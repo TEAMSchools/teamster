@@ -15,6 +15,14 @@ models:
       consumers read. Columns PowerSchool supplies and Focus does not are null
       for Miami -- special-program placement, the KIPP Forward exit codes, and
       the advisor teacher number.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - entrydate
     columns:
       - name: homeless_code
         data_type: string
@@ -32,7 +40,9 @@ models:
           from `stg_powerschool__studentcorefields` for the current academic
           year and from `stg_powerschool__s_nj_ren_x` for closed years. For
           Miami, decoded from the Focus homelessness fields in
-          `int_focus__students`.
+          `int_focus__students`, but only for the current academic year --
+          closed Miami years still read the NJ re-enrollment extension, which is
+          always null for Miami.
       - name: homeless_primary_nighttime_residence_code
         data_type: int64
         data_tests:
@@ -144,16 +154,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitcomment
-      - name: lunchstatus
-        data_type: string
-        description:
-          "Represents the portion of lunch a student must pay for: Blank=No
-          status P=Full pay R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC."
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: lunchstatus
       - name: fteid
         data_type: int64
         description:
@@ -581,3 +581,91 @@ models:
           The student's KIPP `student_number`, used to join NJ Pearson
           state-assessment records, where it is reported as the
           LocalStudentIdentifier.
+      - name: is_enrolled_fdos
+        data_type: boolean
+        description:
+          Whether the student was enrolled as of the first day of school.
+      - name: advisory_section_number
+        data_type: string
+        description: Identifier for the student's advisory section.
+      - name: lep_tf
+        data_type: int64
+        description:
+          Raw NJ state-extension LEP flag for the enrollment year. Null outside
+          New Jersey.
+      - name: liep_parent_refusal_date
+        data_type: date
+        description:
+          Date a parent refused LEP services, from the NJ state extension. Null
+          outside New Jersey.
+      - name: programtypecode
+        data_type: string
+        description:
+          NJ bilingual/ESL program type code, from the state extension. Null
+          outside New Jersey.
+      - name: home_language
+        data_type: string
+        description:
+          Home language reported for the student, from the NJ state extension.
+          Null outside New Jersey.
+      - name: salesforce_contact_id
+        data_type: string
+        description: Salesforce contact record ID.
+        config:
+          meta:
+            contains_pii: true
+      - name: salesforce_contact_college_match_display_gpa
+        data_type: numeric
+        description: GPA the Salesforce contact displays for college match.
+      - name: salesforce_contact_kipp_hs_class
+        data_type: int64
+        description: KIPP high school class year from the Salesforce contact.
+      - name: salesforce_contact_owner_id
+        data_type: string
+        description: Salesforce user ID of the contact's owner.
+      - name: salesforce_contact_owner_name
+        data_type: string
+        description: Name of the Salesforce contact's owner.
+        config:
+          meta:
+            contains_pii: true
+      - name: salesforce_contact_owner_phone
+        data_type: string
+        description: Phone number of the Salesforce contact's owner.
+        config:
+          meta:
+            contains_pii: true
+      - name: salesforce_contact_owner_email
+        data_type: string
+        description: Email address of the Salesforce contact's owner.
+        config:
+          meta:
+            contains_pii: true
+      - name: illuminate_student_id
+        data_type: int64
+        description:
+          Student identifier in Illuminate, matched on the student's
+          local_student_id.
+        config:
+          meta:
+            contains_pii: true
+      - name: ktc_cohort
+        data_type: int64
+        description:
+          KIPP Through College cohort year -- the Salesforce contact's KIPP HS
+          class when present, otherwise the enrollment cohort.
+      - name: salesforce_contact_df_has_fafsa
+        data_type: string
+        description:
+          Whether the Salesforce contact has a FAFSA submission on file.
+      - name: salesforce_contact_college_match_gpa_band
+        data_type: string
+        description:
+          GPA band for college match, bucketed from
+          salesforce_contact_college_match_display_gpa.
+      - name: salesforce_graduation_year
+        data_type: int64
+        description:
+          Projected graduation year from the Salesforce contact's actual or
+          expected high school graduation date, using a July academic-year
+          cutoff.

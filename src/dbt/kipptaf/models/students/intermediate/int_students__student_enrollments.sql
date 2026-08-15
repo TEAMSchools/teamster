@@ -53,10 +53,11 @@ with
     -- PowerSchool-only columns -- dcids, NJ state fields, exit_code_kf and
     -- exit_code_ts -- null-fill automatically.
     --
-    -- Not conformed, each because Focus has no source rather than because the
-    -- values look uniform: is_self_contained and is_out_of_district (no
-    -- special-programs equivalent), the exit codes (no KIPP Forward tracking),
-    -- and advisor_teachernumber (no network teacher number).
+    -- Not conformed because Focus has no source: is_self_contained and
+    -- is_out_of_district (no special-programs equivalent), the exit codes (no
+    -- KIPP Forward tracking), advisor_teachernumber (no network teacher
+    -- number), rn_school, rn_undergrad, is_enrolled_y1, is_enrolled_recent,
+    -- track and cohort_graduated. These null-fill on the Miami side.
     focus_conformed as (
         select
             enr._dbt_source_relation,
@@ -69,6 +70,7 @@ with
             enr.exitcode,
             enr.grade_level,
             enr.rn_year,
+            enr.rn_all,
             enr.year_in_school,
             enr.year_in_network,
             enr.is_enrolled_fdos,
@@ -123,7 +125,8 @@ with
             {{ ref("int_focus__advisory") }} as adv
             on enr.student_number = adv.student_number
             and enr.academic_year = adv.academic_year
-            and enr.ps_schoolid = adv.schoolid
+            and enr.schoolid = adv.schoolid
+            and enr._dbt_source_project = adv._dbt_source_project
     ),
 
     -- Window derivations over the conformed Focus rows, matching the ones the
@@ -197,7 +200,7 @@ with
 
         full union all corresponding
 
-        select * except (grade_level_prev, academic_year_prev),
+        select * except (academic_year_prev),
         from focus_final
     )
 
