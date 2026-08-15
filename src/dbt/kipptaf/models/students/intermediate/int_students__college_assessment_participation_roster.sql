@@ -22,9 +22,10 @@ with
     ),
 
     /*
-        The goal columns have no consumer yet -- all four consumers of this model
-        read only the *_count_lifetime columns and rn_lifetime. Kept for the rpt
-        views to pick up. See #4658.
+        The goal columns have no consumer yet -- both consumers of this model
+        (_dashboard_roster and rpt_gsheets__college_assessments_wide) read only
+        the *_count_lifetime columns and rn_lifetime. Kept for the rpt views to
+        pick up. See #4658.
     */
     attempt_goals_long as (
         select

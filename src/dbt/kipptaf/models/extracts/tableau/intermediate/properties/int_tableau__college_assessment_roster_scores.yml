@@ -31,6 +31,8 @@ models:
               - grade_level
               - expected_admin_season
               - score_category
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: int64

@@ -566,10 +566,12 @@ for practice, since it aggregates the same column. Two practice administrations
 may share a month without ambiguity, which matters because grade 11's SAT2 may
 also fall in September. And the score side needs a matching key,
 `if(test_type = 'Practice', scope_round, format_date('%B', test_date))`, which
-means **`scope_round` has to reach `int_assessments__all_college_assessments`**
-— it is not there yet, and `administration_round` is no substitute, being null
-on every externally created assessment and wrong on the one that has it
-(`Jul 23` against September test dates).
+means **`scope_round` has to reach `int_assessments__all_college_assessments`**.
+It does, as `aligned_month_round` — the hub unions `test_month` on official rows
+and `scope_round` on practice rows under that one column, so a consumer joins
+the tab without knowing which pipeline a row came from. `administration_round`
+is no substitute, being null on every externally created assessment and wrong on
+the one that has it (`Jul 23` against September test dates).
 
 **A growth row needs its score type to exist.** Only `sat_total_score_growth` is
 in the scaffold and hub vocabulary today, so `"growth": true` on a PSAT
@@ -1211,7 +1213,7 @@ Work outward from the student, stopping at the first layer with zero rows.
 - **On the wide sheet, a column without `practice` in its name is official.**
   Practice has its own nine score columns and three attempt counts; the official
   columns were deliberately NOT renamed to `*_official` for symmetry, because
-  the model is contract-enforced across 68 columns and feeds a live sheet, so a
+  the model is contract-enforced across 67 columns and feeds a live sheet, so a
   rename changes 40 contract entries and 40 headers under anyone with a formula.
   If you add an administration to the tab, add its practice column too — a
   practice score with no column of its own does not fall back anywhere, it

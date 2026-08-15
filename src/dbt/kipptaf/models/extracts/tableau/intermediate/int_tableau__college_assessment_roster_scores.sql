@@ -74,9 +74,17 @@ with
             expected_field_name
     ),
 
+    /* grade_level and expected_test_type are carried for the join back below, not
+       for the window. A season name is not unique within a scope -- the tab states
+       SAT Winter at both grade 11 and grade 12, and SAT Fall as both grade 11
+       Practice and grade 12 Official -- so joining on season alone would attach
+       both grades' growth to both grades' rows. The partition deliberately omits
+       them, because chaining growth across grades and test types is the point. */
     growth as (
         select
             student_number,
+            grade_level,
+            expected_test_type,
             expected_scope,
             expected_admin_season,
 
@@ -120,6 +128,8 @@ with
         left join
             growth as g
             on s.student_number = g.student_number
+            and s.grade_level = g.grade_level
+            and s.expected_test_type = g.expected_test_type
             and s.expected_scope = g.expected_scope
             and s.expected_admin_season = g.expected_admin_season
             and g.total_growth_score_change is not null
