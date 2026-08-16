@@ -1,0 +1,54 @@
+models:
+  - name: qa_kippadb__nsc_gaps
+    description: >
+      Audit of KTC-tracked alumni who need a further NSC (National Student
+      Clearinghouse) request to fill postsecondary tracking gaps. One row per
+      alum. The universe is actual HS graduates (a recorded HS graduation date)
+      through the class of current_academic_year + 1 who either graduated in
+      2022 or earlier, or graduated later but have no advising provider
+      assigned. Each alum is classified into exactly one gap type by precedence
+      and given a suggested date to start the next NSC search from.
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce contact id of the alum. Grain of the model.
+        data_tests:
+          - unique
+          - not_null
+      - name: contact_graduation_year
+        data_type: int64
+        description: HS graduation year of the alum, from the KTC roster.
+      - name: contact_advising_provider
+        data_type: string
+        description: >
+          External advising provider assigned to the alum, if any. Null for
+          alumni KTAF tracks directly via NSC.
+      - name: gap_type
+        data_type: string
+        description: >
+          The single gap classification, by precedence. forward_gap — has NSC
+          verified Salesforce terms whose latest term has ended. unverified_only
+          — present in the NSC tracker but with no verified terms to anchor.
+          no_nsc_record — no verified terms and not present in the NSC tracker.
+      - name: completed_college_flag
+        data_type: boolean
+        description: >
+          The alum has an NSC enrollment stint with a derived status of
+          Graduated. Informational — completed alumni are flagged, not excluded.
+      - name: is_stale_6mo
+        data_type: boolean
+        description: >
+          For forward_gap alumni, whether the latest verified term ended more
+          than six months before today. Null for other gap types.
+      - name: is_stale_prior_ay
+        data_type: boolean
+        description: >
+          For forward_gap alumni, whether the latest verified term ended before
+          the start of the current academic year (July 1). Null for other gap
+          types.
+      - name: suggested_search_from
+        data_type: date
+        description: >
+          Suggested date to begin the next NSC search. For forward_gap alumni,
+          the latest verified term end date (falling back to HS graduation date
+          when no term end can be parsed); otherwise the HS graduation date.
