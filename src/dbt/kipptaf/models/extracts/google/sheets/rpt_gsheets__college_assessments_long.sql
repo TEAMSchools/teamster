@@ -36,9 +36,8 @@ with
             e.college_match_gpa_bands,
 
             sc.scope,
-            sc.subject_area,
+            sc.aligned_subject,
             sc.test_date,
-            sc.score_type,
             sc.scale_score,
 
             g.expected_metric_name,
@@ -99,6 +98,146 @@ with
             and e.graduation_year >= {{ var("current_academic_year") + 1 }}
             and e.school_level = 'HS'
             and e.rn_year = 1
+            /*
+            The three subjects pivoted below. Equivalent to the prior
+            score_type exclusion list: every excluded score_type maps to
+            Reading, Math Test, Reading Test, English or Science. Being a
+            positive filter, it also excludes students with no qualifying
+            score, which the prior list did implicitly -- a null score_type
+            never satisfied `not in`.
+            */
+            and sc.aligned_subject in ('Total', 'EBRW/Reading', 'Math')
+    ),
+
+    pivoted as (
+        select
+            region,
+            schoolid,
+            school,
+            student_number,
+            salesforce_id,
+            student_name,
+            student_first_name,
+            student_last_name,
+            grade_level,
+            student_email,
+            enroll_status,
+            ktc_cohort,
+            graduation_year,
+            year_in_network,
+            iep_status,
+            grad_iep_exempt_status_overall,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_projected,
+            college_match_gpa,
+            college_match_gpa_bands,
+            scope as test_type,
+            test_date,
+
+            /*
+            Aggregated rather than grouped: a student enrolled in two College
+            and Career sections, or a tie on the rn_highest superscore joins,
+            would otherwise split the row and break the grain.
+            */
+            max(ccr_course) as ccr_course,
+            max(ccr_teacher_name) as ccr_teacher_name,
+            max(ccr_section) as ccr_section,
+            max(sat_total_superscore) as sat_total_superscore,
+            max(sat_ebrw_highest) as sat_ebrw_highest,
+            max(sat_math_highest) as sat_math_highest,
+
+            /*
+            max() over 'Yes'/'No' resolves to 'Yes', which is correct for both
+            flags: the sitting is the student's highest, or meets the
+            benchmark, if any duplicate upstream row says so. Duplicate
+            kippadb records are tracked in #4871.
+            */
+            max(if(aligned_subject = 'Total', scale_score, null)) as total_scale_score,
+            max(
+                if(aligned_subject = 'Total', highest_score_by_test, null)
+            ) as total_highest_score_by_test,
+            max(
+                if(
+                    aligned_subject = 'Total' and expected_metric_name = 'HS-Ready',
+                    met_minimum,
+                    null
+                )
+            ) as total_hs_grad_ready,
+            max(
+                if(
+                    aligned_subject = 'Total'
+                    and expected_metric_name = 'College-Ready',
+                    met_minimum,
+                    null
+                )
+            ) as total_college_ready,
+
+            max(
+                if(aligned_subject = 'EBRW/Reading', scale_score, null)
+            ) as ebrw_reading_scale_score,
+            max(
+                if(aligned_subject = 'EBRW/Reading', highest_score_by_test, null)
+            ) as ebrw_reading_highest_score_by_test,
+            max(
+                if(
+                    aligned_subject = 'EBRW/Reading'
+                    and expected_metric_name = 'HS-Ready',
+                    met_minimum,
+                    null
+                )
+            ) as ebrw_reading_hs_grad_ready,
+            max(
+                if(
+                    aligned_subject = 'EBRW/Reading'
+                    and expected_metric_name = 'College-Ready',
+                    met_minimum,
+                    null
+                )
+            ) as ebrw_reading_college_ready,
+
+            max(if(aligned_subject = 'Math', scale_score, null)) as math_scale_score,
+            max(
+                if(aligned_subject = 'Math', highest_score_by_test, null)
+            ) as math_highest_score_by_test,
+            max(
+                if(
+                    aligned_subject = 'Math' and expected_metric_name = 'HS-Ready',
+                    met_minimum,
+                    null
+                )
+            ) as math_hs_grad_ready,
+            max(
+                if(
+                    aligned_subject = 'Math' and expected_metric_name = 'College-Ready',
+                    met_minimum,
+                    null
+                )
+            ) as math_college_ready,
+
+        from final
+        group by
+            region,
+            schoolid,
+            school,
+            student_number,
+            salesforce_id,
+            student_name,
+            student_first_name,
+            student_last_name,
+            grade_level,
+            student_email,
+            enroll_status,
+            ktc_cohort,
+            graduation_year,
+            year_in_network,
+            iep_status,
+            grad_iep_exempt_status_overall,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_projected,
+            college_match_gpa,
+            college_match_gpa_bands,
+            scope,
+            test_date
     )
 
 select
@@ -130,26 +269,22 @@ select
     sat_ebrw_highest,
     sat_math_highest,
 
-    scope as test_type,
+    test_type,
     test_date,
-    subject_area as test_subject,
-    scale_score,
-    highest_score_by_test,
 
-    coalesce(hs_grad_ready, 'NA') as hs_grad_ready,
-    coalesce(college_ready, 'NA') as college_ready,
+    total_scale_score,
+    total_highest_score_by_test,
+    coalesce(total_hs_grad_ready, 'NA') as total_hs_grad_ready,
+    coalesce(total_college_ready, 'NA') as total_college_ready,
 
-from
-    final pivot (
-        any_value(met_minimum) for expected_metric_name
-        in ('HS-Grad Ready' as hs_grad_ready, 'College-Ready' as college_ready)
-    )
-where
-    score_type not in (
-        'act_science',
-        'act_english',
-        'psat10_reading',
-        'psat10_math_test',
-        'sat_reading_test_score',
-        'sat_math_test_score'
-    )
+    ebrw_reading_scale_score,
+    ebrw_reading_highest_score_by_test,
+    coalesce(ebrw_reading_hs_grad_ready, 'NA') as ebrw_reading_hs_grad_ready,
+    coalesce(ebrw_reading_college_ready, 'NA') as ebrw_reading_college_ready,
+
+    math_scale_score,
+    math_highest_score_by_test,
+    coalesce(math_hs_grad_ready, 'NA') as math_hs_grad_ready,
+    coalesce(math_college_ready, 'NA') as math_college_ready,
+
+from pivoted

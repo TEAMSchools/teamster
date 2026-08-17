@@ -1,5 +1,16 @@
 models:
   - name: rpt_gsheets__college_assessments_long
+    description:
+      One row per student per test administration, with scores and readiness
+      flags pivoted wide across the three aligned subjects (Total, EBRW/Reading,
+      Math).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - test_type
+              - test_date
     columns:
       - name: region
         data_type: string
@@ -55,15 +66,66 @@ models:
         data_type: numeric
       - name: test_type
         data_type: string
+        description:
+          Assessment scope -- SAT, ACT, PSAT 8/9, PSAT10 or PSAT NMSQT.
       - name: test_date
         data_type: date
-      - name: test_subject
-        data_type: string
-      - name: scale_score
+        description: Date of the administration. One row per student per date.
+      - name: total_scale_score
         data_type: numeric
-      - name: highest_score_by_test
+        description:
+          Composite or combined scale score for this administration. Null when
+          the administration produced no overall score.
+      - name: total_highest_score_by_test
         data_type: string
-      - name: hs_grad_ready
+        description:
+          Whether this administration is the student's highest total score for
+          this test type.
+      - name: total_hs_grad_ready
         data_type: string
-      - name: college_ready
+        description:
+          Whether the total score meets the HS-Ready benchmark. NA when no
+          benchmark exists for this score type.
+      - name: total_college_ready
         data_type: string
+        description:
+          Whether the total score meets the College-Ready benchmark. NA when no
+          benchmark exists for this score type.
+      - name: ebrw_reading_scale_score
+        data_type: numeric
+        description:
+          EBRW scale score, or ACT Reading where the test type reports Reading
+          instead.
+      - name: ebrw_reading_highest_score_by_test
+        data_type: string
+        description:
+          Whether this administration is the student's highest EBRW or Reading
+          score for this test type.
+      - name: ebrw_reading_hs_grad_ready
+        data_type: string
+        description:
+          Whether the EBRW or Reading score meets the HS-Ready benchmark. NA
+          when no benchmark exists for this score type.
+      - name: ebrw_reading_college_ready
+        data_type: string
+        description:
+          Whether the EBRW or Reading score meets the College-Ready benchmark.
+          NA when no benchmark exists for this score type.
+      - name: math_scale_score
+        data_type: numeric
+        description: Math section scale score for this administration.
+      - name: math_highest_score_by_test
+        data_type: string
+        description:
+          Whether this administration is the student's highest math score for
+          this test type.
+      - name: math_hs_grad_ready
+        data_type: string
+        description:
+          Whether the math score meets the HS-Ready benchmark. NA when no
+          benchmark exists for this score type.
+      - name: math_college_ready
+        data_type: string
+        description:
+          Whether the math score meets the College-Ready benchmark. NA when no
+          benchmark exists for this score type.
