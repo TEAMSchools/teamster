@@ -14,6 +14,8 @@ on:
       # the class this workflow was silently failing to catch.
       - .github/workflows/**
       - "!**/*.md"
+      - "!**/package.json"
+      - "!**/package-lock.json"
 
 jobs:
   claude-review:
@@ -35,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@239e3a730883eeb5c53db12b0fc9573b3024b126 # v1.0.191
+        uses: anthropics/claude-code-action@9d7150bc8a3dae8149739a88019d192b579ad90c # v1.0.193
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
