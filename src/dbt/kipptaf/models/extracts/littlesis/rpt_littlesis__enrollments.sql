@@ -66,23 +66,25 @@ with
             room,
             teacher_id,
             course_title,
+            end_date,
 
             cast(course_id as string) as course_id,
         from {{ ref("int_focus__schedule") }}
         where academic_year = {{ var("current_academic_year") }}
     ),
 
-    -- Focus schedules some students into the same course period twice --
-    -- either two full-year rows or two rows in the same term, never one of
-    -- each. Keep one row per (student_id, course_period_id), preferring a
-    -- full-year row (marking_period_id null) if a term-specific row is ever
-    -- present too, so Little SIS gets one enrollment per section.
+    -- Focus schedules some students into the same course period twice: a
+    -- same-day-superseded stint (start_date = end_date) alongside the current
+    -- open one (end_date null). Keep the open stint per
+    -- (student_id, course_period_id); demote marking_period_id as a secondary
+    -- tiebreak in case a genuine full-year/term-specific duplicate ever
+    -- occurs, so Little SIS gets one enrollment per section.
     focus_schedule as (
         {{
             dbt_utils.deduplicate(
                 relation="focus_schedule_raw",
                 partition_by="student_id, course_period_id",
-                order_by="(marking_period_id is not null) asc",
+                order_by="(end_date is not null) asc, (marking_period_id is not null) asc",
             )
         }}
     ),
