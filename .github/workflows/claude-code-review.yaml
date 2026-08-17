@@ -99,6 +99,15 @@ jobs:
             lower-severity findings. Include a confidence level and a severity
             label for each finding so a human can rank them.
 
+            Response format: lead the comment with a short, plain-language
+            summary for human skimming — the overall verdict and only the
+            highest-severity findings, no jargon. Then add a collapsed
+            <details><summary>Full findings</summary> fold-out listing every
+            finding, including lower-severity and uncertain ones, each with
+            file:line, confidence, severity, and the specific convention or
+            citation. This mirrors this repo's PR/issue template pattern:
+            human-readable content first, denser context folded below.
+
             Execution model: this job is a single non-interactive turn sequence.
             There is no wake-up and no second invocation — when you stop
             producing output the process exits and any unfinished work is lost.
