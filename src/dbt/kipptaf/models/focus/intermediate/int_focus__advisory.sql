@@ -30,7 +30,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="homeroom_enrollments",
-                partition_by="student_id, academic_year, schoolid",
+                partition_by="student_id, academic_year, schoolid, _dbt_source_project",
                 order_by="course_period_id desc",
             )
         }}

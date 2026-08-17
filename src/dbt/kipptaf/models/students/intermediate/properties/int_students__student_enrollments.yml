@@ -51,12 +51,15 @@ models:
                 values: [0, 1, 2, 3, 4]
                 quote: false
         description:
-          Raw NJ primary nighttime residence code for the enrollment year — 1
-          for shelters or transitional housing, 2 for doubled-up, 3 for
-          unsheltered, 4 for hotels or motels. Zero means no selection was made.
-          Read from `stg_powerschool__s_nj_stu_x` for the current academic year
-          and from `stg_powerschool__s_nj_ren_x` for closed years. Null outside
-          New Jersey.
+          Primary nighttime residence code for the enrollment year — 1 for
+          shelters or transitional housing, 2 for doubled-up, 3 for unsheltered,
+          4 for hotels or motels. Zero means no selection was made. For the New
+          Jersey regions, read from `stg_powerschool__s_nj_stu_x` for the
+          current academic year and from `stg_powerschool__s_nj_ren_x` for
+          closed years. For Miami, decoded from the Focus homelessness fields in
+          `int_focus__students`, but only for the current academic year --
+          closed Miami years still read the NJ re-enrollment extension, which is
+          always null for Miami.
       - name: student_number
         data_type: int64
         description: |-
@@ -515,12 +518,21 @@ models:
         data_type: date
       - name: gifted_and_talented
         data_type: string
-        description: First non-null of gifted_and_talented.
+        description:
+          First non-null of the NJ state-extension value, the PowerSchool
+          student-user-fields value, and the Focus value for Miami (from
+          `int_focus__students`, via `focus_conformed`), defaulting to N when
+          none are set.
       - name: lunch_balance
         data_type: float64
       - name: is_504
         data_type: boolean
-        description: First non-null of pid_504_tf, is_504.
+        description:
+          For the New Jersey regions, first non-null of `pid_504_tf`, `is_504`.
+          Always null for Miami -- both coalesce inputs resolve through
+          `students_dcid`, which Focus never populates, so Miami has no 504
+          source at all. Null means unknown 504 status, not the absence of a
+          plan.
       - name: is_fldoe_fte_2
         data_type: boolean
         description: Conditional on region, survey_2.
@@ -554,11 +566,12 @@ models:
       - name: lunch_status
         data_type: string
         description:
-          "This is the Lunch status copied from the student table. Represents
-          the portion of lunch a studentmust pay for: Blank=No status P=Full pay
-          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC Categorical mapping
-          of academic_year, eligibility_name, is_directly_certified,
-          lunchstatus, region, rn_year."
+          Categorical lunch-status mapping for the New Jersey regions, based on
+          academic_year, eligibility_name, is_directly_certified, lunchstatus,
+          region, and rn_year -- P for full pay, R for reduced, F for free, E
+          for exempt, T for temporary. Always null for Miami -- Focus's only
+          meal element is a school-level CEP code, which says nothing about the
+          individual student.
       - name: lunch_application_status
         data_type: string
         description:

@@ -87,6 +87,7 @@ with
             stu.lep_status,
             stu.lunchstatus,
             stu.homeless_code,
+            stu.homeless_primary_nighttime_residence_code,
             stu.is_homeless,
             stu.gifted_and_talented,
             stu.ethnicity,
@@ -211,6 +212,7 @@ select
         spedlep,
         prevstudentid,
         homeless_code,
+        homeless_primary_nighttime_residence_code,
         gifted_and_talented
     ),
 
@@ -330,9 +332,16 @@ select
         njr.homeless_code
     ) as homeless_code,
 
+    -- njs (stg_powerschool__s_nj_stu_x) only ever matches NJ, via
+    -- students_dcid; ar.homeless_primary_nighttime_residence_code (from
+    -- int_focus__students, via focus_conformed) is the Miami equivalent and is
+    -- only ever populated there. The two never overlap, so coalescing is safe.
     if(
         ar.academic_year = {{ var("current_academic_year") }},
-        njs.homelessprimarynighttimeres,
+        coalesce(
+            njs.homelessprimarynighttimeres,
+            ar.homeless_primary_nighttime_residence_code
+        ),
         njr.homelessprimarynighttimeres
     ) as homeless_primary_nighttime_residence_code,
 

@@ -45,7 +45,7 @@ select
     -- archive (Sunrise ES, Liberty MS), so it's the fallback.
     coalesce(e.school_level, loc.grade_band) as school_level,
 
-    concat(e.region, e.school_level) as region_school_level,
+    concat(e.region, coalesce(e.school_level, loc.grade_band)) as region_school_level,
 
 from enrollments as e
 left join

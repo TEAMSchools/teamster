@@ -190,7 +190,8 @@ with
 select
     *,
 
-    -- Matches the formula stg_powerschool__studentcorefields uses, so both SIS
-    -- branches agree on what is_homeless means.
-    homeless_code in ('Y1', 'Y2') as is_homeless,
+    -- Matches the formula stg_powerschool__studentcorefields uses -- wrapped
+    -- in if() there too, so a null homeless_code yields false on both SIS
+    -- branches instead of diverging to null here.
+    if(homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
 from conformed

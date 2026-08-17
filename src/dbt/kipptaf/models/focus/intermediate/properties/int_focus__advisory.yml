@@ -13,11 +13,15 @@ models:
               - student_number
               - academic_year
               - schoolid
+              - _dbt_source_project
     columns:
       - name: student_number
         description: >-
           Focus student id (10-digit, FLDOE-district-prefixed) — the student in
           the homeroom.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         description: Academic year of the homeroom enrollment.
       - name: schoolid
