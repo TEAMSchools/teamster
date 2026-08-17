@@ -54,8 +54,7 @@ with
        per course period) and are keyed on the prefixed student id that
        stg_people__student_logins already assigns Google accounts to.
     */
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    focus_schedule_raw as (
+    focus_schedule as (
         select
             academic_year,
             schoolid,
@@ -66,27 +65,10 @@ with
             room,
             teacher_id,
             course_title,
-            end_date,
 
             cast(course_id as string) as course_id,
         from {{ ref("int_focus__schedule") }}
         where academic_year = {{ var("current_academic_year") }}
-    ),
-
-    -- Focus schedules some students into the same course period twice: a
-    -- same-day-superseded stint (start_date = end_date) alongside the current
-    -- open one (end_date null). Keep the open stint per
-    -- (student_id, course_period_id); demote marking_period_id as a secondary
-    -- tiebreak in case a genuine full-year/term-specific duplicate ever
-    -- occurs, so Little SIS gets one enrollment per section.
-    focus_schedule as (
-        {{
-            dbt_utils.deduplicate(
-                relation="focus_schedule_raw",
-                partition_by="student_id, course_period_id",
-                order_by="(end_date is not null) asc, (marking_period_id is not null) asc",
-            )
-        }}
     ),
 
     /*
