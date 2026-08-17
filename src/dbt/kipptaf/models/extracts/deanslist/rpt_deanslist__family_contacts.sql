@@ -74,3 +74,7 @@ inner join
     on c.student_number = s.student_number
     and c._dbt_source_project = s._dbt_source_project
     and s.enroll_status = 0
+-- DeansList's importer displays contacts in the order this file lists them per
+-- student (no independent sort on their end), so Parent1/Parent2 must precede
+-- Emergency here or families see emergency contacts ranked above parents.
+order by c.student_number, if(c.contact_type = 'Emergency', 1, 0), c.contact_type
