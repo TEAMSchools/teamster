@@ -131,45 +131,56 @@ with
             cumulative_y1_gpa_projected,
             college_match_gpa,
             college_match_gpa_bands,
+            /*
+            Grouped, not aggregated. The CCR course/teacher/section triple
+            comes from one joined row, so independent max() calls could pair a
+            course with another row's teacher if a student ever held two
+            College and Career sections in a year. Grouping keeps the triple
+            intact and surfaces such a student as a duplicate row for the
+            uniqueness test to flag, rather than silently blending two rows.
+            Same reasoning for the three lifetime SAT highs, which tie-break
+            independently on rn_highest.
+            */
+            ccr_course,
+            ccr_teacher_name,
+            ccr_section,
+            sat_total_superscore,
+            sat_ebrw_highest,
+            sat_math_highest,
             scope as test_type,
             test_date,
-
-            /*
-            Aggregated rather than grouped: a student enrolled in two College
-            and Career sections, or a tie on the rn_highest superscore joins,
-            would otherwise split the row and break the grain.
-            */
-            max(ccr_course) as ccr_course,
-            max(ccr_teacher_name) as ccr_teacher_name,
-            max(ccr_section) as ccr_section,
-            max(sat_total_superscore) as sat_total_superscore,
-            max(sat_ebrw_highest) as sat_ebrw_highest,
-            max(sat_math_highest) as sat_math_highest,
 
             /*
             max() over 'Yes'/'No' resolves to 'Yes', which is correct for both
             flags: the sitting is the student's highest, or meets the
             benchmark, if any duplicate upstream row says so. Duplicate
-            kippadb records are tracked in #4871.
+            kippadb records are tracked in #4871. 'NA' means no benchmark
+            exists for that score type, distinct from a 'No' that missed one.
             */
             max(if(aligned_subject = 'Total', scale_score, null)) as total_scale_score,
             max(
                 if(aligned_subject = 'Total', highest_score_by_test, null)
             ) as total_highest_score_by_test,
-            max(
-                if(
-                    aligned_subject = 'Total' and expected_metric_name = 'HS-Ready',
-                    met_minimum,
-                    null
-                )
+            coalesce(
+                max(
+                    if(
+                        aligned_subject = 'Total' and expected_metric_name = 'HS-Ready',
+                        met_minimum,
+                        null
+                    )
+                ),
+                'NA'
             ) as total_hs_grad_ready,
-            max(
-                if(
-                    aligned_subject = 'Total'
-                    and expected_metric_name = 'College-Ready',
-                    met_minimum,
-                    null
-                )
+            coalesce(
+                max(
+                    if(
+                        aligned_subject = 'Total'
+                        and expected_metric_name = 'College-Ready',
+                        met_minimum,
+                        null
+                    )
+                ),
+                'NA'
             ) as total_college_ready,
 
             max(
@@ -178,40 +189,53 @@ with
             max(
                 if(aligned_subject = 'EBRW/Reading', highest_score_by_test, null)
             ) as ebrw_reading_highest_score_by_test,
-            max(
-                if(
-                    aligned_subject = 'EBRW/Reading'
-                    and expected_metric_name = 'HS-Ready',
-                    met_minimum,
-                    null
-                )
+            coalesce(
+                max(
+                    if(
+                        aligned_subject = 'EBRW/Reading'
+                        and expected_metric_name = 'HS-Ready',
+                        met_minimum,
+                        null
+                    )
+                ),
+                'NA'
             ) as ebrw_reading_hs_grad_ready,
-            max(
-                if(
-                    aligned_subject = 'EBRW/Reading'
-                    and expected_metric_name = 'College-Ready',
-                    met_minimum,
-                    null
-                )
+            coalesce(
+                max(
+                    if(
+                        aligned_subject = 'EBRW/Reading'
+                        and expected_metric_name = 'College-Ready',
+                        met_minimum,
+                        null
+                    )
+                ),
+                'NA'
             ) as ebrw_reading_college_ready,
 
             max(if(aligned_subject = 'Math', scale_score, null)) as math_scale_score,
             max(
                 if(aligned_subject = 'Math', highest_score_by_test, null)
             ) as math_highest_score_by_test,
-            max(
-                if(
-                    aligned_subject = 'Math' and expected_metric_name = 'HS-Ready',
-                    met_minimum,
-                    null
-                )
+            coalesce(
+                max(
+                    if(
+                        aligned_subject = 'Math' and expected_metric_name = 'HS-Ready',
+                        met_minimum,
+                        null
+                    )
+                ),
+                'NA'
             ) as math_hs_grad_ready,
-            max(
-                if(
-                    aligned_subject = 'Math' and expected_metric_name = 'College-Ready',
-                    met_minimum,
-                    null
-                )
+            coalesce(
+                max(
+                    if(
+                        aligned_subject = 'Math'
+                        and expected_metric_name = 'College-Ready',
+                        met_minimum,
+                        null
+                    )
+                ),
+                'NA'
             ) as math_college_ready,
 
         from final
@@ -236,6 +260,12 @@ with
             cumulative_y1_gpa_projected,
             college_match_gpa,
             college_match_gpa_bands,
+            ccr_course,
+            ccr_teacher_name,
+            ccr_section,
+            sat_total_superscore,
+            sat_ebrw_highest,
+            sat_math_highest,
             scope,
             test_date
     )
@@ -274,17 +304,17 @@ select
 
     total_scale_score,
     total_highest_score_by_test,
-    coalesce(total_hs_grad_ready, 'NA') as total_hs_grad_ready,
-    coalesce(total_college_ready, 'NA') as total_college_ready,
+    total_hs_grad_ready,
+    total_college_ready,
 
     ebrw_reading_scale_score,
     ebrw_reading_highest_score_by_test,
-    coalesce(ebrw_reading_hs_grad_ready, 'NA') as ebrw_reading_hs_grad_ready,
-    coalesce(ebrw_reading_college_ready, 'NA') as ebrw_reading_college_ready,
+    ebrw_reading_hs_grad_ready,
+    ebrw_reading_college_ready,
 
     math_scale_score,
     math_highest_score_by_test,
-    coalesce(math_hs_grad_ready, 'NA') as math_hs_grad_ready,
-    coalesce(math_college_ready, 'NA') as math_college_ready,
+    math_hs_grad_ready,
+    math_college_ready,
 
 from pivoted
