@@ -1,0 +1,91 @@
+unit_tests:
+  - name: test_int_focus__students_homeless_and_meal_conform
+    model: int_focus__students
+    given:
+      - input: ref('stg_focus__students')
+        format: sql
+        rows: |
+          select 1 as student_id, 793 as homeless_student_pk_12,
+            427 as homeless_unaccompanied_youth,
+            15 as free_reduced_meals_program,
+            cast(null as timestamp) as birthdate,
+            cast(null as numeric) as disis_id
+          union all
+          select 2, 789, 425, 24, cast(null as timestamp), cast(null as numeric)
+          union all
+          select 3, 790, 426, 21, cast(null as timestamp), cast(null as numeric)
+          union all
+          select 4, 794, cast(null as int64), 19, cast(null as timestamp),
+            cast(null as numeric)
+          union all
+          select 5, 791, 7261, 22, cast(null as timestamp), cast(null as numeric)
+      - input: ref('int_focus__students__pivot')
+        format: sql
+        rows: |
+          select 1 as student_id,
+            cast(null as string) as ethnicity_hispanic_or_latino_label,
+            cast(null as string) as race_white_label,
+            cast(null as string) as race_black_or_african_american_label,
+            cast(null as string) as race_asian_label,
+            cast(null as string) as sex_label,
+            cast(null as string) as race_american_indian_or_alaska_native_label,
+            cast(null as string)
+              as race_native_hawaiian_or_other_pacific_islander_label,
+            cast(null as string) as residence_county_label,
+            cast(null as string) as language_label,
+            cast(null as string) as ese_fefp_code_label,
+            cast(null as string) as english_language_learner_pk_12_label,
+            cast(null as string) as gifted_eligibility_label,
+            'Student is not homeless-default [N]' as homeless_student_pk_12_label,
+            'Z- Not homeless (or student eligible for homeless services) but does not meet the definition of an unaccompanied youth. ' as homeless_unaccompanied_youth_label,
+            'CEP NOT Direct Cert [N]' as free_reduced_meals_program_label
+          union all
+          select 2, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Living in emergency or transitional shel [A]',
+            'Y- Yes,who is not in the physical custody of parent or guardian [Y]',
+            'The student is eligible for free meals [F]'
+          union all
+          select 3, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Sharing the housing of other persons [B]',
+            'N- No, Is homeless but does not meet the definiton of unaccompanied youth [N]',
+            'Eligible for Reduced Lunch [3]'
+          union all
+          select 4, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Student awaiting foster care [F]', cast(null as string),
+            'Did Not Apply [0]'
+          union all
+          select 5, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Living in cars, parks, temportary trailer parks or campgrounds, train stations, etc. [D]',
+            'U - Student is a homeless child or youth (or student eligible for homeless services) under the age of 16 years who is not in the physical custody of a parent or guardian',
+            'Eligible for Free Lunch with Direct Cert or extension of eligibility [D]'
+    expect:
+      rows:
+        - student_id: 1
+          homeless_code: N
+          is_homeless: false
+          homeless_primary_nighttime_residence_code: null
+          lunchstatus: null
+        - student_id: 2
+          homeless_code: Y2
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: 1
+          lunchstatus: F
+        - student_id: 3
+          homeless_code: Y1
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: 2
+          lunchstatus: R
+        - student_id: 4
+          homeless_code: Y1
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: null
+          lunchstatus: P
+        - student_id: 5
+          homeless_code: Y2
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: 3
+          lunchstatus: F
