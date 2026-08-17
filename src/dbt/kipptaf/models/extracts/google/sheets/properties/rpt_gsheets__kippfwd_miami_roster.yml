@@ -38,9 +38,10 @@ models:
           enroll_status column directly since it keys on grad_type and is
           correct — see the inline SQL comment for why the rest is derived
           locally. -1 fires for every row in the current academic year until the
-          first day of school and self-heals afterward; consumers filtering to 0
-          see zero current-year students until then, a deliberate and disclosed
-          tradeoff.
+          first day of school (2026-08-12 for AY2026, per
+          int_focus__school_year_first_day) and self-heals afterward, clearing
+          once that date passes; consumers filtering to 0 see zero current-year
+          students until then, a deliberate and disclosed tradeoff.
       - name: iep_status
         data_type: string
         data_tests:
@@ -209,4 +210,22 @@ models:
         description: >-
           Prior academic year's FLDOE FAST math progress monitoring 3
           achievement level and scale score.
+        data_type: string
+      - name: reading_group
+        description: >-
+          Focus course-period cohort(s) (short_name, e.g. AA- Cohort 5) for the
+          student's intensive reading block in this academic year, comma
+          separated if the student holds more than one section. Roughly three
+          quarters of the grade 7-8 roster sits in a reading cohort — this is
+          the default middle-school block, not an intervention indicator. Sparse
+          for prior-year rows, which predate this course structure.
+        data_type: string
+      - name: math_group
+        description: >-
+          Focus course-period cohort(s) (short_name, e.g. AA- Cohort 5) for the
+          student's foundational-skills math block in this academic year, comma
+          separated if the student holds more than one section. Roughly three
+          quarters of the grade 7-8 roster sits in a math cohort — this is the
+          default middle-school block, not an intervention indicator. Sparse for
+          prior-year rows, which predate this course structure.
         data_type: string

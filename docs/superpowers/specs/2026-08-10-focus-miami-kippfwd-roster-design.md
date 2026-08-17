@@ -200,7 +200,8 @@ partitioned by (`student_number`, `academic_year`).
   recoverable by coalescing across years — none of the 81 has a prior-year Focus
   row with a non-null `fteid`.
 - **`enroll_status` reads `-1` for the whole current year until the first day of
-  school**, by deliberate choice — see the `enroll_status` derivation above.
+  school (2026-08-12 for AY2026, per `int_focus__school_year_first_day`), then
+  clears**, by deliberate choice — see the `enroll_status` derivation above.
 - **`contact_1_phone_home` is sparse** — 55 of 338 primary contacts. Expected.
 
 ## Testing

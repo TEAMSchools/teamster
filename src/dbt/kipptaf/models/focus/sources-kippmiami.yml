@@ -130,3 +130,12 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__users
+      - name: int_focus__schedule
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__schedule

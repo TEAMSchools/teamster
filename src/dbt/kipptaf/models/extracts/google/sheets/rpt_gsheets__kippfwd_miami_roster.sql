@@ -67,6 +67,59 @@ with
         select _dbt_source_project, studentid, yearid, schoolid, gpa_y1,
         from {{ ref("int_powerschool__gpa_term") }}
         where is_current
+    ),
+
+    /* Reading-intensive and foundational-skills math are the default grade
+       7-8 blocks (roughly three quarters of the grade sits in each), not
+       intervention placements -- classify by course title, not a custom
+       intervention flag. FOUNDATION is deliberately excluded from the math
+       pattern: it also matches GR4/GR5 CS FOUNDATIONS, which are Computer
+       Science courses, not the FDN SKL math block. */
+    course_domains as (
+        select
+            sch.student_id,
+            sch.academic_year,
+
+            cp.short_name,
+
+            case
+                when upper(c.title) like '%INTENS%'
+                then 'reading'
+                when upper(c.title) like '%FDN SKL%'
+                then 'math'
+            end as course_domain,
+        from {{ ref("int_focus__schedule") }} as sch
+        inner join
+            {{ ref("int_focus__course_periods") }} as cp
+            on sch.course_period_id = cp.course_period_id
+        inner join
+            {{ ref("int_focus__courses") }} as c
+            on cp.course_id = c.course_id
+            and cp.syear = c.syear
+    ),
+
+    /* One row per student per academic year per domain, with the cohort's
+       short_name aggregated to avoid the fan-out from a student holding two
+       sections in the same domain. short_name is used deliberately over
+       title -- title embeds teacher names, which must not flow into this
+       distributed sheet. */
+    course_groups as (
+        select
+            student_id,
+            academic_year,
+            string_agg(
+                distinct if(course_domain = 'reading', short_name, null),
+                ', '
+                order by if(course_domain = 'reading', short_name, null)
+            ) as reading_group,
+            string_agg(
+                distinct if(course_domain = 'math', short_name, null),
+                ', '
+                order by if(course_domain = 'math', short_name, null)
+            ) as math_group,
+        from course_domains
+        where course_domain is not null
+        group by student_id, academic_year
     )
 
 select
@@ -111,10 +164,11 @@ select
     case
         when e.startdate > current_date('{{ var("local_timezone") }}')
         /* Fires for the whole current academic year until the first day of
-           school (Miami's is roughly Aug 17), then self-heals as
-           enrollment startdates fall in the past. Until then, consumers
-           filtering enroll_status = 0 see zero current-year students -- a
-           deliberate, disclosed tradeoff, not a bug. */
+           school (2026-08-12 for AY2026, per
+           int_focus__school_year_first_day), then self-heals as enrollment
+           startdates fall in the past and this -1 state clears. Until then,
+           consumers filtering enroll_status = 0 see zero current-year
+           students -- a deliberate, disclosed tradeoff, not a bug. */
         then -1
         when e.enroll_status = 3
         then 3
@@ -142,6 +196,9 @@ select
 
     fp_prev.ela_pm3 as ela_pm3_prev,
     fp_prev.math_pm3 as math_pm3_prev,
+
+    cg.reading_group,
+    cg.math_group,
 from {{ ref("int_focus__student_enrollments") }} as e
 left join students as s on e.student_number = s.student_id
 left join open_enrollment as oe on e.student_number = oe.student_number
@@ -171,6 +228,10 @@ left join
     and psy.yearid = gpa.yearid
     and psy.schoolid = gpa.schoolid
     and psy._dbt_source_project = gpa._dbt_source_project
+left join
+    course_groups as cg
+    on e.student_number = cg.student_id
+    and e.academic_year = cg.academic_year
 where
     e.rn_year = 1
     and e.grade_level in (7, 8)
