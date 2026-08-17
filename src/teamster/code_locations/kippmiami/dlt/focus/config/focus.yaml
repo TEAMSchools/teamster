@@ -133,8 +133,6 @@ assets:
     cursor_column: updated_at
   - table_name: permission
     cursor_column: updated_at
-  - table_name: login_history
-    cursor_column: null
   # Custom Fields
   - table_name: custom_fields
     cursor_column: updated_at
