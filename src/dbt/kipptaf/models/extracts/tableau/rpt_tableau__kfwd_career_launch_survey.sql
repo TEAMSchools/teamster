@@ -36,6 +36,22 @@ with
         group by p.student
     ),
 
+    contact_notes as (
+        select
+            contact as contact_id,
+            `date` as contact_date,
+
+            regexp_contains(`subject`, r'^CC\d') as is_career_conversation,
+        from {{ ref("stg_kippadb__contact_note") }}
+    ),
+
+    career_conversation_dates as (
+        select contact_id, max(contact_date) as last_ccr_date,
+        from contact_notes
+        where is_career_conversation
+        group by contact_id
+    ),
+
     career_conversations as (
         select
             contact_id,
@@ -96,6 +112,8 @@ with
             p.college_programs,
 
             cc.notes as career_conversation_notes,
+
+            ccd.last_ccr_date,
 
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
@@ -193,6 +211,7 @@ with
             {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }} as cc
             on r.contact_id = cc.contact_id
         left join career_conversations as ccr on r.contact_id = ccr.contact_id
+        left join career_conversation_dates as ccd on r.contact_id = ccd.contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -367,6 +386,7 @@ select
     r.cc_total_count,
     r.career_conversation_items_complete_count,
     r.is_career_conversation_complete,
+    r.last_ccr_date,
 
     sp.survey_id,
     sp.survey_title,
