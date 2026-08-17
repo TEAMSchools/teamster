@@ -282,7 +282,12 @@ select
         njs.gifted_and_talented, suf.gifted_and_talented, ar.gifted_and_talented, 'N'
     ) as gifted_and_talented,
 
-    coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
+    -- Both njr and suf join through students_dcid, which Focus never
+    -- populates, so Miami has no 504 source at all -- null means unknown,
+    -- not the fabricated negative false would imply.
+    if(
+        ar.region = 'Miami', null, coalesce(njr.pid_504_tf, suf.is_504, false)
+    ) as is_504,
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
