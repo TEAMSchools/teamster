@@ -4,11 +4,6 @@
 
 > "When merged, this pull request will..."
 
-## AI Assistance
-
-> If Claude Code authored or co-authored this PR, briefly note what was
-> AI-assisted vs. human-directed in the summary above
-
 ## Self-review
 
 > Complete only the sections relevant to your changes.
@@ -74,3 +69,16 @@
 - [Dagster "kinds" Reference](https://docs.dagster.io/guides/build/assets/metadata-and-tags/kind-tags#supported-icons)
 - [Automated checks](https://teamschools.github.io/teamster/CONTRIBUTING/#automated-checks)
 - [dbt Conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/)
+
+<details>
+<summary>For Claude</summary>
+
+> Context, not instructions — AI involvement, what to focus on, what's
+> intentionally out of scope, related issues/PRs. Delete if there's nothing to
+> add.
+
+<!-- e.g. "Claude-assisted, human-directed. The risky part is the retry logic
+in src/x.py; the reformatted imports are just `ruff --fix` noise. Closes
+#123; verified with `uv run pytest tests/test_x.py -k retry`." -->
+
+</details>
