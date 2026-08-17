@@ -32,7 +32,13 @@ select
         coalesce(ada_weighted_semester_q4, ada_weighted_semester_q3), 3
     ) as ada_weighted_semester_s2,
     round(
-        coalesce(ada_year_q4, ada_year_q3, ada_year_q2, ada_year_q1), 3
+        coalesce(
+            ada_weighted_year_q4,
+            ada_weighted_year_q3,
+            ada_weighted_year_q2,
+            ada_weighted_year_q1
+        ),
+        3
     ) as ada_weighted_year,
 
     coalesce(sum_absences_term_q1, 0)
