@@ -4,11 +4,6 @@
 
 > "When merged, this pull request will..."
 
-## AI Assistance
-
-> If Claude Code authored or co-authored this PR, briefly note what was
-> AI-assisted vs. human-directed in the summary above
-
 ## Self-review
 
 > Complete only the sections relevant to your changes.
@@ -74,3 +69,14 @@
 - [Dagster "kinds" Reference](https://docs.dagster.io/guides/build/assets/metadata-and-tags/kind-tags#supported-icons)
 - [Automated checks](https://teamschools.github.io/teamster/CONTRIBUTING/#automated-checks)
 - [dbt Conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/)
+
+## For Claude
+
+> Fill in if this PR was AI-assisted, or if you want `@claude` (mentioned in a
+> comment) or the automated PR review to focus its attention.
+
+- **AI involvement:** none / drafted by Claude / Claude-assisted, human-directed
+- **Focus review on:** files, logic, or edge cases you want scrutinized
+- **Already known / out of scope:** anything intentionally left as-is — don't
+  flag it
+- **Related context:** linked issues, prior PRs, relevant `CLAUDE.md` sections
