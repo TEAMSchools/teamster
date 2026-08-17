@@ -72,10 +72,11 @@ with
         where academic_year = {{ var("current_academic_year") }}
     ),
 
-    -- Focus schedules some students into the same course period twice: once
-    -- as a full-year row (marking_period_id null, the FY sentinel already
-    -- normalized upstream) and once term-specific. Keep the full-year row
-    -- where both exist so Little SIS gets one enrollment per section.
+    -- Focus schedules some students into the same course period twice --
+    -- either two full-year rows or two rows in the same term, never one of
+    -- each. Keep one row per (student_id, course_period_id), preferring a
+    -- full-year row (marking_period_id null) if a term-specific row is ever
+    -- present too, so Little SIS gets one enrollment per section.
     focus_schedule as (
         {{
             dbt_utils.deduplicate(
