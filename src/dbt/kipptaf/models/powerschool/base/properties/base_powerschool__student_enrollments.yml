@@ -6,3 +6,6 @@ models:
       removal once its remaining consumers migrate, tracked in #3999. Carries no
       tests of its own — they run on the model underneath, and repeating them
       here would rescan every column for no additional coverage.
+    config:
+      meta:
+        contains_pii: true

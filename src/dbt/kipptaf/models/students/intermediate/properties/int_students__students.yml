@@ -25,11 +25,11 @@ models:
     columns:
       - name: lunchstatus
         description: >-
-          Meal eligibility. Null for every Miami student: Focus's
-          free_reduced_meals_program is a CEP direct-certification flag that
-          holds one value network-wide, and Focus stores nothing resembling the
-          F/R/P eligibility domain. Populated once Ops surfaces a real
-          per-student eligibility field.
+          Meal eligibility, conformed upstream in int_focus__students. Null for
+          every Miami student today because Focus's free_reduced_meals_program
+          field currently carries only a school-level CEP direct-certification
+          code, not an individual determination -- but the mapping produces F, R
+          or P as soon as Focus records one.
         data_tests:
           - not_null:
               config:

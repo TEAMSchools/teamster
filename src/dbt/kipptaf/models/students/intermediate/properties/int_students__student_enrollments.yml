@@ -569,9 +569,11 @@ models:
           Categorical lunch-status mapping for the New Jersey regions, based on
           academic_year, eligibility_name, is_directly_certified, lunchstatus,
           region, and rn_year -- P for full pay, R for reduced, F for free, E
-          for exempt, T for temporary. Always null for Miami -- Focus's only
-          meal element is a school-level CEP code, which says nothing about the
-          individual student.
+          for exempt, T for temporary. Null for Miami today -- Focus's meal
+          field currently carries only a school-level CEP direct-certification
+          code, not an individual determination. The underlying Focus mapping
+          (in int_focus__students) resolves to F, R or P as soon as Focus
+          records a per-student determination.
       - name: lunch_application_status
         data_type: string
         description:
@@ -600,7 +602,12 @@ models:
           Whether the student was enrolled as of the first day of school.
       - name: advisory_section_number
         data_type: string
-        description: Identifier for the student's advisory section.
+        description:
+          Identifier for the student's advisory section. For the three New
+          Jersey regions, the PowerSchool section number. For Miami, the
+          homeroom's college name (KIPP names Miami homerooms after colleges --
+          Gonzaga, FAMU, Spelman); the frozen archive instead stored a grade
+          digit plus the college name.
       - name: lep_tf
         data_type: int64
         description:
