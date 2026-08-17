@@ -4,6 +4,9 @@ import dlt
 import sqlalchemy as sa
 from dagster import AssetExecutionContext, AssetKey, AssetSpec, Config
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+
+# not re-exported from `dagster_dlt`
+from dagster_dlt.dlt_event_iterator import DltEventType, fetch_row_count_metadata
 from dlt import config as dlt_config
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
@@ -178,6 +181,32 @@ def _powerschool_source(
         )
 
 
+def _with_row_count(
+    event: DltEventType,
+    context: AssetExecutionContext,
+    dlt_pipeline: dlt.Pipeline,
+) -> DltEventType:
+    """Attach dagster-dlt's `row_count` metadata, tolerating a resource with no job.
+
+    `fetch_row_count()` raises when a materialization carries no `jobs` metadata,
+    which is what a first-load table with zero rows produces. All tables share one
+    op, so that raise kills every other table in the run. Enrich per event and
+    fall back to the plain event instead.
+    """
+    try:
+        row_count_metadata = fetch_row_count_metadata(
+            event, context=context, dlt_pipeline=dlt_pipeline
+        )
+    except Exception as e:
+        context.log.warning(f"no row_count for {event.asset_key}: {e}")
+        return event
+
+    if not event.metadata:
+        return event
+
+    return event._replace(metadata={**row_count_metadata, **event.metadata})
+
+
 def build_powerschool_dlt_assets(
     code_location: str,
     tables: list[ProbeTable],
@@ -288,10 +317,10 @@ def build_powerschool_dlt_assets(
             )
 
             try:
-                # fetch_row_count() attaches an authoritative per-table row_count
+                # _with_row_count() attaches an authoritative per-table row_count
                 # to each materialization's metadata (surfaced in the asset
                 # catalog) alongside dagster-dlt's default load metadata.
-                yield from dlt.run(
+                for event in dlt.run(
                     context=context,
                     dlt_source=_powerschool_source(
                         selected, signatures, connection_url, arraysize
@@ -299,7 +328,8 @@ def build_powerschool_dlt_assets(
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",
-                ).fetch_row_count()
+                ):
+                    yield _with_row_count(event, context, dlt_pipeline)
             except Exception:
                 # Surface dlt's per-table extracted row counts in the run log so a
                 # load failure is legible without walking the exception chain.
