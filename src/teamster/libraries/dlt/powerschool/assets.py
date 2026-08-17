@@ -201,10 +201,7 @@ def _with_row_count(
         context.log.warning(f"no row_count for {event.asset_key}: {e}")
         return event
 
-    if not event.metadata:
-        return event
-
-    return event._replace(metadata={**row_count_metadata, **event.metadata})
+    return event._replace(metadata={**row_count_metadata, **(event.metadata or {})})
 
 
 def build_powerschool_dlt_assets(
