@@ -41,14 +41,17 @@ with
             contact as contact_id,
             `date` as contact_date,
 
-            regexp_contains(`subject`, r'^CC\d') as is_career_conversation,
+            regexp_extract(`subject`, r'^CC\d+') as cc_step,
         from {{ ref("stg_kippadb__contact_note") }}
     ),
 
     career_conversation_dates as (
+        /* cc_step mirrors int_kippadb__contact_note_rollup: same extract, same
+           CC1-CC5 domain as its pivot, so this date and the cc*_count columns
+           below always cover the same notes */
         select contact_id, max(contact_date) as last_ccr_date,
         from contact_notes
-        where is_career_conversation
+        where cc_step in ('CC1', 'CC2', 'CC3', 'CC4', 'CC5')
         group by contact_id
     ),
 
