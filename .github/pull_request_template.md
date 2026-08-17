@@ -70,12 +70,15 @@
 - [Automated checks](https://teamschools.github.io/teamster/CONTRIBUTING/#automated-checks)
 - [dbt Conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/)
 
-## For Claude
+<details>
+<summary>For Claude</summary>
 
-> Write this as a prompt to `@claude` — the context it needs to review or
-> resolve this PR — not a form to fill out. Delete if there's nothing to add.
+> Context, not instructions — AI involvement, what to focus on, what's
+> intentionally out of scope, related issues/PRs. Delete if there's nothing to
+> add.
 
-@claude: <!-- e.g. "This PR was Claude-assisted, human-directed. Focus on the
-retry logic in src/x.py — that's the risky part. Ignore the reformatted
-imports, that's just `ruff --fix`. Closes #123; verify with
-`uv run pytest tests/test_x.py -k retry`." -->
+<!-- e.g. "Claude-assisted, human-directed. The risky part is the retry logic
+in src/x.py; the reformatted imports are just `ruff --fix` noise. Closes
+#123; verified with `uv run pytest tests/test_x.py -k retry`." -->
+
+</details>
