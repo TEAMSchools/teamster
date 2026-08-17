@@ -99,7 +99,14 @@ def test_config_matches_spec_membership_map():
     entries = yaml.safe_load(CONFIG.read_text())["assets"]
     by_name = {e["table_name"]: e for e in entries}
 
-    assert len(entries) == 49
+    # derived, not a fourth hand-maintained literal: a table added to the YAML
+    # but not to a spec set fails here instead of drifting silently
+    assert len(entries) == len(
+        INTRADAY_TRANSACTION_DATE
+        | INTRADAY_WHENMODIFIED
+        | NIGHTLY_WHENMODIFIED
+        | NIGHTLY_NO_CURSOR
+    )
 
     for name in INTRADAY_TRANSACTION_DATE:
         assert by_name[name] == {
