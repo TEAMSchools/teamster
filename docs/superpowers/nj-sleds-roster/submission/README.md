@@ -166,7 +166,12 @@ if they don't match.
 
 ## Known blocker outside this scope
 
-The CDS defect is still live: 20,652 of 43,493 rows carry a bad County or School
-code, including every Camden row. The fix is the one-pass School Setup change on
-3 Newark and 5 Camden schools. A clean grade backfill does not make the file
-submittable on its own.
+**The CDS defect is fixed as of the 2026-07-31 extract.** The School Setup
+change landed, and all four files now carry the correct triple on every row —
+Newark `80`/`7325`/`965`, Camden `07`/`1799`/`111`, no blanks, no fallback
+codes. It previously affected 20,652 of 43,493 rows including every Camden row.
+
+That leaves the **ungraded worklist as the only remaining blocker**: 108
+in-scope rows have no usable grade in any source, so the gate still refuses to
+export. Those are a PowerSchool task, not a code one — see "The gate is red on
+arrival" above and run `export_worklist.py` to get the row-level list.
