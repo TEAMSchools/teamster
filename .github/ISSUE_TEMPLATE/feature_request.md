@@ -15,8 +15,9 @@ labels: enhancement
 
 ## For Claude
 
-> Fill in if you're opening this for `@claude` to design or implement.
+> Write this as a prompt to `@claude` — what it needs to design or build this —
+> not a form to fill out. Delete if you're not looping Claude in.
 
-- **Relevant files, models, or assets:**
-- **Constraints or things to avoid:**
-- **Acceptance criteria:** how to verify it's done
+@claude: <!-- e.g. "Add a `--dry-run` flag to scripts/gen-automations-doc.py
+that prints the diff without writing. Done when running it twice with no
+underlying change produces no diff and exits 0." -->

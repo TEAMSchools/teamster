@@ -72,11 +72,10 @@
 
 ## For Claude
 
-> Fill in if this PR was AI-assisted, or if you want `@claude` (mentioned in a
-> comment) or the automated PR review to focus its attention.
+> Write this as a prompt to `@claude` — the context it needs to review or
+> resolve this PR — not a form to fill out. Delete if there's nothing to add.
 
-- **AI involvement:** none / drafted by Claude / Claude-assisted, human-directed
-- **Focus review on:** files, logic, or edge cases you want scrutinized
-- **Already known / out of scope:** anything intentionally left as-is — don't
-  flag it
-- **Related context:** linked issues, prior PRs, relevant `CLAUDE.md` sections
+@claude: <!-- e.g. "This PR was Claude-assisted, human-directed. Focus on the
+retry logic in src/x.py — that's the risky part. Ignore the reformatted
+imports, that's just `ruff --fix`. Closes #123; verify with
+`uv run pytest tests/test_x.py -k retry`." -->

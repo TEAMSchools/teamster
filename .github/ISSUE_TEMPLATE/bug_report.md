@@ -23,9 +23,10 @@ labels: bug
 
 ## For Claude
 
-> Fill in if you're opening this for `@claude` to investigate or fix.
+> Write this as a prompt to `@claude` — what it needs to investigate or fix this
+> — not a form to fill out. Delete if you're not looping Claude in.
 
-- **Relevant files, models, or assets:**
-- **Suspected root cause (if known):**
-- **What "fixed" looks like:** the check that proves it — a test, query, or run
-  status
+@claude: <!-- e.g. "Start with int_focus__schedule — the dedup logic there
+looks like the root cause. Reproduce with
+`uv run dbt build --select +int_focus__schedule`. This is fixed when the
+row-count check in the linked query returns 0." -->
