@@ -371,9 +371,17 @@ downstream contract needs updating and `int_extracts__student_enrollments`'
   `stg_google_sheets__people__locations` already carries `grade_band` for all
   seven Miami schools keyed on `focus_school_id`, and
   `int_focus__student_enrollments` already joins it, so the fix is a coalesce at
-  that model. Note the reach: that model also feeds the Phase 1 spine and its 14
-  marts, so this corrects `school_level` for Miami network-wide, not only in the
-  `base_` vertical.
+  that model.
+
+  **Correction (2026-08-17):** an earlier draft of this bullet claimed the
+  repair reaches the Phase 1 spine and its 14 marts. It does not.
+  `int_students__student_enrollment_union` enumerates its columns and omits
+  `school_level`, and none of the other six consumers of
+  `int_focus__student_enrollments` reference it —
+  `int_tableau__fresh_enrollment_scaffold` derives its own from `grade_level`.
+  The real reach is `int_students__student_enrollments` alone. AY2026 is
+  unaffected either way: prod has exactly 2 AY2026 rows with a null
+  `school_level`, both on an unmapped `schoolid` the crosswalk cannot repair.
 
 - **1,002 Miami alumni graduate-placeholder rows leave `base_`.** These are
   `enroll_status = 3` rows with null entry and exit dates, one per student per
