@@ -495,6 +495,27 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
+  - name: int_powerschool__ada_term_pivot__weighted_year_matches_source
+    description: >-
+      int_powerschool__ada_term computes ada_weighted_year correctly as a rate,
+      and the pivot then re-derives it from its own quarter columns instead of
+      passing that value through. That re-derivation once coalesced the
+      UNWEIGHTED ada_year_q* columns, which produced a number that was still a
+      valid rate between 0 and 1 and therefore invisible to a range test.
+      Because ada_weighted_year is a year-grain window value it is constant
+      across a student's terms, so the pivot's coalesce must reproduce the
+      source value exactly. This test fails on any student-year where the two
+      disagree, which is what a repeat of the wrong-column coalesce looks like.
+      The comparison is exact rather than tolerance-based because the source
+      model aggregates in exact decimal, so equal inputs cannot round to
+      different values between two evaluations.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__ada_term_pivot
+
   - name: test_focus_unprefix_rule_holds
     description: >-
       Focus records the pre-migration student number on returning students, so

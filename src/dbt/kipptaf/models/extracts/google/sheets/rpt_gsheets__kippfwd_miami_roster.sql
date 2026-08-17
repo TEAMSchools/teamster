@@ -56,6 +56,7 @@ with
             sex_label,
             ese_fefp_code,
             cast(disis_id as string) as mdcps_id_raw,
+            cast(student_id as string) as student_id_string,
         from {{ ref("int_focus__students") }}
     ),
 
@@ -142,6 +143,24 @@ select
 
     fp_prev.ela_pm3 as ela_pm3_prev,
     fp_prev.math_pm3 as math_pm3_prev,
+
+    s.student_id as focus_student_id,
+
+    e.exitcode as focus_exit_code,
+
+    concat(e.student_name, ' - ', s.student_id_string) as student_name_id_hash,
+
+    /* Plain in-or-out flag, resolved from the student's open current-year
+       enrollment rather than from this row's exit code. Focus rolls students
+       forward by closing the prior span with an in-school or in-district
+       transfer code, so an exit-code reading would call hundreds of students
+       not enrolled who never left. Reusing open_enrollment also keeps this in
+       lockstep with the derived enroll_status above instead of duplicating its
+       branches: a student who has not started yet still has an open
+       current-year span and correctly reads Enrolled. */
+    if(
+        oe.student_number is not null, 'Enrolled', 'Not Enrolled'
+    ) as focus_enrollment_status,
 from {{ ref("int_focus__student_enrollments") }} as e
 left join students as s on e.student_number = s.student_id
 left join open_enrollment as oe on e.student_number = oe.student_number
