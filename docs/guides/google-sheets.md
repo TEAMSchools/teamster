@@ -132,3 +132,10 @@ models:
       tags: google_sheet
     columns: ...
 ```
+
+## Maintaining the Cube access sheet
+
+For guidance on filling in the `cube_access_individual_exceptions` tab
+specifically (how rows, additional location grants, and the approval lifecycle
+work), see the
+[Cube Access: Individual Exceptions guide](cube-access-individual-exceptions.md).

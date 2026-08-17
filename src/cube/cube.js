@@ -148,11 +148,32 @@ async function resolveAccess(email) {
       reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
     }
     const universes = await loadUniverses(bq);
-    const allowedAbbreviations = access.computeAllowedAbbreviations(
+    const baseStaffAbbreviations = access.computeAllowedAbbreviations(
       row?.staff_location_scope,
       row?.region_key,
       row?.location_abbreviation,
       universes.locations,
+    );
+    const baseStudentAbbreviations = access.computeAllowedAbbreviations(
+      row?.student_location_scope,
+      row?.region_key,
+      row?.location_abbreviation,
+      universes.locations,
+    );
+    // additional_location_grants (dim_staff_cube_access) is one struct per
+    // live individual-exception location grant, unioned in on top of the base
+    // scope — always for staff, only where includes_student_data for
+    // students. See access.js's unionAdditionalGrants / buildGroups docs.
+    const allowedAbbreviations = access.unionAdditionalGrants(
+      baseStaffAbbreviations,
+      row?.additional_location_grants,
+      universes.locations,
+    );
+    const allowedStudentAbbreviations = access.unionAdditionalGrants(
+      baseStudentAbbreviations,
+      row?.additional_location_grants,
+      universes.locations,
+      { studentOnly: true },
     );
     const allowedDepartmentGroups = access.computeAllowedDepartmentGroups(
       row?.staff_department_scope,
@@ -164,6 +185,7 @@ async function resolveAccess(email) {
       reporteeStaffKeys,
       allowedAbbreviations,
       allowedDepartmentGroups,
+      allowedStudentAbbreviations,
     );
     groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
     return ctx;
