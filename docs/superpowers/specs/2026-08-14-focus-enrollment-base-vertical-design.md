@@ -347,6 +347,34 @@ downstream contract needs updating and `int_extracts__student_enrollments`'
   rise. More Miami surface moves onto Focus dates while
   `fct_student_attendance_daily` still keys off archive dates. The test stays
   `severity: warn` and does not block CI; Phase 2 resolves it.
+- **`lunch_status` and `lunch_application_status` go blank for Miami** — 8,315
+  non-null rows today to 0. The archive held real F/R/P values; Focus's only
+  meal element is a school-level CEP code that says nothing about the individual
+  student, so the conform maps it to null (see the meal-eligibility table
+  above). Decision (2026-08-14): accept. Miami's economic-disadvantage proxy
+  loses its historical values along with the archive, and that is a conversation
+  for Ops rather than a modeling fix.
+
+- **`is_504` reads null for Miami rather than false.** The network expression
+  `coalesce(njr.pid_504_tf, suf.is_504, false)` resolves both inputs through
+  `students_dcid`, which Focus never populates, so it would have returned a
+  fabricated `false` for every Miami row — asserting "no 504 plan" where prod
+  carries 191 rows across 55 students. Focus has no 504 field at all, so the
+  Miami branch returns null. Downstream `if(is_504, ...)` renders null and false
+  identically, so no consumer changes behavior; the data simply stops claiming
+  something it does not know.
+
+- **`school_level` is repaired for Miami's closed legacy schools.** Two closed
+  schools carry no `school_level_label` in Focus — Sunrise (2,160 rows,
+  AY2018-2022) and Liberty (896 rows, AY2019-2022) — so `int_focus__schools`
+  left them null and ES/MS/HS-split reporting lost Miami's first five years.
+  `stg_google_sheets__people__locations` already carries `grade_band` for all
+  seven Miami schools keyed on `focus_school_id`, and
+  `int_focus__student_enrollments` already joins it, so the fix is a coalesce at
+  that model. Note the reach: that model also feeds the Phase 1 spine and its 14
+  marts, so this corrects `school_level` for Miami network-wide, not only in the
+  `base_` vertical.
+
 - **1,002 Miami alumni graduate-placeholder rows leave `base_`.** These are
   `enroll_status = 3` rows with null entry and exit dates, one per student per
   academic year — 420 distinct students across AY2022 to AY2025, matching 881
