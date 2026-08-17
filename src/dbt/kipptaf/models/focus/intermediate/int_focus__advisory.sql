@@ -7,6 +7,7 @@
 -- alone, so there is no advisory for prior years. Both gaps are Focus
 -- configuration, not modeling -- see #4868.
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     homeroom_enrollments as (
         select
             sch.student_id,
@@ -25,7 +26,6 @@ with
         where sch.course_title like 'Homeroom%'
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     deduplicate as (
         {{
             dbt_utils.deduplicate(
