@@ -1,0 +1,123 @@
+models:
+  - name: stg_cambium__njgpa
+    description: >-
+      Cambium TIDE NJGPA district summative record file, one row per student per
+      subject test. Filtered to summative, attempted records. Columns keep
+      Cambium's own vocabulary; alignment into the shared NJ state assessment
+      shape happens in kipptaf's stg_cambium__njgpa.
+    columns:
+      - name: student_test_uuid
+        data_type: string
+        description: Cambium's per-test identifier. Unique per row.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: state_student_identifier
+        data_type: int64
+        description: NJ SMART state student identifier (10 digits).
+      - name: local_student_identifier
+        data_type: int64
+        description: >-
+          PowerSchool student_number. Null for a small number of students each
+          administration; patched downstream from the student crosswalk sheet.
+      - name: first_name
+        data_type: string
+        description: Student first name as reported by Cambium.
+      - name: last_or_surname
+        data_type: string
+        description: Student surname as reported by Cambium.
+      - name: academic_year
+        data_type: int64
+        description:
+          Start year of assessment_year, e.g. '2025-2026' becomes 2025.
+      - name: assessment_year
+        data_type: string
+        description: Vendor-reported school year, e.g. '2025-2026'.
+      - name: assessment_grade
+        data_type: string
+        description: >-
+          The test DESIGN level, not the student's grade — 'Grade 10' for ELA
+          and 'Grade 11' for Math. Not used for reporting grade level; see
+          grade_level_when_assessed.
+      - name: grade_level_when_assessed
+        data_type: int64
+        description: >-
+          The student's grade at the time of testing. 11 for every row in the
+          spring administration; expect 12 for fall retakers.
+      - name: period
+        data_type: string
+        description: >-
+          Vendor-reported administration season. 'Spring' in the files seen so
+          far; the fall token is unconfirmed and has drifted historically, so
+          downstream normalization is case-insensitive.
+      - name: subject
+        data_type: string
+        description: "'English Language Arts' or 'Mathematics'."
+      - name: test_code
+        data_type: string
+        description: ELAGP (ELA) or MATGP (Mathematics).
+      - name: test_status
+        data_type: string
+        description: >-
+          Cambium test lifecycle status — completed, pending, or invalidated.
+          Every row surviving the summative and attemptedness filter is
+          'completed', so this is informational rather than a filter.
+      - name: test_performance_level
+        data_type: numeric
+        description: >-
+          1 (Not Yet Graduation Ready) or 2 (Graduation Ready). Same two-level
+          scale Pearson used for NJGPA.
+      - name: test_scale_score
+        data_type: numeric
+        description: Scale score. Non-null on every filtered row.
+      - name: test_score_complete
+        data_type: numeric
+        description: >-
+          Entirely NULL from Cambium, where Pearson set it to 1 on every
+          filtered row. Carried through so the vendor difference is visible here
+          rather than appearing downstream as a union null-fill. The single
+          consumer, int_students__graduation_path_codes, coalesces it. See
+          design spec D2.
+      - name: test_date
+        data_type: date
+        description: >-
+          Date of the earliest online unit start across units 1 through 4,
+          coalesced to the parsed assessment session start. The coalesce is
+          required, not defensive: unit timestamps are populated for ELA only,
+          so unit-only derivation nulls every Mathematics row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_with_disabilities
+        data_type: string
+        description: N, IEP, 504, or B (both IEP and 504).
+      - name: multilingual_learner
+        data_type: string
+        description:
+          Y/N multilingual learner flag; maps to englishlearnerel downstream.
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+        description: Y/N federal ethnicity flag.
+      - name: american_indian_or_alaska_native
+        data_type: string
+        description: Y/N federal race flag.
+      - name: asian
+        data_type: string
+        description: Y/N federal race flag.
+      - name: black_or_african_american
+        data_type: string
+        description: Y/N federal race flag.
+      - name: native_hawaiian_or_other_pacific_islander
+        data_type: string
+        description: Y/N federal race flag.
+      - name: two_or_more_races
+        data_type: string
+        description: Y/N federal race flag.
+      - name: white
+        data_type: string
+        description: Y/N federal race flag.
