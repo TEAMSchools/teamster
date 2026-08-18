@@ -2,18 +2,19 @@
 
 ## Overview
 
-Sixteen dbt projects organized into three tiers:
+Seventeen dbt projects organized into three tiers:
 
-| Tier                  | Projects                                                                                                                    | Purpose                                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
-| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                                     | Combine source packages for a single district                 |
-| **Network analytics** | `kipptaf`                                                                                                                   | Cross-district marts, reporting, and extracts for the network |
+| Tier                  | Projects                                                                                                                               | Purpose                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **Source-system**     | `cambium`, `amplify`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
+| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                                                | Combine source packages for a single district                 |
+| **Network analytics** | `kipptaf`                                                                                                                              | Cross-district marts, reporting, and extracts for the network |
 
 ## Project Dependency Map
 
 ```text
 amplify ──────┐
+cambium ──────┤
 deanslist ────┤
 edplan ───────┤
 finalsite ────┤

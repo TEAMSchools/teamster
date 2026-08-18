@@ -21,6 +21,7 @@ GCS bucket: `teamster-kippnewark`
 | `finalsite`             | API + SFTP    | schedule (contacts 4am) + couchdrop sensor                            |
 | `iready`                | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                   |
 | `overgrad`              | API assets    | schedule                                                              |
+| `cambium`               | SFTP assets   | `AutomationConditionSensor`                                           |
 | `pearson`               | SFTP assets   | `AutomationConditionSensor`                                           |
 | `renlearn`              | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                 |
 | `titan`                 | SFTP assets   | sensor (`build_titan_sftp_sensor`)                                    |

@@ -19,6 +19,7 @@ GCS bucket: `teamster-kippcamden`
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
 | `overgrad`    | API assets        | schedule                                                              |
+| `cambium`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `pearson`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                                    |
 | `extracts`    | BigQuery→SFTP     | schedule (nightly, 3am)                                               |
