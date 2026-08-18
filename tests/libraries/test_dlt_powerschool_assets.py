@@ -1,20 +1,21 @@
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
-import pathlib
-
 import yaml
 from dagster import AssetKey
 
 from teamster.libraries.dlt.powerschool.assets import build_powerschool_dlt_assets
 from teamster.libraries.dlt.probe import ProbeTable
 
-CONFIG = pathlib.Path(
-    "src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/config/assets.yaml"
-)
-
 
 def _config_entries():
-    return yaml.safe_load(CONFIG.read_text())["assets"]
+    # The code location already owns this path and derives it from __file__, so
+    # it resolves regardless of pytest's cwd. Imported inside the function: a
+    # module-scope code-location import needs the dbt manifest at collection.
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
+        config_file,
+    )
+
+    return yaml.safe_load(config_file.read_text())["assets"]
 
 
 def test_factory_builds_single_subsettable_multiasset():

@@ -11,6 +11,9 @@ so that assignment raised `AttributeError` the moment anyone set the tag. These
 tests run the op body far enough to reach that line and assert the module-level
 `dlt.config` (imported here as `dlt_config`, matching the op's import) actually
 received the value.
+
+Also covers event pass-through: the op yields dlt's materializations untouched,
+so a future re-introduction of per-event enrichment fails here.
 """
 
 from collections.abc import Iterator
@@ -18,7 +21,7 @@ from contextlib import contextmanager
 from typing import Any
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, MaterializeResult
 from dlt import config as dlt_config
 from dlt.common.configuration.exceptions import ConfigFieldMissingException
 
@@ -51,19 +54,23 @@ def test_resolve_extract_workers_tag_no_param():
 class _FakeRunResult:
     """Stand-in for dlt's `LoadInfo`; the op iterates it for materializations."""
 
+    def __init__(self, events: tuple[Any, ...] = ()) -> None:
+        self._events = events
+
     def __iter__(self) -> Iterator[Any]:
-        return iter(())
+        return iter(self._events)
 
 
 class _RecordingDltResource:
     """Stand-in for `DagsterDltResource` that records the `run()` kwargs."""
 
-    def __init__(self) -> None:
+    def __init__(self, events: tuple[Any, ...] = ()) -> None:
         self.kwargs: dict[str, Any] = {}
+        self._events = events
 
     def run(self, **kwargs: Any) -> _FakeRunResult:
         self.kwargs = kwargs
-        return _FakeRunResult()
+        return _FakeRunResult(self._events)
 
 
 class _StubLog:
@@ -105,7 +112,9 @@ def reset_extract_workers() -> Iterator[None]:
     dlt_config[EXTRACT_WORKERS] = None
 
 
-def _run_op(tags: dict[str, str] | None = None) -> None:
+def _run_op(
+    tags: dict[str, str] | None = None, events: tuple[Any, ...] = ()
+) -> list[Any]:
     assets_def: Any = build_powerschool_dlt_assets(
         code_location="kipppaterson", tables=[TABLE]
     )
@@ -117,11 +126,11 @@ def _run_op(tags: dict[str, str] | None = None) -> None:
     # config.probe is set (sensor mode), so the op never opens a real DB
     # connection to probe -- the stubbed ssh tunnel and connection_url() are
     # only there to satisfy the op's parameter list.
-    list(
+    return list(
         assets_def.op.compute_fn.decorated_fn(
             context=context,
             config=PowerSchoolDltConfig(probe=PROBE),
-            dlt=_RecordingDltResource(),
+            dlt=_RecordingDltResource(events),
             ssh_powerschool=_StubSSH(),
             db_powerschool=_StubOracle(),
         )
@@ -144,3 +153,21 @@ def test_op_leaves_extract_workers_unset_without_tag() -> None:
     # dlt_config[...] raises when a field is unset -- that IS "unset" here.
     with pytest.raises(ConfigFieldMissingException):
         dlt_config[EXTRACT_WORKERS]
+
+
+def test_op_yields_dlt_events_unmodified() -> None:
+    """dlt's materializations reach Dagster untouched.
+
+    #4879 wrapped each event to attach an `row_count` key, which raised on a
+    zero-row first load and killed the whole multi-asset op. dagster-dlt already
+    puts `rows_loaded` on the event, so the op now just `yield from`s `run()`.
+    Identity, not equality: re-adding any `_replace()` enrichment fails here.
+    """
+    event = MaterializeResult(
+        asset_key=AssetKey(["kipppaterson", "powerschool", "sis", "students"]),
+        metadata={"rows_loaded": 1},
+    )
+
+    (yielded,) = _run_op(events=(event,))
+
+    assert yielded is event
