@@ -41,11 +41,6 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: period_id
-        description: >-
-          Focus school period the attendance was taken in (joins
-          `stg_focus__school_periods`).
-        data_type: int
       - name: course_period_id
         description: >-
           Focus course period (section) the attendance was taken in (joins
@@ -61,6 +56,11 @@ models:
                 field: course_period_id
               config:
                 severity: error
+      - name: period_id
+        description: >-
+          Focus school period the attendance was taken in (joins
+          `stg_focus__school_periods`).
+        data_type: int
       - name: marking_period_id
         description: >-
           Focus marking period the attendance falls in (joins

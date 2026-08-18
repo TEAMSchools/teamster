@@ -14,9 +14,6 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: syear
-        description: Focus school year (start year, e.g. 2026 = 2026-27).
-        data_type: int
       - name: school_id
         description: Focus school id the team belongs to.
         data_type: int
@@ -30,6 +27,9 @@ models:
                 field: id
               config:
                 severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2026 = 2026-27).
+        data_type: int
       - name: grade_id
         description: >-
           Focus grade level the team is scoped to (joins

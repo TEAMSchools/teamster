@@ -44,6 +44,16 @@ models:
       - name: school_id
         description: Focus school id the referral was written at.
         data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__schools')
+                field: id
+              config:
+                severity: error
       - name: district_id
         description: Focus district id the referral belongs to.
         data_type: int
@@ -196,8 +206,12 @@ models:
       - name: action_taken_by
         description: >-
           Custom field "Action Taken By" — free-text name of the administrator
-          who acted on the referral.
+          who acted on the referral. A staff name, so tagged PII on the same
+          basis as the name columns on `stg_focus__users`.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: admin_comments
         description: >-
           Custom field "Admin. Comments" — free-text administrative notes on the
