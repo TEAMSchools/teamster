@@ -77,24 +77,24 @@ Three further models exist in the repo but are `enabled: false` and are not part
 of the workbook — `rpt_tableau__college_assessment_dashboard`,
 `_dashboard_historic`, and `_qc_report`.
 
-### Resolved — the hubs now share one vocabulary
+### Two score pipelines
 
-Both hubs use the same convention: `test_type` is `Official` or `Practice`, and
-`scope` is the test itself.
+Every question about CARAT numbers starts with which pipeline is involved. The
+two stay separate until `int_assessments__all_college_assessments`, which unions
+them; from there down, `test_type` is what tells them apart. Both use the same
+convention — `test_type` is `Official` or `Practice`, and `scope` is the test
+itself:
 
-| Source                                         | `test_type`            | `scope`                                |
-| ---------------------------------------------- | ---------------------- | -------------------------------------- |
-| `int_assessments__college_assessment`          | `Official`             | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT |
-| `int_assessments__college_assessment_practice` | `Practice`             | ACT, PSAT 8/9, PSAT10, SAT             |
-| `stg_google_sheets__kippfwd__scaffold`         | `Official`, `Practice` | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT |
+| Pipeline | Hub model                                      | `test_type` | `scope` values                         | Origin                                           |
+| -------- | ---------------------------------------------- | ----------- | -------------------------------------- | ------------------------------------------------ |
+| Official | `int_assessments__college_assessment`          | `Official`  | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT | kippadb and College Board                        |
+| Practice | `int_assessments__college_assessment_practice` | `Practice`  | ACT, PSAT 8/9, PSAT10, SAT             | Illuminate plus the conversion and scaffold tabs |
 
-The practice hub used to hold the reverse — the test in `test_type`, and
-Illuminate's unusable `Benchmark`-or-null in `scope` — which meant joining or
-unioning the hubs on either column silently mis-grouped rather than erroring.
-That is gone. The conversion sheet's column was renamed `Test_Type` to `scope`,
-`test_type` now comes from the scaffold's `expected_test_type` (always
-`Practice`, since the join filters to it), and the union no longer translates
-anything.
+`stg_google_sheets__kippfwd__scaffold` carries the same vocabulary on both sides
+— `expected_test_type` holds both values and `expected_scope` the full five-test
+list — which is what lets one scaffold row join either hub. On the practice side
+`test_type` comes from `expected_test_type`, always `Practice` since the join
+filters to it.
 
 !!! warning "Predicates key on `scope`, not `test_type`"
 
@@ -105,19 +105,11 @@ anything.
     subject area on ACT, and a summed ACT composite reading 4-102 instead of an
     averaged 1-36 before it was caught.
 
-Older PR and issue text still describes the swapped shape; treat this table as
-current.
+!!! note "Older PR and issue text describes a swapped shape"
 
-### Two score pipelines
-
-Every question about CARAT numbers starts with which pipeline is involved. They
-stay separate until `int_assessments__all_college_assessments`, which unions
-them; from there down, `test_type` is what tells them apart:
-
-| Pipeline | Hub model                                      | `test_type` | Origin                                           |
-| -------- | ---------------------------------------------- | ----------- | ------------------------------------------------ |
-| Official | `int_assessments__college_assessment`          | `Official`  | kippadb and College Board                        |
-| Practice | `int_assessments__college_assessment_practice` | `Practice`  | Illuminate plus the conversion and scaffold tabs |
+    The practice hub once held the test in `test_type` and Illuminate's
+    `Benchmark`-or-null in `scope` — the reverse of the table above. Treat the
+    table as current when the two disagree.
 
 ## `rpt_tableau__college_assessment_dashboard_scores`
 
