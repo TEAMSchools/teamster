@@ -165,6 +165,35 @@ twice counts twice under either measure. Do not "fix" that by filtering
 `rn_highest = 1` — the whole point of the `scale_score` option is to see every
 attempt, and both measures share one row set.
 
+**How far the two measures diverge is a retake-rate signal, and nothing else.**
+Since they share a row set and differ only in which column is averaged, the gap
+between them is entirely a function of how often students sit the test again.
+Measured 2026-08, Official, Aligned Subject Area `Total`:
+
+| Scope      | Attempts per student | avg `scale_score` | avg `max_scale_score` | Gap   | Gap as % |
+| ---------- | -------------------- | ----------------- | --------------------- | ----- | -------- |
+| ACT        | 1.97                 | 16                | 17                    | +0.8  | 5.0%     |
+| SAT        | 1.79                 | 979               | 1,017                 | +37.6 | 3.8%     |
+| PSAT NMSQT | 1.15                 | 800               | 808                   | +7.7  | 1.0%     |
+| PSAT 8/9   | 1.004                | 710               | 711                   | +0.3  | 0.04%    |
+| PSAT10     | 1.000                | 754               | 754                   | 0.0   | 0%       |
+
+The gap is monotonic in the retake rate, which is the check that the toggle is
+doing only what it claims. PSAT10 is the clinching case — 1,137 rows over 1,137
+students, so zero repeat testing and a gap of exactly zero, which is why every
+PSAT10 cell is byte-identical under both settings while every SAT cell moves.
+PSAT 8/9 has four retakes in total across 928 students, enough to move one
+graduating class by a single point and nothing else.
+
+`max_scale_score < scale_score` returns zero rows in every scope, as it must.
+
+!!! warning "ACT has the widest spread, not SAT"
+
+    SAT's +37.6 looks dramatic beside ACT's +0.8, but ACT runs 1–36 against SAT's
+    400–1600. Proportionally ACT is the wider of the two, matching its higher
+    retake rate. "The SAT numbers move most when I flip Score Category" is a
+    scale artifact, not a finding about retake behavior.
+
 **The view is organized by graduating class only, and grade level never enters
 it.** There is no `grade_level` column on the model, and the workbook view does
 not break out or filter on grade — it is `test_type`, then `graduation_year`, by
