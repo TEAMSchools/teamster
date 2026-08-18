@@ -50,7 +50,13 @@ and the district code.
 2. Land it in the warehouse as a contract-enforced staging model.
 3. Union it into the existing NJ state assessment stream so that every current
    consumer (dashboards, graduation pathway codes, topline weekly, the DeansList
-   extract) picks it up with no change in behavior.
+   extract) picks it up without code changes of its own.
+
+   One consumer's **output** does change, intentionally:
+   `int_topline__state_assessments_weekly` currently reports empty NJ 11th-grade
+   state proficiency for AY2025 and becomes NJGPA-driven. See the verification
+   plan.
+
 4. Preserve reporting continuity across the vendor boundary.
 
 ## Non-goals
@@ -162,12 +168,20 @@ This layer stays in **Cambium's own vocabulary**. Its responsibilities:
    start and end fields to `timestamp`.
 1. Apply the attemptedness filter carried over verbatim from Pearson:
    `where summative_flag = 'Y' and test_attemptedness_flag = 'Y'`.
-1. Derive `test_date` as the date of the earliest non-null unit online start
-   timestamp across units 1 through 4.
+1. Derive `test_date` as the earliest non-null unit online start timestamp
+   across units 1 through 4, **coalesced to a parsed
+   `assessmentsessionactualstartdatetime`** — required, because the unit
+   timestamps are ELA-only. See _Verified source characteristics_ below.
 1. Derive `academic_year` as `cast(left(assessment_year, 4) as int)`.
+1. Carry `test_score_complete` through as `numeric` even though Cambium sends it
+   entirely null, so the vendor difference is visible in the contract rather
+   than appearing downstream as a `union_relations` null-fill artifact.
 
 Uniqueness test on `student_test_uuid`, verified 1:1 with rows in both files
-(252 of 252, 598 of 598).
+(252 of 252, 598 of 598), plus `not_null` on `test_date`. Every staging test
+carries `config: severity: error` — both district projects set
+`data_tests: +severity: warn` as the default, so a staging test without an
+explicit severity silently degrades to a warning and never fails CI.
 
 Registered as a package in `kippnewark` and `kippcamden` only. Paterson has
 `stg_pearson__njgpa` disabled and does not sit for NJGPA, so adding the package
@@ -217,11 +231,40 @@ Every translation decision lives here so a reviewer has one file to read.
 | `testperformancelevel_text` | 2 to `Graduation Ready`, 1 to `Not Yet Graduation Ready`                           |
 | `discipline`                | `if(subject = 'Mathematics', 'Math', 'ELA')`                                       |
 | `subject_area`              | `if(subject = 'English Language Arts/Literacy', 'English Language Arts', subject)` |
-| `administration_period`     | `if(period = 'FallBlock', 'Fall', period)`                                         |
+| `administration_period`     | `if(upper(period) like 'FALL%', 'Fall', period)` — see below                       |
 | `module_code`               | `testcode` (no NJSLA Science code remap applies to NJGPA)                          |
-| `test_grade`                | `11` — constant, see D3                                                            |
-| `testscorecomplete`         | `1` — constant, see D2                                                             |
+| `test_grade`                | `case test_code when 'ELAGP' then 11 when 'MATGP' then 11 end` — see D3            |
+| `testscorecomplete`         | passthrough, genuinely NULL from Cambium — see D2                                  |
+| `_dbt_source_relation`      | passthrough from `union_relations` — see below                                     |
 | `_dbt_source_project`       | `{{ extract_source_project("union_relations") }}`                                  |
+
+**`administration_period` normalizes case-insensitively.** Pearson's model uses
+a bare `if(period = 'FallBlock', 'Fall', period)`, which is correct for
+Pearson's observed values. But D8 establishes that the fall token drifts in
+spelling and case, and the file's own `period` column is a separate field from
+the filename token. If Cambium's `period` arrives as `FALL`, an exact-match
+normalization leaves it as `'FALL'` — which produces a **separate**
+`dim_assessment_administrations` tuple from the Pearson `'Fall'` rows and splits
+the Fall series on the state assessments dashboard, invisibly (the resolver
+joins the same value on both sides, so nothing errors). `administration_period`
+also carries `not_null` and `accepted_values: [Spring, Fall]` tests so a novel
+value fails loudly instead of forking a series.
+
+**`_dbt_source_relation` must be selected explicitly.** It is in the union's
+`include` list and all four existing relations carry it. An earlier draft
+omitted it from the alignment model — it is only _read_ inside
+`extract_source_project` — which would have null-filled it for all 813 rows in a
+column documented as the union's source-relation identifier. Blast radius today
+is limited (the only readers join on `_dbt_source_project` instead), but it
+breaks the `_dbt_source_relation` / `_dbt_source_project` pairing invariant in
+`kipptaf/CLAUDE.md` for a one-word fix.
+
+**Deviation worth naming:** `kipptaf/CLAUDE.md` says uniqueness tests and
+`materialized: table` belong on the per-region staging models, not the
+kipptaf-level union view. This model has both. That is deliberate — it is not a
+pure passthrough (every vendor translation lives here) and the existing
+`stg_pearson__njgpa` also sets `materialized: table` — but it is a documented
+deviation rather than an oversight.
 
 `is_bl_fb` is omitted. It is in the union's `include` list but
 `stg_pearson__njgpa` does not produce it either, so `union_relations` null-fills
@@ -258,10 +301,29 @@ same eight hash inputs.
 **Repository plumbing:**
 
 - `src/dbt/cambium/**` and `src/teamster/libraries/cambium/**` added to the
-  push-path filters in `.github/workflows/deploy-prod-kippnewark.yaml` and
+  **push** path filters in `.github/workflows/deploy-prod-kippnewark.yaml` and
   `deploy-prod-kippcamden.yaml`
-- `docs/reference/automations.md` sensor tables updated with the new asset
-- `src/dbt/CLAUDE.md` project inventory and dependency map updated
+- `src/teamster/libraries/cambium/**` also added to the **`pull_request`** path
+  filters in both workflows. The `pull_request` lists exclude `src/dbt/*` source
+  projects by design (dbt Cloud CI covers those) but do enumerate every library
+  individually, `pearson` included. Without it, a future PR that regenerates
+  only the Cambium Pydantic schema gets no branch deployment — which is exactly
+  the situation the rollout depends on for staging a new Avro schema.
+- `.devcontainer/scripts/postCreate.sh` — hardcodes `dbt deps --project-dir` per
+  project. Without a cambium line, a fresh Codespace has no `dbt_packages/` for
+  the new project and cannot parse it. **Hook-protected**: must be handed to the
+  user as a manual application block, not edited directly.
+- `.vscode/scripts/update-dependencies.sh` — the `DBT_PROJECTS` array, so
+  cambium is included in `dbt deps --upgrade`. Not hook-protected.
+- `scripts/CLAUDE.md` — a Script Catalog row for the schema generator.
+- `src/dbt/CLAUDE.md` project inventory, count, and dependency map. In the map,
+  `cambium ──────┤` goes **second**, between `amplify` and `deanslist`: the
+  first row carries a corner glyph (`amplify ──────┐`), so inserting above it
+  breaks the drawing and misplaces it alphabetically.
+- `docs/reference/automations.md` — needs regenerating, but **not** in a
+  Codespace: `gen-automations-doc.py` skips code locations that fail to import
+  (kipptaf and kippmiami both do, on unset credentials) and would drop them from
+  the catalog. Hand off to a full environment.
 
 ## Decisions for the data engineer to confirm
 
@@ -285,16 +347,27 @@ this change. Correct end state; deferred as its own PR.
 
 ### D2 — `testscorecomplete` is synthesized as a constant `1`
 
-**Chosen**, at the user's direction, because it changes no existing model.
+**Chosen: option D — `coalesce` at the single consumer.** Change
+`int_students__graduation_path_codes` from `n.testscorecomplete = 1` to
+`coalesce(n.testscorecomplete, 1) = 1`. One line, in the one model that cares.
+Cambium's genuinely-null column flows through untouched, no vestigial constant
+enters the shared stream, and the follow-up item this decision would otherwise
+have created is closed in the same change.
 
-Cambium's `test_score_complete` is 100 percent NULL in both files.
-`int_students__graduation_path_codes` filters `n.testscorecomplete = 1`, and
-`union_relations` null-fills absent columns, so without a value every Cambium
-NJGPA score would silently drop out of graduation-pathway determination.
+This supersedes an earlier choice to synthesize `1 as testscorecomplete` in the
+alignment model. That option was picked to avoid touching a graduation-pathway
+model at all, but it buys that at the cost of a hardcoded constant in a shared
+column plus a deferred cleanup, and the `coalesce` edit is smaller than the
+constant's explanatory comment.
 
-**Evidence that a constant is faithful:** `testscorecomplete` is `1` on every
-row of both regions' Pearson staging tables — 3,081 Newark, 1,049 Camden, no
-other value and no nulls. The staging filter
+Cambium's `test_score_complete` is 100 percent NULL in both files, and
+`union_relations` null-fills absent columns, so **some** deliberate handling is
+mandatory: left alone, every Cambium NJGPA score silently drops out of
+graduation-pathway determination.
+
+**Evidence that the predicate is already a no-op:** `testscorecomplete` is `1`
+on every row of both regions' Pearson staging tables — 3,081 Newark, 1,049
+Camden, no other value and no nulls. The staging filter
 `where summative_flag = 'Y' and test_attemptedness_flag = 'Y'` has already
 removed everything that would fail the predicate. The same filter behaves
 identically on the Cambium files:
@@ -309,23 +382,49 @@ identically on the Cambium files:
 The `pending` (5) and `invalidated` (1) rows in the Newark file are already
 excluded by the flag filter.
 
-**Alternative A — retire the predicate.** Drop `n.testscorecomplete = 1` from
-`int_students__graduation_path_codes`. Provably a no-op for all 4,130 existing
-rows, so it changes nothing today, and it removes the trap for the next vendor
-permanently. **Recommended as follow-up work**, ideally as its own commit with
-this evidence attached, since it edits a graduation-pathway model.
+**Alternative A — retire the predicate entirely.** Drop
+`n.testscorecomplete = 1` rather than coalescing it. Provably a no-op for all
+4,130 existing rows. Rejected only because `coalesce` keeps the intent legible
+at the call site: a future vendor that genuinely reports incompleteness would
+still be filtered, where a deleted predicate would admit it silently.
+
+**Alternative B — synthesize `1 as testscorecomplete`** in the alignment model.
+Touches no existing model, which is why it was chosen first. Rejected on review:
+it puts a hardcoded constant in a column documented as vendor-reported, and
+leaves a cleanup for later.
 
 **Alternative C — derive it**, as `if(test_status = 'completed', 1, 0)`.
-Semantically faithful to the original intent, but post-filter it evaluates to 1
-for every row, so it is the chosen option with extra indirection.
+Post-filter it evaluates to 1 for every row, so it is alternative B with extra
+indirection.
 
-### D3 — `test_grade` is a hardcoded `11`
+**Consequence for the shared stream:** `testscorecomplete` is now genuinely NULL
+for Cambium rows, so the description on
+`int_pearson__all_assessments.testscorecomplete` ("Score completeness indicator
+as reported by Pearson") must be updated in the same change — a constant or a
+null is only defensible if it is discoverable where an analyst reads the column.
 
-**Chosen.** Neither Cambium field reproduces Pearson's behavior.
+### D3 — `test_grade` is `11`, keyed on `test_code` rather than a bare constant
 
-Pearson's `assessmentgrade` is `Grade 11` on all 4,130 rows, every
+**Chosen.** Neither Cambium field reproduces Pearson's behavior, so the value
+has to be asserted. It is written as a `case` over `test_code` rather than a
+literal:
+
+```sql
+case test_code when 'ELAGP' then 11 when 'MATGP' then 11 end as test_grade,
+```
+
+Same value for both codes that exist, but self-documenting, and it yields NULL
+rather than a confidently wrong `11` if NJ ever adds a graduation-proficiency
+test code at another grade.
+
+Pearson's `assessmentgrade` is `Grade 11` on all 4,130 post-filter rows, every
 administration and both regions, while the _student's_ grade
-(`gradelevelwhenassessed`) is 12 for fall retakers:
+(`gradelevelwhenassessed`) is 12 for fall retakers. The table below is computed
+over the **unfiltered** `src_pearson__njgpa` external (`gradelevelwhenassessed`
+is not carried into `stg_pearson__njgpa`), so its rows total 4,269 rather than
+4,130 — the difference is the not-attempted rows the staging filter removes. The
+conclusion is unaffected: `assessmentgrade = 'Grade 11'` and `test_grade = 11`
+on all 4,130 filtered rows, no other value and no nulls.
 
 | Region | Administration | `assessmentgrade` | Student grade | Rows  |
 | ------ | -------------- | ----------------- | ------------- | ----- |
@@ -348,12 +447,17 @@ from `assessment_grade` splits ELA into a grade-10 and a grade-11 series at the
 vendor boundary; deriving from `grade_level_when_assessed` sends every fall
 retaker to grade 12. Only the constant matches current behavior.
 
-**The constant also prevents nondeterminism.** `dim_assessments` dedups with
+**Asserting 11 also prevents nondeterminism.** `dim_assessments` dedups with
 `partition_by="assessment_type, source_assessment_id, module_code, test_type"`
 and `order_by="title"`, and `title` is the constant `'NJGPA'`. Had Cambium
 emitted grade 10 for ELA, the ELAGP row would have had two tied candidate grade
 levels with no tiebreaker, and `grade_level_tested` could have flipped between
 builds.
+
+Note that `grade_level` is **not** in that dedup partition, so the NJGPA row
+count in `dim_assessments` is 2 either way — a row-count check cannot detect
+this failure. The verification plan asserts `grade_level_tested = 11` on both
+`state_nj_njgpa` rows instead.
 
 **Alternative** — report fall retakers as grade 12 by deriving from
 `grade_level_when_assessed`. A defensible reporting choice, but a change from
@@ -387,14 +491,25 @@ filenames every future administration.
 ### D5 — the year partition dimension is `administration_year`, not `fiscal_year`
 
 **Chosen.** Pearson's dimension is named `fiscal_year` but is not one: `pcspr25`
-holds Spring 2025 (FY25) while `pcfbk25` holds Fall 2025 (FY26). Cambium's
-`2026_Spring` is the calendar year of the administration, which is consistent
-across seasons because a fall administration always falls in the same calendar
-year as its academic year's start. Naming the dimension for what it actually is
-avoids encoding a wrong assumption.
+holds Spring 2025 (FY25) while `pcfbk25` holds Fall 2025 (FY26). Naming the new
+dimension for what it literally is — the number in the filename — avoids
+encoding a wrong assumption.
+
+**What `2026` means is genuinely unknown from one Spring file**, and an earlier
+draft over-claimed here. `2026_Spring` is equally consistent with "calendar year
+of the administration" (under which Fall 2026 ships as `2026_Fall`) and with
+"ending year of school year 2025-26" (under which it ships as `2027_Fall`). The
+partition list is robust to both: for an administration in fiscal year _F_, the
+calendar year is at most _F_ and the school-year-end year is exactly _F_, so
+`range(2026, F + 1)` covers either reading. Both `2026_Fall` and `2027_Fall` are
+valid keys today.
 
 Academic year still comes from the file's own `assessment_year` field, exactly
 as Pearson does. The partition is a file-addressing scheme, never a semantic.
+
+Residual, inherited rather than introduced: `CURRENT_FISCAL_YEAR` is captured at
+module load, so a code location not redeployed between July 1 and a fall drop
+would be one year short. `pearson/assets.py` carries the identical exposure.
 
 ### D6 — district code hardcoded per region
 
@@ -431,19 +546,60 @@ So the fall token changed spelling **and** case across consecutive years under
 the previous vendor. `Fall`, `FALL`, and `FallBlock` are all plausible for
 Cambium.
 
-The regex tolerates any of them — `(?P<administration>[A-Za-z]+)` matches all
-three — so the only thing needing a change is the `StaticPartitionsDefinition`
-value list. The failure mode is contained: the sensor extracts the token, builds
-a `MultiPartitionKey`, and Dagster rejects an unrecognized partition key with a
-visible sensor error. Loud, not silent data loss, and a one-line fix.
+**An earlier draft called this failure "contained, loud, and a one-line fix."
+Two of those three were wrong**, and the correction changes the design.
 
-Worth confirming with NJDOE ahead of the fall administration; not worth blocking
-this change on.
+Verified in the installed Dagster source and reproduced directly: the partition
+key is validated inside `resolve_run_requests`, which processes **every** run
+request for the tick in a single pass, so one bad key raises before
+`SensorExecutionData` is returned and the **whole tick fails**. On
+`TickStatus.FAILURE`, `_daemon/sensor.py` skips the cursor write
+(`_should_update_cursor_on_failure` defaults to `False`), so the cursor never
+advances, the offending file is re-listed on the next tick, and the failure
+repeats indefinitely. Reproduced:
 
-**Consequence for the partition values:** declaring `["Spring", "Fall"]` is a
-guess for half the list. An alternative is to declare `["Spring"]` only and add
-the fall value when the first fall file is seen, which makes the guess explicit
-rather than latent. Either way the fall administration cannot land unnoticed.
+```text
+declared keys: ['Spring|2026', 'Spring|2027', 'Fall|2026', 'Fall|2027']
+  Spring     has_partition_key=True
+  Fall       has_partition_key=True
+  FALL       has_partition_key=False
+  FallBlock  has_partition_key=False
+```
+
+Practical effect: an unrecognized season token stalls **all six Couchdrop assets
+in that region** — Pearson NJGPA, NJSLA, NJSLA Science, student list report,
+student test update, and the Finalsite status report — until someone redeploys.
+Loud, yes; contained, no.
+
+Declaring `["Spring"]` alone is therefore **strictly worse**, not an equivalent
+alternative: it guarantees the stall on the first fall file whatever the token
+is, where `["Spring", "Fall"]` at least avoids it if the token is exactly
+`Fall`.
+
+**Design: derive the regex alternation and the partition list from one list.**
+
+```python
+ADMINISTRATIONS = ["Spring", "Fall", "FALL", "FallBlock"]
+# remote_file_regex uses rf"(?P<administration>{'|'.join(ADMINISTRATIONS)})"
+# partitions_def uses StaticPartitionsDefinition(ADMINISTRATIONS)
+```
+
+The two cannot drift, because they are the same list. A known token matches and
+partitions cleanly; an unknown token **fails to match at all**, so no run
+request is built, no tick fails, and every other asset on the sensor keeps
+running. The cost is a few never-materialized partitions, which is free.
+
+The residual exposure is a genuinely novel token: the file is skipped silently
+rather than stalling the region. That is detected by the asset simply not
+materializing for an administration — which the fall-administration checklist
+below makes an explicit step — and it is a far better failure than a region-wide
+ingestion outage.
+
+Downstream, `administration_period` normalizes case-insensitively so `FALL`,
+`Fall`, and `FallBlock` all collapse to `Fall`; see _Alignment and union_ above.
+
+Worth confirming the token with NJDOE ahead of the fall administration; no
+longer a reason to block, because no plausible token now stalls the sensor.
 
 ### D9 — project named `cambium`, scoped to NJGPA
 
@@ -467,6 +623,16 @@ Established by profiling both files and querying the existing Pearson tables.
 | `student_test_uuid`         | Unique per row in both files                              |
 | `local_student_identifier`  | 5 to 6 digit numerics, matching the existing distribution |
 
+**`assessmentgrade` gains a second value.** Pearson sent `Grade 11` on all 4,130
+rows — one distinct value. Cambium sends `Grade 10` on every ELAGP row and
+`Grade 11` on every MATGP row. D3 correctly refuses to derive `test_grade` from
+it, but the raw column still flows into the shared stream, so
+`int_pearson__all_assessments.assessmentgrade`'s description ("Assessment grade
+level as reported by Pearson") becomes wrong for 407 rows and must be updated in
+the same change. No metric breaks — the only reader is
+`rpt_tableau__academic_goals_rollup`, whose predicate
+(`assessmentgrade = 'Grade 8' and subject like 'Algebra%'`) cannot match NJGPA.
+
 **Newly null**, populated under Pearson: `test_reading_scale_score`,
 `test_writing_scale_score`, `test_reading_csem`, `test_writing_csem`,
 `test_csem_probable_range`, `test_score_complete`, `student_uuid`,
@@ -486,14 +652,58 @@ contract.
 Pearson models key on accountable district, so this needs no special handling —
 noting it so it is not mistaken for bad data.
 
-**Test mode.** `test_mode` is `O` (online) on every row, and no paper attempt
-date field exists in the new layout. `test_date` therefore derives from the unit
-online start timestamps alone. If paper testing appears,
-`assessmentsessionactualstartdatetime` (format `MMDDYYYYHHMM`) is the fallback.
+**Test mode.** `testmode` (not `test_mode` — that column does not exist) is `O`
+(online) on every row, and no paper attempt date field exists in the new layout.
 
-**Unit count.** Cambium carries units 1 through 4; Pearson carried 1 through 3.
-Units 3 and 4 are entirely null in both files today, but `test_date` should take
-the earliest across all four.
+**Unit timestamps are ELA-only — `test_date` cannot derive from them alone.**
+This is the single most consequential difference from Pearson and an earlier
+draft of this spec got it wrong, describing it as "units 3 and 4 are null."
+Measured on the post-filter survivors:
+
+| File          | Test code | Rows | Rows with any unit online start | Rows with `assessmentsessionactualstartdatetime` |
+| ------------- | --------- | ---- | ------------------------------- | ------------------------------------------------ |
+| Newark (7325) | ELAGP     | 282  | 282                             | 282                                              |
+| Newark (7325) | MATGP     | 282  | **0**                           | 282                                              |
+| Camden (1799) | ELAGP     | 125  | 125                             | 125                                              |
+| Camden (1799) | MATGP     | 124  | **0**                           | 124                                              |
+
+Units 3 and 4 are null everywhere, but units 1 and 2 are null for **every
+Mathematics row**. Deriving `test_date` from the unit timestamps alone yields
+NULL on 406 of 813 rows — and that is a silent, total data loss downstream, not
+a cosmetic gap:
+
+1. `int_assessments__resolved_section_enrollments` filters
+   `where test_date is not null and localstudentidentifier is not null`.
+1. `fct_assessment_scores_enrollment_scoped` **inner joins** that model.
+1. So no Cambium Mathematics score would ever reach the fact, Cube, or any
+   fact-backed dashboard.
+
+Nothing would fail. `int_pearson__all_assessments` still gains its 813 rows, the
+uniqueness test still holds, and `dim_assessment_administrations` still creates
+the MATGP administration so the FK reports zero orphans. For contrast, Pearson
+has 0 of 4,130 null `test_date`.
+
+**The fallback, verified in BigQuery rather than assumed.**
+`assessmentsessionactualstartdatetime` is populated on 813 of 813 survivors in
+format `MMDDYYYYHHMM`. `safe_cast('031720261030' as timestamp)` returns NULL, so
+a plain cast cannot read it;
+`date(safe.parse_datetime('%m%d%Y%H%M', '031720261030'))` returns `2026-03-17`.
+So `test_date` mirrors Pearson's `coalesce(online, fallback)` shape:
+
+```sql
+coalesce(
+    date(earliest_test_start_timestamp), date(session_start_datetime)
+) as test_date,
+```
+
+Unit start wins where both exist, which preserves current ELA behavior exactly
+and only fills Math. The two sources are close but not identical — where both
+exist they agree on 363 of 407 ELA rows and differ on 44 — so the ordering
+matters.
+
+`test_date` carries a `not_null` test, and the verification plan asserts
+non-null **per `test_code`**, never in aggregate: an aggregate check passes at
+50% null.
 
 ## Rollout sequence
 
@@ -506,8 +716,33 @@ materialized at least once, because AVRO autodetect needs at least one file.
 1. **Pre-merge** — open the PR non-draft so the branch deployment builds,
    materialize both assets there, then stage the externals against the test
    bucket with a `cloud_storage_uri_base` override of
-   `gs://teamster-test/dagster/<project>` and `ext_full_refresh: true`, so dbt
-   Cloud CI can build.
+   `gs://teamster-test/dagster/<project>` and `ext_full_refresh: true`.
+1. **Pre-merge, and easy to miss** — build the district staging models into the
+   `zz_stg_*` schemas that dbt Cloud CI actually reads:
+
+   ```bash
+   uv run dbt build --select stg_cambium__njgpa \
+     --project-dir src/dbt/kippnewark --target staging
+   uv run dbt build --select stg_cambium__njgpa \
+     --project-dir src/dbt/kippcamden --target staging
+   ```
+
+   Staging the **externals** is not sufficient. The kipptaf source points at a
+   district **model** (`zz_stg_<region>_cambium.stg_cambium__njgpa`), which does
+   not exist until it is built. `kipptaf/CLAUDE.md` → _Single-PR cross-project
+   workflow_ is explicit that a district model modified in the PR needs a
+   `--target staging` build, and `dbt clone` cannot substitute here at all —
+   there is no prod relation to clone from for a brand-new model.
+
+   Without this step CI fails deterministically: `dbt_utils.union_relations`
+   calls `get_columns_in_relation` on a missing relation, yields an empty column
+   superset, and the outer select fails `Name asian not found` — or
+   `int_pearson__all_assessments` raises `There were no columns found to union`.
+   Loud, but avoidable.
+
+   Also seed `zz_stg_kipptaf` itself — under `--target staging` kipptaf reads
+   its own models from there.
+
 1. **Merge.**
 1. **Immediately post-merge** — launch both assets in prod. External sources are
    excluded from the dependency gate, so the first post-deploy tick otherwise
@@ -532,34 +767,78 @@ materialized at least once, because AVRO autodetect needs at least one file.
    `relationships` test on
    `fct_assessment_scores_enrollment_scoped.assessment_administration_key` shows
    zero orphans.
-1. `dim_assessments` row count is unchanged — Cambium dedups into the existing
-   NJGPA rows. A change here means D3 was not applied correctly.
+1. **`test_date` is non-null per `test_code`**, not in aggregate — `count(*)`
+   and `countif(test_date is null)` grouped by `test_code`, expecting zero nulls
+   for both ELAGP and MATGP. An aggregate check passes at 50 percent null, which
+   is exactly the failure mode this guards.
+1. **`fct_assessment_scores_enrollment_scoped` carries both subjects** — count
+   Cambium Spring 2026 rows grouped by `module_code`, expecting ELAGP and MATGP
+   in comparable numbers. The fact is where the `test_date` failure would have
+   surfaced, and only here.
+1. `dim_assessments` — assert `grade_level_tested = 11` on both
+   `type = 'state_nj_njgpa'` rows. **Not** a row-count check: `grade_level` is
+   absent from the dedup partition, so the count stays at 2 whether or not D3
+   was applied, and a row-count check cannot detect the failure it was meant to
+   catch.
 1. `test_grade` is 11 on every Cambium row.
 1. `int_students__graduation_path_codes` returns NJGPA rows for Cambium
-   students. Confirms D2 worked.
+   students. Confirms the D2 `coalesce` worked.
+1. **Column-name checks on the union must run `--target staging`.** A dev-target
+   compile of a union wrapper expands to nothing and still compiles clean
+   (`src/dbt/CLAUDE.md` → _Validating a NEW union wrapper locally_), so a
+   dev-target grep is vacuous and reads as a pass. Run after the district
+   `--target staging` builds in the rollout, and check the passthrough columns
+   (`asian`, `academic_year`, `` `period` ``, `` `subject` ``, `test_date`,
+   `white`) as well as the aliased ones — the passthroughs are precisely the
+   ones that depend on the union expansion.
+1. **`int_topline__state_assessments_weekly` changes** — this is expected, not a
+   regression, but it must be looked at. That model joins
+   `int_pearson__all_assessments` with no assessment filter, hardcodes
+   `'Spring' as test_round`, and is scoped to `academic_year >= 2025`. AY2025
+   currently holds only 304 NJGPA Fall rows and zero NJSLA rows, so NJ
+   11th-grade topline state proficiency is empty today and becomes NJGPA-driven.
+   Fan-out is not a risk: every AY2025 Pearson NJGPA row is
+   `gradelevelwhenassessed = 12` while every Cambium row is grade 11, so no
+   student appears in both.
 1. `test_incorrect_student_number_pearson` singular test — expect a small number
    of failures for the students with no local identifier, resolved by the
-   crosswalk step.
+   crosswalk step. It inherits `severity: warn`, so it will not break the build.
 1. `localstudentidentifier` join rate against `stg_powerschool__students` per
    region, as a coverage check.
 1. `trunk check --force` on every changed file.
 
 ## Deferred work
 
-1. **Retire the `testscorecomplete = 1` predicate** in
-   `int_students__graduation_path_codes` (D2, alternative A). Provably a no-op
-   today; removes the trap for the next vendor.
 1. **Rename the NJ state assessment stream** away from
    `int_pearson__all_assessments` to something vendor-neutral (D1, alternative
-   C).
+   C). The Pearson-named student crosswalk sheet
+   (`stg_google_sheets__pearson__student_crosswalk`) belongs in the same rename
+   — Ops will be adding Cambium UUIDs to a sheet named for the previous vendor.
 1. **NJSLA and NJSLA Science on Cambium**, once those files are seen.
 
 ## Risks
 
-| Risk                                             | Mitigation                                                                         |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| Fall season token differs from `Fall`            | Sensor raises on invalid partition key; one-line fix (D8)                          |
-| Filename pattern changes between administrations | Regex is the contract; confirm with NJDOE before the next administration           |
-| Cambium adds columns mid-year                    | Avro schema check warns on drift; fix by declaring the field in the Pydantic model |
-| `dim_assessments` grade level flips              | Prevented by D3; the verification plan asserts an unchanged row count              |
-| Both districts' files land in one folder         | Asset raises on multiple matches rather than ingesting the wrong district          |
+| Risk                                             | Mitigation                                                                                                                                                                                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fall season token differs from `Fall`            | Regex and partition list derive from one shared list, so an unknown token is skipped rather than stalling the region's whole sensor (D8)                                                                                                                    |
+| Filename pattern changes between administrations | Regex is the contract; confirm with NJDOE before the next administration                                                                                                                                                                                    |
+| Cambium adds a column mid-year                   | Avro check warns on drift; declare the field in the Pydantic model. **Then re-encode**: old and new schema files coexist and a mixed scan drops the new field for the whole scan — only `scripts/reencode_avro_partitions.py` fixes it, not a cache refresh |
+| Cambium **removes or renames** a column          | Nothing detects this today — see below. Mitigated by a non-empty assertion on `stg_cambium__njgpa`                                                                                                                                                          |
+| `period` arrives as `FALL` rather than `Fall`    | `administration_period` normalizes case-insensitively and carries `accepted_values`, so a novel value fails rather than forking the Fall series                                                                                                             |
+| `dim_assessments` grade level flips              | Prevented by D3; the verification plan asserts `grade_level_tested = 11`, not a row count                                                                                                                                                                   |
+| Both districts' files land in one folder         | Asset raises on multiple matches rather than ingesting the wrong district                                                                                                                                                                                   |
+
+**The removed-or-renamed-column risk deserves expanding, because it is the exact
+class of change that created this project and nothing in the pipeline catches
+it.** `check_avro_schema_valid` computes
+`extras = record_fields - schema_fields` and warns only on **extras**; a missing
+key produces no extras, and every generated field defaults to null, so fastavro
+writes null silently and the check passes clean.
+
+Concretely: if Cambium renames `Summative Flag`, then `summative_flag` becomes
+all-NULL, the staging filter returns **zero rows**, `union_relations` tolerates
+an empty relation, and `unique` / `not_null` on `student_test_uuid` both pass
+vacuously on zero rows. NJGPA disappears from graduation-pathway determination
+with no failing test anywhere. Adding `not_null` to more columns does not help —
+a zero-row model passes those too. The fix is an explicit non-empty assertion as
+a singular test in `src/dbt/cambium/tests/`.
