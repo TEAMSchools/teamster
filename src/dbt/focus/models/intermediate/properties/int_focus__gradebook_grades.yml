@@ -112,3 +112,4 @@ models:
       - name: assignment_type_drop_lowest_grades
         description: >-
           Number of lowest scores dropped from the category before averaging.
+          Null where the course period did not resolve.

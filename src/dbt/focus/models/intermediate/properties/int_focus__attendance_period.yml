@@ -113,8 +113,10 @@ models:
         description: Abbreviated teacher-entered attendance code.
       - name: attendance_teacher_code_type
         description: >-
-          Whether the teacher-entered code is teacher-entered or official
-          (office-entered).
+          Focus's own classification of the code the teacher entered — teacher
+          or official. Independent of which column held it: a teacher-entered
+          code can itself be classified official, and usually the official code
+          is classified teacher.
       - name: attendance_teacher_code_state_code
         description: State-reported code for the teacher-entered code.
       - name: attendance_teacher_code_excused

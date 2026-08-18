@@ -6,6 +6,15 @@ models:
       grade. One row per category per course period per marking period —
       category weights change by marking period, so the marking period is part
       of the grain.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assignment_type_id
+              - course_period_id
+              - marking_period_id
+          config:
+            severity: error
     columns:
       - name: id
         description: Primary key — Focus category/course-period link id.

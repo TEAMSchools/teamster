@@ -1,11 +1,11 @@
 with
-    -- group by, not a join: schedule repeats a student/course-period pair on
-    -- ~299 combinations, and joining it as a table would double those grades.
-    -- Collapsing to the pair states the grain this lookup is meant to have.
+    -- not a join: schedule repeats a student/course-period pair on ~299
+    -- combinations, and joining it as a table would double those grades.
+    -- grain projection: student_id, course_period_id are the partition key
+    -- itself; not a mask for upstream duplicates
     student_course_periods as (
-        select student_id, course_period_id,
+        select distinct student_id, course_period_id,
         from {{ ref("stg_focus__schedule") }}
-        group by student_id, course_period_id
     ),
 
     -- An assignment is assigned to many sections, so the link alone fans a
@@ -16,6 +16,7 @@ with
     grade_course_periods as (
         select
             gg.id as student_gradebook_grade_id,
+
             ajcp.course_period_id,
             ajcp.marking_period_id,
             ajcp.assigned_date,
