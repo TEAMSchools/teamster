@@ -13,17 +13,22 @@ high school students and recent cohorts.
 ## Models behind the workbook
 
 The `college_admission_readiness_assessments_tracker_carat` exposure declares
-seven models. The AP model is documented separately and is out of scope here.
+seven models. All seven are documented below.
 
-| Model                                                       | Purpose                                    | Documented   |
-| ----------------------------------------------------------- | ------------------------------------------ | ------------ |
-| `rpt_tableau__college_assessment_dashboard_scores`          | Score-level detail for average-score views | below        |
-| `rpt_tableau__college_assessment_dashboard_current`         | Current-year goal attainment               | pending      |
-| `rpt_tableau__college_assessment_dashboard_over_time`       | Multi-year goal trend                      | pending      |
-| `rpt_tableau__college_assessment_dashboard_roster`          | Student roster with participation counts   | pending      |
-| `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | Benchmark thresholds and attainment        | pending      |
-| `rpt_tableau__college_assessment_dashboard_de`              | Dual enrollment                            | pending      |
-| `rpt_tableau__ap_assessment_dashboard`                      | AP results                                 | out of scope |
+| Model                                                       | Purpose                                    | Grain                             |
+| ----------------------------------------------------------- | ------------------------------------------ | --------------------------------- |
+| `rpt_tableau__college_assessment_dashboard_scores`          | Score-level detail for average-score views | student × attempt                 |
+| `rpt_tableau__college_assessment_dashboard_current`         | Current-year goal attainment               | student × goal                    |
+| `rpt_tableau__college_assessment_dashboard_over_time`       | Multi-year goal trend                      | student × goal × score shape      |
+| `rpt_tableau__college_assessment_dashboard_roster`          | Student roster with participation counts   | student × expected administration |
+| `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | Benchmark thresholds and attainment        | student × scope × subject × tier  |
+| `rpt_tableau__college_assessment_dashboard_de`              | Dual enrollment course grades              | student × DE course               |
+| `rpt_tableau__ap_assessment_dashboard`                      | AP course enrollment and exam results      | student × year × AP subject       |
+
+Only the first five are college-entrance assessment models and only they were
+touched by the practice work. `_de` and the AP model share the workbook and the
+exposure but not the pipeline — they are documented here because the exposure
+owns them, not because they are related.
 
 Three further models exist in the repo but are `enabled: false` and are not part
 of the workbook — `rpt_tableau__college_assessment_dashboard`,
@@ -150,6 +155,413 @@ pair, and the uniqueness test would fail on what the dedupe correctly kept.
 **A small number of rows carry no graduation year.** Fewer than ten. They fall
 out of any grad-year-grouped view silently rather than appearing in an unknown
 bucket.
+
+## `rpt_tableau__college_assessment_dashboard_current`
+
+### What it powers
+
+Current-year goal attainment — the "are we on track this year" views. One row
+per enrolled high school student per goal.
+
+### Lineage
+
+```text
+int_google_sheets__kippfwd__goals_unpivot   (goals paired with thresholds, By Grade branch)
+int_assessments__all_college_assessments    (scores and attempt counts, both pipelines)
+int_extracts__student_enrollments           (the enrolled population)
+        └─ rpt_tableau__college_assessment_dashboard_current
+```
+
+### Grain
+
+One row per student per goal, at `academic_year = current_academic_year`.
+Roughly 111,000 rows over about 2,100 students, split evenly between `Official`
+and `Practice`.
+
+### Behavior worth knowing
+
+**The academic year comes from the var, on every branch.** This is the rollover
+this work exists for — production previously hardcoded AY2025 on four benchmark
+branches while the attempts branch read the var, so the live report served
+attempts a year ahead of benchmarks. See _Annual rollover_ below.
+
+**`granularity_level` is gone.** The model was five near-identical union
+branches emitting one row per student per granularity level; it is now one
+branch, and the workbook aggregates its school, regional and network views from
+student rows. `district` carries the network level.
+
+!!! warning "A `KTAF` total is Camden and Newark only"
+
+    The report is high school, Paterson has no high school grades, and Miami is
+    not on Illuminate so its practice scores are untrackable. `district` reads
+    `KTAF` regardless, so the label is wider than the population it covers.
+
+**An attempts score of 0 is not the same as null.** The `scored_students` CTE
+supplies a literal zero for any student holding any result of that test type,
+and the score reads null where they hold no result at all. That is what keeps
+the attempts denominator to test takers rather than to every enrolled student —
+about 1,320 of 2,110. Treating a non-tester as 0 moves the denominator to 2,110
+and roughly halves every reported percentage, with no error and no row-count
+change. This is the single most dangerous thing in the model to get wrong.
+
+**Only a total-level Benchmark is grade-specific.** The goals join reads
+`expected_goal_type = 'Attempts' or expected_aligned_subject_area != 'Total' or grade_level = expected_grade_level`.
+Attempts and section thresholds apply to every student regardless of grade — a
+grade 9 student has sat the SAT zero times, which is a reportable answer.
+Getting this wrong fails in both directions: requiring a grade match on Attempts
+cuts them to a quarter of their rows, and letting null-grade rows apply to
+everyone inflated Practice totals by 4,028 rows before the rule was narrowed.
+
+**`benchmark_tier` replaces four `met_min_board_*` flags** with a three-way band
+— College-Ready, HS Grad-Ready, or No Benchmark Met. Every board threshold
+turned out to be a scaffold value already, so `Board` was a duplicate encoding.
+
+!!! warning "`expected_test_type` is in the `benchmark_tier` partitions"
+
+    Both `met_college_ready` and `met_hs_ready` partition by `student_number`,
+    `expected_test_type` and `expected_score_type`. Official and Practice share
+    one `score_type` vocabulary, so without the test type a practice score
+    raises the official row's readiness band and vice versa. This shipped
+    without it once and was caught in review. Never remove it.
+
+For what moved against production, see _Why the current dashboard's numbers
+change_ below.
+
+## `rpt_tableau__college_assessment_dashboard_over_time`
+
+### What it powers
+
+Multi-year goal trend — attainment by graduating class rather than by current
+year. Unlike `_current` it projects neither grade level nor cohort, which is why
+the goals sheet carries separate `_over_time` percentage columns.
+
+### Lineage
+
+```text
+int_google_sheets__kippfwd__goals_unpivot   (All Grades branch, filtered by rpt_consumers)
+int_assessments__all_college_assessments    (max score and attempt_lifetime)
+int_extracts__student_enrollments           (population, no year filter)
+        └─ rpt_tableau__college_assessment_dashboard_over_time
+```
+
+### Grain
+
+One row per student per goal per distinct score shape. About 558,000 rows over
+roughly 6,970 students — 40 goal rows per student per test type, plus 326 extra
+Official rows where `strategy_case` emits two rows for one score type.
+
+### Behavior worth knowing
+
+**It selects its own goals by name.** The `goals` CTE unnests `rpt_consumers`
+and filters to this model, so a goal row reaches this view only if the unpivot
+lists it. Adding a goal means adding this model to that array, not editing this
+file.
+
+**There is no academic-year filter.** The population is every enrolled high
+school student across all years, which is what makes it a trend view. `_current`
+is the year-scoped counterpart.
+
+**Two columns named for test type mean different things.** `expected_test_type`
+is the goal side and is always populated; `test_type` is the score side and is
+**null where the student holds no matching score**. A null `test_type` is a
+non-tester, not a defect — the same null-versus-zero semantics `_current`
+handles with `scored_students`.
+
+**It no longer suppresses the 27 scores `_benchmark_calcs` still hides.** The
+`scores` CTE reads the hub through `max(scale_score)` with no `rn_highest`
+filter, so scores whose rank was spent on a row later dropped for a missing test
+date return here. The two views deliberately disagree on those students until
+the benchmark view is repointed. See _Known issue — `rn_highest = 1` discards
+scores_.
+
+**Five `met` flag variants exist because the workbook asks the question at five
+grains** — by score type, by aligned subject, by aligned scope and subject, and
+`alt_` variants that treat `1 Attempt` as an equality rather than a threshold.
+Every one partitions by `expected_test_type`.
+
+For what moved against production, see _Why the over-time dashboard's numbers
+change_ below.
+
+## `rpt_tableau__college_assessment_dashboard_roster`
+
+### What it powers
+
+The student-level roster — one row per student per expected administration, so
+Tableau renders a complete testing progression rather than a ragged one, with
+participation counts and College and Career course context alongside.
+
+### Lineage
+
+```text
+stg_google_sheets__kippfwd__expected_assessments      (the forced scaffold, rn = 1)
+int_tableau__college_assessment_roster_scores         (the score, long on score_category)
+int_students__college_assessment_participation_roster (lifetime attempt counts)
+int_assessments__college_assessment                   (SAT highlight columns)
+base_powerschool__course_enrollments                  (College and Career section)
+int_extracts__student_enrollments                     (population)
+        └─ rpt_tableau__college_assessment_dashboard_roster
+```
+
+### Grain
+
+One row per student per expected administration per score category, for
+currently enrolled high school students whose graduation year is in the future.
+
+### Behavior worth knowing
+
+**The population is forward-looking.** The filter
+`graduation_year >= current_academic_year + 1` excludes students who have
+already graduated, unlike `_over_time`, which keeps every cohort.
+
+!!! warning "The participation join binds `test_type`"
+
+    The join to `int_students__college_assessment_participation_roster` carries
+    `p.test_type = 'Official'` alongside `p.rn_lifetime = 1`. That roster's
+    grain now includes `test_type`, so `rn_lifetime = 1` alone returns one row
+    per test type and duplicates every roster row for any student with practice
+    data. The counts on this view are Official only, deliberately — the column
+    names say so.
+
+**The expected-assessment join is on region and `rn = 1` only.** It does not
+bind grade, so every student in a region gets every administration the tab
+states for that region. Narrowing happens on the score side, through
+`expected_unique_test_admin_id` and `expected_score_category`.
+
+**`sat_highlights` replaces three separate joins** to
+`int_assessments__college_assessment` that differed only by subject area. One
+conditional aggregation, one scan, value-identical. `rn_highest = 1` already
+yields one row per student per subject area, so the `max()` picks rather than
+collapses.
+
+**These columns read `No Data`, not null, when a student has no CCR course** —
+`ccr_course`, `ccr_teacher_name` and `ccr_section` are coalesced to that string,
+so a Tableau filter on them needs the literal rather than a null test.
+
+## `rpt_tableau__college_assessment_dashboard_benchmark_calcs`
+
+### What it powers
+
+Benchmark threshold attainment — whether each student has met the HS Grad-Ready
+and College-Ready bar for each test and subject.
+
+### Lineage
+
+```text
+stg_google_sheets__kippfwd__scaffold       (thresholds, unpivoted to two tiers)
+int_assessments__all_college_assessments   (the benchmark score pick)
+int_extracts__student_enrollments          (population)
+        └─ rpt_tableau__college_assessment_dashboard_benchmark_calcs
+```
+
+### Grain
+
+One row per student per scope per subject area per tier — a cross join, so every
+student in the population gets every scaffold combination whether they tested or
+not. About 241,000 rows over roughly 6,700 students.
+
+### Behavior worth knowing
+
+**Thresholds are data now, not a hardcoded `CASE`.** The scaffold's
+`hs_grad_ready_min_score` and `college_ready_min_score` are unpivoted into two
+tiers. `EA/ED-Ready` is retired, and PSAT 8/9 HS Grad-Ready reads 790 rather
+than the hardcoded 800 — which moves 20 students to `Met`.
+
+**ACT is excluded.** The scaffold filter is `expected_scope != 'ACT'`, so this
+view has no ACT rows at all. `ACT/SAT` folds to `SAT` for the scopes that
+remain.
+
+**Practice can never satisfy an official benchmark.** The score join binds
+`expected_test_type` to the hub's `test_type`, and the hub's
+`rn_highest_benchmark_aligned_scope` partitions on `test_type` too. That pairing
+is what made it safe to let practice reach this view — the risk flagged during
+design was precisely that a practice score would outrank an official one.
+
+**It reads `benchmark_aligned_scope_max_score`, which keeps its `rn_highest = 1`
+filter**, so 27 students holding eligible scores still read `No Data` here. That
+matches production deliberately and is why this view and `_over_time` disagree.
+
+**`met_benchmark_goal` is a three-way string, not a boolean** — `No Data`, `Met`
+or `Not Met`. `No Data` depends on a null score rather than on a threshold, so
+lowering a threshold can never move anyone into or out of it.
+
+For what moved against production, see _Why the benchmark dashboard's totals
+change_ below.
+
+## `rpt_tableau__college_assessment_dashboard_de`
+
+### What it powers
+
+Dual enrollment course grades. This model shares the workbook and the exposure
+with the assessment views but none of the pipeline — no scaffold, no goals, no
+hub, no practice concept.
+
+### Lineage
+
+```text
+stg_powerschool__storedgrades           (the driving table)
+stg_powerschool__students               (student number and name)
+stg_powerschool__u_storedgrades_de      (the DE detail — course, score, institution)
+        └─ rpt_tableau__college_assessment_dashboard_de
+```
+
+### Grain
+
+One row per stored-grade record for a course whose name ends in `(DE)`, with
+`storecode` in `Y1` or `Q2`. There is no academic-year filter — it is full
+history.
+
+### Behavior worth knowing
+
+!!! warning "`unique_identifier` is not unique"
+
+    It is `student_number || '_' || course_number`, which carries neither
+    academic year nor store code. A student taking the same DE course in two
+    years, or holding both a `Q2` and a `Y1` row for one course, collides. Do
+    not use it as a key.
+
+**There is a live `TODO` in the model about exactly that.** DE institutions now
+submit grades twice yearly (fall to `Q2`, spring to an unsettled code). If
+spring grades land on `Y1` in the same academic year, a student holds both a
+`Q2` and a `Y1` row for the same course and the view duplicates. The store-code
+policy is unresolved; a priority or fallback CTE is the anticipated fix.
+
+**Every join is a `LEFT JOIN` from stored grades**, including the one to
+`stg_powerschool__u_storedgrades_de`, whose `de_course_name is not null`
+predicate sits in the `ON` clause. So a `(DE)`-named course with no DE detail
+record still produces a row, with every `de_*` column null.
+
+## `rpt_tableau__ap_assessment_dashboard`
+
+### What it powers
+
+AP course enrollment and exam results — which students took which AP courses,
+which sat the exam, and what they scored. Documented here because the CARAT
+exposure owns it; the ingest side has its own protocol, in
+`.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md`.
+
+### Lineage
+
+```text
+base_powerschool__course_enrollments                 (AP course enrollment)
+int_assessments__ap_assessments                      (exam scores)
+stg_google_sheets__collegeboard__ap_course_crosswalk (course-name resolution)
+int_extracts__student_enrollments                    (population)
+        └─ rpt_tableau__ap_assessment_dashboard
+```
+
+### Grain
+
+One row per student per academic year per AP subject code. The `subjects` CTE
+builds that spine with a `union distinct` of two sources — subjects reached
+through course enrollment and subjects reached through an exam record — so a
+student who sat an exam without enrolling in the course still appears.
+
+### Behavior worth knowing
+
+**A student can legitimately hold two rows for one AP subject.** A main AP
+course plus a companion recitation section are two distinct course offerings,
+not a data error, and they are deliberately left undeduped. This is separate
+from the PowerSchool double-write corpus in
+[#3900](https://github.com/TEAMSchools/teamster/issues/3900).
+
+**`test_subject_area` encodes the course-versus-exam combination**, which is the
+column most of the workbook's logic keys on:
+
+| Course | Exam | `test_subject_area`                     |
+| ------ | ---- | --------------------------------------- |
+| no     | no   | `Not applicable`                        |
+| yes    | no   | `Took course, but not AP exam.`         |
+| no     | yes  | `Took AP exam, not enrolled in course.` |
+| yes    | yes  | the AP course name                      |
+
+**The population filter is an exam-date containment test, not a year equality.**
+`date(academic_year + 1, 05, 01) between entrydate and exitdate` requires the
+student to have been enrolled on 1 May, when AP exams are administered. A
+student who withdrew in March is excluded from that year even though they hold
+an enrollment record for it.
+
+**`Calculus BC: AB Subscore` is filtered out** of `ap_assessments`. It is a
+derived subscore rather than a separate exam, and leaving it in would double a
+BC student's exam count.
+
+**`expected_scope` and `expected_test_type` are literals**, reading
+`Not applicable` or `AP` and `Official`. They exist so the workbook can union
+this view alongside the college-assessment views on a shared field name; they
+carry no practice concept.
+
+## Annual rollover
+
+The rollover is what issue
+[#4658](https://github.com/TEAMSchools/teamster/issues/4658) was opened for. The
+code side is now a single variable, but the data side is several sheet edits,
+and the failure mode on the data side is silent.
+
+### The code side
+
+`current_academic_year` in `src/dbt/kipptaf/dbt_project.yml`, updated each July.
+Four CARAT models read it:
+
+| Model              | Reads the var for                                 |
+| ------------------ | ------------------------------------------------- |
+| `_current`         | the enrolled population, on the single branch     |
+| `_benchmark_calcs` | the scaffold's threshold year                     |
+| `_roster`          | the population, plus `graduation_year >= var + 1` |
+| `_dashboard`       | disabled — not part of the workbook               |
+
+`_over_time`, `_scores`, `_de` and the AP model do not read it. `_over_time` and
+`_scores` are deliberately all-years; `_de` has no year filter at all; the AP
+model derives its own May containment date from each enrollment row's
+`academic_year`.
+
+The variable is network-wide, not CARAT-specific — bumping it moves every model
+in the project that reads it, so a rollover is never a CARAT-only change.
+
+### The data side
+
+!!! warning "A missing scaffold year drops everything, silently"
+
+    The conversion-to-scaffold join is INNER and keyed on `academic_year`,
+    `scope` and `score_type`. A year with no scaffold rows therefore yields no
+    practice output and raises no error — the same class of defect this work
+    removed from the old `act_scale_score_key` join. Nothing downstream
+    complains; the practice pipeline simply reports nothing.
+
+Per year, in this order:
+
+1. **Illuminate sessions must exist for the new raw academic year.** Practice
+   assessments reach `int_assessments__scaffold` only through its
+   `where not is_internal_assessment` branch, which inner-joins student session
+   affiliation on the **raw** year — the spring year, so 2027 for SY26-27.
+   Without sessions the whole chain is empty regardless of everything below.
+   This is owned outside the data team and is the item with a real deadline.
+1. **Scaffold rows for the new year** — one per section plus one per total, per
+   administration. Run _Procedure: Add scaffold rows_ in the skill.
+1. **Scale Score Conversion rows** for each new practice assessment. Run
+   _Procedure: Add practice assessments for a new administration_.
+1. **Goals sheet rows** carrying the new `academic_year`. Every current row is
+   AY2026; goal horizon is not yet modelled.
+1. **Expected Assessments tab**, only if the testing calendar moved. Regenerate
+   the whole tab rather than editing it — see _Procedure: Rebuild the Expected
+   Assessments seasons tab_, which explains why a partial edit is silent.
+
+### Verifying a rollover landed
+
+`_current` is the view to check, because it is the one that broke. Every row
+should carry the new year, and the split between `Official` and `Practice`
+should be even:
+
+```sql
+select
+    academic_year,
+    expected_test_type,
+    count(*) as n_rows,
+    count(distinct student_number) as n_students,
+from `teamster-332318.kipptaf_tableau.rpt_tableau__college_assessment_dashboard_current`
+group by academic_year, expected_test_type
+```
+
+More than one `academic_year` in that result means a branch is reading a
+different year from the rest, which is the production defect this work fixed.
 
 ## The practice pipeline — three pieces
 
@@ -1294,6 +1706,31 @@ Two consequences worth knowing when reconciling a score against the guide:
 Scale scores throughout the sheet come from the guides' `LOWER` column, the
 established convention, so reported scores sit at the bottom of College Board's
 published range rather than mid-range.
+
+## Post-merge verification
+
+Every measured figure in the sections below was taken **before** the merge, from
+a developer build compared against production. They were re-checked against
+production itself on 2026-08-18, after the deploy, and the shape holds:
+
+| Check                                        | Documented           | Production           |
+| -------------------------------------------- | -------------------- | -------------------- |
+| PSAT 8/9 Combined HS Grad-Ready threshold    | 790                  | 790                  |
+| `EA/ED-Ready` present                        | retired              | absent               |
+| `_current` distinct `academic_year`          | one, from the var    | one — 2026           |
+| `_current` attempts denominator              | 1,319 of 2,090       | 1,320 of 2,110       |
+| `_current` SAT 1 Attempt, of test takers     | 31.8%                | 32.0%                |
+| `_over_time` goal rows per student           | 40                   | 40                   |
+| `_over_time` Official `strategy_case` excess | 326 rows             | 326 rows             |
+| Practice ACT composite rows                  | 379, 1:1             | 379, 1:1             |
+| Practice rows on `_roster_scores`            | 30, over 10 students | 30, over 10 students |
+
+The small upward drift in student counts is a live enrollment table in
+mid-August — the population grows daily — not a modelling difference.
+Percentages therefore move by tenths. **Ratios and structural counts are the
+durable figures; absolute student and row counts are not.** Reconcile against
+the shape, and against the guidance in _If you are reconciling and the numbers
+do not match this table_.
 
 ## Why participation attempt counts change
 
