@@ -94,6 +94,17 @@ dagsterCloudAgent:
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
+  # Time the agent waits for a code server DEPLOYMENT to become ready -- in
+  # practice, for the pod to be scheduled. Distinct from
+  # serverProcessStartupTimeout below, which only starts once the Deployment
+  # exists. The chart default is 300s, which sits inside the 3-9 minute NAP
+  # FailedScheduling window documented in CLAUDE.md, so an ordinary provisioning
+  # wait times out. On timeout the agent uploads an error, the control plane
+  # records the location as ERROR, and _should_trigger_recovery then refuses to
+  # retry ("control plane agrees there is an error") -- the location stays dead
+  # until a push or a manual redeploy.
+  deploymentStartupTimeout: 900
+
   serverProcessStartupTimeout: 300
 
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
@@ -131,6 +142,16 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
+        # Code servers were the only pod type without this -- the agent
+        # (dagsterCloudAgent.annotations) and run pods
+        # (runK8sConfig.podTemplateSpecMetadata) both carry it. Blocks
+        # cluster-autoscaler eviction, which accounted for 38-59 code-server
+        # relocations per week. Compatible here: requests above are 500m/2.0Gi,
+        # meeting the Autopilot extended-duration minimum, and code servers are
+        # not on spot (the two are mutually exclusive). Extended-duration
+        # protection expires after 7 days, far longer than the interval between
+        # deploys.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
       # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
