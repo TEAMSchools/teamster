@@ -77,13 +77,18 @@ Three further models exist in the repo but are `enabled: false` and are not part
 of the workbook — `rpt_tableau__college_assessment_dashboard`,
 `_dashboard_historic`, and `_qc_report`.
 
-### Two score pipelines
+### Two score pipelines — entrance exams only
 
-Every question about CARAT numbers starts with which pipeline is involved. The
-two stay separate until `int_assessments__all_college_assessments`, which unions
-them; from there down, `test_type` is what tells them apart. Both use the same
-convention — `test_type` is `Official` or `Practice`, and `scope` is the test
-itself:
+**These two pipelines belong to the entrance-exam family and nothing else.** AP
+draws on PowerSchool course enrollment plus College Board exam records, and dual
+enrollment on PowerSchool stored grades. Neither has a hub, a practice
+counterpart, or a `test_type` in this sense — see their own sections below.
+
+For an entrance-exam question, establishing which pipeline is involved comes
+first. The two stay separate until `int_assessments__all_college_assessments`,
+which unions them; from there down, `test_type` is what tells them apart. Both
+use the same convention — `test_type` is `Official` or `Practice`, and `scope`
+is the test itself:
 
 | Pipeline | Hub model                                      | `test_type` | `scope` values                         | Origin                                           |
 | -------- | ---------------------------------------------- | ----------- | -------------------------------------- | ------------------------------------------------ |
@@ -418,6 +423,13 @@ is the goal side and is always populated; `test_type` is the score side and is
 **null where the student holds no matching score**. A null `test_type` is a
 non-tester, not a defect — the same null-versus-zero semantics `_current`
 handles with `scored_students`.
+
+**`score` is polymorphic — it holds a scale score or an attempt count.** Which
+one depends on `expected_goal_type`: an `Attempts` goal puts
+`attempt_count_lifetime` there, anything else puts `max_scale_score`. So `score`
+cannot be aggregated across goal types, and a chart that averages it without
+splitting on `expected_goal_type` mixes a 400–1600 scale with a count of two.
+`_current` carries the same shape for the same reason.
 
 **It no longer suppresses the 27 scores `_benchmark_calcs` still hides.** The
 `scores` CTE reads the hub through `max(scale_score)` with no `rn_highest`
@@ -1369,7 +1381,7 @@ carry the same `score_type` and the same `scale_score`, so they tie and split
 the ranks. Measured: 290 of 1,438 Subject rows lose rank 1. The same reasoning
 applies to `is_benchmark_eligible` in the assessments hub's benchmark rank.
 
-### Changes when this version replaces the AY2023-era model
+### How its row set differs from the AY2023-era model
 
 Verified by full comparison against production. Section rows are **identical** —
 join key unique on both sides at 18,224 rows, zero differences in `scale_score`,
@@ -1514,22 +1526,17 @@ otherwise, so it is there for the attainment work.
     directly. Left as-is rather than changed blind, since the join drives every
     reported benchmark row.
 
-### Resolved — the open decisions on this model have shipped
+### Who reads the attempt counts
 
-Three entries sat here describing work as still to do. All of it landed in the
-CARAT rollover work, so they are recorded as done rather than pending:
+Two consumers read `attempt_lifetime` and `yearly_attempts_totals` off this hub
+directly — `_current` and `_over_time`, each deriving its own counts. Two others
+read the wide `*_count_lifetime` columns off
+`int_students__college_assessment_participation_roster` instead:
+`_dashboard_roster` and `rpt_gsheets__college_assessments_wide`.
 
-- **Scores and attempts split in `_over_time`.** Its `score` column was a
-  five-branch `CASE` inside an `avg()` holding either a scale score or an
-  attempt count. It is now a two-branch `if()` keyed on `expected_goal_type`.
-- **The participation round trip is gone.** `_over_time` no longer reads
-  `int_students__college_assessment_participation_roster` at all; it derives
-  `attempt_count_lifetime` from `attempt_lifetime` on the hub. Only
-  `_dashboard_roster` and `rpt_gsheets__college_assessments_wide` still read the
-  roster's wide `*_count_lifetime` columns.
-- **The attempt-count fix landed upstream.** `alt_attempt_count_lifetime` no
-  longer exists anywhere in the project. Attempts count distinct test dates on
-  the hub, so duplicate Salesforce records no longer read as separate sittings.
+That split matters when changing either. A count that moves on the hub moves
+`_current` and `_over_time` immediately; the other two move only once the roster
+rebuilds on top of it.
 
 ## `int_tableau__college_assessment_roster_scores`
 
@@ -1744,11 +1751,11 @@ duplicate rows. That is why `_dashboard_roster` now carries a uniqueness test on
 `(student_number, expected_field_name_score_category)` — it had none at all
 before, which repo convention requires of every `rpt_` model.
 
-## Resolved — grade 9 and 10 AY2023 SAT is excluded from reporting
+## Grade 9 and 10 AY2023 SAT is excluded from reporting
 
-**Decision: those administrations are not valid and are not reported.** Ninth
-and tenth graders should have sat PSAT 8/9 and PSAT 10, not a full SAT form, so
-KIPP Forward excluded them.
+**Those administrations are not valid and are not reported.** Ninth and tenth
+graders should have sat PSAT 8/9 and PSAT 10, not a full SAT form, so KIPP
+Forward excluded them.
 
 The exclusion is implemented in the **scaffold sheet**, not in SQL: deleting a
 Practice scaffold row for (`academic_year`, `expected_scope`,
