@@ -22,7 +22,29 @@ colleges read those differently.
 
 For each family it reports what a student has done and how it compares to a bar
 — scores, participation, benchmark attainment, and progress against KIPP
-Forward's goals — for current high school students and recent cohorts.
+Forward's goals.
+
+**The population differs by view, and "recent cohorts" would be wrong for most
+of them.** Only two are scoped to the current year; the other five carry every
+cohort the warehouse holds:
+
+| View                             | Students | Graduation years | Scoping                                                |
+| -------------------------------- | -------- | ---------------- | ------------------------------------------------------ |
+| `_current`                       | 2,110    | 2026–2030        | current year only                                      |
+| `_roster`                        | 1,929    | 2027–2030        | current year, and only graduation years ahead          |
+| `_scores`                        | 4,661    | 2011–2029        | **every cohort** — no year filter                      |
+| `_benchmark_calcs`               | 6,707    | 2010–2030        | **every cohort** — only the thresholds are year-scoped |
+| `_over_time`                     | 6,970    | 2010–2030        | **every cohort** — no year filter                      |
+| `_de`, `ap_assessment_dashboard` | —        | full history     | no year filter                                         |
+
+Measured 2026-08. So a trend view reaching back to the class of 2010 is working
+as intended, not pulling in stale data — and a cohort filter is the reader's
+job, not the model's.
+
+This matters most when reconciling a percentage across views. `_current` and
+`_over_time` answer the same question over populations that differ by more than
+three times, so the same metric legitimately reports two different numbers
+depending on which view is open.
 
 The three families answer the same question and are read side by side in one
 workbook, but they do not share a pipeline. Entrance exams have two score
