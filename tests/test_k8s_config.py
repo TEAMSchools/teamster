@@ -22,8 +22,7 @@ CODE_LOCATIONS = ["kippcamden", "kippmiami", "kippnewark", "kipppaterson", "kipp
 
 GRACE_PERIOD_KEY = "DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS"
 
-# Autopilot minimum requests for an extended-duration pod, which
-# cluster-autoscaler.kubernetes.io/safe-to-evict: "false" makes this pod
+# Autopilot minimum requests for a Scale-Out pod using workload separation
 CODE_SERVER_MIN_CPU = "500m"
 CODE_SERVER_MIN_MEMORY = "2.0Gi"
 
@@ -143,18 +142,36 @@ def test_code_servers_keep_default_priority():
     assert "priorityClassName" not in server_config.get("podSpecConfig", {})
 
 
-def test_code_server_requests_support_extended_duration():
-    """safe-to-evict: "false" makes the pod extended-duration, which Autopilot only
-    honors at or above 500m / 2GiB. Lowering either silently voids the annotation.
+def test_code_servers_are_not_pinned_against_the_autoscaler():
+    """safe-to-evict: "false" was tried on code servers and reverted the same day.
+
+    It blocks autoscaler relocation but not scheduler preemption, so it converted
+    graceful relocations into preemptions: measured ~62x the baseline gRPC error
+    rate and ~118x Preempted over one hour, with Evicted flat at 0. Asserted here
+    so it cannot be reintroduced without the reasoning resurfacing.
     """
     server_config = _helm_values()["workspace"]["serverK8sConfig"]
 
     annotations = server_config["podTemplateSpecMetadata"]["annotations"]
 
-    # must be the quoted string, not a YAML boolean
-    assert annotations["cluster-autoscaler.kubernetes.io/safe-to-evict"] == "false"
+    assert "cluster-autoscaler.kubernetes.io/safe-to-evict" not in annotations
 
-    requests = server_config["containerConfig"]["resources"]["requests"]
+    # the agent and run pods DO carry it, and should keep it -- they are not
+    # preemptible by run pods the way priority-0 code servers are
+    agent_annotations = _helm_values()["dagsterCloudAgent"]["annotations"]
+
+    assert (
+        agent_annotations["cluster-autoscaler.kubernetes.io/safe-to-evict"] == "false"
+    )
+
+
+def test_code_server_requests_meet_scale_out_minimum():
+    """Autopilot requires 500m / 2GiB for Scale-Out pods using workload
+    separation, which the nodeSelector opts these pods into.
+    """
+    requests = _helm_values()["workspace"]["serverK8sConfig"]["containerConfig"][
+        "resources"
+    ]["requests"]
 
     assert requests["cpu"] == CODE_SERVER_MIN_CPU
     assert requests["memory"] == CODE_SERVER_MIN_MEMORY
