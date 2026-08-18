@@ -1,21 +1,5 @@
 models:
   - name: rpt_gsheets__student_contact_info
-    data_tests:
-      # Pin the prior-level banding so it stays a standing invariant rather than
-      # a point-in-time check. Bands are grades K-4 elementary, 5-8 middle, 9-12
-      # high; a student is blank on every band at or below the one they are
-      # currently in. Both tests are scoped by grade, so a grade_level outside
-      # the K-12 domain is skipped rather than flagged.
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: es_attended is null
-          config:
-            where: grade_level in ('K', '1', '2', '3', '4')
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: ms_attended is null
-          config:
-            where: grade_level in ('K', '1', '2', '3', '4', '5', '6', '7', '8')
     columns:
       - name: student_number
         data_type: int64
@@ -113,25 +97,3 @@ models:
         data_type: string
       - name: home_language
         data_type: string
-      - name: es_attended
-        data_type: string
-        description: >-
-          Most recent KIPP school the student attended while in grades K through
-          4. Blank while the student is currently in grades K through 4, so the
-          column reads as prior history rather than the current placement.
-          Banded by the grade the student was enrolled in rather than by the
-          school's designated level, so a school serving grades outside its
-          designation is attributed to the right band. Distinct from the
-          identically named column on int_extracts__student_enrollments, which
-          bands by school level and includes the student's current school.
-      - name: ms_attended
-        data_type: string
-        description: >-
-          Most recent KIPP school the student attended while in grades 5 through
-          8. Blank while the student is currently in grade 8 or below, so the
-          column reads as prior history rather than the current placement.
-          Banded by the grade the student was enrolled in rather than by the
-          school's designated level, so a school serving grades outside its
-          designation is attributed to the right band. Distinct from the
-          identically named column on int_extracts__student_enrollments, which
-          bands by school level and includes the student's current school.
