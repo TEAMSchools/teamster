@@ -111,11 +111,18 @@ headers by a throwaway script; not hand-typed.
 (calls `py_avro_schema.generate()`), and `assets.py`:
 
 ```python
+# One list feeds BOTH the regex alternation and the partition values, so they
+# cannot drift. See D8: an unknown season token must fail to MATCH rather than
+# produce an invalid partition key, which would stall the region's whole sensor.
+ADMINISTRATIONS = ["Spring", "Fall", "FALL", "FallBlock"]
+
 njgpa = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "cambium", "njgpa"],
     remote_dir_regex=rf"/data-team/{CODE_LOCATION}/cambium/njgpa",
     remote_file_regex=(
-        r"(?P<administration_year>\d{4})_(?P<administration>[A-Za-z]+)"
+        r"(?P<administration_year>\d{4})"
+        # longest-first so `FallBlock` is not shadowed by `Fall`
+        rf"_(?P<administration>{'|'.join(sorted(ADMINISTRATIONS, key=len, reverse=True))})"
         r"_7325_District_Summative_Record_File_GPA\.csv"
     ),
     avro_schema=NJGPA_SCHEMA,
@@ -128,7 +135,7 @@ njgpa = build_sftp_file_asset(
                     for year in range(2026, CURRENT_FISCAL_YEAR.fiscal_year + 1)
                 ]
             ),
-            "administration": StaticPartitionsDefinition(["Spring", "Fall"]),
+            "administration": StaticPartitionsDefinition(ADMINISTRATIONS),
         }
     ),
 )
@@ -580,14 +587,21 @@ is, where `["Spring", "Fall"]` at least avoids it if the token is exactly
 
 ```python
 ADMINISTRATIONS = ["Spring", "Fall", "FALL", "FallBlock"]
-# remote_file_regex uses rf"(?P<administration>{'|'.join(ADMINISTRATIONS)})"
-# partitions_def uses StaticPartitionsDefinition(ADMINISTRATIONS)
+# regex:      rf"(?P<administration>{'|'.join(sorted(ADMINISTRATIONS, key=len, reverse=True))})"
+# partitions: StaticPartitionsDefinition(ADMINISTRATIONS)
 ```
 
 The two cannot drift, because they are the same list. A known token matches and
 partitions cleanly; an unknown token **fails to match at all**, so no run
 request is built, no tick fails, and every other asset on the sensor keeps
 running. The cost is a few never-materialized partitions, which is free.
+
+Verified end to end rather than assumed: the alternation survives
+`regex_pattern_replace` (its group-body character class admits `|`),
+`compose_regex` substitutes the partition value back and the asset re-finds the
+real file, and `Winter` / `Autumn` correctly do not match. The
+`sorted(..., key=len, reverse=True)` matters — plain list order puts `Fall`
+ahead of `FallBlock`, which then matches only by backtracking.
 
 The residual exposure is a genuinely novel token: the file is skipped silently
 rather than stalling the region. That is detected by the asset simply not
