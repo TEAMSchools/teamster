@@ -33,6 +33,17 @@ created.
   `uv run dbt parse --target prod --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target-path target/prod`
   if it goes missing. Editing `/workspaces/teamster/<path>` instead silently
   dirties `main`.
+- **Stale dev copies silently poison `--defer`.** `--defer` falls back to prod
+  only for objects ABSENT from the dev schema. Where a stale copy already exists
+  in `zz_<user>_kippmiami_focus`, dbt joins against that instead, and the model
+  still builds green with wrong values. This bit Task 3: a 2026-06-22 copy of
+  `stg_focus__attendance_codes` (`max(id) = 2355`) made 8 rows carrying code
+  `2356` look unresolvable. Before trusting any verification query, rebuild the
+  upstream staging models into dev:
+  `uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select stg_focus__attendance_codes stg_focus__marking_periods stg_focus__attendance_day stg_focus__attendance_period stg_focus__schedule stg_focus__gradebook_grades stg_focus__gradebook_assignments stg_focus__gradebook_assignment_types`.
+  Confirm freshness with `last_modified_time` in
+  `zz_<user>_kippmiami_focus.__TABLES__`, never `row_count` (which lags and
+  matched exactly while the contents differed).
 - **Python.** Always `uv run` — never bare `python`, `dbt`, or `dagster`.
 - **Design source of truth.**
   `docs/superpowers/specs/2026-08-18-focus-attendance-gradebook-intermediates-design.md`
