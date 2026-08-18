@@ -70,6 +70,19 @@ models:
           of a confident 11. NJGPA's reported grade is 11 across all Pearson
           history including 12th-grade fall retakers, and neither Cambium field
           reproduces that. See the design spec, decision D3.
+        data_tests:
+          # accepted_values passes NULLs, so not_null is required alongside it.
+          # Together these make an unrecognized test_code fail loudly rather than
+          # flowing a NULL grade level into dim_assessments, where grade_level is
+          # absent from the dedup partition and so a row-count check cannot catch it.
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [11]
+              config:
+                severity: error
       - name: testscorecomplete
         data_type: numeric
         description: >-

@@ -36,6 +36,16 @@ def main() -> None:
 
     slugs = sorted({slugify(text=h, separator="_") for h in header})
 
+    collisions = {}
+    for slug in slugs:
+        matches = [h for h in header if slugify(text=h, separator="_") == slug]
+        if len(matches) > 1:
+            collisions[slug] = sorted(matches)
+    if collisions:
+        raise SystemExit(
+            f"slug collisions -- distinct headers share a name: {collisions}"
+        )
+
     body = "".join(f"    {slug}: str | None = None\n" for slug in slugs)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
