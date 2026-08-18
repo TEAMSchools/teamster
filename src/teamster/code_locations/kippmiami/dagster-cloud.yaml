@@ -22,14 +22,24 @@ locations:
           pod_spec_config:
             affinity:
               podAntiAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  - labelSelector:
-                      matchExpressions:
-                        - key: location_name
-                          operator: In
-                          values:
-                            - kippmiami
-                    topologyKey: kubernetes.io/hostname
+                # Preferred, not required. With one replica per location this
+                # spreads nothing; as `required` its only live effect was
+                # forbidding the replacement pod from the outgoing pod's node
+                # during a rollover -- the one node guaranteed to have arm64
+                # Scale-Out capacity sized for a code server and, by the run-pod
+                # anti-affinity, no run pods on it. That forced NAP to build a new
+                # node on every redeploy. Cross-location spreading is handled
+                # separately by topologySpreadConstraints in the Helm values.
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: location_name
+                            operator: In
+                            values:
+                              - kippmiami
+                      topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: COUCHDROP_SFTP_PASSWORD
