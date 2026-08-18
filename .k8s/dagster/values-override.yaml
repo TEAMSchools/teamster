@@ -160,16 +160,24 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
-        # Code servers were the only pod type without this -- the agent
-        # (dagsterCloudAgent.annotations) and run pods
-        # (runK8sConfig.podTemplateSpecMetadata) both carry it. Blocks
-        # cluster-autoscaler eviction, which accounted for 38-59 code-server
-        # relocations per week. Compatible here: requests above are 500m/2.0Gi,
-        # meeting the Autopilot extended-duration minimum, and code servers are
-        # not on spot (the two are mutually exclusive). Extended-duration
-        # protection expires after 7 days, far longer than the interval between
-        # deploys.
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        # Do NOT add cluster-autoscaler.kubernetes.io/safe-to-evict: "false" here.
+        # It was added 2026-08-18 to stop the 38-59 autoscaler relocations per week
+        # and reverted the same day. Measured over the hour after it went live:
+        # agent "Could not reach user code server" errors ran ~62x the four-week
+        # baseline (40/hour against ~0.65) and code-server Preempted ran ~118x
+        # (20/hour against ~0.17), while Evicted stayed flat at 0 the whole time.
+        #
+        # Mechanism: the annotation blocks CLUSTER-AUTOSCALER eviction but not
+        # SCHEDULER preemption. Pinning code servers to their nodes stops the
+        # autoscaler relocating them, so capacity fragments and run pods
+        # (priority 1000) can only obtain it by preempting code servers
+        # (priority 0). It converted graceful relocations into preemptions, each
+        # of which recreates the Service and produces a fresh ClusterIP -- which
+        # is the churn the annotation was meant to reduce.
+        #
+        # Evicted holding at 0 is what isolates this from the `preferred`
+        # self-anti-affinity: that change's risk shows up as kubelet eviction, and
+        # it never fired.
     podSpecConfig:
       # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
       # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
