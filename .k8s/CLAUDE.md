@@ -28,9 +28,17 @@ on GKE Autopilot.
 - **Helm deploy is manual** — editing `values-override.yaml` is fine, but
   changes only take effect after `helm upgrade`. `git push` builds code location
   images, not Helm agent config.
+- `deploymentStartupTimeout` (Helm `workspace` key, chart default 300s) — time
+  the agent waits for the code server Deployment to become ready, i.e. for the
+  pod to be SCHEDULED. Currently set to 900s. This is the timeout that fires
+  during a NAP `FailedScheduling` wait. Raising it also raises the agent's
+  worst-case first reconcile, so the `readinessProbe` `failureThreshold` and
+  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it, along
+  with `install.sh`'s `rollout status --timeout`.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
-  agent waits for a code server gRPC ping after creating the Deployment.
-  Currently set to 300s in `values-override.yaml`.
+  agent waits for a code server gRPC ping after the Deployment exists. Fires on
+  slow definitions import, not on failed placement. Currently set to 300s in
+  `values-override.yaml`.
 
 ## Scheduling
 

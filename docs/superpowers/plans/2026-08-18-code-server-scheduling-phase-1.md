@@ -258,6 +258,13 @@ Refs #4907"
 - Consumes: nothing from Task 1. This task is independently landable.
 - Produces: nothing later tasks import. Task 4 measures its effect.
 
+**Superseded in part.** The YAML-key assertion in Step 3 below is weaker than
+this note claims: it would pass on `podAffinityTerms` (plural) or a stray
+`weight` inside `podAffinityTerm`. `tests/test_k8s_config.py` now runs the
+agent's own coercion (`k8s_model_from_dict(V1PodSpec, ...)`), which rejects
+both, and includes a negative case proving it is not vacuous. Prefer that check
+for Phases 2 and 3.
+
 **Critical structural note.** `preferred` is not a rename of `required`. The
 required form takes a list of `PodAffinityTerm` directly; the preferred form
 takes a list of `WeightedPodAffinityTerm`, where each entry is `weight` plus a

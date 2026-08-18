@@ -90,9 +90,18 @@ provisioning lands in the upper half of normal.
 
 ## Constraints
 
-- **The run-pod-to-code-server isolation stays hard.** It was added in response
-  to a real incident in which run pods starved and killed code servers. Relaxing
-  `required` to `preferred` there is out of scope.
+- **The run-pod anti-affinity against code servers stays `required`.** It was
+  added in response to a real incident in which run pods starved and killed code
+  servers. Relaxing it to `preferred` is out of scope.
+
+  Note the vocabulary: `.k8s/CLAUDE.md` forbids calling this rule "isolating"
+  code servers or "preventing co-location", because a `required` anti-affinity
+  authorizes the scheduler to PREEMPT the target pods when no other node fits.
+  What it guarantees is that no node holds a run pod and a code server at the
+  same instant. The mechanism by which that holds is that code servers get
+  evicted, which is why `Preempted` runs at 21 to 37 per week while `Evicted`
+  stays at 0.
+
 - **Code-server priority stays at 0.** Promoting code servers above
   `dagster-run` would make run pods wait instead, reversing a deliberate
   decision recorded in `.k8s/CLAUDE.md`. Explicitly declined.
@@ -115,8 +124,9 @@ in the `dagster-cloud` namespace. Retention is 30 days, so nothing before
 The reported recent uptick is not present; the peak was Jul 28 to Aug 4 and the
 two most recent weeks are lower. This is chronic, not a regression.
 
-`Evicted` at 0 across all four weeks confirms the isolation is doing its job. It
-buys that at the cost of the preemptions and scheduling failures.
+`Evicted` at 0 across all four weeks confirms the run-pod anti-affinity is
+holding. It buys that by having code servers preempted instead, which is what
+the 21 to 37 weekly `Preempted` events are.
 
 ## Design
 
@@ -129,7 +139,7 @@ phase is independently revertable.
 | ------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
 | `deploymentStartupTimeout: 900`                               | Helm `workspace`                                      | agent waits out a normal NAP provision instead of abandoning at 300s |
 | add `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"` | `serverK8sConfig.podTemplateSpecMetadata.annotations` | removes 38 to 59 autoscaler relocations per week                     |
-| self-anti-affinity `required` to `preferred`                  | all five `dagster-cloud.yaml`                         | lets a rollover reuse the outgoing pod's node                        |
+| self-anti-affinity `required` to `preferred`                  | all five `dagster-cloud.yaml`                         | makes the outgoing pod's node feasible again, removing the NAP wait  |
 
 The self-anti-affinity change is the highest-leverage item and needs
 justification, because it looks like a safety feature.
@@ -252,14 +262,17 @@ this first, against a location deliberately put into the timeout state.
 
 ## Failure modes
 
-| Risk                                             | Mitigation                                                                                                                     |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| Watchdog masks a real code defect                | Signature gate plus attempt cap; genuine errors do not match and are never retried                                             |
-| Watchdog races a deploy                          | Skip when `codeLocationUpdateTriggerTimestamp` is recent                                                                       |
-| Placeholder starves real workloads               | Negative priority plus `preemptionPolicy: Never`; it can never displace anything                                               |
-| Warm node reclaimed by autoscaler                | Gate item 2 above; pin with `safe-to-evict` if needed                                                                          |
-| Longer timeout delays real-failure feedback      | Accepted; bad images still surface at 30s via `imagePullGracePeriod`                                                           |
-| Rollover co-locates two code servers on one node | Only under `preferred`; node must fit two 500m/2Gi pods or the scheduler picks elsewhere, which is the current behavior anyway |
+| Risk                                                               | Mitigation                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Watchdog masks a real code defect                                  | Signature gate plus attempt cap; genuine errors do not match and are never retried                                                                                                                                                                                                                                                                                                    |
+| Watchdog races a deploy                                            | Skip when `codeLocationUpdateTriggerTimestamp` is recent                                                                                                                                                                                                                                                                                                                              |
+| Placeholder starves real workloads                                 | Negative priority plus `preemptionPolicy: Never`; it can never displace anything                                                                                                                                                                                                                                                                                                      |
+| Warm node reclaimed by autoscaler                                  | Gate item 2 above; pin with `safe-to-evict` if needed                                                                                                                                                                                                                                                                                                                                 |
+| Longer timeout delays real-failure feedback                        | Accepted; bad images still surface at 30s via `imagePullGracePeriod`                                                                                                                                                                                                                                                                                                                  |
+| Rollover co-locates two code servers on one node                   | Only under `preferred`. The scheduler still penalizes that node twice (the preferred term and the hostname `topologySpreadConstraint`), so it picks elsewhere whenever anything else fits                                                                                                                                                                                             |
+| A single run-pod preemption takes BOTH code servers for a location | New under `preferred`: the hard self-anti-affinity previously forced the incoming and outgoing pods onto separate nodes, so one preemption could only ever take one. Self-limiting (the scheduler prefers the cheapest victim set) but non-zero, and it lands in the exact rollover window this change exists to protect. Watch `Preempted`                                           |
+| Two co-located code servers burst above node allocatable           | Requests are 500m / 2.0Gi but limits are 1000m / 2.5Gi, so two pods admitted on 1000m / 4.0Gi of requests can burst to 2000m / 5.0Gi. `safe-to-evict: "false"` does NOT block kubelet node-pressure eviction, and priority-0 code servers are evicted first. The rollover window is exactly when the incoming pod imports kipptaf's definitions and bursts past 750m. Watch `Evicted` |
+| Raising `deploymentStartupTimeout` breaks the agent's own budgets  | The readiness sentinel is only written after the first full reconcile, so the probe budget, the cleanup grace period, and `install.sh`'s `rollout status --timeout` must all exceed `deploymentStartupTimeout + serverProcessStartupTimeout`. Asserted in `tests/test_k8s_config.py`                                                                                                  |
 
 ## Verification
 
@@ -271,13 +284,22 @@ Success criteria:
 - Zero `loadStatus: ERROR` entries carrying the timeout signature.
 - `FailedScheduling` on code-server pods materially below the 213 to 472 band.
 - Agent gRPC errors below the 85 to 134 per week band.
-- `Evicted` still 0, confirming the isolation was not weakened.
+- `Evicted` still 0. This is the tripwire for the co-located-burst risk above,
+  not merely a formality.
+- `Preempted` no higher than the 21 to 37 per week baseline. Per the
+  failure-modes table this is the counter most likely to move under `preferred`,
+  so it is a must-not-regress rather than informational.
+- No node hosts two code servers once a rollover has settled. Both new risks
+  above are specific to that window, so confirm it closes.
 
 Per-phase checks:
 
 - Phase 1: confirm the new timeout is live via the agent Deployment spec after
-  `helm upgrade`; confirm all five locations reload cleanly after the
-  `dagster-cloud.yaml` change.
+  `helm upgrade`; confirm the agent pod itself reaches Ready rather than
+  stalling on its readiness probe, since raising `deploymentStartupTimeout` also
+  raises the worst-case first reconcile; confirm all five locations reload
+  cleanly after the `dagster-cloud.yaml` change; confirm no node ends up hosting
+  two code servers for the same location once the rollover settles.
 - Phase 2: the three gate items, then confirm a code-server rollover schedules
   in seconds rather than minutes.
 - Phase 3: force a location into the timeout state, confirm the watchdog
