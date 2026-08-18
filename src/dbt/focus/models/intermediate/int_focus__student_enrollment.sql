@@ -17,6 +17,7 @@ with
             ) as network_student_number,
 
             e.id as student_enrollment_id,
+            e.created_at as enrollment_created_at,
             e.syear as academic_year,
             e.school_id as schoolid,
             e.start_date as startdate,
@@ -98,6 +99,9 @@ with
     -- Focus permits two open stints for the same student, year, and start
     -- date; SY26 is the first year of Focus data where it has happened. The
     -- incomplete record is demoted, then the most recently created one wins.
+    -- Recency reads enrollment_created_at, not the id: Focus assigns ids in
+    -- batches, and 20% of SY26 id pairs order differently than creation time,
+    -- so the id alone is not a recency proxy. The id breaks exact ties.
     -- Deduping here, ahead of with_flags, keeps rn_year contiguous --
     -- consumers filter on rn_year = 1 and would lose a student left holding
     -- only rn_year = 2.
@@ -107,7 +111,11 @@ with
             dbt_utils.deduplicate(
                 relation="enrollment",
                 partition_by="student_number, academic_year, startdate",
-                order_by="(schoolid is null) asc, student_enrollment_id desc",
+                order_by="""
+                    (schoolid is null) asc,
+                    enrollment_created_at desc,
+                    student_enrollment_id desc
+                """,
             )
         }}
     ),
