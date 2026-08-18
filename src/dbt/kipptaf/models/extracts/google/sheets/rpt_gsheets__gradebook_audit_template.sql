@@ -63,29 +63,11 @@ select
     week_start_monday,
     school_week_end_date as week_end_friday,
     notes,
-
-    assignment_category_code,
-    expectation,
+    cnt_w as `W`,
+    cnt_h as `H`,
+    cnt_f as `F`,
+    cnt_s as `S`,
 
     {{ var("current_academic_year") - 1 }} as academic_year,  /* summer toggle: see skill */
 
-    concat(assignment_category_code, right(`quarter`, 1)) as assignment_category_term,
-
-    case
-        assignment_category_code
-        when 'W'
-        then 'Work Habits'
-        when 'H'
-        then 'Homework'
-        when 'F'
-        then 'Formative Mastery'
-        when 'S'
-        then 'Summative Mastery'
-    end as assignment_category_name,
-
-from
-    week_expectations unpivot (
-        expectation for assignment_category_code
-        in (`cnt_w` as 'W', `cnt_h` as 'H', `cnt_f` as 'F', `cnt_s` as 'S')
-    )
-where expectation is not null
+from week_expectations
