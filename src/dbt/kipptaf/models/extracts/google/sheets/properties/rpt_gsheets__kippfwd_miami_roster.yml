@@ -6,9 +6,11 @@ models:
       and guardian contacts come from Focus; FAST scores from FLDOE.
       advisor_lastfirst, gpa_cumulative, gpa_y1, and iep_status are
       hybrid-sourced from PowerSchool for the years it covers and from Focus for
-      AY2026 onward; previous_year_ada always comes from PowerSchool and is null
-      once the prior academic year itself falls past PowerSchool's Miami
-      coverage.
+      AY2026 onward; previous_year_ada and previous_year_gpa always come from
+      the frozen PowerSchool archive, reached through a student_number bridge
+      because the Focus enrollment branch carries no PowerSchool studentid, and
+      are null once the prior academic year itself falls past PowerSchool's
+      Miami coverage.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -249,3 +251,13 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: previous_year_gpa
+        description: >-
+          Unweighted cumulative Y1 GPA from PowerSchool as of the end of its
+          Miami coverage (academic year 2025), so on a current-year row this is
+          the GPA the student carried into the year. Null for students with no
+          powerschool_id, who are new to Miami and hold no PowerSchool record,
+          and null on rows whose prior academic year falls before PowerSchool's
+          last covered year, since the archive keeps no year-by-year cumulative
+          snapshot to read instead.
+        data_type: float64

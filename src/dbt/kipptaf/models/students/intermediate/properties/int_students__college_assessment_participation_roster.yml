@@ -1,5 +1,37 @@
 models:
   - name: int_students__college_assessment_participation_roster
+    description: >-
+      How many times each student has sat each college-entrance assessment, one
+      row per student, academic year, and test type. Counts come from
+      attempt_lifetime and yearly_attempts_totals on
+      int_assessments__all_college_assessments rather than being derived here,
+      so a sitting is counted once per test date rather than once per score row.
+
+
+      Scoped to students with a high school enrollment record in the year they
+      tested, because the Tableau views this feeds report on that population.
+      The counts themselves are not scoped that way — attempt_lifetime spans a
+      student's whole history, including tests sat in a year they were not
+      enrolled with us, matching how attempts are treated elsewhere.
+
+
+      Consumers read the *_count_lifetime columns at rn_lifetime = 1. The goal
+      columns have no consumer yet and are carried for the reporting views to
+      pick up. See #4658.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - test_type
+          config:
+            severity: error
+            # A student repeating a grade holds two academic years at one grade
+            # level, so grade_level cannot stand in for academic_year here.
     columns:
       - name: student_number
         data_type: int64
@@ -11,89 +43,112 @@ models:
             source_column: student_number
             contains_pii: true
             column_role: primary_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year of the sitting, start-year convention, so SY26-27 reads
+          2026. Part of the grain — a student who repeats a grade appears once
+          per year rather than once per grade.
+      - name: test_type
+        data_type: string
+        description: >-
+          Official or Practice. Part of the grain, so a student with both has
+          two rows and rn_lifetime = 1 returns one of each. A consumer wanting
+          only official participation must filter this as well as rn_lifetime.
       - name: salesforce_id
         data_type: string
+        description: kippadb contact id, from the student's enrollment record.
       - name: grade_level
         data_type: int64
-        description:
-          "The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed."
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: grade_level
+        description: >-
+          Grade the student was in that academic year, from their enrollment
+          record. Not unique per student — see academic_year.
       - name: psat89_count
         data_type: int64
+        description: >-
+          PSAT 8/9 sittings in this academic year. Null rather than zero when
+          the student did not sit it, since it comes from a pivot rather than a
+          count.
       - name: psat10_count
         data_type: int64
+        description: PSAT10 sittings in this academic year. Null when none.
       - name: psatnmsqt_count
         data_type: int64
+        description: PSAT NMSQT sittings in this academic year. Null when none.
       - name: sat_count
         data_type: int64
+        description: SAT sittings in this academic year. Null when none.
       - name: act_count
         data_type: int64
-      - name: act_1_attempt_min_score
-        data_type: float64
-      - name: act_2_plus_attempts_min_score
-        data_type: float64
-      - name: sat_1_attempt_min_score
-        data_type: float64
-      - name: sat_1_attempt_pct_goal
-        data_type: float64
-      - name: sat_2_plus_attempts_min_score
-        data_type: float64
-      - name: sat_2_plus_attempts_pct_goal
-        data_type: float64
-      - name: psat89_1_attempt_min_score
-        data_type: float64
-      - name: psat89_2_plus_attempts_min_score
-        data_type: float64
-      - name: psat10_1_attempt_min_score
-        data_type: float64
-      - name: psat10_2_plus_attempts_min_score
-        data_type: float64
-      - name: psatnmsqt_1_attempt_min_score
-        data_type: float64
-      - name: psatnmsqt_2_plus_attempts_min_score
-        data_type: float64
-      - name: psat89_count_ytd
-        data_type: int64
-      - name: psat10_count_ytd
-        data_type: int64
-      - name: psatnmsqt_count_ytd
-        data_type: int64
-      - name: sat_count_ytd
-        data_type: int64
-      - name: act_count_ytd
-        data_type: int64
+        description: ACT sittings in this academic year. Null when none.
       - name: psat89_count_lifetime
         data_type: int64
-        description:
-          District-assigned student identification number. MAX of
-          psat89_count_ytd partitioned by student_number.
+        description: >-
+          PSAT 8/9 sittings across the student's whole history, carried on every
+          one of their rows. Counts distinct test dates, so a score filed twice
+          on one date counts once.
       - name: psat10_count_lifetime
         data_type: int64
-        description:
-          District-assigned student identification number. MAX of
-          psat10_count_ytd partitioned by student_number.
+        description: PSAT10 sittings across the student's whole history.
       - name: psatnmsqt_count_lifetime
         data_type: int64
-        description:
-          District-assigned student identification number. MAX of
-          psatnmsqt_count_ytd partitioned by student_number.
+        description: PSAT NMSQT sittings across the student's whole history.
       - name: sat_count_lifetime
         data_type: int64
-        description:
-          District-assigned student identification number. MAX of sat_count_ytd
-          partitioned by student_number.
+        description: SAT sittings across the student's whole history.
       - name: act_count_lifetime
         data_type: int64
-        description:
-          District-assigned student identification number. MAX of act_count_ytd
-          partitioned by student_number.
+        description: ACT sittings across the student's whole history.
       - name: rn_lifetime
         data_type: int64
+        description: >-
+          Ranks a student's rows within one test type so consumers can take a
+          single row per student for the lifetime counts. Unordered — the
+          lifetime columns are identical across a student's rows, so any row
+          serves.
+      - name: min_score_sat_1_attempt
+        data_type: float64
+        description: >-
+          Sittings required to count as having attempted the SAT once, from the
+          scaffold. Constant across students within a test type.
+      - name: pct_goal_sat_1_attempt
+        data_type: float64
+        description: >-
+          Share of students expected to attempt the SAT at least once, as a 0-1
+          fraction. Differs by test type — a scheduled practice administration
+          carries a higher target than an official sitting.
+      - name: min_score_sat_2_plus_attempts
+        data_type: float64
+        description: Sittings required to count as two or more SAT attempts.
+      - name: pct_goal_sat_2_plus_attempts
+        data_type: float64
+        description: >-
+          Share of students expected to attempt the SAT twice or more, as a 0-1
+          fraction.
+      - name: min_score_psat89_1_attempt
+        data_type: float64
         description:
-          District-assigned student identification number. ROWNUMBER of value
-          partitioned by student_number.
+          Sittings required to count as having attempted PSAT 8/9 once.
+      - name: pct_goal_psat89_1_attempt
+        data_type: float64
+        description: >-
+          Share of students expected to attempt PSAT 8/9 at least once, as a 0-1
+          fraction.
+      - name: min_score_psat10_1_attempt
+        data_type: float64
+        description: Sittings required to count as having attempted PSAT10 once.
+      - name: pct_goal_psat10_1_attempt
+        data_type: float64
+        description: >-
+          Share of students expected to attempt PSAT10 at least once, as a 0-1
+          fraction.
+      - name: min_score_psatnmsqt_1_attempt
+        data_type: float64
+        description: >-
+          Sittings required to count as having attempted PSAT NMSQT once. Null
+          on practice rows, which carry no NMSQT goal.
+      - name: pct_goal_psatnmsqt_1_attempt
+        data_type: float64
+        description: >-
+          Share of students expected to attempt PSAT NMSQT at least once, as a
+          0-1 fraction. Null on practice rows.

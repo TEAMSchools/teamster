@@ -153,7 +153,7 @@ If the adapter's scale changes, any existing BQ table with a conflicting column
 type must be dropped manually — `replace` write disposition does not allow type
 changes on existing tables.
 
-### `replace` write-disposition + runtime subsetting (dlt 1.28.1)
+### `replace` write-disposition + runtime subsetting
 
 - A `replace` resource that yields **zero rows truncates** its destination table
   — you cannot skip a table by yielding nothing from inside the run. To load a
@@ -218,9 +218,22 @@ changes on existing tables.
   function body or a `selected=False` resource never round-trip
   (spike-confirmed, silent) — this is why the per-table signature write lives
   inside the extracted resource, not the source.
-- `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
-  metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
-  `except` so a load failure is legible without walking the exception chain.
+- **Do NOT call `.fetch_row_count()` on the `run()` iterator** — it raises on
+  any materialization with no `jobs` metadata, which is what dlt emits for the
+  first load of a table that extracts zero rows (`_handle_empty_tables` writes
+  the empty truncate file only once a table has `seen_data`). With one
+  multi-asset op per district that raise kills every other table in the run, and
+  it bills a `count(*)` per table besides. `dagster_dlt` already attaches dlt's
+  own per-table `rows_loaded` to every materialization for free — the same
+  number for a full `replace` load — so `powerschool/` just `yield from`s
+  `run()`. Trade-off: `rows_loaded` is plain metadata, not the canonical
+  `dagster/row_count` key, so the asset catalog's row-count column stays empty;
+  do not "fix" that by re-adding the chained call. A stub standing in for the
+  `run()` return value must be **iterable** (see
+  `tests/libraries/test_powerschool_dlt_extract_workers.py`).
+- Also log `last_trace.last_normalize_info.row_counts` in an `except`: a load
+  failure emits no materializations at all, so that log is the only per-table
+  visibility.
 - **Stream dlt progress into the Dagster event log**: in the op, set
   `dlt_pipeline.collector = LogCollector(logger=context.log, log_period=30.0)`
   (`context.log` is a `logging.Logger`). The factory default `logger="stdout"`

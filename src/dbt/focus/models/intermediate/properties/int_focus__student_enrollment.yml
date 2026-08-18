@@ -21,6 +21,11 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: enrollment_created_at
+        description: >-
+          Timestamp the Focus enrollment record was created. Projected for the
+          same-start-date dedupe tie-break, which needs a real recency signal --
+          Focus assigns ids in batches, so id order and creation order disagree.
       - name: academic_year
         description: Focus school year start year (e.g. 2025 = 2025-26).
       - name: academic_year_display

@@ -52,6 +52,17 @@ models:
         data_type: int64
       - name: psat10_count_lifetime
         data_type: int64
+      - name: psat89_practice_count_lifetime
+        data_type: int64
+        description: >-
+          Practice sittings only. The unprefixed count columns above are
+          official sittings and are unaffected by practice.
+      - name: psat10_practice_count_lifetime
+        data_type: int64
+        description: Practice sittings only.
+      - name: sat_practice_count_lifetime
+        data_type: int64
+        description: Practice sittings only.
       - name: sat_total_superscore
         data_type: numeric
       - name: sat_ebrw_highest
@@ -132,6 +143,36 @@ models:
         data_type: numeric
       - name: g9_psat89_math
         data_type: numeric
+      - name: g9_practice_psat89_total
+        data_type: numeric
+        description: >-
+          Grade 9 practice PSAT 8/9, Fall. Practice administrations carry their
+          own columns so a practice result can never be read as an official one
+          — every score column without practice in its name is official.
+      - name: g9_practice_psat89_ebrw
+        data_type: numeric
+        description: Grade 9 practice PSAT 8/9 EBRW, Fall.
+      - name: g9_practice_psat89_math
+        data_type: numeric
+        description: Grade 9 practice PSAT 8/9 Math, Fall.
+      - name: g10_practice_psat10_total
+        data_type: numeric
+        description: Grade 10 practice PSAT10, Fall.
+      - name: g10_practice_psat10_ebrw
+        data_type: numeric
+        description: Grade 10 practice PSAT10 EBRW, Fall.
+      - name: g10_practice_psat10_math
+        data_type: numeric
+        description: Grade 10 practice PSAT10 Math, Fall.
+      - name: g11_practice_sat_total
+        data_type: numeric
+        description: Grade 11 practice SAT, Fall.
+      - name: g11_practice_sat_ebrw
+        data_type: numeric
+        description: Grade 11 practice SAT EBRW, Fall.
+      - name: g11_practice_sat_math
+        data_type: numeric
+        description: Grade 11 practice SAT Math, Fall.
       - name: psat89_to_psat10_total_growth
         data_type: numeric
       - name: psat89_to_psat10_ebrw_growth
