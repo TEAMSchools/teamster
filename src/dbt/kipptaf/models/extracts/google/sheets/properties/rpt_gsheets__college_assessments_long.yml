@@ -1,69 +1,182 @@
 models:
   - name: rpt_gsheets__college_assessments_long
+    description:
+      One row per student per test administration, with scores and readiness
+      flags pivoted wide across the three aligned subjects (Total, EBRW/Reading,
+      Math).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - test_type
+              - test_date
     columns:
       - name: region
         data_type: string
+        description: Region the student's school belongs to.
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
       - name: school
         data_type: string
+        description: Name of the school the student attends.
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
       - name: salesforce_id
         data_type: string
+        description:
+          Identifier for the student's matching kippadb contact record.
       - name: student_name
         data_type: string
+        description: Last, First, Mi. Indexed.
       - name: student_first_name
         data_type: string
+        description: Students' first name.
       - name: student_last_name
         data_type: string
+        description: Students last name.
       - name: grade_level
         data_type: int64
+        description:
+          The grade the student is in. Since this is an integer, 0=Kindergarten
+          1, -2=Preschool. Indexed.
       - name: student_email
         data_type: string
+        description: The student's school-issued email address.
       - name: enroll_status
         data_type: string
+        description:
+          The enrollment status of the student. Categorical mapping of
+          enroll_status.
       - name: ktc_cohort
         data_type: int64
+        description: KIPP Through College cohort year.
       - name: graduation_year
         data_type: int64
+        description: Student graduation year.
       - name: year_in_network
         data_type: int64
+        description: Years enrolled in the network as of that year.
       - name: iep_status
         data_type: string
+        description:
+          Database extension field associated to the Students table. Conditional
+          on spedlep.
       - name: grad_iep_exempt_status_overall
         data_type: string
+        description:
+          The enrollment status of the student. Conditional on enroll_status,
+          grad_iep_exempt_overall.
       - name: cumulative_y1_gpa
         data_type: float64
+        description: Cumulative weighted Y1 GPA through this academic year.
       - name: cumulative_y1_gpa_projected
         data_type: float64
+        description:
+          Weighted projected cumulative Y1 GPA, incorporating current
+          in-progress grades not yet stored.
       - name: college_match_gpa
         data_type: numeric
+        description: Cumulative GPA used for college match categorization.
       - name: college_match_gpa_bands
         data_type: string
+        description: GPA band grouping for college match purposes.
       - name: ccr_course
         data_type: string
+        description:
+          Name of the College and Career course the student is enrolled in this
+          academic year. No Data when the student has no such enrollment.
       - name: ccr_teacher_name
         data_type: string
+        description:
+          Teacher of record for that College and Career section. No Data when
+          the student has no such enrollment.
       - name: ccr_section
         data_type: string
+        description:
+          Section identifier for that College and Career course. No Data when
+          the student has no such enrollment.
       - name: sat_total_superscore
         data_type: numeric
+        description:
+          The student's lifetime SAT superscore — highest section scores summed
+          across administrations, not a single sitting.
       - name: sat_ebrw_highest
         data_type: numeric
+        description:
+          The student's highest SAT EBRW section score across all
+          administrations.
       - name: sat_math_highest
         data_type: numeric
+        description:
+          The student's highest SAT Math section score across all
+          administrations.
       - name: test_type
         data_type: string
+        description:
+          Assessment scope — SAT, ACT, PSAT 8/9, PSAT10 or PSAT NMSQT.
       - name: test_date
         data_type: date
-      - name: test_subject
-        data_type: string
-      - name: scale_score
+        description:
+          Date of the administration. One row per student per test type per
+          date, since a student may sit two different assessments on one day.
+      - name: total_scale_score
         data_type: numeric
-      - name: highest_score_by_test
+        description:
+          Composite or combined scale score for this administration. Null when
+          the administration produced no overall score.
+      - name: total_highest_score_by_test
         data_type: string
-      - name: hs_grad_ready
+        description:
+          Whether this administration is the student's highest total score for
+          this test type.
+      - name: total_hs_grad_ready
         data_type: string
-      - name: college_ready
+        description:
+          Whether the total score meets the HS-Ready benchmark. NA when no
+          benchmark exists for this score type.
+      - name: total_college_ready
         data_type: string
+        description:
+          Whether the total score meets the College-Ready benchmark. NA when no
+          benchmark exists for this score type.
+      - name: ebrw_reading_scale_score
+        data_type: numeric
+        description:
+          EBRW scale score, or ACT Reading where the test type reports Reading
+          instead.
+      - name: ebrw_reading_highest_score_by_test
+        data_type: string
+        description:
+          Whether this administration is the student's highest EBRW or Reading
+          score for this test type.
+      - name: ebrw_reading_hs_grad_ready
+        data_type: string
+        description:
+          Whether the EBRW or Reading score meets the HS-Ready benchmark. NA
+          when no benchmark exists for this score type.
+      - name: ebrw_reading_college_ready
+        data_type: string
+        description:
+          Whether the EBRW or Reading score meets the College-Ready benchmark.
+          NA when no benchmark exists for this score type.
+      - name: math_scale_score
+        data_type: numeric
+        description: Math section scale score for this administration.
+      - name: math_highest_score_by_test
+        data_type: string
+        description:
+          Whether this administration is the student's highest math score for
+          this test type.
+      - name: math_hs_grad_ready
+        data_type: string
+        description:
+          Whether the math score meets the HS-Ready benchmark. NA when no
+          benchmark exists for this score type.
+      - name: math_college_ready
+        data_type: string
+        description:
+          Whether the math score meets the College-Ready benchmark. NA when no
+          benchmark exists for this score type.
