@@ -80,22 +80,41 @@ than one option among several.
 `Testing School Code` differed from `Accountable School Code` on 2 rows, so both
 fields are retained.
 
-### The join key already exists
+### Identifier chain
+
+The PDF and the manifest carry **different** identifiers, so this is two joins,
+not one. The PDF never joins to PowerSchool directly -- the manifest is the
+bridge.
+
+| Step | From           | To          | Key                                                                  |
+| ---- | -------------- | ----------- | -------------------------------------------------------------------- |
+| 1    | ISR PDF record | manifest    | **state student ID** -- the only identifier the PDF carries (page 2) |
+| 2    | manifest       | PowerSchool | `Local Student Identifier` or `State Student Identifier`             |
+
+Step 1 is settled: a 10-digit state ID, 299 distinct in 299 occurrences,
+reconciling 1:1 against the manifest with zero orphans in either direction.
+
+Step 2 has two candidate keys, and PowerSchool exposes a column for each:
+
+| Manifest column            | PowerSchool column                                                 | Manifest population |
+| -------------------------- | ------------------------------------------------------------------ | ------------------- |
+| `Local Student Identifier` | `student_number` (projected as `pearson_local_student_identifier`) | 295 / 299           |
+| `State Student Identifier` | `state_studentnumber`                                              | 299 / 299           |
 
 `base_powerschool__student_enrollments` already projects
 `student_number as pearson_local_student_identifier`, documented as the KIPP
 `student_number` reported by the vendor for all NJ regions. Cambium kept
-Pearson's field semantics.
+Pearson's field semantics, which is why that column still applies.
 
-Measured coverage on the Newark manifest:
+Zero conflicting values and zero collisions across students on either key.
 
-| Tier | Key                                                          | Coverage                |
-| ---- | ------------------------------------------------------------ | ----------------------- |
-| 1    | manifest `Local Student Identifier` to `student_number`      | 295 / 299               |
-| 2    | manifest `State Student Identifier` to `state_studentnumber` | most of the remaining 4 |
-| 3    | no match                                                     | `Unsorted`              |
-
-Zero conflicting values and zero collisions across students.
+**Open: which key leads.** The state ID has better manifest population (299 vs
+295), but `student_number` is PowerSchool's own primary key whereas
+`state_studentnumber` can be absent for students not yet submitted to the state.
+Only the manifest side was measured; neither join was tested against
+PowerSchool. The plan must measure both match rates and order the tiers on
+evidence. A student matching on neither key is `Unsorted` with reason
+`no_sis_match`.
 
 ### Grain and status
 
@@ -127,6 +146,7 @@ campus-facing in this design projects those columns.
 | 8   | Two frozen tables and one live projection                                                                 |
 | 9   | The parse aborts rather than guesses; reconciliation gates the renderer                                   |
 | 10  | NJGPA first, NJSLA second. The design is assessment-agnostic; the rollout is not                          |
+| 11  | The Sheet lists every currently-enrolled student in the assessed grades, blank where no report exists     |
 
 ### Rationale for the two that are least obvious
 
@@ -207,13 +227,39 @@ the per-region `Unsorted` packet to Drive via the existing
 Couchdrop mirrors the source PDF into Drive already, so the renderer reads from
 Drive and writes back to Drive with no GCS round trip.
 
-Runs once per administration, manually triggered.
+Runs once per administration, manually triggered. For the first administration
+the data team lead (@anthonygwalters) pulls the freeze and the render; this
+should move to a named ops owner once the process is proven.
+
+Packets are written to a new folder beneath the existing school directory in
+Drive. That structure is already partitioned by region, so cross-LEA isolation
+comes from the existing arrangement rather than from anything this project
+builds.
 
 ### The Sheet
 
 Delivered through the established `rpt_gsheets__*` model plus
 `exposures/google-sheets.yml` pattern. One Sheet per region covering all
 assessments, with an assessment column.
+
+The Sheet is a **full outer join** between live enrollment and the frozen
+assignment, not a projection of the assignment. That yields three row types:
+
+| Row type                             | Report columns              | Status                                             |
+| ------------------------------------ | --------------------------- | -------------------------------------------------- |
+| Enrolled, report exists              | packet link, page start/end | at freeze campus, or moved to campus X             |
+| **Enrolled, no report**              | **blank**                   | `no report received`                               |
+| Report exists, no current enrollment | packet link, page start/end | left the network; report in its freeze-time packet |
+
+The middle row type carries more weight than it looks. Without it, a searcher
+who finds nothing cannot distinguish "this student has no report" from "I
+searched wrong." A blank row is a definitive answer; an absent row is an
+ambiguous one.
+
+The enrollment side is scoped to the grades the assessment actually covers,
+derived from the distinct `Grade Level When Assessed` values in the manifest
+rather than hardcoded -- otherwise every K-12 student would appear with a blank
+row. NJGPA is grade 11 only; NJSLA spans grades 3-9 and varies by subject.
 
 ## Data flow
 
@@ -287,7 +333,8 @@ where 1 = 1  -- region and active-enrollment predicates elided for brevity
 ```
 
 Re-running is a no-op for an administration already captured. `receipt_date` is
-carried as a column because the 30-day clock is measured from it.
+carried as provenance -- the date the vendor files arrived -- which is worth
+recording regardless of how the distribution deadline is ultimately defined.
 
 Whether a guarded incremental or a dbt snapshot is the cleaner mechanism is an
 implementation choice for the plan. The **requirement** is that recomputation
@@ -403,11 +450,14 @@ reconciliation gate.
 
 ## Open items
 
-- **The 30-day requirement is unverified.** It is modeled as `receipt_date` plus
-  a configurable window rather than a hardcoded constant. The actual citation
-  should be confirmed with whoever owns state compliance before this ships; if
-  the trigger is not receipt, the freeze timing changes.
-- **Drive folder locations and the per-region reader group** are implementation
-  detail and need real identifiers.
-- **Which role pulls the freeze** is an ops assignment, not a design decision,
-  but it needs a named owner before the first administration.
+- **Which manifest identifier leads the PowerSchool join.** See _Identifier
+  chain_. Both candidate keys need their match rate measured against PowerSchool
+  before the tier order is fixed; only the manifest side has been measured so
+  far.
+- **Whether the existing school-directory permissions grant read across campuses
+  within a region.** Decision 4 requires that they do. The existing Drive
+  structure guarantees isolation _between_ LEAs, which is the stated guardrail,
+  but if school directories are themselves access boundaries then a transferring
+  student's receiving campus cannot open the packet holding their report -- the
+  exact failure this project exists to fix. If so, packets need a region-level
+  location or an explicit per-region reader group instead.
