@@ -269,10 +269,21 @@ a different pod type.
 - **GCP Error Reporting investigation**: `list_group_stats` (find groups) →
   `list_log_entries` (reconstruct multi-line tracebacks from individual log
   entries) → `k8s_pod` events (find root cause: preemption, OOM, eviction).
-- **Timeout types** (do not conflate): Startup (`serverProcessStartupTimeout`,
-  default 180s) = agent→code server gRPC ping; failure → deployment removed +
-  replacement, causes churn. Sensor execution (300s) = sensor ran too long; code
-  server stays up, no churn.
+- **Timeout types** (do not conflate). Three distinct waits, in the order they
+  occur:
+  1. **Deployment startup** (`deploymentStartupTimeout`, Helm `workspace` key,
+     chart default 300s, set to 900s) — agent waits for the code server
+     Deployment to become ready, i.e. for the pod to be SCHEDULED. This is the
+     one that fires during a NAP `FailedScheduling` wait, and its failure
+     message is `Timed out waiting for deployment {name}` with
+     `Pod status: Pending`. Governs `wait_for_deployment_complete`, not
+     `_wait_for_dagster_server_process`.
+  1. **Server process startup** (`serverProcessStartupTimeout`, Helm `workspace`
+     key, default 180s, set to 300s) — agent waits for a gRPC ping AFTER the
+     Deployment exists. Fires when Dagster definitions are slow to import, not
+     when the pod cannot be placed.
+  1. **Sensor execution** (300s, Dagster+ deployment setting) — sensor ran too
+     long; the code server stays up and no churn results.
 - **Code server startup failure signals**: Check ALL pods for the deployment.
   `Aborted!` stderr = SIGABRT (native crash). `DagsterExecutionInterruptedError`
   = SIGTERM during import (rollover). Silent hang after "Starting Dagster code
@@ -293,9 +304,14 @@ a different pod type.
   `resource.type="gce_subnetwork"` +
   `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
   `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
-- **Autopilot node pre-warming**: Not possible — no DaemonSets, no image
-  pre-pulling, no node lifecycle control. Only levers for cold-node startup
-  latency: image size reduction and Dagster timeout increases.
+- **Autopilot node pre-warming**: no node-lifecycle control — no DaemonSets, no
+  image pre-pulling, no cordon that holds. But capacity CAN be reserved at the
+  workload layer with balloon pods: a Deployment of placeholder pods on a
+  negative `PriorityClass` holds nodes that real pods preempt instantly, and the
+  displaced placeholder then triggers NAP to re-warm the buffer. Google
+  documents this for Autopilot. Not deployed here yet; see
+  `docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md`
+  Phase 2, gated on verifying Warden admits a negative priority value.
 - **CPU limit alert sensitivity**: `GKE Container - High CPU Limit Utilization`
   fires at >90% `ALIGN_MEAN` over 60s with `count=1`. When an asset's `op_tags`
   CPU limit alerts, bump by 250m — re-measure peak with
@@ -317,6 +333,19 @@ a different pod type.
   Dagster+ full deployment settings (see Dagster+ Deployment Settings section)
   expose no tick-retry knob. Terminal `DagsterUserCodeUnreachableError` ticks
   remain terminal.
+- **A timed-out code server deployment is TERMINAL — the agent never retries
+  it.** `_should_trigger_recovery` in
+  `dagster_cloud/workspace/user_code_launcher/user_code_launcher.py` returns
+  `False` when the location is in `control_plane_error_locations` ("control
+  plane agrees there is an error, don't retry"). Recovery fires only when the
+  agent holds a local error while the control plane believes the location is
+  healthy. Normal reconciliation redeploys only when
+  `actual_entry.update_timestamp != desired_entry.update_timestamp`, which
+  changes on a new deploy, and the periodic health check needs a running
+  endpoint that a never-started pod does not have. So a location that fails to
+  schedule stays `ERROR` until someone pushes a commit or clicks redeploy. No
+  agent setting changes this;
+  `DAGSTER_CLOUD_DISABLE_LOCAL_ERROR_SERVER_RECOVERY` only turns recovery off.
 
 ## Dagster+ Deployment Settings
 
