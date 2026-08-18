@@ -854,6 +854,16 @@ set may encode no derivable rule. Likewise count the rows any replacement
 `coalesce` fallback actually fires on: one written to preserve a single row
 fired on 251.
 
+### Retiring a model is always a disable, never a delete
+
+Set `config: enabled: false` in the properties yml and leave the `.sql` and the
+prod relation in place. Applies even when the model has no exposure and zero
+remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
+instead of vanishing. Do not propose deletion as the tidier option, and do not
+issue a `drop view` for the orphaned relation. Disabling a model does NOT
+disable its tests (see _Test config defaults_) — add `enabled: false` to each of
+those too.
+
 ### Verifying a test-removal PR
 
 Never report a count from the YAML diff — it does not say which dbt nodes

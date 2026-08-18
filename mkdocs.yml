@@ -60,6 +60,7 @@ nav:
       - Automation Conditions: reference/automation-conditions.md
   - Models:
       - FRESH Dashboard Data Model: models/fresh-dashboard-data-model.md
+      - CARAT Dashboard Data Model: models/carat-dashboard-data-model.md
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
   - Automations: reference/automations.md
 
