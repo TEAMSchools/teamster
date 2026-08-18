@@ -1,5 +1,14 @@
 models:
   - name: stg_google_sheets__performance_management__leadership_development_metrics
+    description: >
+      Archive only, frozen 2026-07-30. Leadership Development moved to Lattice.
+      The frozen table holds only metrics that were enabled at freeze time,
+      because this model filtered `where not disabled`; the full metric list
+      stays in the source Google Sheet. Registered as
+      google_sheets.stg_google_sheets__performance_management__leadership_development_metrics_archive.
+    # Refs #4627
+    config:
+      enabled: false
     columns:
       - name: Academic_Year
         data_type: int64
