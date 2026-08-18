@@ -154,9 +154,13 @@ campus-facing in this design projects those columns.
 the freeze has their report inside the _former_ campus's packet. Under
 per-campus access the receiving campus cannot open it, which reproduces the
 exact failure this project exists to fix. Region-wide read is defensible on the
-coterminous-LEA fact and removes every human step and broken link. The accepted
-cost: any campus ops user can open any packet in their region and therefore see
-those students' Family Portal access codes.
+coterminous-LEA fact and removes every human step and broken link.
+
+This is satisfied by the Drive structure that already exists rather than by
+anything new: permissioning is at the LEA level, so a campus DSO already reads
+sibling campuses within their region and cannot reach another region. The
+accepted cost: any campus ops user can open any packet in their region and
+therefore see those students' Family Portal access codes.
 
 **`Unsorted` as a packet rather than a queue (6).** Making the Sheet the single
 lookup surface means `Unsorted` is not a place someone must remember to check;
@@ -232,9 +236,11 @@ the data team lead (@anthonygwalters) pulls the freeze and the render; this
 should move to a named ops owner once the process is proven.
 
 Packets are written to a new folder beneath the existing school directory in
-Drive. That structure is already partitioned by region, so cross-LEA isolation
-comes from the existing arrangement rather than from anything this project
-builds.
+Drive. Permissioning there is already at the LEA level: a campus DSO can read
+another campus's folder within their own region, but not a folder in a different
+region. That is exactly what decision 4 requires, so region-wide read and
+cross-LEA isolation both come from the existing arrangement -- this project
+builds no permission machinery of its own.
 
 ### The Sheet
 
@@ -453,11 +459,4 @@ reconciliation gate.
 - **Which manifest identifier leads the PowerSchool join.** See _Identifier
   chain_. Both candidate keys need their match rate measured against PowerSchool
   before the tier order is fixed; only the manifest side has been measured so
-  far.
-- **Whether the existing school-directory permissions grant read across campuses
-  within a region.** Decision 4 requires that they do. The existing Drive
-  structure guarantees isolation _between_ LEAs, which is the stated guardrail,
-  but if school directories are themselves access boundaries then a transferring
-  student's receiving campus cannot open the packet holding their report -- the
-  exact failure this project exists to fix. If so, packets need a region-level
-  location or an explicit per-region reader group instead.
+  far. This is the plan's first task.
