@@ -895,7 +895,7 @@ models:
           downstream normalization is case-insensitive.
       - name: subject
         data_type: string
-        description: 'English Language Arts' or 'Mathematics'.
+        description: "'English Language Arts' or 'Mathematics'."
       - name: test_code
         data_type: string
         description: ELAGP (ELA) or MATGP (Mathematics).
@@ -916,17 +916,18 @@ models:
       - name: test_score_complete
         data_type: numeric
         description: >-
-          Entirely NULL from Cambium, where Pearson set it to 1 on every filtered
-          row. Carried through so the vendor difference is visible here rather
-          than appearing downstream as a union null-fill. The single consumer,
-          int_students__graduation_path_codes, coalesces it. See design spec D2.
+          Entirely NULL from Cambium, where Pearson set it to 1 on every
+          filtered row. Carried through so the vendor difference is visible here
+          rather than appearing downstream as a union null-fill. The single
+          consumer, int_students__graduation_path_codes, coalesces it. See
+          design spec D2.
       - name: test_date
         data_type: date
         description: >-
           Date of the earliest online unit start across units 1 through 4,
           coalesced to the parsed assessment session start. The coalesce is
-          required, not defensive: unit timestamps are populated for ELA only, so
-          unit-only derivation nulls every Mathematics row.
+          required, not defensive: unit timestamps are populated for ELA only,
+          so unit-only derivation nulls every Mathematics row.
         data_tests:
           - not_null:
               config:
@@ -936,7 +937,8 @@ models:
         description: N, IEP, 504, or B (both IEP and 504).
       - name: multilingual_learner
         data_type: string
-        description: Y/N multilingual learner flag; maps to englishlearnerel downstream.
+        description:
+          Y/N multilingual learner flag; maps to englishlearnerel downstream.
       - name: hispanic_or_latino_ethnicity
         data_type: string
         description: Y/N federal ethnicity flag.
