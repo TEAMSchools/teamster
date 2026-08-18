@@ -568,31 +568,69 @@ stg_powerschool__u_storedgrades_de      (the DE detail — course, score, instit
         └─ rpt_tableau__college_assessment_dashboard_de
 ```
 
+**It is the only CARAT model with no intermediate layer.** The report reads
+three staging models directly. There is no `int_` model to hold shared logic,
+which is why the store-code policy problem below has nowhere natural to live.
+
+`stg_powerschool__u_storedgrades_de` is a PowerSchool **custom** table (the `U_`
+prefix), populated per district, holding the college-side detail a stored grade
+cannot carry: which college course, which institution, which semester, the
+college's own score, and pass/fail.
+
 ### Grain
 
 One row per stored-grade record for a course whose name ends in `(DE)`, with
-`storecode` in `Y1` or `Q2`. There is no academic-year filter — it is full
-history.
+`storecode` in `Y1` or `Q2`. No academic-year filter — full history, AY2021
+through AY2025, 6 institutions.
+
+### The row count does not mean what it looks like
+
+1,658 rows over 563 students, and the arithmetic behind that number is worth
+following because two separate defects inflate it. Measured 2026-08:
+
+| Step                                                        | Rows      |
+| ----------------------------------------------------------- | --------- |
+| `(DE)` stored grades with `storecode` in `Y1` / `Q2`        | 1,453     |
+| of which have no matching DE detail row → every `de_*` null | 680 (41%) |
+| of which do have detail (773) but fan out on that join      | 978       |
+| **View total**                                              | **1,658** |
+
+So **41% of the view's rows carry no dual-enrollment detail at all** — no course
+name, no institution, no score, no pass flag. The `(DE)`-named grade exists in
+PowerSchool; the custom table has nothing for it. Any count of DE participation
+taken from this view without filtering `de_course_name is not null` is counting
+those.
 
 ### Behavior worth knowing
 
-!!! warning "`unique_identifier` is not unique"
+!!! warning "Three separate things multiply rows here, and none is fixed"
 
-    It is `student_number || '_' || course_number`, which carries neither
-    academic year nor store code. A student taking the same DE course in two
-    years, or holding both a `Q2` and a `Y1` row for one course, collides. Do
-    not use it as a key.
+    **1. The Q2/Y1 duplication has already happened.** The model carries a `TODO`
+    predicting it as a future risk — institutions now submit twice yearly, fall to
+    `Q2` and spring to an unsettled code, so a student could end up with both for
+    one course in one year. That is no longer hypothetical: 902 `Y1` and 551 `Q2`
+    rows cover only 941 distinct student-course-years, so **512 rows are a second
+    store code for a grade already present**, and 74% of the view's rows sit on an
+    identifier that repeats. The store-code policy is still unresolved.
 
-**There is a live `TODO` in the model about exactly that.** DE institutions now
-submit grades twice yearly (fall to `Q2`, spring to an unsettled code). If
-spring grades land on `Y1` in the same academic year, a student holds both a
-`Q2` and a `Y1` row for the same course and the view duplicates. The store-code
-policy is unresolved; a priority or fallback CTE is the anticipated fix.
+    **2. The DE-detail join fans out.** 198 stored grades have more than one
+    `stg_powerschool__u_storedgrades_de` row (up to three), adding 205 rows. The
+    join is on `sg.dcid = de.storedgradesdcid` with no dedupe.
+
+    **3. `unique_identifier` is not unique** — 941 distinct values across 1,658
+    rows. It is `student_number || '_' || course_number`, carrying neither academic
+    year nor store code. Do not use it as a key.
+
+    Worth noting for whoever fixes this: the missing `academic_year` is **not**
+    currently a cause. Every duplicated identifier duplicates *within* one year —
+    zero duplicate across years — because no student has yet repeated a DE course
+    in a later year. Adding the year to the key would therefore fix nothing today
+    while looking like a fix.
 
 **Every join is a `LEFT JOIN` from stored grades**, including the one to
 `stg_powerschool__u_storedgrades_de`, whose `de_course_name is not null`
-predicate sits in the `ON` clause. So a `(DE)`-named course with no DE detail
-record still produces a row, with every `de_*` column null.
+predicate sits in the `ON` clause rather than the `WHERE`. That is deliberate —
+it is what preserves the 680 detail-less rows above rather than dropping them.
 
 ## `rpt_tableau__ap_assessment_dashboard`
 
@@ -612,6 +650,50 @@ stg_google_sheets__collegeboard__ap_course_crosswalk (course-name resolution)
 int_extracts__student_enrollments                    (population)
         └─ rpt_tableau__ap_assessment_dashboard
 ```
+
+### The exam-score pipeline splits at 2018
+
+`int_assessments__ap_assessments` unions two sources on a hard year boundary,
+and the boundary is the first year a College Board file existed. Nothing
+overlaps — each year comes from exactly one source, and `data_source` on every
+row says which. Measured 2026-08:
+
+| `data_source` | Source model                             | Years     | Rows  | Students | Subjects |
+| ------------- | ---------------------------------------- | --------- | ----- | -------- | -------- |
+| `ADB`         | `int_kippadb__standardized_test_unpivot` | 2010–2017 | 878   | 406      | 19       |
+| `CB File`     | `int_collegeboard__ap_unpivot`           | 2018–2025 | 4,775 | 1,694    | 24       |
+
+The `ADB` branch is Salesforce, filtered to `score_type = 'ap'`, and carries no
+irregularity codes — those columns are literal nulls on every pre-2018 row. So
+an irregularity filter silently excludes all of history.
+
+The `CB File` branch is the richer one, and it is where the crosswalks live:
+
+```text
+stg_collegeboard__ap                              (the score file)
+stg_google_sheets__collegeboard__ap_id_crosswalk  (College Board ID → student number)
+stg_google_sheets__collegeboard__ap_course_crosswalk
+stg_google_sheets__collegeboard__ap_codes         (joined three times)
+        └─ int_collegeboard__ap_unpivot
+```
+
+!!! warning "An unmatched College Board ID vanishes silently"
+
+    `int_assessments__ap_assessments` ends with
+    `where powerschool_student_number is not null`. That column is resolved through
+    `stg_google_sheets__collegeboard__ap_id_crosswalk`, so a College Board record
+    whose ID is missing from that sheet resolves to null and is **dropped with no
+    error and no row count anywhere**. This is the failure mode the AP ingest
+    protocol exists to catch — see
+    `.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md`, which covers
+    matching a new score file's IDs and surfacing the unmatched rows for crosswalk
+    entry. A score file that loads cleanly is not evidence its students were
+    matched.
+
+`rn_highest` is ranked over `powerschool_student_number, ap_course_name` by
+`exam_score desc`, so a student who sat the same AP exam twice has the better
+score at rank 1. The reporting view does not filter on it, so both attempts
+appear.
 
 ### Grain
 
