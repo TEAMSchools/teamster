@@ -41,10 +41,10 @@ select
     ac.state_code as attendance_code_state_code,
     ac.excused as attendance_code_excused,
     ac.tardy as attendance_code_tardy,
-    ac.state_attendance_type as attendance_code_state_attendance_type,
 
     atc.title as attendance_teacher_code_title,
     atc.short_name as attendance_teacher_code_short_name,
+    atc.type as attendance_teacher_code_type,
     atc.state_code as attendance_teacher_code_state_code,
     atc.excused as attendance_teacher_code_excused,
     atc.tardy as attendance_teacher_code_tardy,

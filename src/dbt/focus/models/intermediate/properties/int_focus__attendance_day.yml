@@ -104,8 +104,6 @@ models:
         description: Whether the code counts toward chronic absenteeism.
       - name: daily_code_truancy
         description: Whether the code counts toward truancy.
-      - name: daily_code_state_attendance_type
-        description: State attendance type the code reports under.
       - name: marking_period_title
         description: Marking-period name from stg_focus__marking_periods.
       - name: marking_period_short_name

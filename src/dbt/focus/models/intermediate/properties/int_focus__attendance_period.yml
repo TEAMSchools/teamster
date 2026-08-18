@@ -107,12 +107,14 @@ models:
         description: Y when the official code marks the absence excused.
       - name: attendance_code_tardy
         description: Y when the official code represents a tardy.
-      - name: attendance_code_state_attendance_type
-        description: State attendance type the official code reports under.
       - name: attendance_teacher_code_title
         description: Readable name of the code the teacher originally entered.
       - name: attendance_teacher_code_short_name
         description: Abbreviated teacher-entered attendance code.
+      - name: attendance_teacher_code_type
+        description: >-
+          Whether the teacher-entered code is teacher-entered or official
+          (office-entered).
       - name: attendance_teacher_code_state_code
         description: State-reported code for the teacher-entered code.
       - name: attendance_teacher_code_excused
