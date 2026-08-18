@@ -239,10 +239,15 @@ def test_avro_schema_includes_load_bearing_fields():
 
 
 def test_all_fields_are_nullable_strings():
-    # the SFTP factory hands every CSV value through as a string or None;
-    # a non-string annotation would fail Avro validation at write time
+    # the SFTP factory hands every CSV value through as a string or None, so a
+    # non-string annotation would fail Avro validation at write time. Assert the
+    # ANNOTATION, not just the default -- an `int | None = None` field would
+    # satisfy a defaults-only check while still breaking at write time.
     for name, field in NJGPA.model_fields.items():
         assert field.default is None, f"{name} has a non-None default"
+        assert field.annotation == (str | None), (
+            f"{name} is annotated {field.annotation}, expected str | None"
+        )
 ```
 
 - [ ] **Step 4: Run the test**
@@ -711,8 +716,8 @@ Task 6.
   (string), `period` (string), `state_student_identifier` (int64),
   `student_test_uuid` (string), `student_with_disabilities` (string), `subject`
   (string), `test_code` (string), `test_date` (date), `test_performance_level`
-  (numeric), `test_scale_score` (numeric), `test_status` (string),
-  `two_or_more_races` (string), `white` (string).
+  (numeric), `test_scale_score` (numeric), `test_score_complete` (numeric),
+  `test_status` (string), `two_or_more_races` (string), `white` (string).
 
 - [ ] **Step 1: Write the model**
 
