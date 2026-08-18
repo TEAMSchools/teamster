@@ -165,6 +165,48 @@ twice counts twice under either measure. Do not "fix" that by filtering
 `rn_highest = 1` — the whole point of the `scale_score` option is to see every
 attempt, and both measures share one row set.
 
+**The view is organized by graduating class only, and grade level never enters
+it.** There is no `grade_level` column on the model, and the workbook view does
+not break out or filter on grade — it is `test_type`, then `graduation_year`, by
+`scope`. So every score a class ever earned for a given test lands in one cell,
+whatever grade the student was in when they sat it.
+
+That is the intended behavior, not a gap. The question the view answers is what
+a cohort scored on a test, so scoping it to a grade would discard real results.
+
+What it does mean is that **a cell's population is whoever in that class ever
+sat that test, and those populations vary by two orders of magnitude.** The view
+displays no student count, so a cell resting on seven students is visually
+indistinguishable from one resting on four hundred. Measured 2026-08, Official,
+Aligned Subject Area `Total`, Max Scale Score — the landing-page view's own
+filter state:
+
+| Scope      | Grad 2026 | Grad 2027 | Grad 2028 |
+| ---------- | --------- | --------- | --------- |
+| PSAT 10    | 742 (354) | 621 (11)  | 759 (431) |
+| PSAT NMSQT | 930 (71)  | 785 (400) | 607 (7)   |
+
+Student counts in parentheses. The 621 and the 607 are arithmetically correct
+and rest on 11 and 7 students respectively, so they are not comparable to the
+cells beside them and are not evidence of a decline. Before reading any cell as
+a movement, check what it is built on:
+
+```sql
+select
+    graduation_year,
+    scope,
+    count(distinct student_number) as n_students,
+    round(avg(max_scale_score)) as avg_score,
+from `teamster-332318.kipptaf_tableau.rpt_tableau__college_assessment_dashboard_scores`
+where test_type = 'Official' and aligned_subject_area = 'Total'
+group by graduation_year, scope
+```
+
+Grade-bound questions belong to `_roster` and `_current`, which carry
+`grade_level` and bind a score to an expected administration. Do not reconcile a
+figure from this view against either of those — they are answering a different
+question over a differently scoped population.
+
 **Region and school are the student's current values, not the values at test
 time.** The enrollment join matches on `student_number` only, with no
 `academic_year` predicate, against the enrollment row where `rn_year = 1`. So
