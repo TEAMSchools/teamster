@@ -105,7 +105,7 @@ with
     -- Deduping here, ahead of with_flags, keeps rn_year contiguous --
     -- consumers filter on rn_year = 1 and would lose a student left holding
     -- only rn_year = 2.
-    -- TODO: drop once Focus stops accepting duplicate open stints (#4905).
+    -- TODO: drop once Focus stops accepting duplicate open stints (#4904).
     deduplicate as (
         {{
             dbt_utils.deduplicate(
