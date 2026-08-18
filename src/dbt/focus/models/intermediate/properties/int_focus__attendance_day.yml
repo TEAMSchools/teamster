@@ -1,0 +1,119 @@
+models:
+  - name: int_focus__attendance_day
+    description: >-
+      Focus daily attendance with the daily attendance code resolved to its
+      title and excused/tardy flags, plus marking-period context — one row per
+      student per school date, the same grain as stg_focus__attendance_day.
+      state_value is the present/absent classification; the code join supplies
+      the reason for an absence, not the classification itself. daily_code holds
+      an attendance_codes short_name rather than an id, and codes are scoped per
+      school per year, so school is resolved from the marking period before the
+      code join. No attendance_calendar join — its minutes column is a single
+      sentinel value and detecting missing attendance records needs an
+      enrollment-by-calendar-day scaffold at a different grain. Internal-only —
+      a rpt_ view must sit between this model and any external consumer.
+    columns:
+      - name: student_attendance_day_id
+        description: >-
+          Primary key — Focus attendance_day id; one row per student per school
+          date.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        description: >-
+          Focus school year start year the attendance was taken in (e.g. 2026 =
+          2026-27).
+      - name: schoolid
+        description: >-
+          Focus school id, resolved from the marking period because
+          attendance_day carries no school_id of its own. Null on the few rows
+          whose marking_period_id does not resolve.
+      - name: student_id
+        description: >-
+          Focus student id. Note this is the network student number prefixed
+          with `8400` (Miami-Dade's FLDOE district number), not the bare student
+          number.
+        config:
+          meta:
+            contains_pii: true
+      - name: school_date
+        description: Calendar date the attendance was recorded for.
+      - name: marking_period_id
+        description: Focus marking-period id the school date falls in.
+      - name: daily_code
+        description: >-
+          Raw daily attendance code as an attendance_codes short_name (U, AE,
+          AD). Null when the student was present.
+      - name: state_value
+        description: >-
+          Present/absent classification — 1 present, 0 absent. Populated on
+          every row and independent of daily_code.
+      - name: minutes_present
+        description: Minutes the student was present for the day.
+      - name: minutes_absent
+        description: Minutes the student was absent for the day.
+      - name: time_in
+        description: Time the student arrived, where recorded.
+      - name: time_out
+        description: Time the student left, where recorded.
+      - name: comment
+        description: Free-text comment on the day's attendance.
+        config:
+          meta:
+            contains_pii: true
+      - name: note_approved
+        description: Whether an attached attendance note was approved.
+      - name: note_message
+        description: Free-text message on an attached attendance note.
+        config:
+          meta:
+            contains_pii: true
+      - name: notified_callouts
+        description: Callout notifications sent for the day's attendance.
+      - name: admin_user_id
+        description: Focus user id of the administrator who recorded the row.
+      - name: last_updated_user
+        description: Identifier of the user who last updated the row.
+      - name: last_updated_date
+        description: Source last-updated timestamp.
+      - name: imported
+        description: Y/N — whether the attendance row was imported.
+      - name: daily_code_id
+        description: >-
+          Focus attendance_codes id the daily_code short name resolved to, for
+          the row's school and year.
+      - name: daily_code_title
+        description: >-
+          Readable daily attendance code name (Absent Unexcused, Absent Excused,
+          Absent Documented).
+      - name: daily_code_type
+        description: >-
+          Whether the code is teacher-entered or official (office-entered).
+      - name: daily_code_state_code
+        description: State-reported attendance code — P present, A absent.
+      - name: daily_code_excused
+        description: Y when the absence is excused.
+      - name: daily_code_tardy
+        description: Y when the code represents a tardy.
+      - name: daily_code_chronic_absenteeism
+        description: Whether the code counts toward chronic absenteeism.
+      - name: daily_code_truancy
+        description: Whether the code counts toward truancy.
+      - name: daily_code_state_attendance_type
+        description: State attendance type the code reports under.
+      - name: marking_period_title
+        description: Marking-period name from stg_focus__marking_periods.
+      - name: marking_period_short_name
+        description: Abbreviated marking-period name.
+      - name: marking_period_type
+        description: >-
+          Marking-period granularity (year, semester, quarter, progress period).
+      - name: marking_period_start_date
+        description: First date of the marking period.
+      - name: marking_period_end_date
+        description: Last date of the marking period.
