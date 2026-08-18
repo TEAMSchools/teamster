@@ -1,0 +1,70 @@
+models:
+  - name: stg_focus__gradebook_assignment_types_join_course_periods
+    description: >-
+      Focus link between a gradebook assignment category and the course periods
+      it applies to, carrying that category's weight toward the section's final
+      grade. One row per category per course period per marking period —
+      category weights change by marking period, so the marking period is part
+      of the grain.
+    columns:
+      - name: id
+        description: Primary key — Focus category/course-period link id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: assignment_type_id
+        description: >-
+          Focus gradebook assignment category being linked (joins
+          `stg_focus__gradebook_assignment_types`).
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__gradebook_assignment_types')
+                field: assignment_type_id
+              config:
+                severity: error
+      - name: course_period_id
+        description: Focus course period (section) the category applies to.
+        data_type: int
+      - name: marking_period_id
+        description: >-
+          Focus marking period the weighting applies to. Part of the grain — the
+          same category and section repeat across marking periods with different
+          weights.
+        data_type: int
+      - name: template_id
+        description: Gradebook template the category came from, where templated.
+        data_type: int
+      - name: template_category_id
+        description: Template category the category came from, where templated.
+        data_type: int
+      - name: final_grade_percent
+        description: >-
+          Percentage this category contributes to the section's final grade for
+          the marking period. Populated on nearly every row.
+        data_type: numeric
+      - name: drop_lowest_grades
+        description: >-
+          Number of lowest scores dropped from the category before averaging.
+        data_type: numeric
+      - name: color
+        description: Display color assigned to the category in the gradebook.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
