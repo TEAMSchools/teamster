@@ -31,10 +31,14 @@ dagsterCloudAgent:
   env:
     # Reduce cleanup delay for orphaned code server deployments left by previous
     # agent IDs after Helm upgrades. Defaults: grace=3600s, interval=1800s.
-    # With replicas: 1, each upgrade leaves 1 orphaned deployment per location;
-    # the 10-min heartbeat expiry + 15-min grace period ensures replacements are
-    # reconciled before orphans are deleted.
-    DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS: "900"
+    # With replicas: 1, each upgrade leaves 1 orphaned deployment per location.
+    # The grace period must exceed the worst-case first reconcile so replacements
+    # are reconciled before orphans are deleted -- CLAUDE.md: "do not set grace
+    # period below reconciliation time". That worst case is now ~1200s (see the
+    # readinessProbe note below), so 900s would sit under it; 1500s restores the
+    # invariant. Cost is bounded: orphans linger ~10 min longer, and only after a
+    # helm upgrade.
+    DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS: "1500"
     DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL: "600"
 
   readinessProbe:
@@ -43,7 +47,15 @@ dagsterCloudAgent:
         - /bin/bash
         - -c
         - test -f /tmp/finished_initial_reconciliation_sentinel.txt
-    failureThreshold: 60 # 10 min (60 × 10s) for initial reconciliation
+    # Must cover the WORST-CASE first reconcile, because the sentinel this probe
+    # tests is only written after the first full _reconcile returns
+    # (user_code_launcher.py, gated on _reconcile_count == 0). Per location that
+    # is deploymentStartupTimeout (900s) + serverProcessStartupTimeout (300s) =
+    # 1200s, and locations are reconciled concurrently via asyncio.gather, so
+    # ~1200s total rather than 5x that. 130 x 10s = 1300s leaves margin. Raising
+    # deploymentStartupTimeout without raising this stalls the agent rollout on
+    # exactly the helm upgrade that ships it.
+    failureThreshold: 130 # 21.7 min (130 × 10s) for initial reconciliation
     initialDelaySeconds: 0
     periodSeconds: 10
 
@@ -103,6 +115,12 @@ workspace:
   # records the location as ERROR, and _should_trigger_recovery then refuses to
   # retry ("control plane agrees there is an error") -- the location stays dead
   # until a push or a manual redeploy.
+  #
+  # Agent-global, so it applies to branch deployments too
+  # (dagsterCloud.branchDeployments): a branch deployment that cannot schedule now
+  # takes 15 minutes to report instead of 5. Raising this also moves the agent's
+  # worst-case first reconcile, which the readinessProbe and cleanup grace period
+  # below are sized against -- change all three together.
   deploymentStartupTimeout: 900
 
   serverProcessStartupTimeout: 300
@@ -155,7 +173,8 @@ workspace:
     podSpecConfig:
       # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
       # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
-      # tolerate this: PDB-protected (`minAvailable: 1`), Dagster Cloud
+      # tolerate this: PDB-protected (`maxUnavailable: 1` -- see extraManifests
+      # below; do NOT switch to minAvailable, per CLAUDE.md), Dagster Cloud
       # serves the last-good Deployment until replacements bind.
       nodeSelector:
         cloud.google.com/compute-class: Scale-Out
