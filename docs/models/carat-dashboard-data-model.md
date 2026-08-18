@@ -129,10 +129,13 @@ graduation-year cohort.
 - Rows: `test_type`, then `graduation_year`
 - Columns: `scope` — PSAT 8/9, PSAT 10, PSAT NMSQT, SAT, ACT
 - Measure: average of the selected score column
-- Filters: Region, School, Aligned Subject Area, Grad Year, Score Category
+- Filters: Region, School, **Test Type**, Aligned Subject Area, Grad Year, Score
+  Category
 
 Score Category selects between the two measure columns, `scale_score` and
 `max_scale_score`. Aligned Subject Area selects `Total` or a section.
+`test_type` is both a row dimension and a filter, so Official and Practice can
+be stacked or isolated.
 
 ### Lineage
 
@@ -142,20 +145,37 @@ int_extracts__student_enrollments            (region, school, grad year, cohort)
         └─ rpt_tableau__college_assessment_dashboard_scores
 ```
 
-The model is a single `select` with one join and no CTEs — the simplest of the
-six. It adds no calculation; all aggregation happens in Tableau.
+The simplest model in this pipeline — one join, one score-type filter, and a
+dedupe. It adds no calculation; all aggregation happens in Tableau. The two CTEs
+are `scores` (the join and filter) and `deduplicated`, which exists only to
+absorb the Salesforce duplicates described below.
+
+The enrollment join contributes exactly one row per student — 6,970 rows over
+6,970 distinct students under its four predicates — so it cannot fan the score
+side out. Verified 2026-08.
 
 ### Grain
 
-One row per student per attempt. Roughly 29,000 official rows plus 1,100
-practice, across about 4,600 students and graduation years 2011 through 2029.
+One row per student per attempt. 29,192 official rows and 1,133 practice, across
+4,661 students and graduation years 2011 through 2029.
 
 ### Behavior worth knowing
 
-**Both test types appear here.** The model reads
-`int_assessments__all_college_assessments`, so `test_type` holds `Official` and
-`Practice`, and the workbook's row header separates them. Practice contributes
-AY2023 ACT today — 1,103 rows across composite, math and reading.
+**Both test types appear here, and practice SAT has now landed.** The model
+reads `int_assessments__all_college_assessments`, so `test_type` holds
+`Official` and `Practice`, and the workbook's row header separates them.
+Practice is 1,133 rows:
+
+| Scope | Score types                                | Rows  | Students |
+| ----- | ------------------------------------------ | ----- | -------- |
+| ACT   | `act_composite`, `act_math`, `act_reading` | 1,103 | 378 max  |
+| SAT   | `sat_total_score`, `sat_ebrw`, `sat_math`  | 30    | 10       |
+
+The 30 SAT rows are the **first practice scores to reach this view** — the point
+of the practice work. Earlier revisions of this section said practice was AY2023
+ACT only, which was true before that shipped. Expect the SAT figure to grow as
+SY26-27 administrations land, and PSAT 8/9 and PSAT 10 to appear once their
+Illuminate sessions exist.
 
 **Both Score Category measures average over the same rows, and that is
 deliberate.** The workbook toggles the measure between `scale_score`, each
@@ -291,9 +311,10 @@ of shifting a reported average.
 hold both on one date at one score. Without it the dedupe would collapse a real
 pair, and the uniqueness test would fail on what the dedupe correctly kept.
 
-**A small number of rows carry no graduation year.** Fewer than ten. They fall
-out of any grad-year-grouped view silently rather than appearing in an unknown
-bucket.
+**A small number of rows carry no graduation year.** Nine, all Official,
+measured 2026-08. They fall out of any grad-year-grouped view silently rather
+than appearing in an unknown bucket — so the landing-page view's cells do not
+quite sum to the model's row count.
 
 ## `rpt_tableau__college_assessment_dashboard_current`
 
