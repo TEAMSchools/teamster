@@ -203,10 +203,30 @@ a null course period rather than disappearing:
 
 ## Testing
 
-Each model carries `unique` and `not_null` on its primary key at
-`severity: error`. Those tests are the fan-out guard: any join that multiplies
-rows fails the build loudly rather than silently inflating grade or attendance
-counts.
+Each model carries `unique` and `not_null` on its primary key, declared at
+`severity: error` to match the surrounding staging models.
+
+**That declaration does not take effect, and the tests run at `warn`.** The root
+project sets `data_tests: +severity: warn` in
+`src/dbt/kippmiami/dbt_project.yml`, and root-project config outranks config
+declared inside an installed package — which every `focus` model is. The
+manifest confirms it: existing tests such as
+`unique_stg_focus__attendance_codes_id` resolve to `warn` despite their YAML
+declaring `error`.
+
+So a join that multiplied rows would warn, not fail. The PK tests are a signal,
+not a gate. Grain was therefore confirmed directly rather than inferred from a
+green build — `count(*)` against `count(distinct <pk>)` on each built model:
+
+| Model                                                  | Rows    | Distinct PK |
+| ------------------------------------------------------ | ------- | ----------- |
+| `int_focus__attendance_day`                            | 7,701   | 7,701       |
+| `int_focus__attendance_period`                         | 15,633  | 15,633      |
+| `stg_focus__gradebook_assignments_join_course_periods` | 428,025 | 428,025     |
+
+Run that check on `int_focus__gradebook_grades` too before merging. Whether the
+repo wants `+severity: warn` overridden for primary-key tests is a network-wide
+policy question, out of scope here.
 
 ## Sequencing
 
