@@ -58,6 +58,8 @@ nav:
       - Finalsite to Focus Import: reference/finalsite-focus-import.md
       - Marts Data Models: reference/marts-data-models.md
       - Automation Conditions: reference/automation-conditions.md
+      - Quill Pilot Demographics Extract:
+          reference/quill-seta-ed-demographics-extract.md
   - Models:
       - FRESH Dashboard Data Model: models/fresh-dashboard-data-model.md
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
