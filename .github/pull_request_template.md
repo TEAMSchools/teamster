@@ -2,7 +2,17 @@
 
 ## Summary & Motivation
 
-> "When merged, this pull request will..."
+> Plain language, no jargon — what changed and why. A reviewer skimming just
+> this section should understand the change. Save tradeoffs, edge cases, and
+> verification detail for "Reviewer Notes" below.
+
+"When merged, this pull request will..."
+
+## Reviewer Notes
+
+> Optional. Plain language, like Summary above — name what's worth a second look
+> and why, in a line or two each. Full technical detail, exact values, and edge
+> cases belong in "For Claude" below. Delete if there's nothing here.
 
 ## Self-review
 
@@ -73,12 +83,15 @@
 <details>
 <summary>For Claude</summary>
 
-> Context, not instructions — AI involvement, what to focus on, what's
-> intentionally out of scope, related issues/PRs. Delete if there's nothing to
-> add.
+> Full technical detail behind the Reviewer Notes flags above — exact values,
+> edge cases, full reasoning — plus anything else simplified or cut from Summary
+> for plain-language readability, AI involvement, and anything a future
+> `@claude` invocation needs. Delete if there's nothing to add.
 
-<!-- e.g. "Claude-assisted, human-directed. The risky part is the retry logic
-in src/x.py; the reformatted imports are just `ruff --fix` noise. Closes
-#123; verified with `uv run pytest tests/test_x.py -k retry`." -->
+<!-- e.g. "Claude-assisted, human-directed. Reviewer Notes flags the column-
+projection call -- full reasoning: it matches
+stg_focus__gradebook_assignments, which projects unpopulated columns for the
+same reason, but the schedule / student_report_card_grades precedent goes
+the other way for wide Florida-reporting tables." -->
 
 </details>
