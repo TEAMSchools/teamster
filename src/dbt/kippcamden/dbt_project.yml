@@ -44,6 +44,8 @@ models:
   finalsite:
     api:
       +enabled: true
+  cambium:
+    +materialized: table
   deanslist:
     +materialized: table
     staging:
