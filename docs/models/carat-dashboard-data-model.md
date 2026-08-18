@@ -5,10 +5,31 @@ Tableau workbook and the dbt models behind it.
 
 ## What is CARAT?
 
-CARAT is the KIPP Forward dashboard for college-entrance assessment results —
-SAT, PSAT 8/9, PSAT 10, PSAT NMSQT, and historical ACT. It reports scores,
-participation, benchmark attainment, and progress against goals, for current
-high school students and recent cohorts.
+CARAT is the KIPP Forward dashboard for the **tests and courses colleges use in
+admission decisions**. It covers three families, so the name's "assessments" is
+broader than entrance exams — two of the three are coursework:
+
+| Family                 | Test | Course | What it covers                                                             |
+| ---------------------- | ---- | ------ | -------------------------------------------------------------------------- |
+| **Entrance exams**     | yes  | no     | SAT, PSAT 8/9, PSAT 10, PSAT NMSQT, historical ACT — official and practice |
+| **Advanced Placement** | yes  | yes    | AP course enrollment and the exam score that can earn college credit       |
+| **Dual enrollment**    | no   | yes    | College courses taken for credit in high school, and their grades          |
+
+AP is the one that is both, which is why its model carries the
+course-versus-exam combination as its own column — a student can take the course
+without sitting the exam, or sit the exam without taking the course, and
+colleges read those differently.
+
+For each family it reports what a student has done and how it compares to a bar
+— scores, participation, benchmark attainment, and progress against KIPP
+Forward's goals — for current high school students and recent cohorts.
+
+The three families answer the same question and are read side by side in one
+workbook, but they do not share a pipeline. Entrance exams have two score
+pipelines meeting in a hub, a goals sheet, and a threshold scaffold; AP and dual
+enrollment have none of that. Sections below are grouped by pipeline rather than
+by family, so the entrance-exam machinery dominates — that reflects where the
+complexity is, not what the dashboard is for.
 
 ## Models behind the workbook
 
@@ -25,10 +46,10 @@ seven models. All seven are documented below.
 | `rpt_tableau__college_assessment_dashboard_de`              | Dual enrollment course grades              | student × DE course               |
 | `rpt_tableau__ap_assessment_dashboard`                      | AP course enrollment and exam results      | student × year × AP subject       |
 
-Only the first five are college-entrance assessment models and only they were
-touched by the practice work. `_de` and the AP model share the workbook and the
-exposure but not the pipeline — they are documented here because the exposure
-owns them, not because they are related.
+The first five are the entrance-exam family, and only they were touched by the
+practice work. `_de` and the AP model belong to the dashboard's purpose but not
+to its pipeline — no hub, no goals sheet, no threshold scaffold, no practice
+concept. Read the grouping below as by-pipeline, not by-importance.
 
 Three further models exist in the repo but are `enabled: false` and are not part
 of the workbook — `rpt_tableau__college_assessment_dashboard`,
