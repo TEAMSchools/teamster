@@ -83,10 +83,14 @@
 <details>
 <summary>For Claude</summary>
 
-> AI involvement, and anything a future `@claude` invocation needs that isn't
-> already covered above. Not for review judgment calls — those belong in
-> "Reviewer Notes", visible to every reviewer. Delete if there's nothing to add.
+> Detail simplified or cut from the sections above for plain-language
+> readability — exact values, edge cases, full technical grounding — plus AI
+> involvement and anything a future `@claude` invocation needs. Not for judgment
+> calls a human reviewer needs to weigh — those belong in "Reviewer Notes",
+> visible to everyone. Delete if there's nothing to add.
 
-<!-- e.g. "Claude-assisted, human-directed." -->
+<!-- e.g. "Claude-assisted, human-directed. `state_value` isn't actually an
+FK to attendance_codes despite the name -- see the full column notes in
+migration_details.md if you need them." -->
 
 </details>
