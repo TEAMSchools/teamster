@@ -51,7 +51,12 @@ def bigquery_table_modified_sensor(
     offset = cursor.get(OFFSET_CURSOR_KEY, 0)
 
     # tolerate a cursor written before this key existed, and an offset left
-    # dangling by a deploy that shortened asset_selection
+    # dangling by a deploy that shortened asset_selection. A deploy that REORDERS
+    # asset_selection without changing its length is not detectable here: the
+    # resumed tick polls a different slice than the one it skipped. That is
+    # bounded and self-healing -- per-asset state is keyed by identifier rather
+    # than index, so the worst case is one sweep's detection delay, never a lost
+    # or duplicated materialization.
     if not isinstance(offset, int) or not 0 <= offset < len(asset_selection):
         offset = 0
 
@@ -103,13 +108,23 @@ def bigquery_table_modified_sensor(
 
     cursor[OFFSET_CURSOR_KEY] = next_offset
 
+    if asset_events:
+        skip_reason = None
+    elif next_offset:
+        # a partial slice found nothing, but assets remain unpolled this sweep
+        skip_reason = SkipReason(
+            f"No modified tables in this slice; resuming at index {next_offset}."
+        )
+    else:
+        skip_reason = SkipReason("No modified tables.")
+
     # the cursor is returned on every tick, not just ticks that emit events --
     # otherwise the resume offset would be discarded and the tail of
     # asset_selection would never be polled
     return SensorResult(
         asset_events=asset_events,
         cursor=json.dumps(obj=cursor),
-        skip_reason=(None if asset_events else SkipReason("No modified tables.")),
+        skip_reason=skip_reason,
     )
 
 
