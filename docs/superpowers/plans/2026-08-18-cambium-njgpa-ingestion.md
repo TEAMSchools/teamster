@@ -1698,6 +1698,8 @@ Refs #4899"
 - Modify: `.github/workflows/deploy-prod-kippcamden.yaml`
 - Modify: `src/dbt/CLAUDE.md`
 - Modify: `src/teamster/CLAUDE.md`
+- Modify: `src/teamster/code_locations/kippnewark/CLAUDE.md`
+- Modify: `src/teamster/code_locations/kippcamden/CLAUDE.md`
 
 **Interfaces:**
 
@@ -1755,6 +1757,15 @@ alphabetical list in the **SFTP file drop** row, and add `cambium` to the
 parenthetical "Schema-only libraries" sentence below the table (it lists
 collegeboard, dayforce, fldoe, nsc, pearson, performance_management — `cambium`
 belongs there since the asset is built in the code location).
+
+Then add a `cambium` row to the integrations table in BOTH
+`src/teamster/code_locations/kippnewark/CLAUDE.md` and
+`src/teamster/code_locations/kippcamden/CLAUDE.md`, immediately above the
+existing `pearson` row (the tables are alphabetical). Copy the `pearson` row's
+shape exactly — the cambium asset is also an SFTP asset with no
+`automation_condition`, so its Automation column reads the same
+(`AutomationConditionSensor`). Note the two files use different column widths;
+match each file's own table, and let the `fmt` hook re-pad.
 
 - [ ] **Step 4: Add cambium to the two dbt-project enumerations**
 
