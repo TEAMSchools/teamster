@@ -253,6 +253,31 @@ type added upstream in future is therefore included automatically. That makes
 the view resilient to new assessments but means an unexpected score type appears
 in the scope columns without a code change.
 
+**What the denylist buys is one score type per cell.** Every surviving score
+type maps to exactly one (`scope`, `aligned_subject_area`) pair, fifteen in
+total, so no cell in the workbook averages two different measures together:
+
+| Scope      | EBRW             | Math                     | Reading       | Total             |
+| ---------- | ---------------- | ------------------------ | ------------- | ----------------- |
+| SAT        | `sat_ebrw`       | `sat_math`               | —             | `sat_total_score` |
+| PSAT 8/9   | `psat89_ebrw`    | `psat89_math_section`    | —             | `psat89_total`    |
+| PSAT10     | `psat10_ebrw`    | `psat10_math_section`    | —             | `psat10_total`    |
+| PSAT NMSQT | `psatnmsqt_ebrw` | `psatnmsqt_math_section` | —             | `psatnmsqt_total` |
+| ACT        | —                | `act_math`               | `act_reading` | `act_composite`   |
+
+The exclusions do two different jobs. `sat_math_test_score` and
+`psat10_math_test` are sub-test variants that would compete with the section
+scores in the Math cell; `psat10_reading` and `sat_reading_test_score` would
+open a Reading column for tests that report verbal as EBRW. Only `act_english`
+and `act_science` drop a subject area outright.
+
+!!! note "The two blank columns are structural, not gaps"
+
+    Selecting Aligned Subject Area `EBRW` shows every scope **except** ACT, which
+    has no EBRW concept — its verbal sections are English and Reading. Selecting
+    `Reading` shows **only** ACT, because the College Board tests report verbal as
+    EBRW. Neither blank means data is missing.
+
 **This model is deduplicated, and the duplicates come from Salesforce.** See
 _Known issue — duplicate kippadb test records_ below. The model applies
 `dbt_utils.deduplicate` on `student_number`, `test_type`, `score_type`,
