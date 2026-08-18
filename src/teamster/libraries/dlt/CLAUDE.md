@@ -218,9 +218,19 @@ changes on existing tables.
   function body or a `selected=False` resource never round-trip
   (spike-confirmed, silent) — this is why the per-table signature write lives
   inside the extracted resource, not the source.
-- `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
-  metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
-  `except` so a load failure is legible without walking the exception chain.
+- Per-table `row_count` metadata comes from `fetch_row_count_metadata()`; log
+  `pipeline.last_trace.last_normalize_info.row_counts` in an `except` so a load
+  failure is legible without walking the exception chain. **Do NOT call
+  `.fetch_row_count()` on the `run()` iterator** — it raises on any
+  materialization with no `jobs` metadata, which is what dlt emits for the first
+  load of a table that extracts zero rows (`_handle_empty_tables` writes the
+  empty truncate file only once a table has `seen_data`). With one multi-asset
+  op per district that raise kills every other table in the run. `powerschool/`
+  iterates `run()` directly and enriches each event through `_with_row_count()`,
+  which falls back to the un-enriched materialization; copy that shape rather
+  than the chained call. A stub standing in for the `run()` return value must
+  therefore be **iterable**, not expose `.fetch_row_count()` (see
+  `tests/libraries/test_powerschool_dlt_extract_workers.py`).
 - **Stream dlt progress into the Dagster event log**: in the op, set
   `dlt_pipeline.collector = LogCollector(logger=context.log, log_period=30.0)`
   (`context.log` is a `logging.Logger`). The factory default `logger="stdout"`
