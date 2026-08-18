@@ -1333,9 +1333,9 @@ models:
 - [ ] **Step 4: Add the kipptaf model config**
 
 In `src/dbt/kipptaf/dbt_project.yml`, under the top-level `models: kipptaf:`
-key, the per-integration blocks are alphabetical. `amplify:` sits between
-`alchemer:` and `collegeboard:`, so the correct slot is immediately after the
-`amplify:` block:
+key, the per-integration blocks are alphabetical. The live order is `alchemer`,
+`amplify`, `assessments`, `collegeboard`, so `cambium` goes between
+`assessments:` and `collegeboard:`:
 
 ```yaml
 cambium:
