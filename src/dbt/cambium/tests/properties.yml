@@ -14,3 +14,4 @@ data_tests:
         dagster:
           ref:
             name: stg_cambium__njgpa
+            package: cambium
