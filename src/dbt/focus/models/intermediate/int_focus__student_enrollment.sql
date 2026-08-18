@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     enrollment as (
         select
             s.first_name as student_first_name,
@@ -94,7 +95,25 @@ with
             {{ ref("int_focus__school_year_first_day") }} as fd on e.syear = fd.syear
     ),
 
+    -- Focus permits two open stints for the same student, year, and start
+    -- date; SY26 is the first year of Focus data where it has happened. The
+    -- incomplete record is demoted, then the most recently created one wins.
+    -- Deduping here, ahead of with_flags, keeps rn_year contiguous --
+    -- consumers filter on rn_year = 1 and would lose a student left holding
+    -- only rn_year = 2.
+    -- TODO: drop once Focus stops accepting duplicate open stints (#4905).
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="enrollment",
+                partition_by="student_number, academic_year, startdate",
+                order_by="(schoolid is null) asc, student_enrollment_id desc",
+            )
+        }}
+    ),
+
     with_flags as (
+        -- trunk-ignore(sqlfluff/AM04): deduplicate resolves columns at run time
         select
             *,
 
@@ -129,7 +148,7 @@ with
                 partition by student_number
                 order by academic_year desc, exitdate desc, startdate desc
             ) as rn_all,
-        from enrollment
+        from deduplicate
     ),
 
     with_year_counts as (
