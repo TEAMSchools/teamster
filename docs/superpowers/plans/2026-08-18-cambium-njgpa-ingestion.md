@@ -1254,25 +1254,56 @@ models:
     config:
       materialized: table
     columns:
+      # Columns carrying per-column data_tests sort to the top of the list, per
+      # src/dbt/CLAUDE.md. Every test sets severity explicitly: kipptaf defaults
+      # data_tests to +severity: warn, so a staging test without it silently
+      # degrades to a warning and never fails CI.
       - name: studenttestuuid
         data_type: string
+        description: >-
+          Cambium's per-test identifier, unique per row. Note these are
+          Cambium's own UUIDs, not Pearson's, so existing student-crosswalk rows
+          keyed on Pearson UUIDs will not match Cambium records.
         data_tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: administration_period
+        data_type: string
+        description: >-
+          Normalized from `period`, case-insensitively: 'FallBlock', 'Fall', and
+          'FALL' all collapse to 'Fall'. The vendor's fall token has drifted
+          historically, and an un-normalized value would create a separate
+          dim_assessment_administrations tuple from the Pearson 'Fall' rows,
+          splitting the Fall series on the dashboard with nothing erroring.
+        data_tests:
+          # accepted_values passes NULLs, so not_null is required alongside it
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Spring, Fall]
+              config:
+                severity: error
       - name: test_grade
         data_type: int64
         description: >-
-          Constant 11. NJGPA's reported grade is 11 across all Pearson history
-          including 12th-grade fall retakers; neither Cambium field reproduces
-          that. See the design spec, decision D3.
+          11 for both NJGPA test codes, asserted via a case over `test_code`
+          rather than a bare literal so an unrecognized code yields NULL instead
+          of a confident 11. NJGPA's reported grade is 11 across all Pearson
+          history including 12th-grade fall retakers, and neither Cambium field
+          reproduces that. See the design spec, decision D3.
       - name: testscorecomplete
-        data_type: int64
+        data_type: numeric
         description: >-
-          Constant 1. Cambium sends this field null, while Pearson set it to 1
-          on every row surviving the summative and attemptedness filter.
-          Required so the (currently redundant) predicate in
-          int_students__graduation_path_codes keeps admitting these rows. See
-          the design spec, decision D2.
+          Passthrough, and genuinely NULL for every Cambium row — Cambium does
+          not populate it where Pearson set it to 1. Deliberately NOT
+          synthesized to a constant; int_students__graduation_path_codes
+          coalesces it instead. See the design spec, decision D2.
       - name: assessment_name
         data_type: string
         description: Constant 'NJGPA'.
@@ -1286,9 +1317,12 @@ models:
         description: >-
           Equal to `testcode` (ELAGP, MATGP). The NJSLA Science SC-to-SCI remap
           in the Pearson model does not apply to NJGPA.
-      - name: administration_period
+      - name: _dbt_source_relation
         data_type: string
-        description: Normalized from `period` ('FallBlock' becomes 'Fall').
+        description: >-
+          Source relation identifier emitted by dbt_utils.union_relations.
+          Selected explicitly because int_pearson__all_assessments' include list
+          expects it to arrive from the relation, not to be regenerated.
       - name: _dbt_source_project
         data_type: string
         description: >-
