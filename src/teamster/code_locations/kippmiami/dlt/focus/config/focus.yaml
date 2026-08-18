@@ -111,6 +111,10 @@ assets:
     cursor_column: updated_at
   - table_name: gradebook_templates
     cursor_column: updated_at
+  - table_name: gradebook_assignments_join_course_periods
+    cursor_column: updated_at
+  - table_name: gradebook_assignment_types_join_course_periods
+    cursor_column: updated_at
   # Discipline
   - table_name: discipline_referrals
     cursor_column: updated_at
