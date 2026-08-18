@@ -2,8 +2,15 @@
 
 Refs #4862
 
-**Status:** draft for review by Laszlo de Simon and Jabari Bradley **Author:**
-Anthony Walters (analysis assisted by Claude Code) **Date:** 2026-08-14
+**Status:** revised 2026-08-14 with Jabari Bradley's review; Laszlo de Simon's
+review still outstanding **Author:** Anthony Walters (analysis assisted by
+Claude Code)
+
+> **Revision note.** Jabari answered questions 1-5 below. His answers are folded
+> into the findings they affect, and one of them produced a new finding
+> ([Finding 9](#finding-9--requester-affiliation-is-the-first-gate)) that
+> outranks most of what was here before. Anything still marked open is awaiting
+> Laszlo.
 
 ## Why you are reading this
 
@@ -15,10 +22,9 @@ that has been made.
 Every claim below links to real tickets so you can check my reading. Where I am
 guessing about intent or policy, I say so and ask.
 
-**What I need from you:** the questions in
-[What I need you to confirm or correct](#what-i-need-you-to-confirm-or-correct).
-The data tells me what happened; it cannot tell me _why_ you made a given call,
-and several conclusions hinge on that.
+**What I need from you:** the still-open items under
+[Review status](#review-status). The data tells me what happened; it cannot tell
+me _why_ a given call was made, and several conclusions hinge on that.
 
 ### A note on how ticket text is handled
 
@@ -34,13 +40,20 @@ Full text stayed on a local machine and was not committed.
 - A large slice of that is **not work you do** — it is work you _redirect_ to
   school ops or back to the requester. That reframes the intern role toward
   triage.
+- **Who is asking decides more than what they are asking about.** Regional (Room
+  9/10/11) requesters are handled in house essentially without exception;
+  school-based requesters are supposed to be redirected and mostly are not. This
+  is the sharpest rule in the data and it came from Jabari, not from me — see
+  [Finding 9](#finding-9--requester-affiliation-is-the-first-gate).
+- **PowerSchool splits inside itself**: permission asks are yours (68%), roster
+  asks are school ops' (26% yours). Jabari confirms permissions should stay 100%
+  data-team; rosters are capability-dependent, not a clean boundary.
+- **DeansList ownership is a guide gap, not a policy boundary.** You own the
+  config work because there is nothing to deflect it with. That reorders the
+  recommendations.
 - **Ask type and platform together predict the path**; platform alone is a
   weaker signal than I first thought (see
   [correction](#a-correction-made-during-this-analysis)).
-- **PowerSchool splits inside itself**: permission asks are yours (68%), roster
-  asks are school ops' (26% yours). This is the most robust finding here.
-- The DeansList access-level policy you already apply is real and repeated — but
-  applied inconsistently, which is the strongest argument for writing it down.
 
 ## Scope and method
 
@@ -181,6 +194,29 @@ PowerSchool gradebook assignment, so the fix belongs upstream:
 [380661](https://teamschools.zendesk.com/agent/tickets/380661),
 [381001](https://teamschools.zendesk.com/agent/tickets/381001).
 
+### What Jabari says is actually driving this
+
+> Most DeansList "owns" are due to the requester's lack of ability to update
+> configs in DL. Not enough training, or we don't have guides to deflect the
+> config tickets like "need new list."
+
+So the 64% is **not** a judgment that DeansList belongs to the data team. It is
+the absence of anything to redirect with. That matters because it makes the
+number movable: `DeansList report / list enable` (56) plus
+`DeansList picklist / button config` (34) is **90 tickets that are deflected
+essentially never** — 2 to ops and 4 to self-serve across four seasons. Examples
+handled in house:
+[324947](https://teamschools.zendesk.com/agent/tickets/324947),
+[324964](https://teamschools.zendesk.com/agent/tickets/324964),
+[327649](https://teamschools.zendesk.com/agent/tickets/327649),
+[328369](https://teamschools.zendesk.com/agent/tickets/328369),
+[330698](https://teamschools.zendesk.com/agent/tickets/330698),
+[331563](https://teamschools.zendesk.com/agent/tickets/331563).
+
+Finding 8 shows guides already work: when self-serve deflection tripled in 2024,
+in-house share fell with it. Writing the missing config guides converts
+execute-work into deflect-work permanently.
+
 ## Finding 4 — PowerSchool splits inside itself
 
 The strongest and most actionable result. Same platform, opposite answers:
@@ -190,8 +226,29 @@ The strongest and most actionable result. Same platform, opposite answers:
 | Permission / account (admin vs teacher, SSO, campus)  | 216     | 75       | 14    | 21     | 68%  |
 | Roster / section (homeroom, section, lead/co-teacher) | 70      | 8        | 15    | 8      | 26%  |
 
-A 2.6x difference within one platform. Proposed rule: **PowerSchool permissions
-are the data team's; PowerSchool rosters are school ops'.**
+A 2.6x difference within one platform. Jabari confirms the permission half as
+policy and complicates the roster half:
+
+> Permissions = We own 100% and should stay that way. Rosters = Depends on
+> capability of DSO... sometimes a quick Zoom call is necessary for data
+> accuracy, leads to less errors.
+
+Three consequences:
+
+1. **Permissions are settled** — data team owns them, and the runbook should say
+   so flatly rather than describing an observed tendency.
+1. **Rosters are not a rule, they are a capability question.** A blanket "send
+   rosters to ops" would be wrong. On which DSOs can take them, Jabari's answer
+   was that it is "really school by school, some DSOs are vets, some are rookies
+   going into this year. But even the vets need support on rosters."
+1. **A synchronous call is sometimes the correct resolution**, not a failure to
+   deflect. I did not model this path at all, so it is invisible in every
+   percentage in this document. A runbook should permit it explicitly for
+   accuracy-critical roster work.
+
+Also worth flagging: more guides and a scheduling portal land in 26-27, which
+changes the baseline. Anything written for the roster branch has a known shelf
+life.
 
 Permission asks you executed:
 [322805](https://teamschools.zendesk.com/agent/tickets/322805),
@@ -263,8 +320,17 @@ requester was asked to send this type of request to the ops lead going forward:
 School-ops deflection ran 9% / 5% / 9% across 2023 / 2024 / 2025, so this is a
 long-standing habit rather than new policy.
 
-**This is my most important question for you.** Is the 55 a deliberate judgment
-call (DSO unavailable, urgent, requester already tried), or is it drift?
+### Answered
+
+Jabari's answer: "Some drift, some judgement."
+
+> If the requester is from room 9/10, I'll handle it. School based requesters
+> should always be sent to ops with a guide. Ops should know how to do it 100%
+> of the time.
+
+That names a variable this analysis had not modelled — **who is asking** — and
+it turns out to be the strongest predictor in the dataset. It gets its own
+finding below.
 
 ## Finding 7 — the Clever-fed platforms are high volume, low yield
 
@@ -319,6 +385,86 @@ student, the app, or a screenshot before any work can start:
 An intern with a required-fields checklist could absorb this, but the better fix
 is upstream: make the intake form require school + system + affected person
 before submission. That is a config change, not a hire.
+
+## Finding 9 — requester affiliation is the first gate
+
+This finding exists because Jabari named the rule; I then tested it against all
+3,002 tickets. Requester affiliation comes from `home_work_location_name` on the
+staff roster — Room 9 / 10 / 11 are the regional office, everything named
+`KIPP <school>` is school-based.
+
+Cohort mix: **67% school-based, 26% regional, 7% unknown.**
+
+### The regional half of the rule is followed without exception
+
+| Ask type                      | Requester    | Decided | In house | → ops | → self |
+| ----------------------------- | ------------ | ------- | -------- | ----- | ------ |
+| Permission-tier, all systems  | regional     | 21      | 16 (76%) | **0** | 5      |
+| Permission-tier, all systems  | school-based | 60      | 36 (60%) | 10    | 14     |
+| DeansList permission + access | regional     | 53      | 46 (87%) | **0** | 7      |
+| DeansList permission + access | school-based | 104     | 68 (65%) | 11    | 25     |
+| PowerSchool rosters           | regional     | 7       | 5 (71%)  | **0** | 2      |
+| PowerSchool rosters           | school-based | 32      | 9 (28%)  | 17    | 6      |
+
+A regional requester has **never** been redirected to school ops — zero across
+every cut, and only 4 instances across all of Tier A. That is not drift; it is a
+rule applied consistently. Examples handled in house:
+[324213](https://teamschools.zendesk.com/agent/tickets/324213),
+[326426](https://teamschools.zendesk.com/agent/tickets/326426),
+[327227](https://teamschools.zendesk.com/agent/tickets/327227),
+[327955](https://teamschools.zendesk.com/agent/tickets/327955).
+
+### The school-based half is followed about one time in seven
+
+Jabari's standard is that school-based requesters should "always" be sent to
+ops. On DeansList permission and access asks, 11 of 104 decided tickets were.
+The other 68 were handled in house:
+[322805](https://teamschools.zendesk.com/agent/tickets/322805),
+[322938](https://teamschools.zendesk.com/agent/tickets/322938),
+[324134](https://teamschools.zendesk.com/agent/tickets/324134),
+[324945](https://teamschools.zendesk.com/agent/tickets/324945),
+[324984](https://teamschools.zendesk.com/agent/tickets/324984),
+[325793](https://teamschools.zendesk.com/agent/tickets/325793).
+
+Correctly redirected, for contrast:
+[326346](https://teamschools.zendesk.com/agent/tickets/326346),
+[328614](https://teamschools.zendesk.com/agent/tickets/328614),
+[330503](https://teamschools.zendesk.com/agent/tickets/330503),
+[389257](https://teamschools.zendesk.com/agent/tickets/389257),
+[425933](https://teamschools.zendesk.com/agent/tickets/425933).
+
+**PowerSchool rosters are where the affiliation rule already works** — 28%
+in-house for school-based versus 71% for regional, a 2.5x split, with 17 tickets
+correctly routed to ops:
+[330437](https://teamschools.zendesk.com/agent/tickets/330437),
+[331464](https://teamschools.zendesk.com/agent/tickets/331464),
+[331584](https://teamschools.zendesk.com/agent/tickets/331584),
+[332110](https://teamschools.zendesk.com/agent/tickets/332110),
+[332517](https://teamschools.zendesk.com/agent/tickets/332517),
+[332976](https://teamschools.zendesk.com/agent/tickets/332976).
+
+### The gap is closing, but through guides rather than handoffs
+
+School-based permission and DeansList access asks:
+
+| Season | Decided | In house | → ops | → self-serve |
+| ------ | ------- | -------- | ----- | ------------ |
+| 2023   | 30      | 22 (73%) | 4     | 4            |
+| 2024   | 36      | 23 (64%) | 1     | **12**       |
+| 2025   | 38      | 23 (61%) | 6     | 9            |
+
+In-house share fell 73% to 61% over three seasons and nearly all of that went to
+**self-serve guides**, not ops handoffs. This is the same conclusion Finding 3
+reaches from the other direction: guides move volume, handoff requests mostly do
+not.
+
+### Why this reorders the runbook
+
+For permission and access asks, affiliation is a **cheaper and more accurate
+first question than platform or ask type**. Regional means do it. School-based
+means guide plus DSO. The rule already exists and is already applied perfectly
+on one side, so the runbook is closing one branch rather than introducing
+policy.
 
 ## Full ticket-type inventory
 
@@ -416,8 +562,17 @@ reset student Google accounts themselves:
 [328104](https://teamschools.zendesk.com/agent/tickets/328104),
 [333670](https://teamschools.zendesk.com/agent/tickets/333670),
 [380956](https://teamschools.zendesk.com/agent/tickets/380956),
-[427251](https://teamschools.zendesk.com/agent/tickets/427251). If that is
-right, this is a training and guide problem more than an execution problem.
+[427251](https://teamschools.zendesk.com/agent/tickets/427251).
+
+**Confirmed.** Teachers can reset student passwords and a help guide already
+exists. So these 111 tickets are a guide-distribution problem, not execution
+work — the guide does not need writing, it needs sending. Replies that already
+do this: [328104](https://teamschools.zendesk.com/agent/tickets/328104),
+[331554](https://teamschools.zendesk.com/agent/tickets/331554),
+[333670](https://teamschools.zendesk.com/agent/tickets/333670),
+[380846](https://teamschools.zendesk.com/agent/tickets/380846),
+[381792](https://teamschools.zendesk.com/agent/tickets/381792). This moves the
+whole type out of the execute column and into scripted redirect.
 
 ### Records and surveys — 62 (≈16/season)
 
@@ -472,54 +627,97 @@ support, not with us:
 
 ## Proposed intern scope
 
-Two jobs with very different risk profiles. Recommendation is to start with the
-second only.
+Revised after Jabari's review. Three pieces of work, in the order I would hand
+them over.
 
-### Job 1 — execute (gate this)
+### First project — write the missing config guides (no system access)
 
-DeansList, Illuminate, and Google Workspace student accounts: **208 of 434
-executions (48%)**, all on platforms with self-contained admin UIs where a
-mistake is reversible in-app. Requires production write access.
+Jabari's Finding 3 answer identifies the binding constraint: config tickets are
+handled in house because there is nothing to deflect them with. That makes
+**writing those guides the highest-leverage thing an intern could do**, ahead of
+the role-permission matrix I proposed in the first draft.
 
-Explicitly **not** PowerSchool roster writes — those belong to school ops
-anyway, which conveniently removes the riskiest action from the intern's plate.
-A dropped section or changed enrollment date corrupts attendance and ADA
+Scope: `DeansList report / list enable` (56) and
+`DeansList picklist / button config` (34) — 90 tickets over four seasons,
+currently deflected 6 times total. The 2024 jump in self-serve deflection
+(Finding 9) is the evidence that guides actually move volume.
+
+This needs zero production access, it is reviewable before anything ships, and
+it permanently converts execute-work into deflect-work rather than just
+absorbing it faster.
+
+### Second — triage and scripted redirect (still no system access)
+
+Four streams, all resolved by sending something rather than doing something:
+
+- **School-based permission and access asks** — apply the affiliation gate from
+  Finding 9. Regional goes to an analyst; school-based gets the guide plus the
+  named DSO. This is the branch that is currently followed one time in seven, so
+  it is where a runbook changes behaviour most.
+- **Student password resets** (111 tickets) — confirmed self-serve with an
+  existing guide. Send the guide.
+- **Clever, Google Classroom, Amplify** — 19-44% owned; the answer is almost
+  always a redirect, a cache clear, or "the sync has not run yet."
+- **PowerSchool roster asks** — but see the capability caveat below.
+
+### Third — execute (gate on write access)
+
+DeansList and Illuminate provisioning: net-new accounts, campus reassignment,
+Clever app catalogue. Self-contained admin UIs where a mistake is reversible
+in-app.
+
+Smaller than the first draft claimed, because student password resets moved into
+the redirect stream above.
+
+Explicitly **not** PowerSchool roster writes. Those belong to school ops, and a
+dropped section or changed enrollment date corrupts attendance and ADA
 downstream.
 
-### Job 2 — triage and scripted redirect (start here)
+### Two things the runbook must not do
 
-Clever, Google Classroom, Amplify, and PowerSchool roster asks. Apply the ask-
-type test, send the matching template, loop in the right DSO, close.
+**Do not write a blanket roster deflect.** Jabari: DSO capability is "really
+school by school... even the vets need support on rosters." The roster branch
+needs a per-school capability tier, and it should explicitly permit a short Zoom
+call where accuracy matters — that is a legitimate resolution, not a failure to
+deflect. It is also the branch with the shortest shelf life, since more guides
+and a scheduling portal arrive in 26-27.
 
-**Needs zero system access**, so it is safe on day one, and it directly
-addresses the inconsistency in Finding 6.
+**Do not lead with platform.** For permission and access asks the cheapest
+accurate first question is **who is asking** (Finding 9), then ask type, then
+platform. Platform remains useful as navigation — you know it the moment you
+open the ticket — but it is the weakest of the three predictors in the middle of
+the table.
 
-### Consequence for the runbook structure
+## Review status
 
-I had planned to structure the runbook purely by platform. The correction above
-changes that: platform works as the **navigation** (you know it immediately),
-but because the middle of the table is undifferentiated, **each platform section
-has to branch on ask type** — and for PowerSchool that branch is the whole game.
+### Answered by Jabari
 
-## What I need you to confirm or correct
+1. **The 55 in-house permission changes** — "some drift, some judgement." Room
+   9/10 requesters he handles; school-based should always go to ops with a
+   guide. Folded into Finding 6 and expanded into
+   [Finding 9](#finding-9--requester-affiliation-is-the-first-gate).
+1. **What drives the DeansList ownership number** — a guide gap, not a policy
+   boundary. Folded into Finding 3; it reorders the recommendations.
+1. **PowerSchool permissions vs rosters** — permissions are 100% data-team "and
+   should stay that way"; rosters depend on DSO capability. Folded into
+   Finding 4.
+1. **Which DSOs are equipped** — task-dependent and school by school; even
+   experienced DSOs need roster support. Folded into Finding 4 and the scope
+   section.
+1. **Student password resets** — teachers can reset them and a guide exists.
+   Folded into the Student accounts section; moves 111 tickets out of execution.
 
-1. **Finding 6, the 55 in-house permission changes.** Deliberate judgment (DSO
-   unavailable, urgent, requester already tried) or drift? This decides whether
-   the runbook says "always redirect" or "redirect unless X".
-1. **Is the ask-type-over-platform read in Findings 3 and 4 how you actually
-   think about it**, or is the pattern driven by something else — who was on
-   duty, how the ticket was worded, which region it came from?
-1. **PowerSchool permissions vs rosters** — a real ownership boundary, or does
-   it vary by school depending on DSO capability?
-1. **Which DSOs and ops leads are actually equipped to take these?** The
-   redirect only works if the named person can do it. Uniform across Newark,
-   Camden, Miami, and Paterson, or school by school?
-1. **Student password resets** — can teachers and ops staff genuinely self-serve
-   these? If yes, 111 tickets are a guide problem.
+### Still open
+
 1. **Anything in the analyst-only list you would hand to an intern**, or
    anything in the runbook-shaped list you would never hand over?
-1. **Records pulls** — what is your sign-off practice before student records
-   leave in a ticket reply?
+1. **Records pulls** — what is the sign-off practice before student records
+   leave in a ticket reply? This one gates whether an intern touches that type
+   at all.
+1. **Laszlo's read on all of the above.** Every number here pools both analysts,
+   so a disagreement between them would show up as noise rather than as a
+   difference. Worth knowing if his practice differs — particularly on the
+   affiliation rule, which is Jabari's stated habit and may not be shared.
 
 ## Confidence and known gaps
 
@@ -535,6 +733,19 @@ single row as ±25-30%.
 
 **Low confidence:** anything distinguishing platforms inside the 42-56% band.
 The correction above moved several of those by 5-20 points.
+
+**On Finding 9 specifically:** requester affiliation comes from
+`home_work_location_name` on the staff roster, so the 7% of tickets whose
+submitter does not resolve to a roster record are excluded. In-house shares are
+computed on _decided_ tickets only, so the denominators there are small — 21
+decided regional permission tickets, for example. The robust part is the
+**absence**: zero regional-to-ops deflections across four independent cuts. The
+percentage differences between regional and school-based are directional.
+
+**One resolution path is missing entirely.** Jabari notes that a short Zoom call
+is sometimes the right answer for roster accuracy. Nothing in this analysis can
+see a call, so any ticket resolved that way is sitting in the unmatched 45% or
+looks like an unexplained in-house resolution.
 
 Every ticket cited in this document was spot-checked against its actual request
 and reply. Four citations that did not support the claim they were attached to
@@ -577,5 +788,10 @@ the type definitions in this document.
 
 ## Next step
 
-Once reviewed, the runbook gets written with platform as the navigation and ask
-type as the branch inside each platform.
+The runbook, gated on the two open questions above and on Laszlo's review. Its
+decision order is now **requester affiliation → ask type → platform**, with
+platform serving as navigation rather than as the deciding variable.
+
+The first artifact it depends on is the set of DeansList config guides described
+in the scope section, since those are what make the school-based redirect
+possible at all.
