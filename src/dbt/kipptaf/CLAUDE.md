@@ -269,6 +269,13 @@ Date-range joins on `entrydate` silently drop these rows. Retain them for KIPP
 Forward / kippadb alumni reporting — derived enrollment models must not drop
 them, and `dim_student_enrollments` stays alumni-inclusive.
 
+**Miami is the exception, deliberately.** Focus is Miami's sole enrollment
+source and has no placeholder equivalent, so the Focus cutover removed Miami's
+1,002 placeholder rows (420 students, AY2022-AY2025) — from the spine in #4775
+and from `base_powerschool__student_enrollments` in #4868. The rule above still
+binds the three NJ regions. Do not "restore" Miami placeholders by reviving the
+frozen archive branch; that was decided against on 2026-08-14.
+
 **`enroll_status` is student-level, not per-stint.** Sourced from
 `stg_powerschool__students` and copied identically to every row in
 `int_powerschool__student_enrollment_union`. Don't expect different stints for

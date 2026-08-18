@@ -578,15 +578,6 @@ sources:
                 - dlt
                 - focus
                 - permission
-      - name: login_history
-        config:
-          meta:
-            dagster:
-              asset_key:
-                - "{{ project_name }}"
-                - dlt
-                - focus
-                - login_history
       # Custom Fields
       - name: custom_fields
         config:

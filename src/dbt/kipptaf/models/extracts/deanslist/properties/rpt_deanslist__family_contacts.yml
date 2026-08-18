@@ -9,8 +9,10 @@ models:
       `emergency_4`). `ContactType` distinguishes `Parent1` / `Parent2` /
       `Emergency` so DeansList can scope automated guardian messaging, and every
       contact carries its real Finalsite relationship to the student. Column
-      names match the DeansList import template headers exactly. Delivered by
-      the Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
+      names match the DeansList import template headers exactly. Rows are
+      ordered per student with parents before emergency contacts, since
+      DeansList displays contacts in the file's row order. Delivered by the
+      Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
     data_tests:
       # The source grain is (student, contact_slot), but the DeansList template
       # fixes the header set so the slot cannot be projected — name plus

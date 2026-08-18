@@ -210,3 +210,42 @@ models:
           Prior academic year's FLDOE FAST math progress monitoring 3
           achievement level and scale score.
         data_type: string
+      - name: focus_student_id
+        description: >-
+          Focus student id - the network student number prefixed with 8400,
+          Miami-Dade's FLDOE district number. This is the value Focus displays
+          and the id to search on there. One known student carries an id without
+          the prefix, which passes through unchanged.
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: focus_exit_code
+        description: >-
+          Raw Focus withdrawal code closing this academic year's enrollment
+          span, for example W01 in-school transfer, W02 in-district transfer,
+          W06 graduated, DNE did not enter. Null while the span is still open.
+          Focus rolls students forward by closing the prior span with a transfer
+          code, so a completed academic year carries a code even for students
+          who never left - read focus_enrollment_status, not this column, to
+          tell who is still here.
+        data_type: string
+      - name: focus_enrollment_status
+        description: >-
+          Whether the student is currently enrolled at a KIPP Miami school,
+          Enrolled or Not Enrolled. Resolved from the student's open
+          current-year Focus enrollment rather than from this row's exit code,
+          so a prior-year row reflects where the student is now. A student whose
+          enrollment starts later in the current year reads Enrolled.
+          Student-level, so every row for the same student carries the same
+          value.
+        data_type: string
+      - name: student_name_id_hash
+        description: >-
+          Student name and Focus student id joined by a hyphen, formatted as
+          Last, First - 8400000000. Matches the identifier format the other KIPP
+          Forward sheet rosters use for lookups.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true

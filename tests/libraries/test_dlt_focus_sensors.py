@@ -36,7 +36,7 @@ def test_sensor_factory_shape() -> None:
 def test_sensor_selects_every_configured_table() -> None:
     tables = [
         ProbeTable(name="students", cursor_column="updated_at"),
-        ProbeTable(name="login_history", cursor_column=None),
+        ProbeTable(name="co_teachers", cursor_column=None),
     ]
 
     sensor_def = build_focus_dlt_intraday_sensor(
@@ -49,7 +49,7 @@ def test_sensor_selects_every_configured_table() -> None:
     selection: Any = sensor_def.asset_selection
 
     assert sorted(k.to_user_string() for k in selection.selected_keys) == [
-        "kippmiami/dlt/focus/login_history",
+        "kippmiami/dlt/focus/co_teachers",
         "kippmiami/dlt/focus/students",
     ]
 
@@ -57,11 +57,11 @@ def test_sensor_selects_every_configured_table() -> None:
 def test_build_run_request_selects_changed_and_passes_signatures() -> None:
     changed = [
         ProbeTable(name="students", cursor_column="updated_at"),
-        ProbeTable(name="login_history", cursor_column=None),
+        ProbeTable(name="co_teachers", cursor_column=None),
     ]
     current = {
         "students": {"count": 43, "max_cursor": "2026-08-09T00:00:00"},
-        "login_history": {"count": 10, "max_cursor": None},
+        "co_teachers": {"count": 10, "max_cursor": None},
         # unchanged table present in the probe but not in `changed`:
         "districts": {"count": 1, "max_cursor": "2026-07-01T00:00:00"},
     }
@@ -71,7 +71,7 @@ def test_build_run_request_selects_changed_and_passes_signatures() -> None:
     # trunk-ignore(pyright): asset_selection is always set in our RunRequests
     assert [k.to_user_string() for k in run_request.asset_selection] == [
         "kippmiami/dlt/focus/students",
-        "kippmiami/dlt/focus/login_history",
+        "kippmiami/dlt/focus/co_teachers",
     ]
     assert run_request.run_config == {
         "ops": {
@@ -82,7 +82,7 @@ def test_build_run_request_selects_changed_and_passes_signatures() -> None:
                             "count": 43,
                             "max_cursor": "2026-08-09T00:00:00",
                         },
-                        "login_history": {"count": 10, "max_cursor": None},
+                        "co_teachers": {"count": 10, "max_cursor": None},
                     }
                 }
             }

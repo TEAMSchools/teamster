@@ -58,16 +58,6 @@ select
     -- int_finalsite__enrollment_lifecycle, so end_date needs no re-gating.
     format_date('%Y%m%d', e.enrollment_end_date) as end_date,
 
-    -- Focus import header is drop_code; this carries the raw Finalsite withdraw
-    -- label, which the kippmiami reconciliation layer decodes to the Focus
-    -- short_name. fl_state_withdraw_codes_ss is a raw contact custom attribute
-    -- (NOT gated upstream), so gate it to transfer_out here — a withdraw code is
-    -- only meaningful for a withdrawal, and an ungated value would emit a drop
-    -- code for a still-enrolled student downstream.
-    if(
-        e.is_transfer_out, cca.fl_state_withdraw_codes_ss, cast(null as string)
-    ) as drop_code,
-
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
     cast(null as string) as prior_state,

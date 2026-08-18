@@ -135,5 +135,9 @@ principal itself.
 
 ## Other Files
 
-- `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
+- `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections),
+  plus a "For Claude" section for AI-assistance notes and review focus.
+- `ISSUE_TEMPLATE/` — `bug_report.md` and `feature_request.md`, each with a "For
+  Claude" section for `@claude`-driven issues; `config.yml` disables blank
+  issues.
 - `actionlint.yaml` — self-hosted runner labels for actionlint.

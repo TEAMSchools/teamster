@@ -14,6 +14,8 @@ on:
       # the class this workflow was silently failing to catch.
       - .github/workflows/**
       - "!**/*.md"
+      - "!**/package.json"
+      - "!**/package-lock.json"
 
 jobs:
   claude-review:
@@ -35,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@5ef2e550a465a721f4f45e4a7d3c340c873e1dcc # v1.0.190
+        uses: anthropics/claude-code-action@9d7150bc8a3dae8149739a88019d192b579ad90c # v1.0.193
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -96,6 +98,17 @@ jobs:
             you find, including ones you are uncertain about; do not withhold
             lower-severity findings. Include a confidence level and a severity
             label for each finding so a human can rank them.
+
+            Response format: lead the comment with a short, plain-language
+            summary for human skimming — the overall verdict and only the
+            highest-severity findings, no jargon. Then add a collapsed
+            <details><summary>Full findings</summary> fold-out listing every
+            finding, including lower-severity and uncertain ones, each with
+            file:line, confidence, severity, and the specific convention or
+            citation. Leave a blank line after <summary>Full findings</summary>
+            before the findings list, or GitHub renders the list as inert HTML
+            instead of markdown. This mirrors this repo's PR/issue template
+            pattern: human-readable content first, denser context folded below.
 
             Execution model: this job is a single non-interactive turn sequence.
             There is no wake-up and no second invocation — when you stop
