@@ -25,8 +25,14 @@ created.
 - **Worktree.** All work happens in
   `/workspaces/teamster/.worktrees/cbini/feat/claude-focus-intermediates` on
   branch `cbini/feat/claude-focus-intermediates`. Use `git -C <worktree>` on
-  every git call and `--project-dir <worktree>/src/dbt/focus` on every dbt call.
-  Editing `/workspaces/teamster/<path>` instead silently dirties `main`.
+  every git call. dbt commands build via the **kippmiami** project, never
+  `src/dbt/focus` — `focus` is a package with `focus_schema: null` and no
+  developer profile, so a standalone build resolves nothing. Use:
+  `uv run dbt <cmd> --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select <model>`.
+  The `target/prod` manifest already exists in this worktree; regenerate it with
+  `uv run dbt parse --target prod --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target-path target/prod`
+  if it goes missing. Editing `/workspaces/teamster/<path>` instead silently
+  dirties `main`.
 - **Python.** Always `uv run` — never bare `python`, `dbt`, or `dagster`.
 - **Design source of truth.**
   `docs/superpowers/specs/2026-08-18-focus-attendance-gradebook-intermediates-design.md`
@@ -163,7 +169,8 @@ re-flattens fenced YAML.
 
 - [ ] **Step 4: Verify dbt parses the new sources**
 
-Run: `uv run dbt parse --project-dir <worktree>/src/dbt/focus`
+Run:
+`uv run dbt parse --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt`
 
 Expected: parses without error. A source declared but not yet referenced by any
 model is inert — dbt does not check that the BigQuery table exists.
@@ -329,7 +336,7 @@ models:
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select int_focus__attendance_day`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select int_focus__attendance_day`
 
 Expected: FAIL — the model file does not exist yet, so dbt reports the node is
 missing.
@@ -397,7 +404,7 @@ left join
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select int_focus__attendance_day`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select int_focus__attendance_day`
 
 Expected: PASS, including `unique` and `not_null` on
 `student_attendance_day_id`. A `unique` failure means a join fanned out — the
@@ -412,7 +419,7 @@ check values, not just the build.
 Run:
 
 ```bash
-uv run dbt show --project-dir <worktree>/src/dbt/focus --inline "select countif(daily_code is not null) as coded, countif(daily_code is not null and daily_code_title is null) as unresolved from {{ ref('int_focus__attendance_day') }}"
+uv run dbt show --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --inline "select countif(daily_code is not null) as coded, countif(daily_code is not null and daily_code_title is null) as unresolved from {{ ref('int_focus__attendance_day') }}"
 ```
 
 Expected: `unresolved` is 0 and `coded` is greater than 0.
@@ -595,7 +602,7 @@ models:
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select int_focus__attendance_period`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select int_focus__attendance_period`
 
 Expected: FAIL — model file does not exist.
 
@@ -671,7 +678,7 @@ left join
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select int_focus__attendance_period`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select int_focus__attendance_period`
 
 Expected: PASS, including `unique` and `not_null` on
 `student_attendance_period_id`.
@@ -681,7 +688,7 @@ Expected: PASS, including `unique` and `not_null` on
 Run:
 
 ```bash
-uv run dbt show --project-dir <worktree>/src/dbt/focus --inline "select countif(attendance_code is not null and attendance_code_title is null) as unresolved_official, countif(attendance_teacher_code is not null and attendance_teacher_code_title is null) as unresolved_teacher from {{ ref('int_focus__attendance_period') }}"
+uv run dbt show --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --inline "select countif(attendance_code is not null and attendance_code_title is null) as unresolved_official, countif(attendance_teacher_code is not null and attendance_teacher_code_title is null) as unresolved_teacher from {{ ref('int_focus__attendance_period') }}"
 ```
 
 Expected: both counts are 0.
@@ -985,7 +992,7 @@ models:
 - [ ] **Step 3: Build and verify the contract and PK hold**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select stg_focus__gradebook_assignments_join_course_periods`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select stg_focus__gradebook_assignments_join_course_periods`
 
 Expected: PASS. A contract error naming a column means the `data_type` does not
 match what dlt landed — fix the YAML to match BigQuery, not the other way
@@ -1118,7 +1125,7 @@ models:
 - [ ] **Step 3: Build and verify**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select stg_focus__gradebook_assignment_types_join_course_periods`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select stg_focus__gradebook_assignment_types_join_course_periods`
 
 Expected: PASS.
 
@@ -1272,7 +1279,7 @@ models:
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select int_focus__gradebook_grades`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select int_focus__gradebook_grades`
 
 Expected: FAIL — model file does not exist.
 
@@ -1372,7 +1379,7 @@ left join
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run:
-`uv run dbt build --project-dir <worktree>/src/dbt/focus --select int_focus__gradebook_grades`
+`uv run dbt build --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --select int_focus__gradebook_grades`
 
 Expected: PASS. A `unique` failure on `student_gradebook_grade_id` means one of
 the joins fanned out — check the type-link triple first, then whether
@@ -1381,7 +1388,7 @@ the joins fanned out — check the type-link triple first, then whether
 - [ ] **Step 5: Confirm no grades were lost and the resolution worked**
 
 ```bash
-uv run dbt show --project-dir <worktree>/src/dbt/focus --inline "select (select count(*) from {{ ref('stg_focus__gradebook_grades') }}) as staging_rows, count(*) as model_rows, countif(course_period_id is null) as unresolved_course_period, countif(assignment_type_final_grade_percent is not null) as with_weight from {{ ref('int_focus__gradebook_grades') }}"
+uv run dbt show --project-dir <worktree>/src/dbt/kippmiami --profiles-dir <worktree>/.dbt --target defer --defer --state target/prod --inline "select (select count(*) from {{ ref('stg_focus__gradebook_grades') }}) as staging_rows, count(*) as model_rows, countif(course_period_id is null) as unresolved_course_period, countif(assignment_type_final_grade_percent is not null) as with_weight from {{ ref('int_focus__gradebook_grades') }}"
 ```
 
 Expected: `model_rows` equals `staging_rows` exactly — no grades gained or lost.
