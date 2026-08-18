@@ -42,7 +42,12 @@ models:
 
       - name: assessmentgrade
         data_type: string
-        description: Assessment grade level as reported by Pearson.
+        description: >-
+          Assessment grade level as reported by the vendor. Pearson sent 'Grade
+          11' on every row. Cambium sends the test DESIGN level instead — 'Grade
+          10' for ELAGP and 'Grade 11' for MATGP — so this column carries two
+          values and is NOT the student's grade. Use test_grade (always 11 for
+          NJGPA) or the enrollment for reporting grade level.
 
       - name: assessmentyear
         data_type: string
@@ -158,7 +163,11 @@ models:
 
       - name: testscorecomplete
         data_type: float64
-        description: Score completeness indicator as reported by Pearson.
+        description: >-
+          Score completeness indicator as reported by the vendor. Pearson set it
+          to 1 on every row surviving the staging filter. Cambium does not
+          populate it, so it is NULL for all Cambium NJGPA rows; consumers must
+          coalesce rather than compare directly.
 
       - name: twoormoreraces
         data_type: string
