@@ -15,11 +15,11 @@ GCS bucket: `teamster-kippcamden`
 | ------------- | ----------------- | --------------------------------------------------------------------- |
 | `dbt`         | dbt assets        | `AutomationConditionSensor`                                           |
 | `powerschool` | dlt assets        | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
+| `cambium`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `deanslist`   | API assets        | schedule (nightly)                                                    |
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
 | `overgrad`    | API assets        | schedule                                                              |
-| `cambium`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `pearson`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                                    |
 | `extracts`    | BigQuery→SFTP     | schedule (nightly, 3am)                                               |

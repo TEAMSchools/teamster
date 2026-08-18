@@ -1,11 +1,14 @@
 models:
   - name: int_pearson__all_assessments
     description: >
-      Network-level union of Pearson state assessment results (PARCC, NJSLA,
-      NJSLA Science, NJGPA) enriched with student crosswalk lookups and
-      standardized metadata. Computes aligned demographic labels, proficiency
-      banding, and subject/test-code normalization for use in reporting and
-      demographic comparison models.
+      Network-level union of state assessment results (PARCC, NJSLA, NJSLA
+      Science, NJGPA) enriched with student crosswalk lookups and standardized
+      metadata. NJGPA is dual-vendor -- Pearson through the Fall 2025
+      administration, Cambium TIDE starting Spring 2026 -- unioned into this
+      same shape. The model's Pearson-only name is a known misnomer now that a
+      second vendor feeds it; a rename is pending. Computes aligned demographic
+      labels, proficiency banding, and subject/test-code normalization for use
+      in reporting and demographic comparison models.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

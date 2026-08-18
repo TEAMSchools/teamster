@@ -193,7 +193,7 @@ with
                 u.studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP'
             ) as iep_status,
 
-            if(u.`period` = 'FallBlock', 'Fall', u.`period`) as `admin`,
+            if(upper(u.`period`) like 'FALL%', 'Fall', u.`period`) as `admin`,
 
             if(
                 u.`subject` = 'English Language Arts/Literacy',

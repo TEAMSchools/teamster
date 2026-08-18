@@ -1,0 +1,16 @@
+data_tests:
+  - name: stg_cambium__njgpa__not_empty
+    description: >-
+      stg_cambium__njgpa must never build empty. If Cambium drops or renames a
+      column the model depends on -- e.g. Summative Flag -- that column goes
+      entirely NULL, the staging filter (where summative_flag = 'Y' and
+      test_attemptedness_flag = 'Y') returns zero rows, and unique / not_null
+      pass vacuously over an empty relation. Without this test, NJGPA would
+      silently disappear from every downstream model with every other test still
+      green.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_cambium__njgpa

@@ -25,6 +25,25 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: period
+        data_type: string
+        description: >-
+          Raw vendor-reported administration season, unnormalized. Contrast with
+          administration_period, which case-insensitively collapses this value
+          ('Fall', 'FALL', 'FallBlock') to a single 'Fall' token. This test
+          exists so a novel fall token Cambium has never sent fails the build
+          loudly instead of flowing through unnormalized and quietly forking a
+          second Fall series downstream.
+        data_tests:
+          # accepted_values passes NULLs, so not_null is required alongside it
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Spring, Fall, FallBlock]
+              config:
+                severity: error
       - name: administration_period
         data_type: string
         description: >-

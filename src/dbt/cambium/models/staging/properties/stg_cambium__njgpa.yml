@@ -16,6 +16,17 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: test_date
+        data_type: date
+        description: >-
+          Date of the earliest online unit start across units 1 through 4,
+          coalesced to the parsed assessment session start. The coalesce is
+          required, not defensive: unit timestamps are populated for ELA only,
+          so unit-only derivation nulls every Mathematics row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: state_student_identifier
         data_type: int64
         description: NJ SMART state student identifier (10 digits).
@@ -82,17 +93,6 @@ models:
           rather than appearing downstream as a union null-fill. The single
           consumer, int_students__graduation_path_codes, coalesces it. See
           design spec D2.
-      - name: test_date
-        data_type: date
-        description: >-
-          Date of the earliest online unit start across units 1 through 4,
-          coalesced to the parsed assessment session start. The coalesce is
-          required, not defensive: unit timestamps are populated for ELA only,
-          so unit-only derivation nulls every Mathematics row.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: student_with_disabilities
         data_type: string
         description: N, IEP, 504, or B (both IEP and 504).

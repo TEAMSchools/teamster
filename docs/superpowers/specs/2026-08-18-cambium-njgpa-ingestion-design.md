@@ -711,9 +711,10 @@ coalesce(
 ```
 
 Unit start wins where both exist, which preserves current ELA behavior exactly
-and only fills Math. The two sources are close but not identical — where both
-exist they agree on 363 of 407 ELA rows and differ on 44 — so the ordering
-matters.
+and only fills Math. The two sources agree on the calendar date for all 407 rows
+where both exist, so the coalesce order has no observable effect on today's
+data; unit-start-first is kept because it matches the Pearson model and is the
+more precise source.
 
 `test_date` carries a `not_null` test, and the verification plan asserts
 non-null **per `test_code`**, never in aggregate: an aggregate check passes at

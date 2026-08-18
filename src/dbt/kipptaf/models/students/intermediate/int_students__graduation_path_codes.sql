@@ -88,9 +88,10 @@ with
             -- to 1 on every row surviving the summative + attemptedness filter
             -- (verified 4,130 of 4,130), so this predicate is already a no-op
             -- for Pearson and would silently exclude ALL Cambium NJGPA scores
-            -- without the coalesce. Kept rather than deleted so a future vendor
-            -- that genuinely reports incompleteness is still filtered.
-            coalesce(n.testscorecomplete, 1) = 1
+            -- without treating null as complete. Kept rather than deleted so a
+            -- future vendor that genuinely reports incompleteness is still
+            -- filtered.
+            (n.testscorecomplete is null or n.testscorecomplete = 1)
             and n.assessment_name = 'NJGPA'
             and n.testcode in ('ELAGP', 'MATGP')
 

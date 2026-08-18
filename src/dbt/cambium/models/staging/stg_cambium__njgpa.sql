@@ -96,8 +96,10 @@ select
        int_assessments__resolved_section_enrollments filters them out, and the
        enrollment-scoped fact inner-joins that model -- so every Cambium math
        score would silently never reach the fact, with all tests still green.
-       Where both sources exist they agree on 363 of 407 ELA rows and differ on
-       44, so the ordering is deliberate. */
+       The two sources agree on the calendar date for all 407 rows where both
+       exist, so the coalesce order has no observable effect on today's data;
+       unit-start-first is kept because it matches the Pearson model and is
+       the more precise source. */
     coalesce(
         date(earliest_test_start_timestamp), date(session_start_datetime)
     ) as test_date,
