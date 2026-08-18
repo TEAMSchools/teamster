@@ -44,6 +44,12 @@ INTRADAY_TRANSACTION_DATE = {
     "sections",
     "termbins",
     "terms",
+    # moved off whenmodified in afbd8239b (#4754): these three carry both
+    # columns, and an in-place UPDATE that leaves whenmodified alone is
+    # invisible to the probe's COUNT(*) + MAX(cursor_column) signature.
+    "schoolstaff",
+    "sectionteacher",
+    "users",
 }
 INTRADAY_WHENMODIFIED = {
     "gradescaleitem",
@@ -52,12 +58,10 @@ INTRADAY_WHENMODIFIED = {
     "s_nj_ren_x",
     "s_nj_stu_x",
     "s_stu_x",
-    "schoolstaff",
-    "sectionteacher",
     "studentcorefields",
     "studentrace",
+    "u_expectations",
     "u_studentsuserfields",
-    "users",
     "userscorefields",
 }
 NIGHTLY_WHENMODIFIED = {
@@ -95,7 +99,14 @@ def test_config_matches_spec_membership_map():
     entries = yaml.safe_load(CONFIG.read_text())["assets"]
     by_name = {e["table_name"]: e for e in entries}
 
-    assert len(entries) == 48
+    # derived, not a fourth hand-maintained literal: a table added to the YAML
+    # but not to a spec set fails here instead of drifting silently
+    assert len(entries) == len(
+        INTRADAY_TRANSACTION_DATE
+        | INTRADAY_WHENMODIFIED
+        | NIGHTLY_WHENMODIFIED
+        | NIGHTLY_NO_CURSOR
+    )
 
     for name in INTRADAY_TRANSACTION_DATE:
         assert by_name[name] == {
@@ -151,7 +162,7 @@ def test_assets_module_exposes_single_def():
     )
 
     assert len(assets) == 1
-    assert len(list(assets[0].keys)) == 48
+    assert len(list(assets[0].keys)) == 49
 
 
 def test_nightly_targets_sis_keys_and_counts():

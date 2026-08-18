@@ -52,35 +52,27 @@ The audit operates at several grains:
 
 ### Dashboard coverage (AY 2026-2027)
 
-| Region   | School level | Coverage depth                              | Notes                                                          |
-| -------- | ------------ | ------------------------------------------- | -------------------------------------------------------------- |
-| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                                |
-| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                                |
-| Paterson | MS           | Full audit (all applicable flags)           | Added AY 2026-2027; expectations spoofed from Newark's MS data |
-| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
-| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
-| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                             |
-| Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level           |
+| Region   | School level | Coverage depth                              | Notes                                                |
+| -------- | ------------ | ------------------------------------------- | ---------------------------------------------------- |
+| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                      |
+| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                      |
+| Paterson | MS           | Full audit (all applicable flags)           | Added AY 2026-2027                                   |
+| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook  |
+| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook  |
+| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                   |
+| Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level |
 
-!!! note "Paterson GradeBook plugin" The **KIPP NJ Gradebook Audit** plugin
-cannot be installed on Paterson's PowerSchool instance, so `U_EXPECTATIONS` is
-never populated there natively. `kipptaf`'s own
-`stg_powerschool__u_expectations` model handles this directly: a
-`paterson_spoof` CTE reads Newark's real U_EXPECTATIONS data via
-`source("kippnewark_powerschool", "stg_powerschool__u_expectations")`, filtered
-to `school_level = 'MS'`, with a hardcoded
-`'kipppaterson' as _dbt_source_project` (bypassing the usual
-`extract_source_project()` regex-on-schema-name derivation, since the physical
-relation really is Newark's — deriving from it would mislabel these rows as
-`kippnewark`). This is `UNION ALL`-ed alongside the real Camden/Newark union
-(`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`).
-There is no per-district override model in `kipppaterson` anymore — that
-approach (a `kipppaterson`-project model reading Newark's source under a
-misleadingly-named `kippnewark_powerschool` source declaration) was replaced
-after review; see PR #4132 review discussion.
-`int_powerschool__u_expectations_qtd_unpivot`'s kipptaf-level union picks this
-up as a third region alongside Camden and Newark — no different from a real
-region's data at that point. Tracked:
+!!! note "Paterson GradeBook plugin" The **KIPP NJ Gradebook Audit** plugin is
+now installed on Paterson's PowerSchool instance, so `U_EXPECTATIONS` is
+populated there natively and Paterson is an ordinary third region in the
+kipptaf-level union
+(`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`),
+alongside Camden and Newark. The raw table is ingested by the
+`kipppaterson/powerschool/sis/u_expectations` dlt asset. History: the plugin
+could not originally be installed on Paterson, so from AY 2026-2027 launch until
+the install, Paterson MS ran on _spoofed_ expectations — Newark's MS values,
+relabeled `kipppaterson`. That spoof was removed in #4879; see #4132 for the
+review discussion that shaped it. Tracked:
 [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ---
@@ -170,6 +162,14 @@ int_powerschool__u_expectations_qtd_unpivot ┼───────────
 int_powerschool__gradebook_assignment_scores_rollup ┘
 ```
 
+Alongside that read path, one model runs in the opposite direction — it feeds
+the sheet T&L uses to push expectations back INTO PowerSchool:
+
+```text
+int_powerschool__calendar_week ──┐
+stg_powerschool__u_expectations ─┴──► rpt_gsheets__gradebook_audit_template
+```
+
 **Why changed:** `rpt_tableau__gradebook_audit` used to carry a `student_course`
 branch with full student PII (name, student number) into a Tableau-facing
 report. The July 2026 split moved that branch's logic into its own model,
@@ -239,6 +239,38 @@ completed week per quarter. One row per
 cutoff — is the Sunday ending the most recently completed school week (the
 latest calendar week with
 `week_start_monday < date_trunc(current_date, isoweek)`).
+
+### Expectations upload template: `rpt_gsheets__gradebook_audit_template`
+
+Feeds the Google Sheet the T&L team uses to build the CSV they upload back into
+PowerSchool's `U_EXPECTATIONS` via the plugin — the write side of the same table
+`int_powerschool__u_expectations_qtd_unpivot` reads. Exposure:
+`rpt_gsheets__gradebook_audit_template` in
+`src/dbt/kipptaf/models/exposures/google-sheets.yml`.
+
+One row per
+`region × school_level × quarter × week_number_quarter × assignment_category_code`
+(uniqueness-tested). It shares the QTD unpivot's `term_weeks` CTE and category
+decode, but differs in two ways: it keeps **every** school week rather than
+collapsing to the most recently completed one per quarter, and it takes
+`school_week_end_date` (aliased `week_end_friday`) instead of `week_end_sunday`.
+
+Two gotchas worth knowing before editing it:
+
+- **`week_end_friday` is not always a Friday.** It is the last _in-session_ day
+  of the school week, so it lands on Thursday or earlier when a holiday or PD
+  day shortens the week (~11% of AY 2025 weeks). That is deliberate — a short
+  week should be visible to whoever is setting per-week assignment counts.
+- **`int_powerschool__calendar_week` is per-`schoolid`, and
+  `school_week_end_date` varies across the schools in one region** when only
+  some of them lose a day (e.g. Newark MS Q3 week 6 splits across 2026-03-19 and
+  2026-03-20). `term_weeks` therefore aggregates with
+  `max(school_week_end_date)` and an explicit `GROUP BY`; a `SELECT DISTINCT`
+  fans the join out to one row per distinct end date and breaks the grain.
+
+Coverage follows the inner join to `stg_powerschool__u_expectations` — Newark
+and Camden at MS and HS, Paterson at MS, no ES and no Miami — so it needs no
+region filter of its own.
 
 ### Assignment and category rollup layer
 
@@ -497,6 +529,12 @@ current state of expectations in PowerSchool. Until the T&L team member
 responsible for gradebook expectations updates the table for the new year, the
 audit will continue to report against the prior year's expectation values.
 
+`rpt_gsheets__gradebook_audit_template` (see above) exists to support this step:
+it lands every school week's current expectations in a Google Sheet, which T&L
+edits and exports as the CSV they upload through the plugin. Because it is
+driven by the same toggled year filter as the audit models, check the summer
+toggle's state before reading it as the new year's grid.
+
 Plugin source and update instructions:
 [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
 
@@ -506,8 +544,9 @@ If the summer toggle was applied during the off-season (switching year filters
 to `current_academic_year - 1`, grades type to `'last_year'` where applicable)
 to `rpt_tableau__gradebook_audit`,
 `int_extracts__gradebook_audit_student_flags`,
-`int_powerschool__u_expectations_qtd_unpivot`, and
-`rpt_tableau__gradebook_es_comments`, revert all changes in all four files
+`int_powerschool__u_expectations_qtd_unpivot`,
+`rpt_tableau__gradebook_es_comments`, and
+`rpt_gsheets__gradebook_audit_template`, revert all changes in all five files
 before the new school year begins. See the `gradebook-audit` skill for the exact
 lines — the student grade/comment toggle now lives in
 `int_extracts__gradebook_audit_student_flags` (the July 2026 intermediate
@@ -520,20 +559,12 @@ why).
 
 ## Open questions and future work
 
-Three known future-work items remain. The rest of the AY 2026-2027 build is
+Two known future-work items remain. The rest of the AY 2026-2027 build is
 delivered — see [#3908](https://github.com/TEAMSchools/teamster/issues/3908) and
 the
 [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md)
 for that history.
 
-- **Install the gradebook-audit plugin on Paterson's PowerSchool instance.** The
-  KIPP NJ Gradebook Audit plugin cannot currently be installed on Paterson, so
-  `U_EXPECTATIONS` is not populated there natively and Paterson MS runs on
-  _spoofed_ expectations — Newark's MS values, via the `paterson_spoof` CTE in
-  `stg_powerschool__u_expectations` (see the Paterson note above). Once the
-  plugin can be installed on Paterson, it should use its own real expectations
-  and the spoof can be removed. Plugin source:
-  [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins).
 - **Make student-course selection deterministic when enrollment dates overlap.**
   `int_extracts__course_enrollments_by_term` picks one section per
   student/course/quarter with a `row_number()` tiebreaker

@@ -49,9 +49,9 @@ def test_resolve_extract_workers_tag_no_param():
 
 
 class _FakeRunResult:
-    """Stand-in for dlt's `LoadInfo`; the op chains `.fetch_row_count()`."""
+    """Stand-in for dlt's `LoadInfo`; the op iterates it for materializations."""
 
-    def fetch_row_count(self) -> Iterator[Any]:
+    def __iter__(self) -> Iterator[Any]:
         return iter(())
 
 
