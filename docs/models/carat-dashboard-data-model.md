@@ -695,6 +695,47 @@ stg_google_sheets__collegeboard__ap_codes         (joined three times)
 score at rank 1. The reporting view does not filter on it, so both attempts
 appear.
 
+### How AP scores get in, and who does what
+
+AP is the one CARAT family whose data arrives as a **file drop rather than a
+sync**. College Board publishes a score file, it lands in
+`stg_collegeboard__ap`, and nothing connects a row in it to a KIPP student
+except `stg_google_sheets__collegeboard__ap_id_crosswalk` — a sheet the data
+team maintains by hand. New students are not in it until someone puts them
+there, which is why a file can load perfectly and still report nothing.
+
+Three sheets can each gap independently, and they fail in different ways:
+
+| Sheet                                                  | What a gap costs                                          |
+| ------------------------------------------------------ | --------------------------------------------------------- |
+| `stg_google_sheets__collegeboard__ap_id_crosswalk`     | The score is **dropped entirely** — see the warning above |
+| `stg_google_sheets__collegeboard__ap_codes`            | The subject does not resolve to a name                    |
+| `stg_google_sheets__collegeboard__ap_course_crosswalk` | `ap_course_name` falls back, reading `Not an AP course`   |
+
+Resolving an ID-crosswalk gap is a defined procedure, not ad-hoc work: a
+twelve-phase protocol covering the ingestion check, codes and course-tagging
+completeness, a tiered match, batch-by-batch delivery of unmatched students for
+crosswalk entry, then post-paste reconciliation and a downstream lineage check.
+**The division of labour is that an agent runs the match and the data team
+pastes the rows** — the protocol delivers candidates in reviewable batches
+rather than writing to the sheet itself.
+
+It lives as an agent skill at
+`.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md`, which is not
+part of this site — it is operational instruction rather than reference, and it
+handles student identifiers directly, so its outputs stay local. The working
+history is in
+`docs/superpowers/plans/2026-07-13-collegeboard-ap-data-ingest-protocol.md`,
+also outside the nav.
+
+!!! note "The SAT side has no equivalent yet"
+
+    `stg_google_sheets__collegeboard__sat_id_crosswalk`, `stg_collegeboard__sat`
+    and `int_collegeboard__sat_unpivot` all exist, but no protocol adapts the AP
+    one to SAT, and the official hub does not read the SAT unpivot at all — every
+    official SAT score comes from Salesforce. Tracked as deferred work on
+    [#4658](https://github.com/TEAMSchools/teamster/issues/4658).
+
 ### Grain
 
 One row per student per academic year per AP subject code. The `subjects` CTE
