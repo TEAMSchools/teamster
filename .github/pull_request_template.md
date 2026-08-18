@@ -10,9 +10,9 @@
 
 ## Reviewer Notes
 
-> Optional. Technical decisions, tradeoffs, edge cases, or verification detail
-> worth a second look — visible to every reviewer, not just Claude. Delete if
-> there's nothing here.
+> Optional. Plain language, like Summary above — name what's worth a second look
+> and why, in a line or two each. Full technical detail, exact values, and edge
+> cases belong in "For Claude" below. Delete if there's nothing here.
 
 ## Self-review
 
@@ -83,14 +83,15 @@
 <details>
 <summary>For Claude</summary>
 
-> Detail simplified or cut from the sections above for plain-language
-> readability — exact values, edge cases, full technical grounding — plus AI
-> involvement and anything a future `@claude` invocation needs. Not for judgment
-> calls a human reviewer needs to weigh — those belong in "Reviewer Notes",
-> visible to everyone. Delete if there's nothing to add.
+> Full technical detail behind the Reviewer Notes flags above — exact values,
+> edge cases, full reasoning — plus anything else simplified or cut from Summary
+> for plain-language readability, AI involvement, and anything a future
+> `@claude` invocation needs. Delete if there's nothing to add.
 
-<!-- e.g. "Claude-assisted, human-directed. `state_value` isn't actually an
-FK to attendance_codes despite the name -- see the full column notes in
-migration_details.md if you need them." -->
+<!-- e.g. "Claude-assisted, human-directed. Reviewer Notes flags the column-
+projection call -- full reasoning: it matches
+stg_focus__gradebook_assignments, which projects unpopulated columns for the
+same reason, but the schedule / student_report_card_grades precedent goes
+the other way for wide Florida-reporting tables." -->
 
 </details>

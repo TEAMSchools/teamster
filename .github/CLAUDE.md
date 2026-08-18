@@ -136,12 +136,13 @@ principal itself.
 ## Other Files
 
 - `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
-  Keep "Summary & Motivation" plain-language; put tradeoffs, edge cases, and
-  verification detail a human reviewer needs to weigh in the visible "Reviewer
-  Notes" section instead. The "For Claude" fold-out at the end holds whatever
-  got simplified or cut from the sections above for plain-language readability,
-  plus AI-involvement notes and anything a future `@claude` invocation needs —
-  not judgment calls a human reviewer needs to see.
+  Three tiers, plain to detailed: "Summary & Motivation" is plain-language, what
+  and why. "Reviewer Notes" is also plain-language — name what's worth a second
+  look and why, a line or two each, not the full reasoning. The "For Claude"
+  fold-out at the end holds the full technical detail behind each Reviewer Notes
+  flag (exact values, edge cases, full reasoning), plus whatever else got
+  simplified or cut from Summary for plain-language readability, AI-involvement
+  notes, and anything a future `@claude` invocation needs.
 - `ISSUE_TEMPLATE/` — `bug_report.md` and `feature_request.md`, each with a "For
   Claude" section for `@claude`-driven issues; `config.yml` disables blank
   issues.
