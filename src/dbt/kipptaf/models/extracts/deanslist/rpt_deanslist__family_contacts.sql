@@ -14,6 +14,7 @@ with
             regexp_replace(lower(sc.phone_home), r'[^0-9x]', '') as phone_home,
             regexp_replace(lower(sc.phone_work), r'[^0-9x]', '') as phone_work,
             regexp_replace(lower(sc.phone_mobile), r'[^0-9x]', '') as phone_mobile,
+            regexp_replace(lower(sc.phone_untyped), r'[^0-9x]', '') as phone_untyped,
 
             -- DeansList routes guardian-only automated messaging (reports,
             -- texts, emails) by ContactType, so the slot ordinal need not be
@@ -54,15 +55,26 @@ select
     c.contact_last_name as `ParentLastName`,
     c.phone_home as `HomePhone`,
     c.phone_work as `WorkPhone`,
-    c.phone_mobile as `CellPhone`,
     c.email as `Email`,
     c.relationship as `Relationship`,
     c.contact_type as `ContactType`,
 
     cast(null as string) as `Language`,
+
+    -- The DeansList template has no header for a number whose Finalsite type
+    -- was never set, so before this fallback such a number reached no column at
+    -- all and the family arrived uncallable. CellPhone is where it rides in:
+    -- across the NJ regions ~95% of the numbers that DO carry a type are Cell,
+    -- so it is the likeliest fit, and a landline sent here is no worse off than
+    -- the blank it replaces. A Finalsite-typed Cell still wins outright.
+    coalesce(c.phone_mobile, c.phone_untyped) as `CellPhone`,
 from contacts as c
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on c.student_number = s.student_number
     and c._dbt_source_project = s._dbt_source_project
     and s.enroll_status = 0
+-- DeansList's importer displays contacts in the order this file lists them per
+-- student (no independent sort on their end), so Parent1/Parent2 must precede
+-- Emergency here or families see emergency contacts ranked above parents.
+order by c.student_number asc, (c.contact_type = 'Emergency') asc, c.contact_type asc

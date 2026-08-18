@@ -3,24 +3,27 @@ models:
     description: >
       Student-level college assessment scores used to calculate the percentage
       of students meeting readiness benchmarks for KIPP Forward use. One row per
-      student per (aligned_scope, benchmark_name) combination — including
-      students with no qualifying score (null max_score) so they count in the
-      denominator. Excludes IEP-exempt students and students without a
-      graduation year. Scores reflect each student's all-time best across
-      administrations, not scoped to the current academic year.
+      student per (test_type, aligned_scope, subject_area, benchmark_name)
+      combination — including students with no qualifying score (null max_score)
+      so they count in the denominator. Benchmark definitions and thresholds
+      come from the KIPP Forward scaffold sheet for the current academic year.
+      Excludes IEP-exempt students and students without a graduation year.
+      Scores reflect each student's all-time best across administrations, not
+      scoped to the current academic year.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
+              - test_type
               - aligned_scope
+              - subject_area
               - benchmark_name
     columns:
       - name: benchmark_goal
         description: >
-          Hardcoded score threshold for the benchmark. Derived from
-          benchmark_group — each scope/subject_area/benchmark_name combination
-          maps to a fixed integer cutoff.
+          Score threshold for the benchmark, from the scaffold sheet's
+          hs_grad_ready_min_score and college_ready_min_score columns.
         data_type: int64
         data_tests:
           - not_null
@@ -80,28 +83,29 @@ models:
           unchanged.
         data_type: string
       - name: test_type
-        description: Broad classification of the assessment (e.g., SAT Suite).
-        data_type: string
-      - name: score_type
         description: >
-          Specific score dimension within the assessment (e.g., sat_total,
-          sat_ebrw, sat_math).
+          Official or Practice, from the scaffold. Practice rows resolve against
+          practice scores only, so a practice benchmark is never satisfied by an
+          official result.
         data_type: string
       - name: subject_area
         description: >
-          Subject area of the score — Combined, EBRW, or Math. Combined rows are
-          cross-joined with the three named benchmarks; EBRW and Math rows use
-          subject_area as the benchmark_name directly.
+          Subject area of the score — Combined, EBRW, or Math. Each one carries
+          both benchmark names.
         data_type: string
       - name: max_score
         description: >
           Highest scale score for the student on this aligned scope and subject
           area across all assessment administrations. Null for students with no
           qualifying score. Used as the score value for benchmark percent-met
-          calculations in Tableau.
-        data_type: int64
+          calculations in Tableau. numeric rather than int64 because it is read
+          straight from the hub without a cast. Values are unchanged — every
+          scale score is a whole number.
+        data_type: numeric
       - name: benchmark_name
         description: >
-          Readiness benchmark label. One of College-Ready, HS-Ready, EA/ED-Ready
-          (for Combined rows) or EBRW, Math (for subject-specific rows).
+          Readiness benchmark label, HS Grad-Ready or College-Ready, derived
+          from which scaffold threshold column the row came from. Applies to
+          every subject area, so a section row now carries a readiness tier
+          rather than being named for its subject. EA/ED-Ready is retired.
         data_type: string

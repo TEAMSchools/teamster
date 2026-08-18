@@ -17,6 +17,19 @@ models:
       and region so consumers can resolve a score's reporting quarter by date.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~93 executions/day on the eager table condition. Its ONLY consumer
+          # is fct_assessment_scores_enrollment_scoped, already on
+          # `0 0,10,13,15,17 * * *`. Sharing that tick lets the deps-in-progress
+          # guard serialize the pass instead of rebuilding per upstream change.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: source_type
         data_type: string

@@ -29,15 +29,15 @@ with
             s.ethnicity,
             s.state_studentnumber,
 
-            e.enroll_status,
+            -- Conformed upstream in int_focus__students, which maps nine Focus
+            -- meal codes onto the archive's F/R/P domain. Null for every
+            -- Miami student today because Focus's meal field currently
+            -- carries only a school-level CEP direct-certification code, not
+            -- an individual determination -- but the mapping produces F, R or
+            -- P the moment Focus records one.
+            s.lunchstatus,
 
-            -- Focus's free_reduced_meals_program is a CEP direct-certification
-            -- flag, not an eligibility status -- every Miami student carries
-            -- the same value, and Focus stores nothing resembling the
-            -- archive's F/R/P domain. Null until Ops surfaces a real
-            -- per-student eligibility field; a school-wide constant would feed
-            -- an economic-disadvantage proxy with no signal in it.
-            cast(null as string) as lunchstatus,
+            e.enroll_status,
         from {{ ref("int_focus__students") }} as s
         -- Joined on Focus's own prefixed id. Both sides are Focus-native, so
         -- stripping the 8400 prefix on each just to match them back up is a

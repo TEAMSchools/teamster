@@ -135,11 +135,23 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: phone_untyped
+        data_type: string
+        description:
+          The contact's first phone number carrying no type label, if any.
+          Finalsite lets a number be saved without selecting a type, and such a
+          number reaches none of the typed columns above — this is where it
+          lands, so a consumer can still reach the family. Always null on the
+          Focus branch, which types every number it stores.
+        config:
+          meta:
+            contains_pii: true
       - name: phone_primary
         data_type: string
         description:
-          The contact's first/best phone number regardless of type — a fallback
-          for phones the typed columns miss.
+          The contact's first/best phone number regardless of type, whether or
+          not a type label is set. To recover a number the typed columns miss,
+          use `phone_untyped`, which reports only genuinely untyped numbers.
         config:
           meta:
             contains_pii: true
@@ -235,6 +247,7 @@ unit_tests:
             cast(null as string) as phone_home,
             cast(null as string) as phone_daytime,
             cast(null as string) as phone_work,
+            cast(null as string) as phone_untyped,
             cast(null as string) as phone_primary,
             cast(null as bool) as is_emergency,
             cast(null as bool) as is_pickup,

@@ -1,0 +1,290 @@
+models:
+  - name: int_assessments__all_college_assessments
+    description: >-
+      Single hub for college-entrance assessment scores across both test types,
+      carrying the cross-test ranking and alignment fields that CARAT reporting
+      views each compute for themselves today. Official rows come from
+      int_assessments__college_assessment, practice rows from
+      int_assessments__college_assessment_practice, reconciled to the official
+      hub's vocabulary at the union.
+
+
+      Nine columns are official-only and read null on practice rows —
+      aligned_subject, salesforce_id, the two score-shape counts, surrogate_key,
+      and the four superscore fields. They are computed inside the official hub
+      rather than here. Moving them below the union so they populate for both is
+      separate work.
+
+
+      The practice hub now supplies is_overall_score, is_subject_score,
+      max_scale_score, running_max_scale_score, and strategy_case itself, so
+      those five populate for both test types.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - test_type
+              - score_type
+              - test_date
+              - rn_highest
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school. Indexed.
+      - name: administration_round
+        data_type: string
+        description: Test administration identifier from the source system.
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the administration, start-year convention.
+      - name: test_date
+        data_type: date
+        description: Date the student sat the assessment.
+      - name: test_month
+        data_type: string
+        description: Full month name of test_date.
+      - name: test_type
+        data_type: string
+        description: >-
+          Official or Practice. Both hubs now use this convention, so the union
+          needs no translation.
+      - name: scope
+        data_type: string
+        description: The test itself — ACT, SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
+      - name: benchmark_aligned_scope
+        data_type: string
+        description: >-
+          Scope with PSAT10 and PSAT NMSQT folded to PSAT10/NMSQT, since they
+          are the same test offered in different windows and share a scale.
+          Valid for comparing scores. ACT and SAT are never folded here. Named
+          for the benchmark views it serves, since the goals sheets carry their
+          own expected_aligned_scope that folds ACT and SAT together for
+          attainment and is not interchangeable with this one.
+      - name: subject_area
+        data_type: string
+        description: Section as the source system spells it.
+      - name: aligned_subject_area
+        data_type: string
+        description: Subject area with Composite and Combined folded to Total.
+      - name: aligned_subject
+        data_type: string
+        description: >-
+          Subject area with the reading and EBRW variants folded to
+          EBRW/Reading, for comparison across test generations.
+      - name: course_discipline
+        data_type: string
+        description: ENG, MATH, or SCI, matching PowerSchool credit types.
+      - name: score_type
+        data_type: string
+        description: Score identifier, unique per test and section.
+      - name: scale_score
+        data_type: numeric
+        description: The score as reported, on the test's own scale.
+      - name: rn_highest
+        data_type: int64
+        description: >-
+          Rank of this score among the student's scores for the same scope and
+          score type, highest first. Part of the grain. Official rows inherit
+          the rank from the source unpivots, which assign it before rows without
+          a test date are dropped, so an official student can have no rank-1 row
+          at all. Practice rows are ranked here instead and always have one.
+      - name: aligned_month_round
+        data_type: string
+        description: >-
+          The administration a score belongs to, in the vocabulary the Expected
+          Assessments tab uses, so a reporting view can join the two without
+          knowing which pipeline a row came from.
+
+
+          Official rows carry the month name. College Board sets those dates
+          nationally, so the month identifies the administration reliably.
+
+
+          Practice rows carry scope_round — SAT1, PSAT891, PSAT101. A month
+          cannot identify a practice administration: schools choose their own
+          dates, so a single administration straddles two months (grade 9 runs
+          25 August to 23 September across four schools), and the Illuminate
+          dates are Foundation's to set rather than ours to normalise.
+
+
+          administration_round is not a substitute for either. It derives from
+          Illuminate's administered_at, which is null on every externally
+          created assessment and wrong on the one that has a value — it reads
+          Jul 23 against September test dates.
+
+
+          Null where test_date is null, which is every official row the source
+          system left undated.
+      - name: salesforce_id
+        data_type: string
+        description: kippadb contact id. Null on College Board rows.
+      - name: is_overall_score
+        data_type: int64
+        description: >-
+          Flags a total or composite score rather than a section. Populated for
+          both test types — official derives it from subject_area, practice from
+          response_type.
+      - name: is_subject_score
+        data_type: int64
+        description: >-
+          Flags a section score rather than a total or composite. Populated for
+          both test types.
+      - name: is_benchmark_eligible
+        data_type: boolean
+        description: >-
+          Whether the score can be compared against a benchmark threshold. False
+          for ACT, whose 1-36 scale is not comparable, and for the four legacy
+          sub-test score types reported on a 10-40 scale. The aligned max fields
+          below already exclude these rows. Filter on this column when picking
+          the row a max came from, so the pick and the max cover the same rows.
+      - name: n_overall_scores
+        data_type: int64
+        description: Count of total or composite scores in the same sitting.
+      - name: n_subject_scores
+        data_type: int64
+        description: Count of section scores in the same sitting.
+      - name: strategy_case
+        data_type: string
+        description: >-
+          Which score shapes the testing produced — Case 1 overall only, Case 2
+          sections only, Case 3 both. Populated for both test types, each from
+          its own hub.
+
+
+          Case 1 appears on official rows only. Practice derives a total from
+          its sections, so it cannot produce one without them, and a consumer
+          filtering to Case 1 correctly sees official students only.
+
+
+          The unit differs by one dimension between the two. Official counts
+          score shapes per student, scope, and test date, so the label describes
+          a single sitting. Practice counts sections sat per academic year,
+          student, scope_round, and grade, so it describes an administration.
+
+
+          Not constant across a student's rows for one score type. It is a
+          property of a sitting, so a student who tested completely once and
+          partially another time carries both values — 121 keys today, of which
+          110 are genuinely separate administrations months apart rather than
+          duplicate entry. A consumer aggregating to one row per student must
+          therefore pick, and the pick is theirs to justify.
+      - name: surrogate_key
+        data_type: string
+        description: Hash of student_number, score_type, and test_date.
+      - name: running_max_scale_score
+        data_type: numeric
+        description: >-
+          Highest score for this score type as of this test date, so earlier
+          sittings are not retroactively improved.
+      - name: max_scale_score
+        data_type: numeric
+        description: >-
+          Highest score for this student and score type across all dates,
+          carried on every attempt. Populated for both test types. The official
+          side derives it over rn_highest = 1 rows and so inherits that filter's
+          suppression; the practice side takes a plain max.
+      - name: previous_total_score_change
+        data_type: numeric
+        description: >-
+          Change in total score from the student's previous administration of
+          the same scope. Positive means improvement, null on the first one.
+          Populated for both test types, each hub computing its own.
+
+
+          The unit differs by one dimension, as with strategy_case. Official
+          keys on test date, so it measures sitting to sitting. Practice keys on
+          scope_round, because schools can split one administration across days
+          and two administrations can therefore share a date.
+
+
+          Practice reads null throughout today: no student holds two practice
+          administrations of one test yet.
+      - name: previous_score_change
+        data_type: numeric
+        description: >-
+          Change between consecutive administrations, for every score type
+          rather than totals only, so a view can report growth on sections as
+          well as combined scores. Null on a student's first administration of
+          that score type.
+
+
+          Measured between administrations, not between rows. 261 official
+          sittings carry the same score twice under different rn_highest, and
+          lagging over those directly would read a change of zero between a row
+          and its own duplicate, so the score is taken per administration first.
+
+
+          **test_type is deliberately not in the partition**, and this is the
+          one place in this lineage where that is correct. Every other partition
+          carries it, because a practice score must never displace an official
+          one — but a student's progression runs through both and chaining them
+          is the point. 1,611 administrations currently follow a practice one,
+          across 342 students, mostly the AY2023 practice-ACT cohort chaining
+          into their official ACT. Scores stay comparable because a practice
+          score is converted onto the same scale as its official counterpart.
+
+
+          That is what distinguishes this from previous_total_score_change,
+          which each hub computes for itself and which therefore never crosses
+          test types. This column also covers sections; that one is totals only.
+
+
+          Nothing reads this yet. It exists for the growth-over-time work due
+          shortly after this PR, which reports change for totals and subjects
+          across all students.
+      - name: superscore
+        data_type: numeric
+        description: >-
+          Best section scores across sittings recombined into a total — summed
+          for SAT and PSAT, averaged for ACT.
+      - name: avg_running_max_superscore
+        data_type: numeric
+        description: Section running maxes averaged, feeding the ACT superscore.
+      - name: sum_running_max_superscore
+        data_type: numeric
+        description: Section running maxes summed, feeding the SAT superscore.
+      - name: runnning_superscore
+        data_type: numeric
+        description: >-
+          Superscore as of this test date. Name carries a typo inherited from
+          the upstream hub, where it has no consumers.
+      - name: attempt_lifetime
+        data_type: int64
+        description: >-
+          How many times the student has sat this test across all years, carried
+          on every row. Counts distinct test dates rather than rows, because 261
+          official sittings hold the same score twice under different rn_highest
+          values and a row count would report those students one attempt high.
+          Partitioned by test_type, so a practice sitting never inflates an
+          official count. Null on section rows — an attempt is counted once per
+          sitting, off the total row, not once per section sat.
+      - name: yearly_attempts_totals
+        data_type: int64
+        description: >-
+          The same count scoped to one academic year, so a student who sat the
+          SAT twice in SY26-27 reads 2 here and carries their full history in
+          attempt_lifetime. Null on section rows for the same reason.
+      - name: rn_highest_benchmark_aligned_scope
+        data_type: int64
+        description: >-
+          Ranks benchmark-eligible scores highest-first within test type,
+          benchmark aligned scope, and subject area, so rn = 1 tags the row a
+          consumer filters on instead of deduplicating for itself. Partitioned
+          on subject area rather than score type so PSAT10 and PSAT NMSQT
+          compete for the same subject, and on test type so a practice score
+          never outranks an official one. Null on ineligible rows, which rank
+          among themselves so they never consume a rank from an eligible row.
+      - name: benchmark_aligned_scope_max_score
+        data_type: numeric
+        description: >-
+          Highest benchmark-eligible score for this student, benchmark aligned
+          scope, and subject area, within one test type. test_type is in the
+          partition so an official best is never displaced by a practice one.
+          Carried for reporting views that want the value without filtering; the
+          benchmark view itself now filters rn_highest_benchmark_aligned_scope
+          instead. The two disagree on 27 keys, because this one still requires
+          rn_highest = 1 and the tag does not — see TODO(#4658).

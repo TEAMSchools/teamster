@@ -9,8 +9,10 @@ models:
       `emergency_4`). `ContactType` distinguishes `Parent1` / `Parent2` /
       `Emergency` so DeansList can scope automated guardian messaging, and every
       contact carries its real Finalsite relationship to the student. Column
-      names match the DeansList import template headers exactly. Delivered by
-      the Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
+      names match the DeansList import template headers exactly. Rows are
+      ordered per student with parents before emergency contacts, since
+      DeansList displays contacts in the file's row order. Delivered by the
+      Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
     data_tests:
       # The source grain is (student, contact_slot), but the DeansList template
       # fixes the header set so the slot cannot be projected — name plus
@@ -94,7 +96,12 @@ models:
             contains_pii: true
       - name: CellPhone
         data_type: string
-        description: Parent contact's phone number typed `Cell`, if any.
+        description:
+          Parent contact's phone number typed `Cell`. Falls back to the
+          contact's untyped number when Finalsite holds one with no type label
+          selected — that number reaches none of the typed columns, and the
+          DeansList template has no header of its own for it, so without the
+          fallback the contact arrives with no callable number at all.
         config:
           meta:
             contains_pii: true
@@ -134,32 +141,33 @@ unit_tests:
             'alice@example.com' as email,
             '+19292255670' as phone_home,
             cast(null as string) as phone_work,
-            '+18623007240x216' as phone_mobile
+            '+18623007240x216' as phone_mobile,
+            cast(null as string) as phone_untyped
           union all
           select
             'enr-001', 'kippnewark', 'contact_2', 'parent',
             'Adam', 'Johnson', 'adam@example.com', cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-001', 'kippnewark', 'emergency_1', 'grandparent',
             'Bob', 'Smith', cast(null as string), cast(null as string),
-            cast(null as string), '+13055550200'
+            cast(null as string), '+13055550200', cast(null as string)
           union all
           select
             'enr-001', 'kippnewark', 'emergency_2', 'aunt',
             'Carol', 'Diaz', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-001', 'kippnewark', 'emergency_3', 'uncle',
             'Dan', 'Evans', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-001', 'kippnewark', 'emergency_4', 'neighbor',
             'Erin', 'Fox', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -270,22 +278,23 @@ unit_tests:
             cast(null as string) as email,
             cast(null as string) as phone_home,
             cast(null as string) as phone_work,
-            cast(null as string) as phone_mobile
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
           union all
           select
             'enr-mia', 'kippmiami', 'contact_1', 'parent',
             'Hank', 'Ito', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-unenr', 'kippnewark', 'contact_1', 'parent',
             'Ivy', 'Jones', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-noxwalk', 'kippnewark', 'contact_1', 'parent',
             'Kim', 'Lee', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -350,22 +359,23 @@ unit_tests:
             'jane1@example.com' as email,
             cast(null as string) as phone_home,
             cast(null as string) as phone_work,
-            cast(null as string) as phone_mobile
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
           union all
           select
             'enr-301', 'kippnewark', 'contact_2', 'parent',
             'Jane', 'Two', 'jane2@example.com', cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-301', 'kippnewark', 'contact_3', 'parent',
             'Jane', 'Three', 'jane3@example.com', cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
             'enr-301', 'kippnewark', 'emergency_1', 'neighbor',
             'Jane', 'Four', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -416,5 +426,76 @@ unit_tests:
             Email: null,
             Relationship: neighbor,
             ContactType: Emergency,
+            Language: null,
+          }
+
+  - name: test_family_contacts_untyped_phone_fills_cellphone
+    description:
+      Locks the untyped-phone fallback. Finalsite lets a number be saved with no
+      Cell/Home/Work label, and such a number reaches none of the three typed
+      columns — before the fallback the contact shipped to DeansList with every
+      phone field blank. contact_1 carries only an untyped number and must
+      surface it as CellPhone; contact_2 carries both a typed Cell and an
+      untyped number, and the typed Cell must win rather than being displaced.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_finalsite__student_contacts')
+        format: sql
+        rows: |
+          select
+            'enr-401' as finalsite_enrollment_id,
+            'kippcamden' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'parent' as relationship,
+            'Nan' as contact_first_name,
+            'Untyped' as contact_last_name,
+            cast(null as string) as email,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile,
+            '+18564730100' as phone_untyped
+          union all
+          select
+            'enr-401', 'kippcamden', 'contact_2', 'parent',
+            'Ted', 'Typed', cast(null as string), cast(null as string),
+            cast(null as string), '+18564730200', '+18564730300'
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-401' as finalsite_enrollment_id,
+            'kippcamden' as _dbt_source_project,
+            '400001' as powerschool_student_number
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            0 as enroll_status,
+            'kippcamden' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 400001,
+            ParentFirstName: Nan,
+            ParentLastName: Untyped,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: "18564730100",
+            Email: null,
+            Relationship: parent,
+            ContactType: Parent1,
+            Language: null,
+          }
+        - {
+            StudentID: 400001,
+            ParentFirstName: Ted,
+            ParentLastName: Typed,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: "18564730200",
+            Email: null,
+            Relationship: parent,
+            ContactType: Parent2,
             Language: null,
           }

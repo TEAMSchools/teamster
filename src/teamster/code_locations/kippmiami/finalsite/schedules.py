@@ -13,8 +13,8 @@ finalsite_contacts_daily_asset_job_schedule = ScheduleDefinition(
     # the other (this API pull and the manually-pushed SFTP drop feed opposite
     # sides of int_finalsite__enrollment_lifecycle; the dlt pull feeds the
     # import-once anti-join). Top-of-hour GKE Autopilot fan-out can add 3-9 min of
-    # step-pod scheduling wait, which only queues the run -- against 45 min before
-    # the 12:45 delivery that is noise, and the 3600s max_runtime below absorbs it.
+    # step-pod scheduling wait, which only queues the run -- against 75 min before
+    # the 13:15 delivery that is noise, and the 3600s max_runtime below absorbs it.
     #
     # Miami is the only district on a midday tick, so the finalsite_api pool
     # (limit 1) is uncontended then -- at 04:00 the four districts serialize and
@@ -43,8 +43,8 @@ finalsite_enrollment_lifecycle_backstop_schedule = ScheduleDefinition(
     # model -- observed 2026-08-11, stale for 75+ min across the delivery. #4834
     #
     # The eager condition still does all the normal work; this only guarantees
-    # one rebuild lands before the 12:45 delivery, which is a plain cron and
-    # reports nothing when the model is stale. 10 min of lead against a ~3s
+    # one rebuild lands before the 13:15 delivery, which is a plain cron and
+    # reports nothing when the model is stale. 40 min of lead against a ~3s
     # build, and late enough that the worst-case SFTP chain (~12:26) has landed.
     #
     # A rebuild on a day when nothing was stale is accepted waste: one scan of a

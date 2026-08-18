@@ -129,6 +129,19 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: phone_untyped
+        data_type: string
+        description:
+          The contact's first phone number carrying no type label, if any.
+          Finalsite lets a number be saved without selecting Cell, Home, or
+          Work, and such a number reaches none of the three typed columns above
+          — this column is where it lands, so a consumer can still reach the
+          family. Scans all three phone positions rather than only the first,
+          which is what separates it from `phone_primary`. Already normalized to
+          E.164 upstream.
+        config:
+          meta:
+            contains_pii: true
       - name: phone_daytime
         data_type: string
         description:
@@ -140,9 +153,10 @@ models:
       - name: phone_primary
         data_type: string
         description:
-          The contact's first phone number regardless of type — a fallback for
-          phones with a blank `_type` that the typed columns miss. Already
-          normalized to E.164 upstream.
+          The contact's first phone number regardless of type, whether or not a
+          type label is set. Use `phone_untyped` to recover a number the typed
+          columns miss — it scans all three positions, where this column only
+          ever reports the first. Already normalized to E.164 upstream.
         config:
           meta:
             contains_pii: true
@@ -183,9 +197,11 @@ unit_tests:
     description:
       A contact_1 row routes each of the related person's phones to the slot
       matching its type label — `Cell` to phone_mobile, `Home` to phone_home, an
-      absent type to a null slot — and carries phone_1 through as phone_primary
-      regardless of type. Phones arrive already normalized to E.164 from
-      `stg_finalsite__contacts`; this model passes them through unchanged.
+      absent type to phone_untyped — and carries phone_1 through as
+      phone_primary regardless of type. phone_3 carries a number with no type
+      label, the case that reaches none of the typed columns. Phones arrive
+      already normalized to E.164 from `stg_finalsite__contacts`; this model
+      passes them through unchanged.
     model: int_finalsite__student_contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -213,7 +229,7 @@ unit_tests:
             'Cell' as phone_1_type,
             '+19292255670' as phone_2_number,
             'Home' as phone_2_type,
-            cast(null as string) as phone_3_number,
+            '+13055550199' as phone_3_number,
             cast(null as string) as phone_3_type,
             cast(null as string) as address_1,
             cast(null as string) as address_2,
@@ -245,6 +261,7 @@ unit_tests:
           '+18623007240' as phone_mobile,
           '+19292255670' as phone_home,
           cast(null as string) as phone_work,
+          '+13055550199' as phone_untyped,
           '+18623007240' as phone_primary
 
   - name: test_student_contacts_parent_2

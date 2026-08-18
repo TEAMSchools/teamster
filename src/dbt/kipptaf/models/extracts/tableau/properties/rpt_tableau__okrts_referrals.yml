@@ -113,6 +113,16 @@ models:
         data_type: string
       - name: self_contained_status
         data_type: string
+      - name: homeless_status
+        data_type: string
+        description:
+          Decoded homelessness status for the enrollment year. Null for Miami,
+          which does not populate the underlying PowerSchool field.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+        description:
+          Decoded primary nighttime residence for the enrollment year. Collected
+          in New Jersey only, so null elsewhere.
       - name: entry_staff
         data_type: string
       - name: last_update_staff

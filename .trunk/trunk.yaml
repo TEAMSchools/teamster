@@ -17,11 +17,11 @@ lint:
     - hadolint@2.15.1
     - isort@8.0.1
     - markdownlint@0.49.1
-    - osv-scanner@2.5.0
+    - osv-scanner@2.5.1
     - oxipng@10.2.0
     - prettier@3.9.6
-    - pyright@1.1.411
-    - ruff@0.16.2
+    - pyright@1.1.413
+    - ruff@0.16.3
     - shellcheck@0.11.0
     - shfmt@3.13.1
     - sqlfluff@4.3.0

@@ -20,18 +20,41 @@ directly to BigQuery using `dlt`'s `sql_database` source with PyArrow backend.
 ### `focus/`
 
 Loads tables from the **Focus SIS** (student information system) PostgreSQL
-database directly to BigQuery using `dlt`'s `sql_database` source with PyArrow
-backend.
+database directly to BigQuery using `dlt`'s `table_rows` generator with the
+PyArrow backend. Probe-gated, same style as `powerschool/`.
 
 - Asset keys: `[code_location, "dlt", "focus", table_name]`
+- Factories:
+  `build_focus_dlt_assets(sql_database_credentials, code_location, tables, op_tags=None)`
+  and
+  `build_focus_dlt_intraday_sensor(code_location, tables, sql_database_credentials, nightly_schedule_name, minimum_interval_seconds=900)`
+  (`sensors.py`)
+- **Op run-config contract** (`FocusDltConfig`): `probe` present (intraday
+  sensor) → load exactly the run's asset selection with the passed signatures.
+  `probe` absent (04:00 schedule / manual launch) → probe the selection once
+  BEFORE the load, then load it all unconditionally. `refresh` is the separate
+  #4740 migration knob and is orthogonal to gating. A `dlt_extract_workers` run
+  tag caps dlt's extract concurrency, same diagnostic knob as `powerschool/`
+  (see its section below) — absent tag leaves dlt's default (5). No factory
+  param for it: no caller passes one, so there is no precedence to resolve.
+- Tiering: `0 4 * * *` targets only the count-only tables (`co_teachers` as of
+  writing — derived from `cursor_column: null` in `config/focus.yaml`, not
+  hardcoded) and is their unconditional daily reload, because a count-only probe
+  can't see an in-place edit that leaves row count unchanged. The other 75
+  tables' `updated_at` cursor is verified reliable (99.9%+ of rows on core
+  tables show `updated_at != created_at` with a current max, measured
+  2026-08-10), so the intraday sensor's probe alone gates them — they get no
+  separate unconditional reload. The sensor still probes all 76 tables every 15
+  minutes regardless of tier.
+- `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
+  which is count-only. A new table must declare one in `config/focus.yaml`; the
+  code location reads `a["cursor_column"]`, so omitting it fails at module load.
 - Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
   (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
   `replace` load — see `focus/CLAUDE.md`)
 - `interval_to_microseconds_adapter` maps Postgres `interval` to INT64
   microseconds; without it dlt rejects the inferred `duration[us]` (see
   `focus/CLAUDE.md`)
-- Factory:
-  `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
 
 ### `salesforce/`
 
@@ -73,10 +96,10 @@ and
   None) and no-cursor tables would reload every tick.
 - **Sensor tick**: skip if a sensor-launched or nightly-schedule run is in
   flight (via `dagster/sensor_name` / `dagster/schedule_name` run tags); probe
-  every intraday table over one engine; compare to the dlt-state baseline
-  (`sync_destination()` + `_stored_signatures`); request only changed tables
-  with the probe payload in run config. Idle ticks launch nothing, so unchanged
-  tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
+  every intraday table over one engine; compare to the dlt-state baseline (via
+  `sync_destination()` + probe.py's `stored_signatures`); request only changed
+  tables with the probe payload in run config. Idle ticks launch nothing, so
+  unchanged tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
 - **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
   cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
   (connection closed) at a consistent **~8.6M rows** regardless of throughput
@@ -90,15 +113,31 @@ and
   per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
   naive full-replace works at any table size; `assignmentscore` (19M) completes
   as one query. Set dlt extract concurrency from the op via
-  `dlt.config["extract.workers"] = N` (a writable in-memory provider that
+  `dlt_config["extract.workers"] = N` (`dlt_config` =
+  `from dlt import config as dlt_config`, a writable in-memory provider that
   `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
   `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
-  `pipeline.run()` accepts no `workers` arg.
+  **Do NOT write `dlt.config`** — the op's resource parameter is named `dlt`,
+  which shadows the top-level `dlt` module inside the function body, so
+  `dlt.config` resolves to `DagsterDltResource` (no `config` attribute) and
+  raises `AttributeError`. Both `powerschool/` and `focus/` (below) read a
+  `dlt_extract_workers` run tag and apply it via `dlt_config`. `pipeline.run()`
+  accepts no `workers` arg.
 
 ## Notes
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly
 to BigQuery — they do not go through the GCS IO managers.
+
+### Shared probe helpers (`probe.py`)
+
+`ProbeTable`, `ProbeSignatureConfig`, `probe_signature`, `compute_changed`,
+`stored_signatures`, `IN_FLIGHT_STATUSES`, and `in_flight_run` live in
+`libraries/dlt/probe.py` and are shared by `powerschool/` and `focus/`. Each
+library keeps its OWN sensor — powerschool needs an SSH tunnel plus an Oracle
+resource, focus a plain Postgres URL. Do not merge them into a generic sensor
+factory; `illuminate/` (#4446) is the third intended consumer of the helpers,
+not of a shared sensor.
 
 ### Illuminate: unbounded Postgres `numeric`
 
@@ -114,7 +153,7 @@ If the adapter's scale changes, any existing BQ table with a conflicting column
 type must be dropped manually — `replace` write disposition does not allow type
 changes on existing tables.
 
-### `replace` write-disposition + runtime subsetting (dlt 1.28.1)
+### `replace` write-disposition + runtime subsetting
 
 - A `replace` resource that yields **zero rows truncates** its destination table
   — you cannot skip a table by yielding nothing from inside the run. To load a
@@ -179,9 +218,22 @@ changes on existing tables.
   function body or a `selected=False` resource never round-trip
   (spike-confirmed, silent) — this is why the per-table signature write lives
   inside the extracted resource, not the source.
-- `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
-  metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
-  `except` so a load failure is legible without walking the exception chain.
+- **Do NOT call `.fetch_row_count()` on the `run()` iterator** — it raises on
+  any materialization with no `jobs` metadata, which is what dlt emits for the
+  first load of a table that extracts zero rows (`_handle_empty_tables` writes
+  the empty truncate file only once a table has `seen_data`). With one
+  multi-asset op per district that raise kills every other table in the run, and
+  it bills a `count(*)` per table besides. `dagster_dlt` already attaches dlt's
+  own per-table `rows_loaded` to every materialization for free — the same
+  number for a full `replace` load — so `powerschool/` just `yield from`s
+  `run()`. Trade-off: `rows_loaded` is plain metadata, not the canonical
+  `dagster/row_count` key, so the asset catalog's row-count column stays empty;
+  do not "fix" that by re-adding the chained call. A stub standing in for the
+  `run()` return value must be **iterable** (see
+  `tests/libraries/test_powerschool_dlt_extract_workers.py`).
+- Also log `last_trace.last_normalize_info.row_counts` in an `except`: a load
+  failure emits no materializations at all, so that log is the only per-table
+  visibility.
 - **Stream dlt progress into the Dagster event log**: in the op, set
   `dlt_pipeline.collector = LogCollector(logger=context.log, log_period=30.0)`
   (`context.log` is a `logging.Logger`). The factory default `logger="stdout"`
