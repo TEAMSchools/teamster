@@ -98,12 +98,6 @@ models:
         description: State-reported attendance code — P present, A absent.
       - name: daily_code_excused
         description: Y when the absence is excused.
-      - name: daily_code_tardy
-        description: Y when the code represents a tardy.
-      - name: daily_code_chronic_absenteeism
-        description: Whether the code counts toward chronic absenteeism.
-      - name: daily_code_truancy
-        description: Whether the code counts toward truancy.
       - name: marking_period_title
         description: Marking-period name from stg_focus__marking_periods.
       - name: marking_period_short_name

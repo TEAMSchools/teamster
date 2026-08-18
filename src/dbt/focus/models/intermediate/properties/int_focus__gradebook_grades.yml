@@ -9,7 +9,15 @@ models:
       the one the student is scheduled into. Scores whose assignment has no
       course-period link keep their points and carry a null course period rather
       than dropping. Internal-only — a rpt_ view must sit between this model and
-      any external consumer.
+      any external consumer. A grade resolves to one course period only while a
+      student sits in exactly one of the assignment's sections. Three
+      student-and-assignment pairs currently match two sections each, from
+      mid-year section changes within the same course; none carries a grade
+      today, so no row is duplicated. Filtering the match by the assignment date
+      against the schedule window was tested and rejected: it drops a legitimate
+      grade for a student added to a section on 2026-08-18 and back-graded on
+      work assigned 2026-08-12, which is ordinary late-enrollment behaviour.
+      Revisit if a graded row ever lands in two sections.
     columns:
       - name: student_gradebook_grade_id
         description: >-

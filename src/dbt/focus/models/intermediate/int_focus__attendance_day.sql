@@ -31,9 +31,6 @@ select
     ac.type as daily_code_type,
     ac.state_code as daily_code_state_code,
     ac.excused as daily_code_excused,
-    ac.tardy as daily_code_tardy,
-    ac.chronic_absenteeism as daily_code_chronic_absenteeism,
-    ac.truancy as daily_code_truancy,
 
 from {{ ref("stg_focus__attendance_day") }} as ad
 -- left, not inner: a few rows carry a marking_period_id that does not resolve,
