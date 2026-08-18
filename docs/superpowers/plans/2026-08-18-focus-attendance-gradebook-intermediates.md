@@ -112,6 +112,10 @@ entry in the Gradebook block), add:
   cursor_column: updated_at
 ```
 
+**Indent both entries by 2 spaces** to match the existing entries in that file —
+the block above is shown flush left because the repo's markdown formatter
+re-flattens fenced YAML, so it cannot be pasted verbatim.
+
 `cursor_column: updated_at` is verified, not assumed — both tables carry
 `updated_at :: timestamp with time zone`. Do NOT add
 `gradebook_deleted_assignments_join_course_periods`.
@@ -152,6 +156,10 @@ In `sources-bigquery.yml`, after the `gradebook_templates` entry and before the
           - focus
           - gradebook_assignment_types_join_course_periods
 ```
+
+**Indent both entries by 6 spaces** to match the existing `tables:` entries in
+that file — as above, the block is shown flush left because the formatter
+re-flattens fenced YAML.
 
 - [ ] **Step 4: Verify dbt parses the new sources**
 
