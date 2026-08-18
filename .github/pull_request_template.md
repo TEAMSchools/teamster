@@ -2,7 +2,17 @@
 
 ## Summary & Motivation
 
-> "When merged, this pull request will..."
+> Plain language, no jargon — what changed and why. A reviewer skimming just
+> this section should understand the change. Save tradeoffs, edge cases, and
+> verification detail for "Reviewer Notes" below.
+
+"When merged, this pull request will..."
+
+## Reviewer Notes
+
+> Optional. Technical decisions, tradeoffs, edge cases, or verification detail
+> worth a second look — visible to every reviewer, not just Claude. Delete if
+> there's nothing here.
 
 ## Self-review
 
@@ -73,12 +83,10 @@
 <details>
 <summary>For Claude</summary>
 
-> Context, not instructions — AI involvement, what to focus on, what's
-> intentionally out of scope, related issues/PRs. Delete if there's nothing to
-> add.
+> AI involvement, and anything a future `@claude` invocation needs that isn't
+> already covered above. Not for review judgment calls — those belong in
+> "Reviewer Notes", visible to every reviewer. Delete if there's nothing to add.
 
-<!-- e.g. "Claude-assisted, human-directed. The risky part is the retry logic
-in src/x.py; the reformatted imports are just `ruff --fix` noise. Closes
-#123; verified with `uv run pytest tests/test_x.py -k retry`." -->
+<!-- e.g. "Claude-assisted, human-directed." -->
 
 </details>

@@ -135,8 +135,12 @@ principal itself.
 
 ## Other Files
 
-- `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections),
-  plus a "For Claude" section for AI-assistance notes and review focus.
+- `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
+  Keep "Summary & Motivation" plain-language; put tradeoffs, edge cases, and
+  verification detail in the visible "Reviewer Notes" section instead — that
+  content is for every reviewer, not just Claude. The "For Claude" fold-out at
+  the end is narrower: AI-involvement notes and anything a future `@claude`
+  invocation needs, nothing a human reviewer needs to see.
 - `ISSUE_TEMPLATE/` — `bug_report.md` and `feature_request.md`, each with a "For
   Claude" section for `@claude`-driven issues; `config.yml` disables blank
   issues.
