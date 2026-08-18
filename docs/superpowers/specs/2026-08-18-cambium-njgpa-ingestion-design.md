@@ -367,8 +367,17 @@ independently.
 
 ### D4 — new Couchdrop folder per region
 
-**Chosen.** `/data-team/kippnewark/cambium/njgpa/` and
-`/data-team/kippcamden/cambium/njgpa/`.
+**Chosen and verified in place.** `/data-team/kippnewark/cambium/njgpa/` and
+`/data-team/kippcamden/cambium/njgpa/`, both created 2026-08-18 with each
+region's file present at the expected byte size (647,606 Newark; 306,106
+Camden).
+
+The parent of each `cambium` folder is exactly the `folder_id` already
+configured in that region's `build_couchdrop_sftp_sensor` call —
+`1B24uuik9MuBf-pKrrRn1lt3cWVtVAYJE` for Newark,
+`1BKZgGl_LcHIOVLrDo8eMMZLGFsc2Nk1o` for Camden — so the sensor's recursive
+listing reaches the new subtree with no sensor configuration change beyond the
+asset-selection entry.
 
 **Alternative** — reuse `/data-team/<region>/pearson/njgpa/`. No folders to
 create, but two unrelated schemas would share a directory with both assets
@@ -394,18 +403,47 @@ as Pearson does. The partition is a file-addressing scheme, never a semantic.
 break the moment a stray file from the other district landed in a folder.
 Depends on D4 keeping the regions separate.
 
+**Verified** against the real paths and adversarial cases. Both live files match
+their own region's pattern and yield `administration_year` of `2026` and
+`administration` of `Spring`. A Camden-coded file placed in the Newark folder
+does **not** match, which is the protection this decision buys. No historical
+Pearson NJGPA filename matches either Cambium pattern, and no Cambium path
+matches the Pearson pattern — no cross-contamination in either direction.
+
 ### D7 — `dim_assessments` gets a Cambium CTE it does not strictly need
 
 **Chosen** for explicitness. See _Marts_ above for why it is redundant today.
 Skipping it is defensible and shrinks the diff by one CTE.
 
-### D8 — the fall season token is unconfirmed
+### D8 — the fall season token is unconfirmed, and the precedent is that it drifts
 
-`Spring` is verified from the files in hand. `Fall` is an inference: it matches
-the `period` value Pearson has used since 2025, which changed from `FallBlock`.
-If Cambium ships a different token, the sensor raises on an invalid partition
-key — loud and visible in Dagster, not silent data loss. Confirming with NJDOE
-is worth doing but not worth blocking on.
+`Spring` is verified from the files in hand. `Fall` is an inference, and the
+Pearson filename history on Couchdrop shows the vendor changing its own season
+token between administrations:
+
+| Administration | Pearson filename suffix |
+| -------------- | ----------------------- |
+| Fall 2024      | `..._GPA_FallBlock.csv` |
+| Fall 2025      | `..._GPA_FALL.csv`      |
+| Spring         | `..._GPA_Spring.csv`    |
+
+So the fall token changed spelling **and** case across consecutive years under
+the previous vendor. `Fall`, `FALL`, and `FallBlock` are all plausible for
+Cambium.
+
+The regex tolerates any of them — `(?P<administration>[A-Za-z]+)` matches all
+three — so the only thing needing a change is the `StaticPartitionsDefinition`
+value list. The failure mode is contained: the sensor extracts the token, builds
+a `MultiPartitionKey`, and Dagster rejects an unrecognized partition key with a
+visible sensor error. Loud, not silent data loss, and a one-line fix.
+
+Worth confirming with NJDOE ahead of the fall administration; not worth blocking
+this change on.
+
+**Consequence for the partition values:** declaring `["Spring", "Fall"]` is a
+guess for half the list. An alternative is to declare `["Spring"]` only and add
+the fall value when the first fall file is seen, which makes the guess explicit
+rather than latent. Either way the fall administration cannot land unnoticed.
 
 ### D9 — project named `cambium`, scoped to NJGPA
 
