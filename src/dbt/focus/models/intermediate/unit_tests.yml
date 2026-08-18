@@ -89,3 +89,72 @@ unit_tests:
           is_homeless: true
           homeless_primary_nighttime_residence_code: 3
           lunchstatus: F
+
+  - name: test_int_focus__student_enrollment_dedupes_same_start_date_stints
+    model: int_focus__student_enrollment
+    description: >-
+      Focus permits two open stints sharing a student, year, and start date.
+      Student 1 covers the demotion leg: the schoolid-null stub loses even
+      though it was created later. Student 2 covers the recency leg: the newer
+      stint wins on enrollment_created_at while carrying the LOWER id, so a pass
+      only if the ordering reads the timestamp rather than the id.
+    given:
+      - input: ref('stg_focus__students')
+        format: sql
+        rows: |
+          select 1 as student_id, 'A' as first_name, 'One' as last_name,
+            cast(null as string) as florida_education_identifier,
+            cast(null as string) as student_e_mail_address,
+            cast(null as timestamp) as birthdate
+          union all
+          select 2, 'B', 'Two', cast(null as string), cast(null as string),
+            cast(null as timestamp)
+      - input: ref('stg_focus__student_enrollment')
+        format: sql
+        rows: |
+          select 10 as id, 1 as student_id, 2026 as syear,
+            100 as school_id, cast(null as int64) as grade_id,
+            cast(null as int64) as enrollment_code,
+            cast(null as int64) as drop_code,
+            date '2026-08-12' as start_date, cast(null as date) as end_date,
+            timestamp '2026-07-01 00:00:00' as created_at
+          union all
+          select 11, 1, 2026, cast(null as int64), cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date),
+            timestamp '2026-08-11 00:00:00'
+          union all
+          select 25, 2, 2026, 100, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 24, 2, 2026, 200, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date),
+            timestamp '2026-08-12 00:00:00'
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('int_focus__schools')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('int_focus__student_enrollment__pivot')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('stg_focus__school_gradelevels')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('stg_focus__student_enrollment_codes')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('int_focus__school_year_first_day')
+        rows: []
+    expect:
+      rows:
+        - student_number: 1
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 10
+        - student_number: 2
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 24
