@@ -127,6 +127,35 @@ with
 
     -- grain projection: every selected column is functionally determined
     -- by the partition key; not a mask for upstream duplicates
+    -- Not strictly required: assessment_key hashes (assessment_type,
+    -- module_code, source_assessment_id, test_type), which excludes grade
+    -- level and academic year, so these rows dedup into the Pearson NJGPA
+    -- rows and hash identically. Included so the dimension does not depend on
+    -- Pearson history remaining in place forever.
+    state_nj_njgpa_cambium as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+
+            'state_nj_njgpa' as assessment_type,
+            'NJGPA' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_cambium__njgpa") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     state_fl_fast as (
         select distinct
             assessment_subject as subject_area,
@@ -390,6 +419,9 @@ with
         union all
         select {{ union_cols }},
         from state_nj_njgpa
+        union all
+        select {{ union_cols }},
+        from state_nj_njgpa_cambium
         union all
         select {{ union_cols }},
         from state_nj_njsla
