@@ -50,18 +50,5 @@ def on_files(files, config):
     if html is None:
         return files
 
-    # docs/launch/README.md is a deliberately published page (see mkdocs.yml
-    # exclude_docs, which excludes the catalog's other source files but not
-    # this one), but MkDocs maps a `README.md` stem to `index.html` the same
-    # way it does `index.md` -- so it independently targets this exact
-    # destination too. Files.append() only dedupes by src_uri (ours is
-    # "launch/index.html"; README's own src_uri is "launch/README.md"), so
-    # the clash is otherwise silent: whichever gets WRITTEN last wins on
-    # disk, and it was winning. Evict it first so the generated catalog
-    # always owns this destination.
-    readme = files.get_file_from_path("launch/README.md")
-    if readme is not None:
-        files.remove(readme)
-
     files.append(File.generated(config, "launch/index.html", content=html))
     return files

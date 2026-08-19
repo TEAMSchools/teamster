@@ -37,6 +37,8 @@ exclude_docs: |
   launch/*.py
   launch/template.html
   launch/RUNBOOK.md
+  launch/README.md
+  launch/PROJECT.md
 
 nav:
   - Home: README.md
