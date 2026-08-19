@@ -47,16 +47,16 @@ a quality note. Nothing reaches 1,800 people on the strength of a scrape.
 
 ## Where it stands
 
-| Item                                                               | State                                                                        |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| Issue [#4761](https://github.com/TEAMSchools/teamster/issues/4761) | Open. The parent. Reopened after a linked-branch merge auto-closed it        |
-| PR [#4763](https://github.com/TEAMSchools/teamster/pull/4763)      | **Merged.** Catalog, README and RUNBOOK are on `main`                        |
-| PR [#4767](https://github.com/TEAMSchools/teamster/pull/4767)      | **Merged.** Catalog verification — 39 of 44 verified, 5 still `needs-review` |
-| PR [#4762](https://github.com/TEAMSchools/teamster/pull/4762)      | Open. Design spec for the page itself                                        |
-| Issue [#4818](https://github.com/TEAMSchools/teamster/issues/4818) | Open. Reopened — tracks this implementation work                             |
-| PR [#4819](https://github.com/TEAMSchools/teamster/pull/4819)      | **Merged.** Design spec for the build and gate is on `main`                  |
-| PR [#4816](https://github.com/TEAMSchools/teamster/pull/4816)      | **Merged.** `analytics-engineers` own `/docs/launch/`                        |
-| Google Site                                                        | Still live. Retirement is gated on a cutover threshold, not yet set          |
+| Item                                                               | State                                                                                                                                                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue [#4761](https://github.com/TEAMSchools/teamster/issues/4761) | Open. The parent. Reopened after a linked-branch merge auto-closed it                                                                                                               |
+| PR [#4763](https://github.com/TEAMSchools/teamster/pull/4763)      | **Merged.** Catalog, README and RUNBOOK are on `main`                                                                                                                               |
+| PR [#4767](https://github.com/TEAMSchools/teamster/pull/4767)      | **Merged.** Catalog verification — 39 of 44 verified, 5 still `needs-review`                                                                                                        |
+| PR [#4762](https://github.com/TEAMSchools/teamster/pull/4762)      | Open. Design spec for the page itself                                                                                                                                               |
+| Issue [#4818](https://github.com/TEAMSchools/teamster/issues/4818) | Open. Reopened — tracks this implementation work                                                                                                                                    |
+| PR [#4819](https://github.com/TEAMSchools/teamster/pull/4819)      | **Merged.** Design spec for the build and gate is on `main`                                                                                                                         |
+| PR [#4816](https://github.com/TEAMSchools/teamster/pull/4816)      | **Merged.** `analytics-engineers` own `/src/launch/`, the catalog's prior location. This branch's own refactor moved that CODEOWNERS line to `/docs/launch/` when the catalog moved |
+| Google Site                                                        | Still live. Retirement is gated on a cutover threshold, not yet set                                                                                                                 |
 
 The catalog on `main` is 44 entries — 34 Tableau, 7 Google Sheets, 3 AppSheet —
 and **39 are verified** (5 `needs-review`), so the page would already publish.
@@ -113,7 +113,9 @@ it.
 1. The build pipeline itself lands next, tracked on #4818 (this branch). With
    verification already ahead of the threshold, it becomes the first live
    publish as soon as it merges.
-1. The per-entry `group` field and grouped rendering follow.
+1. The per-entry `group` field and grouped rendering shipped as part of this
+   branch too — every entry now sorts into one of the seven `groups.yml`
+   sections on the published page.
 1. Prose moves into Zendesk.
 1. Once the catalog crosses the cutover threshold, the Google Site is retired
    and redirected.

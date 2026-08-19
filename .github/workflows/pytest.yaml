@@ -18,7 +18,12 @@ concurrency:
 jobs:
   launch:
     name: launch
-    if: github.actor != 'dependabot[bot]'
+    # No `github.actor != 'dependabot[bot]'` gate here, unlike the other
+    # workflows: dependabot's daily `uv` bump is the actor for nearly every
+    # PR that touches pyproject.toml/uv.lock, which is exactly why those
+    # files are in `paths` above. Gating this job on actor would skip the
+    # only check that runs on a dependency bump. Do not "restore
+    # consistency" with the other workflows.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

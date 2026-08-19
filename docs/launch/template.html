@@ -6,7 +6,8 @@
     <title>Data tools — KIPP NJ | Miami</title>
     <style>
       /* Tokens lifted from the KIPP NJ | Miami design system.
-   --font-brand substitutes Hanken Grotesk for licensed Whitney. */
+   --font-brand tries licensed Whitney first, then falls back to Calibri
+   and system fonts for anyone without it installed. */
       :root {
         --kipp-indigo: #001e62;
         --kipp-red: #ee3c37;
@@ -697,7 +698,7 @@
             ? `<span class="limited">Limited access</span>`
             : "";
           const sys = it.system
-            ? `<span class="sys">${esc(it.system)}</span>`
+            ? `<span class="sys">${esc(it.systemLabel || it.system)}</span>`
             : "";
           const guide = it.guide
             ? `<a class="guide" href="${esc(it.guide)}"><svg viewBox="0 0 20 20" width="14" height="14" fill="none"

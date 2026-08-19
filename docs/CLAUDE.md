@@ -11,7 +11,16 @@ the build that renders it into a page. Analyst documentation lives in dbt YAML
 docs/
   README.md                # Site homepage (nav/TOC hidden via hooks.py)
   CONTRIBUTING.md          # Development workflow and PR guidelines
-  hooks.py                 # MkDocs hook: hides nav/TOC on homepage
+  hooks.py                 # MkDocs hooks: hides nav/TOC on homepage, and
+                            # generates launch/index.html from launch/
+  launch/                  # Staff tool catalog — source data + build, not docs
+    links.yml              # The catalog: every tool, status, group, etc.
+    groups.yml              # Topical groups, families, promo cards, threshold
+    build.py               # load -> select -> validate -> render
+    template.html           # The published page's shell
+    README.md              # Field reference: what "verified" requires
+    RUNBOOK.md              # Verification task sequence
+    PROJECT.md              # Why this exists, where it stands
   reference/               # Architectural patterns and operational guides
     architecture.md
     adding-an-integration.md
@@ -76,6 +85,24 @@ that fail to import — so running it in the codespace (locations fail to import
 without their dbt manifests, and `kipptaf` additionally on unset
 Illuminate/Zendesk dlt credentials) drops those locations from the catalog.
 Regenerate only in a full environment where all locations load.
+
+## `launch/` Directory
+
+The staff tool catalog and the pipeline that publishes it — see
+`docs/launch/README.md` (field reference) and `docs/launch/PROJECT.md` (why and
+where it stands) before touching anything here.
+
+- **`docs/launch/*.{yml,py}` and `template.html` are source, not docs** —
+  `mkdocs.yml` `exclude_docs` keeps `links.yml`, `groups.yml`, `build.py`,
+  `template.html`, `RUNBOOK.md`, `README.md`, and `PROJECT.md` out of the built
+  site. Only the page `hooks.py` generates from them (`launch/index.html`)
+  ships.
+- **`docs/launch/` has its own CODEOWNERS entry** (`analytics-engineers`),
+  separate from the rest of `docs/`.
+- **Changes under `docs/launch/` (plus `docs/hooks.py`, `tests/launch/`,
+  `mkdocs.yml`, and the `docs` dependency group in `pyproject.toml`/`uv.lock`)
+  gate on `.github/workflows/pytest.yaml`** — a catalog or build change that
+  fails validation blocks that PR, not just the launch page.
 
 ## `superpowers/` Directory
 

@@ -195,3 +195,56 @@ def test_tier_one_requires_group_to_be_present():
     entry.pop("group", None)
     errors = validate(make_catalog(entries=[entry]), [])
     assert any("group" in e for e in errors)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, "25", 3.5, [25]],
+)
+def test_minimum_verified_must_be_an_int(value):
+    config = {**GOOD_CONFIG, "minimum_verified": value}
+    errors = validate(make_catalog(config=config), [])
+    assert any("minimum_verified" in e for e in errors), errors
+
+
+def test_minimum_verified_rejects_bool():
+    # isinstance(True, int) is True in Python -- a bare isinstance check
+    # would silently accept `minimum_verified: true` as 1.
+    config = {**GOOD_CONFIG, "minimum_verified": True}
+    errors = validate(make_catalog(config=config), [])
+    assert any("minimum_verified" in e for e in errors), errors
+
+
+def test_minimum_verified_rejects_negative():
+    config = {**GOOD_CONFIG, "minimum_verified": -1}
+    errors = validate(make_catalog(config=config), [])
+    assert any("minimum_verified" in e for e in errors), errors
+
+
+def test_minimum_verified_missing_is_rejected():
+    config = {k: v for k, v in GOOD_CONFIG.items() if k != "minimum_verified"}
+    errors = validate(make_catalog(config=config), [])
+    assert any("minimum_verified" in e for e in errors), errors
+
+
+def test_minimum_verified_zero_is_allowed():
+    config = {**GOOD_CONFIG, "minimum_verified": 0}
+    assert validate(make_catalog(config=config), []) == []
+
+
+def test_promo_url_must_be_https():
+    config = {
+        **GOOD_CONFIG,
+        "promos": [{"label": "X", "blurb": "y", "url": "http://insecure.test"}],
+    }
+    errors = validate(make_catalog(config=config), [])
+    assert any("https" in e for e in errors), errors
+
+
+def test_promo_url_rejects_javascript_scheme():
+    config = {
+        **GOOD_CONFIG,
+        "promos": [{"label": "X", "blurb": "y", "url": "javascript:alert(1)"}],
+    }
+    errors = validate(make_catalog(config=config), [])
+    assert any("https" in e for e in errors), errors

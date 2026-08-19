@@ -144,6 +144,21 @@ def _tier_one(catalog: Catalog) -> list[str]:
         if key not in config:
             errors.append(f"groups.yml is missing the `{key}` key")
 
+    # Silent-disable (missing/misspelled -> falls back to 0) and silent-
+    # unpublish (set absurdly high -> a green build that 404s) are both live
+    # risks, so this key gets a real check rather than the .get() default at
+    # render() time. isinstance(True, int) is True in Python, so bool is
+    # rejected explicitly -- otherwise `minimum_verified: true` would pass as 1.
+    minimum_verified = config.get("minimum_verified")
+    if isinstance(minimum_verified, bool) or not isinstance(minimum_verified, int):
+        errors.append(
+            f"groups.yml: `minimum_verified` must be an int, got {minimum_verified!r}"
+        )
+    elif minimum_verified < 0:
+        errors.append(
+            f"groups.yml: `minimum_verified` must be >= 0, got {minimum_verified}"
+        )
+
     names = {e.get("name") for e in entries if isinstance(e, dict)}
 
     for family in config.get("families") or []:
@@ -162,6 +177,8 @@ def _tier_one(catalog: Catalog) -> list[str]:
         url = (promo.get("url") or "").strip()
         if not url or url == "#":
             errors.append(f"promo {promo.get('label')!r} has no destination")
+        elif not url.startswith("https://"):
+            errors.append(f"promo {promo.get('label')!r} `url` must be https")
 
     return errors
 
