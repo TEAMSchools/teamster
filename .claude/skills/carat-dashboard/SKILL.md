@@ -1370,6 +1370,20 @@ Work outward from the student, stopping at the first layer with zero rows.
   duplicated (the composite is built with `group by`, so ACT is 1:1 at 379 rows
   where production had 1,094). Both changes are documented in the reference
   doc's impact section.
+- **`benchmark_tier` is an EXCLUSIVE band; the `met_min_board_*` flags it
+  replaced were cumulative.** `HS Grad-Ready` counts only students between the
+  grad cut and the college cut, so a cumulative "at or above 890" figure needs
+  `College-Ready + HS Grad-Ready` summed. Grade 12 SAT: 80 + 99 = **179** (47%
+  of 380 test takers), where counting the band alone gives **99** (26%) — a
+  21-point understatement that looks plausible. The existing board worksheet is
+  safe (100% stacked bar, cumulative goal lines); the hazard is any new sheet.
+  Also note `benchmark_tier` is null when the student has no score, so it scopes
+  to test takers by construction.
+- **Board goals moved ~3 points, not sharply.** The published board view showed
+  CR 22% / NJ Grad Ready 42% last year and CR 22% / 45% this year, matching the
+  shared grade-12 goals. An earlier note in the reference doc claimed 0.25/0.28
+  and was wrong — it appears to have confused the NJ Grad Ready band value (25%)
+  with its cumulative target.
 - **`_current` has THREE subject columns and two hold identical values.**
   `expected_subject_area` (goal side) and `subject_area` (score side) both read
   `Combined` / `EBRW` / `Math`; only `expected_aligned_subject_area` uses

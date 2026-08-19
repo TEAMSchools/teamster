@@ -400,7 +400,7 @@ on every row; the other is the score side, null for any student with no score.
 
     `Total` exists only on the goal side, so filtering it cannot resolve to the
     wrong column. Filtering `Combined` is ambiguous, and picking the score-side
-    copy silently changes the denominator from *every enrolled student* to *only
+    copy silently changes the denominator from _every enrolled student_ to _only
     students who have a score* — no error, no row-count warning.
 
     Measured on SAT at grade 11: 410 of 431 students have a null score-side
@@ -700,7 +700,7 @@ those.
     year nor store code. Do not use it as a key.
 
     Worth noting for whoever fixes this: the missing `academic_year` is **not**
-    currently a cause. Every duplicated identifier duplicates *within* one year —
+    currently a cause. Every duplicated identifier duplicates _within_ one year —
     zero duplicate across years — because no student has yet repeated a DE course
     in a later year. Adding the year to the key would therefore fix nothing today
     while looking like a fix.
@@ -2362,11 +2362,53 @@ Ready, or No Benchmark Met. Every board threshold was already a scaffold value:
 | sat_math 440      | 440               | `hs_grad_ready_min_score` |
 
 So `Board` was a duplicate encoding of the two tiers, and the jinja loop that
-pivoted it is gone. The board goal percentages were genuinely distinct — 0.25
-and 0.28 for the 890 tier against the Benchmark goals' 0.45 and 0.35 — because
-that view reports over test takers rather than all enrolled students. Those
-separate targets do not survive: one goal now applies everywhere, so the NJ Grad
-Ready goal line moves to the sheet's HS Grad-Ready value.
+pivoted it is gone.
+
+!!! warning "`benchmark_tier` is an exclusive band; the flags it replaced were
+cumulative"
+
+    `met_min_board_890` counted every student **at or above** 890.
+    `benchmark_tier = 'HS Grad-Ready'` counts only the students **between** 890
+    and the College-Ready cut. Reconstructing a cumulative figure therefore needs
+    **both** bands summed.
+
+    Measured at grade 12 SAT: 80 students are `College-Ready`, 99 are
+    `HS Grad-Ready`, and 201 `No Benchmark Met`, over 380 test takers. The
+    cumulative "at or above 890" figure is **179**, or 47%. Counting the band
+    alone gives **99**, or 26% — a 21-point understatement that looks entirely
+    plausible on its own.
+
+    The existing board worksheet is safe: it is a 100% stacked bar whose goal
+    lines sit at cumulative positions, so the two bands read together visually.
+    The hazard is any NEW sheet that counts the band directly.
+
+**`benchmark_tier` is null where the student has no score**, so it scopes to
+test takers by construction — the three bands sum to the test-taker count, not
+the enrolled count. That matches the denominator the board view always used, so
+the rebuild preserved it.
+
+### Board goals — what the change actually was
+
+Earlier drafts of this section put the board's own targets at 0.25 and 0.28
+against Benchmark goals of 0.45 and 0.35, implying the goal line jumped sharply.
+**Checked against the published workbook, that is wrong.** The board view
+displayed:
+
+| Goal          | Last year, grade 11 | This year, grade 12 |
+| ------------- | ------------------- | ------------------- |
+| CR Benchmark  | 22%                 | 22%                 |
+| NJ Grad Ready | **42%**             | **45%**             |
+
+This year's pair matches the shared goals exactly — grade 12 carries
+`College-Ready` 22% and `HS Grad-Ready` 45% — confirming the board view now
+takes the same goals as every other view. So the change is **about three points
+on the grad-ready line**, not a doubling. Attainment rose alongside it (44% to
+45% cumulative), leaving the same narrow margin above goal in both years.
+
+The `0.25` in the retired claim is suspiciously equal to the NJ Grad Ready
+_band_ value the view displays in both years, which suggests the original note
+confused the band with its cumulative target — the same trap the warning above
+describes.
 
 ### Everything else that moves
 
