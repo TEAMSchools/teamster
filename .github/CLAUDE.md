@@ -101,7 +101,11 @@
 - Dagster Cloud actions are pinned to a commit SHA (all `uses:` point at the
   same tag) — update all occurrences together when upgrading.
 - All workflows gate on `github.actor != 'dependabot[bot]'` — maintain this when
-  adding new workflows.
+  adding new workflows. **One deliberate exception:** `pytest.yaml` omits the
+  gate, because its `paths` include `pyproject.toml` and `uv.lock` and
+  dependabot is the actor that changes them — gating it would mean the launch
+  page's tests never run on the PRs most likely to break them. Do not "restore
+  consistency" there without reading the comment in that file first.
 - `DAGSTER_CLOUD_API_TOKEN` is scoped to the `prerun` and `deploy` jobs only —
   do not move it to workflow-level `env`.
 
