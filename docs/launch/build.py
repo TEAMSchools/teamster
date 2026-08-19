@@ -69,3 +69,86 @@ def load(root: Path = HERE) -> Catalog:
     config = yaml.safe_load((root / "groups.yml").read_text()) or {}
     template = (root / "template.html").read_text()
     return Catalog(entries=entries, config=config, template=template)
+
+
+def _tier_one(catalog: Catalog) -> list[str]:
+    errors: list[str] = []
+    entries = catalog.entries
+    config = catalog.config
+
+    if not isinstance(entries, list):
+        return ["links.yml must be a list of entries"]
+
+    seen: set[str] = set()
+    for i, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            errors.append(f"links.yml entry {i} is not a mapping")
+            continue
+
+        where = entry.get("name") or entry.get("id") or f"entry {i}"
+
+        entry_id = entry.get("id")
+        if not entry_id:
+            errors.append(f"{where}: missing `id`")
+        elif not ID_RE.match(str(entry_id)):
+            errors.append(f"{where}: `id` {entry_id!r} must match ^[a-z0-9_]+$")
+        elif entry_id in seen:
+            errors.append(f"{where}: duplicate `id` {entry_id!r}")
+        else:
+            seen.add(entry_id)
+
+        if not (entry.get("name") or "").strip():
+            errors.append(f"{where}: missing `name`")
+
+        url = entry.get("url")
+        if not url:
+            errors.append(f"{where}: missing `url`")
+        elif not str(url).startswith("https://"):
+            errors.append(f"{where}: `url` must be https")
+
+        system = entry.get("system")
+        if system not in SYSTEMS:
+            errors.append(f"{where}: unknown `system` {system!r}")
+
+        status = entry.get("status")
+        if status not in STATUSES:
+            errors.append(f"{where}: `status` must be one of {sorted(STATUSES)}")
+
+        access = entry.get("access")
+        if access is not None and access != "limited":
+            errors.append(f"{where}: `access` may only be 'limited', got {access!r}")
+
+        for region in entry.get("regions") or []:
+            if region not in REGION_VALUES:
+                errors.append(f"{where}: unknown region {region!r}")
+
+    for key in ("groups", "families", "promos"):
+        if key not in config:
+            errors.append(f"groups.yml is missing the `{key}` key")
+
+    group_ids = {g["id"] for g in config.get("groups") or []}
+    names = {e.get("name") for e in entries if isinstance(e, dict)}
+
+    for family in config.get("families") or []:
+        if family.get("group") not in group_ids:
+            errors.append(
+                f"family {family.get('id')!r} names unknown group "
+                f"{family.get('group')!r}"
+            )
+        for member in family.get("members") or []:
+            if member not in names:
+                errors.append(
+                    f"family {family.get('id')!r} names missing tool {member!r}"
+                )
+
+    for promo in config.get("promos") or []:
+        url = (promo.get("url") or "").strip()
+        if not url or url == "#":
+            errors.append(f"promo {promo.get('label')!r} has no destination")
+
+    return errors
+
+
+def validate(catalog: Catalog, verified: list[dict]) -> list[str]:
+    """Tier 1 over everything; tier 2 over the verified subset."""
+    return _tier_one(catalog)
