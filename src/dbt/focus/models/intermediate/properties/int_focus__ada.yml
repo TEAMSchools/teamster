@@ -1,0 +1,42 @@
+models:
+  - name: int_focus__ada
+    description: >-
+      Per-student-per-year Focus attendance rollup — the analogue of
+      int_powerschool__ada. Counts only realized membership days
+      (membershipvalue 1 and calendardate on or before today), so a future
+      year-end day cannot dilute the average. Grouped by student_number rather
+      than studentid because Focus has no studentid. Internal-only — a rpt_ view
+      must sit between this model and any external consumer.
+    columns:
+      - name: student_number
+        description: Network student number, unprefixed.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: studentid
+        description: Always null. Focus has no PowerSchool studentid analogue.
+      - name: yearid
+        description: Academic year minus 1990.
+      - name: academic_year
+        description: Academic year start year (2026 = 2026-27).
+      - name: days_in_membership
+        description: Realized in-session days the student was enrolled for.
+      - name: days_present
+        description: Realized membership days the student was present for.
+      - name: days_absent_unexcused
+        description: >-
+          Realized membership days the student was absent for. Named for parity
+          with int_powerschool__ada; Focus does not split excused from unexcused
+          at this grain.
+      - name: ada
+        description: Average daily attendance across realized membership days.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [student_number, yearid]
+          config:
+            severity: error
