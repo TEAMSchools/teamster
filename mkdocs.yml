@@ -31,6 +31,13 @@ theme:
 hooks:
   - docs/hooks.py
 
+exclude_docs: |
+  hooks.py
+  launch/*.yml
+  launch/*.py
+  launch/template.html
+  launch/RUNBOOK.md
+
 nav:
   - Home: README.md
   - Guides:

@@ -1,7 +1,8 @@
 # CLAUDE.md — `docs/`
 
 MkDocs site for **engineering** documentation — architecture, operational
-guides, and infrastructure patterns. Analyst documentation lives in dbt YAML
+guides, and infrastructure patterns — plus `launch/`, the staff tool catalog and
+the build that renders it into a page. Analyst documentation lives in dbt YAML
 (properties files + exposures), not here.
 
 ## Structure

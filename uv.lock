@@ -3941,6 +3941,7 @@ dev = [
 ]
 docs = [
     { name = "mkdocs-material" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -3980,7 +3981,10 @@ dev = [
     { name = "dagster-webserver" },
     { name = "pytest", specifier = ">=8.3" },
 ]
-docs = [{ name = "mkdocs-material", specifier = ">=9.7" }]
+docs = [
+    { name = "mkdocs-material", specifier = ">=9.7" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
 
 [[package]]
 name = "tenacity"
