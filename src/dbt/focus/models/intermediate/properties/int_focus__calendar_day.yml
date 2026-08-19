@@ -11,9 +11,13 @@ models:
       Internal-only — a rpt_ view must sit between this model and any external
       consumer.
     data_tests:
+      # Includes yearid deliberately. Focus reuses a calendar date across school
+      # years for the same school -- 13,552 rows carry only 12,484 distinct
+      # (schoolid, date_value) pairs, but all 13,552 are distinct once yearid is
+      # added. Asserting the pair alone reports 1,068 false violations.
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [schoolid, date_value]
+            combination_of_columns: [schoolid, yearid, date_value]
           config:
             severity: error
     columns:
