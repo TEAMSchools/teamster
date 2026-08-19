@@ -2,15 +2,18 @@
 
 Refs #4862
 
-**Status:** revised 2026-08-14 with Jabari Bradley's review; Laszlo de Simon's
-review still outstanding **Author:** Anthony Walters (analysis assisted by
-Claude Code)
+**Status:** revised 2026-08-14 with Jabari Bradley's review. Laszlo de Simon's
+review is not expected this cycle, so the findings proceed without it — see
+[Review status](#review-status). **Author:** Anthony Walters (analysis assisted
+by Claude Code)
 
-> **Revision note.** Jabari answered questions 1-5 below. His answers are folded
-> into the findings they affect, and one of them produced a new finding
+> **Revision note.** Jabari answered questions 1-5. His answers are folded into
+> the findings they affect, and one of them produced a new finding
 > ([Finding 9](#finding-9--requester-affiliation-is-the-first-gate)) that
-> outranks most of what was here before. Anything still marked open is awaiting
-> Laszlo.
+> outranks most of what was here before. Two questions were never answered and
+> Laszlo's review is not coming, so the
+> [runbook](2026-08-14-zendesk-triage-runbook.md) was written conservatively on
+> those branches rather than waiting.
 
 ## Why you are reading this
 
@@ -714,10 +717,16 @@ the table.
 1. **Records pulls** — what is the sign-off practice before student records
    leave in a ticket reply? This one gates whether an intern touches that type
    at all.
-1. **Laszlo's read on all of the above.** Every number here pools both analysts,
-   so a disagreement between them would show up as noise rather than as a
-   difference. Worth knowing if his practice differs — particularly on the
-   affiliation rule, which is Jabari's stated habit and may not be shared.
+1. **Laszlo's read on all of the above** — sought but not expected this cycle.
+   Every number here pools both analysts, so a disagreement between them shows
+   up as noise rather than as a difference. The affiliation rule in Finding 9 is
+   Jabari's stated habit specifically, and may not be shared.
+
+Rather than hold the work, the runbook treats each unanswered item as a
+conservative default: records pulls require analyst sign-off, and the roster
+branch offers a live handoff instead of asserting a boundary. Both are marked
+provisional there, so a later answer changes one table rather than the whole
+document.
 
 ## Confidence and known gaps
 
@@ -788,10 +797,15 @@ the type definitions in this document.
 
 ## Next step
 
-The runbook, gated on the two open questions above and on Laszlo's review. Its
-decision order is now **requester affiliation → ask type → platform**, with
-platform serving as navigation rather than as the deciding variable.
+The runbook is written:
+**[Fall ticket triage runbook](2026-08-14-zendesk-triage-runbook.md)**. Its
+decision order is requester affiliation, then ask type, then platform — platform
+serves as navigation rather than as the deciding variable.
 
-The first artifact it depends on is the set of DeansList config guides described
-in the scope section, since those are what make the school-based redirect
-possible at all.
+Two things it depends on that do not exist yet:
+
+1. **The DeansList config guides.** Until they exist, that branch instructs the
+   reader to execute and log the request, so the backlog for writing them builds
+   from real tickets.
+1. **A per-school DSO capability picture.** The runbook asks for bounced
+   redirects to be logged by school, which is the cheapest way to build it.
