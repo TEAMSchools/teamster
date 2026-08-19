@@ -1,8 +1,56 @@
 models:
   - name: int_kippadb__grad_calcs
+    description:
+      Postsecondary completion flags per student, one row per kippadb contact.
+      Each degree family (BA, AA, CTE) carries unbounded ever-earned flags plus
+      time-to-completion flags measured from the August 31 following the
+      student's KIPP high school class year. Undergraduate flags combine the BA
+      and AA families.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          name: grad_calcs_grad_ever_decomposes_by_degree
+          arguments:
+            expression:
+              greatest(is_ba_grad_ever_int, is_aa_grad_ever_int,
+              is_cte_grad_ever_int) = is_grad_ever
+      - dbt_utils.expression_is_true:
+          name: grad_calcs_6yr_any_within_grad_ever
+          arguments:
+            expression: is_6yr_grad_any_int <= is_grad_ever
+      - dbt_utils.expression_is_true:
+          name: grad_calcs_degree_within_ugrad
+          arguments:
+            expression: |
+              is_6yr_ba_grad_int <= is_6yr_ugrad_grad_int
+              and is_6yr_aa_grad_int <= is_6yr_ugrad_grad_int
     columns:
       - name: student
         data_type: string
+        description: kippadb contact id of the student.
+        data_tests:
+          - unique
+      - name: is_ba_grad_ever_int
+        data_type: int64
+        description:
+          Indicates the student has earned a bachelor's degree at any point,
+          with no time limit. Conditional on ba_status only.
+      - name: is_aa_grad_ever_int
+        data_type: int64
+        description:
+          Indicates the student has earned an associate's degree at any point,
+          with no time limit. Conditional on aa_status only.
+      - name: is_cte_grad_ever_int
+        data_type: int64
+        description:
+          Indicates the student has completed a vocational or certificate
+          program at any point, with no time limit. Conditional on cte_status
+          only.
+      - name: is_grad_ever
+        data_type: int64
+        description:
+          Indicates the student has completed any postsecondary credential at
+          any point, with no time limit. Conditional on aa_status, ba_status,
+          cte_status.
       - name: is_4yr_ba_grad_int
         data_type: int64
         description:
@@ -63,33 +111,30 @@ models:
         data_type: int64
         description:
           Conditional on contact_kipp_hs_class, cte_actual_end_date, cte_status.
-      - name: is_grad_ever
-        data_type: int64
-        description:
-          Conditional on aa_status, ba_status, cte_status,
-          ugrad_actual_end_date.
-      - name: is_6yr_ugrad_cte_grad_int
-        data_type: int64
-        description:
-          Categorical mapping of contact_kipp_hs_class, cte_actual_end_date,
-          cte_status, ugrad_actual_end_date, ugrad_status.
       - name: is_24yo_ugrad_cte_grad_int
         data_type: int64
         description:
-          Categorical mapping of contact_birthdate, cte_actual_end_date,
-          cte_status, ugrad_actual_end_date, ugrad_status.
+          Categorical mapping of aa_actual_end_date, aa_status,
+          ba_actual_end_date, ba_status, contact_birthdate, cte_actual_end_date,
+          cte_status.
       - name: is_4yr_ugrad_grad_int
         data_type: int64
         description:
-          Categorical mapping of contact_kipp_hs_class, ugrad_actual_end_date,
-          ugrad_status.
+          Categorical mapping of aa_actual_end_date, aa_status,
+          ba_actual_end_date, ba_status, contact_kipp_hs_class.
       - name: is_5yr_ugrad_grad_int
         data_type: int64
         description:
-          Categorical mapping of contact_kipp_hs_class, ugrad_actual_end_date,
-          ugrad_status.
+          Categorical mapping of aa_actual_end_date, aa_status,
+          ba_actual_end_date, ba_status, contact_kipp_hs_class.
       - name: is_6yr_ugrad_grad_int
         data_type: int64
         description:
-          Categorical mapping of contact_kipp_hs_class, ugrad_actual_end_date,
-          ugrad_status.
+          Categorical mapping of aa_actual_end_date, aa_status,
+          ba_actual_end_date, ba_status, contact_kipp_hs_class.
+      - name: is_6yr_grad_any_int
+        data_type: int64
+        description:
+          Categorical mapping of aa_actual_end_date, aa_status,
+          ba_actual_end_date, ba_status, contact_kipp_hs_class,
+          cte_actual_end_date, cte_status.
