@@ -79,6 +79,8 @@ def _tier_one(catalog: Catalog) -> list[str]:
     if not isinstance(entries, list):
         return ["links.yml must be a list of entries"]
 
+    group_ids = {g["id"] for g in config.get("groups") or []}
+
     seen: set[str] = set()
     for i, entry in enumerate(entries):
         if not isinstance(entry, dict):
@@ -122,11 +124,16 @@ def _tier_one(catalog: Catalog) -> list[str]:
             if region not in REGION_VALUES:
                 errors.append(f"{where}: unknown region {region!r}")
 
+        group = entry.get("group")
+        if not group:
+            errors.append(f"{where}: missing `group`")
+        elif group not in group_ids:
+            errors.append(f"{where}: unknown `group` {group!r}")
+
     for key in ("groups", "families", "promos"):
         if key not in config:
             errors.append(f"groups.yml is missing the `{key}` key")
 
-    group_ids = {g["id"] for g in config.get("groups") or []}
     names = {e.get("name") for e in entries if isinstance(e, dict)}
 
     for family in config.get("families") or []:

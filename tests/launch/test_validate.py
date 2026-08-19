@@ -9,6 +9,7 @@ GOOD_ENTRY = {
     "url": "https://tableau.kipp.org/t/KIPPNJ/views/Attendance",
     "system": "tableau",
     "status": "needs-review",
+    "group": "attendance",
 }
 
 GOOD_CONFIG = {
@@ -181,3 +182,16 @@ def test_family_member_needs_exactly_one_real_region():
     }
     errors = validate(make_catalog(entries=[member], config=config), [member])
     assert any("region" in e for e in errors)
+
+
+def test_tier_one_requires_a_known_group():
+    entry = {**GOOD_ENTRY, "group": "nonexistent"}
+    errors = validate(make_catalog(entries=[entry]), [])
+    assert any("group" in e for e in errors)
+
+
+def test_tier_one_requires_group_to_be_present():
+    entry = {k: v for k, v in GOOD_ENTRY.items()}
+    entry.pop("group", None)
+    errors = validate(make_catalog(entries=[entry]), [])
+    assert any("group" in e for e in errors)
