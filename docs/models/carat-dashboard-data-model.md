@@ -2487,6 +2487,59 @@ score types on the scaffold (`sat_ebrw_growth` and friends), matching rows on
 the Expected Assessments tab, and a KIPP Forward decision that they want it. The
 hub column is ready when they ask.
 
+## Known issue — pre-2017 SAT scores are on the 2400 scale, thresholds are not
+
+**Historical SAT benchmark attainment is inflated, and badly.** The College
+Board redesigned the SAT in March 2016, moving the total from 2400 points
+to 1600. kippadb holds scores from both eras under one `sat_total_score`, and
+every threshold in this lineage is 1600-scale — SAT Combined 890 and 1010. A
+2400-scale total of 1,328 therefore clears the College-Ready bar without
+difficulty.
+
+Measured on `_over_time`, Official, Total, at the individual-cohort level:
+
+| Grad year | Avg SAT total | Max   | Scores above 1600 |
+| --------- | ------------- | ----- | ----------------- |
+| 2012      | 1,259         | 1,680 | 6                 |
+| 2013      | 1,244         | 1,710 | 6                 |
+| 2014      | 1,328         | 1,840 | **28**            |
+| 2015      | 1,254         | 1,650 | 6                 |
+| 2016      | 1,265         | 2,000 | **32**            |
+| 2017      | 1,037         | 1,790 | 2                 |
+| 2018      | 913           | 1,210 | 0                 |
+| 2019      | 972           | 1,280 | 0                 |
+| 2020      | 891           | 1,130 | 0                 |
+
+A total above 1600 cannot exist on the current SAT, so those rows are
+unambiguously old-scale. **2018 onward is clean**; 2012 through 2017 is not.
+
+The visible effect: grad year 2014 reports **68.4% College-Ready and 70.3% HS
+Grad-Ready**, against roughly 21% and 46% for the current senior class. That is
+not three cohorts of extraordinary performance — it is the wrong ruler.
+
+!!! warning "There is no single conversion that fixes this"
+
+    The averages for 2012 to 2015 sit near 1,250, which is low for a 2400 scale
+    and high for a 1600 one. Those years hold a **mix** of both eras, so no
+    per-year multiplier is correct, and the mix cannot be separated by score value
+    alone — a 1,100 is a plausible score on either scale. Separating them needs
+    the test date against the March 2016 redesign, which means fixing it upstream
+    rather than in a reporting view.
+
+**This predates the practice work and is not a change.** The scores come from
+Salesforce and the thresholds have always been 1600-scale, so last year's
+dashboard carried the same inflation. It will not appear as a year-over-year
+discrepancy — which is exactly why it went unnoticed.
+
+Where it bites hardest is `_over_time`, the one view built to show history:
+every SAT benchmark line before 2018 is not comparable to the ones after it. It
+also interacts with the 27 restored scores below, which land on grad years 2014
+and 2015 — inside the affected range, so that documented gain sits on top of an
+already-inflated baseline.
+
+Until it is fixed, treat pre-2018 SAT benchmark attainment as unusable and say
+so when it is quoted. ACT is unaffected; its 1–36 scale did not change.
+
 ## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
 
 **27 students read `No Data` in the benchmark view while holding eligible SAT

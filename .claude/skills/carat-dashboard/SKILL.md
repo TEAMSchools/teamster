@@ -1370,6 +1370,20 @@ Work outward from the student, stopping at the first layer with zero rows.
   duplicated (the composite is built with `group by`, so ACT is 1:1 at 379 rows
   where production had 1,094). Both changes are documented in the reference
   doc's impact section.
+- **Pre-2017 SAT scores are on the 2400 scale while the thresholds are
+  1600-scale, so historical benchmark attainment is inflated.** The SAT was
+  redesigned in March 2016 (2400 to 1600); kippadb holds both eras under one
+  `sat_total_score` and every threshold here is 1600-scale. Grad years 2012-2017
+  contain totals above 1600 — max 1,840 in 2014, 2,000 in 2016 — which cannot
+  exist on the current test. 2018 onward is clean. Effect: grad 2014 reads
+  **68.4% College-Ready** against roughly 21% for current seniors. **No
+  conversion fixes it** — those years hold a MIX of both eras (averages near
+  1,250, ambiguous between scales), and a score value alone cannot say which era
+  it came from, so separating them needs test date against the redesign,
+  upstream of reporting. Predates the practice work, so it never appears as a
+  year-over-year change. Treat pre-2018 SAT benchmark attainment as unusable and
+  say so whenever it is quoted. ACT is unaffected, its 1-36 scale unchanged.
+  Bites hardest on `_over_time`, the one view built to show history.
 - **`benchmark_tier` is an EXCLUSIVE band; the `met_min_board_*` flags it
   replaced were cumulative.** `HS Grad-Ready` counts only students between the
   grad cut and the college cut, so a cumulative "at or above 890" figure needs
