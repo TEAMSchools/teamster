@@ -42,8 +42,16 @@ Design spec:
 - `int_focus__student_enrollment.student_number` is the **prefixed** Focus id
   (`8400…`); `network_student_number` is the stripped network number. Attendance
   joins on the prefixed form; output uses the stripped form.
-- Attendance code mapping: `U` → `A`, `AE` → `AE`, `AD` → `AD`, null → null, no
-  record → `M`. Never pass `U` through — `U` means Unprepared in PowerSchool.
+- Attendance code mapping: `U` → `A`, `AE` → `AE`, `AD` → `AD`, null → null.
+  Never pass `U` through — `U` means Unprepared in PowerSchool.
+- **A scaffold day with no attendance record gets `att_code` NULL, never
+  `'M'`.** PowerSchool represents exactly this case as NULL (7,698,389 rows,
+  average `attendancevalue` 0.997). Its `'M'` is a distinct, rare, entered code
+  meaning Missing Attendance with average `attendancevalue` 0.741, and
+  `rpt_gsheets__absence_streak_roster` filters `att_code in ('A', 'AD', 'M')` —
+  so mapping no-record onto `'M'` would publish 1.13 million fake Miami absence
+  streak rows. The no-record signal is carried by a separate
+  `is_attendance_recorded` boolean instead.
 - Six flags stay null for Miami (`is_tardy`, `is_ontime`, `is_oss`, `is_iss`,
   `is_suspended`, `is_absent_non_susp`), each marked `TODO(#4927)`.
 - Never hash `studentid` on the Focus side. It is null, and
@@ -134,8 +142,9 @@ All paths below are relative to `src/dbt/kipptaf/`.
   `calendardate DATE`, `fteid INT64`, `attendance_conversion_id INT64`,
   `grade_level INT64`, `ontrack INT64`, `offtrack INT64`,
   `student_track STRING`, `yearid INT64`, `att_code STRING`,
-  `att_code_focus STRING`, `attendancevalue FLOAT64`,
-  `potential_attendancevalue FLOAT64`, `membershipvalue FLOAT64`
+  `att_code_focus STRING`, `is_attendance_recorded BOOL`,
+  `attendancevalue FLOAT64`, `potential_attendancevalue FLOAT64`,
+  `membershipvalue FLOAT64`
 
 - [ ] **Step 1: Write the failing unit test**
 
@@ -192,8 +201,8 @@ Append to `src/dbt/focus/models/intermediate/unit_tests.yml`:
       select 3, cast(null as string), cast(null as string),
         cast(1.0 as float64), cast(1.0 as float64), 36
       union all
-      select 4, 'M', cast(null as string), cast(1.0 as float64),
-        cast(1.0 as float64), 36
+      select 4, cast(null as string), cast(null as string),
+        cast(1.0 as float64), cast(1.0 as float64), 36
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -320,15 +329,22 @@ select
 
     -- Focus's four day codes conform to the PowerSchool vocabulary with one
     -- rename. AE and AD already match exactly. U must NOT pass through: U means
-    -- Unprepared in PowerSchool, so an unmapped U would merge unexcused
-    -- absences into an unrelated code. A day with no record maps to M (Missing
-    -- Attendance) and counts present, which is what the district ctod does when
-    -- no absence row exists.
-    case
-        when a.student_id is null then 'M'
-        when a.daily_code = 'U' then 'A'
-        else a.daily_code
-    end as att_code,
+    -- Unprepared in PowerSchool, so an unmapped U would merge unexcused absences
+    -- into an unrelated code.
+    --
+    -- A scaffold day with no attendance record gets NULL, exactly as PowerSchool
+    -- does for the same case. Do NOT use 'M': PowerSchool's M is an entered
+    -- Missing Attendance code that averages 0.741 attendancevalue, and
+    -- rpt_gsheets__absence_streak_roster counts it as an absence, so no-record
+    -- days labelled M would publish fake absence streaks for Miami.
+    if(a.daily_code = 'U', 'A', a.daily_code) as att_code,
+
+    -- The one thing Focus knows and PowerSchool cannot: whether anybody actually
+    -- took attendance. PowerSchool only records absences, so presence is implied
+    -- and the distinction does not exist there -- the kipptaf union leaves this
+    -- null on PowerSchool rows. Focus's rate is material (17-23% of completed
+    -- days in the opening week), so it is worth carrying.
+    a.student_id is not null as is_attendance_recorded,
 
     -- state_value IS the present/absent classification and is populated on every
     -- Focus row, independent of daily_code. NUMERIC upstream, FLOAT64 here to
@@ -463,7 +479,7 @@ reconciles — query your dev schema (`zz_<your-github-user>_kippmiami_focus`):
 ```sql
 select
   count(*) as scaffold_rows,
-  countif(att_code = 'M') as no_record_rows,
+  countif(not is_attendance_recorded) as no_record_rows,
   count(distinct student_number) as students,
   count(distinct calendardate) as days
 from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendance_daily`
@@ -477,14 +493,17 @@ days** for roughly 1,628 students, of which about **9,300 rows are elapsed**
 The model scaffolds the WHOLE school year, not just elapsed days — Focus's
 `syear = 2026` calendar is already populated through 2027-06-03, and the
 PowerSchool ctod behaves the same way. That is what the `is_realized` flag
-downstream exists for. So `att_code = 'M'` is about 97.5% of all rows, because
-almost every row is a future day nobody has taken attendance for yet. Judge the
-`M` rate on ELAPSED rows only:
+downstream exists for. So `is_attendance_recorded` is false on about 97.5% of
+all rows, because almost every row is a future day nobody has taken attendance
+for yet. Judge the `M` rate on ELAPSED rows only:
 
 ```sql
 select
   countif(calendardate <= current_date('America/New_York')) as elapsed_rows,
-  countif(calendardate <= current_date('America/New_York') and att_code = 'M') as elapsed_m
+  countif(
+    calendardate <= current_date('America/New_York')
+    and not is_attendance_recorded
+  ) as elapsed_m
 from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendance_daily`
 where yearid = 36
 ```
@@ -501,7 +520,7 @@ school day had zero. Judge on completed days:
 select
   countif(calendardate < current_date('America/New_York')) as completed_rows,
   countif(
-    calendardate < current_date('America/New_York') and att_code = 'M'
+    calendardate < current_date('America/New_York') and not is_attendance_recorded
   ) as completed_m
 from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendance_daily`
 where yearid = 36
@@ -2187,7 +2206,13 @@ with
     -- archive holds Miami AY2020 through AY2025, so excluding kippmiami outright
     -- (the way int_students__terms does) would delete six years of history.
     powerschool_conformed as (
-        select *,
+        select
+            *,
+
+            -- PowerSchool records only absences, so presence is implied and
+            -- "was attendance taken" is not knowable. Null rather than true, so a
+            -- Focus-vs-NJ comparison cannot read PowerSchool as fully compliant.
+            cast(null as bool) as is_attendance_recorded,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where
             not (
@@ -2233,6 +2258,7 @@ with
             mem.yearid,
             mem.att_code,
             mem.att_code_focus,
+            mem.is_attendance_recorded,
             mem.attendancevalue,
             mem.potential_attendancevalue,
             mem.membershipvalue,

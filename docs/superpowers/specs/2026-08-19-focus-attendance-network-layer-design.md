@@ -133,6 +133,7 @@ makes an un-recorded day representable at all.
 | `yearid`                               | `academic_year - 1990`                       | the verified network formula                                              |
 | `grade_level`                          | enrollment `grade_level`                     |                                                                           |
 | `att_code`                             | mapped Focus code                            | see the mapping below                                                     |
+| `is_attendance_recorded`               | `a.student_id is not null`                   | whether Focus recorded the day at all                                     |
 | `attendancevalue`                      | `state_value`                                | already the present/absent classification                                 |
 | `potential_attendancevalue`            | `1`                                          | every membership day is potentially attendable                            |
 | `membershipvalue`                      | `1`                                          | every in-session day within the stint                                     |
@@ -145,13 +146,13 @@ makes an un-recorded day representable at all.
 Focus's day-grain vocabulary is four codes. PowerSchool's is twelve. They nearly
 coincide:
 
-| Focus     | Focus meaning     | Maps to | PowerSchool meaning                       |
-| --------- | ----------------- | ------- | ----------------------------------------- |
-| null      | present           | null    | present                                   |
-| `U`       | Absent Unexcused  | `A`     | Absent Undocumented / Absent              |
-| `AE`      | Absent Excused    | `AE`    | Absent Excused — exact match              |
-| `AD`      | Absent Documented | `AD`    | Absent Documented — exact match           |
-| no record | —                 | `M`     | Missing Attendance, `attendancevalue = 1` |
+| Focus       | Focus meaning     | Maps to  | PowerSchool meaning                              |
+| ----------- | ----------------- | -------- | ------------------------------------------------ |
+| null        | present           | null     | present                                          |
+| `U`         | Absent Unexcused  | `A`      | Absent Undocumented / Absent                     |
+| `AE`        | Absent Excused    | `AE`     | Absent Excused — exact match                     |
+| `AD`        | Absent Documented | `AD`     | Absent Documented — exact match                  |
+| _no record_ | —                 | **NULL** | no absence recorded — PowerSchool's own encoding |
 
 `AE` and `AD` match exactly, so only `U` needs renaming. That makes every
 existing consumer predicate correct for Miami with **zero consumer branching** —
@@ -164,10 +165,27 @@ through unmapped would silently merge unexcused absences into it.
 
 The raw Focus code is retained in its own column so nothing is lost.
 
-The `M` mapping matches PowerSchool's own semantics — the district ctod resolves
-a day with no absence record to the `Present` conversion, so a missing record
-counts as present. Using the in-vocabulary `M` code keeps those 124 days flagged
-rather than buried.
+A no-record day gets `att_code` NULL, which is exactly how PowerSchool encodes
+the same case — 7,698,389 PowerSchool rows carry a NULL `att_code` with an
+average `attendancevalue` of 0.997, because the district ctod resolves a day
+with no absence record to the `Present` conversion.
+
+An earlier draft of this spec mapped no-record onto PowerSchool's `M` code, on
+the reasoning that `M` means Missing Attendance and was therefore in-vocabulary.
+That was wrong, and Task 1 caught it: PowerSchool's `M` is a rare, explicitly
+entered code averaging 0.741 `attendancevalue`, and
+`rpt_gsheets__absence_streak_roster` filters `att_code in ('A', 'AD', 'M')`, so
+it counts `M` as an absence. Mapping Focus's 1.13 million present-by-default
+rows onto it would have published fake multi-month Miami absence streaks.
+
+The no-record signal is not discarded — it moves to a dedicated
+`is_attendance_recorded` boolean. That is the one thing Focus knows and
+PowerSchool cannot: PowerSchool records only absences, so presence is implied
+and whether attendance was taken is unknowable there. The kipptaf union
+therefore leaves the column NULL on PowerSchool rows rather than true, so a
+Focus-versus-NJ comparison cannot read PowerSchool as fully compliant. Focus's
+own rate is material — 17 to 23% of completed days in the opening week of AY2026
+— which is why it is worth carrying rather than dropping.
 
 ## Deferred, tracked elsewhere
 
