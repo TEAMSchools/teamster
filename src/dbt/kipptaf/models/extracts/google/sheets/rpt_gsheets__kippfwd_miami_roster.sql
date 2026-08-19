@@ -60,6 +60,39 @@ with
         from {{ ref("int_focus__students") }}
     ),
 
+    /* Last academic year PowerSchool covers for Miami. gpa_cumulative carries
+       no year dimension -- it is the archive's final cumulative state -- so it
+       is a true prior-year value only on rows whose prior year is that last
+       covered year. Without this gate an AY2025 row would report its own
+       year's cumulative GPA as the previous year's. Resolved here and carried
+       on the crosswalk row because BigQuery rejects a scalar subquery in a
+       join predicate. */
+    ps_last_academic_year as (
+        select max(academic_year) as academic_year,
+        from {{ ref("int_powerschool__ada_term_pivot") }}
+        where _dbt_source_project = 'kippmiami'
+    ),
+
+    /* Miami's PowerSchool archive is frozen at AY2025 and keys on studentid,
+       which the Focus enrollment branch null-fills (#4775) -- so every ADA and
+       cumulative-GPA column reached through int_extracts reads null for Miami.
+       int_focus__students carries powerschool_id, which is the PowerSchool
+       student_number and NOT studentid, so bridge it to studentid here and read
+       the archive directly. Verified 1:1: no Miami student_number maps to more
+       than one studentid. schoolid comes along to keep the gpa_cumulative join
+       single-rowed -- 323 Miami students have more than one row there. */
+    ps_xwalk as (
+        select
+            stu.student_number as ps_student_number,
+            stu.id as ps_studentid,
+            stu.schoolid,
+
+            ply.academic_year as ps_last_academic_year,
+        from {{ ref("stg_powerschool__students") }} as stu
+        cross join ps_last_academic_year as ply
+        where stu._dbt_source_project = 'kippmiami'
+    ),
+
     /* gpa_y1 is PowerSchool-only. Keep the is_current filter and join THIS
        CTE, never the raw ref -- int_powerschool__gpa_term carries superseded
        term rows, and a direct join to the raw ref fanned prod out to 1,274
@@ -135,7 +168,7 @@ select
 
     psy.cumulative_y1_gpa_unweighted as gpa_cumulative,
 
-    adap.unweighted_ada as previous_year_ada,
+    pada.ada_year as previous_year_ada,
 
     e.fteid as fleid,
 
@@ -161,6 +194,8 @@ select
     if(
         oe.student_number is not null, 'Enrolled', 'Not Enrolled'
     ) as focus_enrollment_status,
+
+    pgc.cumulative_y1_gpa_unweighted as previous_year_gpa,
 from {{ ref("int_focus__student_enrollments") }} as e
 left join students as s on e.student_number = s.student_id
 left join open_enrollment as oe on e.student_number = oe.student_number
@@ -172,12 +207,18 @@ left join
     fast_pivot as fp_prev
     on e.fteid = fp_prev.student_id
     and e.academic_year - 1 = fp_prev.academic_year
+left join ps_xwalk as px on s.powerschool_id = px.ps_student_number
 left join
-    {{ ref("int_extracts__student_enrollments") }} as adap
-    on s.powerschool_id = adap.student_number
-    and e.academic_year - 1 = adap.academic_year
-    and adap.region = 'Miami'
-    and adap.rn_year = 1
+    {{ ref("int_powerschool__ada_term_pivot") }} as pada
+    on px.ps_studentid = pada.studentid
+    and e.academic_year - 1 = pada.academic_year
+    and pada._dbt_source_project = 'kippmiami'
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as pgc
+    on px.ps_studentid = pgc.studentid
+    and px.schoolid = pgc.schoolid
+    and pgc._dbt_source_project = 'kippmiami'
+    and e.academic_year - 1 = px.ps_last_academic_year
 left join
     {{ ref("int_extracts__student_enrollments") }} as psy
     on s.powerschool_id = psy.student_number

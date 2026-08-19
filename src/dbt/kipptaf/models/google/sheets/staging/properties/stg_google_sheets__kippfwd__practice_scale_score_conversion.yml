@@ -1,0 +1,78 @@
+models:
+  - name: stg_google_sheets__kippfwd__practice_scale_score_conversion
+    description: >-
+      Raw-score-to-scale-score conversion tables for practice SAT, PSAT, and ACT
+      administrations. One row per raw-score band per assessment. Membership
+      here designates an Illuminate assessment as a reportable practice
+      assessment. Supersedes stg_google_sheets__kippfwd__act_scale_score_key.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assessment_id
+              - raw_score_low
+          config:
+            severity: error
+    columns:
+      - name: assessment_id
+        data_type: int64
+        description: Illuminate canonical assessment id.
+      - name: academic_year
+        data_type: int64
+        description: Start-year convention, so SY26-27 reads 2026.
+      - name: scope
+        data_type: string
+        description: >-
+          The test itself — SAT, PSAT 8/9, PSAT10, or ACT. Matches the official
+          hub's scope vocabulary, and joins the scaffold on expected_scope.
+          Illuminate's own scope is unusable here, reading Benchmark or null on
+          externally created assessments.
+      - name: scope_round
+        data_type: string
+        description: >-
+          Administration within an academic year — SAT1, SAT2, ACT1, PSAT891,
+          PSAT101. Must differ between administrations in the same year, since
+          it partitions the composite score calculations. Distinct from the
+          practice hub's administration_round, which is a month and year derived
+          from Illuminate.
+      - name: subject
+        data_type: string
+        description: >-
+          Section subject as the sheet spells it — Mathematics, Reading and
+          Writing, Reading, Writing, English, Science.
+      - name: grade_level
+        data_type: int64
+        description:
+          Grade sitting the assessment. Illuminate's grade_level_id minus one.
+      - name: raw_score_low
+        data_type: int64
+        description: Lowest raw score converting to this row's scale score.
+      - name: raw_score_high
+        data_type: int64
+        description: >-
+          Highest raw score converting to this row's scale score. Bands must
+          cover zero through the section maximum without gaps.
+      - name: scale_score
+        data_type: int64
+        description: >-
+          Scale score for this band, from the lower bound of College Board's
+          published range. Grade 9-10 SAT Reading and Writing are legacy test
+          scores on 10-40 and get rescaled by ten downstream.
+      - name: aligned_scale_score
+        data_type: int64
+        description: >-
+          Scale score rescaled onto the section's reporting scale, so downstream
+          sums need no per-grade adjustment. Equals scale_score except for grade
+          9-10 SAT Reading and Writing, which are stored as 10-40 test scores
+          and rescaled by ten.
+      - name: score_type
+        data_type: string
+        description: >-
+          Score identifier matching score_type in
+          int_assessments__college_assessment.
+      - name: expected_total_subjects_tested
+        data_type: int64
+        description: >-
+          Sections a student is expected to sit in this administration. Compared
+          against the count actually tested to decide whether a composite score
+          can be calculated.

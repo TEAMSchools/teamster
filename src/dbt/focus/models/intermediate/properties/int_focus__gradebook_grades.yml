@@ -1,0 +1,115 @@
+models:
+  - name: int_focus__gradebook_grades
+    description: >-
+      Focus gradebook scores with the assignment, its category and category
+      weight, and the course period the score belongs to — one row per score,
+      the same grain as stg_focus__gradebook_grades. A gradebook grade names
+      only the student and the assignment, and an assignment is commonly
+      assigned to several sections, so the course period is resolved by keeping
+      the one the student is scheduled into. Scores whose assignment has no
+      course-period link keep their points and carry a null course period rather
+      than dropping. Internal-only — a rpt_ view must sit between this model and
+      any external consumer. A grade resolves to one course period only while a
+      student sits in exactly one of the assignment's sections. Three
+      student-and-assignment pairs currently match two sections each, from
+      mid-year section changes within the same course; none carries a grade
+      today, so no row is duplicated. Filtering the match by the assignment date
+      against the schedule window was tested and rejected: it drops a legitimate
+      grade for a student added to a section on 2026-08-18 and back-graded on
+      work assigned 2026-08-12, which is ordinary late-enrollment behaviour.
+      Revisit if a graded row ever lands in two sections.
+    columns:
+      - name: student_gradebook_grade_id
+        description: >-
+          Primary key — Focus gradebook_grades id; one row per student per
+          assignment.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id. Note this is the network student number prefixed
+          with `8400` (Miami-Dade's FLDOE district number), not the bare student
+          number.
+        config:
+          meta:
+            contains_pii: true
+      - name: assignment_id
+        description: Focus gradebook assignment the score is for.
+      - name: standard_id
+        description: >-
+          Focus standard the score is against, for standards-based rows.
+      - name: points
+        description: Points the student earned on the assignment.
+      - name: possible_points
+        description: >-
+          Points possible for this student, when it differs from the
+          assignment's own point value (e.g. an accommodation).
+      - name: letter_grade
+        description: >-
+          Letter grade recorded for the score, for assignments graded by letter
+          rather than points.
+      - name: exclude_from_average
+        description: Whether this score is excluded from the gradebook average.
+      - name: late
+        description: Whether the assignment was turned in late.
+      - name: highlight
+        description: Y/N — whether the teacher flagged the score for follow-up.
+      - name: comment
+        description: Free-text teacher comment on the score.
+        config:
+          meta:
+            contains_pii: true
+      - name: comment_codes
+        description: Canned comment codes attached to the score.
+      - name: accommodations
+        description: Accommodations applied when the assignment was scored.
+      - name: last_updated_user
+        description: Identifier of the user who last updated the score.
+      - name: last_updated_date
+        description: Source last-updated timestamp.
+      - name: course_period_id
+        description: >-
+          Course period the score belongs to, resolved by intersecting the
+          assignment's course periods with the ones the student is scheduled
+          into. Null where the assignment has no course-period link row.
+      - name: marking_period_id
+        description: >-
+          Marking period the assignment belongs to for that course period. Null
+          alongside a null course_period_id.
+      - name: assigned_date
+        description: Date the assignment was assigned to the student's section.
+      - name: due_date
+        description: Date the assignment was due for the student's section.
+      - name: publish_date
+        description: >-
+          Date the assignment became visible to the student's section.
+      - name: assignment_type_id
+        description: Focus gradebook category the assignment belongs to.
+      - name: assignment_title
+        description: Assignment name as the teacher entered it.
+      - name: assignment_points
+        description: >-
+          Points the assignment is worth by default, before any per-student
+          override in possible_points.
+      - name: assignment_description
+        description: Free-text assignment description.
+      - name: assignment_exclude_from_average
+        description: >-
+          Whether the assignment as a whole is excluded from the gradebook
+          average, independent of the per-score exclude_from_average flag.
+      - name: assignment_type_title
+        description: >-
+          Gradebook category name (Formative, Homework, Work Habits and so on).
+      - name: assignment_type_final_grade_percent
+        description: >-
+          Percentage the category contributes to the section's final grade for
+          this marking period. Null where the course period did not resolve.
+      - name: assignment_type_drop_lowest_grades
+        description: >-
+          Number of lowest scores dropped from the category before averaging.
+          Null where the course period did not resolve.

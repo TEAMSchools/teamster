@@ -1,0 +1,73 @@
+models:
+  - name: stg_focus__students_join_students
+    description: >-
+      Focus student-to-student links — one row per directed pair, currently used
+      only to record sibling relationships. The link is directed, so a sibling
+      pair may appear once or twice depending on how Focus recorded it; do not
+      assume symmetry.
+    columns:
+      - name: id
+        description: Primary key — Focus student-to-student link id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: primary_student_id
+        description: >-
+          Focus student id on the primary side of the link. Note this is the
+          network student number prefixed with `8400` (Miami-Dade's FLDOE
+          district number), not the bare student number.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: secondary_student_id
+        description: Focus student id on the secondary side of the link.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: relationship
+        description: >-
+          How the two students are related. Only `sibling` is in use in KIPP
+          Miami.
+        data_type: string
+      - name: sync_addresses
+        description: Y/N — whether address changes propagate across the link.
+        data_type: string
+      - name: sync_contacts
+        description: Y/N — whether contact changes propagate across the link.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the link was imported.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

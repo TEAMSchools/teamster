@@ -54,6 +54,7 @@ with
             *,
 
             if(subject_area in ('Combined', 'Composite'), 1, 0) as is_overall_score,
+
             if(subject_area not in ('Combined', 'Composite'), 1, 0) as is_subject_score,
 
             max(scale_score) over (

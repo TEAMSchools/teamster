@@ -288,9 +288,11 @@ def build_powerschool_dlt_assets(
             )
 
             try:
-                # fetch_row_count() attaches an authoritative per-table row_count
-                # to each materialization's metadata (surfaced in the asset
-                # catalog) alongside dagster-dlt's default load metadata.
+                # dagster-dlt already attaches dlt's own per-table `rows_loaded`
+                # to every materialization. Do NOT chain `.fetch_row_count()`
+                # here: it raises on a materialization with no `jobs` metadata (a
+                # first load that extracted zero rows), and one multi-asset op
+                # means that raise kills every other table in the run.
                 yield from dlt.run(
                     context=context,
                     dlt_source=_powerschool_source(
@@ -299,7 +301,7 @@ def build_powerschool_dlt_assets(
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",
-                ).fetch_row_count()
+                )
             except Exception:
                 # Surface dlt's per-table extracted row counts in the run log so a
                 # load failure is legible without walking the exception chain.
