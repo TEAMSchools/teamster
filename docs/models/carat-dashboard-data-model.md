@@ -381,6 +381,84 @@ turned out to be a scaffold value already, so `Board` was a duplicate encoding.
     raises the official row's readiness band and vice versa. This shipped
     without it once and was caught in review. Never remove it.
 
+### Three subject columns, and two of them hold identical values
+
+This is the most dangerous thing about consuming the view, and it has already
+produced a wrong published number. The view carries three subject columns:
+
+| Column                          | Side  | Values                | Null rows |
+| ------------------------------- | ----- | --------------------- | --------- |
+| `expected_subject_area`         | goal  | Combined, EBRW, Math  | 0         |
+| `subject_area`                  | score | Combined, EBRW, Math  | 97,646    |
+| `expected_aligned_subject_area` | goal  | EBRW, Math, **Total** | 0         |
+
+`expected_subject_area` and `subject_area` have the **same three values**, so in
+a Tableau filter list they are indistinguishable. One is the goal side, present
+on every row; the other is the score side, null for any student with no score.
+
+!!! warning "Filter `expected_aligned_subject_area = 'Total'`, never `Combined`"
+
+    `Total` exists only on the goal side, so filtering it cannot resolve to the
+    wrong column. Filtering `Combined` is ambiguous, and picking the score-side
+    copy silently changes the denominator from *every enrolled student* to *only
+    students who have a score* — no error, no row-count warning.
+
+    Measured on SAT at grade 11: 410 of 431 students have a null score-side
+    `subject_area`, so that filter cuts the group to 21. `SAT 1+ Attempts` then
+    reads **100% (21 of 21)**, which is circular — once the denominator is
+    students who tested, all of them have tested. Grade 12 barely moves (9 of
+    389), which is what makes the mistake hard to spot: it looks fine on seniors
+    and destroys juniors.
+
+### Section rows blend into totals if a sheet does not scope them
+
+Section and total rows share `expected_metric_name` — `HS Grad-Ready` and
+`College-Ready` appear at Total, EBRW and Math alike, with the same
+`expected_metric_label` too. Nothing in the data distinguishes a section row
+from a total row except the subject column. **A sheet that does not filter
+subject area averages all three together over a denominator three times too
+large.**
+
+The tell is a numerator larger than its denominator: a metric reading
+`528 / 398` is summing three subject areas against one student count.
+
+### Recorded defect — the NJ view reported two goal verdicts backwards
+
+Found 2026-08-19 on the live workbook. The state/NJ sheet carried no
+subject-area filter, so its benchmark rows blended Total, EBRW and Math. The
+school and regional sheets were correctly scoped; only the NJ level was
+affected, and attempts rows were never affected because they exist only at
+Total.
+
+Grade 12, measured against production:
+
+| Metric        | Blended (reported) | Total-only (correct) | Goal | Verdict reported | Verdict correct |
+| ------------- | ------------------ | -------------------- | ---- | ---------------- | --------------- |
+| College-Ready | 24.6%              | **20.6%**            | 22%  | met              | **missed**      |
+| HS Grad-Ready | 44.9%              | **46.0%**            | 45%  | missed           | **met**         |
+
+Both crossed the goal line, in opposite directions, so the sheet reported
+College-Ready as on track when it was not and HS Grad-Ready as off track when it
+was. Fixed by adding the goal-side subject filter to that sheet; no model change
+was needed.
+
+Two things make this worth keeping on record. The error is invisible from the
+percentages alone — 44.9% against 46.0% looks like rounding — and it only
+declares itself through the impossible numerator. And **HS Grad-Ready now clears
+its goal by less than one student** (180 of 398, 45.2% against 45%), so that
+verdict can flip on enrollment churn with no score changing.
+
+### Section rows carry thresholds but no goals
+
+Every section-level benchmark row has an `expected_metric_min_score` and a null
+`expected_metric_pct_goal` — all 2,102 rows, every scope, both test types. So a
+section can be scored against its bar but has no target for how many students
+should clear it. They are reference measures, not tracked goals, which is why
+they cannot legitimately appear as a met-or-missed bar on this view.
+
+Total-level rows all carry goals. If a section row ever appears with a goal
+attached, the goals sheet has gained a row it did not have.
+
 For what moved against production, see _Why the current dashboard's numbers
 change_ below.
 

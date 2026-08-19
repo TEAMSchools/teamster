@@ -1085,7 +1085,7 @@ guess. **Do not "correct" these to a topline value, and do not report them as a
 discrepancy against the strategy doc.** Ask KIPP Forward what the over-time goal
 should be.
 
-Three things this resolved, all previously listed here as unmodellable:
+Three things this resolved, all previously listed here as impossible to model:
 
 - **School year** is now `academic_year`, a real column.
 - **Thresholds left the goals sheet entirely.** They live on the scaffold as
@@ -1370,6 +1370,28 @@ Work outward from the student, stopping at the first layer with zero rows.
   duplicated (the composite is built with `group by`, so ACT is 1:1 at 379 rows
   where production had 1,094). Both changes are documented in the reference
   doc's impact section.
+- **`_current` has THREE subject columns and two hold identical values.**
+  `expected_subject_area` (goal side) and `subject_area` (score side) both read
+  `Combined` / `EBRW` / `Math`; only `expected_aligned_subject_area` uses
+  `Total`. **Always scope on `expected_aligned_subject_area = 'Total'`** —
+  `Total` exists only on the goal side, so it cannot resolve to the wrong
+  column, whereas `Combined` is ambiguous. Filtering the score-side copy
+  silently swaps the denominator from every enrolled student to only students
+  holding a score: SAT grade 11 drops 431 students to 21 (410 have a null
+  score-side `subject_area`) and `SAT 1+ Attempts` then reads a circular 100%.
+  Grade 12 barely moves, which is why the mistake survives review.
+- **A benchmark numerator larger than its denominator means subject areas are
+  blending.** Section and total rows share `expected_metric_name` and
+  `expected_metric_label`, so a consumer that does not scope subject area
+  averages Total + EBRW + Math over a 3x denominator. This shipped live on the
+  NJ sheet and reported two goal verdicts backwards — College-Ready as met at
+  24.6% when Total-only is 20.6% against a 22% goal, HS Grad-Ready as missed at
+  44.9% when Total-only is 46.0% against 45%. Attempts rows are immune (Total
+  only). See the reference doc's recorded defect.
+- **Section benchmarks have thresholds but no goals** —
+  `expected_metric_pct_goal` is null on all 2,102 section rows, every scope,
+  both test types. They are reference bars, so a section row appearing with a
+  goal means the goals sheet gained a row.
 - **Relaxing `expected_admin_season != 'Not Official'` is NOT needed, and would
   now do harm.** The design spec listed it as a deliverable so practice
   administrations could reach `_roster`. Practice reaches `_roster` anyway —
