@@ -158,3 +158,68 @@ unit_tests:
           academic_year: 2026
           startdate: 2026-08-12
           student_enrollment_id: 24
+
+  - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
+    model: int_focus__attendance_daily
+    description: >-
+      Four students on one in-session day inside one stint. Student 84001 is
+      absent unexcused (U maps to A), 84002 excused (AE passes through), 84003
+      present (null code), and 84004 has no attendance row at all (maps to M and
+      counts present, matching PowerSchool). Proves the scaffold emits a row for
+      a student Focus never recorded.
+    given:
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select 84001 as student_number, 1 as network_student_number,
+            2026 as academic_year, 58 as schoolid,
+            date '2026-08-12' as startdate, date '2027-06-03' as exitdate,
+            5 as grade_level
+          union all
+          select 84002, 2, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+          union all
+          select 84003, 3, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+          union all
+          select 84004, 4, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+      - input: ref('stg_focus__attendance_calendar')
+        format: sql
+        rows: |
+          select 58 as school_id, 2026 as syear,
+            date '2026-08-12' as school_date
+      - input: ref('int_focus__attendance_day')
+        format: sql
+        rows: |
+          select 84001 as student_id, 58 as schoolid,
+            date '2026-08-12' as school_date,
+            cast(0 as numeric) as state_value, 'U' as daily_code
+          union all
+          select 84002, 58, date '2026-08-12', cast(0 as numeric), 'AE'
+          union all
+          select 84003, 58, date '2026-08-12', cast(1 as numeric),
+            cast(null as string)
+    expect:
+      rows:
+        - student_number: 1
+          att_code: A
+          att_code_focus: U
+          attendancevalue: 0.0
+          membershipvalue: 1.0
+          yearid: 36
+        - student_number: 2
+          att_code: AE
+          att_code_focus: AE
+          attendancevalue: 0.0
+          membershipvalue: 1.0
+          yearid: 36
+        - student_number: 3
+          att_code: null
+          att_code_focus: null
+          attendancevalue: 1.0
+          membershipvalue: 1.0
+          yearid: 36
+        - student_number: 4
+          att_code: M
+          att_code_focus: null
+          attendancevalue: 1.0
+          membershipvalue: 1.0
+          yearid: 36
