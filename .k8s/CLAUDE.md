@@ -119,10 +119,15 @@ hit built-in login/SFTP-template fields.
   `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
   (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
 - **Orphan cleanup env vars** —
-  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` (set to 900s) and
+  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` (set to 1500s) and
   `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
   quickly orphaned code server Deployments from previous agent IDs are deleted.
-  Do not set grace period below reconciliation time (~3-4 min).
+  Do not set grace period below the WORST-CASE first reconcile, which is
+  `deploymentStartupTimeout` + `serverProcessStartupTimeout` = 1200s, not the
+  ~3-4 min a healthy reconcile takes. Below that, an orphaned code server can be
+  deleted before its replacement is reconciled. Asserted in
+  `tests/test_k8s_config.py` alongside the readinessProbe budget, which is sized
+  against the same number.
 - **Code server ClusterIPs change on every reconcile** —
   `unique_resource_name()` in
   `dagster_cloud/workspace/user_code_launcher/utils.py` appends a fresh
