@@ -61,9 +61,16 @@ def test_entries_must_be_a_list_of_mappings():
     assert any("mapping" in e for e in errors)
 
 
-def test_missing_groups_key_is_rejected():
-    errors = validate(make_catalog(config={"groups": [], "families": []}), [])
-    assert any("promos" in e for e in errors)
+def test_entries_not_a_list_is_rejected():
+    errors = validate(make_catalog(entries={"id": "a", "name": "A"}), [])
+    assert errors == ["links.yml must be a list of entries"]
+
+
+@pytest.mark.parametrize("missing_key", ["groups", "families", "promos"])
+def test_missing_config_key_is_rejected(missing_key):
+    config = {k: [] for k in ("groups", "families", "promos") if k != missing_key}
+    errors = validate(make_catalog(config=config), [])
+    assert any(missing_key in e for e in errors)
 
 
 def test_family_naming_a_missing_entry_is_rejected():
