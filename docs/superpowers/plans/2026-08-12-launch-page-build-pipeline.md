@@ -420,6 +420,26 @@ font declaration:
 A staff page should not reach a third party for a typeface, and Whitney is the
 KTAF brand face with Calibri as the documented fallback.
 
+**Then fix the masthead and footer, which read payload keys `render()` does not
+emit.** The template currently reads `meta.commit` and `meta.needsReview`; the
+payload carries `meta.updated` and `meta.count`, so the footer would render
+"Generated from src/launch/links.yml at undefined. undefined of 39 entries are
+still being verified." The disclaimer is also obsolete — with unverified entries
+excluded there is nothing to disclaim. Replace both lines:
+
+```javascript
+document.getElementById("mastmeta").textContent =
+  `${tools.length} tools` + (meta.updated ? ` · updated ${meta.updated}` : "");
+document.getElementById("foot").textContent =
+  "Generated from docs/launch/links.yml" +
+  (meta.updated ? ` · ${meta.updated}` : "");
+```
+
+**Payload contract.** The template may read only these keys: `tools`, `groups`,
+`views`, `systems`, `promos`, and `meta.updated`. Task 6 emits exactly that set
+plus `meta.count`. If a later change needs another key, add it to `render()`
+first.
+
 - [ ] **Step 7: Run the tests**
 
 Run: `uv run pytest tests/launch/test_load.py -v` Expected: 2 passed.
