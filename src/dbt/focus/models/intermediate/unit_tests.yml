@@ -164,9 +164,9 @@ unit_tests:
     description: >-
       Four students on one in-session day inside one stint. Student 84001 is
       absent unexcused (U maps to A), 84002 excused (AE passes through), 84003
-      present (null code), and 84004 has no attendance row at all (maps to M and
-      counts present, matching PowerSchool). Proves the scaffold emits a row for
-      a student Focus never recorded.
+      present (null code), and 84004 has no attendance row at all (null
+      att_code, counts present, matching PowerSchool). Proves the scaffold emits
+      a row for a student Focus never recorded.
     given:
       - input: ref('int_focus__student_enrollment')
         format: sql
@@ -218,7 +218,7 @@ unit_tests:
           membershipvalue: 1.0
           yearid: 36
         - student_number: 4
-          att_code: M
+          att_code: null
           att_code_focus: null
           attendancevalue: 1.0
           membershipvalue: 1.0

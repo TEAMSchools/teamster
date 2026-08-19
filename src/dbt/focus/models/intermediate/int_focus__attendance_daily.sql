@@ -129,17 +129,23 @@ select
 
     -- Focus's four day codes conform to the PowerSchool vocabulary with one
     -- rename. AE and AD already match exactly. U must NOT pass through: U means
-    -- Unprepared in PowerSchool, so an unmapped U would merge unexcused
-    -- absences into an unrelated code. A day with no record maps to M (Missing
-    -- Attendance) and counts present, which is what the district ctod does when
-    -- no absence row exists.
-    case
-        when a.student_id is null
-        then 'M'
-        when a.daily_code = 'U'
-        then 'A'
-        else a.daily_code
-    end as att_code,
+    -- Unprepared in PowerSchool, so an unmapped U would merge unexcused absences
+    -- into an unrelated code.
+    --
+    -- A scaffold day with no attendance record gets NULL, exactly as PowerSchool
+    -- does for the same case (7,698,389 rows, average attendancevalue 0.997). Do
+    -- NOT use 'M': PowerSchool's M is an entered Missing Attendance code averaging
+    -- 0.741 attendancevalue, and rpt_gsheets__absence_streak_roster filters
+    -- att_code in ('A', 'AD', 'M'), so no-record days labelled M would publish
+    -- fake absence streaks for Miami.
+    if(a.daily_code = 'U', 'A', a.daily_code) as att_code,
+
+    -- The one thing Focus knows and PowerSchool cannot: whether anybody actually
+    -- took attendance. PowerSchool records only absences, so presence is implied
+    -- and the distinction does not exist there -- the kipptaf union leaves this
+    -- null on PowerSchool rows. Focus's rate is material (17-23% of completed days
+    -- in the opening week), so it is worth carrying.
+    a.student_id is not null as is_attendance_recorded,
 
 from membership as m
 left join

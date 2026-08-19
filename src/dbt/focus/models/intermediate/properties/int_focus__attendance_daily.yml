@@ -7,8 +7,10 @@ models:
       in-session calendar days, left-joined to int_focus__attendance_day, so a
       day Focus recorded no row for is still represented. Attendance codes are
       conformed to the PowerSchool vocabulary (U becomes A; AE and AD already
-      match; a missing record becomes M and counts present) so network consumers
-      need no per-SIS branching. studentid is null because Phase 1 left it
+      match; a missing record gets a null att_code, exactly as PowerSchool does,
+      and counts present) so network consumers need no per-SIS branching.
+      is_attendance_recorded carries the no-record signal Focus has and
+      PowerSchool cannot express. studentid is null because Phase 1 left it
       unpopulated for Focus; every downstream join uses student_number. Emits
       Focus's internal schoolid — kipptaf crosswalks it to the network school
       id. Internal-only — a rpt_ view must sit between this model and any
@@ -52,12 +54,21 @@ models:
       - name: att_code
         description: >-
           Attendance code conformed to the PowerSchool vocabulary — A absent
-          undocumented, AE absent excused, AD absent documented, M missing
-          record, null present.
+          undocumented, AE absent excused, AD absent documented, null present
+          (including a scaffold day with no attendance record at all, which
+          reads as present here — see is_attendance_recorded for whether the
+          register was actually taken).
       - name: att_code_focus
         description: >-
           Raw Focus daily code before conforming (U, AE, AD, or null), retained
           so the original value is not lost.
+      - name: is_attendance_recorded
+        description: >-
+          Whether Focus recorded attendance for this student-day at all. False
+          means the register was never taken, which is distinct from a recorded
+          presence. Null on PowerSchool-sourced rows in the network layer,
+          because PowerSchool records only absences and cannot express the
+          difference.
       - name: attendancevalue
         description: >-
           1 present, 0 absent, from Focus state_value. A day with no attendance
