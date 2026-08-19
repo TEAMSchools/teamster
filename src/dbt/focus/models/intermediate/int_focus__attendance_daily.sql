@@ -5,7 +5,9 @@ with
     -- prod: 78 stints network-wide are transfer boundaries, while 1,755 stints
     -- legitimately end on an in-session day the student attended -- so a blanket
     -- half-open range would drop 1,755 real attendance days to fix 4 duplicates.
-    -- Trim only the transfer day, which assigns it to the ARRIVING school.
+    -- Trim only the transfer day, which assigns it to the ARRIVING school. The
+    -- join must also exclude a stint matching its own row, or a single-day stint
+    -- loses its only day.
     stint_starts as (
         select distinct student_number, academic_year, startdate,
         from {{ ref("int_focus__student_enrollment") }}
@@ -33,6 +35,13 @@ with
             on e.student_number = s.student_number
             and e.academic_year = s.academic_year
             and e.exitdate = s.startdate
+            -- Without this, a single-day stint (startdate = exitdate) matches its
+            -- OWN row in stint_starts, trims its exitdate to startdate - 1, and
+            -- silently loses the student's only membership day. 73 AY2026 stints
+            -- are single-day and all fall on in-session days. startdate is unique
+            -- per student-year, so requiring a different startdate isolates a
+            -- genuine transfer from a self-match.
+            and e.startdate <> s.startdate
     ),
 
     -- Focus's attendance_calendar carries one row per school per day it treats
