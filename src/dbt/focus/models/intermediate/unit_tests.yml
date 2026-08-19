@@ -205,21 +205,25 @@ unit_tests:
           attendancevalue: 0.0
           membershipvalue: 1.0
           yearid: 36
+          is_attendance_recorded: true
         - student_number: 2
           att_code: AE
           att_code_focus: AE
           attendancevalue: 0.0
           membershipvalue: 1.0
           yearid: 36
+          is_attendance_recorded: true
         - student_number: 3
           att_code: null
           att_code_focus: null
           attendancevalue: 1.0
           membershipvalue: 1.0
           yearid: 36
+          is_attendance_recorded: true
         - student_number: 4
           att_code: null
           att_code_focus: null
           attendancevalue: 1.0
           membershipvalue: 1.0
           yearid: 36
+          is_attendance_recorded: false
