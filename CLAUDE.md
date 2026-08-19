@@ -34,6 +34,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `mcp__github__issue_write`; label with conventional commit type, related
   source systems, and `dagster`/`dbt` when applicable.
 
+- **Opening any GitHub issue** (via `mcp__github__issue_write`, whether for a
+  spec/plan or a quick-fix bug/feature report): `issue_write` does NOT apply a
+  repo issue template — that's a GitHub web-UI-only convenience (the "New issue"
+  picker), invisible to the API. Read the matching template under
+  `.github/ISSUE_TEMPLATE/` yourself (`bug_report.md` or `feature_request.md`)
+  and structure the body to match it — plain-language sections first, a "For
+  Claude" fold-out last — rather than writing free-form.
+
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them. When an issue isn't already required (i.e. quick fixes, not
   specs/plans), also ask whether to anchor the branch with one, and honor a
