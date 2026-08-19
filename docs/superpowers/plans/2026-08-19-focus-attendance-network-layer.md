@@ -53,6 +53,20 @@ Design spec:
   `config: materialized:`, never inline `{{ config() }}`.
 - Fenced code blocks in any `.md` need a language (MD040). Backtick every
   `snake_case` identifier in prose.
+- **Data tests in the `focus` package can only WARN, never error.**
+  `src/dbt/kippmiami/dbt_project.yml:19-20` sets an unscoped
+  `data_tests: +severity: warn`, and dbt lets a root project override configs on
+  resources defined in an installed package, so a `severity: error` declared in
+  a focus-package properties yml silently resolves to `warn`. Still declare
+  `severity: error` — it is correct intent and binds if that project config is
+  ever scoped — but do NOT spend fix rounds trying to make a package test fail a
+  build. Real enforcement comes from the kipptaf-level tests in Tasks 9 through
+  13, where kipptaf is the root project. Pre-existing and repo-wide, not
+  introduced here.
+- All generic tests need `arguments:` nesting per `src/dbt/CLAUDE.md:916` —
+  `- dbt_utils.unique_combination_of_columns:`, then `arguments:`, then
+  `combination_of_columns:`. The flat form makes dbt ignore the sibling
+  `config:` block entirely, which silently voids `severity`.
 - Do not run `trunk fmt`. Run
   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <paths> </dev/null`
   with cwd set to the worktree before any push.
@@ -471,9 +485,26 @@ from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendanc
 where yearid = 36
 ```
 
-Expected: about 9,300 elapsed rows with roughly 130 `M`, so under 2%. An elapsed
-`M` rate above 5% means the enrollment or attendance join is wrong, not that
-Focus stopped recording.
+Expected: about 9,300 elapsed rows with roughly 130 `M`, so under 2%.
+
+**Exclude the current day before judging that rate.** Prod gains today's
+attendance through the day, so a dev table built this morning shows every
+student as `M` for today. During Task 1 that read as 1,676 elapsed `M` (18%)
+when 1,547 of them were simply today's not-yet-loaded rows, and every prior
+school day had zero. Judge on completed days:
+
+```sql
+select
+  countif(calendardate < current_date('America/New_York')) as completed_rows,
+  countif(
+    calendardate < current_date('America/New_York') and att_code = 'M'
+  ) as completed_m
+from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendance_daily`
+where yearid = 36
+```
+
+A `completed_m` rate above 5% means the enrollment or attendance join is wrong,
+not that Focus stopped recording.
 
 The 212 distinct days exceed any real school's 182 because Focus school 60
 (Applicants) carries one enrollment against a misconfigured 212-day calendar.
@@ -2382,6 +2413,23 @@ uv run dbt build --select int_students__attendance_daily \
 ```
 
 Expected: PASS including the uniqueness test.
+
+**Confirm the uniqueness test actually ERRORS rather than warns.** Package-level
+tests cannot error (see Global Constraints), so this kipptaf-level test is the
+only real enforcement of the attendance grain in the whole plan. kipptaf is the
+root project here, so a resource-level `severity: error` should win — but verify
+it instead of assuming:
+
+```bash
+uv run dbt ls --resource-type test \
+  --select int_students__attendance_daily --output json \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --target dev 2>/dev/null | grep '^{'
+```
+
+Expected: the `unique_combination_of_columns` test's `config.severity` reads
+`error`. If it reads `warn`, STOP and report — the plan then has no working
+grain enforcement anywhere, which is a design gap rather than a task defect.
 
 NJ must be row-identical AND value-identical to prod:
 
