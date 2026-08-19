@@ -1,147 +1,113 @@
 with
-    base_rows as (
+    attempts as (
         select
+            s.academic_year,
             s.student_number,
             s.test_type,
-            s.scope,
             s.score_type,
+            s.attempt_lifetime,
+            s.yearly_attempts_totals,
 
             e.salesforce_id,
             e.grade_level,
 
-        from {{ ref("int_assessments__college_assessment") }} as s
+        from {{ ref("int_assessments__all_college_assessments") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on s.academic_year = e.academic_year
             and s.student_number = e.student_number
             and e.school_level = 'HS'
             and e.rn_year = 1
-        where
-            s.score_type in (
-                'act_composite',
-                'sat_total_score',
-                'psat89_total',
-                'psatnmsqt_total',
-                'psat10_total'
-            )
+        where s.is_overall_score = 1
     ),
 
-    yearly_tests as (
+    /*
+        The goal columns have no consumer yet -- both consumers of this model
+        (_dashboard_roster and rpt_gsheets__college_assessments_wide) read only
+        the *_count_lifetime columns and rn_lifetime. Kept for the rpt views to
+        pick up. See #4658.
+    */
+    attempt_goals_long as (
         select
-            student_number,
-            salesforce_id,
-            grade_level,
+            test_type, expected_metric_label, expected_min_score, expected_metric_goal,
 
-            psat89_count,
-            psat10_count,
-            psatnmsqt_count,
-            sat_count,
-            act_count,
-
-        from
-            base_rows pivot (
-                count(score_type) for scope in (
-                    'PSAT 8/9' as psat89_count,
-                    'PSAT10' as psat10_count,
-                    'PSAT NMSQT' as psatnmsqt_count,
-                    'SAT' as sat_count,
-                    'ACT' as act_count
-                )
-            )
-    ),
-
-    yearly_test_counts as (
-        select
-            student_number,
-            salesforce_id,
-            grade_level,
-
-            sum(psat89_count) as psat89_count,
-            sum(psat10_count) as psat10_count,
-            sum(psatnmsqt_count) as psatnmsqt_count,
-            sum(sat_count) as sat_count,
-            sum(act_count) as act_count,
-
-        from yearly_tests
-        group by student_number, salesforce_id, grade_level
-    ),
-
-    ytd_counts as (
-        select
-            y.*,
-
-            c.act_1_attempt_min_score,
-            c.act_2_plus_attempts_min_score,
-            c.sat_1_attempt_min_score,
-            c.sat_1_attempt_pct_goal,
-            c.sat_2_plus_attempts_min_score,
-            c.sat_2_plus_attempts_pct_goal,
-            c.psat89_1_attempt_min_score,
-            c.psat89_2_plus_attempts_min_score,
-            c.psat10_1_attempt_min_score,
-            c.psat10_2_plus_attempts_min_score,
-            c.psatnmsqt_1_attempt_min_score,
-            c.psatnmsqt_2_plus_attempts_min_score,
-
-            sum(y.psat89_count) over (
-                partition by y.student_number order by y.grade_level
-            ) as psat89_count_ytd,
-
-            sum(y.psat10_count) over (
-                partition by y.student_number order by y.grade_level
-            ) as psat10_count_ytd,
-
-            sum(y.psatnmsqt_count) over (
-                partition by y.student_number order by y.grade_level
-            ) as psatnmsqt_count_ytd,
-
-            sum(y.sat_count) over (
-                partition by y.student_number order by y.grade_level
-            ) as sat_count_ytd,
-
-            sum(y.act_count) over (
-                partition by y.student_number order by y.grade_level
-            ) as act_count_ytd,
-
-        from yearly_test_counts as y
-        cross join {{ ref("int_google_sheets__kippfwd_goals") }} as c
+        from {{ ref("int_google_sheets__kippfwd__goals_unpivot") }}
+        -- the all-grades branch states its goals grade-free and would collapse
+        -- into the pivot's avg() alongside these
+        where expected_goal_type = 'Attempts' and goal_branch = 'By Grade'
     )
 
 select
-    student_number,
-    salesforce_id,
-    grade_level,
-    psat89_count,
-    psat10_count,
-    psatnmsqt_count,
-    sat_count,
-    act_count,
-    act_1_attempt_min_score,
-    act_2_plus_attempts_min_score,
-    sat_1_attempt_min_score,
-    sat_1_attempt_pct_goal,
-    sat_2_plus_attempts_min_score,
-    sat_2_plus_attempts_pct_goal,
-    psat89_1_attempt_min_score,
-    psat89_2_plus_attempts_min_score,
-    psat10_1_attempt_min_score,
-    psat10_2_plus_attempts_min_score,
-    psatnmsqt_1_attempt_min_score,
-    psatnmsqt_2_plus_attempts_min_score,
-    psat89_count_ytd,
-    psat10_count_ytd,
-    psatnmsqt_count_ytd,
-    sat_count_ytd,
-    act_count_ytd,
+    a.academic_year,
+    a.student_number,
+    a.test_type,
+    a.salesforce_id,
+    a.grade_level,
+    a.yearly_psat89 as psat89_count,
+    a.yearly_psat10 as psat10_count,
+    a.yearly_psatnmsqt as psatnmsqt_count,
+    a.yearly_sat as sat_count,
+    a.yearly_act as act_count,
 
-    max(psat89_count_ytd) over (partition by student_number) as psat89_count_lifetime,
-    max(psat10_count_ytd) over (partition by student_number) as psat10_count_lifetime,
-    max(psatnmsqt_count_ytd) over (
-        partition by student_number
+    g.min_score_sat_1_attempt,
+    g.pct_goal_sat_1_attempt,
+    g.min_score_sat_2_plus_attempts,
+    g.pct_goal_sat_2_plus_attempts,
+    g.min_score_psat89_1_attempt,
+    g.pct_goal_psat89_1_attempt,
+    g.min_score_psat10_1_attempt,
+    g.pct_goal_psat10_1_attempt,
+    g.min_score_psatnmsqt_1_attempt,
+    g.pct_goal_psatnmsqt_1_attempt,
+
+    /*
+        The pivot leaves a lifetime cell null in any year the student did not sit
+        that test, so it is spread across every one of their rows here. Without
+        it, rn_lifetime = 1 can land on a year with no sitting and report null.
+        test_type is in every partition so a practice sitting never inflates an
+        official count, and rn_lifetime = 1 yields one row per test type.
+    */
+    max(a.lifetime_psat89) over (
+        partition by a.student_number, a.test_type
+    ) as psat89_count_lifetime,
+    max(a.lifetime_psat10) over (
+        partition by a.student_number, a.test_type
+    ) as psat10_count_lifetime,
+    max(a.lifetime_psatnmsqt) over (
+        partition by a.student_number, a.test_type
     ) as psatnmsqt_count_lifetime,
-    max(sat_count_ytd) over (partition by student_number) as sat_count_lifetime,
-    max(act_count_ytd) over (partition by student_number) as act_count_lifetime,
+    max(a.lifetime_sat) over (
+        partition by a.student_number, a.test_type
+    ) as sat_count_lifetime,
+    max(a.lifetime_act) over (
+        partition by a.student_number, a.test_type
+    ) as act_count_lifetime,
 
-    row_number() over (partition by student_number) as rn_lifetime,
+    row_number() over (partition by a.student_number, a.test_type) as rn_lifetime,
 
-from ytd_counts
+from
+    attempts pivot (
+        max(yearly_attempts_totals) as yearly,
+        max(attempt_lifetime) as lifetime
+        for score_type in (
+            'psat89_total' as psat89,
+            'psat10_total' as psat10,
+            'psatnmsqt_total' as psatnmsqt,
+            'sat_total_score' as sat,
+            'act_composite' as act
+        )
+    ) as a
+-- trunk-ignore(sqlfluff/AM08): on clause below; parser misses it across the pivot
+inner join
+    attempt_goals_long pivot (
+        avg(expected_min_score) as min_score,
+        avg(expected_metric_goal) as pct_goal
+        for expected_metric_label in (
+            'sat_1_attempt',
+            'sat_2_plus_attempts',
+            'psat89_1_attempt',
+            'psat10_1_attempt',
+            'psatnmsqt_1_attempt'
+        )
+    ) as g
+    on a.test_type = g.test_type

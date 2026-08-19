@@ -537,6 +537,21 @@ lingering as a stale prod table is absent from the prod manifest → clone-skipp
 tables by declaring them a BQ-native source (`sources-bigquery.yml`, plain
 hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
 
+## `dbt build --empty` destroys your dev relation contents
+
+`--empty` doesn't just skip reading upstreams — it rebuilds every SELECTED
+relation as `limit 0`, so a `--empty` run over `<model>+` leaves the whole
+descendant graph EMPTY in your dev schema. A validation query run afterwards
+returns 0 rows and looks like catastrophic row loss in the model.
+
+Order matters: run validation queries BEFORE the `--empty` gate, or rebuild
+without `--empty` afterwards. Distinguish this from a real break by checking a
+relation OUTSIDE the `--empty` selection — a source copy that still has rows
+while every selected model is 0 is the signature. Verified this session: a
+409-node `--empty` gate zeroed `int_students__student_enrollments`,
+`int_focus__advisory` and the `base_` passthrough while the unselected
+`zz_<user>_kippnewark_powerschool` source kept its 97,855 rows.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
@@ -838,6 +853,16 @@ membership filter — often gating an outbound feed — not a lookup, and its ro
 set may encode no derivable rule. Likewise count the rows any replacement
 `coalesce` fallback actually fires on: one written to preserve a single row
 fired on 251.
+
+### Retiring a model is always a disable, never a delete
+
+Set `config: enabled: false` in the properties yml and leave the `.sql` and the
+prod relation in place. Applies even when the model has no exposure and zero
+remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
+instead of vanishing. Do not propose deletion as the tidier option, and do not
+issue a `drop view` for the orphaned relation. Disabling a model does NOT
+disable its tests (see _Test config defaults_) — add `enabled: false` to each of
+those too.
 
 ### Verifying a test-removal PR
 

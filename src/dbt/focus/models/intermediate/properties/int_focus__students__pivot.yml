@@ -90,6 +90,12 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: homeless_unaccompanied_youth_label
+        description:
+          Decoded label for the homeless_unaccompanied_youth select field.
+        config:
+          meta:
+            contains_pii: true
       - name: idea_educational_environment_label
         description: >-
           Decoded label for the idea_educational_environment select field — the

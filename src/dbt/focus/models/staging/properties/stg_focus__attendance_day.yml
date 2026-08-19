@@ -1,0 +1,119 @@
+models:
+  - name: stg_focus__attendance_day
+    description: >-
+      Focus daily attendance — one row per student per school day, carrying the
+      day-level attendance code, the state-reportable day value, and present /
+      absent minutes.
+    columns:
+      - name: id
+        description: Primary key — Focus daily attendance record id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id. Note this is the network student number prefixed
+          with `8400` (Miami-Dade's FLDOE district number), not the bare student
+          number.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: school_date
+        description: The attendance date.
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2026 = 2026-27).
+        data_type: int
+      - name: marking_period_id
+        description: >-
+          Focus marking period the day falls in (joins
+          `stg_focus__marking_periods`).
+        data_type: int
+      - name: daily_code
+        description: >-
+          Short name of the day-level attendance code (e.g. `AD` = Absent
+          Documented, `AE`, `U`). Matches
+          `stg_focus__attendance_codes.short_name` — not a unique key there,
+          since codes are defined per school and school year.
+        data_type: string
+      - name: daily_pres_code
+        description: >-
+          Short name of the day-level present code, when Focus records presence
+          separately from the absence code.
+        data_type: string
+      - name: state_value
+        description: >-
+          State-reportable day value — `1` for a day counted present for Florida
+          reporting, `0` otherwise.
+        data_type: numeric
+      - name: minutes_present
+        description: Minutes the student was present on the day.
+        data_type: numeric
+      - name: minutes_absent
+        description: Minutes the student was absent on the day.
+        data_type: numeric
+      - name: time_in
+        description: Clock-in time, for schools tracking arrival.
+        data_type: time
+      - name: time_out
+        description: Clock-out time, for schools tracking departure.
+        data_type: time
+      - name: comment
+        description: Free-text comment recorded on the day's attendance.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: note_approved
+        description: Y/N — whether an attached attendance note was approved.
+        data_type: string
+      - name: note_message
+        description: Free-text message on the attached attendance note.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: notified_callouts
+        description: Callout notifications sent for the day's attendance.
+        data_type: string
+      - name: admin_user_id
+        description: Focus user id of the administrator who set the day's code.
+        data_type: int
+      - name: last_updated_user
+        description: Identifier of the user who last updated the record.
+        data_type: int
+      - name: last_updated_date
+        description: Source last-updated date.
+        data_type: date
+      - name: imported
+        description: Y/N — whether the record was imported.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

@@ -1,4 +1,41 @@
 data_tests:
+  - name: test_kippfwd_goals_over_time_collapse
+    description: >-
+      int_google_sheets__kippfwd__goals_unpivot collapses the goals sheet's
+      grade rows to one row for the over time branch, taking the over time goal
+      where the sheet states one and the per-grade goal otherwise. Either path
+      is a silent pick if the values being collapsed disagree, so the failure is
+      a wrong network goal reported without complaint rather than an error.
+      Fires on both shapes -- an over time goal stated inconsistently across a
+      score type's grade rows, or a per-grade goal that disagrees where no over
+      time goal exists to override it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals
+
+  - name: test_kippfwd_goals_long_join_grain
+    description: >-
+      rpt_gsheets__college_assessments_long joins the All Grades benchmark goals
+      on test type and score type alone, with no academic year binding, and
+      resolves its pivot with any_value(). A second academic year stating a goal
+      for a key that already has one would double every matching score row and
+      pick a threshold arbitrarily, so the failure is a silently wrong reported
+      threshold rather than an error -- which is the wrong loudness for a
+      warning. The goals model already spans two academic years and stays
+      unambiguous only because the earlier rows are practice ACT while the later
+      ACT rows are official, a property of the data rather than of the model.
+      int_google_sheets__kippfwd__goals_unpivot's own uniqueness test carries
+      academic_year and so cannot catch this.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_google_sheets__kippfwd__goals_unpivot
+
   - name: test_kippfwd_miami_roster_current_year_not_empty
     description: >-
       rpt_gsheets__kippfwd_miami_roster must hold at least one row for
@@ -419,6 +456,23 @@ data_tests:
           ref:
             name: int_people__staff_roster
 
+  - name: rpt_clever__sections__enr_teacher_id_is_the_dso
+    description: >-
+      The auto-generated ENR sections must list the school's DSO as their
+      primary teacher, never the School Leader. Both titles match the same
+      filter in rpt_clever__sections, so the pick is stable only because
+      sortorder ranks them -- without that rank the two swap on BigQuery's scan
+      order, which is how ~90 sections silently changed hands and tripped
+      Clever's churn alert in August 2026. Errors rather than warns: Clever
+      derives each section's display name from its primary teacher, so a
+      regression here rewrites every ENR section name in the feed.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__sections
+
   - name: rpt_clever__school_id_resolves_to_schools_feed
     description: >-
       Cross-feed referential integrity for the six Clever SFTP extracts -- every
@@ -494,6 +548,27 @@ data_tests:
         dagster:
           ref:
             name: rpt_parentsquare__students
+
+  - name: int_powerschool__ada_term_pivot__weighted_year_matches_source
+    description: >-
+      int_powerschool__ada_term computes ada_weighted_year correctly as a rate,
+      and the pivot then re-derives it from its own quarter columns instead of
+      passing that value through. That re-derivation once coalesced the
+      UNWEIGHTED ada_year_q* columns, which produced a number that was still a
+      valid rate between 0 and 1 and therefore invisible to a range test.
+      Because ada_weighted_year is a year-grain window value it is constant
+      across a student's terms, so the pivot's coalesce must reproduce the
+      source value exactly. This test fails on any student-year where the two
+      disagree, which is what a repeat of the wrong-column coalesce looks like.
+      The comparison is exact rather than tolerance-based because the source
+      model aggregates in exact decimal, so equal inputs cannot round to
+      different values between two evaluations.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__ada_term_pivot
 
   - name: test_focus_unprefix_rule_holds
     description: >-

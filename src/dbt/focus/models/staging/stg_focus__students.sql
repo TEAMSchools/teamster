@@ -38,6 +38,7 @@ select
     custom_71 as free_reduced_meals_program,
     custom_65 as native_language_student,
     custom_820 as homeless_student_pk_12,
+    custom_818 as homeless_unaccompanied_youth,
     custom_863 as idea_educational_environment,
     custom_626 as english_language_learner_pk_12,
     custom_942 as pe_waiver,

@@ -22,7 +22,11 @@ with
 
 select
     e.* except (
-        school_number, school_title, school_state_school_id, grade_level_short_name
+        school_number,
+        school_title,
+        school_state_school_id,
+        grade_level_short_name,
+        school_level
     ),
 
     loc.powerschool_school_id as ps_schoolid,
@@ -34,7 +38,14 @@ select
 
     'KTAF' as district,
 
-    concat(e.region, e.school_level) as region_school_level,
+    -- Two closed schools (Focus ids 71 and 72, KIPP Miami Sunrise Academy and
+    -- KIPP Miami-Liberty City) carry no Focus school-level label, so
+    -- e.school_level is null for their ~3,056 historical rows. The
+    -- crosswalk's grade_band covers both from the same PowerSchool-era
+    -- archive (Sunrise ES, Liberty MS), so it's the fallback.
+    coalesce(e.school_level, loc.grade_band) as school_level,
+
+    concat(e.region, coalesce(e.school_level, loc.grade_band)) as region_school_level,
 
 from enrollments as e
 left join

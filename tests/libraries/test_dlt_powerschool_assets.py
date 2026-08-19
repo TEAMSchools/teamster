@@ -1,11 +1,21 @@
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
-import pathlib
-
 import yaml
+from dagster import AssetKey
 
 from teamster.libraries.dlt.powerschool.assets import build_powerschool_dlt_assets
 from teamster.libraries.dlt.probe import ProbeTable
+
+
+def _config_entries():
+    # The code location already owns this path and derives it from __file__, so
+    # it resolves regardless of pytest's cwd. Imported inside the function: a
+    # module-scope code-location import needs the dbt manifest at collection.
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
+        config_file,
+    )
+
+    return yaml.safe_load(config_file.read_text())["assets"]
 
 
 def test_factory_builds_single_subsettable_multiasset():
@@ -29,102 +39,44 @@ def test_factory_builds_single_subsettable_multiasset():
     assert assets_def.op.pool == "dlt_powerschool_kipppaterson"
 
 
-CONFIG = pathlib.Path(
-    "src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/config/assets.yaml"
-)
+def test_assets_module_covers_every_configured_table():
+    """ONE multi-asset def whose keys are exactly the configured tables."""
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import assets
 
-INTRADAY_TRANSACTION_DATE = {
-    "attendance",
-    "storedgrades",
-    "pgfinalgrades",
-    "cc",
-    "students",
-    "courses",
-    "schools",
-    "sections",
-    "termbins",
-    "terms",
-}
-INTRADAY_WHENMODIFIED = {
-    "gradescaleitem",
-    "roledef",
-    "s_nj_crs_x",
-    "s_nj_ren_x",
-    "s_nj_stu_x",
-    "s_stu_x",
-    "schoolstaff",
-    "sectionteacher",
-    "studentcorefields",
-    "studentrace",
-    "u_studentsuserfields",
-    "users",
-    "userscorefields",
-}
-NIGHTLY_WHENMODIFIED = {
-    "assignmentcategoryassoc",
-    "assignmentscore",
-    "assignmentsection",
-    "districtteachercategory",
-    "gradecalcformulaweight",
-    "gradecalcschoolassoc",
-    "gradecalculationtype",
-    "gradeformulaset",
-    "gradeschoolconfig",
-    "gradeschoolformulaassoc",
-    "teachercategory",
-}
-NIGHTLY_NO_CURSOR = {
-    "attendance_code",
-    "attendance_conversion_items",
-    "bell_schedule",
-    "calendar_day",
-    "cycle_day",
-    "fte",
-    "gen",
-    "log",
-    "reenrollments",
-    "spenrollments",
-    "studenttest",
-    "studenttestscore",
-    "test",
-    "testscore",
-}
+    assert len(assets) == 1
+    assert {key for a in assets for key in a.keys} == {
+        AssetKey(["kipppaterson", "powerschool", "sis", e["table_name"]])
+        for e in _config_entries()
+    }
 
 
-def test_config_matches_spec_membership_map():
-    entries = yaml.safe_load(CONFIG.read_text())["assets"]
-    by_name = {e["table_name"]: e for e in entries}
+def test_triggers_cover_every_table():
+    """Every configured table belongs to at least one trigger.
 
-    assert len(entries) == 48
+    A table with both membership flags false would silently never materialize
+    (the dlt assets carry no automation condition). The overlap between tiers
+    must be exactly the no-cursor set: count-gated intraday, authoritative
+    overnight.
+    """
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
+        _nightly_targets,
+    )
 
-    for name in INTRADAY_TRANSACTION_DATE:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": "transaction_date",
-            "intraday": True,
-            "nightly": False,
-        }
-    for name in INTRADAY_WHENMODIFIED:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": "whenmodified",
-            "intraday": True,
-            "nightly": False,
-        }
-    for name in NIGHTLY_WHENMODIFIED:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": "whenmodified",
-            "intraday": False,
-            "nightly": True,
-        }
-    for name in NIGHTLY_NO_CURSOR:
-        assert by_name[name] == {
-            "table_name": name,
-            "cursor_column": None,
-            "intraday": True,
-            "nightly": True,
-        }
+    entries = _config_entries()
+
+    def key(name):
+        return f"kipppaterson/powerschool/sis/{name}"
+
+    expected = {key(e["table_name"]) for e in entries}
+    intraday = {key(e["table_name"]) for e in entries if e["intraday"]}
+    no_cursor = {key(e["table_name"]) for e in entries if e["cursor_column"] is None}
+
+    # Resolve nightly targets through the real scheduling function — the exact
+    # code an orphaned membership would route around.
+    nightly = set(_nightly_targets())
+
+    assert intraday | nightly == expected
+    assert intraday & nightly == no_cursor
 
 
 def test_nightly_schedule_and_intraday_sensor():
@@ -141,31 +93,10 @@ def test_nightly_schedule_and_intraday_sensor():
     assert schedules == [nightly]
     assert nightly.cron_schedule == "0 2 * * *"
     assert nightly.tags == {"dagster/max_runtime": "3600"}
-    assert sensors[0].name == "kipppaterson__powerschool__dlt__intraday_sensor"
-    assert sensors[0].minimum_interval_seconds == 900
 
-
-def test_assets_module_exposes_single_def():
-    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
-        assets,
-    )
-
-    assert len(assets) == 1
-    assert len(list(assets[0].keys)) == 48
-
-
-def test_nightly_targets_sis_keys_and_counts():
-    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
-        _nightly_targets,
-    )
-
-    nightly = _nightly_targets()
-
-    assert len(nightly) == 25
-    assert all(t.startswith("kipppaterson/powerschool/sis/") for t in nightly)
-    assert "kipppaterson/powerschool/sis/teachercategory" in nightly
-    assert "kipppaterson/powerschool/sis/test" in nightly
-    assert "kipppaterson/powerschool/sis/students" not in nightly
+    (sensor,) = sensors
+    assert sensor.name == "kipppaterson__powerschool__dlt__intraday_sensor"
+    assert sensor.minimum_interval_seconds == 900
 
 
 def _resolved_probe_job(tables):

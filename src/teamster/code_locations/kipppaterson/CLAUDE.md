@@ -30,8 +30,8 @@ database through an in-process paramiko SSH tunnel (`ssh_powerschool` resource,
 `enable_legacy_rsa=True`) and landing to BigQuery via keyless ADC (issue #3807).
 This is the pilot/template for migrating the ODBC districts (`kippnewark`,
 `kippcamden`, `kippmiami`) off `sshpass`. ONE `@dlt_assets` multi-asset covers
-all 48 tables (`powerschool/sis/dlt/`); `cursor_column: null` tables always
-replace. Config in `powerschool/sis/dlt/config/assets.yaml` (per-table
+every configured table (`powerschool/sis/dlt/`); `cursor_column: null` tables
+always replace. Config in `powerschool/sis/dlt/config/assets.yaml` (per-table
 `cursor_column` + `intraday`/`nightly` membership booleans). Intraday selection
 is decided by `kipppaterson__powerschool__dlt__intraday_sensor` (probe +
 dlt-state baseline); the nightly schedule full-refreshes its targets
