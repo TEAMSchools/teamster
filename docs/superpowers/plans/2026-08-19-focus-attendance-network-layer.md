@@ -953,7 +953,15 @@ Refs #4924"
 - [ ] **Step 1: Write the model**
 
 ```sql
-select
+-- distinct is grain projection, not dup-masking. stg_focus__attendance_calendar
+-- carries 1,555 exact duplicate rows (15,067 raw against 13,512 distinct
+-- (school_id, syear, school_date) keys; including `minutes` still yields 13,512, so
+-- the duplication is total). Every column below derives from that key, so identical
+-- tuples collapse with no information loss. Without it this model breaks its own
+-- (schoolid, date_value) grain and double-counts in-session days in
+-- dim_school_calendars, which is not year-scoped. AY2026 happens to be clean; the
+-- duplicates are all in historical years. Same source and same fix as Task 1.
+select distinct
     school_id as schoolid,
     school_date as date_value,
 
@@ -1044,9 +1052,23 @@ group by schoolid
 order by schoolid
 ```
 
-Expected: schools 14, 15, 58, 68, 69 at 182 days, and schools 60, 62, 70, 71, 72
-at 212. The 212s are the Ops item and must still appear here — this model does
-not filter them.
+Expected, measured against prod before this task ran: schools 14, 15, 58, 68,
+and 69 at 182 days each, and schools 60, 62, 70, 71, and 72 at 212 each — 1,970
+rows for `yearid` 36 in total. The 212s are the Ops item and must still appear
+here; this model does not filter them.
+
+Then confirm `distinct` did its job, across ALL years rather than just AY2026:
+
+```sql
+select
+  count(*) as rows_all_years,
+  count(distinct format('%T|%T', schoolid, date_value)) as distinct_keys
+from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__calendar_day`
+```
+
+Expected: both 13,512, and equal to each other. The raw source holds 15,067
+rows, so a result of 15,067 means the `distinct` was dropped and the model is
+emitting 1,555 duplicate school-days.
 
 - [ ] **Step 4: Lint and commit**
 
