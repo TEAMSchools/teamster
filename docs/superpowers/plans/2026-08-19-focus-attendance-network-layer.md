@@ -29,6 +29,23 @@ Design spec:
   Use `git -C <worktree>` on every git call and
   `--project-dir <worktree>/src/dbt/<project>` on every dbt call.
 - Always `uv run` — never bare `python`, `dbt`, or `dagster`.
+- **A `--target dev` build reads whatever already sits in your dev schema, not
+  prod.** `--defer` only falls through to prod for models ABSENT from the dev
+  schema, so a stale `zz_<user>_kippmiami_focus.stg_focus__*` copy silently
+  becomes the input. This is not hypothetical: dev
+  `stg_focus__attendance_calendar` held 213 days for Focus school 58 where prod
+  held 182, and Task 4's output matched dev exactly while diverging from every
+  prod-derived expectation. Two consequences:
+  1. Derive a task's expected numbers from the DEV copies the build will
+     actually read, or refresh the upstreams first. A prod-measured expectation
+     is not a valid gate for a dev build.
+  2. The NJ-parity gates in Tasks 9 through 15 compare a dev-built model against
+     PROD tables. That comparison is invalid while dev upstreams are stale.
+     Either rebuild the upstream chain into dev first, or run the parity queries
+     against the dbt Cloud PR-branch schema
+     (`dbt_cloud_pr_<job_id>_<pr>_<schema>`) once the PR is open, which is built
+     from prod sources. Do not report parity from a local dev build without
+     saying which upstreams were refreshed.
 - **`--state` must be the MAIN-repo absolute path**, e.g.
   `--state /workspaces/teamster/src/dbt/kippmiami/target/prod`. A worktree has
   no `target/prod/` of its own, so the relative form fails to find a manifest
@@ -1003,9 +1020,13 @@ models:
       Internal-only — a rpt_ view must sit between this model and any external
       consumer.
     data_tests:
+      # Includes yearid deliberately. Focus reuses a calendar date across school
+      # years for the same school -- 13,552 rows carry only 12,484 distinct
+      # (schoolid, date_value) pairs, but all 13,552 are distinct once yearid is
+      # added. Asserting the pair alone reports 1,068 false violations.
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [schoolid, date_value]
+            combination_of_columns: [schoolid, yearid, date_value]
           config:
             severity: error
     columns:
@@ -1821,7 +1842,8 @@ models:
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [schoolid, date_value, _dbt_source_project]
+            combination_of_columns:
+              [schoolid, yearid, date_value, _dbt_source_project]
           config:
             severity: error
       # Surfaces the Focus calendar misconfiguration handed to Ops: five Focus
