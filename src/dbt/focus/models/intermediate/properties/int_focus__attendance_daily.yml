@@ -15,6 +15,12 @@ models:
       Focus's internal schoolid — kipptaf crosswalks it to the network school
       id. Internal-only — a rpt_ view must sit between this model and any
       external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [student_number, calendardate]
+          config:
+            severity: error
     columns:
       - name: student_number
         description: >-
@@ -87,9 +93,3 @@ models:
         description: Always null. PowerSchool calendar-track machinery.
       - name: student_track
         description: Always null. PowerSchool calendar-track machinery.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [student_number, calendardate]
-          config:
-            severity: error
