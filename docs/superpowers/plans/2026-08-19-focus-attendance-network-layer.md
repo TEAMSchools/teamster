@@ -29,6 +29,10 @@ Design spec:
   Use `git -C <worktree>` on every git call and
   `--project-dir <worktree>/src/dbt/<project>` on every dbt call.
 - Always `uv run` — never bare `python`, `dbt`, or `dagster`.
+- **`--state` must be the MAIN-repo absolute path**, e.g.
+  `--state /workspaces/teamster/src/dbt/kippmiami/target/prod`. A worktree has
+  no `target/prod/` of its own, so the relative form fails to find a manifest
+  and `--defer` silently has nothing to defer to.
 - Focus package models cannot `ref()` a kipptaf model. The network school id
   crosswalk (`stg_google_sheets__people__locations`) is kipptaf-only, so package
   models emit Focus's internal `schoolid` and kipptaf crosswalks it.
@@ -470,7 +474,7 @@ Expected: PASS.
 ```bash
 uv run dbt build --select int_focus__attendance_daily \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS, including the uniqueness test. Then confirm the scaffold
@@ -652,7 +656,7 @@ models:
 ```bash
 uv run dbt build --select int_focus__ada \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS. Then confirm ADA is plausible — every value between 0 and 1, and
@@ -890,7 +894,7 @@ models:
 ```bash
 uv run dbt build --select int_focus__attendance_streak \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS. Then confirm streaks did not collapse — the null-studentid trap
@@ -1026,7 +1030,7 @@ models:
 ```bash
 uv run dbt build --select int_focus__calendar_day \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS. Then confirm the known-bad calendars are visible rather than
@@ -1260,7 +1264,7 @@ models:
 ```bash
 uv run dbt build --select int_focus__calendar_week \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS. Then confirm the week grain and that quarters resolved:
@@ -1389,7 +1393,7 @@ models:
 ```bash
 uv run dbt build --select int_focus__calendar_rollup \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS. Then confirm the totals:
@@ -1456,7 +1460,7 @@ Refs #4924"
 ```bash
 uv run dbt build --select int_focus__attendance_daily+ int_focus__calendar_day+ \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
-  --defer --state src/dbt/kippmiami/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
 
 Expected: PASS on all six models and every data test.
@@ -1630,7 +1634,7 @@ deterministically.
 uv run dbt clone --select int_focus__attendance_daily int_focus__ada \
   int_focus__attendance_streak int_focus__calendar_week \
   int_focus__calendar_rollup int_focus__calendar_day \
-  --target staging --state src/dbt/kippmiami/target/prod \
+  --target staging --state /workspaces/teamster/src/dbt/kippmiami/target/prod \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami
 ```
 
@@ -1641,7 +1645,7 @@ uv run dbt build --empty --select int_focus__attendance_daily int_focus__ada \
   int_focus__attendance_streak int_focus__calendar_day \
   int_focus__calendar_week int_focus__calendar_rollup \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS on all six. `--empty` proves column resolution only, not values.
@@ -1877,7 +1881,7 @@ Leave every other line unchanged. The join already reads `cd.schoolid` against
 ```bash
 uv run dbt build --select int_students__calendar_day dim_school_calendars \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS, with the Ops warn test WARNING on the two closed schools. A warn
@@ -2067,7 +2071,7 @@ Expected: only `int_powerschool__ps_adaadm_daily_ctod.sql` still matches.
 ```bash
 uv run dbt build --select int_students__calendar_week+1 \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS.
@@ -2462,7 +2466,7 @@ Expected: `none remain`.
 ```bash
 uv run dbt build --select int_students__attendance_daily \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS including the uniqueness test.
@@ -2757,7 +2761,7 @@ Also update the `TODO(#4835)` comment above `enrollments` so it reads
 uv run dbt build --select int_students__ada int_students__attendance_streak \
   fct_student_attendance_streaks int_students__attendance_interventions \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS, including the fact's primary-key test — that test is what proves
@@ -2953,7 +2957,7 @@ emits a null track for NJ to pair with.
 uv run dbt build --select int_students__calendar_rollup rpt_tableau__ops_dashboard \
   rpt_gsheets__csgf_enrollment rpt_tableau__nj_school_register \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS.
@@ -3038,7 +3042,7 @@ already daily grain, so the filter has nothing to exclude.
 ```bash
 uv run dbt build --select rpt_tableau__attendance_chronic_absenteeism_log \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS.
@@ -3112,7 +3116,7 @@ uv run dbt build --empty --select int_students__attendance_daily+ \
   int_students__calendar_rollup+ int_students__ada+ \
   int_students__attendance_streak+ \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS on every node. This proves column resolution across all 32
@@ -3124,7 +3128,7 @@ did that.
 ```bash
 uv run dbt build --select fct_student_attendance_daily \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 ```sql
