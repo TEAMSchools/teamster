@@ -117,3 +117,67 @@ def test_every_problem_is_reported_not_just_the_first():
     entry = {**GOOD_ENTRY, "id": "BAD", "system": "notion", "url": "http://x.test"}
     errors = validate(make_catalog(entries=[entry]), [])
     assert len(errors) >= 3
+
+
+VERIFIED = {
+    **GOOD_ENTRY,
+    "status": "verified",
+    "description": "Monitor ADA and chronic absenteeism.",
+    "audiences": ["leaders", "ops"],
+}
+
+
+def test_tier_two_passes_a_complete_verified_entry():
+    assert validate(make_catalog(entries=[VERIFIED]), [VERIFIED]) == []
+
+
+def test_tier_two_requires_a_description():
+    entry = {**VERIFIED, "description": "  "}
+    errors = validate(make_catalog(entries=[entry]), [entry])
+    assert any("description" in e for e in errors)
+
+
+def test_tier_two_requires_audiences():
+    entry = {**VERIFIED, "audiences": []}
+    errors = validate(make_catalog(entries=[entry]), [entry])
+    assert any("audiences" in e for e in errors)
+
+
+def test_tier_two_rejects_an_unknown_audience():
+    entry = {**VERIFIED, "audiences": ["parents"]}
+    errors = validate(make_catalog(entries=[entry]), [entry])
+    assert any("parents" in e for e in errors)
+
+
+def test_tier_two_requires_https_on_a_guide():
+    entry = {**VERIFIED, "guide": "http://guide.test"}
+    errors = validate(make_catalog(entries=[entry]), [entry])
+    assert any("guide" in e for e in errors)
+
+
+def test_tier_two_is_not_applied_to_unverified_entries():
+    draft = {**GOOD_ENTRY, "description": "", "audiences": []}
+    assert validate(make_catalog(entries=[draft]), []) == []
+
+
+def test_family_member_needs_exactly_one_real_region():
+    member = {
+        **VERIFIED,
+        "id": "gpa_roster_camden",
+        "name": "GPA Roster: Camden",
+        "regions": ["all"],
+    }
+    config = {
+        **GOOD_CONFIG,
+        "families": [
+            {
+                "id": "gpa_roster",
+                "name": "GPA Roster",
+                "description": "d",
+                "group": "attendance",
+                "members": ["GPA Roster: Camden"],
+            }
+        ],
+    }
+    errors = validate(make_catalog(entries=[member], config=config), [member])
+    assert any("region" in e for e in errors)

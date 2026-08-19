@@ -149,6 +149,51 @@ def _tier_one(catalog: Catalog) -> list[str]:
     return errors
 
 
+def select(catalog: Catalog) -> list[dict]:
+    """Entries that publish. Partitions only — never short-circuits."""
+    return [
+        e
+        for e in catalog.entries
+        if isinstance(e, dict) and e.get("status") == "verified"
+    ]
+
+
+def _tier_two(catalog: Catalog, verified: list[dict]) -> list[str]:
+    errors: list[str] = []
+    family_members = {
+        member
+        for family in catalog.config.get("families") or []
+        for member in family.get("members") or []
+    }
+
+    for entry in verified:
+        where = entry.get("name") or entry.get("id") or "<unnamed>"
+
+        if not (entry.get("description") or "").strip():
+            errors.append(f"{where}: verified entries need a `description`")
+
+        audiences = entry.get("audiences") or []
+        if not audiences:
+            errors.append(f"{where}: needs a non-empty `audiences` list")
+        for audience in audiences:
+            if audience not in AUDIENCES:
+                errors.append(f"{where}: unknown audience {audience!r}")
+
+        guide = entry.get("guide")
+        if guide and not str(guide).startswith("https://"):
+            errors.append(f"{where}: `guide` must be https")
+
+        if entry.get("name") in family_members:
+            regions = entry.get("regions") or []
+            if len(regions) != 1 or regions[0] not in REGIONS:
+                errors.append(
+                    f"{where}: a family member needs exactly one region "
+                    f"from {sorted(REGIONS)}, got {regions!r}"
+                )
+
+    return errors
+
+
 def validate(catalog: Catalog, verified: list[dict]) -> list[str]:
     """Tier 1 over everything; tier 2 over the verified subset."""
-    return _tier_one(catalog)
+    return _tier_one(catalog) + _tier_two(catalog, verified)
