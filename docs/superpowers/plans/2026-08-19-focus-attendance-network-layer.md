@@ -63,6 +63,10 @@ Design spec:
   build. Real enforcement comes from the kipptaf-level tests in Tasks 9 through
   13, where kipptaf is the root project. Pre-existing and repo-wide, not
   introduced here.
+- A model-level `data_tests:` block goes ABOVE the `columns:` block, per
+  `src/dbt/CLAUDE.md:1283-1285`. Single-column tests stay nested under their
+  column; multi-column tests like `dbt_utils.unique_combination_of_columns` go
+  at model level, above `columns:`.
 - All generic tests need `arguments:` nesting per `src/dbt/CLAUDE.md:916` —
   `- dbt_utils.unique_combination_of_columns:`, then `arguments:`, then
   `combination_of_columns:`. The flat form makes dbt ignore the sibling
@@ -363,6 +367,12 @@ models:
       Focus's internal schoolid — kipptaf crosswalks it to the network school
       id. Internal-only — a rpt_ view must sit between this model and any
       external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [student_number, calendardate]
+          config:
+            severity: error
     columns:
       - name: student_number
         description: >-
@@ -426,12 +436,6 @@ models:
         description: Always null. PowerSchool calendar-track machinery.
       - name: student_track
         description: Always null. PowerSchool calendar-track machinery.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [student_number, calendardate]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 5: Run the test to verify it passes**
@@ -589,6 +593,12 @@ models:
       year-end day cannot dilute the average. Grouped by student_number rather
       than studentid because Focus has no studentid. Internal-only — a rpt_ view
       must sit between this model and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [student_number, yearid]
+          config:
+            severity: error
     columns:
       - name: student_number
         description: Network student number, unprefixed.
@@ -616,12 +626,6 @@ models:
           at this grain.
       - name: ada
         description: Average daily attendance across realized membership days.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [student_number, yearid]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 2b: Build and verify**
@@ -817,6 +821,12 @@ models:
       studentid, because studentid is null on the Focus side and hashing a null
       would collapse every student into one streak. Internal-only — a rpt_ view
       must sit between this model and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [streak_id, att_code]
+          config:
+            severity: error
     columns:
       - name: streak_id
         description: >-
@@ -854,12 +864,6 @@ models:
         description: >-
           Calendar days spanned by the streak, inclusive. Larger than
           streak_length_membership when the streak spans a weekend or break.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [streak_id, att_code]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -967,6 +971,12 @@ models:
       configuration problem tracked with Ops, deliberately not filtered here.
       Internal-only — a rpt_ view must sit between this model and any external
       consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [schoolid, date_value]
+          config:
+            severity: error
     columns:
       - name: schoolid
         description: >-
@@ -990,12 +1000,6 @@ models:
         description: Sunday of the week the date falls in.
       - name: week_end_date
         description: Saturday of the week the date falls in.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [schoolid, date_value]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -1179,6 +1183,12 @@ models:
       dropped rather than faked; they only asserted a valid schedule existed.
       Emits Focus's internal schoolid; kipptaf crosswalks it. Internal-only — a
       rpt_ view must sit between this model and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [schoolid, yearid, week_start_date]
+          config:
+            severity: error
     columns:
       - name: schoolid
         description: >-
@@ -1224,12 +1234,6 @@ models:
         description: >-
           True for the current week in the current academic year, and for the
           final week once the year has ended.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [schoolid, yearid, week_start_date]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -1334,6 +1338,12 @@ models:
       this emits one row per school-year with a null track. Emits Focus's
       internal schoolid; kipptaf crosswalks it. Internal-only — a rpt_ view must
       sit between this model and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [schoolid, yearid]
+          config:
+            severity: error
     columns:
       - name: schoolid
         description: >-
@@ -1353,12 +1363,6 @@ models:
         description: Total in-session days in the school year.
       - name: days_remaining
         description: In-session days still in the future as of today.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [schoolid, yearid]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -1381,11 +1385,34 @@ order by schoolid
 Expected: the five real schools at `days_total` 182, `days_remaining` 176, and
 `min_calendardate` 2026-08-12.
 
+- [ ] **Step 3b: Normalize the two properties files written before the placement
+      rule was known**
+
+Tasks 1 and 2 shipped with their model-level `data_tests:` block BELOW
+`columns:`, which `src/dbt/CLAUDE.md:1283-1285` puts above it. Every other
+properties file in this package follows the rule. Move the block in both files
+so it sits directly under `description:` and above `columns:`:
+
+- `src/dbt/focus/models/intermediate/properties/int_focus__attendance_daily.yml`
+- `src/dbt/focus/models/intermediate/properties/int_focus__ada.yml`
+
+Move only that block. Change no test, no argument, and no severity. Then confirm
+nothing moved in the graph:
+
+```bash
+uv run dbt parse --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami --target dev
+```
+
+Expected: parses clean. YAML key order carries no meaning to dbt, so this is a
+consistency fix with no behavior change.
+
 - [ ] **Step 4: Lint and commit**
 
 ```bash
 cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
+  src/dbt/focus/models/intermediate/properties/int_focus__attendance_daily.yml \
+  src/dbt/focus/models/intermediate/properties/int_focus__ada.yml \
   src/dbt/focus/models/intermediate/int_focus__calendar_rollup.sql \
   src/dbt/focus/models/intermediate/properties/int_focus__calendar_rollup.yml </dev/null
 ```
@@ -1746,6 +1773,22 @@ models:
       Focus's internal school id is crosswalked to the network school number
       here, because the crosswalk sheet is a kipptaf model the focus package
       cannot reach.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [schoolid, date_value, _dbt_source_project]
+          config:
+            severity: error
+      # Surfaces the Focus calendar misconfiguration handed to Ops: five Focus
+      # schools carry unfiltered 212-day calendars including holidays, and the
+      # two closed ones map to live location keys. Warn, not error -- the fix is
+      # in Focus, not here. Deliberately NOT a holiday-date test: Thanksgiving is
+      # the fourth Thursday, so a hardcoded 11-26 would catch AY2026 only. An
+      # in-session day at a school that enrolled nobody that year is
+      # date-independent and catches the whole class.
+      - zero_enrollment_in_session_days:
+          config:
+            severity: warn
     columns:
       - name: schoolid
         description: Network school number.
@@ -1767,22 +1810,6 @@ models:
         description: Saturday of the week the date falls in.
       - name: _dbt_source_project
         description: Originating district project.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [schoolid, date_value, _dbt_source_project]
-          config:
-            severity: error
-      # Surfaces the Focus calendar misconfiguration handed to Ops: five Focus
-      # schools carry unfiltered 212-day calendars including holidays, and the
-      # two closed ones map to live location keys. Warn, not error -- the fix is
-      # in Focus, not here. Deliberately NOT a holiday-date test: Thanksgiving is
-      # the fourth Thursday, so a hardcoded 11-26 would catch AY2026 only. An
-      # in-session day at a school that enrolled nobody that year is
-      # date-independent and catches the whole class.
-      - zero_enrollment_in_session_days:
-          config:
-            severity: warn
 ```
 
 - [ ] **Step 2b: Write the singular test the properties file references**
@@ -1972,6 +1999,13 @@ models:
       PowerSchool branch is year-scoped so the frozen Miami archive keeps
       serving the years Focus does not cover. Focus's internal school id is
       crosswalked to the network school number here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [schoolid, yearid, week_start_date, _dbt_source_project]
+          config:
+            severity: error
     columns:
       - name: schoolid
         description: Network school number.
@@ -1987,13 +2021,6 @@ models:
         description: Region name derived from the source relation.
       - name: _dbt_source_project
         description: Originating district project.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              [schoolid, yearid, week_start_date, _dbt_source_project]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Repoint all 17 refs**
@@ -2325,6 +2352,13 @@ models:
       keeps serving AY2020 through AY2025 while Focus serves AY2026 forward. Six
       flags are null for Miami because Focus has no day-grain source for them —
       see #4927.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [student_number, _dbt_source_project, calendardate]
+          config:
+            severity: error
     columns:
       - name: student_number
         description: Network student number.
@@ -2378,13 +2412,6 @@ models:
           rows. See #4927.
       - name: _dbt_source_project
         description: Originating district project.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              [student_number, _dbt_source_project, calendardate]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 4: Repoint all 11 refs**
@@ -2581,6 +2608,13 @@ models:
       int_powerschool__ada, which stays a pure PowerSchool union. The
       PowerSchool branch is year-scoped so the frozen Miami archive keeps
       serving the years Focus does not cover.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [student_number, yearid, _dbt_source_project]
+          config:
+            severity: error
     columns:
       - name: student_number
         description: Network student number.
@@ -2595,13 +2629,6 @@ models:
         description: Average daily attendance across realized membership days.
       - name: _dbt_source_project
         description: Originating district project.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              [student_number, yearid, _dbt_source_project]
-          config:
-            severity: error
 ```
 
 `properties/int_students__attendance_streak.yml`:
@@ -2615,6 +2642,12 @@ models:
       The Focus branch keys its streak_id on student_number rather than
       studentid, which is null for Focus, so the two branches occupy disjoint
       hash spaces and no NJ streak key changes.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [streak_id, att_code, _dbt_source_project]
+          config:
+            severity: error
     columns:
       - name: streak_id
         description: Surrogate key for the streak.
@@ -2633,12 +2666,6 @@ models:
           value for a value streak.
       - name: _dbt_source_project
         description: Originating district project.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [streak_id, att_code, _dbt_source_project]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Repoint the four refs**
@@ -2834,6 +2861,13 @@ models:
       emits one row per school-year with a null track, because Focus has no
       track concept and Miami's track is already null on every network
       enrollment row.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [schoolid, yearid, track, _dbt_source_project]
+          config:
+            severity: error
     columns:
       - name: schoolid
         description: Network school number.
@@ -2849,13 +2883,6 @@ models:
         description: In-session days still in the future as of today.
       - name: _dbt_source_project
         description: Originating district project.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              [schoolid, yearid, track, _dbt_source_project]
-          config:
-            severity: error
 ```
 
 - [ ] **Step 3: Repoint the three consumers, making the ops dashboard join
