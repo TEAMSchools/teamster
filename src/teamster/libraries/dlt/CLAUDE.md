@@ -56,11 +56,6 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   microseconds; without it dlt rejects the inferred `duration[us]` (see
   `focus/CLAUDE.md`)
 
-### `salesforce/`
-
-Loads Salesforce objects to BigQuery. Pipeline and helpers are adapted from the
-`dlt` Salesforce source. Currently commented out / inactive in `kipptaf`.
-
 ### `zendesk/`
 
 Loads Zendesk Support data (tickets, users, organizations, etc.) to BigQuery
