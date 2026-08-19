@@ -1,0 +1,41 @@
+models:
+  - name: int_focus__calendar_day
+    description: >-
+      Focus in-session calendar days — the analogue of
+      stg_powerschool__calendar_day for the columns network consumers read.
+      Presence of a row in Focus's attendance_calendar is itself the in-session
+      flag, so insession and membershipvalue are constants rather than sourced
+      values. Emits Focus's internal schoolid; kipptaf crosswalks it. Five Focus
+      schools carry unfiltered 212-day calendars that include holidays — a Focus
+      configuration problem tracked with Ops, deliberately not filtered here.
+      Internal-only — a rpt_ view must sit between this model and any external
+      consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [schoolid, date_value]
+          config:
+            severity: error
+    columns:
+      - name: schoolid
+        description: >-
+          Focus internal school id, not the network school number. kipptaf
+          resolves it through the locations crosswalk.
+      - name: date_value
+        description: The in-session calendar date.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: yearid
+        description: Academic year minus 1990.
+      - name: insession
+        description: Always 1 — a row exists only for an in-session day.
+      - name: membershipvalue
+        description: >-
+          Always 1. Focus has no membership-value concept; PowerSchool uses it
+          to mark partial-membership days.
+      - name: week_start_date
+        description: Sunday of the week the date falls in.
+      - name: week_end_date
+        description: Saturday of the week the date falls in.
