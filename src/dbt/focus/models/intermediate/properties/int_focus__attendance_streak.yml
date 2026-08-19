@@ -1,0 +1,53 @@
+models:
+  - name: int_focus__attendance_streak
+    description: >-
+      Consecutive-day Focus attendance streaks — the analogue of
+      int_powerschool__attendance_streak. Two streak families in one relation:
+      by attendance code (att_code holds the code) and by attendance value
+      (att_code holds the stringified 0 or 1). Keyed on student_number, not
+      studentid, because studentid is null on the Focus side and hashing a null
+      would collapse every student into one streak. Internal-only — a rpt_ view
+      must sit between this model and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [streak_id, att_code]
+          config:
+            severity: error
+    columns:
+      - name: streak_id
+        description: >-
+          Surrogate key for the streak, hashed from the streak family, project
+          name, student_number, yearid, the code or value, and the gap between
+          the membership-day number and the per-code row number.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_number
+        description: Network student number, unprefixed.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: studentid
+        description: Always null. Focus has no PowerSchool studentid analogue.
+      - name: yearid
+        description: Academic year minus 1990.
+      - name: att_code
+        description: >-
+          The conformed attendance code for a code streak (P for present), or
+          the stringified attendance value for a value streak.
+      - name: streak_start_date
+        description: First membership day in the streak.
+      - name: streak_end_date
+        description: Last membership day in the streak.
+      - name: streak_length_membership
+        description: Count of membership days in the streak.
+      - name: streak_length_calendar
+        description: >-
+          Calendar days spanned by the streak, inclusive. Larger than
+          streak_length_membership when the streak spans a weekend or break.
