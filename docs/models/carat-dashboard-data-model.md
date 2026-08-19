@@ -716,9 +716,9 @@ Resolving an ID-crosswalk gap is a defined procedure, not ad-hoc work: a
 twelve-phase protocol covering the ingestion check, codes and course-tagging
 completeness, a tiered match, batch-by-batch delivery of unmatched students for
 crosswalk entry, then post-paste reconciliation and a downstream lineage check.
-**The division of labour is that an agent runs the match and the data team
-pastes the rows** — the protocol delivers candidates in reviewable batches
-rather than writing to the sheet itself.
+**The division of labor is that an agent runs the match and the data team pastes
+the rows** — the protocol delivers candidates in reviewable batches rather than
+writing to the sheet itself.
 
 It lives as an agent skill at
 `.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md`, which is not
@@ -826,7 +826,7 @@ Per year, in this order:
 1. **Scale Score Conversion rows** for each new practice assessment. Run
    _Procedure: Add practice assessments for a new administration_.
 1. **Goals sheet rows** carrying the new `academic_year`. Every current row is
-   AY2026; goal horizon is not yet modelled.
+   AY2026; goal horizon is not yet modeled.
 1. **Expected Assessments tab**, only if the testing calendar moved. Regenerate
    the whole tab rather than editing it — see _Procedure: Rebuild the Expected
    Assessments seasons tab_, which explains why a partial edit is silent.
@@ -853,7 +853,7 @@ different year from the rest, which is the production defect this work fixed.
 ## The practice pipeline — three pieces
 
 Practice scores are assembled from two KIPP Forward sheet tabs plus one model,
-and the division of labour matters because both tabs live in the same workbook
+and the division of labor matters because both tabs live in the same workbook
 and it is easy to put something in the wrong one:
 
 | Piece                                                         | Owns                                                               |
@@ -1002,7 +1002,7 @@ duplicated, which is how both this tab and `Goals` got theirs.
 declared schema maps columns to sheet columns in order, so inserting a column in
 the middle of the tab without inserting it at the same position in
 `sources-external.yml` silently shifts every value after it into the wrong
-column. Same-typed neighbours make that invisible.
+column. Same-typed neighbors make that invisible.
 
 **`score_type` must not be removed.** It looks redundant next to `subject`, but
 it is the join key to the scaffold.
@@ -1902,8 +1902,8 @@ Two things worth knowing about how that landed:
   so they are inert. Delete them only if the sheet should stop implying those
   tests are reportable.
 
-The rest of this section records why the labelling itself was correct, since
-that question comes up independently.
+The rest of this section records why the labeling itself was correct, since that
+question comes up independently.
 
 Six of the eight AY2023 practice assessments are grade 9 and 10 but carried
 `Test_Type = SAT`. That was not a typo.
@@ -1922,9 +1922,9 @@ The scale ranges corroborate it. Grades 9-10 store `Reading` and `Writing` on a
 200-800. Grade 11 (138849 / 138850) is the digital two-section form, 200-790 on
 both sections.
 
-So the labelling was right and the programme was wrong, which is what the
-exclusion above resolves. SY26-27 assigns PSAT 8/9 to grade 9 and PSAT 10 to
-grade 10, so current practice already uses the grade-appropriate tests.
+So the labeling was right and the program was wrong, which is what the exclusion
+above resolves. SY26-27 assigns PSAT 8/9 to grade 9 and PSAT 10 to grade 10, so
+current practice already uses the grade-appropriate tests.
 
 ## Unreported practice administrations in Illuminate
 
@@ -2008,11 +2008,11 @@ production itself on 2026-08-18, after the deploy, and the shape holds:
 | Practice rows on `_roster_scores`            | 30, over 10 students | 30, over 10 students |
 
 The small upward drift in student counts is a live enrollment table in
-mid-August — the population grows daily — not a modelling difference.
-Percentages therefore move by tenths. **Ratios and structural counts are the
-durable figures; absolute student and row counts are not.** Reconcile against
-the shape, and against the guidance in _If you are reconciling and the numbers
-do not match this table_.
+mid-August — the population grows daily — not a modeling difference. Percentages
+therefore move by tenths. **Ratios and structural counts are the durable
+figures; absolute student and row counts are not.** Reconcile against the shape,
+and against the guidance in _If you are reconciling and the numbers do not match
+this table_.
 
 ## Why participation attempt counts change
 
@@ -2227,7 +2227,7 @@ That collapse is only possible because goals stopped varying by school and
 region. **Every level now shows the same goal line** for a given grade and
 metric, where production showed 9 distinct school goals and 7 regional ones.
 That is the most visible change in this work and it is a KIPP Forward decision,
-not a modelling one.
+not a modeling one.
 
 ### The row shape is reproduced exactly for Official
 

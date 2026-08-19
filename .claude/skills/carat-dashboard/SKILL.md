@@ -633,7 +633,7 @@ Official row, the `scope_round` on a Practice row (`SAT1`, `PSAT891`,
 `PSAT101`), and the season name on a growth row. Practice cannot bind on month:
 schools choose their own practice dates, so one administration straddles months
 — grade 9 runs 25 August to 23 September across four schools — and Foundation
-controls the Illuminate dates, so they cannot be normalised either.
+controls the Illuminate dates, so they cannot be normalized either.
 `scope_round` identifies the administration regardless of when a school ran it.
 
 Three consequences. `expected_months_included` reads `SAT1` rather than months
@@ -779,7 +779,7 @@ matching the tab's own polymorphic column.
 
 - **ACT is 12 of the 13**, about 4,240 students. `_roster_scores` has never
   covered the ACT and the sheet holds no ACT rows, so these are a standing scope
-  gap rather than anything a rebuild caused. Keep them labelled rather than
+  gap rather than anything a rebuild caused. Keep them labeled rather than
   filtered out, or a future decision to add the ACT will look like it already
   works.
 - **SAT Official July, 1 student** — the only real orphan, and immaterial.
@@ -1098,7 +1098,7 @@ Three things this resolved, all previously listed here as unmodellable:
 
 `int_google_sheets__kippfwd__goals_unpivot` joins goals to scaffold and is what
 consumers should read. Goal horizon (interim versus terminal for one cohort) is
-still unmodelled; every current row is AY2026.
+still unmodeled; every current row is AY2026.
 
 Declare `grade_level` and `cohort` as STRING in the source. The scaffold's
 `expected_grade_level` holds comma-separated lists, and INT64 would foreclose
@@ -1157,7 +1157,7 @@ BigLake connection that Sheets external tables use, so no new access has to be
 arranged — a different identity again from both the Drive MCP and ADC.
 
 Pin `sheet_range:` to the exact tab name. That is what makes a dbt source immune
-to a neighbouring `DO NOT USE THESE` tab. Note the shared-trigger cost: every
+to a neighboring `DO NOT USE THESE` tab. Note the shared-trigger cost: every
 Sheets source on one URI re-triggers together, so editing the goals tab also
 refreshes the conversion and scaffold tabs.
 
