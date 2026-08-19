@@ -1551,6 +1551,9 @@ Refs #4924"
   `src/dbt/kipptaf/models/students/intermediate/int_students__calendar_day.sql`
 - Create:
   `src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_day.yml`
+- Create:
+  `src/dbt/kipptaf/tests/int_students__calendar_day__zero_enrollment_in_session_days.sql`
+- Modify: `src/dbt/kipptaf/tests/properties.yml`
 - Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql:6`
 
 **Interfaces:**
@@ -1634,10 +1637,13 @@ with
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
     )
 
+-- `full union all corresponding` matches columns by NAME. A plain `union all`
+-- matches by POSITION, and the two CTEs above list schoolid in different
+-- positions, which would silently align schoolid with insession.
 select *,
 from powerschool_conformed
 
-union all
+full union all corresponding
 
 select *,
 from focus_conformed
@@ -1687,17 +1693,43 @@ models:
       # Surfaces the Focus calendar misconfiguration handed to Ops: five Focus
       # schools carry unfiltered 212-day calendars including holidays, and the
       # two closed ones map to live location keys. Warn, not error -- the fix is
-      # in Focus, not here.
-      - dbt_utils.expression_is_true:
-          expression: >-
-            not (
-              _dbt_source_project = 'kippmiami'
-              and yearid >= 36
-              and format_date('%m-%d', date_value) in ('11-26', '12-25',
-            '01-01') )
+      # in Focus, not here. Deliberately NOT a holiday-date test: Thanksgiving is
+      # the fourth Thursday, so a hardcoded 11-26 would catch AY2026 only. An
+      # in-session day at a school that enrolled nobody that year is
+      # date-independent and catches the whole class.
+      - zero_enrollment_in_session_days:
           config:
             severity: warn
 ```
+
+- [ ] **Step 2b: Write the singular test the properties file references**
+
+Create
+`src/dbt/kipptaf/tests/int_students__calendar_day__zero_enrollment_in_session_days.sql`
+and register it in `src/dbt/kipptaf/tests/properties.yml`, following the shape
+of the entries already there. A generic `dbt_utils.expression_is_true` cannot
+express this — it needs a join to enrollment.
+
+```sql
+-- Focus in-session days at a school that enrolled nobody that year. Five Focus
+-- schools carry unfiltered 212-day calendars including holidays and breaks; two
+-- of them are closed but still map to live network location keys, so their days
+-- reach dim_school_calendars. The fix belongs in Focus configuration, so this
+-- warns rather than errors -- it makes the rows visible without hiding them.
+select cd.schoolid, cd.yearid, count(*) as n_days,
+from {{ ref("int_students__calendar_day") }} as cd
+left join
+    {{ ref("int_students__student_enrollment_union") }} as e
+    on cd.schoolid = e.schoolid
+    and cd.yearid = e.academic_year - 1990
+    and cd._dbt_source_project = e._dbt_source_project
+where cd._dbt_source_project = 'kippmiami' and e.schoolid is null
+group by cd.schoolid, cd.yearid
+```
+
+Expected when it runs: WARN naming Focus schools 71 and 72, the two closed
+schools, for `yearid` 36. Schools 60, 62, and 70 never reach this model — they
+have no locations-sheet row, so the crosswalk drops them.
 
 - [ ] **Step 3: Repoint `dim_school_calendars`**
 
@@ -1757,6 +1789,8 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-lay
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_day.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_day.yml \
+  src/dbt/kipptaf/tests/int_students__calendar_day__zero_enrollment_in_session_days.sql \
+  src/dbt/kipptaf/tests/properties.yml \
   src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql </dev/null
 ```
 
@@ -1764,6 +1798,8 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-lay
 git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_day.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_day.yml \
+  src/dbt/kipptaf/tests/int_students__calendar_day__zero_enrollment_in_session_days.sql \
+  src/dbt/kipptaf/tests/properties.yml \
   src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql && \
 git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "feat(kipptaf): add int_students__calendar_day and repoint dim_school_calendars
 
@@ -2853,10 +2889,26 @@ from `teamster-332318.zz_<your-github-user>_kipptaf_tableau.rpt_tableau__attenda
 group by 1 order by 1
 ```
 
-Expected: a Miami row appears where prod has none. Compare NJ regions against
-prod — they should be close but need not be identical, because the join key
-moved from `studentid` to `student_number` and the daily-mode filter was
-dropped. Investigate any NJ region that moves more than 1%.
+Expected, measured against prod AY2025 before this plan was executed:
+
+| Region   | Old    | New    | Delta |
+| -------- | ------ | ------ | ----- |
+| Camden   | 25,730 | 25,730 | 0     |
+| Newark   | 66,970 | 66,968 | -2    |
+| Paterson | 5,772  | 5,772  | 0     |
+| Miami    | none   | 289    | +289  |
+
+NJ is effectively unchanged. The 29% row-drop in the kipptaf ctod does not reach
+this predicate, because absences essentially always fall inside a quarter term
+and a mapped calendar week. Newark's -2 of 66,970 is 0.003%.
+
+Treat any NJ delta beyond those exact figures as a defect and investigate before
+committing — not as acceptable drift.
+
+Miami gains rows in the ARCHIVE years too, not only AY2026: the old
+`co.studentid = att.studentid` join excluded Miami in every year because
+`studentid` is null for Focus-sourced enrollment. That is a side-effect fix, and
+it means Miami appears in this report for AY2020 onward.
 
 - [ ] **Step 3: Lint and commit**
 
@@ -3001,8 +3053,9 @@ every union and is produced by all six package models. `schoolid` is Focus
 internal in Tasks 1 through 6 and the network number from Task 9 onward, with
 the crosswalk CTE spelled out in each task that needs it.
 
-**Known gap carried deliberately.** Task 14 states that NJ counts in the chronic
-absenteeism log may move slightly, because the join key changes from `studentid`
-to `student_number` and the `att_mode_code` filter is dropped. That is a real
-behavior change to an NJ report, bounded by a 1% investigation threshold, and it
-is called out rather than hidden.
+**Task 14's NJ risk was measured, not assumed.** The rewrite changes the join
+key from `studentid` to `student_number` and drops the `att_mode_code` filter,
+and the kipptaf ctod is a 29% filtered subset of the district data, so NJ counts
+could have fallen. Measured against prod AY2025 they do not: Camden and Paterson
+are identical, and Newark moves by 2 rows out of 66,970. Task 14 carries those
+exact figures as its gate rather than a tolerance band.
