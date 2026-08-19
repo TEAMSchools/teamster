@@ -3,14 +3,15 @@ models:
     description:
       Postsecondary completion flags per student, one row per kippadb contact.
       Each degree family (BA, AA, CTE) carries unbounded ever-earned flags plus
-      time-to-completion flags measured from the August 31 following the
-      student's KIPP high school class year. Undergraduate flags combine the BA
-      and AA families.
+      time-to-completion flags. Most completion windows are measured from the
+      August 31 following the student's KIPP high school class year, but
+      is_24yo_ugrad_cte_grad_int is measured from the student's birthdate.
+      Undergraduate flags combine the BA and AA families.
     data_tests:
       - dbt_utils.expression_is_true:
           name: grad_calcs_grad_ever_decomposes_by_degree
           arguments:
-            expression:
+            expression: |
               greatest(is_ba_grad_ever_int, is_aa_grad_ever_int,
               is_cte_grad_ever_int) = is_grad_ever
       - dbt_utils.expression_is_true:
