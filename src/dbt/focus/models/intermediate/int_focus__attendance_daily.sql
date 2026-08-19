@@ -1,17 +1,38 @@
 with
+    -- Focus dates a school transfer with the departing stint's exitdate EQUAL to
+    -- the arriving stint's startdate, so an inclusive date range counts that day
+    -- twice and breaks the (student_number, calendardate) grain. Measured against
+    -- prod: 78 stints network-wide are transfer boundaries, while 1,755 stints
+    -- legitimately end on an in-session day the student attended -- so a blanket
+    -- half-open range would drop 1,755 real attendance days to fix 4 duplicates.
+    -- Trim only the transfer day, which assigns it to the ARRIVING school.
+    stint_starts as (
+        select distinct student_number, academic_year, startdate,
+        from {{ ref("int_focus__student_enrollment") }}
+    ),
+
     -- Already deduped to one row per (student_number, academic_year, startdate)
     -- in int_focus__student_enrollment, so the cross with calendar days below
     -- cannot fan out on Focus's duplicate open stints (#4905).
     enrollments as (
         select
-            student_number,
-            network_student_number,
-            academic_year,
-            schoolid,
-            startdate,
-            exitdate,
-            grade_level,
-        from {{ ref("int_focus__student_enrollment") }}
+            e.student_number,
+            e.network_student_number,
+            e.academic_year,
+            e.schoolid,
+            e.startdate,
+            e.grade_level,
+
+            if(
+                s.startdate is null, e.exitdate, date_sub(e.exitdate, interval 1 day)
+            ) as exitdate,
+        from {{ ref("int_focus__student_enrollment") }} as e
+        -- stint_starts is distinct, so this cannot fan out.
+        left join
+            stint_starts as s
+            on e.student_number = s.student_number
+            and e.academic_year = s.academic_year
+            and e.exitdate = s.startdate
     ),
 
     -- Focus's attendance_calendar carries one row per school per day it treats
@@ -32,10 +53,12 @@ with
     -- The membership scaffold. int_focus__attendance_day cannot represent a day
     -- it holds no row for, so absences that were never recorded are invisible
     -- at its grain; crossing enrollment with in-session days is what makes them
-    -- representable. Enrollment is the inner side deliberately: five Focus
-    -- schools (2 closed, 3 non-instructional) carry unfiltered 212-day
-    -- calendars that include holidays, and all five have zero enrollments, so
-    -- this join drops them. Tracked with Ops, not filtered here.
+    -- representable. Enrollment is the inner side deliberately, which drops the
+    -- four misconfigured Focus schools that enrolled nobody. It does NOT drop
+    -- school 60 (Applicants), which carries one AY2026 enrollment against a
+    -- 212-day holiday-inclusive calendar -- that school has no locations-sheet
+    -- row, so the kipptaf crosswalk drops it before anything published reads it.
+    -- The calendar misconfiguration is tracked with Ops, not filtered here.
     membership as (
         select
             e.student_number,

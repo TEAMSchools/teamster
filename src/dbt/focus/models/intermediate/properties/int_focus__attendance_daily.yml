@@ -78,6 +78,7 @@ models:
         description: Always null. PowerSchool calendar-track machinery.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [student_number, calendardate]
+          arguments:
+            combination_of_columns: [student_number, calendardate]
           config:
             severity: error
