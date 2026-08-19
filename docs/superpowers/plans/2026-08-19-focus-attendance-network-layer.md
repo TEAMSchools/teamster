@@ -198,16 +198,37 @@ with
     -- Already deduped to one row per (student_number, academic_year, startdate)
     -- in int_focus__student_enrollment, so the cross with calendar days below
     -- cannot fan out on Focus's duplicate open stints (#4905).
+    -- Focus dates a school transfer with the departing stint's exitdate EQUAL to
+    -- the arriving stint's startdate, so an inclusive date range counts that day
+    -- twice and breaks the (student_number, calendardate) grain. Measured against
+    -- prod: 78 stints network-wide are transfer boundaries, while 1,755 stints
+    -- legitimately end on an in-session day the student attended -- so a blanket
+    -- half-open range would drop 1,755 real attendance days to fix 4 duplicates.
+    -- Trim only the transfer day, which assigns it to the ARRIVING school.
+    stint_starts as (
+        select distinct student_number, academic_year, startdate,
+        from {{ ref("int_focus__student_enrollment") }}
+    ),
+
     enrollments as (
         select
-            student_number,
-            network_student_number,
-            academic_year,
-            schoolid,
-            startdate,
-            exitdate,
-            grade_level,
-        from {{ ref("int_focus__student_enrollment") }}
+            e.student_number,
+            e.network_student_number,
+            e.academic_year,
+            e.schoolid,
+            e.startdate,
+            e.grade_level,
+
+            if(
+                s.startdate is null, e.exitdate, date_sub(e.exitdate, interval 1 day)
+            ) as exitdate,
+        from {{ ref("int_focus__student_enrollment") }} as e
+        -- stint_starts is distinct, so this cannot fan out.
+        left join
+            stint_starts as s
+            on e.student_number = s.student_number
+            and e.academic_year = s.academic_year
+            and e.exitdate = s.startdate
     ),
 
     -- Focus's attendance_calendar carries one row per school per day it treats
@@ -221,10 +242,12 @@ with
     -- The membership scaffold. int_focus__attendance_day cannot represent a day
     -- it holds no row for, so absences that were never recorded are invisible
     -- at its grain; crossing enrollment with in-session days is what makes them
-    -- representable. Enrollment is the inner side deliberately: five Focus
-    -- schools (2 closed, 3 non-instructional) carry unfiltered 212-day
-    -- calendars that include holidays, and all five have zero enrollments, so
-    -- this join drops them. Tracked with Ops, not filtered here.
+    -- representable. Enrollment is the inner side deliberately, which drops the
+    -- four misconfigured Focus schools that enrolled nobody. It does NOT drop
+    -- school 60 (Applicants), which carries one AY2026 enrollment against a
+    -- 212-day holiday-inclusive calendar -- that school has no locations-sheet
+    -- row, so the kipptaf crosswalk drops it before anything published reads it.
+    -- The calendar misconfiguration is tracked with Ops, not filtered here.
     membership as (
         select
             e.student_number,
@@ -391,7 +414,8 @@ models:
         description: Always null. PowerSchool calendar-track machinery.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [student_number, calendardate]
+          arguments:
+            combination_of_columns: [student_number, calendardate]
           config:
             severity: error
 ```
@@ -428,10 +452,32 @@ from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendanc
 where yearid = 36
 ```
 
-Expected on 2026-08-19 data: about 9,287 scaffold rows, about 124 `M` rows,
-1,559 students, 6 days. The `M` count must stay well under 5% of scaffold rows —
-a spike means the enrollment or calendar join is wrong, not that Focus stopped
-recording.
+Expected on 2026-08-19 data: about **307,600 scaffold rows across 212 distinct
+days** for roughly 1,628 students, of which about **9,300 rows are elapsed**
+(`calendardate <= current_date`).
+
+The model scaffolds the WHOLE school year, not just elapsed days — Focus's
+`syear = 2026` calendar is already populated through 2027-06-03, and the
+PowerSchool ctod behaves the same way. That is what the `is_realized` flag
+downstream exists for. So `att_code = 'M'` is about 97.5% of all rows, because
+almost every row is a future day nobody has taken attendance for yet. Judge the
+`M` rate on ELAPSED rows only:
+
+```sql
+select
+  countif(calendardate <= current_date('America/New_York')) as elapsed_rows,
+  countif(calendardate <= current_date('America/New_York') and att_code = 'M') as elapsed_m
+from `teamster-332318.zz_<your-github-user>_kippmiami_focus.int_focus__attendance_daily`
+where yearid = 36
+```
+
+Expected: about 9,300 elapsed rows with roughly 130 `M`, so under 2%. An elapsed
+`M` rate above 5% means the enrollment or attendance join is wrong, not that
+Focus stopped recording.
+
+The 212 distinct days exceed any real school's 182 because Focus school 60
+(Applicants) carries one enrollment against a misconfigured 212-day calendar.
+That is expected here and is dropped by the kipptaf crosswalk in Task 9.
 
 - [ ] **Step 7: Lint and commit**
 
@@ -541,7 +587,8 @@ models:
         description: Average daily attendance across realized membership days.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [student_number, yearid]
+          arguments:
+            combination_of_columns: [student_number, yearid]
           config:
             severity: error
 ```
@@ -778,7 +825,8 @@ models:
           streak_length_membership when the streak spans a weekend or break.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [streak_id, att_code]
+          arguments:
+            combination_of_columns: [streak_id, att_code]
           config:
             severity: error
 ```
@@ -913,7 +961,8 @@ models:
         description: Saturday of the week the date falls in.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [schoolid, date_value]
+          arguments:
+            combination_of_columns: [schoolid, date_value]
           config:
             severity: error
 ```
@@ -1146,7 +1195,8 @@ models:
           final week once the year has ended.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [schoolid, yearid, week_start_date]
+          arguments:
+            combination_of_columns: [schoolid, yearid, week_start_date]
           config:
             severity: error
 ```
@@ -1274,7 +1324,8 @@ models:
         description: In-session days still in the future as of today.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [schoolid, yearid]
+          arguments:
+            combination_of_columns: [schoolid, yearid]
           config:
             severity: error
 ```
@@ -1687,7 +1738,8 @@ models:
         description: Originating district project.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [schoolid, date_value, _dbt_source_project]
+          arguments:
+            combination_of_columns: [schoolid, date_value, _dbt_source_project]
           config:
             severity: error
       # Surfaces the Focus calendar misconfiguration handed to Ops: five Focus
@@ -1906,8 +1958,9 @@ models:
         description: Originating district project.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            [schoolid, yearid, week_start_date, _dbt_source_project]
+          arguments:
+            combination_of_columns:
+              [schoolid, yearid, week_start_date, _dbt_source_project]
           config:
             severity: error
 ```
@@ -2296,8 +2349,9 @@ models:
         description: Originating district project.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            [student_number, _dbt_source_project, calendardate]
+          arguments:
+            combination_of_columns:
+              [student_number, _dbt_source_project, calendardate]
           config:
             severity: error
 ```
@@ -2495,7 +2549,9 @@ models:
         description: Originating district project.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [student_number, yearid, _dbt_source_project]
+          arguments:
+            combination_of_columns:
+              [student_number, yearid, _dbt_source_project]
           config:
             severity: error
 ```
@@ -2531,7 +2587,8 @@ models:
         description: Originating district project.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [streak_id, att_code, _dbt_source_project]
+          arguments:
+            combination_of_columns: [streak_id, att_code, _dbt_source_project]
           config:
             severity: error
 ```
@@ -2746,7 +2803,9 @@ models:
         description: Originating district project.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [schoolid, yearid, track, _dbt_source_project]
+          arguments:
+            combination_of_columns:
+              [schoolid, yearid, track, _dbt_source_project]
           config:
             severity: error
 ```
