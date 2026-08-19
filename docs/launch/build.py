@@ -8,7 +8,9 @@ and what stops `mkdocs serve` rebuilding itself in a loop.
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +35,14 @@ SYSTEMS = {
 
 STATUSES = {"needs-review", "verified"}
 AUDIENCES = {"teachers", "leaders", "ops", "region"}
+
+VIEWS = [
+    ("all", "All tools"),
+    ("teachers", "Teachers"),
+    ("leaders", "Leaders"),
+    ("ops", "Operations"),
+    ("region", "Regional & CMO"),
+]
 
 # Region accents come from the KIPP NJ | Miami design system. `all` is a
 # legal value on a normal entry but never on a family member.
@@ -204,3 +214,111 @@ def _tier_two(catalog: Catalog, verified: list[dict]) -> list[str]:
 def validate(catalog: Catalog, verified: list[dict]) -> list[str]:
     """Tier 1 over everything; tier 2 over the verified subset."""
     return _tier_one(catalog) + _tier_two(catalog, verified)
+
+
+def _tool(entry: dict, family: dict | None) -> dict:
+    regions = entry.get("regions") or []
+    label, colour = REGIONS.get(regions[0], ("", "")) if regions else ("", "")
+    return {
+        "id": entry["id"],
+        "name": entry["name"],
+        "url": entry["url"],
+        "description": (entry.get("description") or "").strip(),
+        "audiences": entry.get("audiences") or [],
+        "system": entry["system"],
+        "systemLabel": SYSTEMS.get(entry["system"], entry["system"]),
+        "group": entry["group"],
+        "guide": entry.get("guide"),
+        "regionLabel": label,
+        "regionColor": colour,
+        "limited": entry.get("access") == "limited",
+        "family": (
+            {
+                "id": family["id"],
+                "name": family["name"],
+                "description": family["description"],
+                "group": family["group"],
+            }
+            if family
+            else None
+        ),
+    }
+
+
+def render(
+    catalog: Catalog, verified: list[dict], updated: str | None = None
+) -> str | None:
+    """The page, or None when too little of the catalog is verified."""
+    minimum = catalog.config.get("minimum_verified", 0)
+    if len(verified) < minimum:
+        return None
+
+    member_of = {
+        member: family
+        for family in catalog.config.get("families") or []
+        for member in family.get("members") or []
+    }
+
+    payload = {
+        "tools": [_tool(e, member_of.get(e["name"])) for e in verified],
+        "groups": catalog.config["groups"],
+        "views": [{"id": i, "label": lbl} for i, lbl in VIEWS],
+        "systems": [
+            {"id": i, "label": lbl}
+            for i, lbl in SYSTEMS.items()
+            if any(e["system"] == i for e in verified)
+        ],
+        "promos": catalog.config["promos"],
+        "meta": {"updated": updated or "", "count": len(verified)},
+    }
+
+    # json.dumps escapes quotes and control characters but NOT `<`, so a
+    # value containing a closing script tag would end the block early and
+    # blank the page with an exit-zero build. Escaping at the unicode
+    # level keeps the JSON valid.
+    encoded = (
+        json.dumps(payload, indent=1)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+    return catalog.template.replace("__CATALOG__", encoded)
+
+
+def _updated(root: Path) -> str:
+    """Tip-commit date, or empty when git cannot answer.
+
+    Deliberately not path-filtered: `git log -1 -- <path>` returns empty
+    under actions/checkout's shallow clone, while the unfiltered tip
+    resolves at depth 1. A missing date is not worth failing a build for,
+    so every failure mode returns "" and the template omits the stamp.
+    """
+    try:
+        # trunk-ignore(bandit/B603,bandit/B607): hardcoded git command, no user input
+        return subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "log",
+                "-1",
+                "--format=%ad",
+                "--date=format:%-d %b %Y",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+        ).stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        return ""
+
+
+def build(root: Path = HERE, updated: str | None = None) -> str | None:
+    """Load, validate and render. Raises CatalogError on any problem."""
+    catalog = load(root)
+    verified = select(catalog)
+    errors = validate(catalog, verified)
+    if errors:
+        raise CatalogError(errors)
+    return render(catalog, verified, updated or _updated(root))
