@@ -456,6 +456,23 @@ data_tests:
           ref:
             name: int_people__staff_roster
 
+  - name: rpt_clever__sections__enr_teacher_id_is_the_dso
+    description: >-
+      The auto-generated ENR sections must list the school's DSO as their
+      primary teacher, never the School Leader. Both titles match the same
+      filter in rpt_clever__sections, so the pick is stable only because
+      sortorder ranks them -- without that rank the two swap on BigQuery's scan
+      order, which is how ~90 sections silently changed hands and tripped
+      Clever's churn alert in August 2026. Errors rather than warns: Clever
+      derives each section's display name from its primary teacher, so a
+      regression here rewrites every ENR section name in the feed.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__sections
+
   - name: rpt_clever__school_id_resolves_to_schools_feed
     description: >-
       Cross-feed referential integrity for the six Clever SFTP extracts -- every
