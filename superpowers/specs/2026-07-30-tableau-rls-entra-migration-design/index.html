@@ -1,0 +1,2481 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Tableau RLS rebuild for the Entra ID identity migration - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tableau-rls-rebuild-for-the-entra-id-identity-migration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tableau RLS rebuild for the Entra ID identity migration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-1-the-dbt-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 1 — the dbt contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 1 — the dbt contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-rules-the-contract-enforces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three rules the contract enforces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models-in-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Models in scope
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Models in scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rpt_tableau__pm_outlier_detection-is-deferred-2026-07-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rpt_tableau__pm_outlier_detection is deferred, 2026-07-31
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-extract-and-exposure-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New extract and exposure work
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-2-the-permissions-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 2 — the Permissions block
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 2 — the Permissions block">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tier-1-self-and-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 — self and manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-2-all-access-functional-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2 — all-access functional groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-3-regional-ops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3 — regional ops
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-4-regional-leaders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 4 — regional leaders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tier-5-school-based" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 5 — school-based
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 5 — school-based">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#historical-entity-values-are-abbreviations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical entity values are abbreviations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-entity-gate-reads-group-membership-not-the-viewers-own-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The entity gate reads group membership, not the viewer's own entity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retired-location-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retired-location bridge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed-entirely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removed entirely
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-3-validation-and-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 3 — validation and rollout
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 3 — validation and rollout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#invariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dbt-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dbt tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview-as-user-personas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preview as User personas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blocking-pre-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocking pre-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollout-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollout order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#federal-grants-timesheet-approval-carries-a-defect-not-a-variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Federal Grants Timesheet Approval carries a defect, not a variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-ups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-ups
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tableau-rls-rebuild-for-the-entra-id-identity-migration">Tableau RLS rebuild for the Entra ID identity migration</h1>
+<p>Refs #4638</p>
+<h2 id="problem">Problem</h2>
+<p>KIPP Tableau Server is migrating identities from Active Directory usernames to
+email addresses. Tableau's <code>USERNAME()</code> will return <code>mail</code> after cutover, which
+breaks every row-level-security calculated field comparing it against a
+<code>samaccountname</code>-style column.</p>
+<p>An external audit surfaced 85 flagged content items network-wide. 21 belong to
+cbaldor; 8 are already tagged <code>entra-broken-accepted</code> (TEMP and Archive
+throwaways), leaving <strong>13 Production workbooks</strong>.</p>
+<p>The identity break is the trigger, not the whole problem. Reading the flagged
+calcs surfaced three compounding defects:</p>
+<ol>
+<li><strong>Identity.</strong> Comparisons resolve against <code>sam_account_name</code> /
+   <code>report_to_sam_account_name</code>, and the backing extracts carry no email column
+   to dual-match against.</li>
+<li><strong>Stale org model.</strong> Calcs reference retired locations and retired groups,
+   and omit 5 currently-active locations entirely. <code>KIPP Paterson</code> appears in no
+   entity gate anywhere, so the 96 active staff whose entity is <code>KIPP Paterson</code>
+   resolve to deny regardless of group membership.</li>
+<li><strong>Hardcoded individuals.</strong> 12 individual usernames grant access directly,
+   bypassing groups. (The list is held in <code>.claude/scratch/</code>, not committed —
+   staff usernames are identifiers.)</li>
+</ol>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Every gated workbook keeps working before <strong>and</strong> after cutover, with no
+  coordination against IT's switch window.</li>
+<li>One canonical Permissions block, pasted unmodified across the 13 workbooks
+  apart from documented per-workbook tiers.</li>
+<li>Location and department become separate access axes.</li>
+<li>Zero individual username grants remain.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>The 64 flagged items owned by other authors.</li>
+<li>Renaming <code>location_clean_name</code> upstream (see <em>Follow-ups</em>).</li>
+<li>Normalizing role logic beyond the AP predicate. This is a migration, not an
+  access redesign.</li>
+<li>Moving row-level decisions out of Tableau groups into the data. Considered and
+  rejected: an entitlements join changes extract grain, and a Virtual Connection
+  data policy needs Data Management licensing.</li>
+</ul>
+<h2 id="decisions">Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity attribute</td>
+<td><code>mail</code>, dual-matched with <code>sam_account_name</code> through cutover</td>
+</tr>
+<tr>
+<td>UPN hedge</td>
+<td>Also match <code>user_principal_name</code> (differs from <code>mail</code> for 3 staff)</td>
+</tr>
+<tr>
+<td>Individual grants</td>
+<td>Gut entirely, no replacement</td>
+</tr>
+<tr>
+<td>Access mechanism</td>
+<td>Tableau groups stay; the calc is restructured around them</td>
+</tr>
+<tr>
+<td>Location value source</td>
+<td><code>int_people__location_crosswalk.location_clean_name</code>, unchanged</td>
+</tr>
+<tr>
+<td>Entity value source</td>
+<td><code>int_people__staff_roster.home_business_unit_name</code></td>
+</tr>
+<tr>
+<td>Paterson entity group</td>
+<td><code>KNJ-SG-Tableau All Staff Paterson</code></td>
+</tr>
+<tr>
+<td>Group naming rule</td>
+<td><code>KNJ-SG-Tableau All Staff</code> + exact location name</td>
+</tr>
+<tr>
+<td>Rooms</td>
+<td>Excluded from location scoping; central office is department-based</td>
+</tr>
+<tr>
+<td>AP role predicate</td>
+<td><code>job_function</code>, with a NULL fallback to <code>job_title</code></td>
+</tr>
+<tr>
+<td>Tier 4 on norming / pulse</td>
+<td>Left ungated — cross-region norming is deliberate</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-1-the-dbt-contract">Section 1 — the dbt contract</h2>
+<p>Every model backing a gated workbook emits these columns under these names.
+Contract columns always describe <strong>the person whose access is being decided</strong>;
+anyone else on the row keeps a descriptive prefix (e.g. <code>respondent_*</code>).</p>
+<p>Columns keep their <strong>real source names</strong> — no aliasing. Uniformity comes from
+every model selecting the same source columns, so a rename in one place cannot
+drift from another. Legacy aliases (<code>entity</code>, <code>`location`</code>, <code>legal_entity</code>,
+<code>region</code>, <code>department</code>, <code>report_to_sam_account_name</code>) are deleted, not retained
+for compatibility.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Source</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>location_clean_name</code></td>
+<td>location crosswalk</td>
+<td>Location gate</td>
+</tr>
+<tr>
+<td><code>campus_name</code></td>
+<td>location crosswalk</td>
+<td>Available axis, not gated</td>
+</tr>
+<tr>
+<td><code>home_business_unit_name</code></td>
+<td>staff roster</td>
+<td>Entity gate</td>
+</tr>
+<tr>
+<td><code>home_department_name</code></td>
+<td>staff roster</td>
+<td>Department axis</td>
+</tr>
+<tr>
+<td><code>job_function</code></td>
+<td>staff roster</td>
+<td>AP role predicate</td>
+</tr>
+<tr>
+<td><code>job_title</code></td>
+<td>staff roster</td>
+<td>NULL-<code>job_function</code> fallback</td>
+</tr>
+<tr>
+<td><code>mail</code></td>
+<td>staff roster</td>
+<td>Post-cutover identity</td>
+</tr>
+<tr>
+<td><code>user_principal_name</code></td>
+<td>staff roster</td>
+<td>UPN hedge</td>
+</tr>
+<tr>
+<td><code>sam_account_name</code></td>
+<td>staff roster</td>
+<td>Pre-cutover identity</td>
+</tr>
+<tr>
+<td><code>reports_to_mail</code></td>
+<td>staff roster</td>
+<td>Manager, post-cutover</td>
+</tr>
+<tr>
+<td><code>reports_to_sam_account_name</code></td>
+<td>staff roster</td>
+<td>Manager, pre-cutover</td>
+</tr>
+</tbody>
+</table>
+<p>Note the plural <code>reports_to_*</code>. The old extracts aliased these to singular
+<code>report_to_*</code>; the real column is plural, and every calc referencing the
+singular must be updated.</p>
+<h3 id="three-rules-the-contract-enforces">Three rules the contract enforces</h3>
+<p><strong>Entity comes from the person, location from the place.</strong> <code>location_region</code> is
+a property of the location, not the viewer: Room 9's region is
+<code>TEAM Academy Charter School</code>, but 130 of its 203 occupants are KTAF central
+office. Using <code>location_region</code> for entity gating would hand central-office
+staff a region's access.</p>
+<p>This governs <strong>person-grain</strong> extracts, where the gated row describes a member
+of staff. On an <strong>event-grain</strong> extract the row describes something that
+happened at a place, and both gates come from that place, not from whoever
+recorded it. <code>rpt_tableau__operations_ekg</code> is the case: a row is a walkthrough
+of a school, so it gates on <code>school_clean_name</code> and <code>school_business_unit_name</code>,
+both resolved from the walked school through <code>int_people__location_crosswalk</code>.
+Gating it on the respondent instead shows a school leader the walkthroughs they
+performed rather than the ones of their school, and no respondent on that form
+is based in KIPP Paterson, so a Paterson leader sees nothing at all. The Room 9
+failure above cannot reach an event-grain extract whose place is always a real
+school — the walkthrough form's dropdown lists no Rooms — and the gate still
+requires group membership, so sourcing entity from the place widens nothing.
+Before applying this carve-out to another extract, confirm its place column
+cannot resolve to a Room.</p>
+<p><strong>Location and department stay separate columns.</strong> This is the structural idea
+borrowed from <code>dim_staff_cube_access</code> (#4269), and it is what stops Rooms from
+granting location-wide visibility.</p>
+<p><strong><code>location_clean_name</code> values pass through untouched.</strong> No renaming, no
+override macro. The 5 naming mismatches are bridged in the Tableau block.</p>
+<h3 id="models-in-scope">Models in scope</h3>
+<p>Derived from <code>models/exposures/tableau.yml</code>, deduplicated across the 13
+workbooks:</p>
+<div class="highlight"><pre><span></span><code>rpt_tableau__leadership_development
+rpt_tableau__schoolmint_grow_observation_details
+rpt_tableau__schoolmint_grow_goals
+rpt_tableau__teacher_observations
+rpt_tableau__pm_outlier_detection   (DEFERRED - see below)
+rpt_tableau__content_team
+rpt_tableau__survey_responses
+rpt_tableau__survey_completion
+rpt_tableau__grants_timesheets
+rpt_tableau__stipend_and_bonus_app
+rpt_tableau__operations_pm
+rpt_tableau__operations_ekg
+rpt_tableau__manager_survey_details   (new)
+</code></pre></div>
+<p>Not every model is confirmed to carry location or entity today —
+<code>__survey_completion</code>, <code>__grants_timesheets</code>, <code>__pm_outlier_detection</code> and
+<code>__operations_ekg</code> are unaudited. Where a column is missing, add it by joining
+<code>int_people__staff_roster</code>. That audit is task one of the implementation plan.</p>
+<h4 id="rpt_tableau__pm_outlier_detection-is-deferred-2026-07-31"><code>rpt_tableau__pm_outlier_detection</code> is deferred, 2026-07-31</h4>
+<p>Dropped from scope by user decision after the contract work surfaced two
+independent grain defects in it, one of them pre-existing and structural:
+<code>score_dates</code> joins <code>stg_google_sheets__reporting__terms</code> with no region
+predicate, while that sheet holds one row per region per term. The SchoolMint
+Grow Dashboard will not be rebuilt for a while, so the model does not justify
+holding up the other twelve. All of its changes were reverted to the merge base
+and its remaining problems are tracked separately.</p>
+<p>Twelve models carry the contract. The Permissions block still targets 13
+workbooks — the SchoolMint Grow Dashboard reads three other contract-carrying
+models alongside this one, so it is gated regardless; it simply cannot gate on
+this model's rows until the deferred work lands.</p>
+<h3 id="new-extract-and-exposure-work">New extract and exposure work</h3>
+<ul>
+<li><strong><code>rpt_tableau__manager_survey_details</code></strong> — new. Manager Survey Reports and
+  Manager Survey Rollup currently point at
+  <code>int_surveys__manager_survey_details</code>, an intermediate model. The new extract
+  wraps it, applies the contract, and adds <code>mail</code> (absent upstream). Both
+  workbook data sources get repointed in Desktop.</li>
+<li><strong>Exposures added:</strong> <code>content_team_dashboard</code> → <code>rpt_tableau__content_team</code>,
+  and <code>manager_survey_rollup</code> → the new extract. Both omit <code>url</code> (only 3 of the
+  file's 47 exposures carry one) and omit <code>cron_schedule</code>, since a cron there
+  becomes a real Dagster refresh schedule and neither workbook is
+  Dagster-refreshed today.</li>
+<li><strong>Exposure updated:</strong> <code>manager_survey_reports</code>, repointed to the new extract.</li>
+<li><strong><code>teacher_goals</code> — skipped by decision, 2026-07-30.</strong> All 13 workbooks use
+  embedded extracts rather than published datasources, and the read-only Tableau
+  MCP exposes no workbook-to-table mapping, so its model could not be
+  determined. The workbook was last modified 2024-09-19 and drew 3 views in a
+  month. Guessing would have created a false lineage edge and a wrong Dagster
+  dependency. Not deferred — declined.</li>
+</ul>
+<h2 id="section-2-the-permissions-block">Section 2 — the Permissions block</h2>
+<p>Five tiers in one <code>OR</code> chain, same order in every workbook so they diff by eye.</p>
+<h3 id="tier-1-self-and-manager">Tier 1 — self and manager</h3>
+<p>The only tier that changes at cutover, and the reason deployment needs no
+coordination with IT: both the old and new identity forms match.</p>
+<div class="highlight"><pre><span></span><code>LOWER(USERNAME()) = LOWER([sam_account_name])
+OR LOWER(USERNAME()) = LOWER([mail])
+OR LOWER(USERNAME()) = LOWER([user_principal_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+</code></pre></div>
+<p><code>user_principal_name</code> is a hedge, not a widening. <code>mail</code> is the expected value
+of <code>USERNAME()</code> after cutover, but that is an expectation rather than a
+confirmation, and Entra sign-in commonly presents UPN. For 1,623 of 1,627 active
+staff the two agree; for 3 they do not, and those 3 would silently fail a
+mail-only match if Server presents UPN. One of them is in the validation matrix.</p>
+<h3 id="tier-2-all-access-functional-groups">Tier 2 — all-access functional groups</h3>
+<p><code>All Data</code>, <code>TC</code>, <code>All HR</code>, <code>All T&amp;L</code>, <code>Recruiting</code>, <code>New Teacher Development</code>,
+<code>Leadership Development</code>. Membership varies per workbook; this is the only tier
+that legitimately differs across the 13. <code>Syndicate</code> is removed. <strong>No individual
+usernames</strong> — this tier is where all 12 hardcoded grants used to live.</p>
+<h3 id="tier-3-regional-ops">Tier 3 — regional ops</h3>
+<div class="highlight"><pre><span></span><code>OR ([home_business_unit_name] IN ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
+    AND ISMEMBEROF('Group Staff NJ Regional'))
+OR ([home_business_unit_name] = 'KIPP Miami' AND ISMEMBEROF('Group Staff MIA Regional'))
+</code></pre></div>
+<h3 id="tier-4-regional-leaders">Tier 4 — regional leaders</h3>
+<div class="highlight"><pre><span></span><code>OR ((ISMEMBEROF('KNJ-SG-Tableau All MDSO') OR ISMEMBEROF('KNJ-SG-Tableau All HOS')
+     OR ISMEMBEROF('KNJ-SG-Tableau All MDO') OR ISMEMBEROF('KNJ-SG-Tableau AcOps'))
+    AND [the Tier 5 entity gate, reproduced below])
+</code></pre></div>
+<p><strong>Two documented variants.</strong> On main <code>Permissions</code> blocks the entity gate
+applies. On <code>Permissions - Norming*</code> and <code>Permissions - PulseChecker</code> blocks the
+tier is <strong>ungated and additionally includes <code>KNJ-SG-Tableau All SL</code></strong>, because
+cross-region norming is intentional. Both variants must carry an inline comment
+saying which they are and why — an undocumented difference is what gets
+"corrected" by the next reader.</p>
+<h3 id="tier-5-school-based">Tier 5 — school-based</h3>
+<p>Requires all three of location, entity, and role.</p>
+<p>Entity gate:</p>
+<div class="highlight"><pre><span></span><code>IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_name] = 'TEAM Academy Charter School' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [home_business_unit_name] = 'KIPP Cooper Norcross Academy' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [home_business_unit_name] = 'KIPP Miami' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE
+ELSE FALSE END
+</code></pre></div>
+<p>The Paterson branch is new and unblocks 96 staff (55 Prep Elementary, 33 Prep
+Middle, 8 in Room 12). A further 3 staff sit in Room 12 under the
+<code>TEAM Academy Charter School</code> entity and gate through that branch instead. The
+KTAF branch stays unconditional, preserving current behavior.</p>
+<h4 id="historical-entity-values-are-abbreviations">Historical entity values are abbreviations</h4>
+<p><code>int_people__staff_roster_history</code> carries pre-2021 abbreviations rather than
+full entity names: <code>TEAM</code> (9,551 rows, 2002-2020), <code>KCNA</code> (2,328), <code>KNJ</code>
+(1,486), and <code>MIA</code> (658). Any view that surfaces rows from 2020 or earlier will
+fail the entity gate above, because none of those values match a full name.</p>
+<p>The old calcs handled this by hand — several tested
+<code>[home_business_unit_name] = 'TEAM' OR [home_business_unit_name] = 'TEAM Academy Charter Schools' OR [home_business_unit_name] = 'TEAM Academy Charter School'</code>.
+That is why those triple comparisons exist; they were not redundancy.</p>
+<p><strong>Superseded 2026-07-30: dbt now normalizes entity, so the Tableau gate compares
+one form only.</strong> Every one of the 13 extracts maps the abbreviations to full
+names with a <code>case</code> in its select list, aliased back to
+<code>home_business_unit_name</code>, so no extract can emit <code>TEAM</code>, <code>KCNA</code>, <code>MIA</code>, or
+<code>KNJ</code> any more. Each entity branch therefore takes a single equality:</p>
+<div class="highlight"><pre><span></span><code>ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools')
+   AND [home_business_unit_name] = 'TEAM Academy Charter School' THEN TRUE
+</code></pre></div>
+<p><strong>Delete the triple comparisons rather than carrying them forward.</strong> An
+abbreviation branch cannot match anything post-normalization, and leaving one in
+place tells the next reader the extracts still carry abbreviations.</p>
+<p>This was not a cosmetic change.
+<code>rpt_tableau__schoolmint_grow_observation_details</code> alone was emitting 276,048
+un-normalized rows — <code>TEAM</code> 189,391, <code>KCNA</code> 79,525, <code>MIA</code> 7,132 — and its
+<code>accepted_values</code> test was failing until the <code>case</code> was added. Any entity gate
+on that data was matching nothing.</p>
+<p><code>KNJ</code> is different: it was the <strong>network</strong> entity, KIPP New Jersey, which is
+today's KTAF rather than any region. Evidence, not inference: of the 327 staff
+who ever carried <code>KNJ</code>, 262 (80%) next appear under
+<code>KIPP TEAM and Family Schools Inc.</code>, and 1,204 of the 1,486 <code>KNJ</code> rows (81%) sit
+at Room 9, the network office. The two figures agree.</p>
+<p><strong>Decision: <code>KNJ</code> maps flatly to KTAF.</strong> In practice that means adding it to no
+region branch at all — the unconditional
+<code>ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE</code> branch already
+covers those rows for network viewers, and region viewers correctly do not see
+historical network staff.</p>
+<p>Two things this deliberately accepts:</p>
+<ul>
+<li>The 64 staff who later moved to a region have their <code>KNJ</code>-era rows attributed
+  to the network, so their own region cannot see them. 64 historical rows is a
+  cheaper error than the alternative.</li>
+<li>The alternative — deriving entity from the location crosswalk — was rejected
+  precisely because it fails the wrong way. Room 9's <code>location_region</code> is
+  <code>TEAM Academy Charter School</code>, so a location-derived entity would put 1,204
+  network-staff rows into TEAM and expose them to every TEAM region viewer. The
+  flat map fails closed; the location map fails open.</li>
+</ul>
+<p>In dbt this is the <code>KNJ</code> branch of the entity <code>case</code>, which rewrites it to
+<code>KIPP TEAM and Family Schools Inc.</code>. Region branches then never match it, and
+the unconditional KTAF branch covers it for network viewers — the same outcome
+the flat map describes, reached in the view rather than in the calc.</p>
+<p>Because normalization happens in dbt, no workbook needs a second entity form
+regardless of how far back its data reaches.</p>
+<h4 id="the-entity-gate-reads-group-membership-not-the-viewers-own-entity">The entity gate reads group membership, not the viewer's own entity</h4>
+<p><code>ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson'</code>
+asks whether the viewer is <strong>in the Paterson staff group</strong> — never whether the
+viewer is a Paterson employee. Membership of an entity group is deliberately not
+the same population as employment by that entity.</p>
+<p>This is load-bearing, not incidental. It is how cross-entity supervision is
+expressed: a TEAM employee who oversees Paterson schools gets Paterson
+visibility by being added to the Paterson group, with <strong>no calc change</strong>. Dual
+membership resolves correctly because the gate is an <code>IF</code>/<code>ELSEIF</code> chain of
+<code>group AND matching-entity</code> pairs — a Paterson row falls through the TEAM branch
+(entity does not match), then lands on the Paterson branch.</p>
+<p>The tempting "cleanup" is to derive entity from the viewer's own roster row
+instead of from group membership. <strong>Do not.</strong> It would silently revoke access
+from every cross-entity supervisor, and silent revocation is the failure mode
+this whole rebuild exists to eliminate.</p>
+<p>Location gate — one line if <code>ISMEMBEROF()</code> accepts a non-literal argument on
+this Server version, otherwise 26 explicit branches:</p>
+<div class="highlight"><pre><span></span><code>ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
+</code></pre></div>
+<p>Rooms are absent by design. Central office reaches data through Tiers 2 and 4,
+never through location.</p>
+<p>Role gate:</p>
+<div class="highlight"><pre><span></span><code>ISMEMBEROF('KNJ-SG-Tableau All DSO')
+OR ISMEMBEROF('KNJ-SG-Tableau All SL')
+OR (ISMEMBEROF('KNJ-SG-Tableau All AP')
+    AND ([job_function] IN ('Teacher', 'Teacher in Residence')
+         OR (ISNULL([job_function])
+             AND (CONTAINS([job_title], 'Teacher') OR [job_title] = 'Learning Specialist'))))
+</code></pre></div>
+<p>Per-workbook role variants, both deliberate: Content Team and Miami
+Instructional Rubrics add <code>TS-DL-NTN Coordinators</code>; Stipend and Bonus and
+Operations Systems omit the AP branch entirely.</p>
+<h3 id="retired-location-bridge">Retired-location bridge</h3>
+<p>Five locations where the canonical clean name and the group name disagree. Each
+bridge branch carries a comment referencing the follow-up issue that deletes it.</p>
+<table>
+<thead>
+<tr>
+<th><code>location_clean_name</code></th>
+<th>Group</th>
+<th>Staff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KIPP Hatch Middle</code></td>
+<td><code>...All Staff KIPP Hatch Academy</code></td>
+<td>33</td>
+</tr>
+<tr>
+<td><code>KIPP Sumner Elementary</code></td>
+<td><code>...All Staff KIPP Sumner Academy</code></td>
+<td>48</td>
+</tr>
+<tr>
+<td><code>Paterson Prep Elementary School</code></td>
+<td><code>...All Staff KIPP Paterson Prep Elementary</code></td>
+<td>55</td>
+</tr>
+<tr>
+<td><code>Paterson Prep Middle School</code></td>
+<td><code>...All Staff KIPP Paterson Prep Middle</code></td>
+<td>33</td>
+</tr>
+<tr>
+<td><code>KIPP Miami - Poinciana Campus</code></td>
+<td><code>...All Staff Poinciana Campus</code></td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<h3 id="removed-entirely">Removed entirely</h3>
+<p>All individual usernames; <code>Syndicate</code> from all-access; the three campus groups
+(<code>Norfolk St Campus</code>, <code>Lanning Sq Campus</code>, <code>18th Ave Campus</code>);
+<code>Group Staff Hatch Middle</code>; <code>Group Staff Sumner Elementary</code>; every retired
+location string; the dead <code>Learning Specialist Coordinator</code> title (0 active
+staff); the redundant explicit <code>ESE Teacher</code>; and the
+<code>KNJ-SG-Tableau All Staff KIPP Whittier MIddle</code> typo, which has never matched
+anything.</p>
+<p><code>Group Staff NJ Regional</code> and <code>Group Staff MIA Regional</code> are kept.</p>
+<h2 id="section-3-validation-and-rollout">Section 3 — validation and rollout</h2>
+<h3 id="invariant">Invariant</h3>
+<p><strong>A <code>location_clean_name</code> change and a Tableau group rename must happen
+together.</strong> Once the calc compares clean-name values against group names, a
+one-sided change breaks access silently. Worth a monitored check later.</p>
+<h3 id="dbt-tests">dbt tests</h3>
+<p>Column names below are the shipped contract names, not the working names this
+spec used before Section 2 settled: <code>location_clean_name</code>, not <code>location_name</code>;
+<code>home_business_unit_name</code>, not <code>entity</code>; <code>mail</code>, not <code>email</code>.</p>
+<p>Per-column, on each of the 13 extracts:</p>
+<ul>
+<li><code>location_clean_name</code> — <code>not_null</code></li>
+<li><code>home_business_unit_name</code> — <code>not_null</code>, plus <code>accepted_values</code> on the 5 real
+  values including <code>KIPP Paterson</code></li>
+</ul>
+<p>Singular tests, in <code>src/dbt/kipptaf/tests/</code>, all three anchored on
+<code>int_people__staff_roster</code> via <code>meta.dagster.ref</code> so each reports as one asset
+check rather than observations across both parents:</p>
+<ul>
+<li><code>int_people__staff_roster__locations_resolve_to_crosswalk</code> — every active
+  roster location resolves to a canonical clean name. This is the 100%-coverage
+  invariant, and it is what catches a new school before it silently denies
+  staff.</li>
+<li><code>int_people__staff_roster__tableau_location_set_expected</code> — the active
+  clean-name set matches the 30 expected, so an addition surfaces rather than
+  passing as a gap. Update the expected set in the same change that creates the
+  group.</li>
+<li><code>int_people__staff_roster__mail_populated_with_sam</code> — <code>mail</code> populated
+  wherever <code>sam_account_name</code> is populated. Warn-level, via the project default
+  rather than an override.</li>
+</ul>
+<p>All three pass against production: 0 unresolved locations, exactly 30 locations,
+0 records holding a <code>sam_account_name</code> without a <code>mail</code>.</p>
+<p>The <code>not_null</code> tests are warn-level and 5 of the 13 extracts carry non-zero
+counts, every one of them a roster-join miss rather than an unmapped location —
+verified by the absence of any row where a location is null while a
+roster-sourced column is populated. Shares: <code>operations_ekg</code> 6.57%,
+<code>content_team</code> 1.60%, <code>teacher_observations</code> 0.55%, <code>leadership_development</code>
+0.11%, <code>stipend_and_bonus_app</code> 0.01%, the rest zero.</p>
+<h3 id="preview-as-user-personas">Preview as User personas</h3>
+<table>
+<thead>
+<tr>
+<th>Persona</th>
+<th>Proves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Teacher</td>
+<td>self-only, Tier 1</td>
+</tr>
+<tr>
+<td>Manager</td>
+<td>self plus direct reports</td>
+</tr>
+<tr>
+<td>Miami AP</td>
+<td>the 9 ESE teachers are visible (job_function)</td>
+</tr>
+<tr>
+<td>School Leader</td>
+<td>cross-region norming access is present</td>
+</tr>
+<tr>
+<td>DSO</td>
+<td>Tier 5 role gate</td>
+</tr>
+<tr>
+<td>MDSO / MDO / HOS</td>
+<td>entity-wide, no location</td>
+</tr>
+<tr>
+<td>Paterson school staff</td>
+<td>the new branch; currently denied entirely</td>
+</tr>
+<tr>
+<td>KTAF person sitting in Room 9</td>
+<td>entity from person, not location</td>
+</tr>
+<tr>
+<td>One of the 3 UPN-mismatch staff</td>
+<td>the Tier 1 hedge</td>
+</tr>
+<tr>
+<td>A NULL-<code>job_function</code> teacher</td>
+<td>the fallback clause</td>
+</tr>
+<tr>
+<td>A formerly-hardcoded individual</td>
+<td>still has access via groups</td>
+</tr>
+</tbody>
+</table>
+<h3 id="blocking-pre-check">Blocking pre-check</h3>
+<p><strong>All 12 formerly-hardcoded individuals need their group coverage confirmed
+before any edit lands.</strong> Gutting an individual grant assumes the person is
+covered by a group. If any were hardcoded <em>because</em> they were not in the right
+group, gutting silently removes their access. Tableau group membership is not
+readable through the MCP — there is no group tool — so this is a manual check by
+the author or IT.</p>
+<h3 id="rollout-order">Rollout order</h3>
+<ol>
+<li>dbt merged and built first. A calc referencing <code>[mail]</code> before the column
+   exists breaks the workbook.</li>
+<li>The four simple workbooks — Teacher Goals, Manager Survey Reports, Manager
+   Survey Rollup, Personalized Survey Links — to shake out the contract on
+   low-risk surfaces.</li>
+<li>The remaining complex ones, SchoolMint Grow (6 calcs) last.</li>
+<li>Tag <code>entra-ready</code> per item. Completion is auditable read-only via the Tableau
+   MCP with <code>tags:eq:entra-ready</code>.</li>
+</ol>
+<h3 id="federal-grants-timesheet-approval-carries-a-defect-not-a-variant">Federal Grants Timesheet Approval carries a defect, not a variant</h3>
+<p>Its <code>userattribute</code> field calls <code>USERATTRIBUTE('username')</code>. That is a mistake
+in the workbook, not a deliberate embedding pattern — it should be <code>USERNAME()</code>
+like every other item. Replace the call and apply the standard block; no
+separate fix path is needed.</p>
+<p>Worth verifying while in there: <code>USERATTRIBUTE()</code> returns NULL unless a
+Connected App or JWT supplies that attribute, and a NULL comparison excludes the
+row. If nothing has been supplying <code>username</code>, this field has been inert and
+whatever it gates has been failing closed for ordinary viewers. Confirm with
+Preview as User what the dashboard shows <strong>before</strong> the edit, so the change in
+behavior is understood rather than discovered later.</p>
+<h3 id="rollback">Rollback</h3>
+<p>Capture each workbook's current calc text before editing, so a bad publish has a
+known-good string to restore. Tableau revision history is the backstop.</p>
+<h2 id="risks">Risks</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gutting individuals removes access someone needs</td>
+<td>Blocking pre-check above</td>
+</tr>
+<tr>
+<td>A mistyped group name fails silently rather than erroring</td>
+<td>Persona matrix; verify names against Server</td>
+</tr>
+<tr>
+<td><code>ISMEMBEROF()</code> may reject a non-literal argument</td>
+<td>Fall back to 26 explicit branches</td>
+</tr>
+<tr>
+<td>Redesign compressed against the cutover date</td>
+<td>Dual-match lets workbooks ship one at a time</td>
+</tr>
+<tr>
+<td>25 teachers have NULL <code>job_function</code></td>
+<td>Documented fallback clause</td>
+</tr>
+</tbody>
+</table>
+<h2 id="open-questions">Open questions</h2>
+<ul>
+<li>Does <code>ISMEMBEROF()</code> accept an expression on this Server version? Two minutes
+  in Desktop settles it.</li>
+<li>Confirm <code>KNJ-SG-Tableau All Staff Room 12</code> against Server. Rooms 9, 10 and 11
+  use <code>KNJ-SG-Tableau All Room N</code>, so the <code>All Staff</code> form may be a typo. Rooms
+  are not gated on, so this may be moot.</li>
+<li>Teacher Goals and Manager Survey Rollup datasources need confirming from the
+  workbooks.</li>
+<li>5 staff carry <code>job_function = 'Teacher'</code> with titles of Assistant School
+  Leader, Dean, or Director of Orchestra and Music. Looks like an ADP mapping
+  error that would expose an ASL's data to APs. Refer to People Operations.</li>
+</ul>
+<h2 id="follow-ups">Follow-ups</h2>
+<ul>
+<li><strong>Rename canonical clean names</strong> to current school names, coordinated with the
+  three lookup sheets that join on them —
+  <code>stg_google_sheets__coupa__address_name_crosswalk</code>,
+  <code>stg_google_sheets__egencia__traveler_groups</code>,
+  <code>stg_google_sheets__zendesk_org_lookup</code>. When this lands, delete the five
+  bridge branches. Deliberately excluded here: 33 models consume the crosswalk,
+  which is too wide a blast radius for cutover week.</li>
+<li><strong>Populate <code>job_function</code></strong> for the 25 affected teachers, then delete the
+  fallback clause.</li>
+<li><strong>Ops sheet fixes:</strong> <code>KIPP Miami - Poinciana Campus</code> carries
+  <code>campus_name = 'KIPP Miami - North Campus'</code>, which looks wrong.
+  <code>N. 13th St. Campus</code> (Purpose and Upper Roseville, 131 staff) has no Tableau
+  group.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

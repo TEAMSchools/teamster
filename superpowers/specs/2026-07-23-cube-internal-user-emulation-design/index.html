@@ -1,0 +1,2027 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Cube internal user emulation for RLS validation — design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-internal-user-emulation-for-rls-validation-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube internal user emulation for RLS validation — design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background-current-architecture-post-pr-4269" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background — current architecture (post PR #4269)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background — current architecture (post PR #4269)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validated-facts-from-the-2026-07-23-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validated facts from the 2026-07-23 session
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals-this-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals (this spec)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-0-pilot-critical-ship-now-low-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 0 — pilot-critical, ship now (low risk)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-verification-spike-answered-2026-07-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — verification spike (answered 2026-07-23)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-enrichment-maxage-admin-gated-act_as" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — enrichment + maxAge + admin-gated act_as
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-compatibility-constraint-kept-in-mind-not-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External-compatibility constraint (kept in mind, not built)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants-preserved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants preserved
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-verification-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions / verification items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-future" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope / future
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-23-cube-internal-user-emulation-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-internal-user-emulation-for-rls-validation-design">Cube internal user emulation for RLS validation — design</h1>
+<ul>
+<li><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4526">#4526</a></li>
+<li><strong>Status:</strong> Design (brainstorming output; feeds <code>superpowers:writing-plans</code>)</li>
+<li><strong>Date:</strong> 2026-07-23</li>
+<li><strong>Author:</strong> cristinabaldor (with Claude)</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<p>Give the data team a sanctioned, admin-gated way to see <strong>exactly what an
+internal user sees</strong> in the Cube semantic layer — for row-level-security (RLS)
+validation ahead of an internal-customer pilot — without letting real end-users
+self-elevate on production.</p>
+<p>The work is deliberately <strong>separated from the external-vendor API-key layer</strong>
+(<a href="https://github.com/TEAMSchools/teamster/issues/4455">#4455</a> /
+<a href="https://github.com/TEAMSchools/teamster/pull/4501">#4501</a>); this spec is
+internal emulation only. It stays source-compatible with that external layer
+(shared <code>checkAuth</code> dispatch, strictly separate group namespaces) so the vendor
+work can fold in later without rework.</p>
+<p>The design is <strong>staged</strong> so the pilot-critical piece ships first. The 2026-07-23
+session ran the verification spike, and it showed the two blocked surfaces fail
+for <strong>different</strong> reasons: the local Playground on the <code>checkAuth</code> <code>maxAge</code>
+token-age cap (fixable with a fresh token), and Cube Cloud because it injects
+its own <strong>unenriched</strong> security context that never runs through <code>resolveAccess</code>.</p>
+<h2 id="background-current-architecture-post-pr-4269">Background — current architecture (post PR #4269)</h2>
+<p>Authentication and RLS flow through one identity-agnostic pipeline:</p>
+<div class="highlight"><pre><span></span><code>checkAuth (REST/MCP)  ─┐
+                       ├─→ resolveAccess(email) ─→ buildSecurityContext ─→ groups ─→ per-view access_policy
+checkSqlAuth (SQL API)─┘
+</code></pre></div>
+<p>Everything downstream reads only the <em>shape</em> of the security context, not how it
+was produced. Grounded in code:</p>
+<ul>
+<li><a href="../../../src/cube/cube.js"><code>cube.js</code></a> <code>checkAuth</code> verifies the bearer token
+  (HS256 against <code>CUBEJS_API_SECRET</code>, with a <code>maxAge: "12h"</code> cap on the token's
+  <code>iat</code>), reads the <code>email</code> claim, and sets
+  <code>req.securityContext = await resolveAccess(email)</code>. It <strong>ignores any
+  caller-supplied context</strong> — the entire context is rebuilt from the email.</li>
+<li><code>checkSqlAuth</code> resolves identity from the connecting SQL <code>user</code> (or
+  <code>CUBE_SQL_DEV_EMAIL</code> outside production), and <code>canSwitchSqlUser</code> lets the SQL
+  super-user (<code>cube-superset-service</code>) impersonate <code>@apps.teamschools.org</code>
+  accounts via <code>__user</code>.</li>
+<li><code>resolveAccess(email)</code> reads one row from <code>dim_staff_cube_access</code> plus
+  reportees from <code>dim_staff_reporting_chain</code>, computes allow-lists, and calls
+  <code>access.buildSecurityContext(...)</code>. It fails <strong>closed</strong> (empty default-deny
+  context) on any error.</li>
+<li><a href="../../../src/cube/access.js"><code>access.js</code></a> holds the pure, unit-tested logic
+  (<code>buildGroups</code>, <code>buildSecurityContext</code>, <code>computeAllowedAbbreviations</code>,
+  <code>computeAllowedDepartmentGroups</code>).</li>
+</ul>
+<p><strong>The gap:</strong> because the context is derived only from the caller's own resolved
+email, there is no first-class "act as user X" path, and each blocked surface
+fails differently:</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Hook</th>
+<th>State</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local SQL API</td>
+<td><code>checkSqlAuth</code></td>
+<td><strong>Works</strong></td>
+<td>Connect as the viewer email in <code>user</code>; runs even in dev mode. Ground-truth validation surface</td>
+</tr>
+<tr>
+<td>Local Playground (REST)</td>
+<td><code>checkAuth</code></td>
+<td><strong>Works (fresh token)</strong></td>
+<td><code>checkAuth</code> runs in dev mode (Cube 1.6.59); paste <code>{"email": "target"}</code> into the Security Context editor. Earlier "denied" was the <code>maxAge</code> cap rejecting a stale cached token</td>
+</tr>
+<tr>
+<td>Cube Cloud Playground / Explore</td>
+<td><code>checkAuth</code> bypassed</td>
+<td><strong>Denied (unenriched context)</strong></td>
+<td>Cube Cloud injects its own context (top-level <code>email</code> = target, <code>cubeCloud.username</code> = caller, <code>iss: "cubecloud"</code>) <strong>directly</strong> — <code>resolveAccess</code> never runs, so <code>contextToGroups</code> finds no <code>groups</code> and <code>row_level</code> fields are absent → <code>WHERE (1 = 0)</code>, views hidden</td>
+</tr>
+</tbody>
+</table>
+<h3 id="validated-facts-from-the-2026-07-23-session">Validated facts from the 2026-07-23 session</h3>
+<ul>
+<li>The <strong>local SQL API matrix works end to end</strong>: connecting as a <code>network</code>,
+  <code>region</code>, <code>school</code>, <code>none</code>, and unresolved viewer returned exactly the right
+  scope (all regions / one region / one school / zero / zero). This is the
+  current ground-truth validation tool.</li>
+<li>The <strong>REST <code>checkAuth</code> + email-JWT path resolves correctly on prod Cube
+  Cloud</strong>: the <code>cube</code> MCP mints an <code>email</code>-claim JWT and gets full network
+  scope.</li>
+<li>A <strong>local-dev blocker was found and patched (scaffold)</strong>: with
+  <code>CUBEJS_DB_BQ_CREDENTIALS</code> unset ("uses ADC locally"), <code>resolveAccess</code>'s
+  hand-rolled BigQuery client runs <code>JSON.parse("")</code> at <code>cube.js:99</code>, throws, and
+  fail-closes to deny-all for every viewer. The driver itself falls back to ADC;
+  <code>resolveAccess</code> does not. Fixed by an ADC fallback (Phase 0).</li>
+<li><strong>Local Playground: <code>checkAuth</code> runs in dev mode; the blocker was a stale
+  token hitting <code>maxAge</code>.</strong> A stack trace on <code>/cubejs-api/v1/meta</code> showed
+  <code>checkAuth</code> firing in dev mode and throwing
+  <code>TokenExpiredError: maxAge exceeded</code> (<code>cube.js:227</code>) on a cached Playground
+  token whose <code>iat</code> was ~5 weeks old. Pasting <code>{"email": "target"}</code> with a
+  freshly minted token then resolves the target correctly. So the CLAUDE.md "dev
+  mode skips checkAuth" note is <strong>wrong for this version</strong>, and local
+  email-emulation works.</li>
+<li><strong>Cube Cloud injects its own unenriched context and bypasses <code>checkAuth</code>.</strong>
+  The query security context on Cube Cloud reads
+  <code>{ "email": "&lt;target&gt;", "cubeCloud": { "username": "&lt;caller&gt;", "roles": ["Developer"], ... }, "iss": "cubecloud", "exp": ... }</code>
+  — a top-level <code>email</code> (the target typed into the Security Context box), the
+  real console user under <code>cubeCloud.username</code>, and <strong>no <code>iat</code></strong>. It produced
+  <code>WHERE (1=0)</code>, <strong>not</strong> a 403 — proving <code>checkAuth</code> did not process it (a
+  missing-<code>iat</code> token would have thrown under <code>maxAge</code>). Cube Cloud injects the
+  object directly; <code>contextToGroups</code> finds no top-level <code>groups</code> → default-deny.
+  This is a <strong>different</strong> blocker from the local <code>maxAge</code> one, and it is the
+  real reason Explore/Playground deny on Cube Cloud. Usefully, it hands us both
+  identities for <code>act_as</code>: the caller in <code>cubeCloud.username</code>, the target in the
+  top-level <code>email</code>.</li>
+</ul>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>The data team can emulate any internal user (by email) to validate RLS before
+  the pilot, on the surfaces the pilot actually uses.</li>
+<li>Emulation is <strong>admin-gated</strong> and honored on <strong>any deployment</strong> (local, branch
+  staging, prod), per the chosen trust model — real end-users can never
+  self-elevate.</li>
+<li>Emulation is <strong>faithful</strong>: it resolves the target's real HR-derived context
+  (groups, <code>region_key</code>, allow-lists, reporting chain), not a hand-crafted stub.</li>
+<li>Source-compatible with the external-vendor API-key layer (#4455 / #4501).</li>
+</ul>
+<h2 id="non-goals-this-spec">Non-goals (this spec)</h2>
+<ul>
+<li>External-vendor API keys / <code>resolveApiKey</code> — deferred to #4501 / #4455.</li>
+<li>Changing <code>canSwitchSqlUser</code> or the SQL super-user model.</li>
+<li>Self-serve emulation for non-admins; a partner/emulation UI.</li>
+<li>A durable warehouse audit sink (v1 uses Cube Cloud logs plus a structured log
+  line; see Audit).</li>
+</ul>
+<h2 id="design">Design</h2>
+<h3 id="phase-0-pilot-critical-ship-now-low-risk">Phase 0 — pilot-critical, ship now (low risk)</h3>
+<ol>
+<li><strong>Make the <code>resolveAccess</code> ADC fallback permanent.</strong> When
+   <code>CUBEJS_DB_BQ_CREDENTIALS</code> is set, parse it as today; when it is unset, build
+   the client with <code>projectId</code> only and let Application Default Credentials
+   resolve (exactly what the BigQuery driver already does). Keep the <code>projectId</code>
+   pin so ADC bills <code>teamster-332318</code> (preserves the #4466 fix). This turns the
+   session scaffold into real code.</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">bqOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">projectId</span><span class="o">:</span><span class="w"> </span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CUBEJS_DB_BQ_PROJECT_ID</span><span class="w"> </span><span class="p">};</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CUBEJS_DB_BQ_CREDENTIALS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">bqOptions</span><span class="p">.</span><span class="nx">credentials</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span>
+<span class="w">    </span><span class="nx">Buffer</span><span class="p">.</span><span class="kr">from</span><span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CUBEJS_DB_BQ_CREDENTIALS</span><span class="p">,</span><span class="w"> </span><span class="s2">"base64"</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span>
+<span class="w">      </span><span class="s2">"utf8"</span><span class="p">,</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">  </span><span class="p">);</span>
+<span class="p">}</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">bq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">BigQuery</span><span class="p">(</span><span class="nx">bqOptions</span><span class="p">);</span>
+</code></pre></div>
+<ol>
+<li><strong>Document the local validation surfaces</strong> as the official pre-pilot tools:
+   the SQL API matrix (<code>.claude/scratch/rls_matrix.py</code> pattern — reconnect per
+   viewer email, assert scope) and the local Playground <code>{email}</code>-paste method.
+   Capture in <code>src/cube/CLAUDE.md</code> and <code>docs/guides/cube.md</code>.</li>
+</ol>
+<p>This alone lets the team sign off each pilot user's scope, so <strong>the pilot is not
+blocked on the phases below</strong>.</p>
+<h3 id="phase-1-verification-spike-answered-2026-07-23">Phase 1 — verification spike (answered 2026-07-23)</h3>
+<p>The spike asked how each surface delivers identity. Answered:</p>
+<ul>
+<li><strong>Local Playground:</strong> <code>checkAuth</code> runs in dev mode; a fresh <code>{email}</code> token
+  resolves the target; a stale token trips <code>maxAge</code>.</li>
+<li><strong>Cube Cloud:</strong> <code>checkAuth</code> is bypassed; Cube Cloud injects an unenriched
+  context (top-level <code>email</code> = target, <code>cubeCloud.username</code> = caller,
+  <code>iss: "cubecloud"</code>, no <code>iat</code>) → <code>contextToGroups</code> returns <code>[]</code> → deny.</li>
+</ul>
+<p>Remaining Cube Cloud items to confirm on staging:</p>
+<ol>
+<li>Does <strong>"Enable Cloud Auth Integration"</strong> (Settings → Configuration) change
+   how the context is injected (e.g. route it through our hooks)?</li>
+<li>What SQL <code>user</code> does <strong>Explore</strong> connect as, and does <code>__user</code> impersonation
+   work for <code>CUBEJS_SQL_SUPER_USER</code> (given <code>canSwitchSqlUser</code>)?</li>
+<li>Can <code>contextToGroups</code> <strong>mutate</strong> the securityContext (populate <code>region_key</code> /
+   allow-lists), or is a dedicated context-transform hook required?</li>
+</ol>
+<p><strong>Decision gate:</strong> the fixes are now surface-specific — local needs the <code>maxAge</code>
+decision, Cube Cloud needs server-side <strong>enrichment</strong> of the injected context.
+Both are Phase 2.</p>
+<h3 id="phase-2-enrichment-maxage-admin-gated-act_as">Phase 2 — enrichment + <code>maxAge</code> + admin-gated <code>act_as</code></h3>
+<p>Two surface-specific fixes over one shared resolver.</p>
+<p><strong>(a) Cube Cloud context enrichment (the cloud blocker).</strong> Cube Cloud delivers
+both identities in the injected context: the authenticated caller in
+<code>cubeCloud.username</code>, the emulation target in the top-level <code>email</code>. The
+deployment must <strong>enrich</strong> this context server-side — gate on
+<code>cubeCloud.username</code> ∈ the impersonator set, then <code>resolveAccess(email)</code> and
+populate the resulting <code>groups</code> + <code>region_key</code> + allow-lists onto the security
+context the policies read. Leading seam: <code>contextToGroups</code> (runs on Cube Cloud,
+receives the context) — confirm it can <strong>mutate</strong> the securityContext, not just
+return groups; else use a context-transform hook. Any path that runs the
+<code>cubecloud</code> token through <code>jwt.verify</code> must <strong>not</strong> impose <code>maxAge</code> (no <code>iat</code>).</p>
+<p><strong>(b) The <code>maxAge</code> control (the local blocker).</strong> <code>checkAuth</code>'s <code>maxAge: "12h"</code>
+(<code>cube.js:227</code>) rejects any token whose <code>iat</code> is over 12h old — which breaks the
+Playground (stale cached token). A security decision, not a snap change; options
+to weigh with the analytics-engineer code owners (against the #4269 rationale
+that a compromised minter cannot extend life via <code>exp</code> alone):</p>
+<ul>
+<li>Raise/remove <code>maxAge</code> and rely on the token's own <code>exp</code>.</li>
+<li>Scope <code>maxAge</code> to only the short-lived MCP-minted tokens (which set a 5-min
+  <code>exp</code>), exempting interactive Playground/console tokens.</li>
+<li>Keep it and document a "re-mint a fresh token" step per surface — fragile.</li>
+</ul>
+<p><strong>(c) Admin-gated <code>act_as</code> (API/MCP + explicit gating).</strong> For the REST/MCP
+surface, add an impersonation path:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">callerEmail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">payload</span><span class="p">.</span><span class="nx">email</span><span class="p">;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">actAs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">payload</span><span class="p">.</span><span class="nx">act_as</span><span class="p">;</span><span class="w"> </span><span class="c1">// optional target</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">callerCtx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">resolveAccess</span><span class="p">(</span><span class="nx">callerEmail</span><span class="p">);</span>
+<span class="nx">req</span><span class="p">.</span><span class="nx">securityContext</span><span class="w"> </span><span class="o">=</span>
+<span class="w">  </span><span class="nx">actAs</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nx">isImpersonator</span><span class="p">(</span><span class="nx">callerEmail</span><span class="p">,</span><span class="w"> </span><span class="nx">callerCtx</span><span class="p">)</span>
+<span class="w">    </span><span class="o">?</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">resolveAccess</span><span class="p">(</span><span class="nx">actAs</span><span class="p">)</span><span class="w"> </span><span class="c1">// faithful emulation of the target</span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="nx">callerCtx</span><span class="p">;</span><span class="w"> </span><span class="c1">// own scope; act_as ignored for non-impersonators</span>
+</code></pre></div>
+<p>The Cube Cloud path (a) is the same gate expressed through <code>cubeCloud.username</code>;
+the REST/MCP path uses an <code>act_as</code> claim. The impersonation decision is made on
+the <strong>caller's real resolved identity</strong>, so it is unforgeable.</p>
+<p><strong>Where "who may impersonate" lives:</strong></p>
+<ul>
+<li><strong>v1 — <code>CUBE_IMPERSONATORS</code> environment variable</strong> (comma-separated data-team
+  emails). Ships without a dbt change; fits the pilot deadline.</li>
+<li><strong>Later — warehouse column</strong> (<code>is_cube_impersonator</code> in
+  <code>dim_staff_cube_access</code>), surfaced by <code>buildSecurityContext</code> as
+  <code>can_impersonate</code>. HR-governed; migrate post-pilot. The
+  <code>isImpersonator(email, ctx)</code> signature accommodates both.</li>
+</ul>
+<p><strong>SQL API / Explore:</strong> impersonation there is already expressible via the
+existing <code>canSwitchSqlUser</code> super-user + <code>__user</code> mechanism; do <strong>not</strong> broaden
+it.</p>
+<p><strong>MCP:</strong> the <code>cube</code> MCP mints an <code>email</code>-only JWT; <code>act_as</code> support there is a
+follow-up, not v1.</p>
+<h3 id="audit">Audit</h3>
+<p>Impersonation moves PII visibility, so it needs a trail. The enrichment/<code>act_as</code>
+path emits a structured log line when a caller resolves as a different target
+(<code>caller</code>, <code>act_as</code>/<code>email</code>, timestamp — no row data) into Cube Cloud logs. A
+durable sink is a future add if compliance requires retention.</p>
+<h2 id="external-compatibility-constraint-kept-in-mind-not-built">External-compatibility constraint (kept in mind, not built)</h2>
+<ul>
+<li>The <code>checkAuth</code> token-routing must be shaped so #4501's <code>resolveApiKey</code>
+  (key-prefix branch) drops in as a sibling without reworking the <code>act_as</code>
+  branch.</li>
+<li><strong>Group namespaces stay strictly separate:</strong> <code>act_as</code> / Cube Cloud enrichment
+  only ever resolves <strong>internal</strong> context via <code>resolveAccess</code> (<code>student-*</code> /
+  <code>staff-*</code>); <code>external-*</code> groups are never emitted by <code>resolveAccess</code>. The two
+  never cross.</li>
+</ul>
+<h2 id="testing-strategy">Testing strategy</h2>
+<ul>
+<li><strong>Unit</strong> (<code>node --test src/cube/access.test.js</code> + a <code>cube.js</code> harness for the
+  hook): impersonator + <code>act_as</code>/<code>cubeCloud.username</code> → target context;
+  <strong>non-impersonator + <code>act_as</code> → own context, not target</strong> (the critical
+  negative case); unknown/unresolvable target → fail-closed; <code>isImpersonator</code>
+  membership; enrichment populates <code>groups</code> <strong>and</strong> <code>region_key</code>/allow-lists.</li>
+<li><strong>Regression:</strong> the internal <code>resolveAccess</code> path is unchanged when no
+  <code>act_as</code> is present; existing <code>student-*</code> / <code>staff-directory</code> / <code>staff-pii</code>
+  behavior unchanged. Confirm any <code>maxAge</code> change still rejects an expired
+  short-lived MCP token.</li>
+<li><strong>Local RLS:</strong> the SQL API viewer-loop matrix (ground truth), plus a
+  Playground <code>{email}</code>-paste check.</li>
+<li><strong>Cloud:</strong> on staging, confirm the enrichment resolves the injected context
+  and scopes correctly, and that out-of-scope rows are absent.</li>
+</ul>
+<h2 id="invariants-preserved">Invariants preserved</h2>
+<ul>
+<li>Cubes private, views public; fail-closed default-deny.</li>
+<li>Real end-users cannot self-elevate — impersonation is honored only for an
+  admin-gated caller (<code>CUBE_IMPERSONATORS</code> / <code>cubeCloud.username</code>).</li>
+<li>Internal identity resolution and existing internal view policies are
+  unchanged.</li>
+<li><code>canSwitchSqlUser</code> unchanged.</li>
+<li>The external group namespace is untouched by internal emulation.</li>
+</ul>
+<h2 id="alternatives-considered">Alternatives considered</h2>
+<ul>
+<li><strong>Test-persona API keys (from #4501 Part 2.2).</strong> They emulate the
+  <strong>external-*</strong> path only (explicit school list, no staff PII, no network), so
+  they cannot reproduce an internal user's real HR-derived scope. Complementary,
+  not a substitute.</li>
+<li><strong>Full-<code>securityContext</code> paste helper</strong>
+  (<code>.claude/scratch/dump_security_context.js</code>). Superseded for the local
+  Playground (a plain <code>{email}</code> paste resolves). May still matter on Cube Cloud
+  if enrichment is not wired, since Cube Cloud uses the injected context —
+  verify during Phase 2. Also a useful offline resolver cross-check.</li>
+<li><strong>Non-prod-only emulation.</strong> Rejected: the chosen trust model is admin-gated
+  on <strong>any</strong> deployment, so emulation must be able to run against prod for a
+  trusted admin.</li>
+</ul>
+<h2 id="open-questions-verification-items">Open questions / verification items</h2>
+<ul>
+<li>The <code>maxAge</code> control decision (raise / scope-to-MCP / keep) — needs code-owner
+  sign-off.</li>
+<li>Whether <code>contextToGroups</code> can mutate the securityContext, or a
+  context-transform hook is required for Cube Cloud enrichment.</li>
+<li>The remaining Cube Cloud config items (Cloud Auth Integration, Explore's SQL
+  <code>user</code>, <code>__user</code>), and whether Cube Cloud console access is already scoped to
+  the intended admin set (if so, console access itself is part of the gate).</li>
+<li>Final impersonator source for v1 (<code>CUBE_IMPERSONATORS</code> list assumed; confirm
+  the data-team email set).</li>
+<li>Native Cube Cloud audit capability and log retention.</li>
+<li>Whether the pilot's customer-facing surface is Cube Cloud Explore, a BI tool
+  over the SQL API, or both — narrows which surface the fix must cover.</li>
+</ul>
+<h2 id="out-of-scope-future">Out of scope / future</h2>
+<ul>
+<li>External-vendor API-key layer (#4455 / #4501).</li>
+<li><code>act_as</code> support in the <code>cube</code> MCP.</li>
+<li>Migrating the impersonator flag from an environment variable to a warehouse
+  column.</li>
+<li>A durable (BigQuery/GCS) impersonation-audit sink.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4526">#4526</a> — this issue.</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4455">#4455</a> /
+  <a href="https://github.com/TEAMSchools/teamster/pull/4501">#4501</a> — external-vendor
+  API-key access + cloud emulation (sibling; folds in later).</li>
+<li><a href="https://github.com/TEAMSchools/teamster/pull/4269">#4269</a> — the HR-derived
+  security redesign this builds on (added the <code>maxAge</code> cap).</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4333">#4333</a> /
+  <a href="https://github.com/TEAMSchools/teamster/pull/4460">#4460</a> — assessment
+  materialization + <code>proficiency_rollup</code> pre-agg (the RLS validation that
+  surfaced this gap).</li>
+<li><code>#4466</code> — the <code>resolveAccess</code> BigQuery-client project pin that the ADC
+  fallback extends.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

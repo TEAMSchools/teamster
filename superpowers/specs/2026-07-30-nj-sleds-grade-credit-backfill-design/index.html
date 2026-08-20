@@ -1,0 +1,2461 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>NJ SLEDS Student Course Roster — grade and credit backfill - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#nj-sleds-student-course-roster-grade-and-credit-backfill" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              NJ SLEDS Student Course Roster — grade and credit backfill
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-handbook-requires" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the handbook requires
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions-load-bearing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions (load-bearing)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-band-rule-and-which-end-of-the-span-is-tested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The band rule, and which end of the span is tested
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-and-join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source and join
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#field-derivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field derivation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region-scoping-is-structural" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region scoping is structural
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fallback-for-the-coverage-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fallback for the coverage gap
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-artifact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The artifact
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The artifact">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The view
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-export-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The export script
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation gate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-profile-2026-07-29-extract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data profile (2026-07-29 extract)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data profile (2026-07-29 extract)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stored-letter-grades-are-already-handbook-legal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stored letter grades are already handbook-legal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#earned-credit-hours-already-encode-pass-and-fail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Earned credit hours already encode pass and fail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-fallback-actually-recovered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the fallback actually recovered
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-exception-to-source-fix-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named exception to source-fix-only
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contingencies-and-follow-ups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contingencies and follow-ups
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Contingencies and follow-ups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#elementary-passfail-contingent-not-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Elementary pass/fail (contingent, not planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#njsleds-identity-splice-follow-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NJSLEDS identity splice (follow-up)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blockers-outside-this-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blockers outside this scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items-to-confirm-during-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items to confirm during implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-30-nj-sleds-grade-credit-backfill-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="nj-sleds-student-course-roster-grade-and-credit-backfill">NJ SLEDS Student Course Roster — grade and credit backfill</h1>
+<p>Design spec for <a href="https://github.com/TEAMSchools/teamster/issues/4630">#4630</a>.</p>
+<p>Extends the audit runbook in
+<a href="../nj-sleds-roster/runbook.md"><code>docs/superpowers/nj-sleds-roster/runbook.md</code></a>
+(branch <code>anthonygwalters/docs/claude-nj-sleds-course-roster-runbook</code>, PR
+<a href="https://github.com/TEAMSchools/teamster/pull/4281">#4281</a>, unmerged as of this
+writing) and its design spec
+<a href="2026-06-29-nj-sleds-course-roster-runbook-design.md"><code>2026-06-29-nj-sleds-course-roster-runbook-design.md</code></a>.</p>
+<h2 id="context">Context</h2>
+<p>The Student Course Roster extract PowerSchool generates carries no usable grade
+values and a uniformly wrong credit value. Measured against the 2026-07-29
+extract loaded into <code>cokafor</code> (43,493 rows: Newark 33,150, Camden 10,343):</p>
+<ul>
+<li><code>NumericGradeEarned</code>, <code>AlphaGradeEarned</code>, and <code>CompletionStatus</code> are empty on
+  <strong>every</strong> row in both regions.</li>
+<li><code>CreditsEarned</code> is populated on all 14,343 secondary-code rows but has exactly
+  <strong>one distinct value, <code>0.000</code></strong>. Every high school student currently reports
+  earning zero credits toward graduation.</li>
+<li>Every row carries a <code>SectionExitDate</code>, so no row escapes the requirement on
+  the exit-date condition.</li>
+</ul>
+<p>Two causes, neither fixable at the source in the time available: customizations
+in the KTAF grading model, and mapping gaps in PowerSchool's NJ state-reporting
+configuration. Filing the submission is a formal certification that the data is
+accurate, so the file cannot ship in this state.</p>
+<h3 id="what-the-handbook-requires">What the handbook requires</h3>
+<p>All citations are to the <strong>NJ SLEDS Student Course Roster Submission Handbook,
+Version 1.4, dated July 28, 2026</strong> — a newer revision than the copy the runbook
+was originally written against. Pages 33 through 36 state the grade requirement
+four times in identical terms (overview, then once under each of the three grade
+elements):</p>
+<blockquote>
+<p>Grades or Completion Status are required to be collected for all students in
+courses with Secondary course codes and an available credit of greater than
+0.000.</p>
+<p>Grades or Completion Status are also required for students with
+Prior-to-secondary course codes that have a grade span of 060X and higher
+(where X is replaced with a full Grade Span such as 0606, 0607, 0608, and so
+on).</p>
+</blockquote>
+<p>Each element's "Is this Data Element Required?" section adds the exit-date
+condition: the rule applies to "all students with a <code>SectionExitDate</code> entered"
+in those two populations.</p>
+<p>Relevant domains and constraints:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Page</th>
+<th>Type and domain</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NumericGradeEarned</code></td>
+<td>34</td>
+<td>numeric, <code>0</code>–<code>100</code>, whole number</td>
+<td>not weighted; round decimals</td>
+</tr>
+<tr>
+<td><code>AlphaGradeEarned</code></td>
+<td>35</td>
+<td><code>A A+ A- B B+ B- C C+ C- D D+ D- E E+ E- F F+ F-</code></td>
+<td><code>E</code> is a grade, not "Exempt"</td>
+</tr>
+<tr>
+<td><code>CompletionStatus</code></td>
+<td>36</td>
+<td><code>P</code> <code>F</code> <code>W</code> <code>I</code> <code>NG</code></td>
+<td><code>P</code> is <strong>not</strong> legal in <code>AlphaGradeEarned</code></td>
+</tr>
+<tr>
+<td><code>CreditsEarned</code></td>
+<td>32</td>
+<td>numeric, <code>0.000</code>–<code>35.000</code>, min length 5</td>
+<td>mandatory for Secondary codes with a <code>SectionExitDate</code>; <strong>error if greater than <code>AvailableCredit</code></strong></td>
+</tr>
+<tr>
+<td><code>AvailableCredit</code></td>
+<td>27</td>
+<td>numeric, <code>0.000</code>–<code>35.000</code></td>
+<td>mandatory for Secondary; may be blank for Prior-to-secondary</td>
+</tr>
+</tbody>
+</table>
+<p>One or more of the three grade elements must be present for a row in scope; the
+handbook does not require all three.</p>
+<h2 id="decisions-load-bearing">Decisions (load-bearing)</h2>
+<ol>
+<li><strong>Populate <code>AlphaGradeEarned</code>, not <code>NumericGradeEarned</code>.</strong> Letter grades are
+   what the transcript shows, and — see the data profile below — the stored
+   letter grades already fall inside the handbook domain, so this needs no
+   mapping table and does not re-open the grading-model customization.</li>
+<li><strong>Pass/fail is out of scope.</strong> <code>P</code> is illegal in <code>AlphaGradeEarned</code>, so
+   pass/fail would have to go in <code>CompletionStatus</code>. The rows that would need it
+   are the ones the handbook does not require a grade for. See <em>Contingencies</em> —
+   this is deliberately deferred, not overlooked.</li>
+<li><strong><code>CreditsEarned</code> comes from PowerSchool's own earned-credit value</strong>, not
+   from a pass/fail rule we invent. <code>storedgrades.earnedcrhrs</code> already encodes
+   the outcome.</li>
+<li><strong>Two fields only.</strong> Every other column passes through byte-identical to the
+   native extract. This is a narrow, named exception to source-fix-only, not a
+   replacement for it.</li>
+<li><strong>A view plus a thin export script</strong>, both region-aware, living in <code>cokafor</code>
+   and the repo respectively. Not a dbt model — see <em>Non-goals</em>.</li>
+</ol>
+<h2 id="scope">Scope</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Rows in scope</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AlphaGradeEarned</code></td>
+<td>28,727</td>
+<td>Secondary-code rows with <code>AvailableCredit</code> greater than <code>0.000</code>, plus prior-to-secondary rows whose <code>GradeSpan</code> <strong>starts</strong> at <code>06</code> or higher</td>
+</tr>
+<tr>
+<td><code>CreditsEarned</code></td>
+<td>14,343</td>
+<td>Secondary-code rows only</td>
+</tr>
+</tbody>
+</table>
+<p>Row counts by band, from the 2026-07-29 extract:</p>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Classification</th>
+<th>Newark</th>
+<th>Camden</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HS</td>
+<td><code>sced_level = 'secondary'</code></td>
+<td>10,695</td>
+<td>3,648</td>
+<td>14,343</td>
+</tr>
+<tr>
+<td>MS</td>
+<td>prior-to-secondary, span starts <code>06</code>+</td>
+<td>10,746</td>
+<td>3,638</td>
+<td>14,384</td>
+</tr>
+<tr>
+<td>Out of scope</td>
+<td>prior-to-secondary, span starts below <code>06</code></td>
+<td>11,709</td>
+<td>3,057</td>
+<td>14,766</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td></td>
+<td><strong>33,150</strong></td>
+<td><strong>10,343</strong></td>
+<td><strong>43,493</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-band-rule-and-which-end-of-the-span-is-tested">The band rule, and which end of the span is tested</h3>
+<p>The handbook's <code>060X and higher</code> phrasing does not say which end of a grade span
+is tested, and the two readings differ by 219 Camden rows. Applied to the
+observed spans:</p>
+<table>
+<thead>
+<tr>
+<th>Span</th>
+<th>Starts</th>
+<th>Ends</th>
+<th>In scope</th>
+<th>Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0606</code>, <code>0707</code>, <code>0808</code></td>
+<td><code>06</code>+</td>
+<td><code>06</code>+</td>
+<td>yes</td>
+<td>14,384</td>
+</tr>
+<tr>
+<td><code>0508</code></td>
+<td><code>05</code></td>
+<td><code>08</code></td>
+<td>no</td>
+<td>20</td>
+</tr>
+<tr>
+<td><code>KG08</code></td>
+<td><code>KG</code></td>
+<td><code>08</code></td>
+<td>no</td>
+<td>199</td>
+</tr>
+<tr>
+<td><code>0505</code>, <code>0404</code>, <code>0303</code>, <code>0202</code>, <code>0101</code></td>
+<td>below</td>
+<td>below</td>
+<td>no</td>
+<td>12,872</td>
+</tr>
+<tr>
+<td><code>KGKG</code></td>
+<td><code>KG</code></td>
+<td><code>KG</code></td>
+<td>no</td>
+<td>1,675</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The rule tests the span's start.</strong> This reverses an earlier decision in this
+spec, and the reason is worth recording, because the original reasoning was
+sound but incomplete.</p>
+<p>The generous reading — testing the span's end, which pulls <code>0508</code> and <code>KG08</code>
+into scope — was chosen on the grounds that a wrongly-omitted graded row is a
+rejection while a wrongly-included blank one is merely a worklist item, and that
+219 rows was a negligible price. Implementation showed the price was not
+negligible: <strong>171 of those 219 rows have no grade in any source</strong>, because
+<code>KG08</code> is a kindergarten-through-8 span that carries no grades at all. Including
+them manufactured 171 rows that could never be filled, inflating the ungraded
+worklist from roughly 108 rows to 279. The handbook's own examples — <code>0606</code>,
+<code>0607</code>, <code>0608</code> — all start at <code>06</code>, so testing the start is also the more
+literal reading.</p>
+<p>Note that <code>KG</code> must be excluded by explicit membership test. A naive string
+comparison places <code>'KG'</code> above <code>'06'</code> lexicographically, so <code>&gt;= '06'</code> would pull
+all 1,675 <code>KGKG</code> rows into scope. The implementation tests membership in
+<code>('06','07','08','09','10','11','12')</code>.</p>
+<h2 id="architecture">Architecture</h2>
+<h3 id="source-and-join">Source and join</h3>
+<p>Primary source is <code>{region}_powerschool.stg_powerschool__storedgrades</code>, filtered
+to <code>academic_year = 2025</code> and <code>storecode = 'Y1'</code> — the year-final grade, which
+matches the handbook's "grade the student received upon completion of the course
+section."</p>
+<p>Join path, validated in both regions:</p>
+<div class="highlight"><pre><span></span><code>stg_student_extract.LocalIdentificationNumber -&gt; students.student_number
+students.id                                   -&gt; storedgrades.studentid
+stg_student_extract.LocalSectionCode          -&gt; storedgrades.sectionid
+</code></pre></div>
+<p><code>LocalSectionCode</code> is PowerSchool's <code>sections.id</code>. This was confirmed rather
+than assumed: all 1,508 distinct Newark section codes match <code>sections.id</code>, and
+<strong>zero</strong> match <code>section_number</code> or <code>dcid</code>.</p>
+<p>The join is 1:1. Joined row counts equal extract row counts exactly in both
+regions (33,150 and 10,343), so there is no fan-out. The extract itself is one
+row per <code>(LocalIdentificationNumber, LocalSectionCode)</code> pair with no duplicates.</p>
+<h3 id="field-derivation">Field derivation</h3>
+<p><code>AlphaGradeEarned</code> is a <strong>pass-through</strong> of <code>storedgrades.grade</code>, guarded
+against the handbook domain: a value outside the 18 legal codes resolves to
+blank and appears in the exception report rather than being emitted. The guard
+exists because the domain is an external contract that can drift, not because
+the current data violates it.</p>
+<p><code>CreditsEarned</code> is <code>storedgrades.earnedcrhrs</code> formatted to exactly three decimal
+places as a string. Formatting is part of the contract, not presentation: the
+handbook sets a minimum length of 5, so <code>1</code> is invalid where <code>1.000</code> is valid.</p>
+<h3 id="region-scoping-is-structural">Region scoping is structural</h3>
+<p>The view is a <code>union all</code> of two region-specific selects. The Newark branch
+reads <code>kippnewark_powerschool</code> against <code>stg_student_extract_newark</code>; Camden
+reads <code>kippcamden_powerschool</code> against <code>stg_student_extract_camden</code>. Neither
+branch can see the other's data.</p>
+<p>This matters because local identifiers are unique only within a district. The
+runbook documents 33 student local IDs shared across the two regions in the EOY
+data. A single select joining on <code>LocalIdentificationNumber</code> alone would
+manufacture false cross-region matches and assign grades to the wrong students.
+Structural separation makes that failure mode unreachable rather than relying on
+a <code>region</code> predicate being remembered in every join.</p>
+<h3 id="fallback-for-the-coverage-gap">Fallback for the coverage gap</h3>
+<p>Secondary source is <code>{region}_powerschool.stg_powerschool__pgfinalgrades</code>
+(PowerTeacher live final grades), used <strong>only</strong> to fill nulls. A stored grade
+always wins; the fallback never overrides one.</p>
+<ul>
+<li><code>AlphaGradeEarned</code> uses the same domain-guarded pass-through.</li>
+<li><code>CreditsEarned</code> requires a derived rule, because live grades carry no
+  earned-credit value: a passing grade (<code>D-</code> or better) takes <strong>the row's own
+  <code>AvailableCredit</code></strong>; a failing grade takes <code>0.000</code>. Sourcing the value from
+  the row itself makes the "must not exceed <code>AvailableCredit</code>" constraint
+  impossible to violate by construction.</li>
+</ul>
+<p>This is the only invented rule in the design, and it applies to exactly 2 rows —
+small enough to review individually before upload.</p>
+<p>Rows still blank after both sources stay blank and are listed in the exception
+report. Nothing is guessed.</p>
+<h2 id="the-artifact">The artifact</h2>
+<h3 id="the-view">The view</h3>
+<p><code>cokafor.rpt_student_course_submission</code> — all 25 submission columns in
+submission order, plus ten audit columns (<code>region</code>, <code>grade_band</code>,
+<code>stored_letter</code>, <code>stored_earned_credit</code>, <code>n_stored_letters</code>, <code>n_stored_credits</code>,
+<code>live_letter</code>, <code>n_live_letters</code>, <code>candidate_letter</code>, <code>grade_source</code>), at one row
+per extract row.</p>
+<p>The view is re-runnable with no edits. Each cycle the intern reloads the base
+tables with the existing reload script and the view reflects the new data
+automatically. This replaces the current practice of hand-editing a copy of the
+reload script per extract cycle.</p>
+<p>Because it is a view in <code>cokafor</code>, it is queryable from the BigQuery console,
+which keeps it on the runbook's documented critical path and lets the existing
+17 audit checks be pointed at the derived file as well as the native one.</p>
+<h3 id="the-export-script">The export script</h3>
+<p>A script in the pattern of the existing reload scripts: select from the view for
+one region, write a submission-ready CSV.</p>
+<p>The script exists because of two hard constraints, not preference:</p>
+<ol>
+<li><strong>Row count.</strong> Newark's 33,150 rows exceed what the BigQuery console will
+   hand back as a CSV download.</li>
+<li><strong>Formatting is correctness.</strong> <code>CreditsEarned</code> must keep three decimals and
+   the CDS columns must keep leading zeros (<code>07</code>, not <code>7</code>). A naive export
+   breaks both — the same failure class as the <code>--autodetect</code> trap the runbook
+   already documents for loads, in the opposite direction.</li>
+</ol>
+<p>Every column is written as a string, exactly as stored in the view. No numeric
+coercion anywhere in the export path.</p>
+<h2 id="validation-gate">Validation gate</h2>
+<p>A companion query that must return zero rows before the file goes to the
+state-access uploader:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>In-scope rows with a blank <code>AlphaGradeEarned</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Secondary rows with a blank <code>CreditsEarned</code>, or one not formatted to three decimals</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>AlphaGradeEarned</code> outside the 18 legal handbook values</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>CreditsEarned</code> greater than <code>AvailableCredit</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>CreditsEarned</code> outside <code>0.000</code>–<code>35.000</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Row-count parity per region between the view and its base table (fan-out guard)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Out-of-scope rows carrying a non-blank grade (scope-boundary guard)</td>
+</tr>
+</tbody>
+</table>
+<p>Check 7 is deliberate: it fails if the elementary contingency below is
+implemented without also updating this spec, so scope cannot drift silently.</p>
+<h2 id="data-profile-2026-07-29-extract">Data profile (2026-07-29 extract)</h2>
+<p>Evidence behind the decisions above. All figures are aggregates; no identifiable
+data appears in this spec.</p>
+<h3 id="stored-letter-grades-are-already-handbook-legal">Stored letter grades are already handbook-legal</h3>
+<p>The complete set of <code>Y1</code> letter grades for SY 2025-26 is 13 values —
+<code>A+ A A- B+ B B- C+ C C- D+ D D- F</code> — summing to exactly 25,006 (Newark) and
+8,493 (Camden), which is every <code>Y1</code> row in each region. No nulls, no
+out-of-domain codes, no local placeholder values. Every one of the 13 is legal
+<code>AlphaGradeEarned</code>.</p>
+<p>This is the finding that makes the pass-through viable and removes the need for
+a grade-scale mapping table.</p>
+<h3 id="earned-credit-hours-already-encode-pass-and-fail">Earned credit hours already encode pass and fail</h3>
+<p><code>earnedcrhrs</code> and <code>potentialcrhrs</code> are populated on 100% of <code>Y1</code> rows (25,006 of
+25,006 Newark; 8,493 of 8,493 Camden). <code>earnedcrhrs</code> equals <code>potentialcrhrs</code> for
+passing students and <code>0</code> for failing ones.</p>
+<p>Against the extract's own <code>AvailableCredit</code> on matched secondary rows:</p>
+<ul>
+<li><code>earnedcrhrs</code> exceeds <code>AvailableCredit</code> on <strong>zero</strong> rows.</li>
+<li><code>potentialcrhrs</code> differs from <code>AvailableCredit</code> on <strong>zero</strong> rows.</li>
+</ul>
+<p>So the two scales agree, and the handbook's credit constraint is already
+satisfied by the source data.</p>
+<h3 id="coverage">Coverage</h3>
+<table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Rows</th>
+<th>Matched to a <code>Y1</code> stored grade</th>
+<th>Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark HS</td>
+<td>10,695</td>
+<td>10,675</td>
+<td>20</td>
+</tr>
+<tr>
+<td>Newark MS (<code>0606</code>/<code>0707</code>/<code>0808</code>)</td>
+<td>10,746</td>
+<td>10,682</td>
+<td>64</td>
+</tr>
+<tr>
+<td>Camden HS</td>
+<td>3,648</td>
+<td>3,616</td>
+<td>32</td>
+</tr>
+<tr>
+<td>Camden MS (<code>0606</code>/<code>0707</code>/<code>0808</code>)</td>
+<td>3,638</td>
+<td>3,633</td>
+<td>5</td>
+</tr>
+<tr>
+<td><strong>In-scope subtotal</strong></td>
+<td><strong>28,727</strong></td>
+<td><strong>28,606 (99.6%)</strong></td>
+<td><strong>121</strong></td>
+</tr>
+</tbody>
+</table>
+<p>52 of the 121 gap rows are secondary (Newark HS 20 + Camden HS 32). Only the
+ones actually filled by the live fallback need the derived credit rule, not the
+whole 52 — measured at exactly 2 rows. See <em>What the fallback actually
+recovered</em> below.</p>
+<h3 id="what-the-fallback-actually-recovered">What the fallback actually recovered</h3>
+<p>Implementation measured the fallback's real yield, and it is far lower than this
+spec originally assumed. Of the 121 gap rows:</p>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Filled from a live final grade</td>
+<td>13</td>
+</tr>
+<tr>
+<td>Live grades disagree, so correctly left blank</td>
+<td>included below</td>
+</tr>
+<tr>
+<td>No usable grade in <strong>either</strong> source</td>
+<td>106</td>
+</tr>
+</tbody>
+</table>
+<p>Plus 2 rows whose only available grade was <code>F*</code> — a warehouse-internal marker,
+not a legal <code>AlphaGradeEarned</code> value — correctly rejected by the domain guard.
+<strong>Total ungraded: 108</strong> (Newark HS 19 + 1, Newark MS 55, Camden HS 29 + 1,
+Camden MS 3).</p>
+<p>The live fallback is therefore a marginal contributor, not the safety net this
+spec implied. The dominant outcome is that PowerSchool holds no grade at all for
+those rows — meaning the native extract could not have produced one either, so
+this is a source-data gap rather than a query limitation. Those 108 rows are a
+PowerSchool worklist: grades must be posted, or the sections excluded, before
+the file can ship. The validation gate reports them and <code>build_submission.py</code>
+refuses to export while they stand.</p>
+<p><strong>The domain guard is load-bearing, not defensive decoration.</strong>
+<code>stg_powerschool__pgfinalgrades</code> in the SY 2025-26 window carries 21,632 <code>F*</code>
+values, 202 <code>P</code>, and 2 <code>I</code> across the two regions. None are legal
+<code>AlphaGradeEarned</code> values (<code>P</code> and <code>I</code> belong to <code>CompletionStatus</code>). Without
+the guard, live-sourced rows would have carried them into a certified
+submission.</p>
+<h2 id="named-exception-to-source-fix-only">Named exception to source-fix-only</h2>
+<p>The runbook's cleaning model is explicit: defects are corrected at the source in
+PowerSchool so the native extract comes out clean, the extract CSV is never
+rewritten or post-filtered in BigQuery, and the handoff artifact is the
+regenerated native extract.</p>
+<p><strong>This work breaks that rule for two fields, on purpose.</strong> PowerSchool cannot
+emit <code>AlphaGradeEarned</code> or <code>CreditsEarned</code> correctly because of the
+grading-model customization and the state-reporting mapping gaps, and neither is
+fixable inside the submission window. The handoff artifact for the student file
+becomes the <strong>derived</strong> CSV rather than the native one.</p>
+<p>Constraints that keep the exception narrow:</p>
+<ul>
+<li>Exactly two fields are written. Every other column passes through unchanged.</li>
+<li>No row is added, removed, or filtered. Row-count parity is check 6.</li>
+<li>Every other defect — CDS above all — is still fixed at source.</li>
+<li>The exception is scoped to the student file. The staff file is untouched.</li>
+</ul>
+<p>Recording it here means the boundary is a decision with a rationale rather than
+an undocumented contradiction between the runbook and what actually ships.</p>
+<h2 id="contingencies-and-follow-ups">Contingencies and follow-ups</h2>
+<h3 id="elementary-passfail-contingent-not-planned">Elementary pass/fail (contingent, not planned)</h3>
+<p>The 14,766 out-of-scope rows (prior-to-secondary, span starting below <code>06</code>,
+including all <code>KGKG</code>) get no grade under this design, because the handbook does
+not require one for them.</p>
+<p>That reading is an inference. The handbook states the requirement affirmatively
+for two populations and is <strong>silent</strong> on whether a grade is permitted or
+expected outside them — it does not say those rows must be blank. Validators are
+routinely stricter than the prose they implement, and prior-year KTAF experience
+suggests the state may in fact expect values here.</p>
+<p><strong>If NJSLEDS returns errors or warnings on blank grade fields for those rows,</strong>
+the contingency is a <code>CompletionStatus</code> of <code>P</code> or <code>F</code> per row, derived from
+promotion: a student promoted to the next grade (SY 2026-27 grade level higher
+than SY 2025-26) takes <code>P</code> on all their courses; a student retained (grade level
+equal) takes <code>F</code>. <code>P</code> must go in <code>CompletionStatus</code>, never <code>AlphaGradeEarned</code>,
+where it is not a legal value.</p>
+<p>Adding it requires resolving, at minimum:</p>
+<ul>
+<li>The authoritative source for the SY 2026-27 grade level —
+  <code>students.sched_nextyeargrade</code> versus actual SY 2026-27 enrollment records.</li>
+<li>Students with no SY 2026-27 record at all: transfers out, and any student who
+  left the network. The equality test would mark them retained, which is wrong.</li>
+<li>Whether <code>int_reporting__promotional_status</code> should drive this instead. It is a
+  status indicator built on attendance and credits with region-specific
+  thresholds, not a record of the retention decision, so it likely cannot.</li>
+</ul>
+<p>Validation-gate check 7 fails if this is implemented without updating this spec.</p>
+<h3 id="njsleds-identity-splice-follow-up">NJSLEDS identity splice (follow-up)</h3>
+<p>For mismatch records that cannot be reconciled on the NJSLEDS end, a follow-up
+would splice state-held values into the extract's identity fields — writing
+<code>ref_state_student</code> and <code>ref_state_staff</code> values over the extract's own so the
+combination checks (runbook checks 2 and 12) pass.</p>
+<p>This is a materially larger departure than the grade backfill: it overwrites
+identity data rather than filling empty derived fields, and it applies to the
+staff file as well. Out of scope here, tracked separately.</p>
+<h2 id="blockers-outside-this-scope">Blockers outside this scope</h2>
+<p>The CDS defect identified in the June audit is <strong>still live</strong> in the 2026-07-29
+extract and gates the same upload:</p>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>County</th>
+<th>District</th>
+<th>School</th>
+<th>Rows</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark</td>
+<td><code>80</code></td>
+<td><code>7325</code></td>
+<td><code>965</code></td>
+<td>22,841</td>
+<td>correct</td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>blank</td>
+<td><code>7325</code></td>
+<td><code>732</code></td>
+<td>5,958</td>
+<td>wrong on both</td>
+</tr>
+<tr>
+<td>Newark</td>
+<td><code>80</code></td>
+<td><code>7325</code></td>
+<td><code>732</code></td>
+<td>4,351</td>
+<td>wrong school code</td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>blank</td>
+<td><code>1799</code></td>
+<td><code>179</code></td>
+<td>6,695</td>
+<td>wrong on both</td>
+</tr>
+<tr>
+<td>Camden</td>
+<td><code>07</code></td>
+<td><code>1799</code></td>
+<td><code>179</code></td>
+<td>3,648</td>
+<td>wrong school code</td>
+</tr>
+</tbody>
+</table>
+<p>20,652 of 43,493 rows (47%) carry a bad CDS, including every Camden row. Camden
+emits <code>179</code>, which is neither the expected <code>111</code> nor the Newark-style <code>732</code>
+pattern, but fits the same root cause: an unset Alternate School Number causing
+a fallback to the internal school number prefix.</p>
+<p>The fix remains the one-pass School Setup change on 3 Newark and 5 Camden
+schools documented in the runbook. <strong>A clean grade backfill does not make the
+file submittable on its own.</strong></p>
+<h2 id="open-items-to-confirm-during-implementation">Open items to confirm during implementation</h2>
+<ul>
+<li>~~Re-measure <code>Y1</code> coverage with the final band rule.~~ <strong>Resolved during
+  implementation.</strong> Coverage under the strict band rule is 28,606 of 28,727
+  (99.6%), a 121-row gap, of which 13 fill from the live fallback, 106 have no
+  grade in any source, and 2 are rejected as <code>F*</code>. See <em>What the fallback
+  actually recovered</em>.</li>
+<li>~~Confirm <code>pgfinalgrades</code> exposes a year-final reporting term.~~ <strong>Resolved
+  during implementation.</strong> It does not: <code>pgfinalgrades</code> has no <code>academic_year</code>
+  column, holds history back to 2004, and its <code>Y1</code> term stopped being used
+  in 2018. The fallback scopes by <code>enddate</code> and takes the greatest <code>enddate</code> per
+  student-section, which selects the terminal term whatever structure the
+  section uses. Several term types close on the same date and disagree, so the
+  aggregation counts distinct letters and reports a conflict rather than
+  picking.</li>
+<li>Confirm the exported CSV matches the native extract's quoting, line endings,
+  and encoding. The reload scripts read the native files with <code>utf-8-sig</code>,
+  implying a BOM; the export must not silently change what the state's parser
+  sees.</li>
+<li>Verify the expected Camden school code is still <code>111</code> against the NJDOE
+  directory before anyone keys it.</li>
+<li>Diff handbook v1.4 against the version the runbook was written from,
+  particularly the v1.2 change making <code>GradeSpan</code> blank-able for Secondary and
+  <code>AvailableCredit</code> blank-able for Prior-to-secondary, which runbook check 9
+  encodes.</li>
+<li>Confirm no in-scope row draws a grade from a section whose <code>CourseType</code> is <code>C</code>
+  (dual enrollment) where the grade is held by the college rather than
+  PowerSchool.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li><strong>No dbt model.</strong> This is a submission-window tool reading a hand-loaded
+  dataset (<code>cokafor</code>) that exists only during the audit cycle. Promoting it to
+  dbt is a reasonable durability question for next year's cycle, and is noted as
+  such in the project context, but it is not this work.</li>
+<li>No changes to the staff file.</li>
+<li>No correction of any field other than the two named, including CDS.</li>
+<li>No promotion or retention logic (see <em>Contingencies</em>).</li>
+<li>No row filtering or deduplication. Row-count parity is preserved, but row
+  <strong>order</strong> is not: BigQuery's output order across a <code>union all</code> with left joins
+  is nondeterministic, and no ordinal column was captured at load, so the native
+  extract's row order is not recoverable. This is harmless for a keyed roster
+  upload, which matches rows on student and section identifiers, not position.</li>
+<li>No row-level identifiable data on any external surface. The exported CSV is
+  PII-bearing and goes to the state-access uploader only; the view stays in
+  <code>cokafor</code>, in-tenant.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
