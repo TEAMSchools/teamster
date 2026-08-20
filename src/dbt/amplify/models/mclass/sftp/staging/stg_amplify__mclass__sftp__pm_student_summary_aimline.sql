@@ -28,6 +28,8 @@ with
                     then 'Word Reading (WRF)'
                     when 'PSF'
                     then 'Phonemic Awareness (PSF)'
+                    when '(DEC-IW)'
+                    then 'Irregular Words (DEC-IW)'
                     else measure
                 end as measure
             ),
@@ -91,6 +93,8 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
+        when 'DEC'
+        then 'Irregular Words'
         else measure_name_code
     end as measure_name,
 

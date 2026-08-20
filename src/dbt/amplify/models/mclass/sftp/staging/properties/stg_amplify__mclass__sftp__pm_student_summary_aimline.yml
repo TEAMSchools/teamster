@@ -14,6 +14,34 @@ models:
           - unique
         constraints:
           - type: primary_key
+      - name: measure
+        data_type: string
+        description: >-
+          Long-form DIBELS measure label, for example 'Reading Fluency (ORF)'.
+          Amplify sends this feed as short codes such as 'ORF' while the sibling
+          PM feed sends long labels, so the mapping translates known short codes
+          and passes long-form values through unchanged. Both models therefore
+          emit the same values. Joins to expected_measure_standard downstream,
+          which carries the long labels.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - Composite
+                  - Decoding (NWF-WRC)
+                  - Letter Names (LNF)
+                  - Letter Sounds (NWF-CLS)
+                  - Phonemic Awareness (PSF)
+                  - Reading Accuracy (ORF-Accu)
+                  - Reading Comprehension (Maze)
+                  - Reading Fluency (ORF)
+                  - Word Reading (WRF)
+              config:
+                severity: error
+                where: assessment_edition = 'DIBELS 8th Edition'
       - name: source_file_name
         data_type: string
         description: Name of the SFTP source CSV file.
@@ -100,11 +128,6 @@ models:
       - name: sync_date
         data_type: date
         description: Date the assessment data was synced.
-      - name: measure
-        data_type: string
-        description: >-
-          Expanded measure name with abbreviation (e.g., 'Reading Fluency
-          (ORF)'). Unmapped values pass through.
       - name: probe_number
         data_type: int64
         description: Probe sequence number within the PM period.

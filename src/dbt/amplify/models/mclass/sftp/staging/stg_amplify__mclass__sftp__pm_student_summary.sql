@@ -9,7 +9,6 @@ with
                 additional_student_id_primarysisid,
                 sync_date,
                 total_number_of_probes,
-                measure,
                 school_primary_id
             ),
 
@@ -39,25 +38,6 @@ with
             if(
                 enrollment_grade = 'K', 0, cast(enrollment_grade as int)
             ) as enrollment_grade_int,
-
-            case
-                measure
-                when 'Maze'
-                then 'Reading Comprehension (Maze)'
-                when 'NWF-WRC'
-                then 'Decoding (NWF-WRC)'
-                when 'NWF-CLS'
-                then 'Letter Sounds (NWF-CLS)'
-                when 'ORF'
-                then 'Reading Fluency (ORF)'
-                when 'ORF-Accu'
-                then 'Reading Accuracy (ORF-Accu)'
-                when 'WRF'
-                then 'Word Reading (WRF)'
-                when 'PSF'
-                then 'Phonemic Awareness (PSF)'
-                else measure
-            end as measure,
 
             case
                 measure
@@ -100,6 +80,8 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
+        when 'DEC'
+        then 'Irregular Words'
         else measure_name_code
     end as measure_name,
 
