@@ -1,18 +1,16 @@
 models:
   - name: int_focus__calendar_week
     description: >-
-      Focus school weeks — the analogue of int_powerschool__calendar_week, one
-      row per school per week that contains at least one in-session day inside a
-      quarter marking period. Quarter and semester come from
-      stg_focus__marking_periods rather than PowerSchool termbins. Focus has no
-      cycle_day or bell_schedule analogue, so those PowerSchool joins are
-      dropped rather than faked; they only asserted a valid schedule existed.
-      Emits Focus's internal schoolid; kipptaf crosswalks it. Internal-only — a
-      rpt_ view must sit between this model and any external consumer.
+      Focus school weeks, one row per school per week that contains at least one
+      in-session day inside a quarter marking period. Quarter and semester come
+      from stg_focus__marking_periods. Focus has no cycle_day or bell_schedule
+      analogue, so no such columns exist here. Emits Focus's internal schoolid;
+      kipptaf crosswalks it. Internal-only -- a rpt_ view must sit between this
+      model and any external consumer.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [schoolid, yearid, week_start_date]
+            combination_of_columns: [schoolid, academic_year, week_start_date]
           config:
             severity: error
     columns:
@@ -30,10 +28,9 @@ models:
         description: Sunday following the week.
       - name: school_level
         description: ES, MS, or HS from int_focus__schools.
-      - name: yearid
-        description: Academic year minus 1990.
       - name: academic_year
-        description: Academic year start year (2026 = 2026-27).
+        description:
+          Academic year start year (2026 = 2026-27), from Focus syear.
       - name: school_week_start_date
         description: First in-session day in the week.
       - name: school_week_end_date

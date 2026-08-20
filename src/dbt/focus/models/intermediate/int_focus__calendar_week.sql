@@ -4,18 +4,16 @@ with
             cd.schoolid,
             cd.week_start_date,
             cd.week_end_date,
-            cd.yearid,
+            cd.academic_year,
 
             sch.school_level,
-
-            cd.yearid + 1990 as academic_year,
 
             date_add(cd.week_start_date, interval 1 day) as week_start_monday,
             date_add(cd.week_end_date, interval 1 day) as week_end_sunday,
 
-            min(cd.date_value) as school_week_start_date,
-            max(cd.date_value) as school_week_end_date,
-            count(cd.date_value) as date_count,
+            min(cd.school_date) as school_week_start_date,
+            max(cd.school_date) as school_week_end_date,
+            count(cd.school_date) as date_count,
 
             max(mp.quarter_semester) as semester,
             max(mp.short_name) as `quarter`,
@@ -26,14 +24,14 @@ with
         inner join
             {{ ref("stg_focus__marking_periods") }} as mp
             on cd.schoolid = mp.school_id
-            and cd.yearid + 1990 = mp.syear
-            and cd.date_value between mp.start_date and mp.end_date
+            and cd.academic_year = mp.syear
+            and cd.school_date between mp.start_date and mp.end_date
             and mp.type = 'quarter'
         group by
             cd.schoolid,
             cd.week_start_date,
             cd.week_end_date,
-            cd.yearid,
+            cd.academic_year,
             sch.school_level
     ),
 
@@ -42,25 +40,26 @@ with
             *,
 
             min(week_start_monday) over (
-                partition by schoolid, yearid
+                partition by schoolid, academic_year
             ) as first_day_school_year,
             max(week_start_monday) over (
-                partition by schoolid, yearid
+                partition by schoolid, academic_year
             ) as last_week_start_school_year,
 
             max(school_week_end_date) over (
-                partition by schoolid, yearid
+                partition by schoolid, academic_year
             ) as last_day_school_year,
 
             lead(school_week_start_date) over (
-                partition by schoolid, yearid order by week_start_date asc
+                partition by schoolid, academic_year order by week_start_date asc
             ) as school_week_start_date_lead,
 
             row_number() over (
-                partition by schoolid, yearid order by week_start_date asc
+                partition by schoolid, academic_year order by week_start_date asc
             ) as week_number_academic_year,
             row_number() over (
-                partition by schoolid, yearid, `quarter` order by week_start_date asc
+                partition by schoolid, academic_year, `quarter`
+                order by week_start_date asc
             ) as week_number_quarter,
 
         from week_rollup
