@@ -21,16 +21,16 @@ models:
           config:
             severity: error
     columns:
-      - name: schoolid
-        description: >-
-          Focus internal school id, not the network school number. kipptaf
-          resolves it through the locations crosswalk.
       - name: school_date
         description: The in-session calendar date.
         data_tests:
           - not_null:
               config:
                 severity: error
+      - name: schoolid
+        description: >-
+          Focus internal school id, not the network school number. kipptaf
+          resolves it through the locations crosswalk.
       - name: academic_year
         description:
           Academic year start year (2026 = 2026-27), from Focus syear.
