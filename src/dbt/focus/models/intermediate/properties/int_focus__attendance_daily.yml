@@ -1,0 +1,61 @@
+models:
+  - name: int_focus__attendance_daily
+    description: >-
+      Focus daily attendance membership — one row per enrolled student per
+      in-session calendar day. Built as enrollment crossed with in-session
+      calendar days, left-joined to int_focus__attendance_day, so a day Focus
+      recorded no row for is still represented. daily_code and state_value are
+      Focus's own attendance vocabulary, unconformed. is_attendance_recorded
+      carries the no-record signal. Emits Focus's internal schoolid — kipptaf
+      crosswalks it to the network school id. Internal-only — a rpt_ view must
+      sit between this model and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [student_number, school_date]
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: >-
+          Network student number, unprefixed. Focus's own student_id carries an
+          8400 prefix (Miami-Dade's FLDOE district number) which is stripped
+          upstream.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_date
+        description: In-session calendar date the membership row represents.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: schoolid
+        description: >-
+          Focus internal school id (14, 15, 58, 68, 69), not the network school
+          number. kipptaf resolves it through the locations crosswalk.
+      - name: academic_year
+        description: Academic year start year (2026 = 2026-27), Focus's syear.
+      - name: startdate
+        description: Start date of the enrollment stint the row belongs to.
+      - name: grade_level
+        description: Grade level from the enrollment stint.
+      - name: daily_code
+        description: >-
+          Focus's raw daily attendance code (U unexcused, AE excused, AD
+          documented), or null when no attendance record exists for the day —
+          see is_attendance_recorded for whether the register was actually
+          taken.
+      - name: is_attendance_recorded
+        description: >-
+          Whether Focus recorded attendance for this student-day at all. False
+          means the register was never taken, which is distinct from a recorded
+          presence.
+      - name: state_value
+        description: >-
+          1 present, 0 absent, from Focus's own state_value. A day with no
+          attendance record counts present.
