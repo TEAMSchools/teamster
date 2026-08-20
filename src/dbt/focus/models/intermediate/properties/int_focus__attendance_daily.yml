@@ -2,23 +2,17 @@ models:
   - name: int_focus__attendance_daily
     description: >-
       Focus daily attendance membership — one row per enrolled student per
-      in-session calendar day, the analogue of the PowerSchool
-      int_powerschool__ps_adaadm_daily_ctod. Built as enrollment crossed with
-      in-session calendar days, left-joined to int_focus__attendance_day, so a
-      day Focus recorded no row for is still represented. Attendance codes are
-      conformed to the PowerSchool vocabulary (U becomes A; AE and AD already
-      match; a missing record gets a null att_code, exactly as PowerSchool does,
-      and counts present) so network consumers need no per-SIS branching.
-      is_attendance_recorded carries the no-record signal Focus has and
-      PowerSchool cannot express. studentid is null because Phase 1 left it
-      unpopulated for Focus; every downstream join uses student_number. Emits
-      Focus's internal schoolid — kipptaf crosswalks it to the network school
-      id. Internal-only — a rpt_ view must sit between this model and any
-      external consumer.
+      in-session calendar day. Built as enrollment crossed with in-session
+      calendar days, left-joined to int_focus__attendance_day, so a day Focus
+      recorded no row for is still represented. daily_code and state_value are
+      Focus's own attendance vocabulary, unconformed. is_attendance_recorded
+      carries the no-record signal. Emits Focus's internal schoolid — kipptaf
+      crosswalks it to the network school id. Internal-only — a rpt_ view must
+      sit between this model and any external consumer.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [student_number, calendardate]
+            combination_of_columns: [student_number, school_date]
           config:
             severity: error
     columns:
@@ -34,62 +28,34 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: calendardate
+      - name: school_date
         description: In-session calendar date the membership row represents.
         data_tests:
           - not_null:
               config:
                 severity: error
-      - name: entrydate
-        description: >-
-          Start date of the enrollment stint the row belongs to. Focus dates a
-          returning student's stint to the real first day of school where
-          PowerSchool used a July 1 administrative rollover.
       - name: schoolid
         description: >-
           Focus internal school id (14, 15, 58, 68, 69), not the network school
           number. kipptaf resolves it through the locations crosswalk.
-      - name: studentid
-        description: >-
-          Always null. Focus has no PowerSchool studentid analogue and Phase 1
-          left it unpopulated in int_students__student_enrollment_union.
-      - name: yearid
-        description: Academic year minus 1990, the network-wide formula.
+      - name: academic_year
+        description: Academic year start year (2026 = 2026-27), Focus's syear.
+      - name: startdate
+        description: Start date of the enrollment stint the row belongs to.
       - name: grade_level
         description: Grade level from the enrollment stint.
-      - name: att_code
+      - name: daily_code
         description: >-
-          Attendance code conformed to the PowerSchool vocabulary — A absent
-          undocumented, AE absent excused, AD absent documented, null present
-          (including a scaffold day with no attendance record at all, which
-          reads as present here — see is_attendance_recorded for whether the
-          register was actually taken).
-      - name: att_code_focus
-        description: >-
-          Raw Focus daily code before conforming (U, AE, AD, or null), retained
-          so the original value is not lost.
+          Focus's raw daily attendance code (U unexcused, AE excused, AD
+          documented), or null when no attendance record exists for the day —
+          see is_attendance_recorded for whether the register was actually
+          taken.
       - name: is_attendance_recorded
         description: >-
           Whether Focus recorded attendance for this student-day at all. False
           means the register was never taken, which is distinct from a recorded
-          presence. Null on PowerSchool-sourced rows in the network layer,
-          because PowerSchool records only absences and cannot express the
-          difference.
-      - name: attendancevalue
+          presence.
+      - name: state_value
         description: >-
-          1 present, 0 absent, from Focus state_value. A day with no attendance
-          record counts present, matching the district ctod.
-      - name: potential_attendancevalue
-        description: Always 1 — every membership day is potentially attendable.
-      - name: membershipvalue
-        description: Always 1 — every row is an in-session day within the stint.
-      - name: fteid
-        description: Always null. PowerSchool attendance-conversion machinery.
-      - name: attendance_conversion_id
-        description: Always null. PowerSchool attendance-conversion machinery.
-      - name: ontrack
-        description: Always null. PowerSchool calendar-track machinery.
-      - name: offtrack
-        description: Always null. PowerSchool calendar-track machinery.
-      - name: student_track
-        description: Always null. PowerSchool calendar-track machinery.
+          1 present, 0 absent, from Focus's own state_value. A day with no
+          attendance record counts present.

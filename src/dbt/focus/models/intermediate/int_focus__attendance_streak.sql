@@ -1,41 +1,39 @@
 with
-    -- studentid is null on the Focus side, and generate_surrogate_key maps null
-    -- to a single constant -- hashing it would collapse every Focus student into
-    -- one streak per year and code. student_number is the key throughout.
+    -- Focus does not populate a separate internal student id at this grain;
+    -- student_number is the key throughout.
     att_mem as (
         select
             student_number,
-            yearid,
-            calendardate,
-            attendancevalue,
+            academic_year,
+            school_date,
+            state_value,
+            daily_code,
 
             '{{ project_name }}' as project_name,
 
-            coalesce(att_code, 'P') as att_code,
-
             row_number() over (
-                partition by student_number, yearid order by calendardate asc
+                partition by student_number, academic_year order by school_date asc
             ) as membership_day_number,
 
             row_number() over (
-                partition by student_number, yearid, cast(attendancevalue as string)
-                order by calendardate asc
-            ) as rn_student_year_attendancevalue,
+                partition by student_number, academic_year, cast(state_value as string)
+                order by school_date asc
+            ) as rn_student_year_state_value,
 
             row_number() over (
-                partition by student_number, yearid, att_code order by calendardate asc
+                partition by student_number, academic_year, daily_code
+                order by school_date asc
             ) as rn_student_year_code,
         from {{ ref("int_focus__attendance_daily") }}
-        where membershipvalue = 1
     ),
 
     streaks_long as (
         select
             student_number,
-            yearid,
-            calendardate,
-            att_code,
-            attendancevalue,
+            academic_year,
+            school_date,
+            daily_code,
+            state_value,
             membership_day_number,
             rn_student_year_code,
 
@@ -45,8 +43,8 @@ with
                         "'code'",
                         "project_name",
                         "student_number",
-                        "yearid",
-                        "att_code",
+                        "academic_year",
+                        "daily_code",
                         "(membership_day_number - rn_student_year_code)",
                     ]
                 )
@@ -58,51 +56,56 @@ with
                         "'att'",
                         "project_name",
                         "student_number",
-                        "yearid",
-                        "attendancevalue",
-                        "(membership_day_number - rn_student_year_attendancevalue)",
+                        "academic_year",
+                        "state_value",
+                        "(membership_day_number - rn_student_year_state_value)",
                     ]
                 )
             }} as att_streak_id,
         from att_mem
     ),
 
+    -- streak_type distinguishes the two families that used to share one
+    -- overloaded column: 'daily_code' rows group on the raw Focus code (null
+    -- is its own group, so a present streak's streak_value is null), 'state_value'
+    -- rows group on the stringified present/absent value.
     streaks_agg as (
         select
             student_number,
-            yearid,
-            att_code,
+            academic_year,
+
+            'daily_code' as streak_type,
+            daily_code as streak_value,
+
             code_streak_id as streak_id,
 
-            min(calendardate) as streak_start_date,
-            max(calendardate) as streak_end_date,
-            count(calendardate) as streak_length_membership,
+            min(school_date) as streak_start_date,
+            max(school_date) as streak_end_date,
+            count(school_date) as streak_length_days,
         from streaks_long
-        group by student_number, yearid, att_code, code_streak_id
+        group by student_number, academic_year, daily_code, code_streak_id
 
         union all
 
         select
             student_number,
-            yearid,
+            academic_year,
 
-            cast(attendancevalue as string) as att_code,
+            'state_value' as streak_type,
+            cast(state_value as string) as streak_value,
 
             att_streak_id as streak_id,
 
-            min(calendardate) as streak_start_date,
-            max(calendardate) as streak_end_date,
-            count(calendardate) as streak_length_membership,
+            min(school_date) as streak_start_date,
+            max(school_date) as streak_end_date,
+            count(school_date) as streak_length_days,
         from streaks_long
-        group by student_number, yearid, attendancevalue, att_streak_id
+        group by student_number, academic_year, state_value, att_streak_id
     )
 
 select
     *,
 
-    -- Projected null so the kipptaf union matches the PowerSchool branch column
-    -- for column.
-    cast(null as int64) as studentid,
-
-    date_diff(streak_end_date, streak_start_date, day) + 1 as streak_length_calendar,
+    date_diff(streak_end_date, streak_start_date, day)
+    + 1 as streak_length_calendar_days,
 from streaks_agg

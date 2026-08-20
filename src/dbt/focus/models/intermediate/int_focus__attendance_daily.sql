@@ -1,7 +1,7 @@
 with
     -- Focus dates a school transfer with the departing stint's exitdate EQUAL to
     -- the arriving stint's startdate, so an inclusive date range counts that day
-    -- twice and breaks the (student_number, calendardate) grain. Measured against
+    -- twice and breaks the (student_number, school_date) grain. Measured against
     -- prod: 78 stints network-wide are transfer boundaries, while 1,755 stints
     -- legitimately end on an in-session day the student attended -- so a blanket
     -- half-open range would drop 1,755 real attendance days to fix 4 duplicates.
@@ -100,58 +100,23 @@ with
     )
 
 select
-    m.schoolid,
-    m.grade_level,
     m.network_student_number as student_number,
-    m.startdate as entrydate,
-    m.school_date as calendardate,
+    m.schoolid,
+    m.academic_year,
+    m.startdate,
+    m.school_date,
+    m.grade_level,
 
-    a.daily_code as att_code_focus,
-
-    -- Phase 1 left studentid unpopulated for Focus in
-    -- int_students__student_enrollment_union, so it stays null here for
-    -- consistency. Every downstream join therefore uses student_number.
-    cast(null as int64) as studentid,
-
-    -- PowerSchool-only attendance-conversion machinery with no Focus analogue.
-    -- Focus's own fteid is a student FLEID, an unrelated name collision.
-    cast(null as int64) as fteid,
-    cast(null as int64) as attendance_conversion_id,
-
-    -- PowerSchool calendar tracks. Passthrough columns at kipptaf, never read in
-    -- a calc, and Miami's track is already null network-wide.
-    cast(null as int64) as ontrack,
-    cast(null as int64) as offtrack,
-    cast(null as string) as student_track,
-
-    cast(1 as float64) as potential_attendancevalue,
-    cast(1 as float64) as membershipvalue,
+    a.daily_code,
 
     -- state_value IS the present/absent classification and is populated on every
     -- Focus row, independent of daily_code. NUMERIC upstream, FLOAT64 here to
     -- match the kipptaf ctod.
-    cast(coalesce(a.state_value, 1) as float64) as attendancevalue,
+    cast(coalesce(a.state_value, 1) as float64) as state_value,
 
-    m.academic_year - 1990 as yearid,
-
-    -- Focus's four day codes conform to the PowerSchool vocabulary with one
-    -- rename. AE and AD already match exactly. U must NOT pass through: U means
-    -- Unprepared in PowerSchool, so an unmapped U would merge unexcused absences
-    -- into an unrelated code.
-    --
-    -- A scaffold day with no attendance record gets NULL, exactly as PowerSchool
-    -- does for the same case (7,698,389 rows, average attendancevalue 0.997). Do
-    -- NOT use 'M': PowerSchool's M is an entered Missing Attendance code averaging
-    -- 0.741 attendancevalue, and rpt_gsheets__absence_streak_roster filters
-    -- att_code in ('A', 'AD', 'M'), so no-record days labelled M would publish
-    -- fake absence streaks for Miami.
-    if(a.daily_code = 'U', 'A', a.daily_code) as att_code,
-
-    -- The one thing Focus knows and PowerSchool cannot: whether anybody actually
-    -- took attendance. PowerSchool records only absences, so presence is implied
-    -- and the distinction does not exist there -- the kipptaf union leaves this
-    -- null on PowerSchool rows. Focus's rate is material (17-23% of completed days
-    -- in the opening week), so it is worth carrying.
+    -- The one thing Focus knows that a no-record day would otherwise hide:
+    -- whether anybody actually took attendance. Focus's rate is material
+    -- (17-23% of completed days in the opening week), so it is worth carrying.
     a.student_id is not null as is_attendance_recorded,
 
 from membership as m

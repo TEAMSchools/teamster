@@ -163,10 +163,10 @@ unit_tests:
     model: int_focus__attendance_daily
     description: >-
       Four students on one in-session day inside one stint. Student 84001 is
-      absent unexcused (U maps to A), 84002 excused (AE passes through), 84003
-      present (null code), and 84004 has no attendance row at all (null
-      att_code, counts present, matching PowerSchool). Proves the scaffold emits
-      a row for a student Focus never recorded.
+      absent unexcused (daily_code U, unconformed), 84002 absent excused (AE),
+      84003 present (null daily_code), and 84004 has no attendance row at all
+      (null daily_code, counts present via state_value). Proves the scaffold
+      emits a row for a student Focus never recorded.
     given:
       - input: ref('int_focus__student_enrollment')
         format: sql
@@ -200,30 +200,22 @@ unit_tests:
     expect:
       rows:
         - student_number: 1
-          att_code: A
-          att_code_focus: U
-          attendancevalue: 0.0
-          membershipvalue: 1.0
-          yearid: 36
+          daily_code: U
+          state_value: 0.0
+          academic_year: 2026
           is_attendance_recorded: true
         - student_number: 2
-          att_code: AE
-          att_code_focus: AE
-          attendancevalue: 0.0
-          membershipvalue: 1.0
-          yearid: 36
+          daily_code: AE
+          state_value: 0.0
+          academic_year: 2026
           is_attendance_recorded: true
         - student_number: 3
-          att_code: null
-          att_code_focus: null
-          attendancevalue: 1.0
-          membershipvalue: 1.0
-          yearid: 36
+          daily_code: null
+          state_value: 1.0
+          academic_year: 2026
           is_attendance_recorded: true
         - student_number: 4
-          att_code: null
-          att_code_focus: null
-          attendancevalue: 1.0
-          membershipvalue: 1.0
-          yearid: 36
+          daily_code: null
+          state_value: 1.0
+          academic_year: 2026
           is_attendance_recorded: false

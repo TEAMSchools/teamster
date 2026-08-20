@@ -1,19 +1,19 @@
 models:
   - name: int_focus__attendance_streak
     description: >-
-      Consecutive-day Focus attendance streaks — the analogue of
-      int_powerschool__attendance_streak. Two streak families in one relation:
-      by attendance code (att_code holds the code) and by attendance value
-      (att_code holds the stringified 0 or 1). Keyed on student_number, not
-      studentid, because studentid is null on the Focus side and hashing a null
-      would collapse every student into one streak. Internal-only — a rpt_ view
+      Consecutive-day Focus attendance streaks. Two streak families in one
+      relation, distinguished by streak_type: daily_code streaks (grouped on
+      Focus's raw daily attendance code, null for a present streak) and
+      state_value streaks (grouped on the stringified present/absent value).
+      Keyed on student_number throughout, since Focus does not populate a
+      separate internal student id at this grain. Internal-only — a rpt_ view
       must sit between this model and any external consumer.
     columns:
       - name: streak_id
         description: >-
           Surrogate key for the streak, hashed from the streak family, project
-          name, student_number, yearid, the code or value, and the gap between
-          the membership-day number and the per-code row number.
+          name, student_number, academic_year, the code or value, and the gap
+          between the membership-day number and the per-code row number.
         data_tests:
           - unique:
               config:
@@ -27,21 +27,22 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: studentid
-        description: Always null. Focus has no PowerSchool studentid analogue.
-      - name: yearid
-        description: Academic year minus 1990.
-      - name: att_code
+      - name: academic_year
+        description: Academic year start year (2026 = 2026-27).
+      - name: streak_type
         description: >-
-          The conformed attendance code for a code streak (P for present), or
-          the stringified attendance value for a value streak.
+          Which streak family the row belongs to — daily_code or state_value.
+      - name: streak_value
+        description: >-
+          The grouped daily_code for a daily_code streak (null for a present
+          streak), or the stringified state_value for a state_value streak.
       - name: streak_start_date
-        description: First membership day in the streak.
+        description: First session day in the streak.
       - name: streak_end_date
-        description: Last membership day in the streak.
-      - name: streak_length_membership
-        description: Count of membership days in the streak.
-      - name: streak_length_calendar
+        description: Last session day in the streak.
+      - name: streak_length_days
+        description: Count of session days in the streak.
+      - name: streak_length_calendar_days
         description: >-
           Calendar days spanned by the streak, inclusive. Larger than
-          streak_length_membership when the streak spans a weekend or break.
+          streak_length_days when the streak spans a weekend or break.

@@ -1,17 +1,11 @@
 select
-    yearid,
     student_number,
+    academic_year,
 
-    -- Null on the Focus side, projected so the kipptaf union matches the
-    -- PowerSchool branch column for column.
-    cast(null as int64) as studentid,
-    yearid + 1990 as academic_year,
-
-    sum(membershipvalue) as days_in_membership,
-    sum(attendancevalue) as days_present,
-    sum(abs(attendancevalue - 1)) as days_absent_unexcused,
-    avg(attendancevalue) as ada,
+    count(school_date) as days_in_session,
+    sum(state_value) as days_present,
+    sum(abs(state_value - 1)) as days_absent,
+    avg(state_value) as ada,
 from {{ ref("int_focus__attendance_daily") }}
-where
-    membershipvalue = 1 and calendardate <= current_date('{{ var("local_timezone") }}')
-group by yearid, student_number
+where school_date <= current_date('{{ var("local_timezone") }}')
+group by student_number, academic_year
