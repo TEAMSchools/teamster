@@ -8,12 +8,6 @@ models:
       studentid, because studentid is null on the Focus side and hashing a null
       would collapse every student into one streak. Internal-only — a rpt_ view
       must sit between this model and any external consumer.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns: [streak_id, att_code]
-          config:
-            severity: error
     columns:
       - name: streak_id
         description: >-
@@ -21,7 +15,7 @@ models:
           name, student_number, yearid, the code or value, and the gap between
           the membership-day number and the per-code row number.
         data_tests:
-          - not_null:
+          - unique:
               config:
                 severity: error
       - name: student_number

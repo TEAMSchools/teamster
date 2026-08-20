@@ -9,6 +9,13 @@ with
     -- join must also exclude a stint matching its own row, or a single-day stint
     -- loses its only day.
     stint_starts as (
+        -- distinct is defensive, not collapsing: int_focus__student_enrollment already
+        -- dedupes to one row per (student_number, academic_year, startdate), the exact
+        -- partition selected here, so today it collapses nothing. It stays because that
+        -- upstream dedupe carries a TODO to be removed once Focus stops accepting
+        -- duplicate open stints (#4905) -- and without it, duplicate rows here would
+        -- fan
+        -- out the enrollments semi-join below.
         select distinct student_number, academic_year, startdate,
         from {{ ref("int_focus__student_enrollment") }}
     ),
