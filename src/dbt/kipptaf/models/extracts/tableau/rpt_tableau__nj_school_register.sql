@@ -15,7 +15,7 @@ with
                     null
                 )
             ) as n_mem_ytd,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         where membershipvalue = 1
         group by studentid, yearid, _dbt_source_relation, _dbt_source_project
     )

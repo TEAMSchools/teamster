@@ -10,7 +10,7 @@ with
 
             sum(attendancevalue) as attendance_value_sum,
             sum(membershipvalue) as membership_value_sum,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         where
             attendancevalue is not null
             and calendardate >= '{{ var("current_academic_year") - 1 }}-07-01'

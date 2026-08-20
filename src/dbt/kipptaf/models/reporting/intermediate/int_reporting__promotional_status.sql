@@ -33,7 +33,7 @@ with
                 when mem._dbt_source_project = 'kippcamden'
                 then 9 * safe_cast(right(rt.name, 1) as int)
             end as hs_off_track_absences,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
+        from {{ ref("int_students__attendance_daily") }} as mem
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on mem.schoolid = rt.school_id

@@ -1,0 +1,213 @@
+models:
+  - name: int_students__attendance_daily
+    description: >-
+      SIS-neutral daily attendance membership across the network — the successor
+      to int_powerschool__ps_adaadm_daily_ctod, which is now a thin PowerSchool
+      union. Holds every derived flag, point-in-time anchor, and running calc
+      for both SIS branches, so there is one definition rather than one per
+      branch. The PowerSchool branch is year-scoped, so the frozen Miami archive
+      keeps serving AY2020 through AY2025 while Focus serves AY2026 forward. Six
+      flags are null for Focus-sourced Miami rows because Focus has no day-grain
+      source for them — see #4927.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [student_number, _dbt_source_project, calendardate]
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: Network student number.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: calendardate
+        description: In-session calendar date the membership row represents.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: _dbt_source_relation
+        description: >-
+          Originating source relation for the union branch (PowerSchool
+          per-district source, or the Focus kipptaf passthrough).
+      - name: studentid
+        description: >-
+          PowerSchool internal student id. Null for every Focus-sourced row
+          (Miami AY2026 forward) — Phase 1 left it unpopulated for Focus, so
+          joins use student_number. Also the discriminator this model uses to
+          tell the frozen Miami PowerSchool archive (populated) apart from
+          Focus-sourced Miami rows (null) for the #4927 null flags.
+      - name: schoolid
+        description: Network school number.
+      - name: entrydate
+        description: >-
+          Enrollment stint start date the row belongs to. Legacy alias,
+          transitional — see enrollment_start_date.
+      - name: fteid
+        description: >-
+          PowerSchool internal FTE id. Null for every Focus-sourced row — Focus
+          has no analog.
+      - name: attendance_conversion_id
+        description: >-
+          PowerSchool internal attendance-conversion id. Null for every
+          Focus-sourced row — Focus has no analog.
+      - name: grade_level
+        description: Grade level the student was enrolled at on this day.
+      - name: ontrack
+        description: >-
+          PowerSchool-only track flag. Null for every Focus-sourced row — Focus
+          has no analog.
+      - name: offtrack
+        description: >-
+          PowerSchool-only track flag. Null for every Focus-sourced row — Focus
+          has no analog.
+      - name: student_track
+        description: >-
+          PowerSchool-only track code. Null for every Focus-sourced row — Focus
+          has no analog.
+      - name: yearid
+        description: >-
+          Academic year minus 1990. Legacy alias, transitional — see
+          academic_year_neutral.
+      - name: att_code
+        description: >-
+          Attendance code in the PowerSchool vocabulary. Legacy name — prefer
+          attendance_code. Focus codes are conformed in this model's
+          focus_conformed CTE, not upstream: U becomes A, AE and AD pass
+          through, and a day with no record stays null, which is how PowerSchool
+          encodes the same case.
+      - name: is_attendance_recorded
+        description: >-
+          Whether the source system recorded attendance for this student-day at
+          all. False means the register was never taken (or, on the PowerSchool
+          branch, that PowerSchool has no such concept — it records only
+          absences), which is distinct from a recorded presence. Never null
+          network-wide. On the Focus branch, this — not studentid — is the real
+          recorded/unrecorded signal; on the PowerSchool branch (including the
+          frozen Miami archive) it is always false by construction.
+      - name: attendancevalue
+        description: >-
+          Attendance weight for the day: 1 present, 0 absent, fractional for
+          partial attendance. Legacy name — prefer is_present.
+      - name: potential_attendancevalue
+        description: >-
+          Maximum possible attendance value for the day. Constant 1 on the Focus
+          branch — every row is an in-session membership day by construction.
+      - name: membershipvalue
+        description: >-
+          Membership weight for the day; the portion of a student's membership
+          this school claims. Legacy name — prefer is_in_membership. Constant 1
+          on the Focus branch.
+      - name: academic_year
+        description: Academic year from the terms join.
+      - name: semester
+        description: Reporting semester from the terms join.
+      - name: term
+        description: Reporting term from the terms join.
+      - name: week_start_monday
+        description: Monday of the calendar week the row falls in.
+      - name: week_end_sunday
+        description: Sunday of the calendar week the row falls in.
+      - name: week_number_academic_year
+        description: Week number within the academic year.
+      - name: _dbt_source_project
+        description: Originating district project.
+      - name: is_absent
+        description: 1 absent, 0 present — abs(attendancevalue - 1).
+      - name: is_present_weighted
+        description: >-
+          Present weight: 0.67 for a tardy day, else attendancevalue.
+      - name: is_tardy
+        description: >-
+          1 tardy, 0 not. Null for Focus-sourced Miami rows — Focus records
+          tardies only at period grain. See #4927.
+      - name: is_ontime
+        description: >-
+          1 on time, 0 tardy. Null for Focus-sourced Miami rows. See #4927.
+      - name: is_oss
+        description: >-
+          1 out-of-school suspension, 0 not. Null for Focus-sourced Miami rows —
+          Focus carries no suspension codes. See #4927.
+      - name: is_iss
+        description: >-
+          1 in-school suspension, 0 not. Null for Focus-sourced Miami rows. See
+          #4927.
+      - name: is_suspended
+        description: >-
+          1 suspended, 0 not. Null for Focus-sourced Miami rows. See #4927.
+      - name: is_absent_non_susp
+        description: >-
+          1 absent for a non-suspension reason. Null for Focus-sourced Miami
+          rows. See #4927.
+      - name: n_absent_running_90
+        description: >-
+          Rolling count of is_absent over the trailing 90 calendar days,
+          partitioned by student and academic year, ordered by calendardate.
+      - name: pct_absent_running_student_year
+        description: >-
+          Running average of is_absent for the student-year to date, ordered by
+          calendardate.
+      - name: n_membership_student_year
+        description: Total membershipvalue for the student-year.
+      - name: is_current_record
+        description: >-
+          True on the latest realized (past or today) in-session day per school,
+          district, and academic year. Per-school point-in-time enrollment
+          anchor driving the student_enrollments Cube.
+      - name: is_enrollment_month_end_record
+        description: >-
+          True on the latest realized in-session day of the calendar month, per
+          school, district, and academic year. Per-school enrollment anchor.
+      - name: is_enrollment_week_end_record
+        description: >-
+          True on the latest realized in-session day of the calendar week, per
+          school and district. Per-school enrollment anchor.
+      - name: is_latest_record
+        description: >-
+          True on the stint's latest realized day. Per-stint attendance anchor —
+          the stint is (student_number, _dbt_source_project, academic_year,
+          entrydate) — driving the student_attendance Cube's latest CA snapshot.
+      - name: is_month_end_record
+        description: >-
+          True on the stint's latest realized membership day of the calendar
+          month. Per-stint attendance anchor.
+      - name: is_week_end_record
+        description: >-
+          True on the stint's latest realized membership day of the calendar
+          week. Per-stint attendance anchor.
+      - name: n_absent_projected
+        description: >-
+          Projected absences for the full student-year, derived from
+          n_membership_student_year and pct_absent_running_student_year.
+      - name: is_truant
+        description: >-
+          Categorical truancy flag: for kippmiami, n_absent_running_90 >= 15;
+          for the NJ regions, n_absent_projected >= 50.
+      - name: academic_year_neutral
+        description: >-
+          Neutral primary academic-year name; yearid + 1990. Named "_neutral"
+          (rather than the plain academic_year) because the terms join already
+          supplies academic_year on this model.
+      - name: school_date
+        description: >-
+          Neutral primary name for calendardate; same value as calendardate.
+      - name: enrollment_start_date
+        description: >-
+          Neutral primary name for entrydate; same value as entrydate.
+      - name: attendance_code
+        description: >-
+          Neutral primary name for att_code; same value as att_code.
+      - name: is_present
+        description: >-
+          Neutral primary name for attendancevalue; same value as
+          attendancevalue.
+      - name: is_in_membership
+        description: >-
+          Neutral primary name for membershipvalue; same value as
+          membershipvalue.

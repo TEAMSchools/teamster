@@ -52,7 +52,7 @@ with
 
             coalesce(co.is_counseling_services, 0) as is_counseling_services,
             coalesce(co.is_student_athlete, 0) as is_student_athlete,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
+        from {{ ref("int_students__attendance_daily") }} as ad
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on ad.studentid = co.studentid

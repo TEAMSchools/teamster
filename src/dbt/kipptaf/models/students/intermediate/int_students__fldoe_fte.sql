@@ -9,7 +9,7 @@ with
 
             max(att.attendancevalue) as attendancevalue,
             max(att.membershipvalue) as membershipvalue,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as att
+        from {{ ref("int_students__attendance_daily") }} as att
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as fte
             on att.yearid = fte.powerschool_year_id

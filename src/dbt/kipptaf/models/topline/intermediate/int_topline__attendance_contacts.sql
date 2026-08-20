@@ -69,7 +69,7 @@ select
     ) as is_successful_int,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 inner join
-    {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as att
+    {{ ref("int_students__attendance_daily") }} as att
     on co.student_number = att.student_number
     and co.schoolid = att.schoolid
     and att.calendardate between co.week_start_monday and co.week_end_sunday

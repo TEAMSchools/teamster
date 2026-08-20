@@ -18,7 +18,7 @@ with
             cast(is_present_weighted as numeric) as is_present_weighted,
             cast(membershipvalue as numeric) as membershipvalue,
 
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         where
             membershipvalue = 1
             and attendancevalue is not null
