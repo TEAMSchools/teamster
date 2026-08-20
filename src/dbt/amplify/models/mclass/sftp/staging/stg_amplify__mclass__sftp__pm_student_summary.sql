@@ -77,6 +77,7 @@ with
                         "school_year",
                         "pm_period",
                         "measure",
+                        "assessment_edition",
                     ]
                 )
             }} as surrogate_key,
