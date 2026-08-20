@@ -94,7 +94,7 @@ with
             and mem._dbt_source_project = t._dbt_source_project
             and t.term is not null
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as cw
+            {{ ref("int_students__calendar_week") }} as cw
             on mem.yearid = cw.yearid
             and mem.schoolid = cw.schoolid
             and mem.calendardate between cw.week_start_monday and cw.week_end_sunday

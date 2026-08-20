@@ -101,7 +101,7 @@ with
             on t.schoolid = sch.school_number
             and t._dbt_source_project = sch._dbt_source_project
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as cw
+            {{ ref("int_students__calendar_week") }} as cw
             on t.yearid = cw.yearid
             and t.schoolid = cw.schoolid
             and t.term = cw.quarter

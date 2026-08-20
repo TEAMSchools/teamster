@@ -2,7 +2,7 @@ with
     school_year_start as (
         select distinct
             _dbt_source_project, academic_year, schoolid, first_day_school_year,
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
     ),
 
     esms_attend as (
