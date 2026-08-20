@@ -1720,6 +1720,74 @@ start PR2 until all six are populated in prod.**
 
 ## PR2 — kipptaf
 
+### The conform contract, shared by Tasks 9 through 13
+
+Task 6b made the `focus` package fully Focus-native, so every `int_students__*`
+model's `focus_conformed` CTE now does real translation rather than a
+passthrough. This section states that translation once; each task below
+references it instead of restating it.
+
+**What the Focus side now provides.** `int_focus__attendance_daily` emits
+`student_number`, `schoolid`, `academic_year`, `startdate`, `school_date`,
+`grade_level`, `daily_code`, `state_value`, `is_attendance_recorded` — and
+nothing else. The calendar models emit `academic_year` and `school_date` in
+place of `yearid` and `date_value`; `int_focus__calendar_day` no longer emits
+`insession` or `membershipvalue` at all; `int_focus__calendar_rollup` no longer
+emits `track`; `int_focus__attendance_streak` emits `streak_type` and
+`streak_value` instead of a single overloaded `att_code`, and
+`streak_length_days` / `streak_length_calendar_days` instead of the
+`_membership` / `_calendar` pair.
+
+**What every `focus_conformed` CTE must therefore do.**
+
+| Translation      | From                           | To                                                                                                                |
+| ---------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Year numbering   | `academic_year`                | `yearid` as `academic_year - 1990`                                                                                |
+| School id        | Focus internal `schoolid`      | network `schoolid`, via the locations crosswalk                                                                   |
+| Date column      | `school_date`                  | `calendardate` (attendance) or `date_value` (calendar)                                                            |
+| Stint start      | `startdate`                    | `entrydate`                                                                                                       |
+| Attendance code  | `daily_code`                   | `att_code`, mapping `U` to `A`; `AE` and `AD` pass through                                                        |
+| Present/absent   | `state_value` NUMERIC          | `attendancevalue` FLOAT64                                                                                         |
+| Membership       | —                              | `membershipvalue` and `potential_attendancevalue` as `cast(1 as float64)`                                         |
+| In-session flag  | —                              | `insession` as `1`                                                                                                |
+| PowerSchool-only | —                              | typed NULLs for `studentid`, `fteid`, `attendance_conversion_id`, `ontrack`, `offtrack`, `student_track`, `track` |
+| Streak family    | `streak_type` + `streak_value` | `att_code` as `coalesce(streak_value, 'P')`                                                                       |
+
+`U` must never reach `att_code` unmapped — `U` means Unprepared in PowerSchool,
+an unrelated concept, and `rpt_gsheets__absence_streak_roster` filters on the
+PowerSchool vocabulary.
+
+The `coalesce(streak_value, 'P')` reproduces the district model's present-streak
+label: on the Focus side a present streak has a NULL `streak_value` because
+`daily_code` is NULL for a present day, and PowerSchool labels that same streak
+`P`.
+
+**Dual-exposed names.** Each `int_students__*` model emits every measure twice:
+a system-agnostic column as the primary name, and the legacy PowerSchool-derived
+name as an alias beside it. The 37 existing consumer references keep reading the
+legacy names untouched; new work uses the neutral ones. Minimum pairs:
+
+| Neutral (primary)       | Legacy alias (transitional)   |
+| ----------------------- | ----------------------------- |
+| `academic_year`         | `yearid`                      |
+| `school_date`           | `calendardate` / `date_value` |
+| `enrollment_start_date` | `entrydate`                   |
+| `attendance_code`       | `att_code`                    |
+| `is_present`            | `attendancevalue`             |
+| `is_in_membership`      | `membershipvalue`             |
+
+Document the legacy set in each properties yml as transitional, with a one-line
+note that it exists so consumers can migrate independently. Retiring the aliases
+is explicitly out of scope for this plan — it is a rename of the network layer,
+not part of getting Miami's attendance into it.
+
+**A note on the NJ-parity gates below.** They compare the legacy-named columns,
+because those are what prod currently exposes. A neutral column has no prod
+counterpart to compare against, so parity is asserted on the legacy alias and
+the neutral column is checked only for being non-null and equal to its alias.
+
+---
+
 ### Task 8: Source declarations and passthrough wrappers
 
 **Files:**
@@ -1932,7 +2000,8 @@ with
     ),
 
     focus_years as (
-        select distinct yearid, from {{ ref("int_focus__calendar_day") }}
+        select distinct academic_year - 1990 as yearid,
+        from {{ ref("int_focus__calendar_day") }}
     ),
 
     -- The frozen PowerSchool archive keeps serving Miami for every year Focus
@@ -1964,18 +2033,23 @@ with
             )
     ),
 
+    -- int_focus__calendar_day is Focus-native: it emits academic_year and
+    -- school_date, and no insession or membershipvalue at all. A row existing there
+    -- IS an in-session day, so both flags are constants supplied here.
     focus_conformed as (
         select
             cd._dbt_source_relation,
             cd._dbt_source_project,
-            cd.insession,
-            cd.membershipvalue,
             cd.week_start_date,
             cd.week_end_date,
-            cd.date_value,
-            cd.yearid,
 
             fs.schoolid,
+
+            cd.school_date as date_value,
+            cd.academic_year - 1990 as yearid,
+
+            1 as insession,
+            cast(1 as float64) as membershipvalue,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
     )
@@ -2185,7 +2259,8 @@ with
     ),
 
     focus_years as (
-        select distinct yearid, from {{ ref("int_focus__calendar_week") }}
+        select distinct academic_year - 1990 as yearid,
+        from {{ ref("int_focus__calendar_week") }}
     ),
 
     powerschool_conformed as (
@@ -2198,11 +2273,17 @@ with
             )
     ),
 
+    -- int_focus__calendar_week emits academic_year rather than yearid, so the
+    -- except-list drops it and the derivation is restated here. Everything else in
+    -- that model already uses names the network shares.
     focus_conformed as (
         select
-            cw.* except (schoolid),
+            cw.* except (schoolid, academic_year),
 
             fs.schoolid,
+
+            cw.academic_year,
+            cw.academic_year - 1990 as yearid,
 
             initcap(
                 regexp_extract(cw._dbt_source_relation, r'kipp(\w+)_')
@@ -2414,8 +2495,11 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
+    -- int_focus__attendance_daily emits academic_year, not yearid -- Task 6b made
+    -- the focus package Focus-native. Convert here, on the network side.
     focus_years as (
-        select distinct yearid, from {{ ref("int_focus__attendance_daily") }}
+        select distinct academic_year - 1990 as yearid,
+        from {{ ref("int_focus__attendance_daily") }}
     ),
 
     -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
@@ -2437,11 +2521,42 @@ with
             )
     ),
 
+    -- The whole Focus-to-network translation lives here. See "The conform contract"
+    -- above. A `select *` will NOT work: the Focus model shares no column names with
+    -- the PowerSchool branch any more.
     focus_conformed as (
         select
-            ad.* except (schoolid),
+            ad.student_number,
+            ad.grade_level,
+            ad.is_attendance_recorded,
 
             fs.schoolid,
+
+            ad.academic_year - 1990 as yearid,
+            ad.startdate as entrydate,
+            ad.school_date as calendardate,
+
+            -- U means an unexcused absence in Focus and "Unprepared" in
+            -- PowerSchool, so it MUST be remapped. AE and AD already mean the same
+            -- thing in both systems and pass through. A present or unrecorded day
+            -- leaves daily_code null, which is exactly how PowerSchool encodes it.
+            if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
+
+            cast(ad.state_value as float64) as attendancevalue,
+
+            -- Every row of int_focus__attendance_daily IS an in-session membership
+            -- day, so these are constants here rather than sourced values.
+            cast(1 as float64) as membershipvalue,
+            cast(1 as float64) as potential_attendancevalue,
+
+            -- PowerSchool-only machinery Focus cannot supply. Typed so the union
+            -- binds; see the conform contract for why each one is unknowable.
+            cast(null as int64) as studentid,
+            cast(null as int64) as fteid,
+            cast(null as int64) as attendance_conversion_id,
+            cast(null as int64) as ontrack,
+            cast(null as int64) as offtrack,
+            cast(null as string) as student_track,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
     ),
@@ -2473,7 +2588,6 @@ with
             mem.student_track,
             mem.yearid,
             mem.att_code,
-            mem.att_code_focus,
             mem.is_attendance_recorded,
             mem.attendancevalue,
             mem.potential_attendancevalue,
@@ -2495,12 +2609,12 @@ with
             -- Miami is excluded from network tardy metrics rather than reading
             -- as a verified zero.
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.att_code_focus is not null,
+                mem._dbt_source_project = 'kippmiami' and mem.is_attendance_recorded is not null,
                 null,
                 if(mem.att_code like 'T%', 1.0, 0.0)
             ) as is_tardy,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.att_code_focus is not null,
+                mem._dbt_source_project = 'kippmiami' and mem.is_attendance_recorded is not null,
                 null,
                 if(mem.att_code like 'T%', 0.0, 1.0)
             ) as is_ontime,
@@ -2513,24 +2627,24 @@ with
             -- here. Null so a network suspension rate excludes Miami rather than
             -- diluting itself with false zeros.
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.att_code_focus is not null,
+                mem._dbt_source_project = 'kippmiami' and mem.is_attendance_recorded is not null,
                 null,
                 if(mem.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0)
             ) as is_oss,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.att_code_focus is not null,
+                mem._dbt_source_project = 'kippmiami' and mem.is_attendance_recorded is not null,
                 null,
                 if(mem.att_code in ('S', 'ISS'), 1.0, 0.0)
             ) as is_iss,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.att_code_focus is not null,
+                mem._dbt_source_project = 'kippmiami' and mem.is_attendance_recorded is not null,
                 null,
                 if(
                     mem.att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI'), 1.0, 0.0
                 )
             ) as is_suspended,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.att_code_focus is not null,
+                mem._dbt_source_project = 'kippmiami' and mem.is_attendance_recorded is not null,
                 null,
                 if(
                     mem.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
@@ -2576,6 +2690,27 @@ git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network
 ```
 
 Do not retype them — copy them, so the NJ arithmetic cannot drift.
+
+Then add the dual-exposed neutral columns to the final select, beside the legacy
+names rather than replacing them, per the conform contract above:
+
+```sql
+    -- Neutral names, exposed alongside the legacy PowerSchool-derived ones so
+    -- consumers can migrate independently. The legacy set is transitional; see the
+    -- properties yml.
+    yearid + 1990 as academic_year_neutral,
+    calendardate as school_date,
+    entrydate as enrollment_start_date,
+    att_code as attendance_code,
+    attendancevalue as is_present,
+    membershipvalue as is_in_membership,
+```
+
+Name the neutral academic-year column `academic_year_neutral` ONLY if
+`academic_year` is already taken in this model's select list — it is, because
+the terms join supplies it, so the plain name is unavailable here. Use
+`academic_year` directly in the four calendar and rollup models, where nothing
+else claims it.
 
 - [ ] **Step 3: Write the properties file**
 
@@ -2787,7 +2922,10 @@ Refs #4927"
 
 ```sql
 with
-    focus_years as (select distinct yearid, from {{ ref("int_focus__ada") }}),
+    focus_years as (
+        select distinct academic_year - 1990 as yearid,
+        from {{ ref("int_focus__ada") }}
+    ),
 
     powerschool_conformed as (
         select *,
@@ -2804,7 +2942,18 @@ from powerschool_conformed
 
 full union all corresponding
 
-select *,
+-- int_focus__ada is Focus-native: academic_year not yearid, days_in_session not
+-- days_in_membership, days_absent not days_absent_unexcused, and no studentid.
+select
+    student_number,
+    days_present,
+    ada,
+
+    academic_year - 1990 as yearid,
+    days_in_session as days_in_membership,
+    days_absent as days_absent_unexcused,
+
+    cast(null as int64) as studentid,
 from {{ ref("int_focus__ada") }}
 ```
 
@@ -2816,7 +2965,8 @@ with
     -- Focus branch only holds years Focus covers, so the PowerSchool side is
     -- scoped against those years exactly as elsewhere.
     focus_years as (
-        select distinct yearid, from {{ ref("int_focus__attendance_streak") }}
+        select distinct academic_year - 1990 as yearid,
+        from {{ ref("int_focus__attendance_streak") }}
     ),
 
     powerschool_conformed as (
@@ -2834,7 +2984,22 @@ from powerschool_conformed
 
 full union all corresponding
 
-select *,
+-- int_focus__attendance_streak splits the district's overloaded att_code into
+-- streak_type plus streak_value. Reassemble the district shape: a present streak has
+-- a null streak_value because daily_code is null on a present day, and PowerSchool
+-- labels that same streak 'P'.
+select
+    student_number,
+    streak_id,
+    streak_start_date,
+    streak_end_date,
+
+    academic_year - 1990 as yearid,
+    coalesce(streak_value, 'P') as att_code,
+    streak_length_days as streak_length_membership,
+    streak_length_calendar_days as streak_length_calendar,
+
+    cast(null as int64) as studentid,
 from {{ ref("int_focus__attendance_streak") }}
 ```
 
@@ -3057,7 +3222,8 @@ with
     ),
 
     focus_years as (
-        select distinct yearid, from {{ ref("int_focus__calendar_rollup") }}
+        select distinct academic_year - 1990 as yearid,
+        from {{ ref("int_focus__calendar_rollup") }}
     ),
 
     powerschool_conformed as (
@@ -3070,11 +3236,21 @@ with
             )
     ),
 
+    -- int_focus__calendar_rollup is Focus-native: academic_year, min_school_date and
+    -- max_school_date, and no track column at all. track is supplied here as a typed
+    -- NULL, which is what the consuming join is made null-safe for.
     focus_conformed as (
         select
-            cr.* except (schoolid),
+            cr.days_total,
+            cr.days_remaining,
 
             fs.schoolid,
+
+            cr.academic_year - 1990 as yearid,
+            cr.min_school_date as min_calendardate,
+            cr.max_school_date as max_calendardate,
+
+            cast(null as string) as track,
         from {{ ref("int_focus__calendar_rollup") }} as cr
         inner join focus_schools as fs on cr.schoolid = fs.focus_school_id
     )
