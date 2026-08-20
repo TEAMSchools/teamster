@@ -28,6 +28,33 @@ models:
               config:
                 severity: error
                 where: assessment_edition = 'DIBELS 8th Edition'
+      - name: measure_name_code
+        data_type: string
+        description: >-
+          Short measure abbreviation, for example 'ORF' from 'Reading Fluency
+          (ORF)'. Derived from the RAW source measure, not from the mapped
+          measure column above — BigQuery has no lateral column aliases, so a
+          bare measure reference in the same select list resolves to the source
+          column. That is why the short-code and long-label arms must BOTH be
+          present here; removing either regenerates a truncated code such as
+          'Maz'. The surrogate key hashes the raw value for the same reason.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - Composite
+                  - Comprehension
+                  - DEC
+                  - LNF
+                  - NWF
+                  - ORF
+                  - PSF
+                  - WRF
+              config:
+                severity: error
       - name: school_name
         data_type: string
       - name: school_year
@@ -123,8 +150,6 @@ models:
       - name: student_primary_id_studentnumber
         data_type: int64
       - name: surrogate_key
-        data_type: string
-      - name: measure_name_code
         data_type: string
       - name: measure_name
         data_type: string
