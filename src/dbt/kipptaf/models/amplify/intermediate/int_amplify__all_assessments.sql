@@ -154,15 +154,7 @@ with
             and p.client_date between e.start_date and e.end_date
             and e.assessment_include is null
             and e.pm_goal_include is null
-        where
-            p.enrollment_grade = p.assessment_grade
-            and p.assessment_grade is not null
-            /* mCLASS Intervention is a separate Amplify product that shares the
-               PM export. Its measures have no expected-assessment mapping, so
-               they must not be counted as DIBELS probes. Excluded by name
-               rather than allow-listing the DIBELS edition, so an edition
-               rename cannot silently empty this branch (#4901). */
-            and p.assessment_edition is distinct from 'mCLASS Intervention'
+        where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
     ),
 
     max_score as (

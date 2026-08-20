@@ -56,9 +56,6 @@ with
                 then 'Word Reading (WRF)'
                 when 'PSF'
                 then 'Phonemic Awareness (PSF)'
-                -- Amplify switched this export from short codes to long labels
-                -- in 2026; pass long-form values through so the mapping
-                -- tolerates both formats (#4901)
                 else measure
             end as measure,
 
@@ -68,8 +65,6 @@ with
                 then 'Composite'
                 when 'Maze'
                 then 'Comprehension'
-                -- long-form spelling of the same measure (#4901); every other
-                -- long label resolves correctly via the substr branch below
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
                 else substr(measure, strpos(measure, '(') + 1, 3)
