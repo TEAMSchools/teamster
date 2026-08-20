@@ -144,6 +144,12 @@ All paths below are relative to `src/dbt/kipptaf/`.
 
 ### Task 1: `int_focus__attendance_daily`
 
+> **Superseded contract.** Tasks 1 through 6 were executed with
+> PowerSchool-shaped projections. Task 6b later stripped all of that and made
+> the package Focus-native. The LOGIC described in Tasks 1 through 6 is current
+> and was never changed; the COLUMN CONTRACTS are not. For the column set any of
+> these six models actually emits, read Task 6b.
+
 **Files:**
 
 - Create: `src/dbt/focus/models/intermediate/int_focus__attendance_daily.sql`
@@ -451,10 +457,12 @@ models:
           Attendance code conformed to the PowerSchool vocabulary — A absent
           undocumented, AE absent excused, AD absent documented, M missing
           record, null present.
-      - name: att_code_focus
+      - name: is_attendance_recorded
         description: >-
-          Raw Focus daily code before conforming (U, AE, AD, or null), retained
-          so the original value is not lost.
+          Whether the source system recorded attendance for this student-day at
+          all. False means the register was never taken, which is distinct from
+          a recorded presence. NULL on PowerSchool-sourced rows, because
+          PowerSchool records only absences and cannot express the difference.
       - name: attendancevalue
         description: >-
           1 present, 0 absent, from Focus state_value. A day with no attendance
@@ -2431,7 +2439,9 @@ PowerSchool wrapper into the SIS-neutral model.
   `int_students__calendar_week`, `int_focus__schools`,
   `stg_google_sheets__people__locations`
 - Produces: `int_students__attendance_daily` with every column the current
-  `int_powerschool__ps_adaadm_daily_ctod` emits, plus `att_code_focus STRING`
+  `int_powerschool__ps_adaadm_daily_ctod` emits, plus
+  `is_attendance_recorded BOOL` and the dual-exposed neutral columns from the
+  conform contract
 
 - [ ] **Step 1: Reduce the PowerSchool wrapper to a thin union**
 
@@ -2681,7 +2691,8 @@ with
 
 Then append the `anchors`, `running_calcs`, and final `select` blocks **exactly
 as they appear in the pre-change `int_powerschool__ps_adaadm_daily_ctod`**, with
-`att_code_focus` added to the final select list. Retrieve them with:
+the dual-exposed neutral columns added to the final select list. Retrieve them
+with:
 
 ```bash
 git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer \
@@ -3597,13 +3608,13 @@ re-measure to Tasks 9 through 15; the two-PR ship sequence to Tasks 7 and 15;
 the `TODO(#4927)` nulls to Task 11. The Ops calendar handoff needs no task — it
 is an Asana item — but its warn test is in Task 9.
 
-**Type consistency.** `int_focus__attendance_daily` produces `att_code_focus`,
-which Task 11 reads to gate the six null flags, and which Task 11's properties
-file documents. `student_number` is the join key in Tasks 12 and 14 and is
-produced by every model from Task 1 onward. `yearid` is the year-scoping key in
-every union and is produced by all six package models. `schoolid` is Focus
-internal in Tasks 1 through 6 and the network number from Task 9 onward, with
-the crosswalk CTE spelled out in each task that needs it.
+**Type consistency.** `int_focus__attendance_daily` produces
+`is_attendance_recorded`, which Task 11 reads to gate the six null flags, and
+which Task 11's properties file documents. `student_number` is the join key in
+Tasks 12 and 14 and is produced by every model from Task 1 onward. `yearid` is
+the year-scoping key in every union and is produced by all six package models.
+`schoolid` is Focus internal in Tasks 1 through 6 and the network number from
+Task 9 onward, with the crosswalk CTE spelled out in each task that needs it.
 
 **Task 14's NJ risk was measured, not assumed.** The rewrite changes the join
 key from `studentid` to `student_number` and drops the `att_mode_code` filter,
