@@ -36,9 +36,13 @@ models:
           CTE, so only long-form labels need arms here and vendor format
           tolerance lives in exactly one place. There is deliberately no
           fallback — an unrecognized measure yields NULL, which the not_null
-          test below catches unconditionally, rather than being silently
-          truncated to a three-character code that could collide with a real
-          one. Add a measure here whenever one is added to the mapping above.
+          test below flags on every row, rather than being silently truncated to
+          a three-character code that could collide with a real one. The test
+          alerts, it does not block: no staging test gates cross-code-location
+          propagation, so a NULL still reaches kipptaf. NULL is chosen because
+          it is the most inert failure value — a NULL partition key can only
+          group with other NULLs. Add a measure here whenever one is added
+          above.
         data_tests:
           - not_null:
               config:
