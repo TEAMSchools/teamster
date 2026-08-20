@@ -148,16 +148,19 @@ PII-tagged package model must re-declare it. Model level suffices for a
 
 ### Finalsite contact unions
 
-`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
-kipptaf `union_relations` views over per-region finalsite sources.
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` /
+`int_finalsite__student_address_of_record` /
+`int_finalsite__contact_address_of_record` are kipptaf `union_relations` views
+over per-region finalsite sources.
 
 - **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
   finalsite api enabled with contacts data AND `powerschool_student_number`s, so
   unioning it into `int_finalsite__student_contacts` double-counts against the
   PowerSchool branch of `int_students__contacts` (the grain test catches it).
-  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
-  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
-  Newark rows (null prefix) never reach the Focus feeds.
+  `int_finalsite__contact_id_attributes` and
+  `int_finalsite__student_address_of_record` DO include Miami — Focus consumes
+  them, and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`,
+  so Newark rows (null prefix) never reach the Focus feeds.
 - **Source schema staging branch**: all four regions' finalsite sources
   (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
   `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
@@ -175,20 +178,36 @@ kipptaf `union_relations` views over per-region finalsite sources.
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
 
-This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
-view lives in kipptaf sourcing district data via `source()`, and each district
-has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
-contract-columns-only — NO data tests or descriptions (those live on the kipptaf
-view). A new kipptaf region source (`sources-kipp*.yml`) needs the
-`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
-can't read it.
+This cross-project shape generalizes (e.g. finalsite→focus,
+`extracts/parentsquare/`): the heavy `rpt_*` view lives in kipptaf sourcing
+district data via `source()`, and each district has a thin wrapper sourcing
+`kipptaf_extracts`. The wrapper is contract-columns-only — NO data tests or
+descriptions (those live on the kipptaf view). A new kipptaf region source
+(`sources-kipp*.yml`) needs the `dev`/`staging` (`zz_stg_`)/prod schema branch,
+or single-PR cross-project CI can't read it.
+
+**The wrapper's region filter is a `code_location` column** the kipptaf view
+exposes (`_dbt_source_project as code_location`, or the roster's
+`home_work_location_dagster_code_location` for staff feeds) — the wrapper then
+filters `where code_location = '{{ project_name }}'` and does NOT project it.
+Don't expose `_dbt_source_project` under its own name for this; `code_location`
+is what `rpt_powerschool__autocomm_students` and `rpt_parentsquare__*` use.
+
+**Widening a Newark-only view to NJ is not just a filter swap** — a bare
+`cross join` to schools fans a region's staff across every NJ school, and an
+ungrouped `min()` pick over a sibling feed assigns one owner network-wide that
+dangles in every other region's file while a single-column `relationships` test
+still passes. Region-key both, and check school-number / `student_number`
+collisions and enum-domain tests (e.g. grade level) against prod before
+implementing, since widening changes the population every error-severity test
+runs over.
 
 **finalsite→focus exception**: the kippmiami `rpt_focus__*` are NOT thin
 pass-throughs — they are the reconciliation layer (import-once / diff against
 current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
-(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+(presence anti-join, with a null/street-line gate #4320); enrollment diffs and
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
@@ -225,7 +244,11 @@ Canonical-grain consumers (1 row per logical school) should use
 **`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
 `Location_Name` only. `Name` is the parent campus and repeats across sibling
 schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
-children).
+children). It is the SOLE owner of location-to-campus — `campus_name` on
+`int_people__location_crosswalk` and `campus` on `dim_locations` resolve from
+here; don't reintroduce a `Campus_Name` scalar on the locations sheet. It
+carries no self-referential rows, so a campus record's `campus_name` is NULL by
+design. It also gates `rpt_illuminate__roles` via an INNER join.
 
 **`stg_powerschool__students` phantom rows**: PowerSchool retains 4 placeholder
 rows (one per district) with
@@ -245,6 +268,13 @@ include `academic_year` hash uniquely; omitting `academic_year` collides.
 Date-range joins on `entrydate` silently drop these rows. Retain them for KIPP
 Forward / kippadb alumni reporting — derived enrollment models must not drop
 them, and `dim_student_enrollments` stays alumni-inclusive.
+
+**Miami is the exception, deliberately.** Focus is Miami's sole enrollment
+source and has no placeholder equivalent, so the Focus cutover removed Miami's
+1,002 placeholder rows (420 students, AY2022-AY2025) — from the spine in #4775
+and from `base_powerschool__student_enrollments` in #4868. The rule above still
+binds the three NJ regions. Do not "restore" Miami placeholders by reviving the
+frozen archive branch; that was decided against on 2026-08-14.
 
 **`enroll_status` is student-level, not per-stint.** Sourced from
 `stg_powerschool__students` and copied identically to every row in
@@ -388,6 +418,21 @@ dbt Cloud project ID: `211862`.
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
 
+A refactor touching many models pulls them into `state:modified+`, so CI builds
+models it has never built — expect latent `severity: error` failures unrelated
+to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
+prod for the same count before assuming you caused it, and budget for triage
+when scoping a wide sweep.
+
+`state:modified+` is branch-vs-deferred-environment, NOT commit-vs-commit. A
+docs-only or `.md`-only push to a branch that already modifies dbt models
+re-runs the whole selection — measured at 918 relations and ~4.5 min on a
+13-file PR whose last commit touched only `.md`. Batch doc commits before
+pushing, or land them in a separate PR. Verify what a run actually built with
+`creation_time` in `region-us.INFORMATION_SCHEMA.TABLES` filtered to
+`dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
+proxies.
+
 CI is scoped to the kipptaf project only. PRs touching only a district project
 (kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
 that selects no models — kipptaf CI green is not evidence the district-side
@@ -485,3 +530,7 @@ snapshot — before removing it.
   `models/marts/`. Actively being developed; see
   `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
   discipline, and strict-chain rules.
+
+New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
+Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward
+choice, and the older ones are not being renamed.

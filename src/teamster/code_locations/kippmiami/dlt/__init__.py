@@ -8,7 +8,12 @@ schedules = [
     *focus.schedules,
 ]
 
+sensors = [
+    *focus.sensors,
+]
+
 __all__ = [
     "assets",
     "schedules",
+    "sensors",
 ]

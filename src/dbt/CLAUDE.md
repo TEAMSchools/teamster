@@ -63,6 +63,23 @@ Consuming district projects override these in their own `dbt_project.yml`.
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
+**A brand-new external source cannot be staged until its asset has materialized
+once** — Avro autodetect needs >=1 file. Pre-merge, open the PR non-draft so the
+branch deployment builds, materialize the asset there, then stage with the
+`gs://teamster-test/...` `--vars` override below. Post-merge, launch that asset
+in prod IMMEDIATELY: external sources are excluded from the deps gate
+(`any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)` in
+`core/automation_conditions.py`), so the first post-deploy tick requests the new
+staging model and its `stage_external_sources` fails on the still-empty prod
+prefix.
+
+**Sheets externals need no manual post-merge prod re-stage.** The
+`build_dbt_assets` stage→refresh→build flow re-stages the prod external and
+rebuilds the `stg_` table on the next tick. The "launch that asset in prod
+IMMEDIATELY" rule above is for NEW Avro/GCS sources only. Verify with
+`INFORMATION_SCHEMA.COLUMNS` on the prod external before filing a manual
+re-stage as outstanding work.
+
 **AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
 evolve an Avro source's schema, the new-schema file must sort last — materialize
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
@@ -240,6 +257,12 @@ config blocks before the move, and rename the model's singular tests and their
 
 ## View→table flips for BigQuery plan depth
 
+**Before re-attempting a materialization or automation-condition change, check
+whether it was already reverted**:
+`git log -S '<config key>' -- <properties yml>`. A reverted perf change reads as
+an obvious win and CI passes for a while — that is how #4464 got re-done here,
+eight days after #4587 reverted it.
+
 A table model with a plan of hundreds of stages (straggler-fragile, e.g.
 [#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
 the depth from view upstreams: BigQuery inlines each view's full SQL per
@@ -263,6 +286,20 @@ the conversion silently keeps serving the stale table. Ship table→view
 conversions with either an explicit
 `DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
 `dbt build --select <model> --full-refresh` once after merge.
+
+## Snapshot meta-column config changes need a manual DDL migration
+
+Adding `hard_deletes: new_record` (or renaming meta columns via
+`snapshot_meta_column_names`) to an EXISTING snapshot fails EVERY run with
+`Snapshot target is missing configured columns` — dbt validates the target's
+columns and raises before any merge; it never adds them
+(`dbt/adapters/base/impl.py::assert_valid_snapshot_target_given_strategy`). Ship
+the one-time DDL with the config change, handed to the user (BQ MCP is
+SELECT-only): `alter table <snapshot> add column dbt_is_deleted string`, then
+`update <snapshot> set dbt_is_deleted = 'False' where true` — dbt writes the
+literal strings `'True'`/`'False'`, and the merge inserts by column name, so
+append-at-end is fine. Never `--full-refresh` a snapshot to clear the error;
+that destroys its SCD history.
 
 ## `WITH RECURSIVE` needs `contract: enforced: false`
 
@@ -291,8 +328,11 @@ against the `kipptaf` project alone. A PR confined to a district project
 (`kipp{newark,camden,miami,paterson}`) or a source-system package selects zero
 models under `state:modified+` unless it changes a kipptaf-consumed `source()`
 schema (column set) — so the dbt Cloud check goes green **trivially, not as
-validation** (a ~30s no-op run). Those models are first exercised by Dagster's
-dbt step (branch deployment / prod automation), not dbt Cloud CI.
+validation** (a ~30s no-op run). A dbt-only PR also gets NO branch deployment
+(the `pull_request` paths in `.github/workflows/deploy-prod-*.yaml` exclude
+`src/dbt/**`), so **nothing in CI builds those models** — a local `dbt build` is
+the only pre-merge validation, and they are first exercised in prod after merge.
+Never call such a PR CI-validated.
 
 ## dbt Cloud CI state comparison
 
@@ -330,6 +370,10 @@ re-stage YOUR copy first:
 `dbt run-operation stage_external_sources --args "select: <source>.<table>" --vars '{ext_full_refresh: true}' --target dev --project-dir src/dbt/<district>`
 (personal schema, NOT classifier-blocked, unlike `--target staging`), then
 `dbt build --select <model> --target dev`.
+
+**A view build does not evaluate data.** A bad `cast` in a view-materialized
+model passes `dbt build` and fails only when a downstream TABLE materializes it.
+Never read a green view build as validation of values or types.
 
 **A macro call missing its `{{ }}` fails only at build.** A bare `my_macro()`
 instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluff,
@@ -417,13 +461,35 @@ preserves newlines as newlines; multi-line SQL is fine.
   models, not district-level overrides with the same name. For cross-project
   staging seeding, omit `--select`.
 
+**A stale `--state` manifest makes the clone skip models silently, and a stale
+`dbt_packages/` is why the manifest goes stale.** Symptom: a `--target staging`
+build right after a full clone fails
+`Not found: Table zz_stg_<district>_<source>.<model>` for a model that plainly
+exists in prod. Cause chain: `dbt clone` skips any node absent from `--state`
+(see above), and the prod manifest only regenerates via `.git/hooks/post-merge`
+— which fails **silently** if `dbt parse` errors, freezing the manifest at its
+last good date. The parse error is usually a package the project no longer
+lists: a retired `local:` package stays in `<project>/dbt_packages/`, so parse
+still loads its models and dies on one referencing a since-disabled model (e.g.
+kippmiami kept a `powerschool` copy after the Focus migration →
+`int_powerschool__contacts` → `stg_powerschool__studentcontactassoc` "is
+disabled"). Diagnose by comparing the manifest's mtime to the model's add date
+and `grep` for the node's `unique_id`; fix with
+`dbt deps --project-dir src/dbt/<project>` (prunes the stale package) then the
+`dbt parse --target prod --target-path target/prod` regeneration above.
+Re-running the clone against the stale manifest just skips the same models
+again.
+
 ## `dbt_utils.union_relations` is compile-time
 
-Compiles to the column intersection from source-table
-`INFORMATION_SCHEMA.COLUMNS`. New columns added at package-level staging don't
-surface at kipptaf-level consumers until district projects rebuild prod. For
-single-PR refactors, add transformations at the kipptaf-level wrapper, not at
-package level.
+Compiles to the column SUPERSET from source-table `INFORMATION_SCHEMA.COLUMNS`,
+null-filling absent columns with `cast(null as <type>)`
+(`dbt_utils/macros/sql/union.sql`). It needs persisted relations, so it cannot
+union a local CTE — for that, BigQuery `full union all corresponding` gives the
+same superset/null-fill semantics. New columns added at package-level staging
+don't surface at kipptaf-level consumers until district projects rebuild prod.
+For single-PR refactors, add transformations at the kipptaf-level wrapper, not
+at package level.
 
 **Value-only vs column change**: a value-only edit to a package model needs no
 staging — the column set is unchanged, so kipptaf CI compiles and corrected
@@ -471,12 +537,32 @@ lingering as a stale prod table is absent from the prod manifest → clone-skipp
 tables by declaring them a BQ-native source (`sources-bigquery.yml`, plain
 hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
 
+## `dbt build --empty` destroys your dev relation contents
+
+`--empty` doesn't just skip reading upstreams — it rebuilds every SELECTED
+relation as `limit 0`, so a `--empty` run over `<model>+` leaves the whole
+descendant graph EMPTY in your dev schema. A validation query run afterwards
+returns 0 rows and looks like catastrophic row loss in the model.
+
+Order matters: run validation queries BEFORE the `--empty` gate, or rebuild
+without `--empty` afterwards. Distinguish this from a real break by checking a
+relation OUTSIDE the `--empty` selection — a source copy that still has rows
+while every selected model is 0 is the signature. Verified this session: a
+409-node `--empty` gate zeroed `int_students__student_enrollments`,
+`int_focus__advisory` and the `base_` passthrough while the unselected
+`zz_<user>_kippnewark_powerschool` source kept its 97,855 rows.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
 dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
+
+The inverse also happens: a stale dev CHILD makes a `relationships` test pass
+VACUOUSLY. A `dbt test` that passes locally and warns in CI with thousands of
+orphans is this, not a regression — confirm by holding the child fixed and
+swapping only the parent.
 
 Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
@@ -506,6 +592,15 @@ hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
 resolved to dev by grepping the compiled SQL (`target/compiled/.../<model>.sql`)
 for `zz_<user>_` refs — dev-schema refs mean `--defer` was shadowed; validate
 against prod (or an ad-hoc prod query) instead.
+
+**`--favor-state` governs refs, NOT `source()`.** kipptaf `sources-kipp*`
+resolve to personal `zz_<user>_*` copies under `target=dev`, so a stale personal
+copy fakes a dev-vs-prod delta that no flag corrects — this produced a phantom
+7,000-row "regression" twice in one session. Validate a filter or union change
+against the SOURCE rows the build actually read (query the `zz_<user>_*` table
+directly), never against prod. Exception: a frozen BQ-native source (e.g.
+`kippmiami_powerschool`) resolves to PROD even under `target=dev` — the opposite
+staleness expectation from its district siblings.
 
 To validate a MODIFIED `rpt_`/view against prod (the deployed view is still the
 OLD code, and a dev build is stale-shadowed), rewrite its compiled SQL
@@ -579,6 +674,17 @@ text-formatted `00000` in Sheets becomes INT64.
       data_type: STRING
 ```
 
+- **Header autodetect needs type variation.** BigQuery only treats row 1 as a
+  header when it differs in type from the data below. An all-STRING range (e.g.
+  a narrowed name-only crosswalk) autodetects as `string_field_0`,
+  `string_field_1` — which fails a contracted `select *`. Declare `columns:`
+  explicitly for any all-string range; `skip_leading_rows: 1` still drops the
+  header.
+- **To narrow a Sheets source, add a new named range and move `sheet_range`**
+  (`src_x` → `src_x_v2`), don't delete sheet columns — AppSheet and other
+  non-dbt consumers read the same tab. Version only the range; keep the source
+  `name:` and Dagster asset key. Precedent:
+  `src_google_sheets__people__locations_v3`.
 - **Phantom empty rows**: a Sheet's full grid (often ~1000 rows) lands as
   null-key rows in the external table → staging `not_null`/`unique` key tests
   fail with ~N results. Filter them in the staging model:
@@ -722,6 +828,53 @@ legitimately-superseded inactive rows that repeat the key.
   `error`. To restore `error`, set `config: severity: error` explicitly.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+- **`accepted_values` passes NULLs** — it compiles to
+  `where value not in (...)`, which NULL never satisfies. Every enum column that
+  must be non-null carries `not_null` too, including one a `coalesce` makes
+  non-null by construction. **Never delete a `not_null` from a column that
+  carries `accepted_values`.** It is not vacuous, whatever the SQL looks like —
+  the pairing is the only thing making the enum test reject NULL.
+- **Never add `not_null` to a column that cannot be NULL by construction.** It
+  can never fail, and it still costs a full BigQuery scan per CI run — on a view
+  mart that scan re-expands the entire upstream chain. Non-nullable by
+  construction means every definition site is one of: an unwrapped
+  `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
+  literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
+  above overrides this rule; nothing else does.
+- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
+  properties yml moves the model to `disabled` but leaves every test in `nodes`
+  (verified with `--no-partial-parse`), still scanning the stale prod relation.
+  Add `config: enabled: false` to each test as well.
+
+### Retiring a crosswalk or lookup as redundant
+
+Check the join TYPE per consumer first. An INNER join makes the table a
+membership filter — often gating an outbound feed — not a lookup, and its row
+set may encode no derivable rule. Likewise count the rows any replacement
+`coalesce` fallback actually fires on: one written to preserve a single row
+fired on 251.
+
+### Retiring a model is always a disable, never a delete
+
+Set `config: enabled: false` in the properties yml and leave the `.sql` and the
+prod relation in place. Applies even when the model has no exposure and zero
+remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
+instead of vanishing. Do not propose deletion as the tidier option, and do not
+issue a `drop view` for the orphaned relation. Disabling a model does NOT
+disable its tests (see _Test config defaults_) — add `enabled: false` to each of
+those too.
+
+### Verifying a test-removal PR
+
+Never report a count from the YAML diff — it does not say which dbt nodes
+actually disappeared. `dbt parse` on main and on the branch, then diff the
+`resource_type == 'test'` node names. That fixes the delta and proves nothing
+unintended was dropped.
+
+Parse BOTH sides with `--no-partial-parse` — partial parse caches node
+enable/disable state and under-reports (767 vs 772 tests this session). Re-parse
+main fresh too: the main checkout's manifest is a stale artifact that reports
+since-deleted models as REMOVED and since-added ones as ADDED.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -808,6 +961,11 @@ Every `expect` row must list the **same columns** — dbt builds them as
 `Queries in UNION ALL have mismatched column count`. Put every asserted column
 in every row, `null` for empties.
 
+**A column ADD breaks that model's OWN unit test** — an `expect` block
+enumerates every output column, so the new column must be added there too. If
+the column is a raw passthrough, `expect` carries the UNnormalized value, not
+the normalized value its sibling scalar columns assert.
+
 ### Date-range joins
 
 Use half-open intervals when joining a point date to intervals that can **abut
@@ -847,8 +1005,8 @@ if(
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
 
-Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
-never returns NULL.
+**Never add a `not_null` test to `generate_surrogate_key` output** — it never
+returns NULL, so the test cannot fail. This holds for FK columns as much as PKs.
 
 #### Nullable PK inputs need a fallback, not a null-wrap
 
@@ -952,6 +1110,12 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   element ordering.
 - **No `QUALIFY`.** Compute the window function as a named column in a CTE and
   filter it with `WHERE` in the next CTE.
+- **No lateral column aliases.** BigQuery rejects a `SELECT`-list alias
+  referenced by another item in the same list —
+  `select 1 as a, case when a = 1 then 'x' end as b` fails
+  `Unrecognized name: a`. It works in Snowflake/DuckDB, so a reviewer may
+  propose it to de-duplicate two `CASE`s that share predicates; hoist to a CTE
+  or keep the duplication.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
@@ -1031,6 +1195,12 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   current_date('{{ var("local_timezone") }}')
   ```
 
+- **sqlfluff ST06 buckets `cast()` as a SIMPLE target**, not a calculation. A
+  `cast(...) as x` placed after `date(...)` / `regexp_extract(...)` in the same
+  select list fails ST06. Put every `cast()` after the plain column refs and
+  before any other function call.
+- **BigQuery rejects `\_` in a string literal** (`Illegal escape sequence`).
+  Escaping an underscore in a `LIKE` needs `'%\\_focus%'`.
 - **sqlfluff ST09 (join order)**: ON-clause predicates list the
   earlier-referenced table on the left, including predicates inside a current
   join that reference a prior-joined table. After
@@ -1101,8 +1271,11 @@ alias.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
-- Columns with **per-column** `data_tests:` should be sorted to the top of the
-  `columns:` list for visibility. Model-level composite tests
+- Columns with **per-column** `data_tests:` must be sorted to the top of the
+  `columns:` list for visibility — including after a change that strips a
+  column's last test. Reorder freely under `contract: enforced`: BigQuery
+  matches contract columns by name, not position (`fct_survey_responses` already
+  differs from its `select` order and builds clean). Model-level composite tests
   (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
   they go in the model-level `data_tests:` block ABOVE `columns:`, and their
   referenced columns can stay in their natural / contract order.
@@ -1118,6 +1291,11 @@ alias.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
   descriptions — those go in inline SQL comments at the derivation site.
+
+### Flattened child-array model naming
+
+`<layer>_<source>__<parent>__<child>` — `stg_coupa__users__roles`,
+`int_deanslist__incidents__actions`, `int_focus__users__pivot`.
 
 ### Legacy `base_` prefix
 

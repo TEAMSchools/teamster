@@ -17,8 +17,9 @@ with
         where
             not is_prestart
             and worker_status_code != 'Terminated'
-            -- Paterson gated from Clever until #4193; drop with the sibling feeds
-            and home_work_location_dagster_code_location != 'kipppaterson'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and home_work_location_dagster_code_location != 'kippmiami'
 
         union all
 
@@ -37,7 +38,12 @@ with
             department as home_department_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
-        where dagster_code_location != 'kipppaterson'
+        where
+            dagster_code_location != 'kippmiami'
+            -- int_people__temp_staff gates on idauto_status and the AD account
+            -- flag, neither of which flips on offboarding. A populated
+            -- idauto_person_term_date is the only termination signal it carries.
+            and idauto_person_term_date is null
     ),
 
     schools as (
@@ -52,12 +58,13 @@ with
         from {{ ref("stg_powerschool__schools") }}
         where
             state_excludefromreporting = 0
-            and _dbt_source_relation not like '%kipppaterson%'
+            and _dbt_source_relation not like '%kippmiami%'
     ),
 
     assignments as (
-        /* - School staff assigned to primary school only
-           - Campus staff assigned to all schools at campus
+        /* School and campus staff assigned to their primary school only. The
+           campus crosswalk previously overrode the school id here, but it
+           resolved to the same value the roster already carries.
         */
         select
             sr.powerschool_teacher_number,
@@ -67,23 +74,11 @@ with
             sr.home_department_name,
             sr.sam_account_name,
 
-            cast(
-                coalesce(
-                    ccw.powerschool_school_id,
-                    sr.home_work_location_powerschool_school_id
-                ) as string
-            ) as school_id,
+            cast(sr.home_work_location_powerschool_school_id as string) as school_id,
         from staff_roster as sr
-        left join
-            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_reporting_name = ccw.location_name
-            and not ccw.is_pathways
         where
             sr.home_department_name not in ('Data', 'Teaching and Learning')
-            and coalesce(
-                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            )
-            != 0
+            and sr.home_work_location_powerschool_school_id != 0
 
         union all
 

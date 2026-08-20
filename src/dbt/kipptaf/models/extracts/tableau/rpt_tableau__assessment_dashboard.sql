@@ -193,6 +193,7 @@ select
     sf.is_sipps,
     sf.is_low_25_fl,
     sf.dibels_most_recent_composite,
+    sf.state_test_proficiency,
 
     /* retired fields kept for tableau compatibility */
     null as power_standard_goal,

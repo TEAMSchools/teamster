@@ -1,123 +1,76 @@
 with
-    contact_1_candidates as (
-        -- contact_1 is the student's FIRST reportable parent contact. Finalsite
-        -- has no explicit contact rank, so we take the relationship it flags
-        -- `primary` (its parent1 designation) and fall back to the one flagged
-        -- `financial` when no primary is set — the two flags Ops maintains to
-        -- mark the responsible caregiver. A record with neither flag gets no
-        -- contact_1 (a Finalsite data-entry gap for Ops to resolve).
-        -- `primary`/`financial` are NULL (not false) when unset, so normalize
-        -- to false here to keep the downstream rank ordering deterministic. No
-        -- SIS scoping — downstream receivers filter to enrolled students by
-        -- joining on the student id.
+    parent_candidates as (
+        -- A parent candidate is any relationship flagged `primary` or
+        -- `financial` whose related contact is an ADULT. Finalsite marks adults
+        -- with status `not_in_workflow`; every other status (enrolled, inquiry,
+        -- waitlisted, ...) belongs to a student record, and a student is never
+        -- a parent. This guard -- not `rel_type` -- is what keeps a co-resident
+        -- sibling out of a parent slot, which matters because an adult sibling
+        -- CAN legitimately be a guardian and must still qualify.
         select
-            finalsite_enrollment_id,
-            relationship_id,
-            rel_id,
-            rel_name,
-            rel_type,
-            household_1_id,
-            is_parent2,
+            r.finalsite_enrollment_id,
+            r.relationship_id,
+            r.rel_id,
+            r.rel_name,
+            r.rel_type,
 
-            coalesce(is_primary, false) as is_primary,
-            coalesce(is_financial, false) as is_financial,
-        from {{ ref("stg_finalsite__contact_relationships") }}
-        where is_primary or is_financial
+            coalesce(r.is_primary, false) as is_primary,
+        from {{ ref("stg_finalsite__contact_relationships") }} as r
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as rc
+            on r.rel_id = rc.finalsite_enrollment_id
+            and rc.status = 'not_in_workflow'
+        where coalesce(r.is_primary, false) or coalesce(r.is_financial, false)
     ),
 
-    contact_1_ranked as (
-        -- Rank primary above financial; within a tier break on relationship_id.
-        -- Ties occur only among multiple `financial` relationships (a student
-        -- never has two `primary`); relationship_id is an arbitrary but stable
-        -- tiebreak — every candidate in a tier is a valid contact, and
-        -- Finalsite exposes no field that reproduces a caregiver ordering.
+    candidates_sharing_student_household as (
+        -- One row per (student, candidate) that co-belong to any household.
+        -- grain projection: a pair sharing several households would otherwise
+        -- repeat and fan out the rank below. Not a mask for upstream duplicates.
+        select distinct c.finalsite_enrollment_id, c.rel_id,
+        from parent_candidates as c
+        inner join
+            {{ ref("int_finalsite__contacts__households") }} as sh
+            on c.finalsite_enrollment_id = sh.finalsite_enrollment_id
+        inner join
+            {{ ref("int_finalsite__contacts__households") }} as ch
+            on c.rel_id = ch.finalsite_enrollment_id
+            and sh.household_id = ch.household_id
+    ),
+
+    parent_ranked as (
+        -- The `primary` relationship sorts first when one exists, then
+        -- co-residents with the student, then an arbitrary but stable
+        -- relationship_id. Household co-membership ORDERS candidates; it does
+        -- not exclude them, so a non-resident parent still fills a slot.
         select
-            finalsite_enrollment_id,
-            rel_id,
-            rel_name,
-            rel_type,
-            household_1_id,
-            is_parent2,
-            is_primary,
+            c.finalsite_enrollment_id,
+            c.rel_id,
+            c.rel_name,
+            c.rel_type,
 
             row_number() over (
-                partition by finalsite_enrollment_id
-                order by is_primary desc, is_financial desc, relationship_id asc
-            ) as rn,
-        from contact_1_candidates
-    ),
-
-    contact_1_picked as (
-        select finalsite_enrollment_id, rel_id, rel_name, rel_type,
-        from contact_1_ranked
-        where rn = 1
-    ),
-
-    contact_2_candidates as (
-        -- contact_2 is the student's SECOND reportable parent (DeansList
-        -- "Parent 2"). Finalsite encodes it as an additional relationship
-        -- flagged `financial` without `primary` (`primary` is a per-student
-        -- singleton — Parent 1; candidates are financial-only rows, so
-        -- `not is_primary` alone expresses that and also guards a hypothetical
-        -- two-primary record). Scoped conservatively per Ops: only when the
-        -- student's own `is_parent2` custom field is true AND the related
-        -- contact is a member of the student's first household ("household
-        -- 1") — second parents in other households are intentionally
-        -- excluded. rn > 1 skips the ROW picked as contact_1 (the financial
-        -- fallback when no primary is set); the rel_id inequality against the
-        -- pick additionally skips any other relationship row to the same
-        -- PERSON, so contact_2 can never duplicate contact_1. The student-side
-        -- gate fields (is_parent2, household_1_id) ride on the relationships
-        -- staging grain, so only the related contact's record is joined here.
-        select r.finalsite_enrollment_id, r.rel_id, r.rel_name, r.rel_type, r.rn,
-        from contact_1_ranked as r
-        inner join
-            contact_1_picked as p
-            on r.finalsite_enrollment_id = p.finalsite_enrollment_id
-            and r.rel_id != p.rel_id
-        inner join
-            {{ ref("stg_finalsite__contacts") }} as cp
-            on r.rel_id = cp.finalsite_enrollment_id
-            and r.household_1_id in unnest(cp.household_ids)
-        where r.rn > 1 and not r.is_primary and r.is_parent2
-    ),
-
-    contact_2_ranked as (
-        -- Multiple qualifying second-parent relationships tie-break by the
-        -- contact_1 ordering (rn carries the relationship_id tiebreak).
-        select
-            finalsite_enrollment_id,
-            rel_id,
-            rel_name,
-            rel_type,
-
-            row_number() over (
-                partition by finalsite_enrollment_id order by rn asc
-            ) as rn_contact_2,
-        from contact_2_candidates
+                partition by c.finalsite_enrollment_id
+                order by
+                    c.is_primary desc,
+                    (s.rel_id is not null) desc,
+                    c.relationship_id asc
+            ) as contact_rank,
+        from parent_candidates as c
+        left join
+            candidates_sharing_student_household as s
+            on c.finalsite_enrollment_id = s.finalsite_enrollment_id
+            and c.rel_id = s.rel_id
     ),
 
     parent_picks as (
+        -- Dense slot numbering has no gaps, so a student with no `primary`
+        -- still gets a populated contact_1 rather than starting at contact_2.
         select
-            finalsite_enrollment_id,
-            rel_id,
-            rel_name,
-            rel_type,
+            * except (contact_rank),
 
-            'contact_1' as contact_slot,
-        from contact_1_picked
-
-        union all
-
-        select
-            finalsite_enrollment_id,
-            rel_id,
-            rel_name,
-            rel_type,
-
-            'contact_2' as contact_slot,
-        from contact_2_ranked
-        where rn_contact_2 = 1
+            concat('contact_', cast(contact_rank as string)) as contact_slot,
+        from parent_ranked
     ),
 
     parents_typed as (
@@ -148,6 +101,11 @@ with
                 if(cp.phone_2_type = 'Work', cp.phone_2_number, null),
                 if(cp.phone_3_type = 'Work', cp.phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(cp.phone_1_type is null, cp.phone_1_number, null),
+                if(cp.phone_2_type is null, cp.phone_2_number, null),
+                if(cp.phone_3_type is null, cp.phone_3_number, null)
+            ) as phone_untyped,
             nullif(
                 array_to_string(
                     [cp.address_1, cp.address_2, cp.city, cp.state, cp.zip], ', '
@@ -169,6 +127,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             home_address,
             first_name as contact_first_name,
             last_name as contact_last_name,
@@ -218,6 +177,11 @@ with
                 if(emrg_1_phone_2_type = 'Work', emrg_1_phone_2_number, null),
                 if(emrg_1_phone_3_type = 'Work', emrg_1_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_1_phone_1_type is null, emrg_1_phone_1_number, null),
+                if(emrg_1_phone_2_type is null, emrg_1_phone_2_number, null),
+                if(emrg_1_phone_3_type is null, emrg_1_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_1_name_first_name is not null and emrg_1_name_first_name != ''
 
@@ -255,6 +219,11 @@ with
                 if(emrg_2_phone_2_type = 'Work', emrg_2_phone_2_number, null),
                 if(emrg_2_phone_3_type = 'Work', emrg_2_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_2_phone_1_type is null, emrg_2_phone_1_number, null),
+                if(emrg_2_phone_2_type is null, emrg_2_phone_2_number, null),
+                if(emrg_2_phone_3_type is null, emrg_2_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_2_name_first_name is not null and emrg_2_name_first_name != ''
 
@@ -292,6 +261,11 @@ with
                 if(emrg_3_phone_2_type = 'Work', emrg_3_phone_2_number, null),
                 if(emrg_3_phone_3_type = 'Work', emrg_3_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_3_phone_1_type is null, emrg_3_phone_1_number, null),
+                if(emrg_3_phone_2_type is null, emrg_3_phone_2_number, null),
+                if(emrg_3_phone_3_type is null, emrg_3_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_3_name_first_name is not null and emrg_3_name_first_name != ''
 
@@ -329,6 +303,11 @@ with
                 if(emrg_4_phone_2_type = 'Work', emrg_4_phone_2_number, null),
                 if(emrg_4_phone_3_type = 'Work', emrg_4_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_4_phone_1_type is null, emrg_4_phone_1_number, null),
+                if(emrg_4_phone_2_type is null, emrg_4_phone_2_number, null),
+                if(emrg_4_phone_3_type is null, emrg_4_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_4_name_first_name is not null and emrg_4_name_first_name != ''
     ),
@@ -348,6 +327,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             phone_primary,
             is_pickup,
             is_custodial,
@@ -374,6 +354,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             phone_daytime,
             phone_primary,
             home_address,
@@ -397,6 +378,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             phone_daytime,
             phone_primary,
             home_address,
@@ -419,6 +401,7 @@ select
     phone_mobile,
     phone_home,
     phone_work,
+    phone_untyped,
     phone_daytime,
     phone_primary,
     home_address,

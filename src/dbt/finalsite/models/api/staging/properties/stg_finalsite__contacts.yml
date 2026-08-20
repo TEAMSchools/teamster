@@ -85,7 +85,10 @@ models:
         description: Start year of the prospect's intended entry school year.
       - name: phone_1_type
         data_type: string
-        description: Type label of the first phone.
+        description:
+          Type label of the first phone — `Cell`, `Home`, or `Work`. Null when
+          Finalsite holds the number with no type selected, which it emits as an
+          empty string and this model normalizes to null.
       - name: phone_1_number
         data_type: string
         description:
@@ -96,7 +99,10 @@ models:
           (control characters stripped) rather than becoming null.
       - name: phone_2_type
         data_type: string
-        description: Type label of the second phone.
+        description:
+          Type label of the second phone — `Cell`, `Home`, or `Work`. Null when
+          Finalsite holds the number with no type selected, which it emits as an
+          empty string and this model normalizes to null.
       - name: phone_2_number
         data_type: string
         description:
@@ -104,7 +110,10 @@ models:
           `phone_1_number`.
       - name: phone_3_type
         data_type: string
-        description: Type label of the third phone.
+        description:
+          Type label of the third phone — `Cell`, `Home`, or `Work`. Null when
+          Finalsite holds the number with no type selected, which it emits as an
+          empty string and this model normalizes to null.
       - name: phone_3_number
         data_type: string
         description:
@@ -137,6 +146,17 @@ models:
           Repeated per-school-year ("track") custom fields; same key-value shape
           as `custom_attributes` plus the `school_year` the value applies to.
           Passed through whole.
+      - name: households
+        data_type:
+          array<struct<id string, address_1 string, address_2 string, city
+          string, state string, zip string, country string>>
+        description:
+          Repeated raw household struct, passed through unnormalized (Finalsite
+          emits empty strings rather than null, and mixed-case states). This
+          model's scalar `address_*` columns are this array's first element
+          only; `int_finalsite__contacts__households` flattens every element per
+          contact, with the same blank-to-null and state-uppercasing
+          normalization applied downstream.
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
@@ -158,16 +178,25 @@ models:
         description:
           Line 1 of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: address_2
         data_type: string
         description:
           Line 2 of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
         description:
           City of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
         description:
@@ -178,6 +207,9 @@ models:
         description:
           ZIP code of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: country
         data_type: string
         description: Country of the primary household address.
@@ -188,7 +220,11 @@ unit_tests:
       Each phone normalizes to E.164 as it is flattened out of its source struct
       — a control-char-garbled number and a parenthesized-and-dashed number both
       resolve to `+1XXXXXXXXXX`, while a value with no parseable digits passes
-      through as entered rather than becoming null. Also covers the
+      through as entered rather than becoming null. phone_3 carries the empty
+      string Finalsite emits when no type is selected, and the expected
+      phone_3_type of null is what proves the blank-to-null normalization fired
+      — downstream models test for an untyped phone with `is null`, so an empty
+      string reaching them would silently strand the number. Also covers the
       household-address normalization applied in the same select — blank to
       null, state uppercased.
     model: stg_finalsite__contacts
@@ -227,9 +263,7 @@ unit_tests:
                 || code_points_to_string([8236]) as number
             ) as phone_1,
             struct('Home' as phone_type, '(929) 225-5670' as number) as phone_2,
-            struct(
-              cast(null as string) as phone_type, 'no phone' as number
-            ) as phone_3,
+            struct('' as phone_type, 'no phone' as number) as phone_3,
             array<struct<field_name string, value struct<string_value string>>>[]
               as custom_attributes,
             array<struct<field_name string, value struct<string_value string>>>[]
@@ -282,6 +316,17 @@ unit_tests:
             as id_attributes,
           array<struct<field_name string, value struct<string_value string>>>[]
             as track_attributes,
+          [
+            struct(
+              'hh1' as id,
+              '123 Main St' as address_1,
+              '' as address_2,
+              ' Miami ' as city,
+              ' fl ' as state,
+              '33101' as zip,
+              'US' as country
+            )
+          ] as households,
           cast('2015-04-05' as date) as birth_date,
           'hh1' as household_1_id,
           '123 Main St' as address_1,

@@ -1,16 +1,27 @@
 with
+    staff as (
+        select
+            *,
+
+            /*
+                job_function (ADP codes TEACH / TIR) is not set on newly created
+                work assignments, so fall back to the job title until it fills in
+            */
+            coalesce(
+                job_function in ('Teacher', 'Teacher in Residence'),
+                job_title like '%Teacher%' or job_title like '%Learning%'
+            ) as is_teacher,
+        from {{ ref("int_people__staff_roster") }}
+        where home_work_location_dagster_code_location != 'kipppaterson'
+    ),
+
     instructional_managers as (
         select distinct sr.reports_to_employee_number,
-        from {{ ref("int_people__staff_roster") }} as sr
-        join
-            {{ ref("int_people__staff_roster") }} as srm
-            on sr.reports_to_employee_number = srm.employee_number
+        from staff as sr
+        join staff as srm on sr.reports_to_employee_number = srm.employee_number
         where
             sr.assignment_status in ('Active', 'Leave')
-            and (
-                contains_substr(sr.job_title, 'Teacher')
-                or contains_substr(sr.job_title, 'Learning Specialist')
-            )
+            and sr.is_teacher
             or srm.home_department_name
             in ('School Support', 'Student Support', 'KIPP Forward')
     ),
@@ -87,18 +98,13 @@ with
                                     'Coach',
                                     null
                                 ),
-                                if(
-                                    sr.job_title like '%Teacher%'
-                                    or sr.job_title like '%Learning%',
-                                    'Teacher',
-                                    null
-                                )
+                                if(sr.is_teacher, 'Teacher', null)
                             ]
                         ) as rn
                     where rn is not null
                 )
             ) as role_names,
-        from {{ ref("int_people__staff_roster") }} as sr
+        from staff as sr
         where
             sr.user_principal_name is not null
             and sr.home_department_name != 'Data'

@@ -14,11 +14,11 @@ select
     `Head_of_Schools_Employee_Number` as head_of_schools_employee_number,
     `ADP_Location_Code` as adp_location_code,
     `Grow_Location_ID` as grow_location_id,
-    `Campus_Name` as campus_name,
     `Address` as address,
     `City` as city,
     `Postal_Code` as postal_code,
     `Focus_School_ID` as focus_school_id,
+    `Google_Student_orgUnitPath` as google_student_org_unit_path,
 
     case
         `Dagster_Code_Location`

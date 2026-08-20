@@ -32,11 +32,11 @@ models:
         description: >-
           FK to dim_survey_administrations. Identifies which survey
           administration this submission belongs to.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_survey_administrations')
-            to_columns: [survey_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_survey_administrations')
+              to_columns: [survey_administration_key]
         data_tests:
           - relationships:
               arguments:
@@ -48,11 +48,11 @@ models:
           FK to dim_dates (role-playing as submission date). The local date the
           survey was submitted.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -80,11 +80,11 @@ models:
           student / family respondents AND for staff respondents whose identity
           cannot be resolved upstream.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -101,11 +101,11 @@ models:
           not present in int_extracts__student_enrollments or has no enrollment
           row covering date_submitted.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -117,11 +117,11 @@ models:
           FK to dim_student_contact_persons for the respondent. Populated when
           respondent_type is family. Null for staff and student.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_contact_persons')
-            to_columns: [student_contact_person_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_contact_persons')
+              to_columns: [student_contact_person_key]
         data_tests:
           - relationships:
               arguments:
@@ -135,11 +135,11 @@ models:
           (direct report) evaluates their manager (subject). Null for all other
           survey types.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:

@@ -10,11 +10,14 @@ with
             fc.contact_slot,
             fc.finalsite_contact_id,
             fc.contact_name,
+            fc.contact_first_name,
+            fc.contact_last_name,
             fc.relationship,
             fc.phone_mobile,
             fc.phone_home,
             fc.phone_daytime,
             fc.phone_work,
+            fc.phone_untyped,
             fc.phone_primary,
             fc.is_emergency,
             fc.is_pickup,
@@ -35,238 +38,162 @@ with
         where xw.powerschool_student_number is not null
     ),
 
-    -- PowerSchool-mapped branch: regions not yet cut over to Finalsite (today
-    -- Miami only — the NJ regions Newark, Camden, and Paterson are all
-    -- Finalsite-sourced). Mirrors the legacy pivot slotting: contact_1 is the
-    -- priority-1 contact; emergency_N are the priority>=3 emergency contacts
-    -- ranked by priority. Remove a region from the filter below as it cuts over
-    -- to Finalsite.
-    ps_base as (
+    -- Miami Focus branch, replacing the branch that read the frozen
+    -- pre-migration kippmiami_powerschool snapshot. Focus stores the KIPP
+    -- student number 8400-prefixed in local_student_id, so student_number is
+    -- derived by stripping that prefix rather than crosswalked -- the network
+    -- has always keyed Miami students on the unprefixed number, and
+    -- dim_students.student_key hashes it. Strip on the literal prefix rather
+    -- than positionally: one id carries no 8400 at all, and dropping its first
+    -- four characters yields a number matching no student, silently losing
+    -- that student's contacts. Deriving beats
+    -- joining int_finalsite__contact_id_attributes on
+    -- focus_student_id_prefixed: its powerschool_student_number agrees with the
+    -- stripped value wherever it is populated, but it is null for every
+    -- Focus-native student (no pre-migration PowerSchool record), so the join
+    -- would silently drop most of Miami.
+    focus_base as (
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentdcid,
-            personid,
+            student_id,
+            person_id,
+            relationship,
+            sort_order,
             contact_name,
-            relationship_type,
-            contactpriorityorder,
+            contact_first_name,
+            contact_last_name,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_primary,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+            _dbt_source_project,
+            email as email_current,
+            home_address as address_home,
 
-            isemergency = 1 as is_emergency,
-            iscustodial = 1 as is_custodial,
-            liveswithflg = 1 as is_household_member,
-            schoolpickupflg = 1 as is_pickup,
-        from {{ ref("int_powerschool__contacts") }}
-        where
-            person_type != 'self'
-            and _dbt_source_project not in ('kippnewark', 'kippcamden', 'kipppaterson')
+            -- Focus types every phone it stores, so there is no untyped number
+            -- to recover on this branch. The column exists to keep both
+            -- branches union-compatible.
+            cast(null as string) as phone_untyped,
+
+            safe_cast(
+                regexp_replace(local_student_id, r'^8400', '') as int64
+            ) as student_number,
+        from {{ ref("int_focus__student_contacts") }}
     ),
 
-    ps_contact_1 as (
-        select *, 'contact_1' as contact_slot,
-        from ps_base
-        where contactpriorityorder = 1
+    focus_contact_1 as (
+        select *, 'contact_1' as contact_slot, from focus_base where sort_order = 1
     ),
 
-    ps_emergency_ranked as (
+    -- Every emergency-flagged link is ranked, including the sort_order 1 row
+    -- that also lands in contact_1 — the two are distinct contact_slot values,
+    -- so the model's (student_number, _dbt_source_project, contact_slot) grain
+    -- holds and one person may legitimately occupy both slots. person_id breaks
+    -- sort_order ties so slot assignment is stable across rebuilds. Capped at 4
+    -- to match the outgoing PowerSchool branch: int_students__contacts_pivot
+    -- enumerates a fixed slot list ending at emergency_4, so higher ranks would
+    -- materialize rows no consumer reads.
+    focus_emergency_ranked as (
         select
             *,
 
             row_number() over (
-                partition by _dbt_source_relation, studentdcid
-                order by contactpriorityorder asc
+                partition by _dbt_source_project, student_id
+                order by sort_order asc, person_id asc
             ) as emergency_rank,
-        from ps_base
-        where contactpriorityorder >= 3 and is_emergency
+        from focus_base
+        where is_emergency
     ),
 
-    ps_emergency as (
+    focus_emergency as (
         select
             * except (emergency_rank),
 
             concat('emergency_', cast(emergency_rank as string)) as contact_slot,
-        from ps_emergency_ranked
+        from focus_emergency_ranked
         where emergency_rank <= 4
     ),
 
-    ps_slotted as (
+    focus_slotted as (
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentdcid,
-            personid,
-            contact_name,
-            relationship_type,
             contact_slot,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
             is_emergency,
+            is_pickup,
             is_custodial,
             is_household_member,
-            is_pickup,
-        from ps_contact_1
+            _dbt_source_project,
+            person_id,
+            student_number,
+        from focus_contact_1
 
         union all
 
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentdcid,
-            personid,
-            contact_name,
-            relationship_type,
             contact_slot,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
             is_emergency,
+            is_pickup,
             is_custodial,
             is_household_member,
+            _dbt_source_project,
+            person_id,
+            student_number,
+        from focus_emergency
+    ),
+
+    focus as (
+        select
+            contact_slot,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
             is_pickup,
-        from ps_emergency
-    ),
-
-    -- Only Miami still sources contacts from PowerSchool; the NJ regions are
-    -- Finalsite-sourced and drop out of ps_base above, so their person-contact
-    -- enrichment rows would never match. Add a region back here if it reverts
-    -- to the PowerSchool branch.
-    ps_person_contacts_union as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source(
-                        "kippmiami_powerschool", "int_powerschool__person_contacts"
-                    ),
-                ]
-            )
-        }}
-    ),
-
-    ps_person_contacts as (
-        select *, {{ extract_source_project() }} as _dbt_source_project,
-        from ps_person_contacts_union
-    ),
-
-    ps_methods_ranked as (
-        select
-            _dbt_source_relation,
+            is_custodial,
+            is_household_member,
             _dbt_source_project,
-            personid,
-            contact_category,
-            contact_type,
-            contact,
+            student_number,
 
-            row_number() over (
-                partition by
-                    _dbt_source_relation, personid, contact_category, contact_type
-                order by is_primary desc, priority_order asc
-            ) as method_rank,
-        from ps_person_contacts
-    ),
-
-    ps_typed as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            personid,
-
-            max(
-                if(
-                    contact_category = 'Phone' and contact_type = 'Mobile',
-                    contact,
-                    null
-                )
-            ) as phone_mobile,
-            max(
-                if(contact_category = 'Phone' and contact_type = 'Home', contact, null)
-            ) as phone_home,
-            max(
-                if(
-                    contact_category = 'Phone' and contact_type = 'Daytime',
-                    contact,
-                    null
-                )
-            ) as phone_daytime,
-            max(
-                if(contact_category = 'Phone' and contact_type = 'Work', contact, null)
-            ) as phone_work,
-            max(
-                if(
-                    contact_category = 'Email' and contact_type = 'Current',
-                    contact,
-                    null
-                )
-            ) as email_current,
-            max(
-                if(
-                    contact_category = 'Address' and contact_type = 'Home',
-                    contact,
-                    null
-                )
-            ) as address_home,
-        from ps_methods_ranked
-        where method_rank = 1
-        group by _dbt_source_relation, _dbt_source_project, personid
-    ),
-
-    ps_primary_phone_ranked as (
-        select
-            _dbt_source_relation,
-            _dbt_source_project,
-            personid,
-            contact as phone_primary,
-
-            row_number() over (
-                partition by _dbt_source_relation, personid
-                order by is_primary desc, priority_order asc
-            ) as phone_rank,
-        from ps_person_contacts
-        where contact_category = 'Phone'
-    ),
-
-    ps_primary_phone as (
-        select _dbt_source_relation, _dbt_source_project, personid, phone_primary,
-        from ps_primary_phone_ranked
-        where phone_rank = 1
-    ),
-
-    students as (
-        select _dbt_source_relation, _dbt_source_project, dcid, student_number,
-        from {{ ref("stg_powerschool__students") }}
-        where dcid >= 1
-    ),
-
-    powerschool as (
-        select
-            sl.contact_slot,
-            sl.contact_name,
-            sl.relationship_type as relationship,
-            sl.is_emergency,
-            sl.is_pickup,
-            sl.is_custodial,
-            sl.is_household_member,
-            sl._dbt_source_project,
-
-            pt.phone_mobile,
-            pt.phone_home,
-            pt.phone_daytime,
-            pt.phone_work,
-            pt.email_current,
-            pt.address_home,
-
-            pp.phone_primary,
-
-            s.student_number,
-
-            cast(sl.personid as string) as personid,
+            cast(person_id as string) as personid,
             cast(null as string) as finalsite_contact_id,
-        from ps_slotted as sl
-        inner join
-            students as s
-            on sl.studentdcid = s.dcid
-            and sl._dbt_source_project = s._dbt_source_project
-        left join
-            ps_typed as pt
-            on sl.personid = pt.personid
-            and sl._dbt_source_project = pt._dbt_source_project
-        left join
-            ps_primary_phone as pp
-            on sl.personid = pp.personid
-            and sl._dbt_source_project = pp._dbt_source_project
+        from focus_slotted
+        where student_number is not null
     )
 
 select
@@ -276,12 +203,15 @@ select
     personid,
     finalsite_contact_id,
     contact_name,
+    contact_first_name,
+    contact_last_name,
     relationship,
     email_current,
     phone_mobile,
     phone_home,
     phone_daytime,
     phone_work,
+    phone_untyped,
     phone_primary,
     address_home,
     is_emergency,
@@ -299,16 +229,19 @@ select
     personid,
     finalsite_contact_id,
     contact_name,
+    contact_first_name,
+    contact_last_name,
     relationship,
     email_current,
     phone_mobile,
     phone_home,
     phone_daytime,
     phone_work,
+    phone_untyped,
     phone_primary,
     address_home,
     is_emergency,
     is_pickup,
     is_custodial,
     is_household_member,
-from powerschool
+from focus

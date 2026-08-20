@@ -200,7 +200,7 @@ with
             if(t.abbreviation like 'S%', t.name, 'Year') as mtss_enrollment,
         from {{ ref("int_powerschool__spenrollments") }} as sp
         inner join
-            {{ ref("stg_powerschool__terms") }} as t
+            {{ ref("int_students__terms") }} as t
             on sp.enter_date = t.firstday
             and sp.exit_date = t.lastday
             and sp.academic_year = t.academic_year

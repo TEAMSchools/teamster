@@ -144,6 +144,14 @@ models:
       - name: ada
         data_type: float64
         description: Average daily attendance for the year.
+      - name: unweighted_ada
+        data_type: float64
+        description: Unweighted average daily attendance for the year.
+      - name: weighted_ada
+        data_type: float64
+        description: >-
+          Weighted average daily attendance for the year, the value used for
+          high school students from SY26 onward.
       - name: ada_above_or_at_80
         data_type: boolean
         description: ADA at or above 80 percent.
@@ -177,7 +185,14 @@ models:
         description: Semester GPA for the row's term. NULL on Y1 rows.
       - name: gpa_y1
         data_type: float64
-        description: Y1 GPA as of the row's term.
+        description: >-
+          Y1 GPA as of the row's term. For the prior year this is RECONSTRUCTED
+          as a running credit-weighted GPA through each term, because
+          PowerSchool stores only the end-of-year value. It is deliberately not
+          anchored to that stored value, so the Q4 reading will not equal the Y1
+          reading. Temporary; see TODO(#4687) (kept here deliberately, despite
+          the no-tracking-refs-in-descriptions convention, so a removal grep for
+          this marker also finds this YAML).
       - name: gpa_y1_unweighted
         data_type: float64
         description: Unweighted Y1 GPA as of the row's term.
@@ -186,8 +201,10 @@ models:
         description: Total Y1 GPA credit hours for the year. NULL on Y1 rows.
       - name: gpa_n_failing_y1
         data_type: int64
-        description:
-          Count of failing Y1 grades as of the row's term. NULL on Y1 rows.
+        description: >-
+          Count of failing Y1 grades as of the row's term. On Y1 rows, the
+          year-end count for a completed academic year and the running count as
+          of today for the current year.
       - name: gpa_y1_1_week_prior
         data_type: float64
         description: >-
@@ -285,14 +302,75 @@ models:
       - name: gpa_needed_for_cumulative_3_0
         data_type: float64
         description: >-
-          Weighted Y1 GPA needed across current-year GPA credits to finish with
-          a 3.00 projected cumulative (current-year rows only; negative means
-          already guaranteed).
+          Unweighted Y1 GPA needed across current-year GPA credits to finish
+          with a 3.00 projected unweighted cumulative (current-year rows only;
+          negative means already guaranteed).
       - name: is_cumulative_3_0_attainable
         data_type: boolean
         description: >-
           True when `gpa_needed_for_cumulative_3_0` is at or below the
           credit-weighted max achievable this year (current-year rows only).
+      - name: cumulative_y1_gpa_unweighted_prior_year
+        data_type: float64
+        description: >-
+          Final unweighted cumulative GPA at the end of the prior academic year,
+          the actual value rather than a projection of it. Student-grain, so it
+          repeats across every quarter and the Y1 row. Current-year rows only.
+          Cumulative GPA accumulates per student-school upstream, which splits
+          the middle- and high-school series — for a grade 9 student this
+          baseline is their middle-school cumulative, not a high-school one, so
+          any comparison against it spans two series rather than measuring
+          movement within one.
+      - name: gpa_band_projected_unweighted
+        data_type: int64
+        description: >-
+          KIPP GPA Band of `cumulative_y1_gpa_projected_unweighted`, on the
+          five-band unweighted scale — 5 at or above 3.50, 4 from 3.00, 3 from
+          2.50, 2 from 2.00, 1 below 2.00. Band 5 is open-ended, since
+          unweighted GPA exceeds the scale's documented 4.00 ceiling. NULL when
+          the projection is NULL.
+      - name: gpa_band_unweighted_prior_year
+        data_type: int64
+        description: >-
+          KIPP GPA Band of `cumulative_y1_gpa_unweighted_prior_year`, on the
+          same five-band unweighted scale as `gpa_band_projected_unweighted`.
+      - name: cumulative_y1_gpa_unweighted_change_from_prior_year
+        data_type: float64
+        description: >-
+          Projected unweighted cumulative GPA minus the prior year's final
+          unweighted cumulative GPA. Negative means the projection sits below
+          where the student finished last year.
+      - name: gpa_band_change_from_prior_year
+        data_type: int64
+        description: >-
+          `gpa_band_projected_unweighted` minus
+          `gpa_band_unweighted_prior_year`. Negative means the student is
+          projected into a lower band than they finished last year.
+      - name: is_gpa_band_slide
+        data_type: boolean
+        description: >-
+          True when the projected unweighted cumulative GPA falls at least one
+          KIPP GPA Band below where the student finished the prior year. NULL
+          when either band is missing, since an unbanded student is unknown
+          rather than known to be holding steady. Bands 1 and 5 are open-ended,
+          so movement inside them is invisible here — a student falling from
+          1.99 to 0.10 never trips this. Read it alongside
+          `cumulative_y1_gpa_unweighted_change_from_prior_year`, which does not
+          have that blind spot. Grade 9 carries the middle-to-high-school series
+          caveat on `cumulative_y1_gpa_unweighted_prior_year`.
+      - name: is_quarter_course_failing
+        data_type: boolean
+        description: >-
+          True when `quarter_course_letter_grade` begins with `F`, which covers
+          both `F` and `F*`. `F*` marks a grade the 50 percent floor was applied
+          to; it is a real failure worth roughly a third of all failing grades,
+          so an exact match on `F` understates the failure rate by about half in
+          any single quarter. NULL rather than false on an ungraded enrolment,
+          since no grade posted is unknown rather than passing — a failure rate
+          built on this flag should divide by the count of non-null
+          `quarter_course_letter_grade`, not by all rows. The Y1 row carries the
+          Y1 letter grade in that same column, so this flag is valid at every
+          marking period without branching.
       - name: sectionid
         data_type: int64
         description: PowerSchool section id of the course enrollment.
@@ -329,6 +407,16 @@ models:
       - name: teacher_tableau_username
         data_type: string
         description: Teacher Tableau username (row-level security).
+      - name: manager
+        data_type: string
+        description: >-
+          Formatted name of the teacher's manager, from the staff roster's
+          reports-to relationship. NULL when the teacher has no roster match.
+      - name: report_to_sam_account_name
+        data_type: string
+        description: >-
+          Account name of the teacher's manager, for filtering a teacher list to
+          one manager's reports.
       - name: tutoring_nj
         data_type: boolean
         description:
@@ -364,10 +452,24 @@ models:
         description: Course grade points for the row's term.
       - name: y1_course_in_progress_percent_grade_adjusted
         data_type: float64
-        description: In-progress Y1 percent grade (current-year rows only).
+        description: >-
+          Year-to-date course percent as of the row's marking period. For the
+          year in progress this is the real running value from the gradebook.
+          For the prior year it is RECONSTRUCTED from stored quarter grades — Q1
+          is exact, Q4 is anchored to the stored Y1 percent and is exact, Q2 and
+          Q3 are approximations that agree with the year value to within half a
+          point on 97.0 percent of courses. The reconstruction is temporary; see
+          TODO(#4687) in the model.
       - name: y1_course_in_progress_letter_grade_adjusted
         data_type: string
-        description: In-progress Y1 letter grade (current-year rows only).
+        description: >-
+          Year-to-date course letter as of the row's marking period. For the
+          year in progress this comes from the gradebook. For the prior year it
+          is RECONSTRUCTED by banding the reconstructed percent back through the
+          course's own grade scale, so it inherits that percent's accuracy — Q1
+          and Q4 exact, Q2 and Q3 approximate. Carries F and F* on the same
+          prefix rule as quarter_course_letter_grade. Temporary; see TODO(#4687)
+          in the model.
       - name: y1_course_in_progress_grade_points
         data_type: float64
         description: In-progress Y1 grade points (current-year rows only).
@@ -389,6 +491,56 @@ models:
       - name: need_90
         data_type: float64
         description: Percent needed to reach a 90 (current-year rows only).
+      - name: need_next_letter_grade
+        data_type: string
+        description: >-
+          The next WHOLE letter grade above where the student's in-progress Y1
+          grade currently sits — one of A, B, C, D or F. Plus and minus rungs
+          are deliberately excluded, so a student sitting at C- and a student
+          sitting at C+ are both working toward the same B. NULL once the
+          student is at the top whole letter, and NULL on courses whose grade
+          scale has no letter ladder, such as the Camden Pass Fail Scale.
+
+          Read from the course's OWN grade scale, not a fixed ladder, so the
+          same letter means different cutoffs across courses — see
+          need_next_cutoff_percent.
+
+          Do NOT read the implied current rung as a pass or fail signal.
+          Dropping the minus rungs widens each whole-letter band downward, so on
+          KIPP NJ 2019 the F rung runs all the way to 62.9 and a student sitting
+          at 61 — a passing D- — shows a next letter of D. That is the correct
+          next WHOLE letter for them, but they are not failing. Use
+          is_quarter_course_failing for pass or fail.
+      - name: need_next_cutoff_percent
+        data_type: float64
+        description: >-
+          The percent cutoff for need_next_letter_grade on that course's grade
+          scale. It varies by scale and will NOT generally match the 60/70/80/90
+          targets behind need_60 through need_90 — on KIPP NJ 2019, which covers
+          most enrolments, a whole-letter D is 63 and a C is 73, while 60 and 70
+          are the D- and C- cutoffs. The two sets of columns are answering
+          different questions and are expected to disagree by a few points.
+      - name: need_next
+        data_type: float64
+        description: >-
+          Percent required in the CURRENT term for the student's YEAR-TO-DATE
+          course grade to reach need_next_cutoff_percent. It is not the percent
+          needed to earn that letter for the quarter alone.
+
+          Derived from need_60 and need_70, which are exactly linear in their
+          target, so this is an exact value rather than an interpolation. Can be
+          negative when the grade is already secured regardless of remaining
+          work, and can exceed 100 when the rung is out of reach in the time
+          left — consumers should handle both rather than displaying a raw
+          percent.
+
+          NULL from two independent causes, and the second one surprises people.
+          Either need_60 is null, which is every prior-year row since need_* is
+          a live-gradebook calculation; OR there is no next rung, which is a
+          student already at the top whole letter and any course on a scale with
+          no letter ladder. The second case does NOT require need_60 to be null
+          — a student at 95 percent has a perfectly good need_60 and still gets
+          a null need_next, because there is nothing above an A to need.
       - name: category_name_code
         data_type: string
         description: Gradebook category code (e.g. F/S/W; NULL on Y1 rows).
@@ -410,6 +562,37 @@ models:
         data_type: float64
         description: >-
           Student's average percent across all courses for the category-term.
+      - name: lowest_category_y1_name
+        data_type: string
+        description: >-
+          Gradebook category code with the lowest year-running percent for this
+          course, read from the latest term that holds category data. Null when
+          that term has no category with a non-null year-running percent — the
+          code never wins the tiebreak on a null value. Present on every row
+          including Y1, which is the point — the per-term category columns are
+          null at Y1 because there is no Y1 category term.
+      - name: lowest_category_y1_percent
+        data_type: float64
+        description: >-
+          The year-running percent belonging to lowest_category_y1_name. Null
+          exactly when that column is null.
+      - name: lowest_category_recent_term_name
+        data_type: string
+        description: >-
+          Gradebook category code with the lowest single-quarter percent in the
+          most recent term holding any usable category percent (quarter or
+          year-running) for this course. Null when that term has no
+          quarter-level percent — which usually means an earlier term does have
+          one, so a null here does not mean the section has no quarter category
+          data anywhere in the window. Answers what the problem is right now,
+          where lowest_category_y1_name answers what dragged the whole year
+          down. The two can legitimately disagree.
+      - name: lowest_category_recent_term_percent
+        data_type: float64
+        description: >-
+          The single-quarter percent belonging to
+          lowest_category_recent_term_name. Null exactly when that column is
+          null.
       - name: y1_course_letter_grade_adjusted
         data_type: string
         description: >-

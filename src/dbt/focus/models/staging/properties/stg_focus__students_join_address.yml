@@ -19,6 +19,9 @@ models:
       - name: student_id
         description: Focus student id the address is linked to.
         data_type: int
+        config:
+          meta:
+            contains_pii: true
       - name: address_id
         description: Focus address id linked to the student.
         data_type: int

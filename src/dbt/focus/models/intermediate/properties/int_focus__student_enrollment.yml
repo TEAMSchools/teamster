@@ -21,6 +21,11 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: enrollment_created_at
+        description: >-
+          Timestamp the Focus enrollment record was created. Projected for the
+          same-start-date dedupe tie-break, which needs a real recency signal --
+          Focus assigns ids in batches, so id order and creation order disagree.
       - name: academic_year
         description: Focus school year start year (e.g. 2025 = 2025-26).
       - name: academic_year_display
@@ -61,6 +66,15 @@ models:
           rollover/summer code '30' is excluded from the join).
       - name: student_number
         description: Focus local student id.
+        config:
+          meta:
+            contains_pii: true
+      - name: network_student_number
+        description: >-
+          Canonical network student number — student_number with the leading
+          8400 Miami-Dade district prefix stripped. Both forms are exposed
+          because student_number holds the prefixed id and account provisioning
+          (stg_people__student_logins) joins on that form.
         config:
           meta:
             contains_pii: true
@@ -144,6 +158,13 @@ models:
           Row number of the enrollment stint within student plus academic year,
           ordered by latest exit date first; 1 marks the canonical stint counted
           for that year.
+      - name: rn_all
+        description: >-
+          Row number of the enrollment stint within student across all years,
+          ordered by latest academic year then latest exit and start date; 1
+          marks the student's most recent stint. Consumers resolving a
+          student-level value from Focus's per-stint columns filter on this
+          rather than repeating the window.
       - name: year_in_school
         description: >-
           Sequential count of academic years the student has been enrolled at

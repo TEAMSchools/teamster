@@ -17,8 +17,14 @@ from {{ ref("int_people__staff_roster") }}
 where
     uac_account_disable = 0
     and not is_prestart
+    -- an enabled AD account does not imply active employment; offboarding can
+    -- leave the account enabled indefinitely, so gate on worker status the way
+    -- rpt_clever__staff does
+    and worker_status_code != 'Terminated'
     and employee_number is not null
     and home_work_location_powerschool_school_id is not null
+    -- Miami rosters into Clever directly from Focus; excluded from all six feeds
+    and home_work_location_dagster_code_location != 'kippmiami'
 
 union all
 
@@ -40,3 +46,9 @@ select
 
     null as `password`,
 from {{ ref("int_people__temp_staff") }}
+where
+    dagster_code_location != 'kippmiami'
+    -- int_people__temp_staff gates on idauto_status and the AD account flag,
+    -- neither of which flips on offboarding. A populated
+    -- idauto_person_term_date is the only termination signal it carries.
+    and idauto_person_term_date is null

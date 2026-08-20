@@ -20,7 +20,7 @@ with
             coalesce(
                 date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
             ) as enrollment_end,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         -- graduates carry NULL entry/exit as a placeholder row; drop them
         -- (no enrollment context to clip against).
         where entrydate is not null
@@ -111,7 +111,7 @@ with
             and l.effective_date_end >= e.entrydate
     ),
 
-    pm_leg as (
+    miami_leg as (
         select
             e.student_number,
             e._dbt_source_project,
@@ -126,7 +126,7 @@ with
             e.entrydate as effective_date_start,
             e.enrollment_end as effective_date_end,
         from enrollments as e
-        where e._dbt_source_project in ('kipppaterson', 'kippmiami')
+        where e._dbt_source_project = 'kippmiami'
     ),
 
     unioned as (
@@ -152,11 +152,11 @@ with
             meal_eligibility,
             effective_date_start,
             effective_date_end,
-        from pm_leg
+        from miami_leg
     ),
 
     classified as (
-        -- coalesce both NJ (titan, ~2 NULLs) and PM (lunchstatus NULL when
+        -- coalesce both NJ (titan, ~2 NULLs) and Miami (lunchstatus NULL when
         -- invalid or no current eligibility) to a single 'Unknown' so the
         -- is_meal_eligible derivation never returns NULL.
         select *, coalesce(meal_eligibility, 'Unknown') as meal_eligibility_clean,

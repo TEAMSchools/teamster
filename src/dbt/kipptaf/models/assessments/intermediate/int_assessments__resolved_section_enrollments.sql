@@ -278,10 +278,13 @@ with
             s._dbt_source_project,
             s.source_type,
             s.score_grain_key,
+            s.anchor_date,
 
             ce.cc_dcid,
             ce._dbt_source_project as cc_source_project,
             ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
 
             1 as tier,
 
@@ -323,10 +326,13 @@ with
             s._dbt_source_project,
             s.source_type,
             s.score_grain_key,
+            s.anchor_date,
 
             ce.cc_dcid,
             ce._dbt_source_project as cc_source_project,
             ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
 
             2 as tier,
 
@@ -375,6 +381,13 @@ select
     cc_source_project,
     source_type,
     resolution_type,
+
+    -- the resolved section's school and region. Carried so consumers can resolve
+    -- a score's reporting quarter from the score's OWN date (#4484); this model
+    -- is one row per score GRAIN, so its anchor_date cannot stand in for the
+    -- date of every score row sharing that grain.
+    powerschool_school_id,
+    region,
 
     {{ dbt_utils.generate_surrogate_key(["cc_dcid", "cc_source_project"]) }}
     as student_section_enrollment_key,

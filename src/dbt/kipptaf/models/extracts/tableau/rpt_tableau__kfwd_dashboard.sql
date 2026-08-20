@@ -373,6 +373,9 @@ select
     ei.ugrad_competitiveness_ranking,
     ei.ugrad_status,
 
+    gc.is_ba_grad_ever_int,
+    gc.is_aa_grad_ever_int,
+    gc.is_cte_grad_ever_int,
     gc.is_4yr_ba_grad_int,
     gc.is_5yr_ba_grad_int,
     gc.is_6yr_ba_grad_int,
@@ -389,7 +392,10 @@ select
     gc.is_5yr_cte_grad_int,
     gc.is_6yr_cte_grad_int,
     gc.is_grad_ever,
-    gc.is_6yr_ugrad_cte_grad_int,
+    -- is_6yr_ugrad_cte_grad_int is identical to is_6yr_grad_any_int once each
+    -- degree is gated on its own end date; kept as an alias for the Tableau
+    -- workbook until it is repointed (#4874).
+    gc.is_6yr_grad_any_int as is_6yr_ugrad_cte_grad_int,
     gc.is_24yo_ugrad_cte_grad_int,
     gc.is_4yr_ugrad_grad_int,
     gc.is_5yr_ugrad_grad_int,

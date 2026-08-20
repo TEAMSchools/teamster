@@ -299,7 +299,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         Args:
             **kwargs: Forwarded to ``_list``. ``customer`` defaults to
-                ``self.customer_id``.
+                ``self.customer_id``. Page size defaults to 200 (API maximum).
 
         Returns:
             List of group resource dicts.
@@ -308,7 +308,13 @@ class GoogleDirectoryResource(ConfigurableResource):
             HttpError: If all retry attempts are exhausted.
         """
         customer = kwargs.pop("customer", self.customer_id)
-        return self._list(api_name="groups", customer=customer, **kwargs)
+        max_results = kwargs.pop("max_results", 200)
+        return self._list(
+            api_name="groups",
+            customer=customer,
+            max_results=max_results,
+            **kwargs,
+        )
 
     def list_members(self, group_key: str, **kwargs) -> list[dict]:
         """Retrieves a paginated list of all members in a group.
@@ -695,12 +701,18 @@ class GoogleDirectoryResource(ConfigurableResource):
 
 def members_for_created_users(
     users: list[dict], create_errors: list[dict]
-) -> list[dict]:
+) -> tuple[list[dict], list[dict]]:
     """Build group-membership payloads for users whose creation did not fail.
 
     A user's group membership can only be added once the account exists, so a
     user whose ``batch_insert_users`` call failed must be excluded — otherwise
     the membership insert is guaranteed to fail with "resource not found".
+
+    A user whose ``groupKey`` is null is excluded for a different reason: the
+    extract resolves ``groupKey`` against the groups Google actually has, so
+    null means the students group for that region does not exist. Attempting the
+    add would fail with "404 Resource Not Found: groupKey" once per user, so the
+    membership is skipped and reported once for the whole run instead.
 
     Args:
         users: The users passed to
@@ -709,18 +721,42 @@ def members_for_created_users(
             users whose creation ultimately failed.
 
     Returns:
+        A two-tuple. The first element holds
         :meth:`GoogleDirectoryResource.batch_insert_members` payloads
-        (``groupKey`` / ``email`` / ``delivery_settings``) for the users NOT
-        present in ``create_errors``.
+        (``groupKey`` / ``email`` / ``delivery_settings``) for created users
+        whose ``groupKey`` resolved. The second holds at most one aggregated
+        ``{"error", "count", "orgUnitPaths"}`` dict describing the created users
+        whose group could not be resolved, and is empty when every group
+        resolved.
     """
     failed_emails = {e["primaryEmail"] for e in create_errors}
 
-    return [
+    created = [u for u in users if u["primaryEmail"] not in failed_emails]
+
+    members = [
         {
             "groupKey": u["groupKey"],
             "email": u["primaryEmail"],
             "delivery_settings": "DISABLED",
         }
-        for u in users
-        if u["primaryEmail"] not in failed_emails
+        for u in created
+        if u["groupKey"] is not None
+    ]
+
+    unresolved = [u for u in created if u["groupKey"] is None]
+
+    if not unresolved:
+        return members, []
+
+    count = len(unresolved)
+    return members, [
+        {
+            "error": (
+                f"{count} created {'user' if count == 1 else 'users'} "
+                f"{'has' if count == 1 else 'have'} no resolvable students"
+                " group; membership skipped"
+            ),
+            "count": count,
+            "orgUnitPaths": sorted({u["orgUnitPath"] for u in unresolved}),
+        }
     ]

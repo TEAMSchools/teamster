@@ -134,13 +134,18 @@ models:
         description: >-
           School level abbreviated to ES/MS/HS, decoded from the school's
           school_level custom field (id 681) via
-          stg_focus__custom_field_select_options's code ('E'/'M'/'H'). Null for
-          Combined/Adult-Higher-Ed schools and schools with no school_level set
-          (e.g. closed legacy schools).
+          stg_focus__custom_field_select_options's code ('E'/'M'/'H'), falling
+          back to the locations crosswalk's grade_band when Focus has no
+          school_level set. The fallback covers the two closed legacy schools
+          (Sunrise, Liberty), which carry no Focus school_level label at all.
+          Still null for Combined/Adult-Higher-Ed schools where the crosswalk
+          also has no grade band.
       - name: region_school_level
         description: >-
-          Concatenation of region and school_level (e.g. "MiamiES"). Null when
-          school_level is null.
+          Concatenation of region and school_level (e.g. "MiamiES"), using the
+          same Focus-else-grade_band value school_level resolves to. Null only
+          when both are null (Combined/Adult-Higher-Ed schools with no crosswalk
+          grade band).
       - name: is_enrolled_fdos
         description: >-
           True when the enrollment's startdate is on or before the school year's

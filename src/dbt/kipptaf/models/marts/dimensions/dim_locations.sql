@@ -1,16 +1,19 @@
 select
-    location_key,
+    pl.location_key,
+    pl.location_name as `name`,
+    pl.grade_band,
+    pl.is_campus,
+    pl.address,
+    pl.city,
+    pl.postal_code,
 
-    {{ dbt_utils.generate_surrogate_key(["business_unit_code"]) }} as region_key,
+    cc.name as campus,
 
-    location_name as `name`,
-    grade_band,
-    campus_name as campus,
-    is_campus,
-    address,
-    city,
-    postal_code,
+    {{ dbt_utils.generate_surrogate_key(["pl.business_unit_code"]) }} as region_key,
 
-    coalesce(abbreviation, location_name) as abbreviation,
-from {{ ref("stg_google_sheets__people__locations") }}
-where not is_pathways and location_name <> 'KIPP Whittier Elementary'
+    coalesce(pl.abbreviation, pl.location_name) as abbreviation,
+from {{ ref("stg_google_sheets__people__locations") }} as pl
+left join
+    {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
+    on pl.location_name = cc.location_name
+where not pl.is_pathways and pl.location_name <> 'KIPP Whittier Elementary'

@@ -17,7 +17,11 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
+    {{ ref("stg_powerschool__schools") }} as sch
+    on sch.state_excludefromreporting = 0
+    -- Miami left Illuminate ahead of AY2026-27. Filter the SITE side only: CMO
+    -- staff are network-wide, so they keep roles at every remaining site.
+    and sch._dbt_source_project != 'kippmiami'
 where
     sr.worker_status_code != 'Terminated'
     and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')
@@ -30,7 +34,7 @@ select
     -- trunk-ignore-begin(sqlfluff/RF05)
     sr.powerschool_teacher_number as `01 Local User ID`,
 
-    cc.powerschool_school_id as `02 Site ID`,
+    sr.home_work_location_powerschool_school_id as `02 Site ID`,
 
     'School Leadership' as `03 Role Name`,
 
@@ -46,11 +50,13 @@ from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
     on sr.home_work_location_reporting_name = cc.location_name
-    and not cc.is_pathways
 where
     sr.worker_status_code != 'Terminated'
     and sr.home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_work_location_is_campus
+    and not sr.home_work_location_is_pathways
+    -- Miami left Illuminate ahead of AY2026-27
+    and sr.home_work_location_dagster_code_location != 'kippmiami'
 
 union all
 
@@ -75,6 +81,8 @@ where
     worker_status_code != 'Terminated'
     and home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and not home_work_location_is_campus
+    -- Miami left Illuminate ahead of AY2026-27
+    and home_work_location_dagster_code_location != 'kippmiami'
 
 union all
 
@@ -95,3 +103,5 @@ select
     1 as `05 Session Type ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__temp_staff") }}
+-- Miami left Illuminate ahead of AY2026-27
+where dagster_code_location != 'kippmiami'
