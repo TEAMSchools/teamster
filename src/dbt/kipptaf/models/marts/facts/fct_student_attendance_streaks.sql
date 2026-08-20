@@ -2,7 +2,6 @@ with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     enrollments_raw as (
         select
-            studentid,
             student_number,
             yearid,
             entrydate,
@@ -25,7 +24,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="enrollments_raw",
-                partition_by="studentid, yearid, entrydate, _dbt_source_project",
+                partition_by="student_number, yearid, entrydate, _dbt_source_project",
                 order_by="exitdate desc",
             )
         }}
@@ -53,10 +52,10 @@ select
     st.att_code as attendance_code,
     st.streak_length_membership,
     st.streak_length_calendar,
-from {{ ref("int_powerschool__attendance_streak") }} as st
+from {{ ref("int_students__attendance_streak") }} as st
 inner join
     enrollments as enr
-    on st.studentid = enr.studentid
+    on st.student_number = enr.student_number
     and st.yearid = enr.yearid
     and st.streak_start_date >= enr.entrydate
     and st.streak_start_date < enr.exitdate

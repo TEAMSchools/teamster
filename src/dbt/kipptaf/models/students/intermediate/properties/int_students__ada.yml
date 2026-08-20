@@ -1,0 +1,49 @@
+models:
+  - name: int_students__ada
+    description: >-
+      SIS-neutral per-student-per-year attendance rollup -- the successor to
+      int_powerschool__ada, which stays a pure PowerSchool union. The
+      PowerSchool branch is year-scoped so the frozen Miami archive keeps
+      serving the years Focus does not cover; Focus serves AY2026 forward.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [student_number, yearid, _dbt_source_project]
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: Network student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: studentid
+        description: >-
+          PowerSchool internal student id. Null for Miami rows sourced from
+          Focus, which has no equivalent id at this grain -- this is why the
+          streak fact's join key was repointed from studentid to student_number
+          in this same change.
+      - name: yearid
+        description: Academic year minus 1990.
+      - name: academic_year
+        description: Academic year. Same value as yearid + 1990.
+      - name: days_in_membership
+        description: >-
+          Count of days the student was enrolled (in membership) during the
+          year.
+      - name: days_present
+        description: Count of days the student was present.
+      - name: days_absent_unexcused
+        description: >-
+          PowerSchool rows: count of unexcused absence days. Focus rows
+          (kippmiami, AY2026 forward) map Focus's total days_absent onto this
+          legacy column name for consumer compatibility -- Focus does not model
+          the excused/unexcused split at this grain, so a Focus row's value is
+          every absence day, not specifically the unexcused ones.
+      - name: ada
+        description: Average daily attendance across realized membership days.
+      - name: _dbt_source_relation
+        description: Source relation the row was unioned from.
+      - name: _dbt_source_project
+        description: Originating district project.
