@@ -160,7 +160,9 @@ with
         from {{ ref("int_extracts__student_enrollments_weeks") }}
         where
             academic_year >= {{ var("current_academic_year") - 1 }}
-            and region != 'Paterson'
+            -- TODO(#4943): Miami until Focus lands, Paterson until its
+            -- goals-sheet rows exist
+            and region not in ('Paterson', 'Miami')
     ),
 
     attrs_ranked as (

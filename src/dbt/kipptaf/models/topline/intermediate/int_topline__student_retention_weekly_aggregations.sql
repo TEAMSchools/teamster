@@ -15,7 +15,13 @@ with
         from {{ ref("int_students__retention_over_time") }}
         where
             academic_year >= {{ var("current_academic_year") - 1 }}
-            and region != 'Paterson'
+            -- int_students__retention_over_time builds its own timeline and
+            -- never joins int_powerschool__calendar_week, so unlike every other
+            -- topline source this one kept publishing AY2026 Miami rows off the
+            -- frozen pre-Focus archive.
+            -- TODO(#4943): Miami until Focus lands, Paterson until its
+            -- goals-sheet rows exist
+            and region not in ('Paterson', 'Miami')
     ),
 
     deduplicate as (
