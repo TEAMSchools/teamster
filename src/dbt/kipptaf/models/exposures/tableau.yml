@@ -311,7 +311,9 @@ exposures:
           asset:
             metadata:
               id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-              cron_schedule: 0 15 * * *
+              cron_schedule:
+                - 0 6 * * *
+                - 0 15 * * *
   - name: literacy_dashboard
     label: Literacy Dashboard
     type: dashboard
@@ -419,8 +421,6 @@ exposures:
               id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
               cron_schedule:
                 - 0 1 * * *
-                - 40 14 * * 3
-                - 00 11 * * 3
                 - 0 16 * * 5
                 - 0 18 * * *
   - name: apm_dashboard
