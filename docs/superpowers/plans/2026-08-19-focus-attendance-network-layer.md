@@ -1797,6 +1797,45 @@ note that it exists so consumers can migrate independently. Retiring the aliases
 is explicitly out of scope for this plan — it is a rename of the network layer,
 not part of getting Miami's attendance into it.
 
+**The Miami cutover is a floor, derived from RECORDED attendance.** Measured
+against prod on 2026-08-20, before Task 9 was written:
+
+| Source                            | Years present                      |
+| --------------------------------- | ---------------------------------- |
+| `int_focus__attendance_day` (raw) | AY2026 only, 2026-08-12 to 08-20   |
+| `int_focus__attendance_daily`     | AY2020 to AY2026                   |
+| `int_focus__calendar_day`         | AY2010 to AY2026                   |
+| Miami `ps_adaadm_daily_ctod`      | AY2018 to AY2025, nothing for 2026 |
+
+Miami's PowerSchool attendance stops at AY2025 and Focus's begins at AY2026,
+with no overlap: Miami left PowerSchool at the start of AY2026. But
+`int_focus__attendance_daily` carries AY2020 through AY2026 because it scaffolds
+a present-by-default row for every enrolled student-day, and **827,851 of those
+rows -- every row before AY2026 -- have `is_attendance_recorded = false`**.
+`int_focus__calendar_day` reaches back to AY2010 with 3 schools and roughly 180
+days a year against PowerSchool's 6 schools and 2,190.
+
+So `select distinct academic_year from <a focus model>` is NOT a sound cutover.
+Deriving the boundary that way would have excluded Miami's PowerSchool rows for
+AY2020 through AY2025 and replaced six years of real attendance with fabricated
+perfect attendance. Same failure mode as the `M` mapping: plausible-looking
+rows, silently wrong.
+
+Two corrections, and both halves are required:
+
+1. **Derive the boundary from recorded attendance, as a floor**, in one shared
+   model (Task 8b) rather than repeated per conform:
+   `select min(academic_year) from int_focus__attendance_daily where is_attendance_recorded`.
+   A floor rather than an `in (select ...)` set because a set can punch a hole
+   in the middle of history -- a Focus year that recorded no exceptions at all
+   would fall back to a PowerSchool archive holding nothing for it. A floor
+   cannot.
+2. **Filter the FOCUS branch too.** The plan as originally written filtered only
+   the PowerSchool side, on the assumption Focus held AY2026 alone. It does not.
+   Without a Focus-side floor, Focus's pre-2026 scaffold rows land _beside_
+   PowerSchool's real rows for the same Miami school-days and break the grain
+   test.
+
 **A note on the NJ-parity gates below.** They compare the legacy-named columns,
 because those are what prod currently exposes. A neutral column has no prod
 counterpart to compare against, so parity is asserted on the legacy alias and
@@ -1970,6 +2009,86 @@ Refs #4924"
 
 ---
 
+### Task 8b: `int_students__sis_cutover`, the one shared boundary
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/students/intermediate/int_students__sis_cutover.sql`
+- Create:
+  `src/dbt/kipptaf/models/students/intermediate/properties/int_students__sis_cutover.yml`
+
+**Interfaces:**
+
+- Consumes: `int_focus__attendance_daily` (the Task 8 kipptaf wrapper)
+- Produces: one row, one column, `focus_start_academic_year INT64`.
+  Currently 2026.
+
+Tasks 9 through 13 all read this model. It exists so the boundary is stated
+once, with its reasoning, instead of five times.
+
+- [ ] **Step 1: Write the model**
+
+```sql
+-- Miami left PowerSchool for Focus at the start of AY2026: Miami's PowerSchool
+-- attendance stops at AY2025 and Focus's begins at AY2026, with no overlap. Every
+-- int_students__* conform splits Miami on this boundary, so it is derived once here
+-- rather than five times -- and derived from data rather than hardcoded to 2026.
+--
+-- Derived from RECORDED attendance, not from row presence. int_focus__attendance_daily
+-- scaffolds a present-by-default row for every enrolled student-day back to AY2020, so
+-- "years with Focus rows" spans AY2020 to AY2026 while Focus holds real attendance for
+-- AY2026 only. Deriving from presence would replace six years of real PowerSchool
+-- attendance with fabricated perfect attendance.
+--
+-- A floor, not a set: `min` cannot punch a hole mid-history the way `in (select ...)`
+-- can. A Focus year that happened to record no exceptions would otherwise fall back to
+-- a PowerSchool archive that holds nothing for it.
+select min(academic_year) as focus_start_academic_year,
+from {{ ref("int_focus__attendance_daily") }}
+where is_attendance_recorded
+```
+
+- [ ] **Step 2: Write the properties file**
+
+```yaml
+models:
+  - name: int_students__sis_cutover
+    description: >-
+      The academic year Miami's attendance moved from PowerSchool to Focus,
+      derived from the first year Focus holds recorded attendance. One row.
+      Tasks 9 through 13 scope both sides of every Miami union on it:
+      PowerSchool serves the years below it, Focus serves it and forward.
+    columns:
+      - name: focus_start_academic_year
+        description: >-
+          First academic year with recorded Focus attendance. Currently 2026.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+```
+
+An aggregate with no `group by` always returns exactly one row, so no single-row
+test is needed. `not_null` is the real guard: it fires if
+`is_attendance_recorded` is ever null-filled or the predicate matches nothing,
+either of which would silently collapse every downstream conform to
+PowerSchool-only.
+
+- [ ] **Step 3: Build and verify**
+
+```bash
+uv run dbt build --select int_students__sis_cutover \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
+```
+
+Expected: PASS, one row, `focus_start_academic_year` = 2026. Any other value
+means the Focus attendance wrapper or `is_attendance_recorded` changed and every
+conform below needs re-measuring.
+
+---
+
 ### Task 9: `int_students__calendar_day` and repoint `dim_school_calendars`
 
 **Files:**
@@ -1988,9 +2107,14 @@ Refs #4924"
 - Consumes: `stg_powerschool__calendar_day`, `int_focus__calendar_day` (kipptaf
   wrapper), `int_focus__schools`, `stg_google_sheets__people__locations`
 - Produces: `int_students__calendar_day` with `schoolid INT64` (network school
-  number), `date_value DATE`, `insession INT64`, `membershipvalue FLOAT64`,
-  `week_start_date DATE`, `week_end_date DATE`, `yearid INT64`,
-  `_dbt_source_relation STRING`, `_dbt_source_project STRING`
+  number), `week_start_date DATE`, `week_end_date DATE`,
+  `_dbt_source_relation STRING`, `_dbt_source_project STRING`, plus the
+  dual-exposed pairs required by the contract above: `school_date` /
+  `date_value` (both DATE), `academic_year` / `yearid` (both INT64),
+  `is_in_session BOOL` / `insession INT64`, `is_in_membership BOOL` /
+  `membershipvalue FLOAT64`. The legacy name of each pair is what
+  `dim_school_calendars` and the NJ-parity gate read; the neutral name is what
+  new work reads.
 
 - [ ] **Step 1: Write the model**
 
@@ -2015,9 +2139,14 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    focus_years as (
-        select distinct academic_year - 1990 as yearid,
-        from {{ ref("int_focus__calendar_day") }}
+    -- One row. See int_students__sis_cutover for why the boundary is a floor
+    -- derived from recorded attendance rather than from Focus row presence:
+    -- int_focus__calendar_day reaches back to AY2010 with 3 schools against
+    -- PowerSchool's 6, so scoping on the years it contains would replace most of
+    -- Miami's calendar history with a thinner copy.
+    cutover as (
+        select focus_start_academic_year,
+        from {{ ref("int_students__sis_cutover") }}
     ),
 
     -- The frozen PowerSchool archive keeps serving Miami for every year Focus
@@ -2042,10 +2171,11 @@ with
             and cd.date_value between t.firstday and t.lastday
             and cd._dbt_source_project = t._dbt_source_project
             and t.isyearrec = 1
+        cross join cutover as c
         where
             not (
                 cd._dbt_source_project = 'kippmiami'
-                and t.yearid in (select yearid from focus_years)
+                and t.yearid >= c.focus_start_academic_year - 1990
             )
     ),
 
@@ -2068,6 +2198,11 @@ with
             cast(1 as float64) as membershipvalue,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
+        cross join cutover as c
+        -- Required, not belt-and-braces. Without it Focus's AY2010 through AY2025
+        -- calendar rows land beside PowerSchool's real rows for the same Miami
+        -- school-days and break this model's own grain test.
+        where cd.academic_year >= c.focus_start_academic_year
     )
 
 -- `full union all corresponding` matches columns by NAME. A plain `union all`
@@ -2182,12 +2317,33 @@ Leave every other line unchanged. The join already reads `cd.schoolid` against
 
 ```bash
 uv run dbt build --select int_students__calendar_day dim_school_calendars \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
 Expected: PASS, with the Ops warn test WARNING on the two closed schools. A warn
 here is the expected outcome, not a failure.
+
+Measured against prod on 2026-08-20, this model's output must be exactly:
+
+| `_dbt_source_project` | branch      | rows   | schools |
+| --------------------- | ----------- | ------ | ------- |
+| kippnewark            | PowerSchool | 76,027 | 17      |
+| kippcamden            | PowerSchool | 32,483 | 8       |
+| kipppaterson          | PowerSchool | 4,794  | 4       |
+| kippmiami             | PowerSchool | 13,015 | 6       |
+| kippmiami             | Focus       | 1,334  | 7       |
+
+127,653 rows total, and `count(*)` must equal the distinct count of (`schoolid`,
+`yearid`, `date_value`) in every group -- the two Miami branches are
+year-disjoint (PowerSchool `yearid` at most 35, Focus exactly 36), so the grain
+test must pass across the union, not merely within each branch.
+
+Miami at 14,349 rows across both branches is the headline number: 13,015 of
+PowerSchool history preserved plus 1,334 Focus days. A Miami total near 1,334
+means the PowerSchool floor is inverted and history was dropped; a total above
+15,000 means the Focus-side floor is missing and pre-2026 scaffold rows leaked
+in.
 
 Then compare NJ against prod. NJ counts must be identical:
 
@@ -2220,7 +2376,7 @@ wrong.
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_day.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_day.yml \
@@ -2230,13 +2386,13 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-lay
 ```
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_day.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_day.yml \
   src/dbt/kipptaf/tests/int_students__calendar_day__zero_enrollment_in_session_days.sql \
   src/dbt/kipptaf/tests/properties.yml \
   src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "feat(kipptaf): add int_students__calendar_day and repoint dim_school_calendars
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer commit -m "feat(kipptaf): add int_students__calendar_day and repoint dim_school_calendars
 
 Refs #4924"
 ```
@@ -2244,6 +2400,15 @@ Refs #4924"
 ---
 
 ### Task 10: `int_students__calendar_week` and 17 repoints
+
+> **REQUIRED CORRECTION, not yet applied to the SQL block below.** This task's
+> `focus_years` CTE and its one-sided PowerSchool predicate are both unsound --
+> see "The Miami cutover is a floor, derived from RECORDED attendance" above.
+> Replace the `focus_years` CTE with a `cutover` CTE reading
+> `int_students__sis_cutover` (Task 8b), change the PowerSchool predicate to
+> `t.yearid >= c.focus_start_academic_year - 1990`, and ADD the Focus-side floor
+> `where academic_year >= c.focus_start_academic_year`, which the original block
+> omits. Task 9 is the worked example.
 
 **Files:**
 
@@ -2358,7 +2523,7 @@ models:
 - [ ] **Step 3: Repoint all 17 refs**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 grep -rl 'ref("int_powerschool__calendar_week")' --include='*.sql' src/dbt/kipptaf/models/ \
   | grep -v 'int_powerschool__ps_adaadm_daily_ctod.sql' \
   | xargs sed -i 's/ref("int_powerschool__calendar_week")/ref("int_students__calendar_week")/g'
@@ -2369,7 +2534,7 @@ removes its `calendar_week` join entirely when the calcs move out. Confirm the
 sweep:
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 grep -rc 'ref("int_powerschool__calendar_week")' --include='*.sql' src/dbt/kipptaf/models/ | grep -v ':0$'
 ```
 
@@ -2379,7 +2544,7 @@ Expected: only `int_powerschool__ps_adaadm_daily_ctod.sql` still matches.
 
 ```bash
 uv run dbt build --select int_students__calendar_week+1 \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -2407,17 +2572,17 @@ Expected: identical `n` and `n_keys` per NJ project.
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   $(git -C . diff --name-only HEAD | while read -r f; do [ -f "$f" ] && printf '%s ' "$f"; done) </dev/null
 ```
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add -u && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add -u && \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_week.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_week.yml && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "feat(kipptaf): add int_students__calendar_week and repoint 17 refs
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer commit -m "feat(kipptaf): add int_students__calendar_week and repoint 17 refs
 
 Refs #4924"
 ```
@@ -2425,6 +2590,15 @@ Refs #4924"
 ---
 
 ### Task 11: Thin the ctod wrapper, add `int_students__attendance_daily`, repoint 11 refs
+
+> **REQUIRED CORRECTION, not yet applied to the SQL block below.** This task's
+> `focus_years` CTE and its one-sided PowerSchool predicate are both unsound --
+> see "The Miami cutover is a floor, derived from RECORDED attendance" above.
+> Replace the `focus_years` CTE with a `cutover` CTE reading
+> `int_students__sis_cutover` (Task 8b), change the PowerSchool predicate to
+> `t.yearid >= c.focus_start_academic_year - 1990`, and ADD the Focus-side floor
+> `where academic_year >= c.focus_start_academic_year`, which the original block
+> omits. Task 9 is the worked example.
 
 The largest task. It moves roughly 200 lines of derived calcs from the
 PowerSchool wrapper into the SIS-neutral model.
@@ -2712,7 +2886,7 @@ the dual-exposed neutral columns added to the final select list. Retrieve them
 with:
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer \
   show HEAD:src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__ps_adaadm_daily_ctod.sql \
   | sed -n '/anchors as (/,$p'
 ```
@@ -2827,7 +3001,7 @@ models:
 - [ ] **Step 4: Repoint all 11 refs**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 grep -rl 'ref("int_powerschool__ps_adaadm_daily_ctod")' --include='*.sql' src/dbt/kipptaf/models/ \
   | xargs sed -i 's/ref("int_powerschool__ps_adaadm_daily_ctod")/ref("int_students__attendance_daily")/g'
 ```
@@ -2835,7 +3009,7 @@ grep -rl 'ref("int_powerschool__ps_adaadm_daily_ctod")' --include='*.sql' src/db
 Confirm zero remain:
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 grep -rc 'ref("int_powerschool__ps_adaadm_daily_ctod")' --include='*.sql' src/dbt/kipptaf/models/ | grep -v ':0$' || echo "none remain"
 ```
 
@@ -2845,7 +3019,7 @@ Expected: `none remain`.
 
 ```bash
 uv run dbt build --select int_students__attendance_daily \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -2860,7 +3034,7 @@ it instead of assuming:
 ```bash
 uv run dbt ls --resource-type test \
   --select int_students__attendance_daily --output json \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --target dev 2>/dev/null | grep '^{'
 ```
 
@@ -2907,7 +3081,7 @@ with `first_day` 2026-08-12 and about 1,559 students.
 - [ ] **Step 6: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   $(git -C . diff --name-only HEAD | while read -r f; do [ -f "$f" ] && printf '%s ' "$f"; done) \
   src/dbt/kipptaf/models/students/intermediate/int_students__attendance_daily.sql \
@@ -2915,11 +3089,11 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-lay
 ```
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add -u && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add -u && \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add \
   src/dbt/kipptaf/models/students/intermediate/int_students__attendance_daily.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__attendance_daily.yml && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "feat(kipptaf): add int_students__attendance_daily and thin the ctod wrapper
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer commit -m "feat(kipptaf): add int_students__attendance_daily and thin the ctod wrapper
 
 Refs #4924
 Refs #4927"
@@ -2928,6 +3102,15 @@ Refs #4927"
 ---
 
 ### Task 12: `int_students__ada`, `int_students__attendance_streak`, and the streak join key
+
+> **REQUIRED CORRECTION, not yet applied to the SQL block below.** This task's
+> `focus_years` CTE and its one-sided PowerSchool predicate are both unsound --
+> see "The Miami cutover is a floor, derived from RECORDED attendance" above.
+> Replace the `focus_years` CTE with a `cutover` CTE reading
+> `int_students__sis_cutover` (Task 8b), change the PowerSchool predicate to
+> `t.yearid >= c.focus_start_academic_year - 1990`, and ADD the Focus-side floor
+> `where academic_year >= c.focus_start_academic_year`, which the original block
+> omits. Task 9 is the worked example.
 
 **Files:**
 
@@ -3121,7 +3304,7 @@ models:
 - [ ] **Step 3: Repoint the four refs**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 grep -rl 'ref("int_powerschool__ada")' --include='*.sql' src/dbt/kipptaf/models/ \
   | xargs sed -i 's/ref("int_powerschool__ada")/ref("int_students__ada")/g' && \
 grep -rl 'ref("int_powerschool__attendance_streak")' --include='*.sql' src/dbt/kipptaf/models/ \
@@ -3180,7 +3363,7 @@ Also update the `TODO(#4835)` comment above `enrollments` so it reads
 ```bash
 uv run dbt build --select int_students__ada int_students__attendance_streak \
   fct_student_attendance_streaks int_students__attendance_interventions \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -3205,7 +3388,7 @@ in both. A higher `dev` `n` means the join fanned out.
 - [ ] **Step 6: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   $(git -C . diff --name-only HEAD | while read -r f; do [ -f "$f" ] && printf '%s ' "$f"; done) \
   src/dbt/kipptaf/models/students/intermediate/int_students__ada.sql \
@@ -3215,13 +3398,13 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-lay
 ```
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add -u && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add -u && \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add \
   src/dbt/kipptaf/models/students/intermediate/int_students__ada.sql \
   src/dbt/kipptaf/models/students/intermediate/int_students__attendance_streak.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__ada.yml \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__attendance_streak.yml && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "feat(kipptaf): add int_students__ada and __attendance_streak, key the streak fact on student_number
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer commit -m "feat(kipptaf): add int_students__ada and __attendance_streak, key the streak fact on student_number
 
 Refs #4924"
 ```
@@ -3229,6 +3412,15 @@ Refs #4924"
 ---
 
 ### Task 13: `int_students__calendar_rollup` and the null-safe track join
+
+> **REQUIRED CORRECTION, not yet applied to the SQL block below.** This task's
+> `focus_years` CTE and its one-sided PowerSchool predicate are both unsound --
+> see "The Miami cutover is a floor, derived from RECORDED attendance" above.
+> Replace the `focus_years` CTE with a `cutover` CTE reading
+> `int_students__sis_cutover` (Task 8b), change the PowerSchool predicate to
+> `t.yearid >= c.focus_start_academic_year - 1990`, and ADD the Focus-side floor
+> `where academic_year >= c.focus_start_academic_year`, which the original block
+> omits. Task 9 is the worked example.
 
 **Files:**
 
@@ -3392,7 +3584,7 @@ emits a null track for NJ to pair with.
 ```bash
 uv run dbt build --select int_students__calendar_rollup rpt_tableau__ops_dashboard \
   rpt_gsheets__csgf_enrollment rpt_tableau__nj_school_register \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -3417,7 +3609,7 @@ calendar.
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   $(git -C . diff --name-only HEAD | while read -r f; do [ -f "$f" ] && printf '%s ' "$f"; done) \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_rollup.sql \
@@ -3425,11 +3617,11 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-lay
 ```
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add -u && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add -u && \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add \
   src/dbt/kipptaf/models/students/intermediate/int_students__calendar_rollup.sql \
   src/dbt/kipptaf/models/students/intermediate/properties/int_students__calendar_rollup.yml && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "feat(kipptaf): add int_students__calendar_rollup with a null-safe track join
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer commit -m "feat(kipptaf): add int_students__calendar_rollup with a null-safe track join
 
 Refs #4924"
 ```
@@ -3477,7 +3669,7 @@ already daily grain, so the filter has nothing to exclude.
 
 ```bash
 uv run dbt build --select rpt_tableau__attendance_chronic_absenteeism_log \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -3513,14 +3705,14 @@ it means Miami appears in this report for AY2020 onward.
 - [ ] **Step 3: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__attendance_chronic_absenteeism_log.sql </dev/null
 ```
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer add -u && \
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer commit -m "fix(kipptaf): source the chronic absenteeism log from int_students__attendance_daily
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer add -u && \
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer commit -m "fix(kipptaf): source the chronic absenteeism log from int_students__attendance_daily
 
 Refs #4924"
 ```
@@ -3534,7 +3726,7 @@ Refs #4924"
 - [ ] **Step 1: Confirm no stale refs remain**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 grep -rn 'ref("int_powerschool__\(ps_adaadm_daily_ctod\|calendar_week\|calendar_rollup\|attendance_streak\|ada\)")' \
   --include='*.sql' src/dbt/kipptaf/models/ || echo "no stale refs"
 ```
@@ -3551,7 +3743,7 @@ uv run dbt build --empty --select int_students__attendance_daily+ \
   int_students__calendar_week+ int_students__calendar_day+ \
   int_students__calendar_rollup+ int_students__ada+ \
   int_students__attendance_streak+ \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -3563,7 +3755,7 @@ did that.
 
 ```bash
 uv run dbt build --select fct_student_attendance_daily \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer/src/dbt/kipptaf \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --target dev
 ```
 
@@ -3587,7 +3779,7 @@ filter on its region column. Expected: an AY2026 row with non-null `ada` between
 - [ ] **Step 4: Lint the whole PR**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   $(git -C . diff --name-only origin/main...HEAD | while read -r f; do [ -f "$f" ] && printf '%s ' "$f"; done) </dev/null
 ```
@@ -3602,7 +3794,7 @@ Confirm dbt Cloud CI is in a terminal state before pushing — a push cancels an
 in-progress run and restarts it.
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer push
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-kipptaf-layer push
 ```
 
 Open PR2 using `.github/pull_request_template.md`. The body must include:
