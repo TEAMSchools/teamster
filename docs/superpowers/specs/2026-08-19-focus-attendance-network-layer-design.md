@@ -105,87 +105,136 @@ non-instructional Focus schools (`Applicants`, `Virtual Franchise`,
 `ZZ Course History`) have no locations row and drop out on the join, which is
 the existing Phase 1 behavior.
 
+## The package speaks Focus, the network layer conforms
+
+The `focus` package carries **no PowerSchool knowledge at all**. Its models use
+Focus's own vocabulary, and every translation into the network's
+PowerSchool-derived shape happens in the kipptaf blended-source layer, which is
+the layer whose job that is.
+
+An earlier revision of this spec did the opposite: it pushed `studentid`,
+`yearid`, the PowerSchool attendance-code vocabulary, and a set of constant-NULL
+PowerSchool columns (`fteid`, `attendance_conversion_id`, `ontrack`, `offtrack`,
+`student_track`, `track`) down into the Focus models so the downstream union
+would be a trivial `select *`. That was the wrong trade. It bought a cheap union
+at the cost of a source-system package that could not be read or reused without
+knowing PowerSchool, and it put conform logic in the one place that has no
+business knowing about the target shape.
+
+Naming follows Focus's own columns, which is also what `focus/CLAUDE.md`
+establishes for the package and what the sibling `int_focus__student_enrollment`
+already does. The rule is to stop renaming, not to invent:
+
+| Focus-native name | Where the name comes from        |
+| ----------------- | -------------------------------- |
+| `academic_year`   | `int_focus__student_enrollment`  |
+| `startdate`       | `int_focus__student_enrollment`  |
+| `schoolid`        | `int_focus__student_enrollment`  |
+| `school_date`     | `stg_focus__attendance_calendar` |
+| `daily_code`      | `stg_focus__attendance_day`      |
+| `state_value`     | `stg_focus__attendance_day`      |
+
 ## `int_focus__attendance_daily`
 
-The load-bearing new model, and the analogue of the district
-`int_powerschool__ps_adaadm_daily_ctod`.
-
-Grain: one row per enrolled student per in-session calendar day. Built as
-enrollment crossed with in-session calendar days, left-joined to
-`int_focus__attendance_day`.
+The load-bearing new model. Grain: one row per enrolled student per in-session
+calendar day, built as enrollment crossed with in-session calendar days and
+left-joined to `int_focus__attendance_day`.
 
 The scaffold is necessary because a missing attendance record is not visible at
 `int_focus__attendance_day`'s own grain. Measured for AY2026: 9,287 scaffold
 rows against 9,253 attendance rows, joining to 9,163 matched, 124 scaffold days
 with no record, and 90 attendance rows outside any scaffold row. So Focus is
-already about 99% complete daily coverage, not sparse — but the scaffold is what
-makes an un-recorded day representable at all.
+already about 99% complete daily coverage — but the scaffold is what makes an
+un-recorded day representable at all.
 
 ### Column contract
 
-| District ctod column                   | Focus source                                 | Note                                                                      |
-| -------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------- |
-| `studentid`                            | —                                            | null, consistent with Phase 1's enrollment union                          |
-| `student_number`                       | `network_student_number`                     | unprefixed network number                                                 |
-| `schoolid`                             | Focus internal `schoolid`                    | crosswalked at kipptaf, not here                                          |
-| `entrydate`                            | enrollment `startdate`                       |                                                                           |
-| `calendardate`                         | `stg_focus__attendance_calendar.school_date` |                                                                           |
-| `yearid`                               | `academic_year - 1990`                       | the verified network formula                                              |
-| `grade_level`                          | enrollment `grade_level`                     |                                                                           |
-| `att_code`                             | mapped Focus code                            | see the mapping below                                                     |
-| `is_attendance_recorded`               | `a.student_id is not null`                   | whether Focus recorded the day at all                                     |
-| `attendancevalue`                      | `state_value`                                | already the present/absent classification                                 |
-| `potential_attendancevalue`            | `1`                                          | every membership day is potentially attendable                            |
-| `membershipvalue`                      | `1`                                          | every in-session day within the stint                                     |
-| `fteid`                                | —                                            | null. Focus's own `fteid` is a student FLEID, an unrelated name collision |
-| `attendance_conversion_id`             | —                                            | null, PowerSchool-specific                                                |
-| `ontrack`, `offtrack`, `student_track` | —                                            | null. Passthrough columns at kipptaf, never used in a calc                |
+Every column carries Focus data. Nothing is projected to satisfy a downstream
+union.
 
-### Attendance code mapping
+| Column                   | Meaning                                                       |
+| ------------------------ | ------------------------------------------------------------- |
+| `student_number`         | Network student number, unprefixed                            |
+| `schoolid`               | Focus internal school id; kipptaf crosswalks it               |
+| `academic_year`          | Focus `syear` — 2026 means 2026-27                            |
+| `startdate`              | Start date of the enrollment stint the row belongs to         |
+| `school_date`            | The in-session calendar date                                  |
+| `grade_level`            | Grade level from the enrollment stint                         |
+| `daily_code`             | Focus's own code — `U`, `AE`, `AD`, or NULL. Never translated |
+| `state_value`            | Focus's present/absent classification — 1 present, 0 absent   |
+| `is_attendance_recorded` | Whether Focus recorded the day at all                         |
 
-Focus's day-grain vocabulary is four codes. PowerSchool's is twelve. They nearly
-coincide:
+Deliberately absent, and why:
 
-| Focus       | Focus meaning     | Maps to  | PowerSchool meaning                              |
-| ----------- | ----------------- | -------- | ------------------------------------------------ |
-| null        | present           | null     | present                                          |
-| `U`         | Absent Unexcused  | `A`      | Absent Undocumented / Absent                     |
-| `AE`        | Absent Excused    | `AE`     | Absent Excused — exact match                     |
-| `AD`        | Absent Documented | `AD`     | Absent Documented — exact match                  |
-| _no record_ | —                 | **NULL** | no absence recorded — PowerSchool's own encoding |
+- `studentid` — a PowerSchool internal id with no Focus analogue. It was
+  constant NULL.
+- `fteid`, `attendance_conversion_id` — PowerSchool attendance-conversion
+  machinery. Focus's own `fteid` is a student FLEID, an unrelated name
+  collision.
+- `ontrack`, `offtrack`, `student_track` — PowerSchool calendar-track machinery.
+  Miami's `track` is NULL network-wide anyway.
+- `yearid` — PowerSchool's internal year numbering (`academic_year - 1990`). The
+  kipptaf conform derives it.
+- `membershipvalue`, `potential_attendancevalue` — PowerSchool ADA machinery.
+  Every row of this model IS a membership day, so a constant-1 column carries
+  nothing.
+- `att_code`, `att_code_focus` — the conformed/raw pair only existed because the
+  model was translating. It emits `daily_code` and nothing else now.
 
-`AE` and `AD` match exactly, so only `U` needs renaming. That makes every
-existing consumer predicate correct for Miami with **zero consumer branching** —
-`att_code like 'A%'`, `att_code like 'T%'`, and
-`att_code in ('OS', 'OSS', 'OSSP', 'SHI')` all behave as intended.
+### The no-record encoding
 
-Mapping `U` is not cosmetic: `U` already exists in the PowerSchool vocabulary
-meaning **Unprepared** (14 rows), an unrelated concept. Passing Focus codes
-through unmapped would silently merge unexcused absences into it.
+A scaffold day with no attendance record leaves `daily_code` NULL and
+`is_attendance_recorded` false. `state_value` coalesces to 1, matching how
+PowerSchool resolves a day with no absence record to the `Present` conversion.
 
-The raw Focus code is retained in its own column so nothing is lost.
+`is_attendance_recorded` is the one signal Focus has and PowerSchool cannot
+express: PowerSchool records only absences, so presence is implied and "was
+attendance taken" is unknowable there. The kipptaf union therefore leaves that
+column NULL on PowerSchool rows rather than true, so a Focus-versus-NJ
+comparison cannot read PowerSchool as fully compliant. Focus's own rate is
+material — 119 of 7,773 completed-day rows for AY2026, 1.5%.
 
-A no-record day gets `att_code` NULL, which is exactly how PowerSchool encodes
-the same case — 7,698,389 PowerSchool rows carry a NULL `att_code` with an
-average `attendancevalue` of 0.997, because the district ctod resolves a day
-with no absence record to the `Present` conversion.
+An earlier revision mapped no-record onto PowerSchool's `M` code on the
+reasoning that `M` means Missing Attendance and was therefore in-vocabulary.
+That was wrong: PowerSchool's `M` is a rare, explicitly entered code averaging
+0.741 `attendancevalue`, and `rpt_gsheets__absence_streak_roster` filters
+`att_code in ('A', 'AD', 'M')`, counting it as an absence. Mapping 1.13 million
+Focus present-by-default rows onto it would have published fake multi-month
+Miami absence streaks. Under the Focus-native design the question does not arise
+in this package at all — the code stays NULL and the conform layer decides what
+the network sees.
 
-An earlier draft of this spec mapped no-record onto PowerSchool's `M` code, on
-the reasoning that `M` means Missing Attendance and was therefore in-vocabulary.
-That was wrong, and Task 1 caught it: PowerSchool's `M` is a rare, explicitly
-entered code averaging 0.741 `attendancevalue`, and
-`rpt_gsheets__absence_streak_roster` filters `att_code in ('A', 'AD', 'M')`, so
-it counts `M` as an absence. Mapping Focus's 1.13 million present-by-default
-rows onto it would have published fake multi-month Miami absence streaks.
+## The kipptaf conform layer
 
-The no-record signal is not discarded — it moves to a dedicated
-`is_attendance_recorded` boolean. That is the one thing Focus knows and
-PowerSchool cannot: PowerSchool records only absences, so presence is implied
-and whether attendance was taken is unknowable there. The kipptaf union
-therefore leaves the column NULL on PowerSchool rows rather than true, so a
-Focus-versus-NJ comparison cannot read PowerSchool as fully compliant. Focus's
-own rate is material — 17 to 23% of completed days in the opening week of AY2026
-— which is why it is worth carrying rather than dropping.
+The `focus_conformed` CTE inside each `int_students__*` model does the whole
+translation. It already had to crosswalk Focus's internal school id through
+`stg_google_sheets__people__locations`; it now also:
+
+- derives `yearid` as `academic_year - 1990`
+- maps `daily_code` into the PowerSchool vocabulary: `U` becomes `A`, while `AE`
+  and `AD` already match and pass through. `U` must never pass through unmapped
+  — it means Unprepared in PowerSchool, an unrelated concept
+- casts `state_value` to the `attendancevalue` FLOAT64 the network expects
+- emits `membershipvalue` and `potential_attendancevalue` as 1, since every
+  Focus scaffold row is a membership day
+- projects typed NULLs for `studentid`, `fteid`, `attendance_conversion_id`,
+  `ontrack`, `offtrack`, and `student_track`, which the union needs and Focus
+  cannot supply
+
+Putting these here rather than upstream means the PowerSchool-shaped vocabulary
+exists in exactly one layer, and it is the layer that already knows both shapes.
+
+### Dual-exposed column names
+
+`int_students__*` models expose each measure twice: a system-agnostic name as
+the primary column, and the legacy PowerSchool-derived name as an alias beside
+it. The 37 existing consumer references keep working untouched, and new work can
+adopt the neutral names without a coordinated migration.
+
+The legacy aliases are transitional by construction and documented as such in
+each properties yml, so a later pass can retire them once no consumer reads
+them. Retiring them is explicitly out of scope here — this work is about getting
+Miami's attendance into the network layer, not about renaming the network layer.
 
 ## Deferred, tracked elsewhere
 

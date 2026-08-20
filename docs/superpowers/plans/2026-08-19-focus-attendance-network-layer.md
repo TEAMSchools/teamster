@@ -1494,6 +1494,174 @@ Refs #4924"
 
 ---
 
+### Task 6b: Refactor the focus package to Focus-native
+
+Tasks 1 through 6 built the six models with PowerSchool-shaped projections so
+the downstream union would be a trivial `select *`. That was the wrong trade: it
+left a source-system package that cannot be read without knowing PowerSchool,
+and it put conform logic in the layer with no business knowing the target shape.
+This task strips all of it. **The column contracts stated in Tasks 1 through 6
+are superseded by this task.** No model LOGIC changes — the scaffold, the
+transfer-day trim, the `distinct` grain projections, the streak gap arithmetic,
+and every join stay exactly as they are. Only the projections change.
+
+**Files:** all six `src/dbt/focus/models/intermediate/int_focus__*.sql` from
+Tasks 1 through 6, their six `properties/*.yml`, and the unit test in
+`unit_tests.yml`.
+
+**Interfaces:** every consumer of these models is a later task in this plan, so
+nothing outside the `focus` package breaks. Tasks 9 through 13 absorb the
+translation.
+
+#### The rule
+
+Use Focus's own column names. Stop renaming rather than invent: `academic_year`,
+`startdate`, `schoolid` come from `int_focus__student_enrollment`; `school_date`
+from `stg_focus__attendance_calendar`; `daily_code` and `state_value` from
+`stg_focus__attendance_day`.
+
+#### Per-model changes
+
+`int_focus__attendance_daily` — remove `studentid`, `fteid`,
+`attendance_conversion_id`, `ontrack`, `offtrack`, `student_track`, `att_code`,
+`att_code_focus`, `attendancevalue`, `potential_attendancevalue`, and
+`membershipvalue`. Rename `yearid` to `academic_year` (and stop subtracting 1990
+— emit the Focus `syear` as-is), `entrydate` to `startdate`, `calendardate` to
+`school_date`. Emit Focus's raw `daily_code` with NO translation — `U` stays
+`U`. Emit `state_value` in place of `attendancevalue`, keeping the
+`coalesce(..., 1)` so a no-record day still reads present, and keeping the
+FLOAT64 cast. Keep `student_number`, `schoolid`, `grade_level`, and
+`is_attendance_recorded`.
+
+Final contract: `student_number`, `schoolid`, `academic_year`, `startdate`,
+`school_date`, `grade_level`, `daily_code`, `state_value`,
+`is_attendance_recorded`.
+
+`int_focus__ada` — remove the null `studentid` and `yearid`. Group by
+`student_number` and `academic_year`. Rename `days_in_membership` to
+`days_in_session` and `days_absent_unexcused` to `days_absent` (Focus does not
+split excused from unexcused at this grain, so the old name overclaimed). Keep
+`days_present` and `ada`. The `where` clause loses `membershipvalue = 1`
+entirely, because every row of the upstream IS a session day; it becomes just
+`school_date <= current_date('{{ var("local_timezone") }}')`.
+
+`int_focus__attendance_streak` — remove the null `studentid` and `yearid`;
+partition and hash on `student_number` and `academic_year`. Drop the
+`coalesce(att_code, 'P')`: partition on the raw `daily_code`, which lets NULL be
+its own group and keeps the present-streak native. Replace the overloaded
+`att_code` column with two: `streak_type` STRING holding `'daily_code'` or
+`'state_value'`, and `streak_value` STRING holding the grouped value (NULL for a
+present streak in the `daily_code` family). Rename `streak_length_membership` to
+`streak_length_days` and `streak_length_calendar` to
+`streak_length_calendar_days`. Keep `streak_id`, `streak_start_date`,
+`streak_end_date`.
+
+The `streak_type` split is new. The old single `att_code` column carried a real
+code in one union branch and a stringified numeric in the other, with nothing to
+tell them apart — a latent ambiguity the code review flagged. Splitting it is
+both native and strictly clearer, and the kipptaf conform reassembles the old
+shape.
+
+`int_focus__calendar_day` — remove the `insession` and `membershipvalue`
+constants entirely; a row existing in this model IS an in-session day, which is
+the model's whole meaning. Rename `date_value` to `school_date` and `yearid` to
+`academic_year` (again, no 1990 subtraction). Keep `schoolid`,
+`week_start_date`, `week_end_date`.
+
+`int_focus__calendar_week` — rename `yearid` to `academic_year` and drop the
+separate `academic_year` derivation that computed `yearid + 1990`. Everything
+else stays: `quarter` and `semester` are education-generic and genuinely
+describe Focus marking periods, and the week columns are not
+PowerSchool-specific.
+
+`int_focus__calendar_rollup` — remove the constant-NULL `track` column entirely.
+Rename `yearid` to `academic_year`, `min_calendardate` to `min_school_date`, and
+`max_calendardate` to `max_school_date`. Keep `days_total` and `days_remaining`.
+
+#### Cascading updates
+
+Every `properties/*.yml` needs its column list and descriptions updated to
+match, and every description that explains a column in PowerSchool terms should
+now explain it in Focus terms. Delete the descriptions of removed columns rather
+than leaving them orphaned — a stale description for a column that no longer
+exists is worse than none.
+
+The uniqueness grains change names but not meaning:
+`int_focus__attendance_daily` becomes `(student_number, school_date)`;
+`int_focus__calendar_day` becomes `(schoolid, academic_year, school_date)`;
+`int_focus__calendar_week` becomes `(schoolid, academic_year, week_start_date)`;
+`int_focus__calendar_rollup` becomes `(schoolid, academic_year)`;
+`int_focus__ada` becomes `(student_number, academic_year)`.
+`int_focus__attendance_streak` keeps the plain `unique` on `streak_id`.
+
+The unit test in `unit_tests.yml` needs its `expect` block rewritten to the new
+column names and native code values: student 1 expects `daily_code` `U` (not
+`A`), students 3 and 4 expect NULL, `state_value` replaces `attendancevalue`,
+`academic_year` is 2026 (not `yearid` 36), and `att_code_focus` disappears. Keep
+`is_attendance_recorded` asserted on all four rows — it is the only thing
+distinguishing students 3 and 4.
+
+#### Verification
+
+- [ ] **Step 1: Rewrite all six models and their properties files, and the unit
+      test**
+
+- [ ] **Step 2: Build the whole subgraph in the FOREGROUND**
+
+```bash
+uv run dbt build --select int_focus__attendance_daily+ int_focus__calendar_day+ \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer/src/dbt/kippmiami \
+  --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
+```
+
+Expected: every model and test passes, and the unit test passes.
+
+- [ ] **Step 3: Prove no row count moved**
+
+This is a projection-only refactor, so every row count must be identical to what
+Tasks 1 through 6 produced. Any change means logic was altered.
+
+```sql
+select
+  (select count(*) from `teamster-332318.zz_cbini_kippmiami_focus.int_focus__attendance_daily` where academic_year = 2026) as daily_2026,
+  (select count(*) from `teamster-332318.zz_cbini_kippmiami_focus.int_focus__ada` where academic_year = 2026) as ada_2026,
+  (select count(*) from `teamster-332318.zz_cbini_kippmiami_focus.int_focus__attendance_streak` where academic_year = 2026) as streak_2026,
+  (select count(*) from `teamster-332318.zz_cbini_kippmiami_focus.int_focus__calendar_day`) as calendar_day_all,
+  (select count(*) from `teamster-332318.zz_cbini_kippmiami_focus.int_focus__calendar_week`) as calendar_week_all,
+  (select count(*) from `teamster-332318.zz_cbini_kippmiami_focus.int_focus__calendar_rollup`) as calendar_rollup_all
+```
+
+Expected, unchanged from before the refactor: `daily_2026` 307,638; `ada_2026`
+1,628; `streak_2026` 4,474; `calendar_day_all` 13,552; `calendar_week_all`
+2,571; `calendar_rollup_all` 68.
+
+- [ ] **Step 4: Prove no PowerSchool vocabulary survives in the package**
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+grep -nE '\b(studentid|yearid|att_code|attendancevalue|membershipvalue|potential_attendancevalue|attendance_conversion_id|fteid|ontrack|offtrack|student_track|calendardate|entrydate|date_value|insession)\b' \
+  src/dbt/focus/models/intermediate/int_focus__attendance_daily.sql \
+  src/dbt/focus/models/intermediate/int_focus__ada.sql \
+  src/dbt/focus/models/intermediate/int_focus__attendance_streak.sql \
+  src/dbt/focus/models/intermediate/int_focus__calendar_day.sql \
+  src/dbt/focus/models/intermediate/int_focus__calendar_week.sql \
+  src/dbt/focus/models/intermediate/int_focus__calendar_rollup.sql \
+  src/dbt/focus/models/intermediate/properties/*.yml || echo "CLEAN"
+```
+
+Expected: `CLEAN`. A hit in a COMMENT explaining what was removed and why is
+acceptable — report it rather than deleting a useful comment.
+
+- [ ] **Step 5: Lint and commit**
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-attendance-network-layer && \
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
+  src/dbt/focus/models/intermediate/ </dev/null
+```
+
+---
+
 ### Task 7: Ship PR1 and wait for prod materialization
 
 **Files:** none — this is a gate.
