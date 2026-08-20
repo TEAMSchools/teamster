@@ -1121,6 +1121,15 @@ select
     case
         when not has_goal
         then null
+        /* an un-evaluable row is unknown, not a miss -- without a goal value, a
+           direction, or a metric value the comparisons below return null and
+           would otherwise fall through to `else false` and read as a missed
+           goal */
+        when
+            goal_resolved is null
+            or goal_direction is null
+            or metric_aggregate_value is null
+        then null
         when goal_direction = 'baseball' and metric_aggregate_value >= goal_resolved
         then true
         when goal_direction = 'golf' and metric_aggregate_value < goal_resolved

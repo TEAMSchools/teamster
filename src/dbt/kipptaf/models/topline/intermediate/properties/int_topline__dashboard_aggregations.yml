@@ -163,8 +163,10 @@ models:
         data_type: float64
       - name: is_goal_met
         description:
-          Whether the metric meets its goal, given goal_direction; null when
-          has_goal is false.
+          Whether the metric meets its goal, given goal_direction. Null when
+          has_goal is false, and also null when the comparison cannot be
+          evaluated -- no resolved goal value, no goal_direction, or no metric
+          value -- so an un-evaluable row does not read as a missed goal.
         data_type: boolean
       - name: goal_difference_percent
         description:
