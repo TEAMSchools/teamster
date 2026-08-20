@@ -73,7 +73,7 @@ with
             on l.location_powerschool_school_id = cal.schoolid
             and cal.week_start_monday between st.valid_from and st.valid_to
         -- TODO(#4943): drop when Focus integration lands
-        where st.entity != 'Miami'
+        where coalesce(st.entity, '') not in ('Miami', 'MIA')
     )
 
 select

@@ -40,7 +40,7 @@ with
             -- the macro is applied downstream, and the sheet carries both
             -- 'Miami' and 'KIPP Miami'.
             -- TODO(#4943): drop when Focus integration lands
-            and home_business_unit_name != 'KIPP Miami'
+            and coalesce(home_business_unit_name, '') not in ('KIPP Miami', 'MIA')
     )
 
 select

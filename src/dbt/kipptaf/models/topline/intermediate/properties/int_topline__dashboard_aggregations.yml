@@ -15,6 +15,14 @@ models:
       any period — before falling back to the base aggregate-goals config.
     config:
       materialized: table
+      meta:
+        dagster:
+          # nightly instead of eager: this table reaches intraday sources
+          # through view chains that bypass the cron-guarded weekly siblings,
+          # so an eager condition rebuilds it repeatedly for a consumer chain
+          # delivered by nightly extract schedules (01:15-03:00 ET). Refs #4559
+          automation_condition:
+            cron_schedule: 0 0 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -42,8 +50,9 @@ models:
         data_type: int64
       - name: region
         description:
-          Region name — Newark, Camden, Miami, Paterson, TAF (central-office
-          staff), or All on org-scope rows.
+          Region name — Newark, Camden, Paterson, TAF (central-office staff), or
+          All on org-scope rows. Miami is excluded from this model pending its
+          Focus integration; see issue 4943.
         data_type: string
       - name: schoolid
         description: PowerSchool school id; null on region and org scope rows.

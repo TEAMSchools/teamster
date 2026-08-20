@@ -4,14 +4,15 @@ models:
       Topline cascade dashboard extract for Tableau. Rows span four period
       grains (week, month, quarter, ytd) for the same metric/scope — every
       worksheet must filter on period_type, or its aggregates mix grains.
-      Composite-key uniqueness is enforced at error severity upstream on
-      `int_topline__dashboard_aggregations`; the mirrored test here is warn-only
-      because pre-existing duplicate-key rows already reach this extract. Region
-      scope -- student metrics cover Newark and Camden, staff metrics also cover
-      Paterson and TAF. Miami is excluded entirely pending its Focus integration
-      -- its PowerSchool source is a frozen pre-migration archive with no AY2026
-      data. Paterson's student metrics are excluded pending its rows in the
-      topline goals sheet. See issue 4943.
+      Composite-key uniqueness is tested here and upstream on
+      `int_topline__dashboard_aggregations`, but both are warn-only -- the
+      project default in dbt_project.yml is severity warn and neither test
+      overrides it -- because pre-existing duplicate-key rows already reach this
+      extract. Region scope -- student metrics cover Newark and Camden, staff
+      metrics also cover Paterson and TAF. Miami is excluded entirely pending
+      its Focus integration -- its PowerSchool source is a frozen pre-migration
+      archive with no AY2026 data. Paterson's student metrics are excluded
+      pending its rows in the topline goals sheet. See issue 4943.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -114,13 +115,19 @@ models:
         data_type: float64
       - name: metric_numerator
         description:
-          Enrolled count behind the Seat Target / Budget Target ratio; null for
-          other indicators.
+          Intended to carry the enrolled count behind the Seat Target / Budget
+          Target ratio. Currently null on every row, because no Seat Target or
+          Budget Target rows are produced at all -- the source indicator Total
+          Enrollment (Without SC OOD) has no aggregate-goals row, so its
+          org_level and therefore its join_key are null and the target join
+          matches nothing. Awaiting the definitional decision in issue 4489
+          (whether the enrolled-vs-target measure counts SC OOD students).
         data_type: numeric
       - name: metric_denominator
         description:
-          Seat or budget target integer behind the ratio; null for other
-          indicators.
+          Intended to carry the seat or budget target integer behind the ratio.
+          Currently null on every row for the same reason as metric_numerator.
+          See issue 4489.
         data_type: numeric
       - name: region
         data_type: string

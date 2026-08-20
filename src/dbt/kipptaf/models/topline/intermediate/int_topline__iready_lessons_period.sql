@@ -10,6 +10,13 @@ with
             coalesce(n_lessons_passed_week, 0) as n_lessons_passed_week,
             coalesce(time_on_task_min_week, 0) as time_on_task_min_week,
         from {{ ref("int_topline__iready_lessons_weekly") }}
+        /* the weekly source is enrollment-spine-filled through year end, so an
+           unbounded count(*) denominator divides by the whole school year for
+           any in-progress period -- AY2026 is 96.7% future weeks. Mirrors the
+           bound already in int_topline__attendance_period. Note this still
+           admits the current partially-elapsed week; that is the same
+           partial-window question tracked for the as-of path. */
+        where week_start_monday <= current_date('{{ var("local_timezone") }}')
     ),
 
     periods as (

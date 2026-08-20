@@ -5,9 +5,9 @@ models:
       cascade dashboard, unioning the period-grain indicator variants into the
       same shape as int_topline__student_metrics. Student attributes (region,
       school, grade level) come from the student's last enrolled week inside the
-      window; the inner join to enrolled weeks also applies the Paterson
-      exclusion and enrollment gate matching the weekly path. Week rows are NOT
-      produced here — they stay on the weekly path.
+      window; the inner join to enrolled weeks also applies the Paterson and
+      Miami exclusions and the enrollment gate matching the weekly path. Week
+      rows are NOT produced here — they stay on the weekly path.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
