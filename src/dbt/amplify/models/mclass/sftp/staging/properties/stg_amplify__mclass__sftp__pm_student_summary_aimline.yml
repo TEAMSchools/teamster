@@ -32,6 +32,7 @@ models:
                 values:
                   - Composite
                   - Decoding (NWF-WRC)
+                  - Irregular Words (DEC-IW)
                   - Letter Names (LNF)
                   - Letter Sounds (NWF-CLS)
                   - Phonemic Awareness (PSF)
@@ -41,7 +42,6 @@ models:
                   - Word Reading (WRF)
               config:
                 severity: error
-                where: assessment_edition = 'DIBELS 8th Edition'
       - name: measure_name_code
         data_type: string
         description: >-
