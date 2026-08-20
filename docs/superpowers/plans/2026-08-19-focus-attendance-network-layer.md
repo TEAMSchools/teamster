@@ -2769,13 +2769,18 @@ models:
           left it unpopulated for Focus, so joins use student_number.
       - name: att_code
         description: >-
-          Attendance code in the PowerSchool vocabulary. Focus codes are
-          conformed upstream (U becomes A; AE and AD match; a missing record
-          becomes M).
-      - name: att_code_focus
+          Attendance code in the PowerSchool vocabulary. Legacy name — prefer
+          `attendance_code`. Focus codes are conformed in this model's
+          focus_conformed CTE, not upstream: U becomes A, AE and AD pass
+          through, and a day with no record stays null, which is how PowerSchool
+          encodes the same case.
+      - name: is_attendance_recorded
         description: >-
-          Raw Focus daily code, null on every PowerSchool row. Doubles as the
-          marker for which rows carry the #4927 null flags.
+          Whether the source system recorded attendance for this student-day at
+          all. False means the register was never taken, which is distinct from
+          a recorded presence. NULL on PowerSchool-sourced rows, because
+          PowerSchool records only absences and cannot express the difference.
+          Also the marker for which rows carry the #4927 null flags.
       - name: is_tardy
         description: >-
           1 tardy, 0 not. Null for Focus-sourced Miami rows — Focus records
