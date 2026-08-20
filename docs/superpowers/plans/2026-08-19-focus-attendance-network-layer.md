@@ -1761,6 +1761,14 @@ emits `track`; `int_focus__attendance_streak` emits `streak_type` and
 | PowerSchool-only | —                              | typed NULLs for `studentid`, `fteid`, `attendance_conversion_id`, `ontrack`, `offtrack`, `student_track`, `track` |
 | Streak family    | `streak_type` + `streak_value` | `att_code` as `coalesce(streak_value, 'P')`                                                                       |
 
+**Every conform CTE must carry `_dbt_source_relation` and `_dbt_source_project`
+through explicitly.** A conform that lists columns rather than using `*` will
+silently omit them, and `full union all corresponding` then null-fills them for
+the Focus rows. That breaks every downstream join (almost all of them key on
+`_dbt_source_project`) and mis-hashes `student_enrollment_key` and
+`student_attendance_streak_key`, which both include it. This was a real defect
+in four of the five conforms below before it was caught.
+
 `U` must never reach `att_code` unmapped — `U` means Unprepared in PowerSchool,
 an unrelated concept, and `rpt_gsheets__absence_streak_roster` filters on the
 PowerSchool vocabulary.
@@ -2540,6 +2548,15 @@ with
             ad.grade_level,
             ad.is_attendance_recorded,
 
+            -- Carried through explicitly. Every downstream join keys on
+            -- _dbt_source_project, and student_enrollment_key hashes it, so letting
+            -- it null-fill through `full union all corresponding` would break the
+            -- Miami joins and mis-hash the key. The kipptaf passthrough wrapper
+            -- supplies both: union_relations adds _dbt_source_relation and
+            -- extract_source_project adds _dbt_source_project.
+            ad._dbt_source_relation,
+            ad._dbt_source_project,
+
             fs.schoolid,
 
             ad.academic_year - 1990 as yearid,
@@ -2965,6 +2982,11 @@ select
     days_present,
     ada,
 
+    -- Carried through explicitly: every downstream join keys on
+    -- _dbt_source_project, so letting it null-fill would break the Miami joins.
+    _dbt_source_relation,
+    _dbt_source_project,
+
     academic_year - 1990 as yearid,
     days_in_session as days_in_membership,
     days_absent as days_absent_unexcused,
@@ -3009,6 +3031,11 @@ select
     streak_id,
     streak_start_date,
     streak_end_date,
+
+    -- Carried through explicitly: fct_student_attendance_streaks joins on
+    -- _dbt_source_project and hashes it into student_attendance_streak_key.
+    _dbt_source_relation,
+    _dbt_source_project,
 
     academic_year - 1990 as yearid,
     coalesce(streak_value, 'P') as att_code,
@@ -3259,6 +3286,11 @@ with
         select
             cr.days_total,
             cr.days_remaining,
+
+            -- Carried through explicitly: the ops dashboard and csgf extract both
+            -- join on _dbt_source_project.
+            cr._dbt_source_relation,
+            cr._dbt_source_project,
 
             fs.schoolid,
 
