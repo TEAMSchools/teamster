@@ -46,12 +46,13 @@ models:
         data_type: string
         description: >-
           Short measure abbreviation, for example 'ORF' from 'Reading Fluency
-          (ORF)'. Derived from the RAW source measure, not from the mapped
-          measure column above — BigQuery has no lateral column aliases, so a
-          bare measure reference in the same select list resolves to the source
-          column. That is why the short-code and long-label arms must BOTH be
-          present here; removing either regenerates a truncated code such as
-          'Maz'. The surrogate key hashes the raw value for the same reason.
+          (ORF)'. Derived from the NORMALIZED measure produced by the preceding
+          CTE, so only long-form labels need arms here and vendor format
+          tolerance lives in exactly one place. There is deliberately no
+          fallback — an unrecognized measure yields NULL, which the not_null
+          test below catches unconditionally, rather than being silently
+          truncated to a three-character code that could collide with a real
+          one. Add a measure here whenever one is added to the mapping above.
         data_tests:
           - not_null:
               config:

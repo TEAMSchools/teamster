@@ -1,5 +1,5 @@
 with
-    pm_student_summary as (
+    normalized as (
         select
             * except (
                 device_date,
@@ -61,15 +61,35 @@ with
                 else measure
             end as measure,
 
+        from {{ source("amplify_mclass_sftp", "pm_student_summary") }}
+    ),
+
+    pm_student_summary as (
+        select
+            *,
+
             case
                 measure
                 when 'Composite'
                 then 'Composite'
-                when 'Maze'
-                then 'Comprehension'
+                when 'Decoding (NWF-WRC)'
+                then 'NWF'
+                when 'Irregular Words (DEC-IW)'
+                then 'DEC'
+                when 'Letter Names (LNF)'
+                then 'LNF'
+                when 'Letter Sounds (NWF-CLS)'
+                then 'NWF'
+                when 'Phonemic Awareness (PSF)'
+                then 'PSF'
+                when 'Reading Accuracy (ORF-Accu)'
+                then 'ORF'
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
-                else substr(measure, strpos(measure, '(') + 1, 3)
+                when 'Reading Fluency (ORF)'
+                then 'ORF'
+                when 'Word Reading (WRF)'
+                then 'WRF'
             end as measure_name_code,
 
             {{
@@ -84,7 +104,7 @@ with
                 )
             }} as surrogate_key,
 
-        from {{ source("amplify_mclass_sftp", "pm_student_summary") }}
+        from normalized
     )
 
 select
@@ -92,18 +112,20 @@ select
 
     case
         measure_name_code
-        when 'LNF'
-        then 'Letter Names'
-        when 'PSF'
-        then 'Phonological Awareness'
-        when 'NWF'
-        then 'Nonsense Word Fluency'
-        when 'WRF'
-        then 'Word Reading Fluency'
-        when 'ORF'
-        then 'Oral Reading Fluency'
+        when 'Comprehension'
+        then 'Comprehension'
         when 'DEC'
         then 'Irregular Words'
+        when 'LNF'
+        then 'Letter Names'
+        when 'NWF'
+        then 'Nonsense Word Fluency'
+        when 'ORF'
+        then 'Oral Reading Fluency'
+        when 'PSF'
+        then 'Phonological Awareness'
+        when 'WRF'
+        then 'Word Reading Fluency'
         else measure_name_code
     end as measure_name,
 
