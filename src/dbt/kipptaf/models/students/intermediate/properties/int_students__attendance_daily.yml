@@ -32,6 +32,19 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: is_attendance_recorded
+        description: >-
+          Whether the source system recorded attendance for this student-day at
+          all. False means the register was never taken (or, on the PowerSchool
+          branch, that PowerSchool has no such concept — it records only
+          absences), which is distinct from a recorded presence. Never null
+          network-wide. On the Focus branch, this — not studentid — is the real
+          recorded/unrecorded signal; on the PowerSchool branch (including the
+          frozen Miami archive) it is always false by construction.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: _dbt_source_relation
         description: >-
           Originating source relation for the union branch (PowerSchool
@@ -82,15 +95,6 @@ models:
           focus_conformed CTE, not upstream: U becomes A, AE and AD pass
           through, and a day with no record stays null, which is how PowerSchool
           encodes the same case.
-      - name: is_attendance_recorded
-        description: >-
-          Whether the source system recorded attendance for this student-day at
-          all. False means the register was never taken (or, on the PowerSchool
-          branch, that PowerSchool has no such concept — it records only
-          absences), which is distinct from a recorded presence. Never null
-          network-wide. On the Focus branch, this — not studentid — is the real
-          recorded/unrecorded signal; on the PowerSchool branch (including the
-          frozen Miami archive) it is always false by construction.
       - name: attendancevalue
         description: >-
           Attendance weight for the day: 1 present, 0 absent, fractional for

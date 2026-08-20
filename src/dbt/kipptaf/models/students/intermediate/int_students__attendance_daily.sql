@@ -19,22 +19,29 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- The per-district ctod source carries a small number of exact
-    -- double-write duplicate rows (same studentid, same calendardate, every
-    -- column byte-identical -- confirmed against the raw per-district source
-    -- tables) plus one genuine same-day schedule-change conflict
-    -- (one Camden student-day: two different fteid/grade_level
-    -- rows for the same studentid/date). Both are pre-existing upstream
-    -- PowerSchool data-quality artifacts, unrelated to this model's Focus
-    -- conform logic -- they were previously invisible because the old
-    -- ctod's own uniqueness test carried no severity override and silently
-    -- warned. _dbt_source_project MUST be in partition_by, not just
-    -- studentid: PowerSchool's internal studentid is assigned per-district,
-    -- not network-wide, so two different students in two different
-    -- districts routinely collide on the same (studentid, calendardate) --
-    -- omitting the project from the partition silently merged unrelated
-    -- students from different districts (caught via a dev-vs-prod parity
-    -- check: dropping it undercounted every NJ district by 1-2K rows/year).
+    -- The per-district ctod source carries 561 duplicate (studentid,
+    -- calendardate) keys network-wide (1,301 excess rows: every column
+    -- byte-identical, a raw double-write -- confirmed against the raw
+    -- per-district source tables) plus 18 genuine same-day conflicts (rows
+    -- that differ -- one Camden student-day carries two different
+    -- fteid/grade_level rows for the same studentid/date). 558 of the 561
+    -- keys are Newark, spanning 2026-08-19 through 2027-06-17 -- the current,
+    -- still-loading academic year, so this is an ONGOING double-write, not a
+    -- closed historical defect. Both are pre-existing upstream PowerSchool
+    -- data-quality artifacts, unrelated to this model's Focus conform logic
+    -- -- they were previously invisible because the old ctod's own
+    -- uniqueness test carried no severity override and silently warned.
+    -- TODO: the PowerSchool attendance-calendar load needs an upsert/natural-
+    -- key constraint on (studentid, calendardate) so it stops writing a
+    -- second identical row for the same student-day when the nightly
+    -- pre-population job reruns; until then this dedup must stay.
+    -- _dbt_source_project MUST be in partition_by, not just studentid:
+    -- PowerSchool's internal studentid is assigned per-district, not
+    -- network-wide, so two different students in two different districts
+    -- routinely collide on the same (studentid, calendardate) -- omitting
+    -- the project from the partition silently merged unrelated students
+    -- from different districts (caught via a dev-vs-prod parity check:
+    -- dropping it undercounted every NJ district by 1-2K rows/year).
     powerschool_deduped as (
         {{
             dbt_utils.deduplicate(
@@ -61,6 +68,13 @@ with
             -- misread as "unknown" when it is actually "not the Focus
             -- recorded-register concept."
             false as is_attendance_recorded,
+
+            -- Explicit, system-agnostic discriminator for the calcs CTE's
+            -- #4927 null-outs below -- NOT derived from studentid or any other
+            -- PowerSchool-specific column, so it survives PowerSchool
+            -- compatibility scaffolding (studentid included) eventually
+            -- leaving this model.
+            false as is_focus_source,
         from powerschool_deduped
         cross join cutover as c
         where
@@ -78,6 +92,10 @@ with
             ad.student_number,
             ad.grade_level,
             ad.is_attendance_recorded,
+
+            -- See powerschool_conformed's is_focus_source for why this is an
+            -- explicit flag rather than a studentid-null proxy.
+            true as is_focus_source,
 
             -- Carried through explicitly. Every downstream join keys on
             -- _dbt_source_project, and student_enrollment_key hashes it, so
@@ -177,20 +195,15 @@ with
             -- is_tardy, is_ontime, and is_present_weighted's tardy weighting
             -- have no Miami source. Null rather than a fabricated 0 or 1 so
             -- Miami is excluded from network tardy metrics rather than
-            -- reading as a verified zero. Discriminated on studentid, not
-            -- is_attendance_recorded -- that column is FALSE (never null) on
-            -- BOTH the frozen Miami PowerSchool archive and Focus-sourced
-            -- Miami rows, so it can't tell them apart; studentid is null only
-            -- on the Focus branch (PowerSchool can't supply it).
+            -- reading as a verified zero. Discriminated on is_focus_source,
+            -- not is_attendance_recorded -- that column is FALSE (never null)
+            -- on BOTH the frozen Miami PowerSchool archive and Focus-sourced
+            -- Miami rows, so it can't tell them apart.
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.studentid is null,
-                null,
-                if(mem.att_code like 'T%', 1.0, 0.0)
+                mem.is_focus_source, null, if(mem.att_code like 'T%', 1.0, 0.0)
             ) as is_tardy,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.studentid is null,
-                null,
-                if(mem.att_code like 'T%', 0.0, 1.0)
+                mem.is_focus_source, null, if(mem.att_code like 'T%', 0.0, 1.0)
             ) as is_ontime,
             if(
                 mem.att_code like 'T%', 0.67, mem.attendancevalue
@@ -201,22 +214,20 @@ with
             -- sourced here. Null so a network suspension rate excludes Miami
             -- rather than diluting itself with false zeros.
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.studentid is null,
+                mem.is_focus_source,
                 null,
                 if(mem.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0)
             ) as is_oss,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.studentid is null,
-                null,
-                if(mem.att_code in ('S', 'ISS'), 1.0, 0.0)
+                mem.is_focus_source, null, if(mem.att_code in ('S', 'ISS'), 1.0, 0.0)
             ) as is_iss,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.studentid is null,
+                mem.is_focus_source,
                 null,
                 if(mem.att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI'), 1.0, 0.0)
             ) as is_suspended,
             if(
-                mem._dbt_source_project = 'kippmiami' and mem.studentid is null,
+                mem.is_focus_source,
                 null,
                 if(
                     mem.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
