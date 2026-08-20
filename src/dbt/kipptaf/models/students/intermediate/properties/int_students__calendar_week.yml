@@ -15,8 +15,20 @@ models:
           config:
             severity: error
     columns:
+      - name: _dbt_source_relation
+        description: Fully-qualified source relation the row was unioned from.
       - name: schoolid
         description: Network school number.
+      - name: week_start_date
+        description: >-
+          PowerSchool-native week-start date (Sunday), one day before
+          week_start_monday.
+      - name: week_end_date
+        description: >-
+          PowerSchool-native week-end date (Saturday), one day before
+          week_end_sunday.
+      - name: school_level
+        description: School level of the associated school.
       - name: yearid
         description: Academic year minus 1990.
       - name: academic_year
@@ -25,7 +37,39 @@ models:
         description: Monday of the week, the network-standard week anchor.
       - name: week_end_sunday
         description: Sunday following the week.
+      - name: school_week_start_date
+        description: Earliest in-session calendar date within the week.
+      - name: school_week_end_date
+        description: Latest in-session calendar date within the week.
+      - name: date_count
+        description: Count of in-session calendar days within the week.
+      - name: semester
+        description: Semester the week falls in.
+      - name: quarter
+        description: Quarter (term abbreviation) the week falls in.
+      - name: first_day_school_year
+        description: Calendar Monday of the first school week of the year.
+      - name: last_week_start_school_year
+        description: Calendar Monday of the last school week of the year.
+      - name: last_day_school_year
+        description: >-
+          Last actual instructional day of the school year for this school.
+      - name: school_week_start_date_lead
+        description: >-
+          school_week_start_date of the following week within the academic year.
+      - name: week_number_academic_year
+        description: Sequential week number within the academic year.
+      - name: week_number_quarter
+        description: Sequential week number within the quarter.
+      - name: is_current_week_mon_sun
+        description: >-
+          True if this is the current school week (Mon-Sun window), or the last
+          school week of the year once its Sunday has passed.
       - name: region
-        description: Region name derived from _dbt_source_project.
+        description: >-
+          Region name. On the PowerSchool branch, inherited unchanged from
+          int_powerschool__calendar_week, where it derives from
+          _dbt_source_relation; on the Focus branch, derived from
+          _dbt_source_project via extract_region().
       - name: _dbt_source_project
         description: Originating district project.
