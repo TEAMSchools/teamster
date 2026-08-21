@@ -627,4 +627,6 @@ model, which is stale — fix it in the same change.
 - **Should the unresolved-school check become an enforced dbt test?** Recommend
   yes. A `relationships`-style test or a zero-row assertion on unmatched
   `school` values would have caught the `KIPP Technical HS` gap before it
-  reached a dashboard.
+  reached a dashboard. Noted as a follow-up on #4950 rather than built here.
+  Worth generalising: any vendor export that resolves location by name has the
+  same exposure, not just i-Ready.
