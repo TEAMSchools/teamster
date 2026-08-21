@@ -353,6 +353,56 @@ Physically deleting that GCS prefix is optional cleanup. It is a destructive
 shared-resource operation and must be run by a human with the prefix named
 explicitly — do not script it as part of this change.
 
+## SFTP region topology
+
+Verified by listing `/exports` on 2026-08-21. There are **four** region folders,
+not two:
+
+| Folder            | Ingested by  | Contents                                                |
+| ----------------- | ------------ | ------------------------------------------------------- |
+| `fl-kipp_miami`   | `kippmiami`  | Full export set, FY24 through `Current_Year`            |
+| `nj-kipp_nj`      | `kippnewark` | Full export set; covers Newark **and** Camden           |
+| `nj-paterson`     | nothing      | Full export set except Personalized Instruction Summary |
+| `fl-kipp_liberty` | nothing      | Empty (0 files) — provisioned, unused                   |
+
+`nj-kipp_nj` is a single export covering two cities. Region is not carried in
+the file; it is derived downstream by joining the vendor's `school` column to
+`int_people__location_crosswalk` in `int_iready__diagnostic_results`, which
+yields `location_region` and `location_dagster_code_location`. The FY26 NJ
+diagnostic export contains 17 KIPP-named schools spanning Newark and Camden
+(Cooper Norcross and the Lanning Square schools are the visible Camden ones),
+and `int_iready__diagnostic_results` already maps `kippcamden` and
+`kipppaterson` to `NJSLA` in its `state_assessment_type` case expression.
+
+### Paterson i-Ready data has never been ingested
+
+`/exports/nj-paterson` is a separate, fully populated folder that no Dagster
+asset reads. A `kipppaterson` code location exists but has no `iready` module.
+
+- 16 files across `2025/` and `Current_Year/`, including the complete new-naming
+  set: `i-ready_inform_results_math`, `i-ready_inform_results_reading_english`,
+  `iready_instruction_by_lesson_reading`, and
+  `iready_pro_instruction_by_lesson_reading`, all dropped 2026-08-04.
+- Contents are `Paterson Prep ES` (1,085 students) and `Paterson Prep MS` (567),
+  1,652 rows total. **Neither school name appears in the `nj-kipp_nj` export**,
+  so this is not duplicate coverage — it is genuinely absent from the warehouse.
+- `personalized_instruction_summary` is not configured for Paterson at all.
+- Its `Current_Year` Inform file still reports `Academic Year = 2025-2026`, with
+  row counts and school distribution identical to the FY26 `diagnostic_results`
+  file. So Paterson's Inform export is, so far, a rename-only re-issue of FY26
+  content.
+
+This is a pre-existing gap, not something the rename caused, and it is a scope
+decision rather than a design one. Wiring it up is mechanical once Phase 1
+lands: add an `iready` module to the `kipppaterson` code location reusing
+`build_iready_sftp_asset` with `region_subfolder="nj-paterson"`, add the
+region's sources to the dbt layer, and add the relation to the `union_relations`
+calls in the kipptaf intermediate models. The one wrinkle is the missing
+Personalized Instruction Summary export, which either needs enabling in i-Ready
+Connect or needs that asset omitted for Paterson.
+
+`fl-kipp_liberty` needs nothing until files appear.
+
 ## Phase 2: Reading (Spanish) readiness
 
 `i-ready_inform_results_reading_spanish_CONFIDENTIAL` is in the vendor's rename
@@ -468,7 +518,14 @@ model, which is stale — fix it in the same change.
 - **The cutover-year constant is a trust point.** If the vendor's rename had
   applied from a different academic year than FY27, or applies differently per
   region, `IREADY_SUBJECT_RENAME_ACADEMIC_YEAR` would silently resolve the wrong
-  filename. Observed evidence says FY27 in both regions.
+  filename. Observed evidence says FY27 in all three populated regions
+  (`fl-kipp_miami`, `nj-kipp_nj`, `nj-paterson`), and the renamed files appear
+  in the `Current_Year` folder only — the `2025/` archives retain the old names,
+  which is what the threshold rule assumes.
+- **Paterson's folder is renamed too.** If Paterson is wired up later, it
+  inherits the same translation automatically because the alias lives in the
+  shared library — but only if it is built on `build_iready_sftp_asset` rather
+  than hand-rolled.
 - **A2's partition-to-filename mismatch is permanent** and will confuse future
   debugging. This is the accepted cost of Decision 1; see the trade-offs there.
 - **Reading (Spanish) will widen the mismatch.** Once `reading_spanish` exists
@@ -476,10 +533,24 @@ model, which is stale — fix it in the same change.
   English reading, the naming will read oddly. Worth revisiting Decision 1 at
   that point.
 
+## Resolved questions
+
+- **Naming debt from Decision 3** is tracked on #4949 rather than a separate
+  issue. It stays a documented follow-up phase there, not a parallel ticket.
+- **Region topology** is settled — see the section above. Camden rides inside
+  the `nj-kipp_nj` export and is split out downstream by school name; Paterson
+  has its own uningested folder; a fourth folder exists but is empty.
+
 ## Open questions
 
-- Should the naming debt from Decision 3 get a tracking issue now, or wait until
-  someone is annoyed by it?
-- Does Camden or Paterson have its own i-Ready SFTP subfolder that needs the
-  same treatment? Only `fl-kipp_miami` and `nj-kipp_nj` were checked, and the
-  two existing code locations cover only those.
+- **Is Paterson in scope for this change or a follow-up?** The data has been
+  missing for at least two academic years, so it is not a regression, and
+  folding it in enlarges an outage fix. Recommend shipping Phase 1 first and
+  taking Paterson as an immediate follow-up on the same issue.
+- **Is the missing Paterson `personalized_instruction_summary` export
+  intentional?** Needs an i-Ready Connect check by whoever owns the vendor
+  relationship.
+- **Does `int_people__location_crosswalk` cover `Paterson Prep ES` and
+  `Paterson Prep MS` under `location_name`?** If not, Paterson rows would land
+  with a null region even once ingested. This must be confirmed before wiring
+  Paterson up, not after.
