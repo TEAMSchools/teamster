@@ -797,7 +797,7 @@ exposures:
     type: analysis
     owner:
       name: Data Team - grangel
-    url: https://docs.google.com/spreadsheets/d/1e52D42Zhlhasj-_Tf429ZWxJdtSr05YedsI4Ur0Tva8
+    url: https://docs.google.com/spreadsheets/d/1d9hApvHMf_865-rQgXwnpxcbOLhiMaP6tkDz_YZTdSU
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_student_flags")
     config:
@@ -814,6 +814,7 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_template")
+      - ref("stg_powerschool__u_expectations")
     config:
       meta:
         dagster:
@@ -908,6 +909,19 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1O0LapZFC1X1JoYs8z3K3iFNeaD5hV2xpV_fdhIYx1Vo
     depends_on:
       - ref("rpt_gsheets__finalsite__log")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+  - name: google_sheets__dibels_daily_completion
+    label: DIBELS Daily Completion
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1Peu2YG3kDKV9qCT6h9ez-StDqsrwNUZ5focjBg_xStM
+    depends_on:
+      - ref("rpt_gsheets__dibels_benchmark_completion_daily")
     config:
       meta:
         dagster:
