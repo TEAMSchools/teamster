@@ -1,0 +1,103 @@
+models:
+  - name: rpt_gsheets__dibels_benchmark_measures_student
+    description: >
+      Camden worklist of the DIBELS measures each student still owes, one row
+      per outstanding measure per student per day of the window. Filtered from
+      int_tableau__dibels_benchmark_completion_daily to rows where the measure
+      was not yet assessed as of calendar_day, so filtering the Sheet to the
+      latest calendar_day gives the current outstanding list and earlier days
+      remain available as history.
+
+      Because the population comes from enrollment rather than from assessment
+      records, a student who has never been assessed appears here from the first
+      day of the window — that is the case a report built on assessment records
+      alone cannot show.
+
+      This model deliberately does not label a measure as in progress. A measure
+      either carries a client_date or it does not, so at this grain there is no
+      intermediate state to report — an outstanding row means "no completed
+      measure recorded as of this day" and nothing more. A partly-finished
+      student could in principle be inferred from a mix of finished and
+      outstanding measures, but that mix is vanishingly rare in practice: across
+      the entire completed BOY 2025 Camden window only two students ever showed
+      one. Stakeholders should read this as complete versus not complete.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - student_number
+              - assessment_type
+              - period
+              - round_number
+              - expected_measure_standard
+              - calendar_day
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: measures_outstanding >= 1
+    columns:
+      - name: academic_year
+        description: Academic year of the testing window, by start year.
+        data_type: int64
+      - name: region
+        description: KIPP region. Always Camden in this model.
+        data_type: string
+      - name: student_number
+        description: Student who still owes the measure.
+        data_type: int64
+      - name: grade_level
+        description: Enrolled grade level as an integer, with kindergarten as 0.
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school number of the enrolling school.
+        data_type: int64
+      - name: school
+        description: School abbreviation.
+        data_type: string
+      - name: advisory
+        description: >
+          Advisory name, which at Camden schools is also the ELA section
+          identifier. Students with no advisory are labelled Unassigned.
+        data_type: string
+      - name: assessment_type
+        description: Benchmark or PM.
+        data_type: string
+      - name: period
+        description: Testing window — BOY, MOY, or EOY for benchmarks.
+        data_type: string
+      - name: round_number
+        description: Round within the window.
+        data_type: int64
+      - name: start_date
+        description: First day of the testing window.
+        data_type: date
+      - name: end_date
+        description: >
+          Last day of the testing window — the deadline the outstanding measure
+          is against.
+        data_type: date
+      - name: expected_measure_standard
+        description: >
+          The specific measure still owed, as named by the expectations sheet.
+        data_type: string
+      - name: expected_measure_count
+        description: >
+          Number of measures making up a complete round for this student's
+          grade.
+        data_type: int64
+      - name: calendar_day
+        description: >
+          Day of the window this row reports as of. The measure was still
+          outstanding on this date.
+        data_type: date
+      - name: measures_finished_to_date
+        description: >
+          Count of the student's measures finished on or before calendar_day,
+          within this window and round.
+        data_type: int64
+      - name: measures_outstanding
+        description: >
+          Expected measures the student had not finished as of calendar_day.
+          Always at least one, since finished measures produce no rows.
+        data_type: int64

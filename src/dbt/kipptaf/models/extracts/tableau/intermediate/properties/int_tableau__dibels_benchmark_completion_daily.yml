@@ -1,0 +1,135 @@
+models:
+  - name: int_tableau__dibels_benchmark_completion_daily
+    description: >
+      DIBELS completion progress at one row per expected measure per student per
+      calendar day of a testing window, for the current academic year and all
+      regions. Consumers filter to the population they report on.
+
+      The population is every ELA-enrolled student through grade 8, taken from
+      int_extracts__student_enrollments_subjects rather than from assessment
+      records, so a student who has not started appears from the first day of
+      the window instead of being absent. Students are matched to a window only
+      when their enrollment overlaps it, so a mid-year arrival is not held to a
+      window that closed before they enrolled. Expected measures come from the
+      expectations sheet for the student's grade.
+
+      Completion is rebuilt from assessment history rather than daily snapshots.
+      A measure counts as finished on and after the day it was assessed, so
+      finished_measure is cumulative and a count of it on a given calendar_day
+      is the running figure — no running total is needed downstream. Every
+      calendar day in the window is present, in session or not, and days later
+      than today are present until the window ends.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - student_number
+              - assessment_type
+              - period
+              - round_number
+              - expected_measure_standard
+              - calendar_day
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: measures_finished_to_date <= expected_measure_count
+    columns:
+      - name: academic_year
+        description: Academic year of the testing window, by start year.
+        data_type: int64
+      - name: region
+        description: KIPP region running the window.
+        data_type: string
+      - name: student_number
+        description: Student expected to complete the measure.
+        data_type: int64
+      - name: grade_level
+        description: >
+          Enrolled grade level as an integer, with kindergarten as 0. Matched
+          against the grade the measure is expected of.
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school number of the enrolling school.
+        data_type: int64
+      - name: school
+        description: School abbreviation.
+        data_type: string
+      - name: advisory
+        description: >
+          Advisory name, which at Camden schools is also the ELA section
+          identifier. Students with no advisory on their enrollment record are
+          labelled Unassigned rather than dropped, so they stay countable.
+        data_type: string
+      - name: assessment_type
+        description: >
+          Benchmark or PM. PM rows are limited to measures flagged as probe
+          eligible.
+        data_type: string
+      - name: period
+        description: >
+          Testing window — BOY, MOY, or EOY for benchmarks. Named admin_season
+          on the expectations model.
+        data_type: string
+      - name: expected_measure_standard
+        description: >
+          Measure the student is expected to complete in this window, as named
+          by the expectations sheet.
+        data_type: string
+      - name: round_number
+        description: >
+          Round within the window. Benchmark windows carry a single round; PM
+          windows can carry several.
+        data_type: int64
+      - name: start_date
+        description: >
+          First day of the testing window. A school may not be in session on it.
+        data_type: date
+      - name: end_date
+        description: Last day of the testing window.
+        data_type: date
+      - name: expected_measure_count
+        description: >
+          Number of measures making up a complete round for this grade, region,
+          window and round. Counted before the date spine is generated, so it
+          reflects measures rather than measure-days.
+        data_type: int64
+      - name: calendar_day
+        description: >
+          One day of the testing window, generated for every date from
+          start_date through end_date inclusive. Weekends, holidays and closures
+          are present.
+        data_type: date
+      - name: client_date
+        description: >
+          Date the measure was assessed. Null while a measure is outstanding —
+          Amplify dates only completed measures, and a student with no
+          assessment record at all also lands here, so a null is the signal that
+          the measure is still owed.
+        data_type: date
+      - name: finished_measure
+        description: >
+          True on and after the day the measure was assessed, false before it
+          and false while it is outstanding. Cumulative by construction, so
+          counting true values for a calendar_day gives the running completion
+          figure.
+        data_type: boolean
+      - name: finished_this_day
+        description: >
+          True only on the single day the measure was assessed. Gives per-day
+          throughput; summing it across a window reaches the same total that
+          finished_measure reports on the final day.
+        data_type: boolean
+      - name: measures_finished_to_date
+        description: >
+          Count of the student's measures finished on or before this
+          calendar_day, within this window and round. Counted after the date
+          join, so it advances day by day.
+        data_type: int64
+      - name: finished_round
+        description: >
+          True when the student has finished every measure their grade expects
+          for this round as of this calendar_day. Compares against the grade's
+          full expected count, so a student missing assessment records never
+          reads as finished.
+        data_type: boolean

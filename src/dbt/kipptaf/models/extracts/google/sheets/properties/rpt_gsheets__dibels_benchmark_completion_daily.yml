@@ -1,49 +1,79 @@
 models:
   - name: rpt_gsheets__dibels_benchmark_completion_daily
     description: >
-      DIBELS benchmark completion rate per Camden advisory for each in-session
-      day of a testing window, replacing a hand-maintained spreadsheet. A
-      student counts as complete only on and after their season test date, so
-      the pace curve rebuilds from assessment history rather than from daily
-      snapshots. The spine stops at yesterday because the Amplify feed lands
-      overnight for the prior day. Grade subtotals, school averages and
-      formatting are deliberately absent — those stay in the Sheet.
+      Camden DIBELS completion rate per advisory for each calendar day of a
+      testing window, replacing a hand-maintained spreadsheet. One row per
+      advisory per day, aggregated from
+      int_tableau__dibels_benchmark_completion_daily.
+
+      The rate is already cumulative — a measure counts as finished on and after
+      the day it was assessed — so measure_completion_rate can be charted
+      straight against calendar_day with no running total in the Sheet.
+      measures_finished_this_day gives same-day throughput for a bar view.
+
+      The denominator is every ELA-enrolled Camden student through grade 8 whose
+      enrollment overlaps the window, not only students with assessment records,
+      so students who have not started are counted as outstanding rather than
+      omitted. Grade subtotals, school averages and formatting are deliberately
+      absent — those stay in the Sheet.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - academic_year
+              - region
               - schoolid
               - grade_level
               - advisory
-              - admin_season
-              - as_of_date
+              - assessment_type
+              - period
+              - round_number
+              - calendar_day
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: measures_finished <= measures_expected
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: students_finished_round <= students_expected
     columns:
-      - name: completion_rate
+      - name: measure_completion_rate
         description: >
-          Students completed divided by students expected, rounded to two
-          decimal places. Null when no students are expected.
+          measures_finished divided by measures_expected, rounded to four
+          decimal places. Cumulative as of calendar_day. Null only when no
+          measures are expected.
         data_type: float64
         data_tests:
           - dbt_utils.expression_is_true:
               arguments:
                 expression: between 0 and 1
               config:
-                where: completion_rate is not null
+                where: measure_completion_rate is not null
+      - name: student_completion_rate
+        description: >
+          students_finished_round divided by students_expected, rounded to four
+          decimal places. Stricter than measure_completion_rate because a
+          student counts only once every measure their grade expects is done.
+        data_type: float64
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 1
+              config:
+                where: student_completion_rate is not null
       - name: academic_year
-        description: Academic year of the benchmark window, by start year.
+        description: Academic year of the testing window, by start year.
         data_type: int64
       - name: region
         description: KIPP region. Always Camden in this model.
         data_type: string
-      - name: school
-        description: School abbreviation.
-        data_type: string
       - name: schoolid
         description: PowerSchool school number. Part of the grain key.
         data_type: int64
+      - name: school
+        description: School abbreviation.
+        data_type: string
       - name: grade_level
-        description: Student grade level as an integer, with kindergarten as 0.
+        description: Enrolled grade level as an integer, with kindergarten as 0.
         data_type: int64
       - name: advisory
         description: >
@@ -51,50 +81,48 @@ models:
           identifier. Students with no advisory are grouped as Unassigned rather
           than dropped.
         data_type: string
-      - name: admin_season
-        description: Benchmark window — BOY, MOY, or EOY.
+      - name: assessment_type
+        description: Benchmark or PM.
         data_type: string
-      - name: window_start_date
+      - name: period
+        description: Testing window — BOY, MOY, or EOY for benchmarks.
+        data_type: string
+      - name: round_number
+        description: Round within the window.
+        data_type: int64
+      - name: start_date
         description: >
-          First day of the benchmark window, carried through so the Sheet can
-          label a season without a second lookup. A school may not be in session
-          on it.
+          First day of the testing window, carried through so the Sheet can
+          label a season without a second lookup.
         data_type: date
-      - name: window_end_date
-        description: Last day of the benchmark window.
+      - name: end_date
+        description: Last day of the testing window.
         data_type: date
-      - name: as_of_date
+      - name: calendar_day
         description: >
-          In-session date through which testing is counted. This is a test date,
-          not a reporting date.
-        data_type: date
-      - name: reported_morning_of
-        description: >
-          Next in-session day after as_of_date — the morning this row's rate
-          would be reported, matching the column headers of the spreadsheet this
-          model replaces.
+          Day of the window this row reports through. Every date from start_date
+          to end_date is present, in session or not.
         data_type: date
       - name: students_expected
-        description: Students expected to test in this advisory and window.
-        data_type: int64
-      - name: students_completed
         description: >
-          Students whose Amplify status is Complete and whose season test date
-          falls on or before as_of_date.
+          Distinct students expected to test in this advisory and window, from
+          enrollment rather than from assessment records.
         data_type: int64
-      - name: students_in_progress
+      - name: measures_expected
         description: >
-          Students who had tested by as_of_date but did not yet count as
-          complete. Because Amplify dates only completed benchmarks, these
-          students carry an imputed window-start date and so appear from the
-          first day of the window rather than from the day they were tested.
+          Expected measures across all students in this advisory and window —
+          students multiplied by the measures their grade expects.
         data_type: int64
-      - name: students_not_started
-        description: Students with no testing recorded on or before as_of_date.
+      - name: measures_finished
+        description: Expected measures assessed on or before calendar_day.
         data_type: int64
-      - name: data_through_date
+      - name: measures_finished_this_day
         description: >
-          Latest test date present for this region, year, and window.
-          Distinguishes a day on which nobody tested from a day that has not
-          loaded yet.
-        data_type: date
+          Measures assessed on calendar_day itself. Summing this across a window
+          reaches the same total measures_finished reports on the final day.
+        data_type: int64
+      - name: students_finished_round
+        description: >
+          Students who had finished every measure their grade expects as of
+          calendar_day.
+        data_type: int64
