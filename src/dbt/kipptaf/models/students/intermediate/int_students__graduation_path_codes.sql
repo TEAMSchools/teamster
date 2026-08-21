@@ -84,7 +84,14 @@ with
             on s.student_number = n.localstudentidentifier
             and s.discipline = n.discipline
         where
-            n.testscorecomplete = 1
+            -- Cambium reports test_score_complete as null where Pearson set it
+            -- to 1 on every row surviving the summative + attemptedness filter
+            -- (verified 4,130 of 4,130), so this predicate is already a no-op
+            -- for Pearson and would silently exclude ALL Cambium NJGPA scores
+            -- without treating null as complete. Kept rather than deleted so a
+            -- future vendor that genuinely reports incompleteness is still
+            -- filtered.
+            (n.testscorecomplete is null or n.testscorecomplete = 1)
             and n.assessment_name = 'NJGPA'
             and n.testcode in ('ELAGP', 'MATGP')
 

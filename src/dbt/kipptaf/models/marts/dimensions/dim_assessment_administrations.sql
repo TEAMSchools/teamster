@@ -120,6 +120,35 @@ with
 
     -- grain projection: every selected column is functionally determined
     -- by the partition key; not a mask for upstream duplicates
+    -- Cambium TIDE took over NJGPA reporting with the Spring 2026
+    -- administration. Required, not cosmetic: the administration key hashes
+    -- academic_year and administration_period, and academic year 2025 with
+    -- period Spring exists only in Cambium (Pearson's 2025 holds only Fall).
+    -- Without this CTE the FK on
+    -- fct_assessment_scores_enrollment_scoped.assessment_administration_key
+    -- orphans every Cambium score.
+    state_nj_njgpa_cambium_administrations as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+            academic_year,
+            administration_period,
+            _dbt_source_project,
+
+            'state_nj_njgpa' as assessment_type,
+            'NJGPA' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_cambium__njgpa") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State FL FAST: one administration per (test_code, administration_window,
     -- academic_year).
     state_fl_fast_administrations as (
@@ -378,6 +407,9 @@ with
         union all
         select {{ union_cols }},
         from state_nj_njgpa_administrations
+        union all
+        select {{ union_cols }},
+        from state_nj_njgpa_cambium_administrations
         union all
         select {{ union_cols }},
         from state_nj_njsla_administrations

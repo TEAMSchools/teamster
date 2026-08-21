@@ -52,6 +52,8 @@ models:
     mclass:
       api:
         +enabled: false
+  cambium:
+    +materialized: table
   deanslist:
     +materialized: table
     staging:

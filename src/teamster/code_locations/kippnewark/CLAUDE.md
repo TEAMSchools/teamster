@@ -16,6 +16,7 @@ GCS bucket: `teamster-kippnewark`
 | `dbt`                   | dbt assets    | `AutomationConditionSensor`                                           |
 | `powerschool`           | dlt assets    | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
 | `amplify` (mclass sftp) | SFTP assets   | sensor (`build_amplify_mclass_sftp_sensor`)                           |
+| `cambium`               | SFTP assets   | `AutomationConditionSensor`                                           |
 | `deanslist`             | API assets    | schedule (nightly)                                                    |
 | `edplan`                | SFTP asset    | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`             | API + SFTP    | schedule (contacts 4am) + couchdrop sensor                            |

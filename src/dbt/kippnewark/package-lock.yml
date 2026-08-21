@@ -1,6 +1,8 @@
 packages:
   - local: ../amplify
     name: amplify
+  - local: ../cambium
+    name: cambium
   - local: ../deanslist
     name: deanslist
   - local: ../edplan
@@ -25,4 +27,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: 5570079e221ff852de47fdebe3ac63b255f4e667
+sha1_hash: 6eec19f94ebc7aa48137a797849cb5e0d9fb00c4
