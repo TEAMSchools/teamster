@@ -14,8 +14,13 @@ models:
       The denominator is every ELA-enrolled Camden student through grade 8 whose
       enrollment overlaps the window, not only students with assessment records,
       so students who have not started are counted as outstanding rather than
-      omitted. Grade subtotals, school averages and formatting are deliberately
-      absent — those stay in the Sheet.
+      omitted. Self-contained and out-of-district students are excluded,
+      matching rpt_tableau__dibels_dashboard and the tracker this replaces.
+
+      Only days up to and including today are reported, so the Sheet does not
+      carry future dates that would read as zero progress. Grade subtotals,
+      school averages and formatting are deliberately absent — those stay in the
+      Sheet.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

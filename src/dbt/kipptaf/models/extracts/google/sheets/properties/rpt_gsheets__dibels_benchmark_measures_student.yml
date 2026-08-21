@@ -11,7 +11,9 @@ models:
       Because the population comes from enrollment rather than from assessment
       records, a student who has never been assessed appears here from the first
       day of the window — that is the case a report built on assessment records
-      alone cannot show.
+      alone cannot show. Self-contained and out-of-district students are
+      excluded, matching rpt_tableau__dibels_dashboard and the tracker this
+      replaces.
 
       This model deliberately does not label a measure as in progress. A measure
       either carries a client_date or it does not, so at this grain there is no

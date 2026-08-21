@@ -20,7 +20,11 @@ with
             if(finished_round, student_number, null) as finished_round_student_number,
 
         from {{ ref("int_tableau__dibels_benchmark_completion_daily") }}
-        where region = 'Camden'
+        where
+            region = 'Camden'
+            and not is_self_contained
+            and not is_out_of_district
+            and calendar_day <= current_date('{{ var("local_timezone") }}')
     )
 
 select

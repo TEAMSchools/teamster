@@ -61,6 +61,17 @@ models:
           identifier. Students with no advisory on their enrollment record are
           labelled Unassigned rather than dropped, so they stay countable.
         data_type: string
+      - name: is_self_contained
+        description: >
+          Whether the student is in a self-contained placement. Carried through
+          rather than filtered so consumers decide — both reporting views
+          exclude these students, matching rpt_tableau__dibels_dashboard.
+        data_type: boolean
+      - name: is_out_of_district
+        description: >
+          Whether the student is placed out of district. Carried through rather
+          than filtered, on the same basis as is_self_contained.
+        data_type: boolean
       - name: assessment_type
         description: >
           Benchmark or PM. PM rows are limited to measures flagged as probe

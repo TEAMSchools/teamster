@@ -19,7 +19,11 @@ with
             measures_finished_to_date,
 
         from {{ ref("int_tableau__dibels_benchmark_completion_daily") }}
-        where region = 'Camden' and not finished_measure
+        where
+            region = 'Camden'
+            and not finished_measure
+            and not is_self_contained
+            and not is_out_of_district
     )
 
 select
