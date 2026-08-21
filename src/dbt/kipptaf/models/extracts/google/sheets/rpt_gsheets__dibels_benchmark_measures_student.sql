@@ -24,6 +24,7 @@ with
             and not finished_measure
             and not is_self_contained
             and not is_out_of_district
+            and calendar_day <= current_date('{{ var("local_timezone") }}')
     )
 
 select

@@ -6,7 +6,9 @@ models:
       int_tableau__dibels_benchmark_completion_daily to rows where the measure
       was not yet assessed as of calendar_day, so filtering the Sheet to the
       latest calendar_day gives the current outstanding list and earlier days
-      remain available as history.
+      remain available as history. Only days up to and including today are
+      reported — a future-dated row would assert a measure is outstanding on a
+      date that has not happened.
 
       Because the population comes from enrollment rather than from assessment
       records, a student who has never been assessed appears here from the first
@@ -91,7 +93,8 @@ models:
       - name: calendar_day
         description: >
           Day of the window this row reports as of. The measure was still
-          outstanding on this date.
+          outstanding on this date. Dates later than today are withheld until
+          they arrive.
         data_type: date
       - name: measures_finished_to_date
         description: >
