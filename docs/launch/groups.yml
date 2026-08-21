@@ -1,0 +1,48 @@
+# Presentation data the catalog itself does not carry.
+
+# Below this many verified entries, no page is generated at all. The URL
+# 404s rather than serving a near-empty page. Owned by the catalog owner.
+minimum_verified: 25
+
+groups:
+  - id: attendance
+    name: Attendance & behavior
+  - id: academics
+    name: Academics & assessment
+  - id: college
+    name: College readiness & pathways
+  - id: performance
+    name: Performance management & coaching
+  - id: staff
+    name: Staff, hiring & pay
+  - id: operations
+    name: Enrollment & operations
+  - id: surveys
+    name: Surveys
+
+# Region-variant tools collapse into one row with per-region sub-links.
+# Members are matched on `name`; each must carry exactly one region.
+families:
+  - id: gpa_roster
+    name: GPA Roster
+    description: Course grades and GPA by student. One sheet per region.
+    group: academics
+    members:
+      - "GPA Roster: Camden"
+      - "GPA Roster: Miami"
+      - "GPA Roster: Newark"
+  - id: student_contact_info_feed
+    name: Student Contact Info Feed
+    description: Student and guardian contact information. Pick your region.
+    group: operations
+    members:
+      - Student Contact Info Feed - KIPP Newark
+      - Student Contact Info Feed - KIPP Camden
+      - Student Contact Info Feed - KIPP Miami
+      - Student Contact Info Feed - KIPP Paterson
+
+# "From the data team" cards, pointing at prose that lives in Zendesk.
+promos:
+  - label: All help guides
+    blurb: Every written guide in one list.
+    url: https://teamschools.zendesk.com/hc/en-us/categories/204269047-Data-Launch

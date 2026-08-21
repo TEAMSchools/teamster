@@ -34,12 +34,12 @@ made "put it on GitHub Pages behind auth" hard — the auth was never needed.
 a quality note. Nothing reaches 1,800 people on the strength of a scrape.
 
 ```text
-  src/launch/links.yml     46 tools, each with a status
-  src/launch/groups.yml    topical groups, families, promo cards, threshold
-  src/launch/template.html the page shell
+  docs/launch/links.yml     44 tools, each with a status
+  docs/launch/groups.yml    topical groups, families, promo cards, threshold
+  docs/launch/template.html the page shell
            |
            v
-  src/launch/build.py      load -> select -> validate -> render
+  docs/launch/build.py      load -> select -> validate -> render
            |
            v
   MkDocs hook -> teamschools.github.io/teamster/launch/
@@ -47,27 +47,27 @@ a quality note. Nothing reaches 1,800 people on the strength of a scrape.
 
 ## Where it stands
 
-| Item                                                               | State                                                                 |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| Issue [#4761](https://github.com/TEAMSchools/teamster/issues/4761) | Open. The parent. Reopened after a linked-branch merge auto-closed it |
-| PR [#4763](https://github.com/TEAMSchools/teamster/pull/4763)      | **Merged.** Catalog, README and RUNBOOK are on `main`                 |
-| PR [#4767](https://github.com/TEAMSchools/teamster/pull/4767)      | Open. Catalog verification in progress — **10 of 46 verified**        |
-| PR [#4762](https://github.com/TEAMSchools/teamster/pull/4762)      | Open. Design spec for the page itself                                 |
-| Issue [#4818](https://github.com/TEAMSchools/teamster/issues/4818) | Open. The build pipeline and CI gate                                  |
-| PR [#4819](https://github.com/TEAMSchools/teamster/pull/4819)      | Open. Design spec for the build and gate                              |
-| PR [#4816](https://github.com/TEAMSchools/teamster/pull/4816)      | **Merged.** `analytics-engineers` own `/src/launch/`                  |
-| Google Site                                                        | Still live. Retirement is gated on a cutover threshold, not yet set   |
+| Item                                                               | State                                                                                                                                                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue [#4761](https://github.com/TEAMSchools/teamster/issues/4761) | Open. The parent. Reopened after a linked-branch merge auto-closed it                                                                                                               |
+| PR [#4763](https://github.com/TEAMSchools/teamster/pull/4763)      | **Merged.** Catalog, README and RUNBOOK are on `main`                                                                                                                               |
+| PR [#4767](https://github.com/TEAMSchools/teamster/pull/4767)      | **Merged.** Catalog verification — 39 of 44 verified, 5 still `needs-review`                                                                                                        |
+| PR [#4762](https://github.com/TEAMSchools/teamster/pull/4762)      | Open. Design spec for the page itself                                                                                                                                               |
+| Issue [#4818](https://github.com/TEAMSchools/teamster/issues/4818) | Open. Reopened — tracks this implementation work                                                                                                                                    |
+| PR [#4819](https://github.com/TEAMSchools/teamster/pull/4819)      | **Merged.** Design spec for the build and gate is on `main`                                                                                                                         |
+| PR [#4816](https://github.com/TEAMSchools/teamster/pull/4816)      | **Merged.** `analytics-engineers` own `/src/launch/`, the catalog's prior location. This branch's own refactor moved that CODEOWNERS line to `/docs/launch/` when the catalog moved |
+| Google Site                                                        | Still live. Retirement is gated on a cutover threshold, not yet set                                                                                                                 |
 
-The catalog on `main` is 46 entries — 35 Tableau, 7 Google Sheets, 3 AppSheet, 1
-Zendesk — and **zero are verified**, so the page would currently render empty.
-That is deliberate: it makes this the safe window to build the pipeline, because
-it cannot publish anything wrong yet.
+The catalog on `main` is 44 entries — 34 Tableau, 7 Google Sheets, 3 AppSheet —
+and **39 are verified** (5 `needs-review`), so the page would already publish.
+That was deliberate: it made this the safe window to build the pipeline, before
+verification caught up.
 
 ## Who owns what
 
 | Work                                                    | Owner                                                                  |
 | ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Verifying the 46 catalog entries                        | Intern, tracked on #4767                                               |
+| Verifying the 44 catalog entries                        | Intern, tracked on #4767                                               |
 | Triaging which Google Sheets exposures are staff-facing | Anthony — needs judgement about which reports real people actually use |
 | The build pipeline, validation and CI gate              | Data team, specced on #4819                                            |
 | Prose content in Zendesk                                | Not started; no owner yet                                              |
@@ -86,7 +86,7 @@ it.
 1. **Don't scrape the dbt exposures into the catalog.** There are 63 Google
    Sheets exposures and staff-facing ones appear in every naming category, so no
    heuristic sorts them.
-1. **Don't move the catalog into the exposure YAMLs.** Measured: zero of 46
+1. **Don't move the catalog into the exposure YAMLs.** Measured: zero of 44
    entries have a matching exposure URL. Exposures record lineage, not
    destinations.
 
@@ -108,14 +108,14 @@ it.
 
 ## Sequence
 
-Roughly, and the first two run in parallel:
-
-1. Verification continues on #4767 until the catalog is trustworthy.
-1. The build pipeline and gate land, per #4819. **This has to merge before #4767
-   does** — that merge flips ten entries to verified at once and becomes the
-   first live publish.
-1. The per-entry `group` field and grouped rendering follow, sequenced after
-   #4767 so it does not conflict with in-flight verification.
+1. Verification on #4767 is done — 39 of 44 entries are verified.
+1. The build-gate design spec, #4819, is done too — merged to `main`.
+1. The build pipeline itself lands next, tracked on #4818 (this branch). With
+   verification already ahead of the threshold, it becomes the first live
+   publish as soon as it merges.
+1. The per-entry `group` field and grouped rendering shipped as part of this
+   branch too — every entry now sorts into one of the seven `groups.yml`
+   sections on the published page.
 1. Prose moves into Zendesk.
 1. Once the catalog crosses the cutover threshold, the Google Site is retired
    and redirected.
@@ -132,9 +132,9 @@ not wire the build into the deploy before the gate exists.
 
 | Path                                                                 | What                                         |
 | -------------------------------------------------------------------- | -------------------------------------------- |
-| `src/launch/links.yml`                                               | The catalog. Source of truth                 |
-| `src/launch/README.md`                                               | Field reference and what "verified" requires |
-| `src/launch/RUNBOOK.md`                                              | The verification task sequence               |
+| `docs/launch/links.yml`                                              | The catalog. Source of truth                 |
+| `docs/launch/README.md`                                              | Field reference and what "verified" requires |
+| `docs/launch/RUNBOOK.md`                                             | The verification task sequence               |
 | `docs/superpowers/specs/2026-08-06-launch-page-design.md`            | What the page is (on #4762)                  |
 | `docs/superpowers/specs/2026-08-11-launch-page-build-gate-design.md` | How it gets built (on #4819)                 |
 
