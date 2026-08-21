@@ -1,0 +1,60 @@
+models:
+  - name: int_topline__iready_lessons_period
+    description:
+      Student-level i-Ready usage metrics aggregated over non-week period
+      windows for the topline cascade dashboard. The vendor source is
+      pre-aggregated to weekly buckets, so a bucket belongs to the month of its
+      week start (week-assigned month boundaries, not exact). Metrics are
+      per-enrolled-week averages so weekly goals stay comparable across grains.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - discipline
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: discipline
+        description: Subject area — ELA or Math.
+        data_type: string
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: week_count
+        description: Enrolled weeks with an i-Ready row inside the window.
+        data_type: int64
+      - name: lessons_passed_sum
+        description: Lessons passed across in-window weeks.
+        data_type: int64
+      - name: time_on_task_min_sum
+        description: Time on task minutes across in-window weeks.
+        data_type: float64
+      - name: time_on_task_min_week_avg
+        description: Average time on task minutes per in-window week.
+        data_type: float64
+      - name: meets_lessons_passed_period_int
+        description:
+          1 when the student averaged at least 2 lessons passed per in-window
+          week.
+        data_type: int64

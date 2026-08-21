@@ -589,4 +589,12 @@ left join
     and co.academic_year = mu.academic_year
     and co.week_start_monday = mu.term
 where
-    co.academic_year >= {{ var("current_academic_year") - 1 }} and region != 'Paterson'
+    co.academic_year >= {{ var("current_academic_year") - 1 }}
+    -- Miami's live SIS is Focus; kippmiami_powerschool is a frozen
+    -- pre-migration archive with no AY2026 data, so Miami tiles would render
+    -- blank. Paterson is held out until its topline goals-sheet rows exist:
+    -- metric_aggregate_value is a CASE on the goals-sourced aggregation_type,
+    -- so without those rows every Paterson value computes to null.
+    -- TODO(#4943): drop 'Miami' when Focus integration lands; drop 'Paterson'
+    -- when the goals sheet is populated.
+    and region not in ('Paterson', 'Miami')

@@ -34,7 +34,13 @@ with
                 else home_work_location_powerschool_school_id
             end as schoolid,
         from {{ ref("int_people__staff_roster_history") }}
-        where primary_indicator
+        where
+            primary_indicator
+            -- Filter the raw ADP business unit, not the region_to_city output:
+            -- the macro is applied downstream, and the sheet carries both
+            -- 'Miami' and 'KIPP Miami'.
+            -- TODO(#4943): drop when Focus integration lands
+            and coalesce(home_business_unit_name, '') not in ('KIPP Miami', 'MIA')
     )
 
 select

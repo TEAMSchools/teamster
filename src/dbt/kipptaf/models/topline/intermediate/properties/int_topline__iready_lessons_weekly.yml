@@ -9,3 +9,7 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    columns:
+      - name: schoolid
+        description: PowerSchool school id from the enrollment spine.
+        data_type: int64

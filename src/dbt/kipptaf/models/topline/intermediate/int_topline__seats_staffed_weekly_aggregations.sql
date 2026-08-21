@@ -12,7 +12,13 @@ with
 
     seat_tracker as (
         select
-            staffing_model_id, entity, adp_location, valid_from, valid_to, is_staffed,
+            staffing_model_id,
+            adp_location,
+            valid_from,
+            valid_to,
+            is_staffed,
+
+            {{ region_to_city("entity") }} as entity,
         from {{ ref("int_seat_tracker__snapshot") }}
         /* only active, non-deleted seats for the current academic year */
         where
@@ -66,6 +72,8 @@ with
             calendar as cal
             on l.location_powerschool_school_id = cal.schoolid
             and cal.week_start_monday between st.valid_from and st.valid_to
+        -- TODO(#4943): drop when Focus integration lands
+        where coalesce(st.entity, '') not in ('Miami', 'MIA')
     )
 
 select
