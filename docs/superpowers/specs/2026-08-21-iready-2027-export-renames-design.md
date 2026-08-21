@@ -414,6 +414,11 @@ one. Either way it needs nothing while it stays empty.
 
 ### Required in Phase 1: three missing location-crosswalk aliases
 
+**Tracked separately in #4950.** The fix is three rows in a Google Sheet and is
+independent of any code change here, so it can ship immediately and should land
+before or with Phase 1. The analysis below stays in this document because the
+failure mode is what makes it a Phase 1 blocker rather than a tidy-up.
+
 This is the one finding that turns a clean Phase 1 into a silently wrong
 Phase 1.
 
