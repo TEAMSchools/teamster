@@ -14,11 +14,20 @@ Vendor source of truth:
 `.claude/scratch/i-Ready updates/`; extracted text is in
 `.claude/scratch/iready_vendor_faq.txt`.
 
-All SFTP observations below were taken on 2026-08-21 against both
-`/exports/fl-kipp_miami` and `/exports/nj-kipp_nj`. Raw listings and header
-diffs are in `.claude/scratch/iready_probe.json`,
-`.claude/scratch/iready_miami_listing.txt`, and
-`.claude/scratch/iready_years.json`.
+All SFTP observations below were taken on 2026-08-21 against every folder under
+`/exports` — `fl-kipp_miami`, `nj-kipp_nj`, `nj-paterson`, and
+`fl-kipp_liberty`. Raw listings, header diffs, school-name distributions and
+academic-year distributions are in `.claude/scratch/iready_probe.json`,
+`.claude/scratch/iready_miami_listing.txt`, `.claude/scratch/iready_years.json`,
+`.claude/scratch/iready_regions.json`, `.claude/scratch/iready_uningested.json`,
+and `.claude/scratch/iready_paterson.json`.
+
+Crosswalk-coverage findings were taken from BigQuery against
+`kipptaf_people.int_people__location_crosswalk`,
+`kippmiami_iready.stg_iready__diagnostic_results`, and
+`kippnewark_iready.stg_iready__diagnostic_results`. Note the NJ dataset is named
+`kippnewark_iready`; the dbt source is named `kippnj_iready` and overrides the
+schema, so the source name is not the dataset name.
 
 ## What changed
 
@@ -358,12 +367,12 @@ explicitly — do not script it as part of this change.
 Verified by listing `/exports` on 2026-08-21. There are **four** region folders,
 not two:
 
-| Folder            | Ingested by  | Contents                                                |
-| ----------------- | ------------ | ------------------------------------------------------- |
-| `fl-kipp_miami`   | `kippmiami`  | Full export set, FY24 through `Current_Year`            |
-| `nj-kipp_nj`      | `kippnewark` | Full export set; covers Newark **and** Camden           |
-| `nj-paterson`     | nothing      | Full export set except Personalized Instruction Summary |
-| `fl-kipp_liberty` | nothing      | Empty (0 files) — provisioned, unused                   |
+| Folder            | Ingested by  | Contents                                      |
+| ----------------- | ------------ | --------------------------------------------- |
+| `fl-kipp_miami`   | `kippmiami`  | Full export set, FY24 through `Current_Year`  |
+| `nj-kipp_nj`      | `kippnewark` | Full export set; covers Newark **and** Camden |
+| `nj-paterson`     | nothing      | Populated, but being merged into `nj-kipp_nj` |
+| `fl-kipp_liberty` | nothing      | Empty (0 files)                               |
 
 `nj-kipp_nj` is a single export covering two cities. Region is not carried in
 the file; it is derived downstream by joining the vendor's `school` column to
@@ -374,34 +383,96 @@ diagnostic export contains 17 KIPP-named schools spanning Newark and Camden
 and `int_iready__diagnostic_results` already maps `kippcamden` and
 `kipppaterson` to `NJSLA` in its `state_assessment_type` case expression.
 
-### Paterson i-Ready data has never been ingested
+### Paterson arrives via the NJ export, not its own folder
 
-`/exports/nj-paterson` is a separate, fully populated folder that no Dagster
-asset reads. A `kipppaterson` code location exists but has no `iready` module.
+`/exports/nj-paterson` exists and is fully populated (16 files across `2025/`
+and `Current_Year/`, including the complete new-naming set dropped 2026-08-04,
+covering `Paterson Prep ES` and `Paterson Prep MS` — 1,652 rows). None of it has
+ever been ingested; a `kipppaterson` code location exists but has no `iready`
+module.
 
-- 16 files across `2025/` and `Current_Year/`, including the complete new-naming
-  set: `i-ready_inform_results_math`, `i-ready_inform_results_reading_english`,
-  `iready_instruction_by_lesson_reading`, and
-  `iready_pro_instruction_by_lesson_reading`, all dropped 2026-08-04.
-- Contents are `Paterson Prep ES` (1,085 students) and `Paterson Prep MS` (567),
-  1,652 rows total. **Neither school name appears in the `nj-kipp_nj` export**,
-  so this is not duplicate coverage — it is genuinely absent from the warehouse.
-- `personalized_instruction_summary` is not configured for Paterson at all.
-- Its `Current_Year` Inform file still reports `Academic Year = 2025-2026`, with
-  row counts and school distribution identical to the FY26 `diagnostic_results`
-  file. So Paterson's Inform export is, so far, a rename-only re-issue of FY26
-  content.
+**Do not build a Paterson asset.** Paterson's data is scheduled to be folded
+into the `nj-kipp_nj` export, after which its own folder stops being populated.
+So Paterson will arrive through the existing `kippnewark` assets and be split
+out downstream by school name, exactly as Camden already is. No new asset, no
+new code location wiring, no new dbt sources.
 
-This is a pre-existing gap, not something the rename caused, and it is a scope
-decision rather than a design one. Wiring it up is mechanical once Phase 1
-lands: add an `iready` module to the `kipppaterson` code location reusing
-`build_iready_sftp_asset` with `region_subfolder="nj-paterson"`, add the
-region's sources to the dbt layer, and add the relation to the `union_relations`
-calls in the kipptaf intermediate models. The one wrinkle is the missing
-Personalized Instruction Summary export, which either needs enabling in i-Ready
-Connect or needs that asset omitted for Paterson.
+Two consequences worth recording:
 
-`fl-kipp_liberty` needs nothing until files appear.
+- **Paterson history will not backfill itself.** The FY26 and prior data sitting
+  in `/exports/nj-paterson/2025/` will not appear in the NJ export
+  retroactively. If Paterson history matters, that is a separate one-off
+  backfill decision.
+- **`personalized_instruction_summary` is not configured for Paterson** in its
+  own folder. Whether it appears once Paterson merges into the NJ export is a
+  vendor configuration question.
+
+`fl-kipp_liberty` is empty (0 files). Note that `KIPP Liberty Academy` does
+appear in ingested Miami i-Ready history through FY23 and resolves via the
+crosswalk, so this folder is plausibly a legacy export path rather than a future
+one. Either way it needs nothing while it stays empty.
+
+### Required in Phase 1: three missing location-crosswalk aliases
+
+This is the one finding that turns a clean Phase 1 into a silently wrong
+Phase 1.
+
+Region attribution is an **exact string join** —
+`on dr.school = lc.location_name` in `int_iready__diagnostic_results` — against
+`int_people__location_crosswalk`, which is an alias table sourced from the
+`stg_google_sheets__people__location_crosswalk` sheet. It is a LEFT join, so an
+unmatched school is **retained with a null region** rather than dropped. Nothing
+fails loudly.
+
+Every i-Ready school name currently in the warehouse resolves — a coverage check
+across both staging tables returns zero unresolved rows. But the FY27 exports
+introduce school names that have never been through this join, and three of them
+have no alias:
+
+| Emitted by i-Ready  | Needs `clean_name`                | Where                      |
+| ------------------- | --------------------------------- | -------------------------- |
+| `KIPP Technical HS` | `KIPP Miami Technical High`       | Miami FY27 Inform, 67 rows |
+| `Paterson Prep ES`  | `Paterson Prep Elementary School` | NJ export, once merged     |
+| `Paterson Prep MS`  | `Paterson Prep Middle School`     | NJ export, once merged     |
+
+These are **missing aliases, not missing schools**. The crosswalk already
+carries `KIPP Miami Tech`, `KIPP Miami Technical High`, and
+`miami_technical_high` for the Miami high school, and `KIPP Paterson Prep ES` /
+`Paterson Prep Elementary` and their middle-school equivalents for Paterson.
+i-Ready simply spells them differently from every existing alias. The fix is
+three rows in the Google Sheet.
+
+For context on how new this is: Miami i-Ready history contains only Courage,
+Royalty, Liberty and Sunrise. The FY27 Inform export adds three school names at
+once — `KIPP Legacy Elementary` and `KIPP Legacy Middle`, which do resolve, and
+`KIPP Technical HS`, which does not.
+
+#### Why an unresolved school is worse than a null region
+
+`state_assessment_type` is derived from `location_dagster_code_location`, so an
+unresolved school nulls it. That null then defeats five downstream joins in
+`int_iready__diagnostic_results`, because each matches
+`wc.state_assessment_type = cw*.destination_system` and null never equals
+anything. The result for those students:
+
+- `region`, `school_abbreviation`, `schoolid` — null
+- `projected_sublevel`, `projected_sublevel_number`, `projected_is_proficient`,
+  `projected_level_number` and their `_recent`, `_typical`, `_stretch` variants
+  — all null (the `cwo`, `cwr`, `cwt`, `cws` joins)
+- `proficent_scale_score` and therefore `scale_points_to_proficiency` — null
+  (the `cwp` join)
+
+`sublevel_with_typical` survives, because the `cwi` join keys on
+`destination_system = 'i-Ready'` rather than on `state_assessment_type`.
+
+So restoring ingestion without the aliases would bring Miami FY27 data back
+while silently blanking every projected-proficiency column for one whole high
+school. Add the aliases in the same change, and re-run the coverage check
+afterwards.
+
+The check is worth keeping as a permanent guard rather than a one-off — an
+unresolved school name is exactly the kind of thing that should fail a dbt test
+instead of quietly nulling a dashboard column.
 
 ## Phase 2: Reading (Spanish) readiness
 
@@ -543,14 +614,12 @@ model, which is stale — fix it in the same change.
 
 ## Open questions
 
-- **Is Paterson in scope for this change or a follow-up?** The data has been
-  missing for at least two academic years, so it is not a regression, and
-  folding it in enlarges an outage fix. Recommend shipping Phase 1 first and
-  taking Paterson as an immediate follow-up on the same issue.
-- **Is the missing Paterson `personalized_instruction_summary` export
-  intentional?** Needs an i-Ready Connect check by whoever owns the vendor
-  relationship.
-- **Does `int_people__location_crosswalk` cover `Paterson Prep ES` and
-  `Paterson Prep MS` under `location_name`?** If not, Paterson rows would land
-  with a null region even once ingested. This must be confirmed before wiring
-  Paterson up, not after.
+- **Is Paterson history worth a one-off backfill?** Merging Paterson into the NJ
+  export is go-forward only; the FY26 and prior files in
+  `/exports/nj-paterson/2025/` will not appear retroactively.
+- **Will `personalized_instruction_summary` cover Paterson** once it merges into
+  the NJ export? It is not configured in Paterson's own folder today.
+- **Should the unresolved-school check become an enforced dbt test?** Recommend
+  yes. A `relationships`-style test or a zero-row assertion on unmatched
+  `school` values would have caught the `KIPP Technical HS` gap before it
+  reached a dashboard.
