@@ -19,7 +19,17 @@ models:
         data_type: string
       - name: object
         data_type: string
+      - name: public_school
+        description: >-
+          Whether Overgrad classifies the institution as publicly controlled.
+          Null where Overgrad has not classified it.
+        data_type: boolean
       - name: state
         data_type: string
       - name: status
+        data_type: string
+      - name: university_type
+        description: >-
+          Overgrad's institution length category: `four_year`, `two_year`, or
+          `less_than_two_year`. Null where Overgrad has not categorized it.
         data_type: string

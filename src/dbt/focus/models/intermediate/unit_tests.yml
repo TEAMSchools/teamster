@@ -158,3 +158,148 @@ unit_tests:
           academic_year: 2026
           startdate: 2026-08-12
           student_enrollment_id: 24
+
+  - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
+    model: int_focus__attendance_daily
+    description: >-
+      Four students on one in-session day inside one stint. Student 84001 is
+      absent unexcused (daily_code U, unconformed), 84002 absent excused (AE),
+      84003 present (null daily_code), and 84004 has no attendance row at all
+      (null daily_code, counts present via state_value). Proves the scaffold
+      emits a row for a student Focus never recorded.
+    given:
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select 84001 as student_number, 1 as network_student_number,
+            2026 as academic_year, 58 as schoolid,
+            date '2026-08-12' as startdate, date '2027-06-03' as exitdate,
+            5 as grade_level
+          union all
+          select 84002, 2, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+          union all
+          select 84003, 3, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+          union all
+          select 84004, 4, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+      - input: ref('stg_focus__attendance_calendar')
+        format: sql
+        rows: |
+          select 58 as school_id, 2026 as syear,
+            date '2026-08-12' as school_date
+      - input: ref('int_focus__attendance_day')
+        format: sql
+        rows: |
+          select 84001 as student_id, 58 as schoolid,
+            date '2026-08-12' as school_date,
+            cast(0 as numeric) as state_value, 'U' as daily_code
+          union all
+          select 84002, 58, date '2026-08-12', cast(0 as numeric), 'AE'
+          union all
+          select 84003, 58, date '2026-08-12', cast(1 as numeric),
+            cast(null as string)
+    expect:
+      rows:
+        - student_number: 1
+          daily_code: U
+          state_value: 0.0
+          academic_year: 2026
+          is_attendance_recorded: true
+        - student_number: 2
+          daily_code: AE
+          state_value: 0.0
+          academic_year: 2026
+          is_attendance_recorded: true
+        - student_number: 3
+          daily_code: null
+          state_value: 1.0
+          academic_year: 2026
+          is_attendance_recorded: true
+        - student_number: 4
+          daily_code: null
+          state_value: 1.0
+          academic_year: 2026
+          is_attendance_recorded: false
+
+  - name: test_int_focus__attendance_daily_transfer_day_and_single_day_stint
+    model: int_focus__attendance_daily
+    description: >-
+      Pins down the stint_starts/enrollments trim. Student 501 transfers from
+      school 58 to school 59 on 2026-08-12 (stint A's exitdate equals stint B's
+      startdate) -- the shared day must appear exactly once, attributed to the
+      ARRIVING school 59, not the departing school 58. Student 502 is a
+      single-day stint (startdate = exitdate = 2026-08-13) -- without the
+      e.startdate <> s.startdate guard it would self-match in stint_starts and
+      lose its only day. Student 503 is a normal multi-day stint whose exitdate
+      (2026-08-14) is an in-session day no other stint starts on -- it must NOT
+      be trimmed.
+    given:
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select 85001 as student_number, 501 as network_student_number,
+            2026 as academic_year, 58 as schoolid,
+            date '2026-08-10' as startdate, date '2026-08-12' as exitdate,
+            5 as grade_level
+          union all
+          select 85001, 501, 2026, 59, date '2026-08-12', date '2026-08-14', 5
+          union all
+          select 85002, 502, 2026, 58, date '2026-08-13', date '2026-08-13', 5
+          union all
+          select 85003, 503, 2026, 58, date '2026-08-10', date '2026-08-14', 5
+      - input: ref('stg_focus__attendance_calendar')
+        format: sql
+        rows: |
+          select 58 as school_id, 2026 as syear, date '2026-08-10' as school_date
+          union all
+          select 58, 2026, date '2026-08-11'
+          union all
+          select 58, 2026, date '2026-08-12'
+          union all
+          select 58, 2026, date '2026-08-13'
+          union all
+          select 58, 2026, date '2026-08-14'
+          union all
+          select 59, 2026, date '2026-08-12'
+          union all
+          select 59, 2026, date '2026-08-13'
+          union all
+          select 59, 2026, date '2026-08-14'
+      # empty: attendance is not under test here -- only membership day counts
+      # and the school each shared/boundary day attaches to.
+      - input: ref('int_focus__attendance_day')
+        rows: []
+    expect:
+      rows:
+        - student_number: 501
+          schoolid: 58
+          school_date: 2026-08-10
+        - student_number: 501
+          schoolid: 58
+          school_date: 2026-08-11
+        - student_number: 501
+          schoolid: 59
+          school_date: 2026-08-12
+        - student_number: 501
+          schoolid: 59
+          school_date: 2026-08-13
+        - student_number: 501
+          schoolid: 59
+          school_date: 2026-08-14
+        - student_number: 502
+          schoolid: 58
+          school_date: 2026-08-13
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-10
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-11
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-12
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-13
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-14
