@@ -19,49 +19,6 @@ with
         where assessment_include is null and pm_goal_include is null
     ),
 
-    ela_sections as (
-        select
-            cc_academic_year,
-            cc_schoolid,
-            students_student_number,
-            _dbt_source_project,
-
-            courses_course_name as course_name,
-            cc_course_number as course_number,
-            cc_section_number as section_number,
-            teacher_lastfirst as teacher_name,
-
-            -- a handful of students are scheduled into two ELA courses in one
-            -- year; take the lower course number so the attribute is stable
-            -- rather than fanning the measure grain out
-            row_number() over (
-                partition by
-                    cc_academic_year,
-                    cc_schoolid,
-                    students_student_number,
-                    _dbt_source_project
-                order by cc_course_number
-            ) as rn_student_course,
-
-        from {{ ref("base_powerschool__course_enrollments") }}
-        where
-            rn_course_number_year = 1
-            and not is_dropped_section
-            and cc_section_number not like '%SC%'
-            and courses_course_name in (
-                'ELA GrK',
-                'ELA K',
-                'ELA Gr1',
-                'ELA Gr2',
-                'ELA Gr3',
-                'ELA Gr4',
-                'ELA Gr5',
-                'ELA Gr6',
-                'ELA Gr7',
-                'ELA Gr8'
-            )
-    ),
-
     students as (
         select
             s.academic_year,
@@ -75,21 +32,37 @@ with
             s.is_self_contained,
             s.is_out_of_district,
 
-            c.course_name,
-            c.course_number,
-            c.section_number,
-            c.teacher_name,
+            c.courses_course_name as course_name,
+            c.cc_course_number as course_number,
+            c.cc_section_number as section_number,
+            c.teacher_lastfirst as teacher_name,
 
             coalesce(s.advisory, 'Unassigned') as advisory,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }} as s
         left join
-            ela_sections as c
+            {{ ref("base_powerschool__course_enrollments") }} as c
             on s.academic_year = c.cc_academic_year
             and s.schoolid = c.cc_schoolid
             and s.student_number = c.students_student_number
             and s._dbt_source_project = c._dbt_source_project
-            and c.rn_student_course = 1
+            -- ranked per student-subject, not per course number as the dashboard
+            -- does, since this model's grain cannot absorb a second ELA course
+            and c.rn_student_year_illuminate_subject_desc = 1
+            and not c.is_dropped_section
+            and c.cc_section_number not like '%SC%'
+            and c.courses_course_name in (
+                'ELA GrK',
+                'ELA K',
+                'ELA Gr1',
+                'ELA Gr2',
+                'ELA Gr3',
+                'ELA Gr4',
+                'ELA Gr5',
+                'ELA Gr6',
+                'ELA Gr7',
+                'ELA Gr8'
+            )
         where
             s.discipline = 'ELA' and s.enroll_status in (0, 2, 3) and s.grade_level <= 8
     ),
