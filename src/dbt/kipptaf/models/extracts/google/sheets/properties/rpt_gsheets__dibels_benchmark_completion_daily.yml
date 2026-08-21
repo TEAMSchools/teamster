@@ -1,10 +1,17 @@
 models:
   - name: rpt_gsheets__dibels_benchmark_completion_daily
     description: >
-      Camden DIBELS completion rate per advisory for each calendar day of a
+      Camden DIBELS completion rate per ELA section for each calendar day of a
       testing window, replacing a hand-maintained spreadsheet. One row per
-      advisory per day, aggregated from
+      advisory and scheduled ELA section per day, aggregated from
       int_tableau__dibels_benchmark_completion_daily.
+
+      Advisory and section are not one-to-one, so both are carried. Most Camden
+      advisories map to a single ELA section, but some span several, and a
+      minority of students have no undropped ELA section on their schedule at
+      all — those rows carry a null section_number, course_name and teacher_name
+      rather than being dropped, so the completion figures still cover every
+      enrolled student.
 
       The rate is already cumulative — a measure counts as finished on and after
       the day it was assessed — so measure_completion_rate can be charted
@@ -30,6 +37,7 @@ models:
               - schoolid
               - grade_level
               - advisory
+              - section_number
               - assessment_type
               - period
               - round_number
@@ -85,6 +93,22 @@ models:
           Advisory name, which at Camden schools is also the ELA section
           identifier. Students with no advisory are grouped as Unassigned rather
           than dropped.
+        data_type: string
+      - name: course_name
+        description: >
+          Name of the scheduled ELA course for this section. Null when no
+          undropped ELA section is found for the students in this group.
+        data_type: string
+      - name: course_number
+        description: Course number of the scheduled ELA course.
+        data_type: string
+      - name: section_number
+        description: >
+          Section number of the scheduled ELA course — the official section
+          identifier, as distinct from the advisory label.
+        data_type: string
+      - name: teacher_name
+        description: Teacher of record for the ELA section, last-first.
         data_type: string
       - name: assessment_type
         description: Benchmark or PM.

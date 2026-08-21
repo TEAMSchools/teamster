@@ -72,6 +72,29 @@ models:
           Whether the student is placed out of district. Carried through rather
           than filtered, on the same basis as is_self_contained.
         data_type: boolean
+      - name: course_name
+        description: >
+          Name of the student's scheduled ELA course, from the PowerSchool
+          course enrollment matching the same allowlist
+          rpt_tableau__dibels_dashboard uses. Null when no undropped ELA section
+          is found for the student.
+        data_type: string
+      - name: course_number
+        description: >
+          Course number of the scheduled ELA course. Null on the same basis as
+          course_name.
+        data_type: string
+      - name: section_number
+        description: >
+          Section number of the scheduled ELA course. Distinct from advisory,
+          which is the grade-prefixed advisory label; sections whose number
+          contains SC are treated as self-contained and not matched.
+        data_type: string
+      - name: teacher_name
+        description: >
+          Teacher of record for the scheduled ELA section, last-first. Null on
+          the same basis as course_name.
+        data_type: string
       - name: assessment_type
         description: >
           Benchmark or PM. PM rows are limited to measures flagged as probe

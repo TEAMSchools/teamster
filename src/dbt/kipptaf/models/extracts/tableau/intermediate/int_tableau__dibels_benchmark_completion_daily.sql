@@ -19,23 +19,79 @@ with
         where assessment_include is null and pm_goal_include is null
     ),
 
+    ela_sections as (
+        select
+            cc_academic_year,
+            cc_schoolid,
+            students_student_number,
+            _dbt_source_project,
+
+            courses_course_name as course_name,
+            cc_course_number as course_number,
+            cc_section_number as section_number,
+            teacher_lastfirst as teacher_name,
+
+            -- a handful of students are scheduled into two ELA courses in one
+            -- year; take the lower course number so the attribute is stable
+            -- rather than fanning the measure grain out
+            row_number() over (
+                partition by
+                    cc_academic_year,
+                    cc_schoolid,
+                    students_student_number,
+                    _dbt_source_project
+                order by cc_course_number
+            ) as rn_student_course,
+
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            rn_course_number_year = 1
+            and not is_dropped_section
+            and cc_section_number not like '%SC%'
+            and courses_course_name in (
+                'ELA GrK',
+                'ELA K',
+                'ELA Gr1',
+                'ELA Gr2',
+                'ELA Gr3',
+                'ELA Gr4',
+                'ELA Gr5',
+                'ELA Gr6',
+                'ELA Gr7',
+                'ELA Gr8'
+            )
+    ),
+
     students as (
         select
-            academic_year,
-            region,
-            student_number,
-            grade_level,
-            schoolid,
-            school,
-            entrydate,
-            exitdate,
-            is_self_contained,
-            is_out_of_district,
+            s.academic_year,
+            s.region,
+            s.student_number,
+            s.grade_level,
+            s.schoolid,
+            s.school,
+            s.entrydate,
+            s.exitdate,
+            s.is_self_contained,
+            s.is_out_of_district,
 
-            coalesce(advisory, 'Unassigned') as advisory,
+            c.course_name,
+            c.course_number,
+            c.section_number,
+            c.teacher_name,
 
-        from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
+            coalesce(s.advisory, 'Unassigned') as advisory,
+
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as s
+        left join
+            ela_sections as c
+            on s.academic_year = c.cc_academic_year
+            and s.schoolid = c.cc_schoolid
+            and s.student_number = c.students_student_number
+            and s._dbt_source_project = c._dbt_source_project
+            and c.rn_student_course = 1
+        where
+            s.discipline = 'ELA' and s.enroll_status in (0, 2, 3) and s.grade_level <= 8
     ),
 
     student_measures as (
@@ -49,6 +105,10 @@ with
             s.advisory,
             s.is_self_contained,
             s.is_out_of_district,
+            s.course_name,
+            s.course_number,
+            s.section_number,
+            s.teacher_name,
 
             e.assessment_type,
             e.admin_season,
@@ -81,6 +141,10 @@ with
             advisory,
             is_self_contained,
             is_out_of_district,
+            course_name,
+            course_number,
+            section_number,
+            teacher_name,
             assessment_type,
             admin_season,
             expected_measure_standard,
@@ -141,6 +205,10 @@ with
             s.advisory,
             s.is_self_contained,
             s.is_out_of_district,
+            s.course_name,
+            s.course_number,
+            s.section_number,
+            s.teacher_name,
             s.assessment_type,
             s.admin_season,
             s.expected_measure_standard,
@@ -197,6 +265,10 @@ select
     advisory,
     is_self_contained,
     is_out_of_district,
+    course_name,
+    course_number,
+    section_number,
+    teacher_name,
     assessment_type,
     admin_season as `period`,
     expected_measure_standard,
