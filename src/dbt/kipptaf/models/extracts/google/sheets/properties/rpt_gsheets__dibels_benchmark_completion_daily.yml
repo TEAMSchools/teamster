@@ -106,7 +106,8 @@ models:
       - name: calendar_day
         description: >
           Day of the window this row reports through. Every date from start_date
-          to end_date is present, in session or not.
+          up to and including today is present, in session or not; dates later
+          than today are withheld until they arrive.
         data_type: date
       - name: students_expected
         description: >
