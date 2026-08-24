@@ -175,10 +175,10 @@ select
     ) as is_enrolled_oct15_next,
 from {{ ref("int_extracts__student_enrollments") }} as se
 left join
-    {{ ref("int_powerschool__calendar_rollup") }} as cal
+    {{ ref("int_students__calendar_rollup") }} as cal
     on se.schoolid = cal.schoolid
     and se.yearid = cal.yearid
-    and se.track = cal.track
+    and se.track is not distinct from cal.track
     and se._dbt_source_project = cal._dbt_source_project
 left join
     att_mem

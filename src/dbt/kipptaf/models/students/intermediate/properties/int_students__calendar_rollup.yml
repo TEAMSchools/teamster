@@ -1,0 +1,44 @@
+models:
+  - name: int_students__calendar_rollup
+    description: >-
+      SIS-neutral per-school-per-year instructional day totals -- the successor
+      to int_powerschool__calendar_rollup, which stays a pure PowerSchool union.
+      The PowerSchool branch emits one row per calendar track; the Focus branch
+      emits one row per school-year with a null track, because Focus has no
+      track concept and Miami's track is already null on every network
+      enrollment row.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [schoolid, yearid, track, _dbt_source_project]
+          config:
+            severity: error
+    columns:
+      - name: schoolid
+        description: Network school number.
+      - name: yearid
+        description: Academic year minus 1990.
+      - name: track
+        description: >-
+          PowerSchool calendar track (A through F), or null for Focus-sourced
+          rows.
+      - name: min_calendardate
+        description: >-
+          First calendar date of the school year for the row's track.
+          PowerSchool rows: PowerSchool-native calendar bound. Focus rows: the
+          school's first in-session day, from int_focus__calendar_rollup's
+          min_school_date.
+      - name: max_calendardate
+        description: >-
+          Last calendar date of the school year for the row's track. PowerSchool
+          rows: PowerSchool-native calendar bound. Focus rows: the school's last
+          in-session day, from int_focus__calendar_rollup's max_school_date.
+      - name: days_total
+        description: Total in-session days in the school year.
+      - name: days_remaining
+        description: In-session days still in the future as of today.
+      - name: _dbt_source_relation
+        description: Source relation the row was unioned from.
+      - name: _dbt_source_project
+        description: Originating district project.

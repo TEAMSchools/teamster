@@ -51,7 +51,7 @@ inner join
     and co.yearid = sub.yearid
     and co._dbt_source_project = sub._dbt_source_project
 left join
-    {{ ref("int_powerschool__calendar_rollup") }} as d
+    {{ ref("int_students__calendar_rollup") }} as d
     on co.schoolid = d.schoolid
     and co.yearid = d.yearid
     and co.track = d.track
