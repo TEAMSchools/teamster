@@ -22,15 +22,13 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project is what preserves
-    -- Miami AY2020 through AY2025.
-    --
-    -- Dual-exposes the neutral (school_date, academic_year, is_in_session,
-    -- is_in_membership) alongside the legacy names (date_value, yearid,
-    -- insession, membershipvalue) that dim_school_calendars and the NJ-parity
-    -- gate read. See "Dual-exposed names" in the plan.
-    powerschool_conformed as (
+    -- LEFT JOIN: stg_powerschool__terms only carries isyearrec = 1 windows, and
+    -- some real calendar days (mostly August pre-service dates, plus a 15-day
+    -- Paterson gap) fall outside every window. An INNER JOIN here silently
+    -- dropped those days from the model -- and from dim_school_calendars, which
+    -- reads this model directly. yearid is NULL for a day with no covering
+    -- term; nothing downstream requires it (or academic_year) to be non-null.
+    powerschool_dated as (
         select
             cd._dbt_source_relation,
             cd._dbt_source_project,
@@ -43,23 +41,59 @@ with
             cd.date_value as school_date,
 
             t.yearid,
-            t.yearid + 1990 as academic_year,
 
             cd.insession = 1 as is_in_session,
             cd.membershipvalue > 0 as is_in_membership,
+
+            -- NULL-safe cutover flag: a day with no covering term (t.yearid is
+            -- NULL) is never a Focus-covered year, so it's kept below
+            -- regardless of project.
+            coalesce(
+                t.yearid >= c.focus_start_academic_year - 1990, false
+            ) as is_focus_covered_year,
         from {{ ref("stg_powerschool__calendar_day") }} as cd
-        inner join
+        left join
             {{ ref("stg_powerschool__terms") }} as t
             on cd.schoolid = t.schoolid
             and cd.date_value between t.firstday and t.lastday
             and cd._dbt_source_project = t._dbt_source_project
             and t.isyearrec = 1
         cross join cutover as c
-        where
-            not (
-                cd._dbt_source_project = 'kippmiami'
-                and t.yearid >= c.focus_start_academic_year - 1990
-            )
+        -- stg_powerschool__calendar_day NULLs date_value for pre-2000 sentinel
+        -- rows (a handful of PowerSchool junk records). The old INNER JOIN
+        -- incidentally dropped them (BETWEEN against NULL is never true); the
+        -- LEFT JOIN above no longer does, so drop them explicitly -- they were
+        -- never real calendar days.
+        where cd.date_value is not null
+    ),
+
+    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
+    -- does not cover. Scoping by year rather than by project is what preserves
+    -- Miami AY2020 through AY2025. A no-term day is never dropped here, even
+    -- for Miami -- see is_focus_covered_year above.
+    --
+    -- Dual-exposes the neutral (school_date, academic_year, is_in_session,
+    -- is_in_membership) alongside the legacy names (date_value, yearid,
+    -- insession, membershipvalue) that dim_school_calendars and the NJ-parity
+    -- gate read. See "Dual-exposed names" in the plan.
+    powerschool_conformed as (
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            schoolid,
+            insession,
+            membershipvalue,
+            week_start_date,
+            week_end_date,
+            date_value,
+            school_date,
+            yearid,
+            is_in_session,
+            is_in_membership,
+
+            yearid + 1990 as academic_year,
+        from powerschool_dated
+        where not (_dbt_source_project = 'kippmiami' and is_focus_covered_year)
     ),
 
     -- int_focus__calendar_day is Focus-native: it emits academic_year and
