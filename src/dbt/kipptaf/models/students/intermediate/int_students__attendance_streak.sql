@@ -9,7 +9,7 @@ with
     -- does not cover. Scoping by year rather than by project is what preserves
     -- Miami AY2020 through AY2025.
     powerschool_conformed as (
-        select ps.*,
+        select ps.*, ps.yearid + 1990 as academic_year,
         from {{ ref("int_powerschool__attendance_streak") }} as ps
         cross join cutover as c
         where
@@ -45,6 +45,7 @@ with
 
             cast(null as int64) as studentid,
 
+            fa.academic_year,
             fa.academic_year - 1990 as yearid,
             coalesce(fa.streak_value, 'P') as att_code,
         from {{ ref("int_focus__attendance_streak") }} as fa

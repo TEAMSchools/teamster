@@ -28,8 +28,16 @@ models:
           Focus, which has no equivalent id at this grain -- this is why the
           streak fact's join key was repointed from studentid to student_number
           in this same change.
+      - name: academic_year
+        description: >-
+          Academic year -- the primary, system-agnostic year column. Native on
+          Focus rows; derived as yearid + 1990 on PowerSchool rows. Consumers
+          should join/group on this rather than yearid going forward.
       - name: yearid
-        description: Academic year minus 1990.
+        description: >-
+          Academic year minus 1990. Legacy PowerSchool year encoding, retained
+          transitional for existing consumers -- derived as academic_year - 1990
+          on Focus rows, which carry no native yearid.
       - name: att_code
         description: >-
           The attendance code for a code streak, or the stringified attendance
