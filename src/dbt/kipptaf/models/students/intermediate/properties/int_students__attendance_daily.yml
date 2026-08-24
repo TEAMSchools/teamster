@@ -53,9 +53,9 @@ models:
         description: >-
           PowerSchool internal student id. Null for every Focus-sourced row
           (Miami AY2026 forward) — Phase 1 left it unpopulated for Focus, so
-          joins use student_number. Also the discriminator this model uses to
-          tell the frozen Miami PowerSchool archive (populated) apart from
-          Focus-sourced Miami rows (null) for the #4927 null flags.
+          joins use student_number. Retained for existing consumers built
+          against the PowerSchool branch; the #4927 null flags are discriminated
+          on the explicit is_focus_source flag, not on this column.
       - name: schoolid
         description: Network school number.
       - name: entrydate
