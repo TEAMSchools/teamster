@@ -1,15 +1,20 @@
 with
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
+    -- internal id and is null for every Focus-sourced (Miami) row, so
+    -- grouping on it would collapse every Miami student into one row per
+    -- (yearid, _dbt_source_project). student_number is populated on both
+    -- branches.
     att_mem as (
         select
             _dbt_source_project,
-            studentid,
+            student_number,
             yearid,
 
             sum(attendancevalue) as n_attendance,
             sum(membershipvalue) as n_membership,
         from {{ ref("int_students__attendance_daily") }}
         where membershipvalue = 1
-        group by studentid, yearid, _dbt_source_project
+        group by student_number, yearid, _dbt_source_project
     ),
 
     target_union as (
@@ -182,7 +187,7 @@ left join
     and se._dbt_source_project = cal._dbt_source_project
 left join
     att_mem
-    on se.studentid = att_mem.studentid
+    on se.student_number = att_mem.student_number
     and se.yearid = att_mem.yearid
     and se._dbt_source_project = att_mem._dbt_source_project
 left join

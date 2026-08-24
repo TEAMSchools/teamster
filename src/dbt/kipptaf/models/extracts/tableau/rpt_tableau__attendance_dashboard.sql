@@ -55,7 +55,10 @@ with
         from {{ ref("int_students__attendance_daily") }} as ad
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
-            on ad.studentid = co.studentid
+            -- studentid is a PowerSchool-internal id, null for every
+            -- Focus-sourced (Miami) row -- student_number is populated on
+            -- both branches and network-wide.
+            on ad.student_number = co.student_number
             and ad.schoolid = co.schoolid
             and ad.calendardate between co.entrydate and co.exitdate
             and ad._dbt_source_project = co._dbt_source_project

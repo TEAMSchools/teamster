@@ -1,9 +1,13 @@
 with
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
+    -- internal id and is null for every Focus-sourced (Miami) row, so
+    -- grouping on it would collapse every Miami student into one row per
+    -- (yearid, term_name). student_number is populated on both branches.
     attendance as (
         select
             mem._dbt_source_relation,
             mem._dbt_source_project,
-            mem.studentid,
+            mem.student_number,
             mem.yearid,
 
             rt.name as term_name,
@@ -48,7 +52,7 @@ with
             mem._dbt_source_relation,
             mem._dbt_source_project,
             mem.yearid,
-            mem.studentid,
+            mem.student_number,
             rt.name
     ),
 
@@ -504,7 +508,7 @@ with
             and rt.type = 'RT'
         left join
             attendance as att
-            on co.studentid = att.studentid
+            on co.student_number = att.student_number
             and co.yearid = att.yearid
             and rt.name = att.term_name
             and co._dbt_source_project = att._dbt_source_project
