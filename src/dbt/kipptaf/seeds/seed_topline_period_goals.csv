@@ -1,0 +1,21 @@
+org_level,entity,schoolid,grade_low,grade_high,layer,topline_indicator,academic_year,period_type,period_label,goal
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,October,0.958
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,November,0.952
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,December,0.945
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,January,0.94
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,February,0.944
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,March,0.948
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,April,0.95
+region,Newark,,0,12,Attendance and Enrollment,ADA,2025,month,May,0.953
+region,Camden,,0,12,Attendance and Enrollment,ADA,,month,October,0.94
+region,Camden,,0,12,Attendance and Enrollment,ADA,,month,November,0.934
+region,Miami,,0,8,Attendance and Enrollment,ADA,2025,quarter,,0.944
+org,,,0,12,Attendance and Enrollment,ADA,,ytd,,0.94
+school,Newark,133570965,5,8,Attendance and Enrollment,ADA,2025,month,October,0.965
+school,Newark,133570965,5,8,Attendance and Enrollment,ADA,,ytd,,0.961
+school,Camden,179904,9,12,Attendance and Enrollment,ADA,,month,October,0.89
+region,Newark,,0,12,Student and Family Experience,Suspensions,2025,quarter,Q1,0.02
+region,Newark,,0,12,Student and Family Experience,Suspensions,2025,quarter,Q2,0.035
+region,Newark,,0,12,Student and Family Experience,Suspensions,2025,quarter,Q3,0.045
+region,Newark,,0,12,Student and Family Experience,Suspensions,2025,quarter,Q4,0.05
+region,Newark,,,,Outstanding Teammates,Staff Retention,,quarter,,0.93

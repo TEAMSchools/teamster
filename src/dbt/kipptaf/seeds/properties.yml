@@ -1,0 +1,110 @@
+seeds:
+  - name: seed_topline_period_rollup
+    description:
+      MOCK stand-in for the period_rollup column planned for the topline
+      aggregate goals sheet (issue 4363) — one row per layer x indicator
+      assigning the non-week rollup treatment. as_of takes the last available
+      week's value inside each period; period recomputes the metric within the
+      period window. Replace with the sheet column and delete this seed once
+      stakeholders populate the real config.
+    config:
+      column_types:
+        layer: string
+        topline_indicator: string
+        period_rollup: string
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - layer
+              - topline_indicator
+    columns:
+      - name: period_rollup
+        description: Rollup treatment for non-week grains.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [as_of, period]
+      - name: layer
+        description: Topline layer the indicator belongs to.
+      - name: topline_indicator
+        description: Indicator name, matching the aggregate goals sheet.
+
+  - name: seed_topline_period_goals
+    description:
+      MOCK stand-in for the planned topline period-goals sheet tab (issue 4363)
+      — long-format period-specific goals keyed like the aggregate goals sheet
+      plus academic_year / period_type / period_label, with blanks as wildcards.
+      Rows mirror real config combinations (entities, school ids, grade bands)
+      with mock goal values, and deliberately exercise all four
+      resolution-specificity branches — exact label-and-year (Newark ADA monthly
+      ramp), label with wildcard year (Camden ADA months), year with wildcard
+      label (Miami ADA quarters), and both wildcards (org ADA ytd) — plus a
+      quarter ramp (Newark Suspensions Q1-Q4) and a period goal on an as-of
+      staff metric. Replace with the sheet tab and delete this seed once
+      stakeholders populate real goals.
+    config:
+      column_types:
+        org_level: string
+        entity: string
+        schoolid: int64
+        grade_low: int64
+        grade_high: int64
+        layer: string
+        topline_indicator: string
+        academic_year: int64
+        period_type: string
+        period_label: string
+        goal: numeric
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - org_level
+              - entity
+              - schoolid
+              - grade_low
+              - grade_high
+              - layer
+              - topline_indicator
+              - academic_year
+              - period_type
+              - period_label
+    columns:
+      - name: period_type
+        description: Grain this goal applies to.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [week, month, quarter, ytd]
+      - name: goal
+        description: Mock goal value, same units as the base goal column.
+        data_tests:
+          - not_null
+      - name: org_level
+        description: Aggregation level the goal row targets.
+      - name: entity
+        description:
+          Region entity as city name, matching the aggregate goals sheet.
+      - name: schoolid
+        description:
+          PowerSchool school id for school-level rows; blank otherwise.
+      - name: grade_low
+        description:
+          Low end of the grade band, matching the aggregate goals sheet.
+      - name: grade_high
+        description:
+          High end of the grade band, matching the aggregate goals sheet.
+      - name: layer
+        description: Topline layer the indicator belongs to.
+      - name: topline_indicator
+        description: Indicator name, matching the aggregate goals sheet.
+      - name: academic_year
+        description:
+          Academic year (start year) the goal applies to; blank = every year.
+      - name: period_label
+        description:
+          Period instance the goal applies to (full month name or Q1-Q4); blank
+          = every instance of the grain.

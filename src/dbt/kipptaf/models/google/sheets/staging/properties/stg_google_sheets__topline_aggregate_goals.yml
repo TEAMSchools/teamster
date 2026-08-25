@@ -1,5 +1,18 @@
 models:
   - name: stg_google_sheets__topline_aggregate_goals
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Layer
+              - Topline_Indicator
+              - Org_Level
+              - Entity
+              - Schoolid
+              - Discipline
+              - grade_band
+          config:
+            severity: error
     columns:
       - name: Layer
         data_type: string
@@ -9,6 +22,9 @@ models:
         data_type: string
       - name: Entity
         data_type: string
+        description: >-
+          Region entity, normalized to city names (Newark / Camden / Miami /
+          Paterson / TAF) via region_to_city regardless of the sheet's form.
       - name: Schoolid
         data_type: int64
       - name: Grade_Low

@@ -1,23 +1,37 @@
 with
     source as (
         select
-            * except (goal, entity),
+            org_level,
+            schoolid,
+            grade_low,
+            grade_high,
+            layer,
+            topline_indicator,
+            academic_year,
+            period_type,
+            period_label,
 
             cast(goal as numeric) as goal,
 
-            {{ region_to_city("entity") }} as `Entity`,
-        from
-            {{ source("google_sheets", "src_google_sheets__topline__aggregate_goals") }}
+            {{ region_to_city("entity") }} as entity,
+        -- TODO(#4363): swap to the sheet-tab source at cutover (see plan
+        -- Task 13) and delete the seed
+        from {{ ref("seed_topline_period_goals") }}
+        where topline_indicator is not null
     )
 
 select
-    *,
-
-    if(
-        grade_low = grade_high,
-        cast(grade_high as string),
-        if(grade_low = 0, 'K', cast(grade_low as string)) || '-' || grade_high
-    ) as grade_band,
+    org_level,
+    schoolid,
+    grade_low,
+    grade_high,
+    layer,
+    topline_indicator,
+    academic_year,
+    period_type,
+    period_label,
+    goal,
+    entity,
 
     case
         when layer = 'Outstanding Teammates' and org_level = 'org'
