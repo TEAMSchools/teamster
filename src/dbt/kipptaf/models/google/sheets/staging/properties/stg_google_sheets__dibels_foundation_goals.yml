@@ -1,19 +1,74 @@
 models:
   - name: stg_google_sheets__dibels_foundation_goals
+    description: >-
+      KIPP Foundation's DIBELS benchmark goal rates by region, grade, period,
+      population and goal type, transcribed from T&L's DIBELS goals tab. Long
+      grain -- one row per academic year, region, grade, period, population and
+      goal type. See the dibels-dashboard skill for the transcription rule and
+      generator script.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - Region
+              - Grade_Level
+              - Period
+              - Population
+              - Grade_Goal_Type
     columns:
       - name: Academic_Year
         data_type: int64
+        description: >-
+          Fall-start convention -- 2025 means school year 2025-26.
       - name: Region
         data_type: string
+        description: Newark, Camden, Miami or Paterson.
       - name: Grade_Range
         data_type: string
+        description: >-
+          Cosmetic 3-way label -- K-2, 3-5 or 6-8. A pure function of
+          Grade_Level, kept for continuity with the prior schema. Not used by
+          tiering logic -- see Grade_Band.
+      - name: Grade_Band
+        data_type: string
+        description: >-
+          GK-5 or G6-8. Drives which row of the Bright Spot tier lookup applies
+          -- G6-8 at MOY is measured against the EOY goal, not a MOY goal.
+          Sheet-maintained rather than derived from Grade_Level, since T&L can
+          change grade groupings.
       - name: Grade_Level
         data_type: int64
+        description: Individual grade, K = 0.
       - name: Period
         data_type: string
+        description: MOY or EOY.
+      - name: Population
+        data_type: string
+        description: >-
+          All or IEP. IEP goals exist starting AY2025 and are sparse -- Newark
+          and Camden grades K-5 only as of AY2025, none for grades 6-8 or
+          Paterson. Absence means no goal was set, not zero.
       - name: Grade_Goal_Type
         data_type: string
+        description: At/Above or Well Below.
+      - name: Grade_Goal_Low
+        data_type: float64
+        description: Low end of the goal range as published by T&L.
+      - name: Grade_Goal_High
+        data_type: float64
+        description: High end of the goal range as published by T&L.
       - name: Grade_Goal
         data_type: float64
+        description: >-
+          Single-point goal used downstream, derived from
+          Grade_Goal_Low/Grade_Goal_High: Grade_Goal_Low when Grade_Goal_Type is
+          At/Above, Grade_Goal_High when Well Below. Verified against historical
+          goal values rather than assumed -- holds for MOY and EOY alike.
       - name: Grade_Range_Goal
         data_type: float64
+        description: >-
+          The K-2 band-aggregate goal, same low/high rule applied to the K-2
+          band row. Populated only when Grade_Level is 0, 1 or 2; null
+          otherwise. There is no equivalent 3-5 or 6-8 band row in the source
+          tab.
