@@ -367,6 +367,20 @@ data_tests:
           ref:
             name: dim_student_section_enrollments
 
+  - name: test_focus_course_sections_teacher_resolves
+    description: >-
+      Warns on Focus sections whose lead teacher does not resolve through the
+      staff roster. All 77 current Miami teachers resolve today because they
+      predate the Focus migration and still carry a PowerSchool teacher number;
+      a Miami-only hire would not, which is an Ops roster correction, not a
+      modeling defect.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_sections
+
   - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
     description: >-
       Exactly one academic year may carry `is_latest_graded_year`. More than one
