@@ -6,10 +6,14 @@ models:
       contiguous value span)`; active rows end at `'9999-12-31'`. Newark +
       Camden draw from EdPlan with native effective dates; Paterson + Miami
       carry a single current-state span derived from PowerSchool enrollments +
-      `studentcorefields.spedlep`. All spans are clipped to the student's
-      PowerSchool enrollment range in the source district — phantom NJSmart
-      records for districts where the student was never enrolled drop out at the
-      enrollment inner-join.
+      `studentcorefields.spedlep`. Enrollment context is per-stint — a student
+      with multiple stints in the same district gets a separate span set per
+      stint, each clipped to that stint's entry/exit window (aggregating to a
+      min/max range across stints would wrongly span gaps between them, e.g. a
+      Newark → Camden → Newark student's Newark range covering the Camden
+      period). All spans are clipped to the student's PowerSchool enrollment
+      range in the source district — phantom NJSmart records for districts where
+      the student was never enrolled drop out at the enrollment inner-join.
     config:
       meta:
         dagster:

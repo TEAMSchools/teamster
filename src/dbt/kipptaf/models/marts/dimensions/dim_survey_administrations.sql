@@ -16,7 +16,6 @@ with
         }}
     ),
 
-    /* SCD + Manager Survey admin-grain rows */
     survey_terms as (
         select
             sg.survey_id,
@@ -39,7 +38,6 @@ with
         where sg.academic_year is not null
     ),
 
-    /* Historic Alchemer Manager archive admin rows */
     historic_archive_terms as (
         select
             ms.survey_id,
