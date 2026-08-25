@@ -1,7 +1,17 @@
 models:
   - name: stg_powerschool__students
+    description: >-
+      Cross-district union of the district-level stg_powerschool__students
+      models. Filters out PowerSchool's placeholder rows with a dcid >= 1
+      predicate, so the four per-district placeholders present in the raw
+      district tables do not appear here.
     columns:
       - name: student_number
         data_type: int64
         data_tests:
           - unique
+      - name: enroll_status
+        description: >-
+          Enrollment status of the student. Values are -1 pre-registered, 0
+          active, 1 inactive, 2 withdrawn, and 3 graduated. Student-level, not
+          per-stint, and current-only — it never reflects status on a past date.
