@@ -132,14 +132,31 @@ Every key in scope is generated downstream in `dim_student_section_enrollments`.
 
 All coverage figures measured 2026-08-25 against prod.
 
-| Target column         | Focus source                                                                        | Coverage                |
-| --------------------- | ----------------------------------------------------------------------------------- | ----------------------- |
-| `cc_dcid`             | `student_schedule_id`                                                               | 19,594 of 19,594 unique |
-| `cc_dateenrolled`     | `start_date`                                                                        | native                  |
-| `cc_dateleft`         | `end_date`                                                                          | native                  |
-| `teachernumber`       | `teacher_id` to `int_focus__users.staff_id`, then roster `ein` coalesced with email | 77 of 77                |
-| `is_homeroom`         | `courses.homeroom` boolean                                                          | native                  |
-| `_dbt_source_project` | literal `kippmiami`                                                                 | n/a                     |
+| Target column         | Focus source                                                                        | Coverage                    |
+| --------------------- | ----------------------------------------------------------------------------------- | --------------------------- |
+| `cc_dcid`             | `student_schedule_id`                                                               | 19,594 of 19,594 unique     |
+| `cc_dateenrolled`     | `start_date`                                                                        | native                      |
+| `cc_dateleft`         | `end_date`                                                                          | native                      |
+| `teachernumber`       | `teacher_id` to `int_focus__users.staff_id`, then roster `ein` coalesced with email | 77 of 77                    |
+| `is_homeroom`         | `course_title like 'Homeroom%'`                                                     | 1,072 rows, elementary only |
+| `_dbt_source_project` | literal `kippmiami`                                                                 | n/a                         |
+
+### Homeroom
+
+Focus carries a `homeroom` boolean on both the course and the schedule, and it
+is null on every one of the 19,594 rows. `int_focus__advisory` already hit this
+and identifies the homeroom course by title instead, so this reuses that rule:
+`course_title like 'Homeroom%'`.
+
+That makes `is_homeroom` a column on the neutral model rather than something
+`dim_student_section_enrollments` derives. The dim computes it today as
+`cc_course_number like 'HR%'`, a PowerSchool naming convention that Focus course
+numbers do not follow. Each branch supplies its own rule and the dim reads the
+column.
+
+Coverage is elementary-only: 1,072 homeroom rows, concentrated in grades K
+through 5. That is Focus configuration rather than a modeling gap, and is
+already tracked on #4868.
 
 ### Grain
 
