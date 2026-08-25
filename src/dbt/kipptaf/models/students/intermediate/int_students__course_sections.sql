@@ -59,11 +59,11 @@ with
 
             'kippmiami' as _dbt_source_project,
 
-            -- Focus carries a homeroom boolean on both the course and the
-            -- course period and it is null on every row, so the homeroom
-            -- course is identified by title. Same rule int_focus__advisory
-            -- already uses. Elementary-only coverage is Focus configuration,
-            -- tracked on #4868.
+            -- Focus carries a homeroom boolean on the course, and it is null
+            -- on every row, so the homeroom course is identified by title
+            -- instead. Same rule int_focus__advisory already uses.
+            -- Elementary-only coverage is Focus configuration, tracked on
+            -- #4868.
             coalesce(c.title like 'Homeroom%', false) as is_homeroom,
 
             -- The AP course subject crosswalk is a New Jersey state

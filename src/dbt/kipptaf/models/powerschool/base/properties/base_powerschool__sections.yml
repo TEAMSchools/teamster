@@ -1,8 +1,13 @@
 models:
   - name: base_powerschool__sections
     description: >-
-      Compatibility passthrough over int_students__course_sections, which holds
-      the section logic and the column documentation. Scheduled for removal once
-      its remaining consumers migrate, tracked in #3999. Carries no tests of its
-      own — they run on the model underneath, and repeating them here would
-      rescan every column for no additional coverage.
+      Compatibility passthrough over `int_students__course_sections`, which
+      holds the section logic and the column documentation. Scheduled for
+      removal once its remaining consumers migrate, tracked in #3999. Carries no
+      tests of its own — they run on the model underneath, and repeating them
+      here would rescan every column for no additional coverage. This model
+      converts from a table to a view — production still serves the old TABLE
+      until a one-time `dbt build --select base_powerschool__sections
+      --full-refresh` (or an explicit `DROP TABLE`) runs after merge — `create
+      or replace view` does not drop a pre-existing table at the same path, so
+      skipping this step leaves prod silently serving stale data with no error.
