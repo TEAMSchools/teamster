@@ -20,13 +20,14 @@ models:
       - name: cc_dcid
         description: >-
           Course enrollment identifier. For Miami, the Focus
-          `student_schedule_id`, unique across all 19,594 Focus schedule rows.
+          `student_schedule_id`, unique across all 19,295 rows of
+          `int_focus__schedule`, the deduplicated kipptaf wrapper.
         data_type: int64
       - name: is_dropped_section
         description: >-
           Whether the student dropped this section. PowerSchool derives it from
           its `sectionid < 0` convention. Null for Miami: Focus has no drop
-          convention, and a false here would put 19,594 guaranteed-not-dropped
+          convention, and a false here would put 19,295 guaranteed-not-dropped
           rows into every network drop-rate metric.
         data_type: bool
       - name: is_dropped_course
@@ -45,4 +46,55 @@ models:
           Canonical network student number. For Miami, from
           `int_focus__students.student_number`, which already has the 8400
           Miami-Dade district prefix stripped.
+        data_type: int64
+      - name: teachernumber
+        description: >-
+          Lead teacher's PowerSchool teacher number. For Miami, resolved from
+          the Focus `teacher_id` through `int_focus__users` to the staff roster:
+          first by `ein`, falling back to a case-insensitive match on email for
+          a user whose `ein` doesn't resolve.
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teachernumber
+      - name: _dbt_source_project
+        description: >-
+          Region prefix extracted from `_dbt_source_relation` via
+          `regexp_extract(..., r'(kipp\w+)_')` on the PowerSchool branch;
+          hardcoded to `kippmiami` on the Focus branch. Used as a region
+          discriminator in downstream surrogate keys, consistent across all
+          upstream union tables.
+        data_type: string
+      - name: region
+        description: >-
+          Derived from `_dbt_source_relation` on the PowerSchool branch;
+          hardcoded to `Miami` on the Focus branch.
+        data_type: string
+      - name: is_ap_course
+        description: >-
+          Conditional on `ap_course_subject`, a New Jersey state reporting
+          crosswalk. Null for Miami's Focus branch, which is Florida and has no
+          such crosswalk.
+        data_type: bool
+      - name: courses_credittype
+        description: >-
+          Normalizes variant credit type codes (ELA -> ENG, Math -> MATH,
+          Science -> SCI, Homeroom -> HR) caused by a 2023 PowerSchool plugin
+          glitch in one region that produced non-standard values for that year's
+          records. Null for Miami's Focus branch, which has no equivalent field.
+        data_type: string
+      - name: standardized_discipline
+        description: >-
+          Course subject discipline with 'SOC' normalized to 'Civics'; all other
+          discipline values pass through unchanged. Null for Miami's Focus
+          branch, which has no equivalent field.
+        data_type: string
+      - name: rn_student_year_illuminate_subject_desc
+        description: >-
+          Row number of value partitioned by `_dbt_source_relation`,
+          `cc_studyear`, `illuminate_subject_area` ordered by `cc_termid`,
+          `cc_dateenrolled`, `cc_dateleft`, all descending. Null for Miami's
+          Focus branch, which does not compute this window.
         data_type: int64

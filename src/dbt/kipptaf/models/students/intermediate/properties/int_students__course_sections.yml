@@ -37,10 +37,17 @@ models:
       - name: teachernumber
         description: >-
           Lead teacher's PowerSchool teacher number. For Miami, resolved from
-          the Focus `teacher_id` through `int_focus__users.ein` to the staff
-          roster. All 77 current Miami Focus teachers resolve, because they
-          predate the Focus migration; a Miami-only hire would not.
+          the Focus `teacher_id` through `int_focus__users` to the staff roster:
+          first by `ein`, falling back to a case-insensitive match on email for
+          a user whose `ein` doesn't resolve. See
+          `test_focus_course_sections_teacher_resolves` for how much of the
+          Focus population resolves through each path.
         data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teachernumber
       - name: is_homeroom
         description: >-
           Whether this section is a homeroom. Derived per branch: PowerSchool
