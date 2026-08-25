@@ -2,10 +2,10 @@ models:
   - name: stg_renlearn__star
     description: >-
       Consolidated STAR model and the single place STAR data is read or edited.
-      Materialized as a table. Folds in the derived columns that previously
-      lived in the retired rollup — academic_year, star subject and discipline,
-      administration window mapped from Fall, Winter, and Spring to BOY, MOY,
-      and EOY, benchmark integer flags, and the per-subject row numbers.
+      Folds in the derived columns that previously lived in the retired rollup —
+      academic_year, star subject and discipline, administration window mapped
+      from Fall, Winter, and Spring to BOY, MOY, and EOY, benchmark integer
+      flags, and the per-subject row numbers.
     config:
       materialized: table
     columns:

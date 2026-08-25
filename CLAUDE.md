@@ -605,6 +605,12 @@ exploration that led nowhere (keep only the conclusion).
 
 ## MCP Servers
 
+Dagster+ MCP auth: do not revert `.mcp.json` to `op run` —
+`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot, so `op run` silently breaks
+after the first Codespace restart. Keep `scripts/dagster-mcp-launch.sh` as the
+launcher. Package internals: see
+[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
+
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
   BigQuery calls. Same if an EXPECTED MCP tool is absent from the deferred-tools
@@ -723,8 +729,7 @@ injects `.claude/context/<server>.md` the first time each MCP server is used in
 a session (and again after a compaction), so this file no longer carries them.
 The file name must match the server segment of the tool name
 (`mcp__<server>__<tool>`). To add or change guidance for a server, edit that
-file — no hook or settings change is needed. Current files: `bigquery`,
-`dagster`, `dbt`, `gke`, `gcp-observability`, `claude_ai_Asana`.
+file — no hook or settings change is needed.
 
 **Warehouse writes stay with the user**: the BigQuery MCP is SELECT-only, and
 the `bq` CLI runs on user credentials that expire mid-session, so warehouse

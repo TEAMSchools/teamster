@@ -244,9 +244,10 @@ Facebook, Illuminate Fivetran, Instagram.
 **Miami is the exception, deliberately.** Focus is Miami's sole enrollment
 source and has no placeholder equivalent, so the Focus cutover removed Miami's
 1,002 placeholder rows (420 students, AY2022-AY2025) — from the spine in #4775
-and from `base_powerschool__student_enrollments` in #4868. The rule above still
-binds the three NJ regions. Do not "restore" Miami placeholders by reviving the
-frozen archive branch; that was decided against on 2026-08-14.
+and from `base_powerschool__student_enrollments` in #4868. The
+retain-graduate-placeholder rule below still binds the three NJ regions. Do not
+"restore" Miami placeholders by reviving the frozen archive branch; that was
+decided against on 2026-08-14.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
 `enroll_status`.** `count_students` in the `student_enrollments` Cube derives

@@ -5,7 +5,8 @@ models:
       order. A lower number means the associate was seen in ADP earlier, NOT
       that they were hired earlier — worker_original_hire_date is editable. One
       person with duplicate ADP worker records receives multiple active employee
-      numbers.
+      numbers. The LDAP UPN attaches only to whichever employee number the
+      account was provisioned under.
     config:
       materialized: incremental
       incremental_strategy: merge

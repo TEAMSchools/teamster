@@ -128,11 +128,3 @@ Claude cannot authenticate direct GraphQL calls — the token comes from `op rea
 (hook-blocked). Hand queries to the user to run in the Dagster+ UI GraphQL
 playground; the MCP's fixed field selections omit some fields (e.g.
 `materializationFailureType` on `FailedToMaterializeEvent`).
-
-## MCP auth
-
-Dagster+ MCP auth: do not revert `.mcp.json` to `op run` —
-`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot, so `op run` silently breaks
-after the first Codespace restart. Keep `scripts/dagster-mcp-launch.sh` as the
-launcher. Package internals: see
-[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
