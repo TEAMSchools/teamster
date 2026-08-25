@@ -43,10 +43,10 @@ models:
           department, CEO, or a President title) sees all entities and levels; 6
           (any Chief title) sees all entities below their own level; 5 (a
           Managing Director in School Support, or a Head of Schools title) sees
-          their own entity below their own level; 4 (a School Leader title) sees
-          their own location; 3 (a Managing Director within the KIPP TEAM and
-          Family Schools Inc entity) sees their own location below their own
-          level; 2 is assigned when the person has direct reports and sees only
-          those reports; 1 is the fallback and sees only their own data.
+          their own entity below their own level; 4 (a School Leader title) and
+          3 (a Managing Director within the KIPP TEAM and Family Schools Inc
+          entity) see their own location below their own level; 2 is assigned
+          when the person has direct reports and sees only those reports; 1 is
+          the fallback and sees only their own data.
       - name: reports_to_employee_number
         data_type: int64

@@ -71,6 +71,8 @@ with
                 then 'Two or more races'
             end as crdc_demographic,
 
+            -- bring over the manual entry student numbers that match the crdc
+            -- question tag
             if(me.student_number is null, false, true) as crdc_question_section_status,
 
             if(e.iep_status = 'Has IEP' and not is_504, true, false) as iep_only,

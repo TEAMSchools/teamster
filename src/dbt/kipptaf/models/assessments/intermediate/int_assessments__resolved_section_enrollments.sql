@@ -374,6 +374,10 @@ select
     source_type,
     resolution_type,
 
+    -- the resolved section's school and region. Carried so consumers can resolve
+    -- a score's reporting quarter from the score's OWN date (#4484); this model
+    -- is one row per score GRAIN, so its anchor_date cannot stand in for the
+    -- date of every score row sharing that grain.
     powerschool_school_id,
     region,
 
