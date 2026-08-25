@@ -14,8 +14,9 @@ SIS-neutral models.
 `int_students__course_enrollments` and `int_students__course_sections`, each
 adding a Focus branch joined by BigQuery `full union all corresponding`. The two
 `base_` models become one-line compatibility passthroughs so their 50-plus
-consumers keep resolving. `dim_student_section_enrollments` repoints to the new
-model and moves its student-stint join off PowerSchool internal ids.
+consumers keep resolving. `dim_courses` gains the same treatment so Miami
+sections resolve their course FK, and `dim_student_section_enrollments` repoints
+to the new model and moves its student-stint join off PowerSchool internal ids.
 
 **Tech Stack:** dbt (BigQuery), `uv` for all Python and dbt invocation, trunk
 for lint, `dbt_utils` macros.
@@ -37,6 +38,13 @@ for lint, `dbt_utils` macros.
   holds Miami AY2020 through AY2025 and must keep serving those years. Derive
   the boundary with `select min(academic_year) from int_focus__schedule` — never
   hardcode `2026`.
+- EVERY `dbt build` MUST carry
+  `--defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod`.
+  Without it the build reads empty personal-dev copies of the `int_focus__*`
+  upstreams, silently drops the whole Focus branch, and still passes every test
+  green. Plain `--defer` is not enough: it prefers an existing dev relation even
+  when that relation is empty, so `--favor-state` is required. Verified on Task
+  1 — the first build produced zero Miami AY2026 rows with no error.
 - Columns Focus cannot source land `null`, never `false` and never a derived
   guess. The two drop flags carry a `TODO(#4968)` comment. `is_ap_course` does
   not: it is a New Jersey state crosswalk and Miami is Florida, so it is
@@ -273,7 +281,8 @@ Run in the FOREGROUND — do not background it:
 
 ```bash
 uv run dbt build --select int_students__course_sections base_powerschool__sections+1 \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf \
+  --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
 
 Expected: PASS, including the `unique_combination_of_columns` test.
@@ -542,7 +551,8 @@ FOREGROUND only:
 
 ```bash
 uv run dbt build --select int_students__course_enrollments base_powerschool__course_enrollments+1 \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf \
+  --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
 
 Expected: PASS.
@@ -600,7 +610,185 @@ git -C "$wt" commit -m "feat(dbt): add int_students__course_enrollments with Foc
 
 ---
 
-### Task 3: Repoint `dim_student_section_enrollments`
+### Task 3: Branch `dim_courses` so Miami sections resolve their course FK
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/students/intermediate/int_students__courses.sql`
+- Create:
+  `src/dbt/kipptaf/models/students/intermediate/properties/int_students__courses.yml`
+- Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_courses.sql`
+
+**Interfaces:**
+
+- Consumes: `stg_powerschool__courses`, `int_focus__courses`,
+  `stg_google_sheets__assessments__course_subject_crosswalk`.
+- Produces: one row per `(course_number, _dbt_source_project)`. `dim_courses`
+  keeps its existing output columns and its unique `course_key`.
+
+**Why this task exists.** Task 1 puts Miami Focus sections into
+`dim_course_sections`, whose `course_key` is
+`surrogate_key(sections_course_number, _dbt_source_project)`. `dim_courses`
+reads `stg_powerschool__courses`, a pure PowerSchool model, so every Miami
+section's `course_key` points at a row that does not exist — 844 orphans on the
+warn-severity relationships test after Task 1.
+
+Task 1 set the Focus `sections_course_number` to
+`int_focus__courses.short_name`. This model MUST key on exactly that column, or
+the FK stays broken.
+
+- [ ] **Step 1: Write `int_students__courses`**
+
+```sql
+with
+    powerschool_conformed as (
+        select
+            course_number,
+            course_name,
+            credittype,
+            credit_hours,
+            _dbt_source_project,
+        from {{ ref("stg_powerschool__courses") }}
+    ),
+
+    -- int_focus__courses carries one row per course per school year: 14,616
+    -- rows against 1,350 distinct short_name. dim_courses.course_key is unique
+    -- on (course_number, _dbt_source_project), so the Focus branch keeps the
+    -- most recent year per short_name. The 3 courses with a null short_name
+    -- cannot produce a key and are dropped -- no scheduled course period
+    -- references one, verified 2026-08-25.
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    focus_courses as (
+        select
+            syear,
+            short_name as course_number,
+            title as course_name,
+            credit_hours,
+
+            -- Focus has no credit-type field. Null rather than a guess.
+            cast(null as string) as credittype,
+
+            'kippmiami' as _dbt_source_project,
+        from {{ ref("int_focus__courses") }}
+        where short_name is not null
+    ),
+
+    focus_deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation="focus_courses",
+                partition_by="course_number",
+                order_by="syear desc",
+            )
+        }}
+    ),
+
+    focus_conformed as (
+        select * except (syear),
+        from focus_deduplicated
+    )
+
+select *,
+from powerschool_conformed
+
+full union all corresponding
+
+select *,
+from focus_conformed
+```
+
+Do NOT reach for `select distinct` or `qualify row_number() = 1` here. This repo
+uses `dbt_utils.deduplicate`.
+
+- [ ] **Step 2: Write the properties YAML**
+
+```yaml
+models:
+  - name: int_students__courses
+    description: >-
+      SIS-neutral course spine. One row per course per source project. Unions
+      `stg_powerschool__courses` with Miami's Focus courses, conformed to the
+      PowerSchool column vocabulary and deduplicated to the most recent school
+      year per course number. Exists so `dim_courses` can resolve the course FK
+      for Miami sections.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - course_number
+              - _dbt_source_project
+    columns:
+      - name: course_number
+        description: >-
+          Course number. For Miami, the Focus course `short_name`, which holds
+          the Florida state course code. This must match the
+          `sections_course_number` that `int_students__course_sections` writes
+          for Focus, because `dim_course_sections.course_key` is derived from
+          it.
+        data_type: string
+      - name: credittype
+        description: >-
+          Credit type. Null for Miami: Focus has no equivalent field.
+        data_type: string
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`).
+        data_type: string
+```
+
+- [ ] **Step 3: Repoint `dim_courses`**
+
+Change the one ref. Everything else in the file stays.
+
+```sql
+from {{ ref("int_students__courses") }} as c
+```
+
+The `stg_google_sheets__assessments__course_subject_crosswalk` join beside it
+keys on `powerschool_course_number`, so Miami rows get a null `academic_subject`
+and `is_foundations`. That is correct — the crosswalk is a PowerSchool artifact
+— and needs no branch.
+
+- [ ] **Step 4: Build and verify the orphans are gone**
+
+FOREGROUND only:
+
+```bash
+uv run dbt build --select int_students__courses dim_courses dim_course_sections \
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf \
+  --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod
+```
+
+Expected: PASS, and the `relationships` test from
+`dim_course_sections.course_key` to `dim_courses.course_key` reports **0
+failures**. It reported 844 after Task 1. A non-zero count means `course_number`
+here does not match the `sections_course_number` Task 1 wrote.
+
+- [ ] **Step 5: Lint and commit**
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments && \
+  /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
+  src/dbt/kipptaf/models/students/intermediate/int_students__courses.sql \
+  src/dbt/kipptaf/models/students/intermediate/properties/int_students__courses.yml \
+  src/dbt/kipptaf/models/marts/dimensions/dim_courses.sql </dev/null
+```
+
+```bash
+wt=/workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments
+git -C "$wt" add src/dbt/kipptaf/models/students/intermediate/int_students__courses.sql \
+  src/dbt/kipptaf/models/students/intermediate/properties/int_students__courses.yml \
+  src/dbt/kipptaf/models/marts/dimensions/dim_courses.sql
+git -C "$wt" commit -m "fix(dbt): branch dim_courses so Miami sections resolve their course FK"
+```
+
+---
+
+### Task 4: Repoint `dim_student_section_enrollments`
 
 **Files:**
 
@@ -660,7 +848,8 @@ FOREGROUND only:
 
 ```bash
 uv run dbt build --select dim_student_section_enrollments \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf \
+  --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
 
 Then the check this whole task exists for:
@@ -689,7 +878,7 @@ git -C "$wt" commit -m "fix(dbt): join section enrollments to stints on the neut
 
 ---
 
-### Task 4: Whole-branch validation
+### Task 5: Whole-branch validation
 
 **Files:**
 
@@ -698,7 +887,7 @@ git -C "$wt" commit -m "fix(dbt): join section enrollments to stints on the neut
 
 **Interfaces:**
 
-- Consumes: every model from Tasks 1 through 3.
+- Consumes: every model from Tasks 1 through 4.
 - Produces: no model. A warn-severity test plus recorded validation evidence.
 
 - [ ] **Step 1: Write the warn-severity teacher test**
@@ -761,7 +950,8 @@ catastrophic loss.
 
 ```bash
 uv run dbt build --empty --select int_students__course_enrollments+ int_students__course_sections+ \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf \
+  --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
 
 Expected: PASS. This proves column resolution across every descendant, which is
@@ -771,7 +961,8 @@ what catches a consumer reading a column the passthrough no longer carries.
 
 ```bash
 uv run dbt build --select int_students__course_enrollments+ int_students__course_sections+ \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
+  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf \
+  --defer --favor-state --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
 
 Lint every changed `.sql` and `.yml` with `trunk check --force`, then:
