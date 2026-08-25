@@ -21,8 +21,8 @@ Measured 2026-08-25:
 | `kipppaterson_powerschool` | 3,947                                         |
 | `kippmiami_powerschool`    | 0 (17,065 in AY2025)                          |
 
-Focus has the data. `int_focus__schedule` carries 19,594 rows across 1,694
-students, all AY2026, and is already declared in
+Focus has the data. The kipptaf `int_focus__schedule` wrapper carries 19,295
+rows across 1,694 students, and is already declared in
 `kipptaf/models/focus/sources-kippmiami.yml` with a kipptaf wrapper in place.
 
 ### The non-obvious half of the problem
@@ -102,8 +102,8 @@ neutral key.
 
 `int_students__student_enrollment_union` excludes Miami from the PowerSchool
 side wholesale, because Focus carries enrollment history back to AY2018. Course
-enrollments cannot do that. All 19,594 `int_focus__schedule` rows are AY2026,
-and the archive holds Miami AY2020 through AY2025.
+enrollments cannot do that. All 19,295 `int_focus__schedule` wrapper rows are
+AY2026, and the archive holds Miami AY2020 through AY2025.
 
 So the union is year-scoped, and the boundary is derived from the years Focus
 actually covers rather than hardcoded:
@@ -144,7 +144,7 @@ All coverage figures measured 2026-08-25 against prod.
 ### Homeroom
 
 Focus carries a `homeroom` boolean on both the course and the schedule, and it
-is null on every one of the 19,594 rows. `int_focus__advisory` already hit this
+is null on every one of the 19,295 rows. `int_focus__advisory` already hit this
 and identifies the homeroom course by title instead, so this reuses that rule:
 `course_title like 'Homeroom%'`.
 
