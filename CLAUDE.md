@@ -765,7 +765,7 @@ a session (and again after a compaction), so this file no longer carries them.
 The file name must match the server segment of the tool name
 (`mcp__<server>__<tool>`). To add or change guidance for a server, edit that
 file — no hook or settings change is needed. Current files: `bigquery`,
-`dagster`, `dbt`, `gke`, `gcp-observability`, `claude_ai_Asana`.
+`dagster`, `dbt`, `gke`, `gcp-observability`, `claude_ai_Asana`, `tableau`.
 
 **Warehouse writes stay with the user**: the BigQuery MCP is SELECT-only, and
 the `bq` CLI runs on user credentials that expire mid-session, so warehouse
