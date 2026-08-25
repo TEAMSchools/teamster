@@ -132,14 +132,14 @@ Every key in scope is generated downstream in `dim_student_section_enrollments`.
 
 All coverage figures measured 2026-08-25 against prod.
 
-| Target column         | Focus source                                                                        | Coverage                    |
-| --------------------- | ----------------------------------------------------------------------------------- | --------------------------- |
-| `cc_dcid`             | `student_schedule_id`                                                               | 19,594 of 19,594 unique     |
-| `cc_dateenrolled`     | `start_date`                                                                        | native                      |
-| `cc_dateleft`         | `end_date`                                                                          | native                      |
-| `teachernumber`       | `teacher_id` to `int_focus__users.staff_id`, then roster `ein` coalesced with email | 77 of 77                    |
-| `is_homeroom`         | `course_title like 'Homeroom%'`                                                     | 1,072 rows, elementary only |
-| `_dbt_source_project` | literal `kippmiami`                                                                 | n/a                         |
+| Target column         | Focus source                                                                        | Coverage                              |
+| --------------------- | ----------------------------------------------------------------------------------- | ------------------------------------- |
+| `cc_dcid`             | `student_schedule_id`                                                               | 19,295 of 19,295 unique (post-dedupe) |
+| `cc_dateenrolled`     | `start_date`                                                                        | native                                |
+| `cc_dateleft`         | `end_date`                                                                          | native                                |
+| `teachernumber`       | `teacher_id` to `int_focus__users.staff_id`, then roster `ein` coalesced with email | 77 of 77                              |
+| `is_homeroom`         | `course_title like 'Homeroom%'`                                                     | 1,072 rows, elementary only           |
+| `_dbt_source_project` | literal `kippmiami`                                                                 | n/a                                   |
 
 ### Homeroom
 
@@ -160,14 +160,20 @@ already tracked on #4868.
 
 ### Grain
 
-`int_focus__schedule` is one row per student per course period: 19,295 distinct
-`(student_id, course_period_id)` pairs across 19,594 rows. Adding
-`marking_period_id` yields the same 19,295, so the marking period contributes no
-additional grain. The 299 extra rows are repeated student-and-course-period
-pairs, the Focus analogue of PowerSchool's dropped-and-re-added sections.
+The kipptaf wrapper `int_focus__schedule` is one row per student per course
+period: 19,295 rows. The `kippmiami_focus` package model underneath holds
+19,594, and the wrapper deduplicates the 299-row difference on
+`(student_id, course_period_id)`, keeping the open stint. Its own comment gives
+the reason: Focus schedules some students into the same course period twice, a
+same-day-superseded stint (`start_date = end_date`) alongside the current open
+one.
 
-`student_schedule_id` is unique across all 19,594 rows, so it seeds `cc_dcid`
-cleanly and the surrogate key stays one-per-row.
+Branch at the wrapper, which is what every kipptaf model reads. Expect 19,295
+Focus rows, not 19,594 — a validation written against the package model's count
+reads as a 299-row loss that is not happening.
+
+`student_schedule_id` is unique across all 19,295 wrapper rows, so it seeds
+`cc_dcid` cleanly and the surrogate key stays one-per-row.
 
 ### The stint join key
 
@@ -210,7 +216,7 @@ branch, each carrying a `TODO` comment that points at the follow-up issue.
 
 PowerSchool derives the two drop flags from its `sectionid < 0` convention,
 which Focus has no equivalent of. Null rather than false, so Miami is excluded
-from network drop-rate metrics rather than diluting them with 19,594
+from network drop-rate metrics rather than diluting them with 19,295
 guaranteed-false rows. This is the treatment #4924 gave the six Miami attendance
 flags, for the same reason.
 

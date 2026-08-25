@@ -501,13 +501,15 @@ models:
       - name: cc_dcid
         description: >-
           Course enrollment identifier. For Miami, the Focus
-          `student_schedule_id`, unique across all 19,594 Focus schedule rows.
+          `student_schedule_id`, unique across all 19,295 rows of the kipptaf
+          `int_focus__schedule` wrapper, which dedupes superseded same-day
+          stints out of the package model's 19,594.
         data_type: int64
       - name: is_dropped_section
         description: >-
           Whether the student dropped this section. PowerSchool derives it from
           its `sectionid < 0` convention. Null for Miami: Focus has no drop
-          convention, and a false here would put 19,594 guaranteed-not-dropped
+          convention, and a false here would put 19,295 guaranteed-not-dropped
           rows into every network drop-rate metric.
         data_type: bool
       - name: is_dropped_course
@@ -586,12 +588,12 @@ order by 1, 2
 
 Expected:
 
-| `_dbt_source_project` | 2025   | 2026                  |
-| --------------------- | ------ | --------------------- |
-| `kippnewark`          | 51,575 | drifts, see below     |
-| `kippcamden`          | 18,730 | drifts, see below     |
-| `kipppaterson`        | 4,531  | drifts, see below     |
-| `kippmiami`           | 17,065 | roughly 19,594 and up |
+| `_dbt_source_project` | 2025   | 2026              |
+| --------------------- | ------ | ----------------- |
+| `kippnewark`          | 51,575 | drifts, see below |
+| `kippcamden`          | 18,730 | drifts, see below |
+| `kipppaterson`        | 4,531  | drifts, see below |
+| `kippmiami`           | 17,065 | 19,295 and up     |
 
 **Only the AY2025 column is a fixed check.** Those years are frozen, so any
 change there is a real defect.
