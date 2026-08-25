@@ -337,11 +337,12 @@ data_tests:
       Warns when a non-dropped course-enrollment (cc) record overlaps more than
       one school enrollment stint. dim_student_section_enrollments resolves
       these to a single stint (covering-first, else earliest), so a nonzero
-      count is a known, monitored condition rather than a failure. Baseline is
-      now ~154 (~16 Miami, ~138 NJ) as of the Focus course-enrollments change --
-      the prior ~147 figure was NJ-only, because the test could not see Focus
-      rows before that change joined it on the neutral (student_number,
-      schoolid, academic_year, _dbt_source_project) key. Growth signals new
+      count is a known, monitored condition rather than a failure. Baseline as
+      measured on the repaired test: 154 rows -- 16 Miami, 135 Newark, 3 Camden.
+      Almost all are genuine mid-year drop/re-enroll. Miami became visible only
+      with this change, which added the Focus branch upstream and made the
+      test's join, date predicate and drop filter null-safe; earlier baselines
+      predate all three and are not comparable. Growth against 154 signals new
       boundary-spanning sections to review.
     config:
       meta:
@@ -372,11 +373,17 @@ data_tests:
 
   - name: test_focus_course_sections_teacher_resolves
     description: >-
-      Warns on Focus sections whose lead teacher does not resolve through the
-      staff roster. All 77 current Miami teachers resolve today because they
-      predate the Focus migration and still carry a PowerSchool teacher number;
-      a Miami-only hire would not, which is an Ops roster correction, not a
-      modeling defect.
+      Warns on Focus course periods whose lead teacher does not resolve through
+      the staff roster (by `ein`, falling back to email), scoped to the Focus
+      population by year so the frozen Miami PowerSchool archive (which predates
+      the roster and will never resolve) doesn't inflate the count. Measured
+      floor is 80 AY2026 course periods: 67 with no teacher assigned in Focus at
+      all, plus 13 whose assigned user resolves through neither `ein` nor email.
+      Both are source data gaps in Focus / the roster, not a modeling defect.
+      (`int_focus__course_periods` also holds 21 stale AY2025 rows that the
+      year-scope filter correctly excludes here -- a raw, unscoped count over
+      all course periods would show 101 unresolved instead, double-counting that
+      stale year.)
     config:
       severity: warn
       meta:
