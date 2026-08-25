@@ -2,10 +2,8 @@ with
     student_enrollments as (
         select
             _dbt_source_project,
-            studentid,
-            schoolid,
-            yearid,
             student_number,
+            schoolid,
             academic_year,
             entrydate,
             exitdate,
@@ -25,6 +23,7 @@ with
             cc.is_dropped_course,
             cc.cc_course_number,
             cc.teachernumber,
+            cc.is_homeroom,
 
             enr._dbt_source_project as enr_source_project,
             enr.student_number as enr_student_number,
@@ -35,16 +34,27 @@ with
                 cc.cc_dateenrolled >= enr.entrydate
                 and cc.cc_dateenrolled < enr.exitdate
             ) as is_covering,
-        from {{ ref("base_powerschool__course_enrollments") }} as cc
+        from {{ ref("int_students__course_enrollments") }} as cc
         -- alumni placeholder rows (enroll_status=3) have NULL entrydate/exitdate
         -- and match no stint here, producing a NULL student_enrollment_key
+        --
+        -- Focus leaves a course period's end_date null while the schedule is
+        -- still open (PowerSchool always populates cc_dateleft), so the
+        -- coalesce below is required for Miami to match its current stint.
+        -- It is a no-op for NJ: cc_dateleft is null on zero NJ rows. entrydate
+        -- and exitdate are never null in student_enrollments, so they need no
+        -- equivalent coalesce. The ~10.5% of Miami rows still unmatched after
+        -- this (same-day stints, cross-school scheduling artifacts) is an
+        -- accepted residual within the NJ completed-year orphan-rate norm,
+        -- tracked in #4970 -- see the rate test in
+        -- tests/test_miami_section_enrollment_orphan_rate.sql.
         left join
             student_enrollments as enr
-            on cc.cc_studentid = enr.studentid
+            on cc.students_student_number = enr.student_number
             and cc.sections_schoolid = enr.schoolid
-            and cc.cc_yearid = enr.yearid
+            and cc.cc_academic_year = enr.academic_year
             and cc._dbt_source_project = enr._dbt_source_project
-            and cc.cc_dateleft > enr.entrydate
+            and coalesce(cc.cc_dateleft, cast('9999-12-31' as date)) > enr.entrydate
             and cc.cc_dateenrolled < enr.exitdate
     ),
 
@@ -65,12 +75,11 @@ with
             cc_dateleft as exit_date,
             is_dropped_section,
             is_dropped_course,
+            is_homeroom,
             cc_course_number,
             teachernumber,
             enr_source_project,
             enr_student_number,
-
-            coalesce(cc_course_number like 'HR%', false) as is_homeroom,
 
             {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
             as student_section_enrollment_key,
