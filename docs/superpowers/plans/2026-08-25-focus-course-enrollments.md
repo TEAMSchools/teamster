@@ -45,6 +45,15 @@ for lint, `dbt_utils` macros.
   green. Plain `--defer` is not enough: it prefers an existing dev relation even
   when that relation is empty, so `--favor-state` is required. Verified on Task
   1 — the first build produced zero Miami AY2026 rows with no error.
+- `--favor-state` has a second, opposite trap. It forces every ref NOT in your
+  `--select` to resolve to the PROD relation from `--state`. So selecting only
+  downstream models makes the models THIS BRANCH CHANGED read prod, and your
+  changes silently vanish — green build, wrong data. Always select the changed
+  models themselves, with `+` to pull their descendants:
+  `--select int_students__course_sections+ int_students__course_enrollments+ int_students__courses+`.
+  Verified on Task 4: building only the three dims left `dim_course_sections` at
+  32,836 rows, exactly prod's count, instead of the branch's 33,680 — and
+  produced a 19,295-row relationships failure that was pure build artifact.
 - Columns Focus cannot source land `null`, never `false` and never a derived
   guess. The two drop flags carry a `TODO(#4968)` comment. `is_ap_course` does
   not: it is a New Jersey state crosswalk and Miami is Florida, so it is
