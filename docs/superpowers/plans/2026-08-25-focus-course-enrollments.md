@@ -650,14 +650,27 @@ git -C "$wt" commit -m "feat(dbt): add int_students__course_enrollments with Foc
 
 **Why this task exists.** Task 1 puts Miami Focus sections into
 `dim_course_sections`, whose `course_key` is
-`surrogate_key(sections_course_number, _dbt_source_project)`. `dim_courses`
-reads `stg_powerschool__courses`, a pure PowerSchool model, so every Miami
-section's `course_key` points at a row that does not exist — 844 orphans on the
+`surrogate_key(courses_course_number, _dbt_source_project)`. `dim_courses` reads
+`stg_powerschool__courses`, a pure PowerSchool model, so every Miami section's
+`course_key` points at a row that does not exist — 844 orphans on the
 warn-severity relationships test after Task 1.
 
-Task 1 set the Focus `sections_course_number` to
-`int_focus__courses.short_name`. This model MUST key on exactly that column, or
-the FK stays broken.
+**Note the column: `courses_course_number`, not `sections_course_number`.** An
+earlier draft of this task named the wrong one. In PowerSchool the two are
+non-null and identical on all 32,836 rows of `base_powerschool__sections`, so
+the distinction is invisible there — but Task 1's Focus branch populated only
+`sections_course_number`, which left every Focus row hashing NULL into a single
+placeholder `course_key`. Two things are therefore required, and neither alone
+is sufficient:
+
+1. `int_students__course_sections`' Focus branch must set
+   `courses_course_number` to `int_focus__courses.short_name`, the same value it
+   already gives `sections_course_number`.
+1. `int_students__courses.course_number` must be that same
+   `int_focus__courses.short_name`.
+
+If either uses a different column, the FK stays broken and this task
+accomplishes nothing.
 
 - [ ] **Step 1: Write `int_students__courses`**
 
