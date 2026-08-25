@@ -34,6 +34,12 @@ Authoritative consumer list for a source-system package:
 Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
 source data via `source()`, not as a package.
 
+**A model name can exist in both a source-system package and `kipptaf`** (e.g.
+`int_finalsite__student_contacts`). `ref()` resolves to the CURRENT project's
+copy, so when reading a `kipptaf` model's upstream, open the `kipptaf` file —
+the same-named package file is a different model. Confirm with
+`find src/dbt -name '<model>.sql'` before reading.
+
 ## District Variable Defaults
 
 All district projects share these variables (override via `dbt_project.yml`):
@@ -1291,6 +1297,12 @@ alias.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
   descriptions — those go in inline SQL comments at the derivation site.
+- The reverse also holds: rationale that needs no code context belongs in
+  `description:`, not an inline SQL comment. Keep SQL comments to what a reader
+  of that line cannot see — a non-obvious fallback, why a filter exists. A
+  comment longer than the expression it annotates belongs in the properties
+  file; the repo's existing multi-paragraph SQL comments are not a precedent to
+  extend.
 
 ### Flattened child-array model naming
 
