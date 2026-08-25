@@ -12,8 +12,7 @@ with
             phone_primary,
             address_home,
             _dbt_source_project,
-
-            coalesce(finalsite_contact_id, personid) as person_identity,
+            person_identity,
         from {{ ref("int_students__contacts") }}
     ),
 
