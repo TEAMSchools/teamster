@@ -530,7 +530,10 @@ models:
         data_type: float64
       - name: dcid
         data_type: int64
-        description: Unique identifier for this table. Indexed. Required.
+        description:
+          Unique identifier for this table. Indexed. Required. PowerSchool
+          retains four placeholder rows per district carrying dcid -100,
+          student_number 0, and enroll_status -100. They are not real students.
         constraints:
           - type: primary_key
       - name: districtentrygradelevel
@@ -540,7 +543,12 @@ models:
           on reports and/or custompages.
       - name: enroll_status
         data_type: int64
-        description: The enrollment status of the student.
+        description:
+          The enrollment status of the student. Values are -1 pre-registered, 0
+          active, 1 inactive, 2 withdrawn, and 3 graduated. The value is
+          student-level, not per-stint — every enrollment stint for a student
+          carries the same value, and it reflects current status only, never
+          status on a past date.
       - name: enrollment_schoolid
         data_type: int64
         description:
