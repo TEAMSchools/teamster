@@ -9,6 +9,10 @@ models:
 
       Also serves as the membership list for `rpt_illuminate__roles`, which
       inner-joins it to decide which locations receive Illuminate roles.
+
+      Grain is Location_Name alone. Name is the parent campus and repeats across
+      sibling schools. The sheet carries no self-referential rows, so a campus
+      record resolves to a null campus name by design.
     columns:
       - name: Location_Name
         description: |
