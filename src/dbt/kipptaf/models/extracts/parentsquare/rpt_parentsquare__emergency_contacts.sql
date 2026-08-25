@@ -19,9 +19,6 @@ with
     ),
 
     contact_source as (
-        -- emergency_1..4 are the Finalsite emergency-contact custom-field sets.
-        -- ParentSquare's emergency file carries one phone, so collapse the typed
-        -- columns to a single best number, mobile first.
         select
             student_number,
             contact_slot,
@@ -67,16 +64,6 @@ with
     ),
 
     contacts as (
-        -- `contact_id` is keyed on (student, slot) rather than on
-        -- `finalsite_contact_id`, which is null for every emergency row: these
-        -- are scalar custom fields on the student's own Finalsite record, not
-        -- linked contact records, so (student, slot) is the true grain. The key
-        -- needs no region component — `student_number` is unique across the NJ
-        -- regions this view covers.
-        --
-        -- ParentSquare requires exactly 10 digits. A shorter value is an upstream
-        -- data-entry typo, so drop the number rather than send one ParentSquare
-        -- would reject along with the rest of the row.
         select
             student_number,
             contact_first_name,
@@ -107,6 +94,4 @@ inner join
     students as s
     on c.student_number = s.student_number
     and c.code_location = s.code_location
--- ParentSquare needs an email or a phone to reach an emergency contact with Smart
--- and Urgent Alerts, so a contact carrying neither is dropped.
 where c.email_current is not null or c.phone is not null

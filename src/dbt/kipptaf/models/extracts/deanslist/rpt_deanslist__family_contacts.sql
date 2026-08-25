@@ -58,12 +58,6 @@ select
 
     cast(null as string) as `Language`,
 
-    -- The DeansList template has no header for a number whose Finalsite type
-    -- was never set, so before this fallback such a number reached no column at
-    -- all and the family arrived uncallable. CellPhone is where it rides in:
-    -- across the NJ regions ~95% of the numbers that DO carry a type are Cell,
-    -- so it is the likeliest fit, and a landline sent here is no worse off than
-    -- the blank it replaces. A Finalsite-typed Cell still wins outright.
     coalesce(c.phone_mobile, c.phone_untyped) as `CellPhone`,
 
     -- person_identity is null on emergency slots, so the slot stands in there.
@@ -78,7 +72,4 @@ inner join
     on c.student_number = s.student_number
     and c._dbt_source_project = s._dbt_source_project
     and s.enroll_status = 0
--- DeansList's importer displays contacts in the order this file lists them per
--- student (no independent sort on their end), so Parent1/Parent2 must precede
--- Emergency here or families see emergency contacts ranked above parents.
 order by c.student_number asc, (c.contact_type = 'Emergency') asc, c.contact_type asc

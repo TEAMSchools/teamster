@@ -115,7 +115,6 @@ with
 
         union all
 
-        /* auto-generate ENR course with DSO "teacher" */
         select
             dsos.school_id as sections_schoolid,
 
