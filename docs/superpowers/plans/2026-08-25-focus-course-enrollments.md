@@ -973,7 +973,26 @@ git -C "$wt" push -u origin cbini/fix/claude-focus-course-enrollments
 ```
 
 Open the PR with `.github/pull_request_template.md` as the body, and
-`Refs #4925` plus the prerequisite issue reference.
+`Refs #4925` plus `Refs #4968`.
+
+**The PR body MUST carry the post-merge deploy step.**
+`base_powerschool__sections` converts from a table to a view. Per
+`src/dbt/CLAUDE.md`, `create or replace view` does not drop a pre-existing table
+at the same path — it silently keeps serving the stale table, with no error
+anywhere. Someone has to run this once after merge:
+
+```bash
+uv run dbt build --select base_powerschool__sections --full-refresh \
+  --project-dir src/dbt/kipptaf --target prod
+```
+
+Or an explicit
+`drop table if exists teamster-332318.kipptaf_powerschool.base_powerschool__sections`
+before the first prod run. That is a warehouse write, so it belongs in the
+user's terminal — never attempt it from a tool.
+
+`base_powerschool__course_enrollments` needs no such step: it is already a view,
+so its passthrough is a view-to-view change.
 
 ---
 
