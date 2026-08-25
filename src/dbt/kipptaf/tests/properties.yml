@@ -337,13 +337,15 @@ data_tests:
       Warns when a non-dropped course-enrollment (cc) record overlaps more than
       one school enrollment stint. dim_student_section_enrollments resolves
       these to a single stint (covering-first, else earliest), so a nonzero
-      count is a known, monitored condition rather than a failure. Baseline as
-      measured on the repaired test: 154 rows -- 16 Miami, 135 Newark, 3 Camden.
-      Almost all are genuine mid-year drop/re-enroll. Miami became visible only
-      with this change, which added the Focus branch upstream and made the
-      test's join, date predicate and drop filter null-safe; earlier baselines
-      predate all three and are not comparable. Growth against 154 signals new
-      boundary-spanning sections to review.
+      count is a known, monitored condition rather than a failure. Almost all
+      are genuine mid-year drop/re-enroll. Miami contributes 16, and that number
+      is stable across every environment measured. The New Jersey component
+      drifts with the live school year -- it read 135 in one build and 128 in CI
+      hours later -- so treat the total as roughly 150 rather than a fixed
+      number, and watch the Miami component and the trend instead. Miami became
+      visible only with this change, which added the Focus branch upstream and
+      made the test's join, date predicate and drop filter null-safe; earlier
+      baselines predate all three and are not comparable.
     config:
       meta:
         dagster:

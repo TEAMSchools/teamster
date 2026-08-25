@@ -20,4 +20,4 @@ select
     countif(student_enrollment_key is null) as orphaned_rows,
     safe_divide(countif(student_enrollment_key is null), count(*)) as orphan_rate,
 from miami_current_year
-having safe_divide(countif(student_enrollment_key is null), count(*)) > 0.15
+having orphan_rate > 0.15
