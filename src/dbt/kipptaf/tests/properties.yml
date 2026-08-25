@@ -337,8 +337,11 @@ data_tests:
       Warns when a non-dropped course-enrollment (cc) record overlaps more than
       one school enrollment stint. dim_student_section_enrollments resolves
       these to a single stint (covering-first, else earliest), so a nonzero
-      count is a known, monitored condition (baseline ~147, almost all genuine
-      mid-year drop/re-enroll) rather than a failure. Growth signals new
+      count is a known, monitored condition rather than a failure. Baseline is
+      now ~154 (~16 Miami, ~138 NJ) as of the Focus course-enrollments change --
+      the prior ~147 figure was NJ-only, because the test could not see Focus
+      rows before that change joined it on the neutral (student_number,
+      schoolid, academic_year, _dbt_source_project) key. Growth signals new
       boundary-spanning sections to review.
     config:
       meta:
