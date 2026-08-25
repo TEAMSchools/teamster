@@ -68,6 +68,21 @@ models:
           regions. Used with `_dbt_source_project` to key the contact person in
           the dimension — the id space is per-source-system, so the region is
           always part of the key.
+      - name: person_identity
+        data_type: string
+        description:
+          The contact's identity as a person, independent of the student they
+          are attached to and the slot they occupy — the Finalsite contact UUID
+          on the Finalsite branch, the Focus person id on the Focus branch. Null
+          for every emergency slot on both branches, which are scalar custom
+          fields on the student's own record rather than linked contact records;
+          a consumer keying on a person falls back to (student, slot) there.
+          `dim_student_contact_persons`, `bridge_student_contacts`, and
+          `rpt_deanslist__family_contacts` all key on this column, so they agree
+          on who is the same person.
+        config:
+          meta:
+            contains_pii: true
       - name: finalsite_contact_id
         data_type: string
         description:

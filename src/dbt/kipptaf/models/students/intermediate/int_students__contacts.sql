@@ -194,54 +194,73 @@ with
             cast(null as string) as finalsite_contact_id,
         from focus_slotted
         where student_number is not null
+    ),
+
+    all_contacts as (
+        select
+            student_number,
+            _dbt_source_project,
+            contact_slot,
+            personid,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+        from finalsite
+
+        union all
+
+        select
+            student_number,
+            _dbt_source_project,
+            contact_slot,
+            personid,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+        from focus
     )
 
 select
-    student_number,
-    _dbt_source_project,
-    contact_slot,
-    personid,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email_current,
-    phone_mobile,
-    phone_home,
-    phone_daytime,
-    phone_work,
-    phone_untyped,
-    phone_primary,
-    address_home,
-    is_emergency,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-from finalsite
+    *,
 
-union all
-
-select
-    student_number,
-    _dbt_source_project,
-    contact_slot,
-    personid,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email_current,
-    phone_mobile,
-    phone_home,
-    phone_daytime,
-    phone_work,
-    phone_untyped,
-    phone_primary,
-    address_home,
-    is_emergency,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-from focus
+    -- The contact's identity as a PERSON, independent of which student they are
+    -- attached to or which slot they occupy: the Finalsite contact UUID on the
+    -- Finalsite branch, the Focus person id on the Focus branch. Null for every
+    -- emergency slot on both branches -- those are scalar custom fields on the
+    -- student's own record, not linked contact records -- so a consumer keying
+    -- on a person must fall back to (student, slot) there.
+    --
+    -- Derived here rather than in each consumer: dim_student_contact_persons,
+    -- bridge_student_contacts, and rpt_deanslist__family_contacts all key on
+    -- this and must agree, or the DeansList extract and the marts disagree
+    -- about who is the same person.
+    coalesce(finalsite_contact_id, personid) as person_identity,
+from all_contacts

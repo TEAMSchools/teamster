@@ -2,14 +2,13 @@ with
     contacts as (
         select
             sc.contact_slot,
-            sc.finalsite_contact_id,
+            sc.person_identity,
             sc.contact_first_name,
             sc.contact_last_name,
-            sc.email,
+            sc.email_current,
             sc.relationship,
+            sc.student_number,
             sc._dbt_source_project,
-
-            safe_cast(xw.powerschool_student_number as int64) as student_number,
 
             -- DeansList phone fields accept only digits and `x` (extension); strip
             -- the E.164 canonical (leading `+`, etc.) to that shape.
@@ -37,14 +36,15 @@ with
                 then 'Parent2'
                 else 'Emergency'
             end as contact_type,
-        from {{ ref("int_finalsite__student_contacts") }} as sc
-        inner join
-            {{ ref("int_finalsite__contact_id_attributes") }} as xw
-            on sc.finalsite_enrollment_id = xw.finalsite_enrollment_id
-            and sc._dbt_source_project = xw._dbt_source_project
+        -- The network contact surface, not the Finalsite intermediates this
+        -- model used to join itself: int_students__contacts' Finalsite branch
+        -- IS that join (same two refs, same keys, same crosswalk filter), and
+        -- it carries `person_identity`, the shared contact-identity definition
+        -- the marts key on. The region filter stays because that model also
+        -- unions Miami's Focus contacts, which DeansList does not take.
+        from {{ ref("int_students__contacts") }} as sc
         where
             sc._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
-            and xw.powerschool_student_number is not null
             and (
                 sc.contact_slot in ('contact_1', 'contact_2')
                 or sc.contact_slot like 'emergency\\_%'
@@ -57,7 +57,7 @@ select
     c.contact_last_name as `ParentLastName`,
     c.phone_home as `HomePhone`,
     c.phone_work as `WorkPhone`,
-    c.email as `Email`,
+    c.email_current as `Email`,
     c.relationship as `Relationship`,
     c.contact_type as `ContactType`,
 
@@ -82,19 +82,23 @@ select
     -- key while taking on the other parent's name, phone, and email, dragging
     -- whatever DeansList attached to that key onto the wrong person.
     --
-    -- Emergency contacts have no UUID: they are scalar `emrg_N` custom fields
-    -- on the student's own record, not linked contact records, so the slot IS
-    -- their identity -- the same key `rpt_parentsquare__emergency_contacts`
-    -- uses, for the same reason.
+    -- Emergency contacts have no `person_identity`: they are scalar `emrg_N`
+    -- custom fields on the student's own record, not linked contact records, so
+    -- the slot IS their identity. Same split, and same reasoning, as
+    -- `bridge_student_contacts.student_contact_person_key`; the student prefix
+    -- is what takes this from the dimension's person grain down to DeansList's
+    -- (student, contact) grain, so a parent with two enrolled children gets one
+    -- key per child rather than one shared key.
     --
-    -- Readable rather than hashed like that sibling: a 6-digit student number
-    -- plus a 36-char UUID is 43 chars, so it fits, and staff can trace a row
-    -- back to its Finalsite contact by eye. No region component --
-    -- `student_number` is unique across the three NJ regions covered here.
+    -- Readable rather than hashed like the marts key: a 6-digit student number
+    -- plus a 36-char UUID is 43 chars, so it fits inside DeansList's 64, and
+    -- staff can trace a row back to its Finalsite contact by eye. No region
+    -- component -- `student_number` is unique across the three NJ regions
+    -- covered here.
     concat(
         cast(c.student_number as string),
         '-',
-        coalesce(c.finalsite_contact_id, c.contact_slot)
+        coalesce(c.person_identity, c.contact_slot)
     ) as `IntegrationKey`,
 from contacts as c
 inner join
