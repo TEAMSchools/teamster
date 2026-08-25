@@ -65,6 +65,8 @@ before Task 1.
   `src/dbt/kipptaf/models/students/intermediate/int_students__course_sections.sql`
 - Create:
   `src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_sections.yml`
+- Modify:
+  `src/dbt/kipptaf/models/powerschool/base/base_powerschool__sections.sql`
 
 **Interfaces:**
 
@@ -78,8 +80,9 @@ before Task 1.
   `sections_id`, `sections_schoolid` (INT64), `sections_course_number` (STRING),
   `sections_section_number` (STRING), `courses_dcid` (INT64),
   `terms_academic_year` (INT64), `teachernumber` (STRING), `is_ap_course`
-  (BOOL), `is_homeroom` (BOOL), `_dbt_source_project` (STRING). Task 2 and Task
-  3 both depend on these names.
+  (BOOL), `is_homeroom` (BOOL), `_dbt_source_project` (STRING). Task 2 depends
+  on these names. `base_powerschool__sections` keeps its existing name and full
+  column set as a passthrough, so its consumers need no edits.
 
 - [ ] **Step 1: Write the model**
 
@@ -248,18 +251,52 @@ models:
         data_type: string
 ```
 
-- [ ] **Step 3: Build the model**
+- [ ] **Step 3: Convert `base_powerschool__sections` to a passthrough**
+
+Replace the whole body. Match the wording of the existing
+`base_powerschool__student_enrollments` passthrough.
+
+```sql
+-- Compatibility passthrough. The section logic moved to
+-- int_students__course_sections, which carries both SIS branches; this model
+-- exists so the consumers listed in #3999 keep resolving while they migrate.
+-- Delete it once they have.
+select *, from {{ ref("int_students__course_sections") }}
+```
+
+Do this in the same commit as the new model. Leaving the union body in both
+models, even briefly, is duplicated logic.
+
+- [ ] **Step 4: Build both models**
 
 Run in the FOREGROUND — do not background it:
 
 ```bash
-uv run dbt build --select int_students__course_sections \
+uv run dbt build --select int_students__course_sections base_powerschool__sections+1 \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
 ```
 
 Expected: PASS, including the `unique_combination_of_columns` test.
 
-- [ ] **Step 4: Verify both branches populated**
+- [ ] **Step 5: Confirm the column set did not narrow**
+
+`base_powerschool__sections` consumers read columns the new model must still
+produce. Compare against prod:
+
+```sql
+select column_name
+from `teamster-332318.kipptaf_powerschool`.INFORMATION_SCHEMA.COLUMNS
+where table_name = 'base_powerschool__sections'
+except distinct
+select column_name
+from `teamster-332318.zz_cbini_kipptaf_powerschool`.INFORMATION_SCHEMA.COLUMNS
+where table_name = 'base_powerschool__sections'
+```
+
+Expected: zero rows. Any row is a column a consumer reads that the new model
+dropped.
+
+- [ ] **Step 6: Verify both branches populated**
 
 ```sql
 select _dbt_source_project, terms_academic_year, count(*) as n
@@ -273,19 +310,21 @@ Expected: `kippmiami` present at `terms_academic_year = 2026` with roughly 5
 schools' worth of course periods, AND still present at 2025 from the archive. If
 Miami 2025 is missing, the year-scope filter is inverted.
 
-- [ ] **Step 5: Lint and commit**
+- [ ] **Step 7: Lint and commit**
 
 ```bash
 cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments && \
   /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   src/dbt/kipptaf/models/students/intermediate/int_students__course_sections.sql \
-  src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_sections.yml </dev/null
+  src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_sections.yml \
+  src/dbt/kipptaf/models/powerschool/base/base_powerschool__sections.sql </dev/null
 ```
 
 ```bash
 wt=/workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments
 git -C "$wt" add src/dbt/kipptaf/models/students/intermediate/int_students__course_sections.sql \
-  src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_sections.yml
+  src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_sections.yml \
+  src/dbt/kipptaf/models/powerschool/base/base_powerschool__sections.sql
 git -C "$wt" commit -m "feat(dbt): add int_students__course_sections with Focus branch"
 ```
 
@@ -299,6 +338,8 @@ git -C "$wt" commit -m "feat(dbt): add int_students__course_sections with Focus 
   `src/dbt/kipptaf/models/students/intermediate/int_students__course_enrollments.sql`
 - Create:
   `src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_enrollments.yml`
+- Modify:
+  `src/dbt/kipptaf/models/powerschool/base/base_powerschool__course_enrollments.sql`
 
 **Interfaces:**
 
@@ -313,8 +354,9 @@ git -C "$wt" commit -m "feat(dbt): add int_students__course_sections with Focus 
   `cc_course_number` (STRING), `sections_dcid` (INT64), `sections_schoolid`
   (INT64), `students_student_number` (INT64), `teachernumber` (STRING),
   `is_dropped_section` (BOOL), `is_dropped_course` (BOOL), `is_homeroom` (BOOL),
-  `region` (STRING), `_dbt_source_project` (STRING). Task 3 and Task 4 depend on
-  these names.
+  `region` (STRING), `_dbt_source_project` (STRING). Task 3 depends on these
+  names. `base_powerschool__course_enrollments` keeps its existing name and full
+  column set as a passthrough, so its 50-plus consumers need no edits.
 
 - [ ] **Step 1: Write the model**
 
@@ -478,18 +520,51 @@ models:
         data_type: int64
 ```
 
-- [ ] **Step 3: Build the model**
+- [ ] **Step 3: Convert `base_powerschool__course_enrollments` to a
+      passthrough**
+
+Replace the whole body.
+
+```sql
+-- Compatibility passthrough. The course enrollment logic moved to
+-- int_students__course_enrollments, which carries both SIS branches; this
+-- model exists so the consumers listed in #3999 keep resolving while they
+-- migrate. Delete it once they have.
+select *, from {{ ref("int_students__course_enrollments") }}
+```
+
+Do this in the same commit as the new model. Leaving the union body in both
+models, even briefly, is duplicated logic.
+
+- [ ] **Step 4: Build both models**
 
 FOREGROUND only:
 
 ```bash
-uv run dbt build --select int_students__course_enrollments \
+uv run dbt build --select int_students__course_enrollments base_powerschool__course_enrollments+1 \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
 ```
 
 Expected: PASS.
 
-- [ ] **Step 4: Verify NJ parity and Miami presence**
+- [ ] **Step 5: Confirm the column set did not narrow**
+
+This model has more than 50 consumers, so a dropped column is the highest-risk
+failure in the whole plan.
+
+```sql
+select column_name
+from `teamster-332318.kipptaf_powerschool`.INFORMATION_SCHEMA.COLUMNS
+where table_name = 'base_powerschool__course_enrollments'
+except distinct
+select column_name
+from `teamster-332318.zz_cbini_kipptaf_powerschool`.INFORMATION_SCHEMA.COLUMNS
+where table_name = 'base_powerschool__course_enrollments'
+```
+
+Expected: zero rows.
+
+- [ ] **Step 6: Verify NJ parity and Miami presence**
 
 ```sql
 select _dbt_source_project, cc_academic_year, count(*) as n
@@ -511,91 +586,21 @@ Expected, against the measurements in the spec:
 NJ figures must match exactly. A changed NJ number means the year-scope filter
 leaked past Miami.
 
-- [ ] **Step 5: Lint and commit**
+- [ ] **Step 7: Lint and commit**
 
-Same two commands as Task 1 Step 5, with this task's two paths.
+Same trunk check as Task 1 Step 7, with this task's three paths.
 
 ```bash
+wt=/workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments
+git -C "$wt" add src/dbt/kipptaf/models/students/intermediate/int_students__course_enrollments.sql \
+  src/dbt/kipptaf/models/students/intermediate/properties/int_students__course_enrollments.yml \
+  src/dbt/kipptaf/models/powerschool/base/base_powerschool__course_enrollments.sql
 git -C "$wt" commit -m "feat(dbt): add int_students__course_enrollments with Focus branch"
 ```
 
 ---
 
-### Task 3: Convert the two `base_` models to passthroughs
-
-**Files:**
-
-- Modify:
-  `src/dbt/kipptaf/models/powerschool/base/base_powerschool__course_enrollments.sql`
-- Modify:
-  `src/dbt/kipptaf/models/powerschool/base/base_powerschool__sections.sql`
-
-**Interfaces:**
-
-- Consumes: `int_students__course_enrollments` and
-  `int_students__course_sections` from Tasks 1 and 2.
-- Produces: unchanged column sets at both existing model names, so all 50-plus
-  consumers keep resolving without edits.
-
-- [ ] **Step 1: Replace both bodies**
-
-Match the wording of the existing `base_powerschool__student_enrollments`
-passthrough exactly.
-
-```sql
--- Compatibility passthrough. The course enrollment logic moved to
--- int_students__course_enrollments, which carries both SIS branches; this
--- model exists so the consumers listed in #3999 keep resolving while they
--- migrate. Delete it once they have.
-select *, from {{ ref("int_students__course_enrollments") }}
-```
-
-```sql
--- Compatibility passthrough. The section logic moved to
--- int_students__course_sections, which carries both SIS branches; this model
--- exists so the consumers listed in #3999 keep resolving while they migrate.
--- Delete it once they have.
-select *, from {{ ref("int_students__course_sections") }}
-```
-
-- [ ] **Step 2: Confirm the column set did not narrow**
-
-Both models previously carried columns the new `int_students__` models must
-still produce. Compare against prod before trusting the build:
-
-```sql
-select column_name
-from `teamster-332318.kipptaf_powerschool`.INFORMATION_SCHEMA.COLUMNS
-where table_name = 'base_powerschool__course_enrollments'
-except distinct
-select column_name
-from `teamster-332318.zz_cbini_kipptaf_powerschool`.INFORMATION_SCHEMA.COLUMNS
-where table_name = 'base_powerschool__course_enrollments'
-```
-
-Expected: zero rows. Any row is a column a consumer reads that the new model
-dropped.
-
-- [ ] **Step 3: Build both plus immediate children**
-
-FOREGROUND only:
-
-```bash
-uv run dbt build --select base_powerschool__course_enrollments+1 base_powerschool__sections+1 \
-  --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-focus-course-enrollments/src/dbt/kipptaf
-```
-
-Expected: PASS.
-
-- [ ] **Step 4: Lint and commit**
-
-```bash
-git -C "$wt" commit -m "refactor(dbt): make base_powerschool course models passthroughs"
-```
-
----
-
-### Task 4: Repoint `dim_student_section_enrollments`
+### Task 3: Repoint `dim_student_section_enrollments`
 
 **Files:**
 
@@ -684,7 +689,7 @@ git -C "$wt" commit -m "fix(dbt): join section enrollments to stints on the neut
 
 ---
 
-### Task 5: Whole-branch validation
+### Task 4: Whole-branch validation
 
 **Files:**
 
@@ -693,7 +698,7 @@ git -C "$wt" commit -m "fix(dbt): join section enrollments to stints on the neut
 
 **Interfaces:**
 
-- Consumes: every model from Tasks 1 through 4.
+- Consumes: every model from Tasks 1 through 3.
 - Produces: no model. A warn-severity test plus recorded validation evidence.
 
 - [ ] **Step 1: Write the warn-severity teacher test**
