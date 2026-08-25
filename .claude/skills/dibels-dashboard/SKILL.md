@@ -5,7 +5,7 @@ description: >-
   Bright Spots tracker (#4952), the PM/aimline migration (#3834), benchmark
   completion tracking (#4902), or anything touching
   stg_google_sheets__dibels_foundation_goals,
-  stg_google_sheets__dibels_brightspot_goals,
+  stg_google_sheets__dibels_brightspot_goals, rpt_tableau__dibels_brightspots,
   rpt_gsheets__dibels_bm_goals_calculations, int_amplify__all_assessments, or
   rpt_tableau__dibels_dashboard and their lineage.
 ---
@@ -26,31 +26,66 @@ here rather than starting a separate skill:
 Builds on the benchmark path, not PM/aimline -- the two tracks are unblocked and
 separate. Full spec: issue #4952.
 
-**Architecture decision, made mid-build: Bright Spots does NOT get a new
-reporting model.** It fits into the existing `rpt_tableau__dibels_dashboard`
-(student-grain, one row per student/period/measure). That model already carries
-school/region-level _aggregates_ joined onto every student row (e.g.
-`n_admin_season_school_gl_at_above`, sourced from
-`stg_google_sheets__dibels_bm_goals`) -- Bright Spots columns follow the same
-pattern: a school/grade/period/population aggregate joined onto student rows,
-not a standalone model.
+**Architecture, settled after three reversals mid-build:** Bright Spots is its
+own standalone report, `rpt_tableau__dibels_brightspots` -- NOT folded into the
+existing `rpt_tableau__dibels_dashboard`, and NOT split into a separate `int_`
+feeding a passthrough `rpt_`. An earlier pass tried fitting it into the existing
+dashboard model (school/region aggregates joined onto its student-grain rows,
+the way `n_admin_season_school_gl_at_above` already works there via
+`stg_google_sheets__dibels_bm_goals`); the next pass split the aggregate logic
+into its own `int_amplify__dibels_brightspot_status` with a thin `rpt_` wrapper
+selecting straight through it. That wrapper did zero transformation, which
+defeats the point of the intermediate/report split (the convention exists to
+buffer external consumers from internal schema evolution -- a bare passthrough
+buys nothing over just consuming the `int_` directly, and reads as accidental
+indirection to a reviewer). Landed on one model doing all the work, named `rpt_`
+since Tableau reads it directly. If a real second consumer or a real
+transformation shows up later, split it back out then -- not preemptively.
 
-**But that existing goals join can't be reused as-is.**
-`stg_google_sheets__dibels_bm_goals` is a **padded** manual-freeze snapshot
-(copy-pasted from `rpt_gsheets__dibels_bm_goals_calculations`'s padded output).
-Bright Spots must use **unpadded** goals (T&L confirmed, see #4952). So Bright
-Spot columns need their own aggregate, computed from the retrofitted (unpadded)
-`stg_google_sheets__dibels_foundation_goals`, joined in _alongside_ the existing
-padded columns -- not replacing them.
+Reads the same student population as `rpt_tableau__dibels_dashboard` (Reading
+`iready_subject`, excludes self-contained and out-of-district,
+active/withdrawn/graduated enrollment), scoped to **Benchmark Composite only**
+-- this tracker does not use PM data at all.
 
-**A separate long intermediate is still needed upstream of that join**, grain =
-student x period x population. A single kid can belong to more than one
-population at once (an IEP kid needs both an "All" row and an "IEP" row, each
-with its own tier), which a flat wide table can't represent. That long table is
-what computes the school/grade/period/population aggregate and tier, which then
-gets joined onto `rpt_tableau__dibels_dashboard`'s student rows by (school,
-grade, period) -- fanning out to however many population rows apply to each
-student.
+**Grain is academic_year / region / grade_level / period / population /
+goal_type -- aggregate, not student-level.** A student can contribute to more
+than one population row (an IEP student counts toward both All and IEP), which
+is exactly why this can't be flat columns on a student-grain table -- it would
+need a different join-with-membership-filter per population, which is what made
+folding into the existing dashboard model awkward enough to abandon.
+
+**Unpadded goals, not the existing padded ones.**
+`stg_google_sheets__dibels_bm_goals` (feeding the existing dashboard) is a
+**padded** manual-freeze snapshot. Bright Spots uses the retrofitted (unpadded)
+`stg_google_sheets__dibels_foundation_goals` directly -- a separate goal source,
+not a shared join.
+
+**Population membership, at the student level**: `All` always; `IEP` when
+`iep_status = 'Has IEP'` (string, confirmed via data -- NOT a boolean); `MLL`
+when `lep_status` (boolean, on `int_extracts__student_enrollments_subjects`).
+Fan a student's composite row out to 1-3 population rows via
+`cross join unnest(array_concat(['All'], if(iep_status = 'Has IEP', ['IEP'], []), if(lep_status, ['MLL'], [])))`
+-- avoids a 3-way `UNION ALL` and any subquery.
+
+**`foundation_measure_standard_level` (on `int_amplify__all_assessments`), not
+`aggregated_measure_standard_level`, is the field to aggregate on.** The latter
+is only a 2-way split (`At/Above` / `Below/Well Below`) used by the existing
+dashboard's padded columns -- too coarse for Bright Spots, which needs
+`Well Below` isolated from plain `Below` to match the Well Below goal type
+exactly. `foundation_measure_standard_level` already has the right 3-way split
+and was built for exactly this reconciliation (it's also what
+`rpt_gsheets__dibels_bm_goals_calculations` joins on).
+
+**Gap rounding — a real bug found by row-count sanity-checking, not guessed.**
+`gap` used to round to 2 decimal places, and rows would silently vanish: Newark
+AY2025 K EOY All At/Above had attained 81.72% vs a 77% goal, a gap of 4.72 --
+inside neither On Track (`0` to `4`) nor Bright Spot (`>= 5`). T&L's thresholds
+are written as whole numbers with no stated rule for a continuous value landing
+between two adjacent boundaries. Fixed by rounding `gap` to the nearest whole
+point before the tier join. Caught by comparing actual row counts against the
+expected combinatorics (grades x periods x populations x goal_types) rather than
+trusting a clean build -- the join was an `INNER JOIN`, so a row with no
+matching tier just disappears with no error.
 
 ## Why this skill exists
 
