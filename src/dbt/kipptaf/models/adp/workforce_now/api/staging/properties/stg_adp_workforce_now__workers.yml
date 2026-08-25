@@ -11,7 +11,12 @@ models:
       have short_name and long_name sub-fields; ADP returns long_name instead of
       short_name when the value exceeds 20 characters. legal_address is the
       primary or secondary legal address; other_personal_addresses contains
-      non-legal addresses.
+      non-legal addresses. There is no SCD2 tombstone for disappearance. A
+      worker hard-deleted or merged in ADP vanishes from the daily snapshots
+      without a terminated status row, so its final record stays open at
+      9999-12-31 with is_current_record true indefinitely. That ghost flows
+      downstream into stg_people__employee_numbers, int_people__staff_roster,
+      and the rpt_idauto__staff_roster login feed.
     columns:
       - name: associate_oid
         data_type: string
