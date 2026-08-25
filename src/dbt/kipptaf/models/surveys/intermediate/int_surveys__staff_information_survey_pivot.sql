@@ -66,7 +66,6 @@ select
     employee_number,
     last_submitted_timestamp,
 
-    /* pivot cols */
     additional_languages,
     cert_barriers,
     cert_out_of_state_details,

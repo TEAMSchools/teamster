@@ -53,7 +53,11 @@ models:
           guardian's own gender where gender is populated. Emergency rows carry
           the Finalsite emrg_N relationship label through the same crosswalk and
           have no gender to split on. Anything without a Focus equivalent
-          becomes None.
+          becomes None. Focus itself does not enforce this vocabulary — a small
+          number of un-crosswalked lowercase values already sit in prod Focus —
+          so the `accepted_values` test on this column is the only gate. The
+          accepted domain was verified against live Focus (13 values, no
+          'Emergency').
         data_tests:
           - not_null:
               config:

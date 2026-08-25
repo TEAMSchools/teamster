@@ -45,9 +45,6 @@ with
             and grade_level <= 8
     ),
 
-    /* ============================================================
-     * TEACHER MANAGER LOOKUP — homeroom advisor's "reports to"
-     * ============================================================ */
     team_manager_raw as (
         select
             e.school,
@@ -75,9 +72,6 @@ with
         }}
     ),
 
-    /* ============================================================
-     * ATTENDANCE — ADA and Chronic Absence (weekly, by homeroom/grade)
-     * ============================================================ */
     ada_running as (
         select student_number, academic_year, week_start_monday, ada_running,
         from {{ ref("int_topline__ada_running_weekly") }}
@@ -178,9 +172,6 @@ with
         group by region, school, grade_level, week_start_monday
     ),
 
-    /* ============================================================
-     * ASSESSMENT — Internal formative proficiency (weekly, by homeroom/grade)
-     * ============================================================ */
     assessment_responses as (
         select
             powerschool_student_number,
@@ -263,9 +254,6 @@ with
             a.module_code
     ),
 
-    /* ============================================================
-     * CULTURE — DeansList referral counts by tier (weekly, by homeroom/grade)
-     * ============================================================ */
     dl_incidents as (
         select
             student_school_id,
@@ -408,9 +396,6 @@ with
         group by ew.region, ew.school, ew.grade_level, ew.week_start_monday, dl.category
     ),
 
-    /* ============================================================
-     * GRADES — Failure rate by academic section + term
-     * ============================================================ */
     section_enrollments as (
         select
             enr._dbt_source_relation,
@@ -599,10 +584,6 @@ with
         group by e.region, e.school, e.grade_level, g.week_start_monday
     )
 
-/* ============================================================
- * FINAL UNION — all metrics in long format
- * ============================================================ */
-/* 1. ADA by homeroom + week */
 select
     'Attendance' as domain,
     cast(null as string) as discipline,
@@ -622,7 +603,6 @@ from ada_homeroom_week
 
 union all
 
-/* 2. ADA by grade level + week */
 select
     'Attendance' as domain,
     cast(null as string) as discipline,
@@ -642,7 +622,6 @@ from ada_gradelevel_week
 
 union all
 
-/* 3. % Chronically Absent (ADA <= 90%) by homeroom + week */
 select
     'Attendance' as domain,
     cast(null as string) as discipline,
@@ -662,7 +641,6 @@ from chronic_homeroom_week
 
 union all
 
-/* 4. % Chronically Absent (ADA <= 90%) by grade level + week */
 select
     'Attendance' as domain,
     cast(null as string) as discipline,
@@ -682,7 +660,6 @@ from chronic_gradelevel_week
 
 union all
 
-/* 5. Assessment proficiency by homeroom + week */
 select
     'Assessment' as domain,
     discipline,
@@ -702,7 +679,6 @@ from proficiency_homeroom_week
 
 union all
 
-/* 6. Assessment proficiency by grade level + week */
 select
     'Assessment' as domain,
     discipline,
@@ -722,7 +698,6 @@ from proficiency_gradelevel_week
 
 union all
 
-/* 7. DeansList referrals - All by homeroom + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -742,7 +717,6 @@ from dl_homeroom_week
 
 union all
 
-/* 8. DeansList referrals - High by homeroom + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -762,7 +736,6 @@ from dl_homeroom_week
 
 union all
 
-/* 9. DeansList referrals - Middle by homeroom + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -782,7 +755,6 @@ from dl_homeroom_week
 
 union all
 
-/* 10. DeansList referrals - Low by homeroom + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -802,7 +774,6 @@ from dl_homeroom_week
 
 union all
 
-/* 11. DeansList referrals - All by grade level + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -822,7 +793,6 @@ from dl_gradelevel_week
 
 union all
 
-/* 12. DeansList referrals - High by grade level + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -842,7 +812,6 @@ from dl_gradelevel_week
 
 union all
 
-/* 13. DeansList referrals - Middle by grade level + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -862,7 +831,6 @@ from dl_gradelevel_week
 
 union all
 
-/* 14. DeansList referrals - Low by grade level + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -882,7 +850,6 @@ from dl_gradelevel_week
 
 union all
 
-/* 15. DeansList referrals by category, homeroom + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -902,7 +869,6 @@ from dl_category_homeroom_week
 
 union all
 
-/* 16. DeansList referrals by category, grade level + week */
 select
     'Culture' as domain,
     cast(null as string) as discipline,
@@ -922,7 +888,6 @@ from dl_category_gradelevel_week
 
 union all
 
-/* 17. Failure rate by section + term */
 select
     'Grades' as domain,
     cast(null as string) as discipline,
@@ -942,7 +907,6 @@ from section_grades_raw
 
 union all
 
-/* 18. Avg weighted Y1 GPA by homeroom + week */
 select
     'Academics' as domain,
     cast(null as string) as discipline,
@@ -962,7 +926,6 @@ from gpa_homeroom_week
 
 union all
 
-/* 19. Avg weighted Y1 GPA by grade level + week */
 select
     'Academics' as domain,
     cast(null as string) as discipline,

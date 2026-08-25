@@ -22,7 +22,6 @@ with
         where d.syear = {{ var("current_academic_year") }} and d.end_date is null
     ),
 
-    -- entry branch: student-year absent from Focus -> send the entry row
     entries as (
         select d.*,
         from desired as d

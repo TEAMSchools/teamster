@@ -1,10 +1,4 @@
 with
-    -- NJ Finalsite branch: the SIS-agnostic student-contacts union (cutover
-    -- regions only — the region scope lives in int_finalsite__student_contacts),
-    -- reduced to enrolled students by crosswalking the Finalsite enrollment id
-    -- to a PowerSchool student number. The crosswalk union also carries Miami's
-    -- Focus contacts, but they never match here because
-    -- int_finalsite__student_contacts unions only cutover regions.
     finalsite as (
         select
             fc.contact_slot,
@@ -89,14 +83,6 @@ with
         select *, 'contact_1' as contact_slot, from focus_base where sort_order = 1
     ),
 
-    -- Every emergency-flagged link is ranked, including the sort_order 1 row
-    -- that also lands in contact_1 — the two are distinct contact_slot values,
-    -- so the model's (student_number, _dbt_source_project, contact_slot) grain
-    -- holds and one person may legitimately occupy both slots. person_id breaks
-    -- sort_order ties so slot assignment is stable across rebuilds. Capped at 4
-    -- to match the outgoing PowerSchool branch: int_students__contacts_pivot
-    -- enumerates a fixed slot list ending at emergency_4, so higher ranks would
-    -- materialize rows no consumer reads.
     focus_emergency_ranked as (
         select
             *,

@@ -1,9 +1,4 @@
 with
-    -- Focus's own school_id is its internal id (14, 15, 58...), not the
-    -- network school number, and it is a different value from the
-    -- "school_number" the focus package itself exposes (a Florida school code
-    -- like 2008A). Resolve through both hops, matching the Focus branch of
-    -- int_students__schools.
     focus_schools as (
         select s.id as focus_school_id, loc.powerschool_school_id as schoolid,
         from {{ ref("int_focus__schools") }} as s
@@ -12,9 +7,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- quarter_semester and is_within_dates are derived in
-    -- stg_focus__marking_periods; this model only resolves Focus's internal
-    -- school id to the network one and applies the filters below.
     focus_marking_periods as (
         select
             mp._dbt_source_relation,
@@ -42,16 +34,6 @@ with
         where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2018
     ),
 
-    -- Miami school-year, semester, and quarter definitions from Focus,
-    -- conformed to the PowerSchool terms vocabulary so they merge into the
-    -- network terms spine below by column name (full union all
-    -- corresponding). yearid and fiscal_year have no Focus source and are
-    -- derived from the verified network-wide formulas (yearid = academic_year
-    -- - 1990, fiscal_year = academic_year + 1). term, term_start_date,
-    -- term_end_date, semester, and is_current_term are populated only for
-    -- quarter rows, matching the quarter-only grain the former
-    -- int_powerschool__terms consumers expect -- they filter this model to
-    -- term is not null at the call site instead of a second conform model.
     focus_conformed as (
         select
             _dbt_source_relation,
@@ -77,13 +59,6 @@ with
         from focus_marking_periods
     ),
 
-    -- int_powerschool__terms resolves quarter dates and codes through termbins
-    -- rather than the terms table's own quarter rows -- the two disagree on
-    -- dates for some schools (termbins carries the actual in-session start
-    -- date; the raw quarter row often defaults to a placeholder). termbins is
-    -- what every existing quarter-grain consumer already reads, so its columns
-    -- are attached to the matching raw terms row below rather than recomputed
-    -- from firstday / lastday.
     powerschool_quarters as (
         select
             schoolid,
@@ -134,8 +109,6 @@ with
             and p.rn = 1
     ),
 
-    -- Focus is Miami's system of record for term definitions, so the frozen
-    -- archive contributes no Miami rows.
     powerschool_conformed as (
         select *, from powerschool_joined where _dbt_source_project != 'kippmiami'
     )

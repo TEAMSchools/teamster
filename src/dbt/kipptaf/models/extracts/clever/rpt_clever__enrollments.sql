@@ -19,7 +19,6 @@ where
 
 union all
 
-/* ENR sections */
 select
     schoolid as school_id,
 

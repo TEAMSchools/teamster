@@ -26,7 +26,6 @@ select
     cast(total_lesson_time_on_task_min as int) as total_lesson_time_on_task_min,
     cast(percent_all_lessons_passed as numeric) as percent_all_lessons_passed,
 
-    /* math */
     cast(
         i_ready_algebra_and_algebraic_thinking_lessons_completed as int
     ) as algebra_and_algebraic_thinking_lessons_completed,
@@ -154,7 +153,6 @@ select
         i_ready_pro_whole_numbers_and_operations_skills_successful as int
     ) as whole_numbers_and_operations_skills_successful,
 
-    /* ela */
     cast(
         i_ready_comprehension_close_reading_lessons_completed as int
     ) as comprehension_close_reading_lessons_completed,

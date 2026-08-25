@@ -82,7 +82,6 @@ with
 
         union all
 
-        /* T&L/EDs/Data to all schools under CMO */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -105,7 +104,6 @@ with
 
         union all
 
-        /* all region */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -123,7 +121,6 @@ with
 
         union all
 
-        /* all NJ */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
