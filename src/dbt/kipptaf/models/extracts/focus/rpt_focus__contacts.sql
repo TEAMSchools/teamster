@@ -327,10 +327,6 @@ with
     ),
 
     crosswalked as (
-        -- Focus does not enforce STUDENT_RELATION, and 12 rows of
-        -- un-crosswalked lowercase feed values are already sitting in prod
-        -- Focus. The accepted_values test on this output is the only gate.
-        -- Domain verified against live Focus: 13 values, no 'Emergency'.
         -- Gender is present only on the guardian branch (a guardian's own
         -- stg_finalsite__contacts row); emergency rows are custom fields on
         -- the student's record and fall through to the non-gendered value.
