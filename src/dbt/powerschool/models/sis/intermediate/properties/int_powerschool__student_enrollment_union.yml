@@ -1,5 +1,10 @@
 models:
   - name: int_powerschool__student_enrollment_union
+    description: >-
+      One row per student-school enrollment event. Graduated students carry
+      placeholder rows with null entry and exit dates, one row per academic year
+      per student and district. Surrogate keys must include academic_year or
+      those rows collide.
     columns:
       - name: studentid
         data_type: int64
@@ -14,8 +19,14 @@ models:
       - name: schoolid
         data_type: int64
       - name: entrydate
+        description: >-
+          Date the student entered the school for this stint. Null on graduate
+          placeholder rows, which a date-range join silently drops.
         data_type: date
       - name: exitdate
+        description: >-
+          Date the student left the school for this stint. Null on graduate
+          placeholder rows, which a date-range join silently drops.
         data_type: date
       - name: entrycode
         data_type: string
