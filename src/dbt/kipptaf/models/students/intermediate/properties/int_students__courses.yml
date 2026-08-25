@@ -1,0 +1,34 @@
+models:
+  - name: int_students__courses
+    description: >-
+      SIS-neutral course spine. One row per course per source project. Unions
+      `stg_powerschool__courses` with Miami's Focus courses, conformed to the
+      PowerSchool column vocabulary and deduplicated to the most recent school
+      year per course number. Exists so `dim_courses` can resolve the course FK
+      for Miami sections.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - course_number
+              - _dbt_source_project
+    columns:
+      - name: course_number
+        description: >-
+          Course number. For Miami, the Focus course `short_name`, which holds
+          the Florida state course code. This must match the
+          `sections_course_number` that `int_students__course_sections` writes
+          for Focus, because `dim_course_sections.course_key` is derived from
+          it.
+        data_type: string
+      - name: credittype
+        description: >-
+          Credit type. Null for Miami: Focus has no equivalent field.
+        data_type: string
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`).
+        data_type: string
