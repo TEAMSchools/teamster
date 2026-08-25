@@ -70,7 +70,8 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          KIPP academic year (July start) derived from yearid + 1990.
+          KIPP academic year (July start). Derived from yearid + 1990 on the
+          PowerSchool branch; native on Focus-sourced rows.
 
       - name: attendance_code
         data_type: string

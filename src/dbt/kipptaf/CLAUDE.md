@@ -211,6 +211,14 @@ actual SFTP feed. Per feed: addresses/contacts/demographics import-once
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
+## Reuse existing entity identity
+
+**Before deriving an entity key in a new model, grep the marts.**
+`dim_student_contact_persons` and `bridge_student_contacts` already define
+`person_identity` and `student_contact_person_key`; an extract that invents its
+own contact key silently disagrees with them. A shared identity expression
+belongs in the `int_` model every consumer reads, not copy-pasted per consumer.
+
 ## `dbt_project.yml` Inherited Defaults
 
 These are set at directory level — **do not repeat per-model** or flag their

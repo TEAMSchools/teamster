@@ -62,7 +62,7 @@ with
             {{ ref("int_people__location_crosswalk") }} as lc
             on b.school_name = lc.location_name
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as w
+            {{ ref("int_students__calendar_week") }} as w
             on b.behavior_date between w.week_start_monday and w.week_end_sunday
             and w._dbt_source_project = b._dbt_source_project
             and lc.location_powerschool_school_id = w.schoolid
