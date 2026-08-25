@@ -48,8 +48,7 @@ with
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
-            a.response_type_description,  -- Group name
-            /* Points earned... looks to be # of questions correct on Illuminate */
+            a.response_type_description,
             a.points,
 
             ssk.test_type,
@@ -65,7 +64,7 @@ with
             ssk.expected_total_subjects_tested,
             ssk.course_discipline,
 
-            initcap(a.response_type) as response_type,  -- Group or overall
+            initcap(a.response_type) as response_type,
 
             format_date('%B', a.date_taken) as test_month,
 
@@ -110,7 +109,6 @@ with
     ),
 
     scores as (
-        -- group scores
         select
             academic_year,
             powerschool_student_number,
@@ -144,7 +142,6 @@ with
 
         union all
 
-        -- subject scores
         select
             academic_year,
             powerschool_student_number,
@@ -182,7 +179,6 @@ with
 
         union all
 
-        -- total scores
         select
             academic_year,
             powerschool_student_number,

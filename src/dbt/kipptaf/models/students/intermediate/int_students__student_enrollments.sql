@@ -48,16 +48,6 @@ with
         where rn_year = 1
     ),
 
-    -- Miami enrollment from Focus, conformed to the PowerSchool column names
-    -- and value domains so it merges into the NJ branch below by column name.
-    -- PowerSchool-only columns -- dcids, NJ state fields, exit_code_kf and
-    -- exit_code_ts -- null-fill automatically.
-    --
-    -- Not conformed because Focus has no source: is_self_contained and
-    -- is_out_of_district (no special-programs equivalent), the exit codes (no
-    -- KIPP Forward tracking), advisor_teachernumber (no network teacher
-    -- number), rn_school, rn_undergrad, is_enrolled_y1, is_enrolled_recent,
-    -- track and cohort_graduated. These null-fill on the Miami side.
     focus_conformed as (
         select
             enr._dbt_source_relation,
@@ -130,8 +120,6 @@ with
             and enr._dbt_source_project = adv._dbt_source_project
     ),
 
-    -- Window derivations over the conformed Focus rows, matching the ones the
-    -- district base_ model computes for the NJ branch.
     focus_windowed as (
         select
             *,

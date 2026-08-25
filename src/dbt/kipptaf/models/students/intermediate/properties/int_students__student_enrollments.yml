@@ -13,8 +13,11 @@ models:
 
       Also carries the demographic data and student identifiers the enrollment
       consumers read. Columns PowerSchool supplies and Focus does not are null
-      for Miami -- special-program placement, the KIPP Forward exit codes, and
-      the advisor teacher number.
+      for Miami -- `is_self_contained` and `is_out_of_district` (no
+      special-programs equivalent in Focus), the KIPP Forward exit codes
+      (`exit_code_kf`, `exit_code_ts`), `advisor_teachernumber` (no network
+      teacher number in Focus), `rn_school`, `rn_undergrad`,
+      `is_enrolled_y1`, `is_enrolled_recent`, `track`, and `cohort_graduated`.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

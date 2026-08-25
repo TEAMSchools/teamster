@@ -1,9 +1,4 @@
 with
-    -- The section's Lead Teacher is already on the schedule row; co-teachers
-    -- are a separate assignment keyed by course_period_id + syear. Union both
-    -- so every staff member who taught a section is credited with that
-    -- section's scheduled students, mirroring the PowerSchool model's Lead
-    -- Teacher + Co-teacher roledef union in section_teacher.
     teacher_students as (
         select
             s.teacher_id as staff_id,
@@ -107,11 +102,6 @@ with
         from grade_level_counts_window
     ),
 
-    -- Miami teacher grade-level distribution from Focus, conformed to the
-    -- PowerSchool teacher_grade_levels vocabulary so it merges into the network
-    -- spine below by column name (full union all corresponding). yearid and
-    -- _dbt_source_relation have no Focus source and are omitted; the union
-    -- null-fills them.
     focus_conformed as (
         select
             teachernumber,
@@ -130,8 +120,6 @@ with
         from percentages
     ),
 
-    -- Focus is Miami's system of record for scheduling, so the frozen archive
-    -- contributes no Miami rows.
     powerschool_conformed as (
         select *,
         from {{ ref("int_powerschool__teacher_grade_levels") }}
