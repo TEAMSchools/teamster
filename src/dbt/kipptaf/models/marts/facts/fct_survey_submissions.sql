@@ -223,7 +223,6 @@ with
             and ms.campaign_academic_year is not null
     ),
 
-    /* Combine all staff-type submissions (live SCD + Manager + archive) */
     combined_staff as (
         select
             {{

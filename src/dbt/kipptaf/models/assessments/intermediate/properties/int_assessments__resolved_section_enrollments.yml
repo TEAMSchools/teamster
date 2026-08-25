@@ -84,8 +84,10 @@ models:
       - name: administration_period
         data_type: string
         description: >-
-          Administration window label within the academic year. Populated only
-          for state score rows; NULL for internal score rows.
+          Administration window label within the academic year. Populated for
+          state, iReady, STAR, and DIBELS score rows; NULL for internal score
+          rows. For iReady rows this is the reporting-terms window (BOY / MOY /
+          EOY / Outside Round) from `test_round`.
         config:
           meta:
             source_column: int_pearson__all_assessments.administration_period
@@ -94,9 +96,9 @@ models:
         description: >-
           Subject area of the assessment, aligned to illuminate_subject_area
           values in int_assessments__course_enrollments. For internal scores
-          this is the scaffold subject_area; for state scores it is the
-          state-to-course mapped illuminate_subject column from the state
-          intermediates.
+          this is the scaffold subject_area; for state, iReady, STAR, and DIBELS
+          scores it is the `illuminate_subject` column mapped upstream (e.g.
+          Reading -> Text Study, Math -> Mathematics).
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area

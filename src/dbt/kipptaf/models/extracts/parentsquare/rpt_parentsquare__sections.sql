@@ -40,17 +40,6 @@ with
     ),
 
     section_owner as (
-        -- ParentSquare requires a staff_id on every section and exactly one
-        -- primary per section. Which of the Operations leaders owns a section
-        -- is a formality — their access to every school comes from their
-        -- rpt_parentsquare__staff rows, not from section membership — so this
-        -- picks one deterministically. Reading it from the staff feed rather than
-        -- restating the leader list guarantees the value resolves in staff.csv.
-        --
-        -- Grouping by region is what makes it resolve at the section's OWN
-        -- school: rpt_parentsquare__staff fans a leader across the schools of
-        -- their region only, so a single owner picked network-wide would dangle
-        -- in every other region's file.
         select code_location, min(staff_id) as staff_id,
         from {{ ref("rpt_parentsquare__staff") }}
         group by code_location

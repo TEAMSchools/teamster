@@ -24,9 +24,6 @@ with
             exclude_from_fte,
             pmrn,
 
-            -- Focus stores 0, not null, for a full-year schedule (mp = 'FY'), so
-            -- normalize it before joining or those rows read as unresolvable
-            -- marking-period ids
             nullif(marking_period_id, 0) as marking_period_id,
         from {{ ref("stg_focus__schedule") }}
     )

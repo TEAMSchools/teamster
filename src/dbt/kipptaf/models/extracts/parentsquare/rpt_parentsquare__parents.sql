@@ -19,9 +19,6 @@ with
     ),
 
     contact_source as (
-        -- contact_1 and contact_2 are the Finalsite Household 1 parent slots.
-        -- ParentSquare's parents file carries one voice fallback, so the typed
-        -- home phone is preferred and work is the backstop.
         select
             student_number,
             contact_first_name,
@@ -30,13 +27,6 @@ with
             email_current,
             _dbt_source_project as code_location,
 
-            -- A Finalsite number saved with no type label reaches none of the
-            -- typed columns, so without this fallback the parent has no mobile
-            -- at all -- and a parent carrying neither a mobile nor an email is
-            -- dropped below as undeliverable, which is how untyped-phone
-            -- families went missing from ParentSquare entirely. Nearly every
-            -- tenant number that does carry a type is a Cell, so an untyped
-            -- number is treated as the mobile candidate; a typed Cell wins.
             coalesce(phone_mobile, phone_untyped) as phone_mobile,
             coalesce(phone_home, phone_work) as phone_secondary,
         from {{ ref("int_students__contacts") }}
@@ -88,9 +78,6 @@ with
     ),
 
     contacts as (
-        -- ParentSquare requires exactly 10 digits. A shorter value is an upstream
-        -- data-entry typo, so drop the number rather than send one ParentSquare
-        -- would reject along with the rest of the row.
         select
             student_number,
             contact_first_name,
@@ -131,9 +118,6 @@ with
             students as s
             on c.student_number = s.student_number
             and c.code_location = s.code_location
-        -- ParentSquare needs an email or a mobile number to create a
-        -- contactable parent account, so a parent carrying neither is not
-        -- deliverable and is dropped.
         where c.email_current is not null or c.mobile is not null
     ),
 

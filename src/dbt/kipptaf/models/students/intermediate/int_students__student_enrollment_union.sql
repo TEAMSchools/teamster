@@ -43,10 +43,6 @@ with
         from {{ ref("int_focus__student_enrollments") }}
     ),
 
-    -- Focus is Miami's system of record for enrollment, and carries the full
-    -- history back to AY2018, so the frozen archive contributes no Miami rows
-    -- at all -- including its alumni graduate placeholders (enroll_status 3
-    -- with null entry/exit dates, one per academic year).
     powerschool_conformed as (
         select *,
         from {{ ref("int_powerschool__student_enrollment_union") }}

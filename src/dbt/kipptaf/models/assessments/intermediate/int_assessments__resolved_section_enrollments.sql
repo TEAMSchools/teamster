@@ -76,8 +76,6 @@ with
         where test_date is not null and localstudentidentifier is not null
     ),
 
-    -- FL state scores (FLDOE). administration_window is the FL analogue of
-    -- administration_period.
     state_fl_scores as (
         select
             student_number as powerschool_student_number,
@@ -95,9 +93,6 @@ with
         where test_date is not null and student_number is not null
     ),
 
-    -- iReady diagnostics. test_round is the reporting-terms IR window (BOY /
-    -- MOY / EOY / Outside Round); illuminate_subject maps Reading -> Text
-    -- Study, Math -> Mathematics upstream.
     iready_scores as (
         select
             student_id as powerschool_student_number,
@@ -267,7 +262,6 @@ with
         from scores
     ),
 
-    -- tier 1: subject-matching section active on the anchor date (half-open window)
     candidates_subject as (
         select
             s.powerschool_student_number,
@@ -307,7 +301,6 @@ with
     -- by the partition key; not a mask for upstream duplicates
     resolved_subject_keys as (select distinct score_grain_key, from candidates_subject),
 
-    -- scores that found no subject section, eligible for the homeroom tier
     scores_unresolved as (
         select s.*,
         from scores_mapped as s
@@ -315,7 +308,6 @@ with
         where cs.score_grain_key is null
     ),
 
-    -- tier 2: the student's homeroom section active on the anchor date
     candidates_homeroom as (
         select
             s.powerschool_student_number,

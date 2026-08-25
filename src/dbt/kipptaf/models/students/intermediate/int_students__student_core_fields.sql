@@ -1,7 +1,4 @@
 with
-    -- The staging model carries only studentsdcid, so resolve it to
-    -- student_number here. dcid is PowerSchool plumbing and stops at this
-    -- layer; the mart joins on student_number.
     powerschool as (
         select
             scf._dbt_source_relation,
@@ -15,7 +12,6 @@ with
             {{ ref("stg_powerschool__students") }} as s
             on scf.studentsdcid = s.dcid
             and scf._dbt_source_project = s._dbt_source_project
-        -- Miami's archive is superseded by the Focus branch below.
         where s._dbt_source_project != 'kippmiami'
     ),
 

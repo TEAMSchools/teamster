@@ -8,10 +8,6 @@ with
             s.student_e_mail_address as student_email,
             s.student_id as student_number,
 
-            -- The canonical network student number. student_number above is
-            -- the PREFIXED Focus id despite its name, and account
-            -- provisioning joins on that form, so both are exposed rather
-            -- than one being renamed.
             cast(
                 regexp_replace(cast(s.student_id as string), r'^8400', '') as int64
             ) as network_student_number,
@@ -73,8 +69,6 @@ with
         inner join
             {{ ref("stg_focus__student_enrollment") }} as e
             on s.student_id = e.student_id
-        -- int_focus__schools decodes the level to the ES/MS/HS abbreviation
-        -- the network contract uses
         left join {{ ref("int_focus__schools") }} as sch on e.school_id = sch.id
         left join
             {{ ref("int_focus__student_enrollment__pivot") }} as ep on e.id = ep.id
@@ -148,10 +142,6 @@ with
                 order by academic_year desc, exitdate desc
             ) as rn_year,
 
-            -- Most recent stint per student across all years. Focus records
-            -- enroll_status per stint while the network treats it as the
-            -- student's current standing, so consumers resolving a
-            -- student-level value take rn_all = 1.
             row_number() over (
                 partition by student_number
                 order by academic_year desc, exitdate desc, startdate desc

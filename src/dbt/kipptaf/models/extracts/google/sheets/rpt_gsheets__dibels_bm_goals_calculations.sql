@@ -14,7 +14,6 @@ with
             f.grade_goal,
             f.grade_range_goal,
 
-            -- school/gl calcs
             count(a.student_number) over (
                 partition by a.academic_year, e.school, a.period, a.assessment_grade
             ) as n_admin_season_school_gl_all,
@@ -49,7 +48,6 @@ with
                     a.aggregated_measure_standard_level
             ) as n_admin_season_school_gl_bl_wb,
 
-            -- region/gl calcs
             count(a.student_number) over (
                 partition by a.academic_year, e.region, a.period, a.assessment_grade
             ) as n_admin_season_region_gl_all,
@@ -84,7 +82,6 @@ with
                     a.aggregated_measure_standard_level
             ) as n_admin_season_region_gl_bl_wb,
 
-            -- distinct
             row_number() over (
                 partition by
                     a.academic_year,

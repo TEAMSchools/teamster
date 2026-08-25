@@ -40,7 +40,6 @@ with
 
     -- trunk-ignore(sqlfluff/ST03)
     internal_assessments as (
-        /* K-8 */
         select
             a.assessment_id,
             a.title,
@@ -86,7 +85,6 @@ with
 
         union all
 
-        /* HS */
         select
             a.assessment_id,
             a.title,
@@ -138,7 +136,6 @@ with
         }}
     )
 
-/* internal assessments */
 select
     ia.illuminate_student_id,
     ia.powerschool_student_number,
@@ -176,7 +173,6 @@ left join
 
 union all
 
-/* K-8 replacement curriculum */
 select
     sa.student_id as illuminate_student_id,
 
@@ -236,7 +232,6 @@ where
 
 union all
 
-/* all other assessments */
 select
     sa.student_id as illuminate_student_id,
 

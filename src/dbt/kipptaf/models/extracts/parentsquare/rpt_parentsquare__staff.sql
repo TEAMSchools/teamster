@@ -57,15 +57,6 @@ with
             and r.home_department_name = 'Operations'
     )
 
--- One row per (leader, school within their own region). ParentSquare's staff file
--- is per-school and its spec states a staff member "can be at more than one
--- school", so fanning a leader across every school in their region is what grants
--- them school-level access everywhere — and it is what makes every
--- rpt_parentsquare__sections.staff_id resolve at its own school. The join is
--- region-keyed rather than a bare cross join, which matches the "all region"
--- assignment branch in rpt_clever__staff and keeps a leader out of another
--- region's feed. No district-office row is emitted because schools.csv carries
--- only operating schools, so a school_id of 0 would dangle.
 select
     o.job_title as title,
     o.given_name as first_name,

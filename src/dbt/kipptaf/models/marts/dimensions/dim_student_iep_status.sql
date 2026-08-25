@@ -1,13 +1,4 @@
 with
-    -- Per-enrollment-stint PowerSchool enrollment range. Each row is one stint
-    -- (entry/exit pair) for a (student, district); a student with multiple
-    -- stints in the same district has multiple rows. Inner-joining the legs to
-    -- this CTE per-stint clips IEP spans to the student's actual enrollment
-    -- and drops phantom records. Multi-stint students get a separate dim row
-    -- per stint, each clipped to its specific entry/exit window. Aggregating
-    -- to min(entry)/max(exit) would wrongly span gaps between stints (e.g.,
-    -- a Newark → Camden → Newark student would have a Newark range covering
-    -- the Camden period).
     enrollments as (
         select
             student_number,

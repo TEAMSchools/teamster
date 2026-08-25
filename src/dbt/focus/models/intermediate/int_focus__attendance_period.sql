@@ -25,8 +25,6 @@ select
     ap.last_updated_date,
     ap.imported,
 
-    -- attendance_period has no syear of its own; the marking period supplies
-    -- both the year and the school
     mkp.syear as academic_year,
     mkp.school_id as schoolid,
     mkp.title as marking_period_title,
@@ -53,8 +51,6 @@ from {{ ref("stg_focus__attendance_period") }} as ap
 left join
     {{ ref("stg_focus__marking_periods") }} as mkp
     on ap.marking_period_id = mkp.marking_period_id
--- both code columns are attendance_codes ids here, so no school/year scoping is
--- needed — unlike attendance_day, whose daily_code is a short_name
 left join {{ ref("stg_focus__attendance_codes") }} as ac on ap.attendance_code = ac.id
 left join
     {{ ref("stg_focus__attendance_codes") }} as atc

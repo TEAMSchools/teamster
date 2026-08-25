@@ -28,8 +28,6 @@ with
             cast(school_number as string) as school_id,
             lower(principalemail) as principal_email_match,
 
-            -- PowerSchool holds school phones in mixed formats (bare digits and
-            -- dash-separated); ParentSquare wants 10 digits.
             regexp_replace(schoolphone, r'[^0-9]', '') as school_phone,
         from {{ ref("stg_powerschool__schools") }}
         -- Every NJ region is in scope and each district wrapper filters this view

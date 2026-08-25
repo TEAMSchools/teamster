@@ -1,10 +1,6 @@
 {% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
 
 with
-    -- Per-enrollment-stint PowerSchool enrollment range. One row per stint;
-    -- multi-stint students get multiple dim rows per eligibility record, each
-    -- clipped to its specific entry/exit window. Aggregating to min/max would
-    -- span gaps between stints.
     enrollments as (
         select
             student_number,

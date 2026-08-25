@@ -13,13 +13,4 @@ select distinct
 
     date_trunc(school_date, week) as week_start_date,
     date_add(date_trunc(school_date, week), interval 6 day) as week_end_date,
-from
-    {{ ref("stg_focus__attendance_calendar") }}
-    -- Focus has no insession flag or membership-value concept. A row in
-    -- attendance_calendar IS an in-session day -- that is this model's whole
-    -- meaning, so no constant column is needed to express it. Five schools
-    -- (2 closed, 3 non-instructional) carry unfiltered 212-day calendars
-    -- including holidays; that is a Focus configuration problem handed to Ops,
-    -- not something filtered here. The warn test in the kipptaf union
-    -- surfaces the rows. week_start_date is the Sunday, week_end_date the
-    -- following Saturday.
+from {{ ref("stg_focus__attendance_calendar") }}
