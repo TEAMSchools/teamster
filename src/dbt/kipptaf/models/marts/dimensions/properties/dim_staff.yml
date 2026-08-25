@@ -9,7 +9,10 @@ models:
       fact tables are represented. Person attributes may be null for employees
       not yet in roster history. Work assignments are in
       dim_staff_work_assignments, which foreign-keys to this model via
-      staff_key.
+      staff_key. This dimension is all-time staff, roughly 4,600 rows, not
+      active-only. For an active-staff grain, spine on
+      dim_staff_work_assignments where is_current, which already excludes
+      terminated staff by termination date.
     columns:
       - name: staff_key
         data_type: string
