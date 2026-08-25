@@ -180,7 +180,7 @@ with
             week_number_academic_year,
 
             sum(is_tardy) as n_tardies_week,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         group by
             _dbt_source_project,
             student_number,

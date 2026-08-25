@@ -70,7 +70,12 @@ with
     ps_last_academic_year as (
         select max(academic_year) as academic_year,
         from {{ ref("int_powerschool__ada_term_pivot") }}
-        where _dbt_source_project = 'kippmiami'
+        -- studentid is not null scopes this to the frozen PowerSchool
+        -- archive only -- the table now also carries live Focus-sourced
+        -- kippmiami rows (null studentid), which would otherwise pull this
+        -- max forward to the current year and break the "last year
+        -- PowerSchool covers" semantics this CTE is named for.
+        where _dbt_source_project = 'kippmiami' and studentid is not null
     ),
 
     /* Miami's PowerSchool archive is frozen at AY2025 and keys on studentid,
@@ -209,8 +214,11 @@ left join
     and e.academic_year - 1 = fp_prev.academic_year
 left join ps_xwalk as px on s.powerschool_id = px.ps_student_number
 left join
+    -- Keyed on student_number, not studentid: studentid is null for every
+    -- Focus-sourced kippmiami row in ada_term_pivot, which previously left
+    -- this join permanently unmatched for Miami once Focus took over.
     {{ ref("int_powerschool__ada_term_pivot") }} as pada
-    on px.ps_studentid = pada.studentid
+    on px.ps_student_number = pada.student_number
     and e.academic_year - 1 = pada.academic_year
     and pada._dbt_source_project = 'kippmiami'
 left join
