@@ -16,6 +16,17 @@ with
             ) as rn_date,
         from {{ ref("int_deanslist__comm_log") }}
         where is_attendance_call and call_status = 'Completed'
+    ),
+
+    attendance_daily as (
+        select
+            *,
+
+            -- is_suspended is null for Focus-sourced Miami rows (#4927); treat
+            -- null as not-suspended so the join below doesn't drop Miami rows
+            -- outright while still excluding true suspensions.
+            coalesce(is_suspended, 0) as is_suspended_int,
+        from {{ ref("int_students__attendance_daily") }}
     )
 
 select
@@ -69,12 +80,12 @@ select
     ) as is_successful_int,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 inner join
-    {{ ref("int_students__attendance_daily") }} as att
+    attendance_daily as att
     on co.student_number = att.student_number
     and co.schoolid = att.schoolid
     and att.calendardate between co.week_start_monday and co.week_end_sunday
     and att.is_absent = 1
-    and att.is_suspended = 0
+    and att.is_suspended_int = 0
     and att.membershipvalue = 1
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt

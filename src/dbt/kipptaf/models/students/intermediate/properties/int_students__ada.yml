@@ -1,5 +1,7 @@
 models:
   - name: int_students__ada
+    config:
+      materialized: table
     description: >-
       SIS-neutral per-student-per-year attendance rollup -- the successor to
       int_powerschool__ada, which stays a pure PowerSchool union. The

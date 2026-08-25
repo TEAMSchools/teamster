@@ -112,7 +112,7 @@ select
     nj_overall_student_tier,
 
     avg(attendancevalue) over (
-        partition by studentid, academic_year order by calendardate
+        partition by student_number, academic_year order by calendardate
     ) as ada_running,
     avg(is_ontime) over (
         partition by student_number, academic_year order by calendardate

@@ -1,5 +1,7 @@
 models:
   - name: int_students__calendar_rollup
+    config:
+      materialized: table
     description: >-
       SIS-neutral per-school-per-year instructional day totals -- the successor
       to int_powerschool__calendar_rollup, which stays a pure PowerSchool union.

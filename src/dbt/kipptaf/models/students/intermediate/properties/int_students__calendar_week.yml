@@ -1,5 +1,7 @@
 models:
   - name: int_students__calendar_week
+    config:
+      materialized: table
     description: >-
       SIS-neutral school weeks across the network -- the successor to
       int_powerschool__calendar_week, which stays a pure PowerSchool union. The
