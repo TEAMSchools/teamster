@@ -70,6 +70,7 @@ with
 
     section_enrollments as (
         select
+            _dbt_source_project,
             cc_academic_year as academic_year,
             cc_dateenrolled as entry_date,
             cc_dateleft as exit_date,
@@ -127,6 +128,7 @@ with
 
             row_number() over (
                 partition by
+                    se._dbt_source_project,
                     se.enr_student_number,
                     se.enr_source_project,
                     se.academic_year,
@@ -142,8 +144,17 @@ with
             -- the enrollment stint and keep the most recent, so at most one
             -- current homeroom exists per stint even when a student carries
             -- concurrent HR sections (a data-quality case; deduped to latest).
+            --
+            -- _dbt_source_project is included because student_enrollment_key
+            -- is NULL on every stint-orphaned row network-wide -- without it,
+            -- every orphaned homeroom row (any region) shares one partition,
+            -- and BigQuery sorts NULL is_dropped_* FIRST under asc, so a
+            -- Miami orphan (drop flags always null by design) can outrank an
+            -- NJ orphan for rank = 1. _dbt_source_project is non-null on
+            -- every row, so adding it only tightens the partition.
             row_number() over (
-                partition by se.student_enrollment_key, se.is_homeroom
+                partition by
+                    se._dbt_source_project, se.student_enrollment_key, se.is_homeroom
                 order by
                     (se.is_dropped_section or se.is_dropped_course) asc,
                     coalesce(se.exit_date, cast('9999-12-31' as date)) desc,

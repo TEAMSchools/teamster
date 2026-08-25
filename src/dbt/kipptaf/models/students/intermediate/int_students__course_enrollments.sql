@@ -33,8 +33,14 @@ with
     -- archive still holds Miami AY2020 through AY2025. Scope by year rather
     -- than excluding Miami wholesale, and derive the boundary so a Focus
     -- backfill of an earlier year does not silently double-count.
+    -- coalesce guards against an empty int_focus__schedule (e.g. an unbuilt
+    -- --defer dev copy): min(academic_year) with no rows is NULL, and NULL >=
+    -- fay.min_academic_year evaluates to NULL rather than false below, so
+    -- `not (...)` also evaluates to NULL and the WHERE filter drops every
+    -- Miami row instead of keeping the archive. 9999 fails toward preserving
+    -- the data that exists.
     focus_academic_year_boundary as (
-        select min(academic_year) as min_academic_year,
+        select coalesce(min(academic_year), 9999) as min_academic_year,
         from {{ ref("int_focus__schedule") }}
     ),
 
@@ -112,6 +118,7 @@ with
 
     focus_conformed as (
         select
+            s._dbt_source_relation,
             s.student_schedule_id as cc_dcid,
             s.academic_year as cc_academic_year,
             s.course_period_id as sections_dcid,
@@ -122,10 +129,13 @@ with
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
             c.short_name as cc_course_number,
-            sr.powerschool_teacher_number as teachernumber,
 
             'kippmiami' as _dbt_source_project,
             'Miami' as region,
+
+            coalesce(
+                sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number
+            ) as teachernumber,
 
             -- Focus's homeroom boolean is null on every row; identified by
             -- title instead, matching int_focus__advisory. See #4868.
@@ -149,10 +159,16 @@ with
         left join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on sch.school_number = loc.focus_school_id
-        left join {{ ref("int_focus__users") }} as usr on s.teacher_id = usr.staff_id
         left join
-            {{ ref("int_people__staff_roster") }} as sr
-            on safe_cast(usr.ein as int64) = sr.employee_number
+            {{ ref("int_focus__users") }} as usr
+            on s.teacher_id = usr.staff_id
+            and s._dbt_source_project = usr._dbt_source_project
+        left join
+            {{ ref("int_people__staff_roster") }} as sr_ein
+            on safe_cast(usr.ein as int64) = sr_ein.employee_number
+        left join
+            {{ ref("int_people__staff_roster") }} as sr_email
+            on lower(usr.e_mail_address) = lower(sr_email.google_email)
     )
 
 select *,
