@@ -8,11 +8,6 @@ with
         from {{ ref("stg_focus__schedule") }}
     ),
 
-    -- An assignment is assigned to many sections, so the link alone fans a
-    -- grade out. Intersecting with the student's own sections picks exactly
-    -- one. Inner joins here are deliberate: this CTE holds only grades whose
-    -- course period resolved, and it is LEFT joined back on below so the rest
-    -- survive.
     grade_course_periods as (
         select
             gg.id as student_gradebook_grade_id,

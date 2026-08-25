@@ -1,6 +1,4 @@
 with
-    -- Focus does not populate a separate internal student id at this grain;
-    -- student_number is the key throughout.
     att_mem as (
         select
             student_number,

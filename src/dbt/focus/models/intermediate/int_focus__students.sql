@@ -1,9 +1,3 @@
--- Staging columns plus their decoded custom-field labels. Drives from staging
--- and LEFT JOINs the pivot: BigQuery UNPIVOT drops entities whose unpivoted
--- columns are all null, so the pivot alone is not a complete entity spine.
---
--- Also conforms the fields whose Focus representation differs from the network
--- one, so every consumer reads the same derivation rather than repeating it.
 with
     labeled as (
         select
@@ -59,10 +53,6 @@ with
         select
             *,
 
-            -- student_id is the network student number prefixed with 8400,
-            -- Miami-Dade's FLDOE district number. Strip it where present and pass any
-            -- other value through unchanged, so the one known anomalous id stays
-            -- visible instead of being silently mangled.
             cast(
                 regexp_replace(cast(student_id as string), r'^8400', '') as int64
             ) as student_number,
@@ -71,17 +61,10 @@ with
 
             regexp_extract(sex_label, r'\[(\w+)\]') as gender,
 
-            -- The MDCPS student id, stored as NUMERIC, which drops the leading zero
-            -- most of them carry. Pad back to the 7 digits MDCPS issues.
             lpad(cast(disis_id as string), 7, '0') as state_studentnumber,
 
-            -- ESE FEFP Code is the only ESE field Focus stores. It is a funding-matrix
-            -- code, so any value means the student receives ESE services; its absence
-            -- does not mean the student has no IEP, hence null rather than 'No IEP'.
             if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
 
-            -- Gifted Eligibility records the FLDOE criteria paragraph a student
-            -- qualified under, so any A or B is gifted and Z is not.
             case
                 when gifted_eligibility_label like 'Student was determined eligible%'
                 then 'Y'
@@ -89,9 +72,6 @@ with
                 then 'N'
             end as gifted_and_talented,
 
-            -- FLDOE ELL codes. LY is currently LEP; the followup, exited and
-            -- not-applicable codes are not. The tested-or-pending codes are left null
-            -- because they are genuinely unknown rather than negative.
             case
                 regexp_extract(english_language_learner_pk_12_label, r'\[(\w+)\]')
                 when 'LY'
@@ -125,9 +105,6 @@ with
                 else 'Y1'
             end as homeless_code,
 
-            -- FLDOE residence types mapped to the network primary-nighttime-residence
-            -- domain. Awaiting foster care has no analogue and stays null, as does the
-            -- not-homeless default.
             case
                 homeless_c
                 when 'A'
@@ -167,9 +144,6 @@ with
                 then 'P'
             end as lunchstatus,
 
-            -- Single-character race code matching the network domain. Multiple races
-            -- yield T, a single race yields its code, and no recorded race yields null
-            -- rather than a fabricated category.
             case
                 when race_count > 1
                 then 'T'
@@ -187,11 +161,5 @@ with
         from coded
     )
 
-select
-    *,
-
-    -- Matches the formula stg_powerschool__studentcorefields uses -- wrapped
-    -- in if() there too, so a null homeless_code yields false on both SIS
-    -- branches instead of diverging to null here.
-    if(homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
+select *, if(homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
 from conformed
