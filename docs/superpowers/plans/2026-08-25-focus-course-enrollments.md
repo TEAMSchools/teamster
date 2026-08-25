@@ -584,17 +584,36 @@ group by 1, 2
 order by 1, 2
 ```
 
-Expected, against the measurements in the spec:
+Expected:
 
-| `_dbt_source_project` | 2025   | 2026           |
-| --------------------- | ------ | -------------- |
-| `kippnewark`          | 51,575 | 44,481         |
-| `kippcamden`          | 18,730 | 14,655         |
-| `kipppaterson`        | 4,531  | 3,947          |
-| `kippmiami`           | 17,065 | roughly 19,594 |
+| `_dbt_source_project` | 2025   | 2026                  |
+| --------------------- | ------ | --------------------- |
+| `kippnewark`          | 51,575 | drifts, see below     |
+| `kippcamden`          | 18,730 | drifts, see below     |
+| `kipppaterson`        | 4,531  | drifts, see below     |
+| `kippmiami`           | 17,065 | roughly 19,594 and up |
 
-NJ figures must match exactly. A changed NJ number means the year-scope filter
-leaked past Miami.
+**Only the AY2025 column is a fixed check.** Those years are frozen, so any
+change there is a real defect.
+
+AY2026 is the live school year and prod moves during the day — measured twice on
+2026-08-25, Newark went 44,481 to 44,523 and Camden 14,655 to 14,689. Do NOT
+compare AY2026 against a number written in this plan. Compare it against live
+prod at the moment you run it:
+
+```sql
+select
+  regexp_extract(_dbt_source_relation, r'`(kipp[^`]+_powerschool)`') as src,
+  cc_academic_year,
+  count(*) as n
+from `teamster-332318.kipptaf_powerschool.base_powerschool__course_enrollments`
+where cc_academic_year = 2026
+group by 1, 2
+order by 1
+```
+
+The three NJ rows must match your dev build exactly. A mismatch there means the
+year-scope filter leaked past Miami.
 
 - [ ] **Step 7: Lint and commit**
 
@@ -925,9 +944,11 @@ from `teamster-332318.zz_cbini_kipptaf_students.int_students__course_enrollments
 where _dbt_source_project != 'kippmiami'
 ```
 
-Expected: identical between dev and `kipptaf_students` / `kipptaf_marts` prod.
-Any drift is a regression introduced by the year-scope filter or the join-key
-change, not an improvement.
+Expected: identical between dev and `kipptaf_students` / `kipptaf_marts` prod,
+measured in the same session — not against a number recorded earlier. The live
+academic year gains rows through the day, so a stale baseline manufactures a
+false regression. Any real drift is the year-scope filter or the join-key change
+leaking past Miami.
 
 - [ ] **Step 3: Confirm Miami history survived**
 
