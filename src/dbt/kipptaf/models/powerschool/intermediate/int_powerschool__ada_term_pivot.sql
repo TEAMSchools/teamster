@@ -1,6 +1,7 @@
 select
     _dbt_source_project,
     studentid,
+    student_number,
     academic_year,
 
     /* pivot fields */

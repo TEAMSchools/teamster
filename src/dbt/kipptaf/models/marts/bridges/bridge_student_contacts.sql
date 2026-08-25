@@ -9,8 +9,7 @@ with
             is_custodial,
             is_household_member,
             _dbt_source_project,
-
-            coalesce(finalsite_contact_id, personid) as person_identity,
+            person_identity,
         from {{ ref("int_students__contacts") }}
         where
             contact_slot in ('contact_1', 'contact_2')

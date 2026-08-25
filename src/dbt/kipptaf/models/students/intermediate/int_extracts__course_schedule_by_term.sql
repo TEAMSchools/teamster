@@ -36,7 +36,7 @@ with
                     c.`quarter`
             ) as days_in_quarter,
 
-        from {{ ref("int_powerschool__calendar_week") }} as c
+        from {{ ref("int_students__calendar_week") }} as c
         inner join
             {{ ref("int_students__terms") }} as t
             on c.academic_year = t.academic_year

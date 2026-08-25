@@ -584,3 +584,18 @@ data_tests:
         dagster:
           ref:
             name: int_students__students
+
+  - name: int_students__calendar_day__zero_enrollment_in_session_days
+    description: >-
+      Focus in-session days at a school that enrolled nobody that year. Five
+      Focus schools carry unfiltered 212-day calendars including holidays and
+      breaks; two of them are closed but still map to live network location
+      keys, so their days reach dim_school_calendars. The fix belongs in Focus
+      configuration, so this warns rather than errors -- it makes the rows
+      visible without hiding them.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__calendar_day

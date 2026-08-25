@@ -194,54 +194,59 @@ with
             cast(null as string) as finalsite_contact_id,
         from focus_slotted
         where student_number is not null
+    ),
+
+    all_contacts as (
+        select
+            student_number,
+            _dbt_source_project,
+            contact_slot,
+            personid,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+        from finalsite
+
+        union all
+
+        select
+            student_number,
+            _dbt_source_project,
+            contact_slot,
+            personid,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+        from focus
     )
 
-select
-    student_number,
-    _dbt_source_project,
-    contact_slot,
-    personid,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email_current,
-    phone_mobile,
-    phone_home,
-    phone_daytime,
-    phone_work,
-    phone_untyped,
-    phone_primary,
-    address_home,
-    is_emergency,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-from finalsite
-
-union all
-
-select
-    student_number,
-    _dbt_source_project,
-    contact_slot,
-    personid,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email_current,
-    phone_mobile,
-    phone_home,
-    phone_daytime,
-    phone_work,
-    phone_untyped,
-    phone_primary,
-    address_home,
-    is_emergency,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-from focus
+select *, coalesce(finalsite_contact_id, personid) as person_identity,
+from all_contacts

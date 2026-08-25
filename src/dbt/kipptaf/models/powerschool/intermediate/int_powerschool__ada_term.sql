@@ -2,6 +2,7 @@ with
     daily_attendance as (
         select
             _dbt_source_project,
+            student_number,
             studentid,
             academic_year,
             semester,
@@ -18,20 +19,29 @@ with
             cast(is_present_weighted as numeric) as is_present_weighted,
             cast(membershipvalue as numeric) as membershipvalue,
 
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         where
             membershipvalue = 1
             and attendancevalue is not null
             and calendardate <= current_date('{{ var("local_timezone") }}')
     ),
 
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-internal
+    -- id and is null for every Focus-sourced (Miami) row, so grouping on it
+    -- collapses every Miami Focus student into one meaningless aggregate row per
+    -- (kippmiami, academic_year, semester, term) -- SQL treats null as a single
+    -- group. studentid is carried through as max(studentid) so the NJ-only
+    -- downstream consumers that join on it keep working untouched; it stays null
+    -- for Focus rows, which is correct.
     ada_by_term as (
         select
             _dbt_source_project,
-            studentid,
+            student_number,
             academic_year,
             semester,
             term,
+
+            max(studentid) as studentid,
 
             sum(is_present_weighted) as sum_attendance_value_weighted_term,
             sum(attendancevalue) as sum_attendance_value_term,
@@ -44,12 +54,13 @@ with
             sum(abs(attendancevalue - 1)) as sum_absences_term,
 
         from daily_attendance
-        group by _dbt_source_project, studentid, academic_year, semester, term
+        group by _dbt_source_project, student_number, academic_year, semester, term
     ),
 
     ada_rates as (
         select
             _dbt_source_project,
+            student_number,
             studentid,
             academic_year,
             term,
@@ -65,11 +76,11 @@ with
                 safe_divide(
                     sum(sum_attendance_value_term) over (
                         partition by
-                            _dbt_source_project, studentid, academic_year, semester
+                            _dbt_source_project, student_number, academic_year, semester
                     ),
                     sum(count_attendance_value_term) over (
                         partition by
-                            _dbt_source_project, studentid, academic_year, semester
+                            _dbt_source_project, student_number, academic_year, semester
                     )
                 ),
                 3
@@ -78,10 +89,10 @@ with
             round(
                 safe_divide(
                     sum(sum_attendance_value_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                     ),
                     sum(count_attendance_value_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                     )
                 ),
                 3
@@ -90,11 +101,11 @@ with
             round(
                 safe_divide(
                     sum(sum_attendance_value_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                         order by term asc
                     ),
                     sum(count_attendance_value_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                         order by term asc
                     )
                 ),
@@ -112,11 +123,11 @@ with
                 safe_divide(
                     sum(sum_attendance_value_weighted_term) over (
                         partition by
-                            _dbt_source_project, studentid, academic_year, semester
+                            _dbt_source_project, student_number, academic_year, semester
                     ),
                     sum(count_attendance_value_term) over (
                         partition by
-                            _dbt_source_project, studentid, academic_year, semester
+                            _dbt_source_project, student_number, academic_year, semester
                     )
                 ),
                 3
@@ -125,10 +136,10 @@ with
             round(
                 safe_divide(
                     sum(sum_attendance_value_weighted_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                     ),
                     sum(count_attendance_value_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                     )
                 ),
                 3
@@ -137,11 +148,11 @@ with
             round(
                 safe_divide(
                     sum(sum_attendance_value_weighted_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                         order by term asc
                     ),
                     sum(count_attendance_value_term) over (
-                        partition by _dbt_source_project, studentid, academic_year
+                        partition by _dbt_source_project, student_number, academic_year
                         order by term asc
                     )
                 ),
@@ -153,6 +164,7 @@ with
 
 select
     _dbt_source_project,
+    student_number,
     studentid,
     academic_year,
     term,
