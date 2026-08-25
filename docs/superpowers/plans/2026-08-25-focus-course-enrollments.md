@@ -38,7 +38,9 @@ for lint, `dbt_utils` macros.
   the boundary with `select min(academic_year) from int_focus__schedule` — never
   hardcode `2026`.
 - Columns Focus cannot source land `null`, never `false` and never a derived
-  guess. Each carries a `TODO(#NNNN)` comment naming the prerequisite issue.
+  guess. The two drop flags carry a `TODO(#4968)` comment. `is_ap_course` does
+  not: it is a New Jersey state crosswalk and Miami is Florida, so it is
+  correctly absent rather than deferred.
 - Backtick model and column names in every markdown file; trunk-fmt mangles bare
   `snake_case` as emphasis.
 - Commit messages use conventional commits and end with
@@ -46,16 +48,12 @@ for lint, `dbt_utils` macros.
 
 ---
 
-## Prerequisite (coordinator action, not an implementer task)
+## Prerequisite — done
 
-Open the follow-up issue tracking the null `is_dropped_section` and
-`is_dropped_course` columns for Miami, as a sibling of #4925, in the same shape
-#4927 uses for the six Miami attendance flags. Its number replaces every
-`TODO(#NNNN)` below.
-
-Repo convention requires asking the user before opening any GitHub issue. Do not
-start Task 1 until the number exists — the `TODO` comments cannot be written
-honestly without it.
+#4968 tracks the null `is_dropped_section` and `is_dropped_course` columns for
+Miami, in the same shape #4927 uses for the six Miami attendance flags. Its
+number is already written into the `TODO` comments below. No action needed
+before Task 1.
 
 ---
 
@@ -153,9 +151,9 @@ with
             -- tracked on #4868.
             coalesce(c.title like 'Homeroom%', false) as is_homeroom,
 
-            -- TODO(#NNNN): the AP course subject crosswalk is a New Jersey
-            -- state reporting table. Miami is Florida, so this is correctly
-            -- absent rather than missing.
+            -- The AP course subject crosswalk is a New Jersey state
+            -- reporting table. Miami is Florida, so this is correctly absent
+            -- rather than deferred -- no tracking issue.
             cast(null as bool) as is_ap_course,
         from {{ ref("int_focus__course_periods") }} as cp
         inner join {{ ref("int_focus__courses") }} as c on cp.course_id = c.course_id
@@ -393,15 +391,15 @@ with
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
 
-            -- TODO(#NNNN): PowerSchool derives both flags from its
+            -- TODO(#4968): PowerSchool derives both flags from its
             -- `sectionid < 0` convention. Focus has no drop convention at all,
             -- so these are null rather than false: Miami is excluded from
             -- network drop-rate metrics instead of diluting them.
             cast(null as bool) as is_dropped_section,
             cast(null as bool) as is_dropped_course,
 
-            -- TODO(#NNNN): New Jersey state reporting crosswalk; Miami is
-            -- Florida.
+            -- New Jersey state reporting crosswalk; Miami is Florida, so
+            -- correctly absent rather than deferred.
             cast(null as bool) as is_ap_course,
         from {{ ref("int_focus__schedule") }} as s
         inner join {{ ref("int_focus__students") }} as st on s.student_id = st.student_id
