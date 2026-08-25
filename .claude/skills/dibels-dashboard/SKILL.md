@@ -119,10 +119,11 @@ matching tier just disappears with no error.
 
 T&L's source doc gives goals as **ranges** ("62 - 66%") and, starting AY2025, as
 **two-or-more side-by-side population blocks** (All Students, Students with
-IEPs, and MLL is coming -- see _Open: MLL population_ below). The existing
-single-value staging table already required someone to collapse each range to
-one number by hand, applying a rule nobody wrote down. That rule is now written
-down (below) and encoded in a generator script instead of memory.
+IEPs, and MLL, whose real goal values are still outstanding -- see _MLL
+population -- shipped with placeholder values_ below). The existing single-value
+staging table already required someone to collapse each range to one number by
+hand, applying a rule nobody wrote down. That rule is now written down (below)
+and encoded in a generator script instead of memory.
 
 ## The min/max rule (verified, not guessed)
 
@@ -200,23 +201,34 @@ collapse into `Grade_Range_Goal` and attach to the K/1/2 individual-grade rows
 for that region/period/population/goal_type, mirroring how the prior
 single-value schema already carried it.
 
-## Open: MLL population
+## MLL population -- shipped with placeholder values, real numbers still needed
 
-T&L wants a third population, MLL, added alongside All and IEP. Two things need
-answering before touching the generator -- **don't assume either**, IEP's goal
-values already turned out to genuinely differ from All's once (see the min/max
-rule section -- that was a real surprise, not a guess that panned out):
+`MLL` is a live `Population` value in both
+`stg_google_sheets__dibels_foundation_goals` and
+`stg_google_sheets__dibels_brightspot_goals` (`accepted_values` tests updated,
+`rpt_tableau__dibels_brightspots` fans MLL students out correctly). **But the
+AY2025 MLL goal rows are fabricated** -- explicitly requested as a stopgap ("use
+fake numbers, half of IEP") to unblock a time-sensitive demo, not derived from
+any T&L source. `Grade_Goal_Low`/`Grade_Goal_High`/`Grade_Goal` for every MLL
+row are half the matching IEP row's values; everything else
+(region/grade/period/goal_type) is identical to that IEP row. Flagged in the
+sheet-source column description too.
 
-1. Do MLL goal _values_ actually differ from All, or could T&L reuse the same
-   numbers?
-2. Has the MLL block already been added to the sheet, and what's its exact
-   header text (e.g. "Students who are MLL")? `build_foundation_goals_rows.py`
-   currently hardcodes detection for exactly one extra block labeled `IEP` -- it
-   needs generalizing to loop over N population blocks, keyed off each block's
-   actual header text, not a hardcoded second block.
+**Before this goes anywhere near a real stakeholder**: replace the MLL rows with
+T&L's actual numbers. Don't assume they'll match the halved values, or even that
+they'll be close -- IEP's real goals already turned out to genuinely differ from
+All's once (see the min/max rule section), so there's no reason to expect the
+fabricated MLL placeholders to land anywhere near reality.
 
-The Bright Spot tier _thresholds_, by contrast, are confirmed
-population-agnostic (see below) -- this open item is about the goals table only.
+The Bright Spot tier _thresholds_ (`stg_google_sheets__dibels_brightspot_goals`)
+are confirmed population-agnostic and are NOT placeholders -- only the MLL _goal
+values_ are fake.
+
+`build_foundation_goals_rows.py` still hardcodes detection for exactly one extra
+population block labeled `IEP` -- it was never generalized to parse a real MLL
+block from a T&L source doc, because the MLL rows here were entered by hand
+(computed placeholders), not generated from a raw sheet paste. Fix this before
+there's an actual MLL source to run the generator against.
 
 ## Tier lookup table: `stg_google_sheets__dibels_brightspot_goals`
 
@@ -373,8 +385,9 @@ with open("ay<year>.tsv", "w") as f:
 ```
 
 One TSV per academic year. The generator auto-detects whether the tab has an IEP
-block (looks for "IEP" anywhere in the first row) -- see _Open: MLL population_
-above for why this detection needs generalizing before a third block shows up.
+block (looks for "IEP" anywhere in the first row) -- see _MLL population --
+shipped with placeholder values_ above for why this detection needs generalizing
+before a real MLL source shows up.
 
 ### Step 3 -- run the generator
 
