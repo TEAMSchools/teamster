@@ -55,6 +55,13 @@ with
             cp.short_name as sections_section_number,
             loc.powerschool_school_id as sections_schoolid,
             c.short_name as sections_course_number,
+
+            -- PowerSchool's sections_course_number and courses_course_number
+            -- are identical on every row (verified against prod). dim_course_
+            -- sections.course_key hashes courses_course_number, so Focus must
+            -- populate it too or every Miami row hashes a null placeholder.
+            c.short_name as courses_course_number,
+
             sr.powerschool_teacher_number as teachernumber,
 
             'kippmiami' as _dbt_source_project,
