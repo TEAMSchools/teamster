@@ -2,29 +2,16 @@
 
 ## Overview
 
-Sixteen dbt projects organized into three tiers:
+Three tiers, told apart by name (`ls src/dbt` for the current list):
 
-| Tier                  | Projects                                                                                                                    | Purpose                                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
-| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                                     | Combine source packages for a single district                 |
-| **Network analytics** | `kipptaf`                                                                                                                   | Cross-district marts, reporting, and extracts for the network |
+- **Source-system** (everything not `kipp*`) — clean and contract-enforce raw
+  data from one source system.
+- **District-specific** (`kippnewark`, `kippcamden`, `kippmiami`,
+  `kipppaterson`) — combine source packages for a single district.
+- **Network analytics** (`kipptaf`) — cross-district marts, reporting, and
+  extracts for the network.
 
 ## Project Dependency Map
-
-```text
-amplify ──────┐
-deanslist ────┤
-edplan ───────┤
-finalsite ────┤
-focus ────────┤                ┌─ kippnewark ──┐
-iready ───────┼── (packages) ─┼─ kippcamden ───┼── (sources) ── kipptaf
-overgrad ─────┤                ├─ kippmiami ───┤
-pearson ──────┤                └─ kipppaterson ─┘
-powerschool ──┤
-renlearn ─────┤
-titan ────────┘
-```
 
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
@@ -40,29 +27,17 @@ copy, so when reading a `kipptaf` model's upstream, open the `kipptaf` file —
 the same-named package file is a different model. Confirm with
 `find src/dbt -name '<model>.sql'` before reading.
 
-## District Variable Defaults
+## District Variables
 
-All district projects share these variables (override via `dbt_project.yml`):
+Each project's `vars:` block is the top of its `dbt_project.yml` — read it
+there; source-system projects declare null/zero defaults that consuming
+districts override. `current_academic_year` / `current_fiscal_year` roll over
+each July.
 
-- `current_academic_year`, `current_fiscal_year` — updated each July; get
-  current values from any district's `dbt_project.yml`
-- `local_timezone` — `America/New_York`
-- `cloud_storage_uri_base` — `gs://teamster-<project>/dagster/<project>`
-  (redirects to `gs://teamster-test/dagster/<project>` when
-  `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`, via inline conditional in each
-  `external.location` template)
-
-Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
-`renlearn_schema: kippnj_renlearn`. All five `kipp*` projects (the four
-districts plus `kipptaf`) set `bigquery_external_connection_name` to the
-`biglake-teamster-gcs` connection; source-system projects default it to `null`.
-See `kipptaf`'s CLAUDE.md.
-
-## Variable Override Pattern
-
-Source-system projects declare variables with null/zero defaults
-(`bigquery_external_connection_name: null`, `current_academic_year: 0`, etc.).
-Consuming district projects override these in their own `dbt_project.yml`.
+Not visible in the yml: `cloud_storage_uri_base` redirects to
+`gs://teamster-test/dagster/<project>` when
+`DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`, via an inline conditional in each
+`external.location` template.
 
 ## External Table Pattern
 
@@ -788,23 +763,7 @@ without it being real drift — normalize before comparing.
 descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
 `extracts/powerschool/` special case before adding either.
 
-### Uniqueness test examples
-
-```yaml
-# single-column uniqueness
-columns:
-  - name: surrogate_key
-    data_tests:
-      - unique
-
-# multi-column uniqueness (when no single column is unique)
-data_tests:
-  - dbt_utils.unique_combination_of_columns:
-      arguments:
-        combination_of_columns:
-          - column_a
-          - column_b
-```
+### Uniqueness tests
 
 **History-carrying staging (active-flag + superseded rows)**: scope the key
 `unique` test `where: <active_flag>` — a plain `unique` false-fails on
@@ -918,23 +877,6 @@ the lookup and logs `AssetObservation` across all parents instead of an
 `AssetCheckResult` on the intended asset. Always set `package: <source>` for
 source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
 (refs default to kipptaf).
-
-### Generic test syntax (dbt 1.11+)
-
-All generic tests (`relationships`, `accepted_values`,
-`dbt_utils.unique_combination_of_columns`, etc.) require `arguments:` nesting.
-The flat form (without `arguments:`) triggers a deprecation warning:
-
-```yaml
-# wrong — flat
-- accepted_values:
-    values: [a, b]
-
-# right — nested under arguments
-- accepted_values:
-    arguments:
-      values: [a, b]
-```
 
 ### dbt unit-test fixtures
 
@@ -1317,8 +1259,22 @@ new `base_` models.
 
 ### SQL formatting (sqlfluff-enforced)
 
-All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect; trailing commas in
-`SELECT`; single-quoted strings; 88-char lines; reserved words backtick-quoted
-in SQL with `quote: true` in YAML; no self-aliases per AL09 — drop `as <name>`
-when it equals the source column). CI enforces these — **do not flag code that
-already follows them.**
+All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect), enforced by CI —
+**do not flag code that already follows it.**
+
+### Removing comments changes lint/format behavior
+
+- sqlfmt rejoins statements once a mid-statement comment is gone (`from` /
+  `select *,` collapse to one line) — let the pre-commit fmt hook apply it.
+- Deleting `{#- ... #}` blocks can newly expose sqlfluff rules (ST06) on
+  adjacent code that main passes — sqlfluff skips rules near templated slices.
+  If fixing ST06 would reorder a contract/sheet-fixed column list, suppress with
+  the repo-standard `trunk-ignore(sqlfluff/ST06)` instead.
+
+### Verifying a comment-only SQL change
+
+Strip `--`, `/* */`, and `{# #}` comments from the old and new blobs, collapse
+whitespace, and compare — token identity proves no logic change, and it works
+where a dev build cannot (stale personal `zz_` source copies, which
+`--favor-state` does not defer). Compiled-SQL identity via `dbt compile` is the
+equivalent fallback per model.
