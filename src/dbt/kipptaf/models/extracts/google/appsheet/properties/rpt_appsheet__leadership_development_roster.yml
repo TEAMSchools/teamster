@@ -1,5 +1,9 @@
 models:
   - name: rpt_appsheet__leadership_development_roster
+    description: >
+      Roster feeding the AppSheet leadership development app — active or
+      on-leave staff, each flagged with an `active` default and a
+      `permission_level` that the app uses to scope what a user can see.
     columns:
       - name: employee_number
         data_type: int64
@@ -25,7 +29,24 @@ models:
         data_type: string
       - name: active
         data_type: boolean
+        description: >
+          Whether the staff member's `job_title` flags them as active in leader
+          performance management by default — true when the title contains
+          Chief, Director, Head, Leader, or President, or equals Controller.
+          Editable per person in the AppSheet app; this is only the default
+          value.
       - name: permission_level
         data_type: int64
+        description: >
+          App access tier derived from `job_title`, `department`, and `entity`,
+          from broadest to narrowest — 7 (Data or Leadership Development
+          department, CEO, or a President title) sees all entities and levels; 6
+          (any Chief title) sees all entities below their own level; 5 (a
+          Managing Director in School Support, or a Head of Schools title) sees
+          their own entity below their own level; 4 (a School Leader title) sees
+          their own location; 3 (a Managing Director within the KIPP TEAM and
+          Family Schools Inc entity) sees their own location below their own
+          level; 2 is assigned when the person has direct reports and sees only
+          those reports; 1 is the fallback and sees only their own data.
       - name: reports_to_employee_number
         data_type: int64
