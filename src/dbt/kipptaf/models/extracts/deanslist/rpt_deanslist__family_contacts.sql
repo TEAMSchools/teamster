@@ -1,6 +1,8 @@
 with
     contacts as (
         select
+            sc.contact_slot,
+            sc.finalsite_contact_id,
             sc.contact_first_name,
             sc.contact_last_name,
             sc.email,
@@ -68,6 +70,32 @@ select
     -- so it is the likeliest fit, and a landline sent here is no worse off than
     -- the blank it replaces. A Finalsite-typed Cell still wins outright.
     coalesce(c.phone_mobile, c.phone_untyped) as `CellPhone`,
+
+    -- DeansList has no id of ours to key contact rows on, so its importer keys
+    -- them on a hash of the contact's name: two contacts sharing a name
+    -- collapse into one row and a family silently loses a contact.
+    -- `IntegrationKey` gives it a real key (any string up to 64 chars).
+    --
+    -- Parents key on their own Finalsite contact UUID, NOT on the slot, because
+    -- parent slots are ranked rather than fixed -- flipping a `primary` flag
+    -- upstream swaps contact_1 and contact_2. A slot-keyed row would keep its
+    -- key while taking on the other parent's name, phone, and email, dragging
+    -- whatever DeansList attached to that key onto the wrong person.
+    --
+    -- Emergency contacts have no UUID: they are scalar `emrg_N` custom fields
+    -- on the student's own record, not linked contact records, so the slot IS
+    -- their identity -- the same key `rpt_parentsquare__emergency_contacts`
+    -- uses, for the same reason.
+    --
+    -- Readable rather than hashed like that sibling: a 6-digit student number
+    -- plus a 36-char UUID is 43 chars, so it fits, and staff can trace a row
+    -- back to its Finalsite contact by eye. No region component --
+    -- `student_number` is unique across the three NJ regions covered here.
+    concat(
+        cast(c.student_number as string),
+        '-',
+        coalesce(c.finalsite_contact_id, c.contact_slot)
+    ) as `IntegrationKey`,
 from contacts as c
 inner join
     {{ ref("stg_powerschool__students") }} as s
