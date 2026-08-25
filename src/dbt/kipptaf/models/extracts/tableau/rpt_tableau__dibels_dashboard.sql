@@ -41,7 +41,6 @@ select
     a.expected_measure_name,
     a.expected_measure_standard,
 
-    -- foundation benchmark tests goals
     g.benchmark_goal_season as admin_goal_season,
     g.grade_goal as admin_goal,
     g.grade_range_goal as admin_goal_grade_range,
@@ -231,7 +230,6 @@ select
     null as n_admin_season_region_gl_at_above_expected,
     null as n_admin_season_region_gl_at_above_gap,
 
-    -- pm round goals: measure standard growth progress
     g.assessment_grade_int as grade_level,
     g.assessment_grade as expected_grade_level,
     g.starting_words as average_starting_words,
@@ -278,7 +276,6 @@ select
     rs.completed_test_round,
     rs.completed_test_round_int,
 
-    -- met pm goal calcs for the student
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
     pm.met_measure_name_code_goal,

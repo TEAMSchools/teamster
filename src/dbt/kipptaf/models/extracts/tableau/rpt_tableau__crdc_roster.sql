@@ -39,8 +39,6 @@ with
             -- need this to join to act/sat scores
             e.salesforce_id,
 
-            -- tag the manual entry for student numbers on the crdc student crosswalk
-            -- g-sheet feed
             me.crdc_question_section,
 
             coalesce(r.is_retained_year, false) as is_retained_year,
@@ -73,8 +71,6 @@ with
                 then 'Two or more races'
             end as crdc_demographic,
 
-            -- bring over the manual entry student numbers that match the crdc
-            -- question tag
             if(me.student_number is null, false, true) as crdc_question_section_status,
 
             if(e.iep_status = 'Has IEP' and not is_504, true, false) as iep_only,
@@ -153,14 +149,12 @@ with
 
             false as is_credit_recovery,
 
-            -- some data is needed as of fall snapshot
             if(
                 c.cc_dateenrolled <= '2023-10-02' and c.cc_dateleft >= '2023-10-02',
                 true,
                 false
             ) as is_oct_01_course,
 
-            -- some data is needed as of the last day of school
             if(c.cc_dateleft >= c.terms_lastday, true, false) as is_last_day_course,
 
             if(g.grade like 'F%', false, true) as passed_course,
@@ -251,16 +245,13 @@ with
             and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
     ),
 
-    -- this CTE is appending the different course versions/groupings needed
     final_schedule as (
-        -- data dual enrolled students
         select *, 'PENR-4' as crdc_question_section,
         from custom_schedule
         where is_dual_enrollment and is_oct_01_course and not ap_tag
 
         union all
 
-        -- credit recovery students
         select *, 'PENR-6' as crdc_question_section,
         from custom_schedule
         where is_credit_recovery
@@ -275,7 +266,6 @@ with
 
         union all
 
-        -- hs math courses
         select *, 'COUR-7' as crdc_question_section,
         from custom_schedule
         where
@@ -292,7 +282,6 @@ with
 
         union all
 
-        -- hs science courses
         select
             *,
             case
@@ -312,7 +301,6 @@ with
 
         union all
 
-        -- ap courses that have correct tags on PS
         select *, 'APIB-4' as crdc_question_section,
         from custom_schedule
         -- crdc ap group is needed to not count the AP courses crdc doesnt like
@@ -320,7 +308,6 @@ with
 
         union all
 
-        -- ap courses that have incorrect tags on PS
         select *, 'APIB-4' as crdc_question_section,
         from custom_schedule
         -- crdc ap group is needed to not count the AP courses crdc doesnt like
@@ -341,7 +328,6 @@ with
         group by all
     )
 
--- DSED-2 and ATHL
 select
     _dbt_source_relation,
     academic_year,
@@ -403,7 +389,6 @@ where
 
 union all
 
--- ENRL-1, 2a,2b, 3, and 4;and RETN
 select
     _dbt_source_relation,
     academic_year,
@@ -804,7 +789,6 @@ where
     is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
 
 union all
--- act/sat attempts
 select
     e._dbt_source_relation,
     e.academic_year,

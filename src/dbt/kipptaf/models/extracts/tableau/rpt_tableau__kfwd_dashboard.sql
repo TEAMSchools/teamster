@@ -308,7 +308,6 @@ select
     c.ktc_status,
     c.es_graduated,
     c.contact_highest_sat_score as highest_sat_score,
-    /* Military columns */
     c.contact_intent_to_enlist as intent_to_enlist,
     c.contact_cte_military_interest as cte_military_interest,
     c.contact_opt_out_national_contact,
@@ -593,11 +592,9 @@ select
 
     coalesce(
         gpa_fall.cumulative_credits_earned,
-        /* prev spring */
         lag(gpa_spr.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         ),
-        /* prev fall */
         lag(gpa_fall.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         )
@@ -606,11 +603,9 @@ select
     coalesce(
         gpa_spr.cumulative_credits_earned,
         gpa_fall.cumulative_credits_earned,
-        /* prev spring */
         lag(gpa_spr.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         ),
-        /* prev fall */
         lag(gpa_fall.cumulative_credits_earned, 1) over (
             partition by c.contact_id order by ay.academic_year asc
         )
@@ -705,7 +700,6 @@ select
             and ar.n_68_plus_ecc_submitted >= 2
             and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
-        -- when cf.best_guess_pathway = '4-year' and
         else 0
     end as is_submitted_quality_bar_int,
 

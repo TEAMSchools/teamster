@@ -28,9 +28,6 @@ with
             end as behavior,
 
             case
-                -- when b.behavior_category = 'Earned Incentives'
-                -- then 'Incentives'
-                /* Miami */
                 when
                     b._dbt_source_relation like '%kippmiami%'
                     and b.behavior_category in ('Written Reminders', 'Big Reminders')
@@ -47,7 +44,6 @@ with
                         'Teamwork (Community)'
                     )
                 then 'BEAT'
-                /* all other regions */
                 when
                     b._dbt_source_relation not like '%kippmiami%'
                     and b.behavior_category = 'Corrective Behaviors'
@@ -74,7 +70,6 @@ with
                 'Be Kind (Revolutionary Love)',
                 'Big Reminders',
                 'Corrective Behaviors',
-                -- 'Earned Incentives',
                 'Effort (Perseverance)',
                 'Effort (Pride)',
                 'Teamwork (Community)',
