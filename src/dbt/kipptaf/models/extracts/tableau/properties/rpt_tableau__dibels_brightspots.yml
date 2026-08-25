@@ -1,18 +1,20 @@
 models:
   - name: rpt_tableau__dibels_brightspots
     description: >-
-      DIBELS Bright Spots tracker (#4952): school/region-grain attainment
-      against KIPP Foundation's unpadded benchmark goals, tiered into Bright
-      Spot / On Track / In Range / Off Track. Grain is academic_year, region,
-      grade_level, period, population, goal_type -- not student-level. A single
-      student can contribute to more than one population row (an IEP student
-      counts toward both All and IEP). Reads the same student population as
-      rpt_tableau__dibels_dashboard (Reading iready_subject, excludes
-      self-contained and out-of-district, active/withdrawn/graduated
-      enrollment), scoped to Benchmark Composite only -- this tracker does not
-      use PM data. See the dibels-dashboard skill for the goal/tier join rules
-      and the gap-rounding rationale. TODO: add an exposure entry here once a
-      Tableau workbook is built against this model.
+      DIBELS Bright Spots tracker (#4952): student-grain rows carrying
+      school/region-level attainment against KIPP Foundation's unpadded
+      benchmark goals, tiered into Bright Spot / On Track / In Range / Off
+      Track. Student-grain (not pre-aggregated) so Tableau can slice by any
+      student attribute on the row -- teacher, advisory, demographics -- not
+      just the fixed axes the tier itself is computed on. Grain is
+      academic_year, region, school, grade_level, period, population, goal_type,
+      student_number -- a student can appear more than once per period (an IEP
+      student gets both an All row and an IEP row). Reads the same student
+      population and the same ELA course-enrollment join as
+      rpt_tableau__dibels_dashboard, scoped to Benchmark Composite only -- this
+      tracker does not use PM data. See the dibels-dashboard skill for the
+      goal/tier join rules and the gap-rounding rationale. TODO: add an exposure
+      entry here once a Tableau workbook is built against this model.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -23,11 +25,14 @@ models:
               - period
               - population
               - goal_type
+              - student_number
     columns:
       - name: academic_year
         data_type: int64
         description: Fall-start convention -- 2025 means school year 2025-26.
       - name: region
+        data_type: string
+      - name: school
         data_type: string
       - name: grade_level
         data_type: int64
@@ -46,14 +51,73 @@ models:
         description: >-
           GK-5 or G6-8, from the matching foundation goals row. Drives which
           tier lookup row applies.
+      - name: student_number
+        data_type: int64
+      - name: advisory
+        data_type: string
+        description: >-
+          advisory_name for ES/MS students, advisor_lastfirst for HS -- matches
+          rpt_tableau__dibels_dashboard.
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: lunch_status
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: is_homeless
+        data_type: boolean
+      - name: cohort
+        data_type: int64
+      - name: hos
+        data_type: string
+      - name: is_tutoring
+        data_type: boolean
+      - name: is_sipps
+        data_type: boolean
+      - name: teacherid
+        data_type: int64
+        description: >-
+          ELA course-section teacher, from base_powerschool__course_enrollments
+          -- PowerSchool only, null for Miami (Focus) students. Same join
+          rpt_tableau__dibels_dashboard uses.
+      - name: teacher_name
+        data_type: string
+        description: Same PowerSchool-only caveat as teacherid.
+      - name: course_name
+        data_type: string
+        description:
+          ELA course name, e.g. "ELA Gr3". Same PowerSchool-only caveat.
+      - name: course_number
+        data_type: string
+      - name: section_number
+        data_type: string
       - name: brightspot_status
         data_type: string
         description: Bright Spot, On Track, In Range or Off Track.
+      - name: is_attained
+        data_type: boolean
+        description: >-
+          Whether this student's own foundation_measure_standard_level matches
+          goal_type -- lets Tableau compute a custom % against any cut (teacher,
+          advisory, demographic) rather than only the pre-computed group rate
+          below.
+      - name: is_above_average_growth
+        data_type: boolean
+        description: >-
+          True when measure_semester_growth is Above Average or Well Above
+          Average on int_amplify__all_assessments -- Amplify's own national
+          growth norm, not a rate against this population's own average growth.
+          The latter is a distinct, unresolved ask -- see the dibels-dashboard
+          skill. Null on BOY rows.
       - name: n_all
         data_type: int64
         description: >-
           Count of students in this academic_year/region/grade_level/period/
-          population group.
+          population group -- repeated on every student row in the group.
       - name: n_attained
         data_type: int64
         description: >-
@@ -79,12 +143,7 @@ models:
           between two adjacent boundaries.
       - name: n_above_average_growth
         data_type: int64
-        description: >-
-          Count of n_all where is_above_average_growth is true on
-          int_amplify__all_assessments -- Amplify's own national growth norm
-          (Above Average or Well Above Average), not a rate against this
-          population's own average growth. The latter is a distinct, unresolved
-          ask -- see the dibels-dashboard skill.
+        description: Count of n_all where is_above_average_growth is true.
       - name: pct_above_average_growth
         data_type: float64
         description: >-

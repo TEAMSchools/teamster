@@ -31,13 +31,15 @@ models:
       - name: Population
         data_type: string
         description: >-
-          All or IEP. IEP goals exist starting AY2025 and are sparse -- Newark
-          and Camden grades K-5 only as of AY2025, none for grades 6-8 or
-          Paterson. Absence means no goal was set, not zero.
+          All, IEP or MLL. IEP goals exist starting AY2025 and are sparse --
+          Newark and Camden grades K-5 only as of AY2025, none for grades 6-8 or
+          Paterson. Absence means no goal was set, not zero. MLL goals as of
+          AY2025 are placeholder values (half of the matching IEP row), not real
+          T&L numbers -- see the dibels-dashboard skill.
         data_tests:
           - accepted_values:
               arguments:
-                values: [All, IEP]
+                values: [All, IEP, MLL]
               config:
                 severity: error
       - name: Grade_Goal_Type

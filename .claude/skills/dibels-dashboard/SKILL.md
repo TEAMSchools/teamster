@@ -42,17 +42,23 @@ indirection to a reviewer). Landed on one model doing all the work, named `rpt_`
 since Tableau reads it directly. If a real second consumer or a real
 transformation shows up later, split it back out then -- not preemptively.
 
-Reads the same student population as `rpt_tableau__dibels_dashboard` (Reading
-`iready_subject`, excludes self-contained and out-of-district,
-active/withdrawn/graduated enrollment), scoped to **Benchmark Composite only**
--- this tracker does not use PM data at all.
+Scoped to **Benchmark Composite only** -- this tracker does not use PM data at
+all.
 
-**Grain is academic_year / region / grade_level / period / population /
-goal_type -- aggregate, not student-level.** A student can contribute to more
-than one population row (an IEP student counts toward both All and IEP), which
-is exactly why this can't be flat columns on a student-grain table -- it would
-need a different join-with-membership-filter per population, which is what made
-folding into the existing dashboard model awkward enough to abandon.
+**Grain is academic_year / region / school / grade_level / period / population /
+goal_type / student_number -- student-level, not pre-aggregated.** An earlier
+pass grouped straight to the
+academic_year/region/grade_level/period/population/goal_type aggregate, which is
+wrong for Tableau: it locks the output to exactly those cuts, with no student
+row left to slice by teacher, advisory, or any demographic. Fixed by computing
+the same group stats (`n_all`, `n_attained`, `attained_rate`, `gap`,
+`brightspot_status`, `n_above_average_growth`, `pct_above_average_growth`) with
+**window functions** (`count(...) over (partition by ...)`) instead of
+`GROUP BY`, so every student keeps their own row (repeating the group's stats on
+each one) plus their own `is_attained` and `is_above_average_growth` flags for
+building custom cuts Tableau-side. A student can still appear more than once per
+period -- once per population they belong to (an IEP student gets both an All
+row and an IEP row).
 
 **Unpadded goals, not the existing padded ones.**
 `stg_google_sheets__dibels_bm_goals` (feeding the existing dashboard) is a
@@ -60,12 +66,34 @@ folding into the existing dashboard model awkward enough to abandon.
 `stg_google_sheets__dibels_foundation_goals` directly -- a separate goal source,
 not a shared join.
 
+**Enrollment source: `int_extracts__student_enrollments`, NOT `..._subjects`.**
+The `_subjects` variant is that same model cross-joined against a static 2-row
+list (`Reading`/`Math`) plus a few subject-crosswalk columns
+(`illuminate_subject_area`, `fast_subject`, `powerschool_credittype`, none of
+which this tracker uses) -- using it means fanning every student out 2x and then
+filtering straight back down with `iready_subject = 'Reading'`, which just lands
+back where the base model already was. `rpt_tableau__dibels_dashboard` does use
+`_subjects` (for the subject filter), which is why it looked like the default
+choice at first. **Two fields exist ONLY on `_subjects`, not the base model**:
+`nj_student_tier` and `mtss_enrollment` (both computed in `_subjects`'s own
+CTEs). Not used here -- if a future need brings them back, that's the trade to
+make explicitly, not a reason to default back to `_subjects` for everything.
+
 **Population membership, at the student level**: `All` always; `IEP` when
 `iep_status = 'Has IEP'` (string, confirmed via data -- NOT a boolean); `MLL`
-when `lep_status` (boolean, on `int_extracts__student_enrollments_subjects`).
-Fan a student's composite row out to 1-3 population rows via
+when `lep_status` (boolean, on `int_extracts__student_enrollments`). Fan a
+student's composite row out to 1-3 population rows via
 `cross join unnest(array_concat(['All'], if(iep_status = 'Has IEP', ['IEP'], []), if(lep_status, ['MLL'], [])))`
 -- avoids a 3-way `UNION ALL` and any subquery.
+
+**ELA teacher/course/section, joined exactly like
+`rpt_tableau__dibels_dashboard` does** -- `base_powerschool__course_enrollments`
+filtered to the `ELA Gr*` course-name list, `rn_course_number_year = 1`, not
+dropped, section not `%SC%`. This is separate from and in addition to `advisory`
+(a general homeroom/advisor field, not subject-specific) -- DIBELS is a reading
+assessment, so the relevant teacher is the ELA one, not the generic advisor.
+**PowerSchool-only**: null for Miami (Focus) students, same known gap the
+existing dashboard already has.
 
 **`foundation_measure_standard_level` (on `int_amplify__all_assessments`), not
 `aggregated_measure_standard_level`, is the field to aggregate on.** The latter
