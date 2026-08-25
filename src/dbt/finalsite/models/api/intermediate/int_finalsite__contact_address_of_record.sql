@@ -1,12 +1,6 @@
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     candidate_households as (
-        -- Any household carrying a street line is a candidate. Completeness is
-        -- deliberately NOT a gate: an incomplete address is visibly wrong in
-        -- Focus and can be corrected there, whereas withholding it is silent.
-        -- Households with no street at all ARE excluded — Miami holds 94 such
-        -- city/state/ZIP fragments, and each would otherwise count as its own
-        -- candidate and manufacture ambiguity that is not real.
         select
             finalsite_enrollment_id,
             household_id,
@@ -22,11 +16,6 @@ with
     ),
 
     address_candidates as (
-        -- One row per (contact, distinct address). Address identity is an
-        -- exact match on the five mailing fields — no case-folding, no
-        -- punctuation-stripping, no ZIP+4 truncation. Two spellings of the
-        -- same address therefore stay distinct candidates and are counted
-        -- separately, which is what makes candidate_count meaningful.
         {{
             dbt_utils.deduplicate(
                 relation="candidate_households",
@@ -46,12 +35,6 @@ with
     ),
 
     picked_address as (
-        -- The address of record is the BEST candidate, not the only one. A
-        -- complete address beats an incomplete one; ties fall to the lowest
-        -- household_id so the pick is stable between runs. Withholding was
-        -- worse than choosing: a blank address in an import-once feed is
-        -- permanent and silent, while a wrong one is visible and correctable
-        -- in the receiving system.
         {{
             dbt_utils.deduplicate(
                 relation="address_candidates",
@@ -62,8 +45,6 @@ with
     ),
 
     counted as (
-        -- Spined on the full contact list so a contact with no street-bearing
-        -- household still gets a row, with candidate_count 0.
         select
             c.finalsite_enrollment_id,
 

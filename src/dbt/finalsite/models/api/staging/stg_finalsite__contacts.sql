@@ -42,9 +42,6 @@ select
 
     households[safe_offset(0)].id as household_1_id,
 
-    -- normalize the household address: Finalsite emits empty strings (not null)
-    -- and mixed-case states, which flow unchanged into the Focus ADDRESS and
-    -- CONTACTS feeds. Blank -> null; uppercase the state code.
     nullif(trim(households[safe_offset(0)].address_1), '') as address_1,
     nullif(trim(households[safe_offset(0)].address_2), '') as address_2,
     nullif(trim(households[safe_offset(0)].city), '') as city,
@@ -56,11 +53,6 @@ select
         select h.id, from unnest(households) as h where h.id is not null
     ) as household_ids,
 
-    -- normalize to E.164 here, the earliest point each phone is a scalar
-    -- column, so every consumer reads one format: the Focus CONTACTS /
-    -- ADDRESS import feeds and the SIS-agnostic contact models alike.
-    -- Finalsite emits bare 10-digit numbers almost everywhere; anything not
-    -- confidently parseable passes through de-garbled rather than nulling.
     {{ clean_phone("phone_1.number") }} as phone_1_number,
     {{ clean_phone("phone_2.number") }} as phone_2_number,
     {{ clean_phone("phone_3.number") }} as phone_3_number,

@@ -39,10 +39,6 @@ with
     ),
 
     parent_ranked as (
-        -- The `primary` relationship sorts first when one exists, then
-        -- co-residents with the student, then an arbitrary but stable
-        -- relationship_id. Household co-membership ORDERS candidates; it does
-        -- not exclude them, so a non-resident parent still fills a slot.
         select
             c.finalsite_enrollment_id,
             c.rel_id,
@@ -64,8 +60,6 @@ with
     ),
 
     parent_picks as (
-        -- Dense slot numbering has no gaps, so a student with no `primary`
-        -- still gets a populated contact_1 rather than starting at contact_2.
         select
             * except (contact_rank),
 
@@ -313,9 +307,6 @@ with
     ),
 
     emergency as (
-        -- Positional passthrough: emergency_N is the emrg_N custom-field set
-        -- as-is. No ranking, no priority re-sort, no gap-filling — if an
-        -- emrg_N set is empty it simply produces no emergency_N row.
         select
             finalsite_enrollment_id,
             contact_slot,
