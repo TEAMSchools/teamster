@@ -12,10 +12,11 @@ models:
       names match the DeansList import template headers exactly. Rows are
       ordered per student with parents before emergency contacts, since
       DeansList displays contacts in the file's row order. Sourced from
-      `int_students__contacts`, filtered to the NJ regions. `IntegrationKey`
-      gives DeansList a stable id for each contact row, so two contacts sharing
-      a name no longer collapse into one on import. Delivered by the Dagster
-      asset `kipptaf/extracts/deanslist/contacts_txt`.
+      `int_students__contacts`, filtered to the NJ regions because that model
+      also carries Miami's Focus contacts. `IntegrationKey` gives DeansList a
+      stable id for each contact row, so two contacts sharing a name no longer
+      collapse into one on import. Delivered by the Dagster asset
+      `kipptaf/extracts/deanslist/contacts_txt`.
     data_tests:
       # The source grain is (student, contact_slot), but the DeansList template
       # fixes the header set so the slot cannot be projected — name plus
@@ -137,7 +138,13 @@ models:
           custom fields on the student's own Finalsite record. Same split as
           `bridge_student_contacts.student_contact_person_key`, with the student
           prefix taking it from that model's person grain down to DeansList's
-          (student, contact) grain.
+          (student, contact) grain — without it a parent with two enrolled
+          children would get one key for two rows. Left readable rather than
+          hashed like that marts key — the longest value is 43 characters
+          against DeansList's 64-character limit, so staff can trace a row back
+          to its Finalsite contact by eye. No region component, since
+          `student_number` is unique across the three NJ regions this extract
+          covers.
         data_tests:
           - not_null:
               config:
