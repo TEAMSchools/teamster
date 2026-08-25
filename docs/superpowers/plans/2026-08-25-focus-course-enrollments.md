@@ -952,6 +952,38 @@ from {{ ref("int_students__course_sections") }}
 where _dbt_source_project = 'kippmiami' and teachernumber is null
 ```
 
+- [ ] **Step 1b: Repair the multi-stint overlap test, which is now vacuous for
+      Miami**
+
+`src/dbt/kipptaf/tests/dim_student_section_enrollments__no_multi_stint_overlap.sql`
+guards a real invariant — one course enrollment must not overlap two stints —
+and after Task 4 it covers zero Miami rows. Three independent reasons, each
+sufficient on its own:
+
+1. It joins on `cc.cc_studentid` and `cc.cc_yearid`, which are NULL for every
+   Focus row. Task 4 moved the dim off those columns; this test was not moved
+   with it.
+1. It uses `cc.cc_dateleft {greater than} enr.entrydate` without the coalesce,
+   so 96.9% of Miami rows drop even if the key matched.
+1. `where not cc.is_dropped_section` — that column is NULL for Focus, and
+   `not NULL` is NULL, so every remaining Miami row is filtered out.
+
+Bring it in line with the dim it guards:
+
+- Read `int_students__course_enrollments`, not
+  `base_powerschool__course_enrollments`.
+- Join on
+  `(students_student_number, sections_schoolid, cc_academic_year, _dbt_source_project)`.
+- Coalesce `cc_dateleft` to `cast('9999-12-31' as date)`, matching the dim.
+- Make the drop filter null-safe:
+  `where not coalesce(cc.is_dropped_section, false)`. Focus has no drop
+  convention, so a NULL there means "not known to be dropped" and the row must
+  stay in scope.
+
+Then confirm the test actually sees Miami now — a test that passes because it
+matches nothing is worse than no test. Report how many Miami rows it evaluates,
+not just whether it passed.
+
 - [ ] **Step 2: Record NJ parity against prod**
 
 Run this for `int_students__course_enrollments` as written, then again
