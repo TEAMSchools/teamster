@@ -1,22 +1,4 @@
 with
-    union_relations as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "base_powerschool__sections"),
-                    source("kippcamden_powerschool", "base_powerschool__sections"),
-                    source("kippmiami_powerschool", "base_powerschool__sections"),
-                    source("kipppaterson_powerschool", "base_powerschool__sections"),
-                ]
-            )
-        }}
-    ),
-
-    sections as (
-        select *, {{ extract_source_project() }} as _dbt_source_project,
-        from union_relations
-    ),
-
     -- Focus is Miami's system of record from AY2026 forward, but the frozen
     -- archive still holds Miami AY2020 through AY2025. Scope by year rather
     -- than excluding Miami wholesale, and derive the boundary so a Focus
@@ -39,7 +21,7 @@ with
             if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
             coalesce(sec.sections_course_number like 'HR%', false) as is_homeroom,
-        from sections as sec
+        from {{ ref("int_powerschool__sections_union") }} as sec
         cross join focus_academic_year_boundary as fay
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
@@ -68,8 +50,7 @@ with
             -- sections.course_key hashes courses_course_number, so Focus must
             -- populate it too or every Miami row hashes a null placeholder.
             c.short_name as courses_course_number,
-
-            'kippmiami' as _dbt_source_project,
+            cp._dbt_source_project,
 
             coalesce(
                 sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number

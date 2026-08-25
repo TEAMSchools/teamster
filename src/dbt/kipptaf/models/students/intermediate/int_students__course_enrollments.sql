@@ -1,34 +1,4 @@
 with
-    union_relations as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source(
-                        "kippnewark_powerschool",
-                        "base_powerschool__course_enrollments",
-                    ),
-                    source(
-                        "kippcamden_powerschool",
-                        "base_powerschool__course_enrollments",
-                    ),
-                    source(
-                        "kippmiami_powerschool",
-                        "base_powerschool__course_enrollments",
-                    ),
-                    source(
-                        "kipppaterson_powerschool",
-                        "base_powerschool__course_enrollments",
-                    ),
-                ]
-            )
-        }}
-    ),
-
-    add_dbt_field as (
-        select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
-        from union_relations as ur
-    ),
-
     -- Focus is Miami's system of record from AY2026 forward, but the frozen
     -- archive still holds Miami AY2020 through AY2025. Scope by year rather
     -- than excluding Miami wholesale, and derive the boundary so a Focus
@@ -100,7 +70,7 @@ with
                 order by a.cc_termid desc, a.cc_dateenrolled desc, a.cc_dateleft desc
             ) as rn_student_year_illuminate_subject_desc,
 
-        from add_dbt_field as a
+        from {{ ref("int_powerschool__course_enrollments_union") }} as a
         cross join focus_academic_year_boundary as fay
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
@@ -129,9 +99,9 @@ with
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
             c.short_name as cc_course_number,
+            s._dbt_source_project,
 
-            'kippmiami' as _dbt_source_project,
-            'Miami' as region,
+            {{ extract_region("s") }} as region,
 
             coalesce(
                 sr_ein.powerschool_teacher_number, sr_email.powerschool_teacher_number

@@ -25,11 +25,10 @@ with
             short_name as course_number,
             title as course_name,
             credit_hours,
+            _dbt_source_project,
 
             -- Focus has no credit-type field. Null rather than a guess.
             cast(null as string) as credittype,
-
-            'kippmiami' as _dbt_source_project,
         from {{ ref("int_focus__courses") }}
         where short_name is not null
     ),

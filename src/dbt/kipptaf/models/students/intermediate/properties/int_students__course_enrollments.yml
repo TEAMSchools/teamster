@@ -64,16 +64,17 @@ models:
             source_column: teachernumber
       - name: _dbt_source_project
         description: >-
-          Region prefix extracted from `_dbt_source_relation` via
-          `regexp_extract(..., r'(kipp\w+)_')` on the PowerSchool branch;
-          hardcoded to `kippmiami` on the Focus branch. Used as a region
-          discriminator in downstream surrogate keys, consistent across all
-          upstream union tables.
+          Region prefix extracted from `_dbt_source_relation`. Carried through
+          from `int_powerschool__course_enrollments_union` on the PowerSchool
+          branch and from `int_focus__schedule` on the Focus branch -- both
+          derive it via the same `extract_source_project` macro. Used as a
+          region discriminator in downstream surrogate keys, consistent across
+          all upstream union tables.
         data_type: string
       - name: region
         description: >-
-          Derived from `_dbt_source_relation` on the PowerSchool branch;
-          hardcoded to `Miami` on the Focus branch.
+          Title-case region derived from `_dbt_source_project` via
+          `extract_region`, on both the PowerSchool and Focus branches.
         data_type: string
       - name: is_ap_course
         description: >-
