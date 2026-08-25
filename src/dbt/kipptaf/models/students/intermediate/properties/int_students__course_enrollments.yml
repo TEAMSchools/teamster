@@ -1,0 +1,48 @@
+models:
+  - name: int_students__course_enrollments
+    description: >-
+      SIS-neutral course enrollment spine. Each row is one student's enrolment
+      in one section. Unions the four PowerSchool district
+      `base_powerschool__course_enrollments` sources with Miami's Focus
+      schedule, conformed inline to the PowerSchool column vocabulary. The Miami
+      PowerSchool branch is scoped to years before Focus coverage begins.
+      Replaces `base_powerschool__course_enrollments` as the canonical
+      course-enrollment-grain source.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cc_dcid
+              - _dbt_source_project
+    columns:
+      - name: cc_dcid
+        description: >-
+          Course enrollment identifier. For Miami, the Focus
+          `student_schedule_id`, unique across all 19,594 Focus schedule rows.
+        data_type: int64
+      - name: is_dropped_section
+        description: >-
+          Whether the student dropped this section. PowerSchool derives it from
+          its `sectionid < 0` convention. Null for Miami: Focus has no drop
+          convention, and a false here would put 19,594 guaranteed-not-dropped
+          rows into every network drop-rate metric.
+        data_type: bool
+      - name: is_dropped_course
+        description: >-
+          Whether every section of this course was dropped. Null for Miami, for
+          the same reason as `is_dropped_section`.
+        data_type: bool
+      - name: is_homeroom
+        description: >-
+          Whether this enrollment is a homeroom. PowerSchool from the `HR%`
+          course-number convention, Focus from a `Homeroom%` course title. Focus
+          coverage is elementary-only, tracked on #4868.
+        data_type: bool
+      - name: students_student_number
+        description: >-
+          Canonical network student number. For Miami, from
+          `int_focus__students.student_number`, which already has the 8400
+          Miami-Dade district prefix stripped.
+        data_type: int64
