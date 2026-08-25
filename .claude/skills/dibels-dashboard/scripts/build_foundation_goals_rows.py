@@ -105,7 +105,9 @@ def parse_grid(path: str, academic_year: int) -> tuple[list[tuple], list[str]]:
     warnings: list[str] = []
 
     lines = [
-        ln.rstrip("\n") for ln in Path(path).read_text().splitlines() if ln.strip()
+        ln.rstrip("\n")
+        for ln in Path(path).read_text(encoding="utf-8").splitlines()
+        if ln.strip()
     ]
     grid = [ln.split("\t") for ln in lines]
 
@@ -233,7 +235,7 @@ def main() -> None:
         all_warnings.extend(warnings)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w") as f:
+    with out_path.open("w", encoding="utf-8") as f:
         for row in all_rows:
             f.write("\t".join(str(v) for v in row) + "\n")
 

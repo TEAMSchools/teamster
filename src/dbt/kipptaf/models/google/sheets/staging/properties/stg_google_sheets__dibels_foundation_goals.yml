@@ -16,7 +16,39 @@ models:
               - Period
               - Population
               - Grade_Goal_Type
+          config:
+            severity: error
     columns:
+      - name: Period
+        data_type: string
+        description: MOY or EOY.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [MOY, EOY]
+              config:
+                severity: error
+      - name: Population
+        data_type: string
+        description: >-
+          All or IEP. IEP goals exist starting AY2025 and are sparse -- Newark
+          and Camden grades K-5 only as of AY2025, none for grades 6-8 or
+          Paterson. Absence means no goal was set, not zero.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [All, IEP]
+              config:
+                severity: error
+      - name: Grade_Goal_Type
+        data_type: string
+        description: At/Above or Well Below.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [At/Above, Well Below]
+              config:
+                severity: error
       - name: Academic_Year
         data_type: int64
         description: >-
@@ -40,18 +72,6 @@ models:
       - name: Grade_Level
         data_type: int64
         description: Individual grade, K = 0.
-      - name: Period
-        data_type: string
-        description: MOY or EOY.
-      - name: Population
-        data_type: string
-        description: >-
-          All or IEP. IEP goals exist starting AY2025 and are sparse -- Newark
-          and Camden grades K-5 only as of AY2025, none for grades 6-8 or
-          Paterson. Absence means no goal was set, not zero.
-      - name: Grade_Goal_Type
-        data_type: string
-        description: At/Above or Well Below.
       - name: Grade_Goal_Low
         data_type: float64
         description: Low end of the goal range as published by T&L.
