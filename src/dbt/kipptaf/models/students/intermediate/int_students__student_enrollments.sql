@@ -44,7 +44,7 @@ with
             lag(academic_year) over (
                 partition by network_student_number order by academic_year asc
             ) as academic_year_prev,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_year = 1
     ),
 
@@ -103,7 +103,7 @@ with
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
 
             if(yg.grade_level_prev = enr.grade_level, true, false) as is_retained_year,
-        from {{ ref("int_focus__student_enrollments") }} as enr
+        from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
             {{ ref("int_focus__students") }} as stu
             on enr.network_student_number = stu.student_number

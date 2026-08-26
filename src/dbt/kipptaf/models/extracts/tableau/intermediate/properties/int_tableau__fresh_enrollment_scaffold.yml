@@ -9,8 +9,8 @@ models:
       stg_google_sheets__people__locations to reach the PowerSchool-space
       schoolid and the school abbreviation. Grade membership comes from actual
       current enrollment (stg_powerschool__students where enroll_status = 0;
-      int_focus__student_enrollments where enroll_status = 0, academic_year =
-      current_academic_year and rn_year = 1), not a static
+      int_focus__student_enrollment_roster where enroll_status = 0,
+      academic_year = current_academic_year and rn_year = 1), not a static
       low_grade/high_grade-style span -- high_grade does track each school's max
       enrolled grade, but low_grade is stale-low on rebanded schools, so
       expanding the declared span injects rows for grades those schools don't

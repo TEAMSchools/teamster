@@ -40,7 +40,7 @@ with
             student_last_name as last_name,
 
             network_student_number as student_number,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
     ),
 
     powerschool_conformed as (
