@@ -43,11 +43,22 @@ with
         -- coalesce below is required for Miami to match its current stint.
         -- It is a no-op for NJ: cc_dateleft is null on zero NJ rows. entrydate
         -- and exitdate are never null in student_enrollments, so they need no
-        -- equivalent coalesce. The ~10.5% of Miami rows still unmatched after
-        -- this (same-day stints, cross-school scheduling artifacts) is an
-        -- accepted residual within the NJ completed-year orphan-rate norm,
-        -- tracked in #4970 -- see the rate test in
+        -- equivalent coalesce. The ~10.6% of Miami rows still unmatched after
+        -- this is an accepted residual within the NJ completed-year orphan-rate
+        -- norm -- see the rate test in
         -- tests/test_miami_section_enrollment_orphan_rate.sql.
+        --
+        -- That residual is attributed, not unexplained. Of 2,045 orphaned
+        -- Miami AY2026 rows measured 2026-08-26: 1,859 schedule rows fall
+        -- outside a stint at the same school (#5002); 182 are stale schedule
+        -- rows at a campus the student was reassigned away from, left open in
+        -- Focus (#5003); 4 are courses taken at a second campus, where
+        -- int_focus__student_enrollment keeps only the primary stint (#5003).
+        -- The Focus school-to-network mapping was ruled out for the last two.
+        --
+        -- All three stay null deliberately: attaching a section at one campus
+        -- to the student's stint at another would emit a confidently wrong
+        -- key, which is worse than no key (#4970).
         left join
             student_enrollments as enr
             on cc.students_student_number = enr.student_number

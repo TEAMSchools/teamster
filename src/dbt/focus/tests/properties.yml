@@ -36,3 +36,27 @@ data_tests:
           ref:
             name: stg_focus__people_join_contacts
             package: focus
+  - name: stg_focus__student_enrollment__one_primary_per_stint
+    description: >-
+      Guards the tie-break of the same-start-date dedupe in
+      int_focus__student_enrollment. When a student holds two enrollments
+      sharing a year and a start date at different schools, exactly one must
+      leave the Focus "Second School" checkbox (custom_9) unchecked -- that row
+      is the primary, home-campus enrollment, and it is the one the dedupe
+      keeps. Two unchecked rows leave the dedupe with no signal and it picks
+      between two schools arbitrarily; zero unchecked rows mean the primary
+      record is missing. Either way a student is attributed to a campus by
+      accident, which is what happened before the tie-break read this field
+      (#5003). Asserted on the staging model because the dedupe has already
+      dropped one row by the intermediate layer, and a uniqueness test on the
+      deduped grain cannot fail by construction. Same-school duplicates are out
+      of scope; the dedupe resolves those without a primary marker, as are
+      groups where one row has no school at all -- there is no second school to
+      be primary over, and no such row exists in Focus today.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_focus__student_enrollment
+            package: focus
