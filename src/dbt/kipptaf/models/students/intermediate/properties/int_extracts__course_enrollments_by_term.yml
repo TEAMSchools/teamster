@@ -22,12 +22,18 @@ models:
           automation_condition:
             cron_schedule: 0 2 * * *
     data_tests:
+      # grain keyed on student_number, not studentid: studentid is null on
+      # every Focus row, so Miami's rows would all collide on a null key.
+      # student_number is non-null on both SIS branches and matches the
+      # model's own dedup partition. It is also the stricter assertion --
+      # distinct student_number equals the row count exactly, where distinct
+      # studentid does not.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_project
               - academic_year
-              - studentid
+              - student_number
               - course_number
               - quarter
           config:
@@ -38,7 +44,9 @@ models:
       - name: studentid
         data_type: int64
         description:
-          The internal number and ID of the associated Students record.
+          The internal number and ID of the associated Students record. Null for
+          Miami from AY2026 forward -- Focus has no equivalent internal id. Use
+          student_number to identify a student across both SIS branches.
         config:
           meta:
             source_system: PowerSchool
@@ -1240,7 +1248,8 @@ models:
       - name: rn
         data_type: int64
         description: >
-          Row number within (project, academic_year, studentid, course_number,
-          quarter), ordered by school exitdate desc then CC dateleft desc.
-          Always 1 in this model's output — filtered by a WHERE clause after
-          computing the window, not QUALIFY. Retained for downstream reference.
+          Row number within (project, academic_year, student_number,
+          course_number, quarter), ordered by school exitdate desc then CC
+          dateleft desc. Always 1 in this model's output — filtered by a WHERE
+          clause after computing the window, not QUALIFY. Retained for
+          downstream reference.
