@@ -288,9 +288,10 @@ select
     address is now the login generator's google_email like every other region,
     so the username and password behind it come from the same place. Leaving the
     password null failed every Paterson row of the Google Directory user sync
-    (#4756). The Miami/Paterson SPED exceptions below are NOT stale: neither
-    region has rows in the edplan njsmart union, so they must keep reading
-    ar.spedlep or their IEP data drops to null. */
+    (#4756). The Miami SPED exception below is NOT stale: Miami has no rows in
+    the edplan njsmart union, so it must keep reading ar.spedlep or its IEP data
+    drops to null. Paterson used to share that exception and no longer does --
+    it now pulls EdPlan like Newark and Camden. */
     sl.username as student_web_id,
     sl.default_password as student_web_password,
 
@@ -303,7 +304,7 @@ select
     ) as is_fldoe_fte_all,
 
     if(
-        ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.special_education_code
+        ar.region = 'Miami', ar.spedlep, sped.special_education_code
     ) as special_education_code,
 
     if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
@@ -333,9 +334,7 @@ select
         njr.homelessprimarynighttimeres
     ) as homeless_primary_nighttime_residence_code,
 
-    coalesce(
-        if(ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.spedlep), 'No IEP'
-    ) as spedlep,
+    coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
 
     case
         when ar.region = 'Miami'
