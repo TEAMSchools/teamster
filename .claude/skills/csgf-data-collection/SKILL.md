@@ -413,15 +413,49 @@ Questions are done (Step 4) -- before treating the doc as final.
 - **Teammates outside the Data Team** (Compliance -- Jeff Fleming, Nadja Salem,
   Susie Chu): reach them via the CSGF-dedicated Slack channel, replacing the
   in-person kickoff meeting cycles used to have (alongside CSGF's own optional
-  office hours -- see Step 2). Post one message covering:
-  1. What changed in general this cycle (a summary, not the full doc).
-  2. A link to the updated item-list doc, with an explicit ask to read it.
-  3. The Outlook calendar invites they should expect to receive.
-  4. Per-person specifics that affect their own items -- e.g. "you'll need an
-     NSC file in January" for whoever owns HSDC Round 2, or "Finance has two
-     rounds -- unaudited for the October deadline, audited in January" for
-     Compliance. Don't make people extract their own action items from the full
-     doc -- call them out by name.
+  office hours -- see Step 2). Post one message covering: the 3 most important
+  dates, what changed this cycle, a link to the item-list doc with an explicit
+  prework ask, the Outlook invites they'll get, and per-person specifics called
+  out by name (don't make people extract their own action items from the full
+  doc). **Template, sent and working for the 2026-2027 cycle:**
+  [`reference/kickoff-slack-template.md`](reference/kickoff-slack-template.md)
+  -- reuse the structure, swap the `[ADJUST]` placeholders each cycle.
+
+### 7. Generate and send the Outlook calendar invites
+
+**Trigger:** once this cycle's dates are finalized (Step 3) -- same dates the
+Slack message (Step 6) uses.
+
+1. **First, create an Outlook Contact Group** with everyone involved in this
+   cycle's collection, if one doesn't already exist -- do this before touching
+   the invites. A personal Contact Group can be typed directly into an invite's
+   attendee field in the Outlook client and it expands to every member
+   automatically, so you add it once per invite instead of typing each person's
+   email every time. (A personal Contact Group has no email address of its own,
+   so it can't be embedded in a raw `.ics` file -- it only works from inside the
+   Outlook client, which is exactly how it's used in step 3 below.)
+2. **Generate an `.ics` file** covering this cycle's actual dates: the Data
+   Collection Window, Pre-Work Completed Deadline, each Office Hours slot, the
+   Internal Deadline, Panic Week, and the Official Deadline (pull the exact
+   dates from the item-list doc's Context section -- see Step 3). Worked example
+   from the 2026-2027 cycle, with correct RFC 5545 structure (CRLF line endings,
+   balanced VEVENT/VALARM blocks) to use as a reference:
+   [`reference/outlook-invites-2026-2027.ics`](reference/outlook-invites-2026-2027.ics).
+   Regenerate fresh each cycle with that cycle's real dates -- don't just reuse
+   the old file's dates.
+3. **Import it into classic desktop Outlook** via **File → Open & Export →
+   Import/Export → "Import an iCalendar (.ics) or vCalendar (.vcs) file."** **Do
+   not double-click the file** -- on a machine where Microsoft's newer "New
+   Outlook" (or the web client) is the default `.ics` handler, a double-click
+   opens that client instead and offers to "add" the file as an entirely
+   separate subscribed calendar feed rather than importing individual events --
+   confirmed behavior, not a bug in the file. If double-clicking keeps doing
+   this, it's a Windows default-app association (Settings → Apps → Default apps
+   → `.ics`), not something to fix in the file itself.
+4. **Edit each imported invite to add the Contact Group (Step 1) as attendees**,
+   then send. The generated `.ics` intentionally has no `ATTENDEE`/`ORGANIZER`
+   lines -- recipients get added per-invite, in Outlook, not baked into the
+   file.
 
 ---
 
@@ -543,6 +577,44 @@ corresponding `rpt_gsheets__csgf_*` dbt model (aggregate-level) over reading the
 live CSGF sheet directly.
 
 ---
+
+## Known data risks -- verify before submitting
+
+**`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
+cycle -- owner is aware and fixing separately from this skill; check whether
+it's still open before relying on this note). The model is driven by
+`stg_powerschool__schools`, a frozen PowerSchool-era Miami school catalog that
+was never updated after Miami's cutover to Focus as its SIS. Concretely:
+
+- Two Focus-marked-`(Closed)` schools (Sunrise, Liberty) still appear in the
+  catalog and show up in the extract with every enrollment/demographic column
+  null.
+- Three schools with real, currently-enrolled Focus students are silently
+  **missing** from the extract entirely (not null -- absent rows), because the
+  join to the stale catalog fails: KIPP Miami Tech (95 HS students), KIPP Legacy
+  Elementary (173 students), KIPP Legacy Middle (32 students) -- roughly 300 of
+  Miami's ~1,755 enrolled students, about 17% of Miami, invisible to this
+  report.
+- This is unrelated to the placeholder-row/Focus-cutover issue documented in
+  `src/dbt/kipptaf/CLAUDE.md`'s "Known Upstream Issues" (that one is about the
+  enrollment spine correctly losing synthetic continuity rows) -- this is a
+  stale school directory, a distinct problem.
+- **Before submitting Miami's enrollment numbers to CSGF**, cross-check the
+  extract's Miami school list against Focus's actual current roster (5 active
+  buildings as of this cycle: Courage, Royalty, Miami Tech, Legacy ES, Legacy
+  MS) rather than trusting the extract's row count at face value.
+
+**Forward risk for next cycle, not this one:** Miami opened its first high
+school in AY2026 -- KIPP Miami Technical High, ~95 students, mostly grade 9. The
+7 HS-scoped `rpt_gsheets__csgf_*` models are correctly Miami-irrelevant _this_
+cycle (they read AY2025, when Miami had zero HS students), but next cycle they
+roll to AY2026 and will need Miami HS data for the first time ever. Miami's
+PowerSchool-based course/grade ingestion (which those models' lineage depends on
+-- `base_powerschool__course_enrollments`, `stg_powerschool__storedgrades`) is
+retired post-Focus-cutover, with no known replacement path for HS course/grade
+data. Whoever runs next cycle's rollover should check this explicitly rather
+than assuming the existing HS models will "just work" once Miami has HS
+enrollees.
 
 ## Open questions for this skill (not yet answered)
 
