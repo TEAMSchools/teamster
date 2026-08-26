@@ -112,8 +112,8 @@ misleading heading — drop such columns and let the consuming union null-fill.
 
 The student id has the same shape of trap: `students.student_id` is the network
 student number prefixed with `8400` (Miami-Dade's FLDOE district number), and
-`int_focus__student_enrollment.student_number` holds that PREFIXED form despite
-its name, so joining on it by name returns zero matches with no error.
+`int_focus__student_enrollment_roster.student_number` holds that PREFIXED form
+despite its name, so joining on it by name returns zero matches with no error.
 
 ## Source data conventions
 
