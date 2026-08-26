@@ -75,8 +75,8 @@ models:
         description: >-
           Focus marking-period id the schedule row covers. Focus stores 0 rather
           than null for a full-year schedule, so this does not resolve to
-          stg_focus__marking_periods for every row — int_focus__schedule
-          normalizes the 0 to null before joining.
+          stg_focus__marking_periods directly — int_focus__schedule resolves the
+          0 to the school's type = 'year' marking period.
         data_type: int
       - name: mp
         description: >-

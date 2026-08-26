@@ -4,9 +4,13 @@ select
     school_id,
     student_id,
     grad_subject_id,
+    report_card_grade_id,
+    grade_scale_id,
+    course_period_id,
     course_num,
     course_title,
     grade_title,
+    percent_grade,
     gpa_points,
     weighted_gpa_points,
     credits,
@@ -25,13 +29,13 @@ select
     custom_7 as grade_level,
 
     -- Focus stores this FK as a string here (int64 everywhere else) and prefixes
-    -- live postings with a grade-type token (e.g. DT7181). safe_cast keeps only
-    -- values that are already a plain id, so downstream joins to
-    -- stg_focus__marking_periods compare plain columns; a prefixed value goes
-    -- null rather than being decoded, since stripping a token cannot be done
-    -- safely without knowing Focus's full token vocabulary — the trailing digit
-    -- run of an unknown token could collide with a real id.
-    -- TODO: decode the token from the raw dlt table once its vocabulary is
-    -- known, so live postings recover their marking period.
-    safe_cast(marking_period_id as int) as marking_period_id,
+    -- live postings with a grade-type token: DT is the running gradebook, DY is
+    -- yesterday's grade, E is an exam (Focus SIS Level 1 Certification, Day 2).
+    -- The decode strips any alpha prefix and casts the digit tail, rather than
+    -- enumerating the tokens -- the vocabulary grew from 5 values to 8 in 5 days,
+    -- so an enumeration would silently null the next token Focus adds. The token
+    -- is kept as its own column because it is load-bearing for the grain:
+    -- dropping it collapses 3,074 live-posted rows onto 1,542.
+    regexp_extract(marking_period_id, r'^[A-Za-z]+') as grade_type_token,
+    safe_cast(regexp_extract(marking_period_id, r'\d+$') as int) as marking_period_id,
 from {{ source("focus", "student_report_card_grades") }}
