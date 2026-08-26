@@ -6,7 +6,23 @@
 explaining, reviewing, or modifying). Project-wide conventions live in this
 file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
+## CLAUDE.md Editing Rules
+
+- **Before adding to any CLAUDE.md file**: beyond the skill's
+  brevity/avoid-list, apply the necessity test — name the specific decision or
+  action Claude will make differently because of the line. If you can't name
+  one, cut it, even when the line is concise and non-obvious.
+
+- **Where a new line goes**: if it is specific to one MCP server's behavior, put
+  it in `.claude/context/<server>.md` (auto-injected on first use of that
+  server). If it is specific to one directory, put it in that directory's
+  CLAUDE.md. Keep it in this file only when it must be known BEFORE any tool
+  runs — safety prohibitions, branch/PR etiquette, and rules whose violation
+  produces a silently wrong answer rather than a loud error.
+
 ## Working Conventions
+
+### Privacy
 
 - **PII stays local.** Never emit PII values (or screenshots/logs containing
   them) to PR comments, commits, issues, Slack, Asana, scheduled-agent outputs,
@@ -15,6 +31,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   values from local validation, replace PII with redacted labels (`Student A`,
   `a sample student`) or column-name references. Aggregates / deidentified ≠
   PII. See _PII reference_ below for what counts.
+
+### Issues and specs
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
@@ -28,7 +46,21 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   picker), invisible to the API. Read the matching template under
   `.github/ISSUE_TEMPLATE/` yourself (`bug_report.md` or `feature_request.md`)
   and structure the body to match it — plain-language sections first, a "For
-  Claude" fold-out last — rather than writing free-form.
+  Claude" fold-out last — rather than writing free-form. Because no template is
+  applied, its front-matter label never lands either: add `enhancement`
+  (feature_request) or `bug` (bug_report) alongside the conventional-commit-type
+  and source-system labels.
+
+- **Keep the "For Claude" fold-out on every issue Claude opens.** The template's
+  "Delete if you're not looping Claude in" applies only when the issue carries
+  no technical detail at all. `PLAIN_LANGUAGE.md` names the fold-out as the one
+  section exempt from plain-language rules, so its job is structural, not
+  audience-based — it is where model paths, column names, row counts,
+  constraints, and acceptance criteria go. Reaching for a heading the template
+  does not have (a "what blocks what" section, say) is the tell that detail is
+  escaping into the body; put it below the fold instead.
+
+### Branches and worktrees
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them. When an issue isn't already required (i.e. quick fixes, not
@@ -84,29 +116,25 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   from cwd (`trunk check`, `pytest`, `sed -i`) silently operate on the wrong
   checkout's copies and report a false "clean".
 
-- **Worktree Read/Edit/Write must target the worktree path**, not the main
-  checkout: editing `/workspaces/teamster/<path>` instead of
-  `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
-  unchanged and dirties `main` (the worktree commit then reports "nothing to
-  commit").
+- **Worktree file operations must name the worktree path** —
+  `/workspaces/teamster/.worktrees/<branch>/<path>`, never
+  `/workspaces/teamster/<path>`. Editing the main path silently leaves the
+  worktree unchanged and dirties `main`, and the worktree commit then reports
+  "nothing to commit". IDE Pyright diagnostics on worktree files are
+  false-positive-prone for the same reason: it resolves imports against the MAIN
+  checkout, so worktree-only signature or symbol changes surface phantom
+  `unknown import` / `no parameter named X` errors. Trust `uv run` executed
+  inside the worktree, not the IDE.
 
-- **IDE Pyright diagnostics on worktree files are false-positive-prone** — it
-  resolves imports against the MAIN checkout, so worktree-only signature/symbol
-  changes surface phantom `unknown import` / `no parameter named X` errors.
-  Trust `uv run` executed inside the worktree, not the IDE.
-
-- **Worktree file Read/Edit and Bash `cd <worktree>` re-inject that worktree's
-  CLAUDE.md files (~40KB each) into context on every call**; `git -C <worktree>`
-  and `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
+- **Worktree Read/Edit and Bash `cd <worktree>` re-inject that worktree's
+  CLAUDE.md files (~40KB each) on every call**; `git -C <worktree>` and
+  `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
   (content-exempt), do NOT. For a large multi-file worktree refactor, delegate
-  the edits to subagents (their context absorbs the injection) and verify via
-  `git -C <worktree> diff` from the main repo.
-
-- **When subagents aren't available**, edit worktree files by `Write`-ing a
-  Python script to `.claude/scratch/` and running it by ABSOLUTE path from the
-  main repo cwd — `Write` content is injection-exempt and no `cd` occurs, so
-  neither step re-injects. Assert each anchor matches exactly once and abort
-  otherwise; verify with `git -C <worktree> diff`.
+  the edits to subagents — their context absorbs the injection — and verify via
+  `git -C <worktree> diff` from the main repo. With no subagents available,
+  `Write` a Python script to `.claude/scratch/` and run it by ABSOLUTE path from
+  the main repo cwd (neither step re-injects); assert each anchor matches
+  exactly once, abort otherwise, and verify the same way.
 
 - **`git worktree add` with a RELATIVE path resolves against the shell cwd**,
   which drifts after a foreground `cd` into another worktree — pass an ABSOLUTE
@@ -117,6 +145,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
   declined an issue, `git checkout -b <branch>`.
 
+### Git basics
+
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
   naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
@@ -126,11 +156,40 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   hook, `git add -A` can stage unrelated files. Subagents must name specific
   files in `git add` — never `-u`, `-A`, or `.`.
 
-- **Refactor regex sweeps include `*.md`**: a model/column rename's
-  `grep -rl --include='*.sql' --include='*.yml'` misses CLAUDE.md
-  hash-derivation examples, plan/spec docs, and inline doc cross-refs. Use
-  `--include='*.{sql,yml,md}'` (or drop `--include` entirely) for any rename
-  that changes a model or column name.
+- **`git merge-tree` reads the committed tip, not the index** — a staged-but-
+  uncommitted conflict resolution still reports CONFLICT. Commit first, then
+  verify with `git merge-tree --write-tree --name-only origin/main <branch>`.
+
+- **A version-only dependency conflict resolves by taking main's blobs whole**:
+  `git checkout origin/main -- <manifest> <lockfile>`, then run the installer
+  and confirm it leaves the lockfile unchanged (proof main's pair is coherent).
+  Both files end byte-identical to main, so the conflict cannot recur. Do NOT
+  hand-merge a lockfile.
+
+- **Git resuming**: Before resuming work on an existing branch, merge `main`:
+  `git fetch origin main && git merge origin/main`.
+
+- **A CI failure in a file your branch never touched usually means `main`
+  moved** — run `git log <merge-base>..origin/main` before diagnosing. A clean
+  prod baseline does NOT rule this out — CI builds `--full-refresh` against
+  deferred upstreams, so prod passing and CI failing is the expected shape.
+  Check git before the warehouse; it is one command and decisive.
+
+- **A mid-session Codespace restart can delete `.worktrees/` and desync local
+  git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
+  HEAD that reads as the pre-session commit yet holds merged content). Trust
+  GitHub over local git for ground truth: `gh api .../branches/main` and
+  `gh api .../pulls/<n>` (`merged` / `merge_commit_sha`), then re-fetch and
+  recreate any lost worktree off `origin/main`.
+
+- **Reverting experimental code to a docs-only PR**:
+  `git checkout origin/main -- <file>` restores main's CURRENT blob, which can
+  differ from the branch's merge-base and leak main's advancement into the
+  three-dot PR diff. Restore to the merge-base instead —
+  `git checkout $(git merge-base origin/main HEAD) -- <file>` — then verify with
+  `git diff --stat origin/main...HEAD`.
+
+### Subagents and workflows
 
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
@@ -182,12 +241,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   positives — trust `uv run` inside the worktree, not the IDE.
 
 - **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
-  Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
-  window reload left a prior run orphaned-but-alive that kept spawning
-  branches/worktrees and collided with the relaunch. Prefer discrete main-loop
-  `Agent` dispatches for multi-batch work (one unit lost on failure, resumable);
-  if you must run a Workflow, after any reload/relaunch check for and kill a
-  leftover prior run BEFORE relaunching.
+  Codespace** — runs stall mid-run, and a window reload can leave a prior run
+  orphaned-but-alive, still spawning branches and worktrees. Prefer discrete
+  main-loop `Agent` dispatches for multi-batch work (one unit lost on failure,
+  resumable); if you must run a Workflow, check for and kill a leftover prior
+  run after any reload BEFORE relaunching.
 
 - **Workflow run hygiene**: a dead run = its journal
   (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
@@ -200,40 +258,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   Codespace → 2; raising it needs a larger machine, whose restart kills
   in-flight runs).
 
-- **`git merge-tree` reads the committed tip, not the index** — a staged-but-
-  uncommitted conflict resolution still reports CONFLICT. Commit first, then
-  verify with `git merge-tree --write-tree --name-only origin/main <branch>`.
-
-- **A version-only dependency conflict resolves by taking main's blobs whole**:
-  `git checkout origin/main -- <manifest> <lockfile>`, then run the installer
-  and confirm it leaves the lockfile unchanged (proof main's pair is coherent).
-  Both files end byte-identical to main, so the conflict cannot recur. Do NOT
-  hand-merge a lockfile.
-
-- **Git resuming**: Before resuming work on an existing branch, merge `main`:
-  `git fetch origin main && git merge origin/main`.
-
-- **A CI failure in a file your branch never touched usually means `main`
-  moved** — run `git log <merge-base>..origin/main` before diagnosing. A merged
-  PR that narrowed a contract read as a live production incident this session;
-  merging `main` was the entire fix. A clean prod baseline does NOT rule this
-  out — CI builds `--full-refresh` against deferred upstreams, so prod passing
-  and CI failing is the expected shape. Check git before the warehouse; it is
-  one command and decisive.
-
-- **A mid-session Codespace restart can delete `.worktrees/` and desync local
-  git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
-  HEAD that reads as the pre-session commit yet holds merged content). Trust
-  GitHub over local git for ground truth: `gh api .../branches/main` and
-  `gh api .../pulls/<n>` (`merged` / `merge_commit_sha`), then re-fetch and
-  recreate any lost worktree off `origin/main`.
-
-- **Reverting experimental code to a docs-only PR**:
-  `git checkout origin/main -- <file>` restores main's CURRENT blob, which can
-  differ from the branch's merge-base and leak main's advancement into the
-  three-dot PR diff. Restore to the merge-base instead —
-  `git checkout $(git merge-base origin/main HEAD) -- <file>` — then verify with
-  `git diff --stat origin/main...HEAD`.
+### Consent and the auto-classifier
 
 - **Auto-classifier doesn't see verbal approval or `AskUserQuestion` answers** —
   only the assistant message immediately preceding the tool call. After
@@ -265,11 +290,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the user; do not retry. Editing and committing on LOCAL `main` is allowed when
   the user asks; anything remote goes through a branch + PR.
 
-- **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
-  and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
-  `googleapiclient` `.files()`, OpenAI sub-client) lacks the attribute at call
-  time. Before claiming a fix is verified, call the method — minimally against a
-  mock or `try` block — not just `hasattr`.
+### Pull requests and CI
 
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
@@ -293,8 +314,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
   `gh search issues` for a tracker before filing.
 
-- **The `claude-review` bot asserts repo conventions that may not be enforced**
-  (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
+- **The `claude-review` bot asserts repo conventions that may not be enforced.**
   Verify each convention claim against existing models before applying — its
   findings are advisory, and `git grep` settles it faster than complying.
   **Always invoke `superpowers:receiving-code-review` BEFORE processing
@@ -305,42 +325,36 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   an unaddressed review.
 
 - **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
-  authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
-  bless an `order by ... limit 1` pick that violates the SQL guide. Verify a
-  subagent's convention claims (dismissals as much as flags) against the guide
-  text + `git grep` before relaying.
+  authoritative** — verify its convention claims (dismissals as much as flags)
+  against the guide text + `git grep` before relaying.
 
 - **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
   (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
   CodeQL / `claude` are _check runs_ (`get_check_runs` /
-  `commits/<sha>/check-runs`). Check both before calling a PR green.
-  `claude-review` triggers only on PR `opened` / `ready_for_review` (not
-  `synchronize`) — it does NOT re-run when you push fixes, so don't wait or
-  monitor for a re-review after a fix push. A PR with all checks green but
+  `commits/<sha>/check-runs`). Check both before calling a PR green. Trunk's
+  check-runs are RE-CREATED on each push, so a `gh pr checks` poll gating on
+  "nothing pending" can sample the gap between them and report done prematurely
+  — re-check after a delay. A PR with all checks green but
   `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
-  analytics-engineers), not a CI failure. `claude-review` may leave TWO issue
-  comments — an initial "Reviewing…" status stub and a separate final findings
-  comment — and the stub can stay stuck mid-render even after the check-run
-  reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first. A re-fired run creates a NEW comment rather than updating the
-  previous one, even with `use_sticky_comment: true` — poll by enumerating
-  comments, never by a cached comment id. It may instead EDIT its checklist stub
-  comment in place with the findings, minutes AFTER the check-run reports
-  `success` — so a findings-poll must gate on the comment's `updated_at` / body
-  growing, not the check-run conclusion or a naive length threshold (the
-  ~500-char checklist stub trips it). Trunk's check-runs are RE-CREATED on each
-  push, so a `gh pr checks` poll gating on "nothing pending" can sample the gap
-  between them and report done prematurely — re-check after a delay before
-  calling CI complete. To get `claude-review` onto code pushed after its pass,
-  toggle draft state — that re-fires `ready_for_review`. REST
+  analytics-engineers), not a CI failure.
+
+- **`claude-review` fires only on PR `opened` / `ready_for_review`**, never on
+  `synchronize` — it does NOT re-run when you push fixes, so don't wait or
+  monitor for a re-review after a fix push. To get it onto code pushed after its
+  pass, toggle draft state via GraphQL `convertPullRequestToDraft` then
+  `markPullRequestReadyForReview`; REST
   `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
-  `draft: false`, no error); use GraphQL `convertPullRequestToDraft` then
-  `markPullRequestReadyForReview`. It posts as **`github-actions[bot]`**, not a
-  `claude`-named user — filtering comments by a "claude" login returns nothing.
-  Its in-progress stub carries a todo checklist that can exceed 1,200 chars, so
-  gate a findings-poll on the body no longer matching "in progress", not on a
-  length threshold.
+  `draft: false`, no error).
+
+- **Read `claude-review` findings by enumerating ALL issue comments**, newest
+  and longest first. It posts as **`github-actions[bot]`**, not a `claude`-named
+  user, so filtering by a "claude" login returns nothing. It may leave TWO
+  comments (a "Reviewing…" stub plus a findings comment) or instead EDIT the
+  stub in place minutes AFTER the check-run reports `success`, and a re-fired
+  run creates a NEW comment even with `use_sticky_comment: true`. So gate a
+  findings-poll on the body no longer matching "in progress" — never on a cached
+  comment id, a length threshold, or the check-run conclusion.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
@@ -352,12 +366,16 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
   whose config you edited.
 
+### Python
+
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
 
 - **Transient Python deps**: Use `uv run --with <pkg> python script.py` for
   one-off scripts needing a package not in `pyproject.toml` — don't
   `uv add --dev` for throwaway tooling.
+
+### Harness behavior
 
 - **IDE selection arrives only via `<ide_selection>` tags**, not
   `<ide_opened_file>` (which only names the open path). When the user references
@@ -375,9 +393,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a DERIVED value** — line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline, and a plausible
-  substitute string survives eyeballing where a length does not. This session an
-  asserted "tool output renders X as Y" artifact was a plain misread, and it
-  produced a false correction to the user before it was tested.
+  substitute string survives eyeballing where a length does not.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
@@ -396,6 +412,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the wrong payload. After any call that creates or updates a resource with
   string fields (issue title, PR body, commit message, etc.), check the returned
   values match intent before moving on.
+
+- **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
+  and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
+  `googleapiclient` `.files()`, OpenAI sub-client) lacks the attribute at call
+  time. Before claiming a fix is verified, call the method — minimally against a
+  mock or `try` block — not just `hasattr`.
+
+### Trunk and linting
 
 - **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
   — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
@@ -449,6 +473,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `trunk/ignore-does-nothing`. Binary:
   `/workspaces/teamster/.trunk/tools/trunk`.
 
+### Markdown
+
 - **Markdown**: Always specify a language on fenced code blocks (MD040). Use
   `text` only when no real language applies.
 
@@ -473,6 +499,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Widening a markdown table cell trips markdownlint MD060** (table column
   style) until `trunk fmt` re-pads the table. Commit and let the fmt hook fix it
   — don't hand-align.
+
+- **Refactor regex sweeps include `*.md`**: a model/column rename's
+  `grep -rl --include='*.sql' --include='*.yml'` misses CLAUDE.md
+  hash-derivation examples, plan/spec docs, and inline doc cross-refs. Use
+  `--include='*.{sql,yml,md}'` (or drop `--include` entirely) for any rename
+  that changes a model or column name.
+
+### Tooling and docs
 
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
@@ -589,20 +623,6 @@ When summarizing the conversation, always preserve:
 Discard freely: full file contents already on disk, verbose tool output, and
 exploration that led nowhere (keep only the conclusion).
 
-## CLAUDE.md Editing Rules
-
-- **Before adding to any CLAUDE.md file**: beyond the skill's
-  brevity/avoid-list, apply the necessity test — name the specific decision or
-  action Claude will make differently because of the line. If you can't name
-  one, cut it, even when the line is concise and non-obvious.
-
-- **Where a new line goes**: if it is specific to one MCP server's behavior, put
-  it in `.claude/context/<server>.md` (auto-injected on first use of that
-  server). If it is specific to one directory, put it in that directory's
-  CLAUDE.md. Keep it in this file only when it must be known BEFORE any tool
-  runs — safety prohibitions, branch/PR etiquette, and rules whose violation
-  produces a silently wrong answer rather than a loud error.
-
 ## MCP Servers
 
 Dagster+ MCP auth: do not revert `.mcp.json` to `op run` —
@@ -696,9 +716,9 @@ the allowlist.
   `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
   big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
   comment creation via `gh api`.
-- Editing a PR **body** — round-tripping a fetched body through
-  `mcp__github__update_pull_request` double-encodes existing entities (it
-  re-applies the `&`→`&amp;` encoding). Edit cleanly via
+- Editing a PR **body** — never round-trip a fetched body through
+  `mcp__github__update_pull_request`; it double-encodes existing entities (see
+  `.claude/context/github.md`). Edit cleanly via
   `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (raw, no
   re-encoding).
 - Replying to a PR inline review comment in-thread —
