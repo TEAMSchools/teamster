@@ -1,0 +1,57 @@
+models:
+  - name: rpt_branchingminds__school_year
+    description: >
+      One row per KTAF district per academic year, built for the Branching Minds
+      daily SFTP feed. Start date is a hardcoded override for each district's
+      official first day of school, since the school calendar's in-session flag
+      marks a handful of early dates as in-session for some districts that
+      predate their real opening. End date and instructional day count are
+      averaged across every school in the district. Scoped to Newark, Camden,
+      and Paterson for the current academic year only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - school_year_id
+              - district_id
+          config:
+            severity: error
+    columns:
+      - name: school_year_id
+        data_type: string
+        description: >-
+          School year identifier Branching Minds expects, expressed as the
+          calendar year the school year ends in (e.g. 2027 for the 2026-2027
+          school year).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        data_type: string
+        description: >-
+          KTAF-assigned district code for the Branching Minds feed, not a state
+          or vendor-issued identifier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: name
+        quote: true
+        data_type: string
+        description: Human-readable school year label, e.g. 2026-2027.
+      - name: start_date
+        data_type: date
+        description: >-
+          Official first day of school for the district, hardcoded per district
+          rather than derived from the school calendar.
+      - name: end_date
+        data_type: date
+        description: >-
+          Latest in-session calendar date across the district's schools,
+          averaged to a single value at district grain.
+      - name: instruction_days
+        data_type: float64
+        description: >-
+          Average count of in-session calendar days across the district's
+          schools for the year.

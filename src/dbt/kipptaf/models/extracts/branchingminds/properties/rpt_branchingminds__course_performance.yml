@@ -1,0 +1,42 @@
+models:
+  - name: rpt_branchingminds__course_performance
+    description: >
+      One row per posted quarterly grade per student per course for Newark,
+      Camden, and Paterson, built for the Branching Minds daily SFTP feed.
+      Sourced from PowerSchool's stored (posted) grades rather than the live
+      gradebook, so a grade only appears here once a quarter is finalized --
+      expect this to be empty early in a quarter. Scoped to the current academic
+      year only.
+    columns:
+      - name: record_id
+        data_type: string
+        description: >-
+          PowerSchool's own unique identifier for the stored grade record,
+          prefixed by district.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        data_type: string
+        description: Student's PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: course_id
+        data_type: string
+        description: >-
+          PowerSchool course number, prefixed by district since course numbers
+          repeat across districts.
+      - name: school_year_id
+        data_type: string
+        description: >-
+          School year identifier expressed as the calendar year the school year
+          ends in.
+      - name: grade
+        quote: true
+        data_type: string
+        description: Percent score for the posted quarter grade.

@@ -1,0 +1,37 @@
+models:
+  - name: rpt_branchingminds__behavior_incident_detail
+    description: >
+      One row per student involved in a disciplinary DeansList incident for
+      Newark, Camden, and Paterson, built for the Branching Minds daily SFTP
+      feed. DeansList doesn't track multiple students with distinct roles on one
+      incident today, so this is currently one-to-one with
+      rpt_branchingminds__behavior_incident rather than a true one-to-many
+      breakdown. Carries the same non-disciplinary exclusion as that model.
+    columns:
+      - name: incident_detail_id
+        data_type: string
+        description: Unique identifier for the incident/student pairing.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: incident_id
+        data_type: string
+        description: >-
+          Foreign key to rpt_branchingminds__behavior_incident.incident_id.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("rpt_branchingminds__behavior_incident")
+                field: incident_id
+              config:
+                severity: error
+      - name: student_id
+        data_type: string
+        description: Student's PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true

@@ -1,0 +1,46 @@
+models:
+  - name: rpt_branchingminds__course_info
+    description: >
+      One row per active course offering per district for Newark, Camden, and
+      Paterson, built for the Branching Minds daily SFTP feed. Scoped to courses
+      with at least one section carrying real enrollment in the current academic
+      year, rather than the entire historical PowerSchool catalog. Course
+      numbers repeat across districts for shared network courses, so course_id
+      is only unique in combination with district_id.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - course_id
+              - district_id
+          config:
+            severity: error
+    columns:
+      - name: course_id
+        data_type: string
+        description: >-
+          PowerSchool course number. Not unique on its own -- shared network
+          course numbers repeat across districts; unique only in combination
+          with district_id.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        data_type: string
+        description: >-
+          KTAF-assigned district code for the Branching Minds feed, not a state
+          or vendor-issued identifier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: name
+        quote: true
+        data_type: string
+        description: Course name from the PowerSchool catalog.
+      - name: description
+        data_type: string
+        description: >-
+          Course catalog description from PowerSchool. Populated for a small
+          minority of courses since the source field is rarely filled in.

@@ -1,0 +1,43 @@
+models:
+  - name: rpt_branchingminds__daily_attendance
+    description: >
+      One row per student per in-session school day for Newark, Camden, and
+      Paterson, built for the Branching Minds daily SFTP feed. Attendance
+      category collapses in-school and out-of-school suspension into Absent,
+      since Branching Minds' excused/unexcused absence distinction isn't modeled
+      anywhere upstream. Excludes any day before each district's official first
+      day of school, since real attendance activity exists in some districts
+      before their stated opening. Scoped to the current academic year only.
+    columns:
+      - name: event_id
+        data_type: string
+        description: >-
+          Unique identifier for the attendance record, taken from the underlying
+          attendance fact's surrogate key.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_year_id
+        data_type: string
+        description: >-
+          School year identifier expressed as the calendar year the school year
+          ends in.
+      - name: student_id
+        data_type: string
+        description: Student's PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true
+      - name: record_category
+        data_type: string
+        description: >-
+          Attendance status for the day -- Present, Tardy, or Absent
+          (suspensions of either kind collapse into Absent).
+      - name: date
+        quote: true
+        data_type: date
+        description: Calendar date of the attendance record.
