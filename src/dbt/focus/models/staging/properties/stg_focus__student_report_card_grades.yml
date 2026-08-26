@@ -69,16 +69,6 @@ models:
                 field: marking_period_id
               config:
                 severity: error
-      - name: grade_type_token
-        description: >-
-          Alpha prefix Focus writes on marking_period_id for a live posting, per
-          the Focus SIS Level 1 Certification documentation — DT is the running
-          gradebook (the live grade, posted by a staff account), DY is
-          yesterday's grade (a daily snapshot written by the cron admin
-          account), E is an exam. Null on imported course history, which carries
-          no prefix. Part of the grain: DT and DY are two rows for the same
-          student, course period and marking period.
-        data_type: string
       - name: report_card_grade_id
         description: >-
           Focus report_card_grades id of the grade definition this posting used.
@@ -122,6 +112,16 @@ models:
                 field: course_period_id
               config:
                 severity: error
+      - name: grade_type_token
+        description: >-
+          Alpha prefix Focus writes on marking_period_id for a live posting, per
+          the Focus SIS Level 1 Certification documentation — DT is the running
+          gradebook (the live grade, posted by a staff account), DY is
+          yesterday's grade (a daily snapshot written by the cron admin
+          account), E is an exam. Null on imported course history, which carries
+          no prefix. Part of the grain: DT and DY are two rows for the same
+          student, course period and marking period.
+        data_type: string
       - name: percent_grade
         description: >-
           Numeric percent behind the letter grade. Populated on live-posted rows

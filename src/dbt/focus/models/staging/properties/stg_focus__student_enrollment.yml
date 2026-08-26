@@ -173,6 +173,9 @@ models:
           home-campus enrollments. No option list exists for a checkbox field,
           so the stored value is carried through undecoded.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: resident_status_state_county
         description: >-
           Resident Status, State/County — Focus custom field. Stored as an
