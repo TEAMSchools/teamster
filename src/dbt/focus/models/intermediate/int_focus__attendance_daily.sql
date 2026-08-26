@@ -9,19 +9,19 @@ with
     -- join must also exclude a stint matching its own row, or a single-day stint
     -- loses its only day.
     stint_starts as (
-        -- distinct is defensive, not collapsing: int_focus__student_enrollment already
-        -- dedupes to one row per (student_number, academic_year, startdate), the exact
-        -- partition selected here, so today it collapses nothing. It stays because that
-        -- upstream dedupe carries a TODO to be removed once Focus stops accepting
-        -- duplicate open stints (#4905) -- and without it, duplicate rows here would
-        -- fan
-        -- out the enrollments semi-join below.
+        -- distinct is defensive, not collapsing:
+        -- int_focus__student_enrollment_roster already dedupes to one row per
+        -- (student_number, academic_year, startdate), the exact partition selected
+        -- here, so today it collapses nothing. It stays because that upstream dedupe
+        -- carries a TODO to be removed once Focus stops accepting duplicate open
+        -- stints (#4905) -- and without it, duplicate rows here would fan out the
+        -- enrollments semi-join below.
         select distinct student_number, academic_year, startdate,
-        from {{ ref("int_focus__student_enrollment") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
     ),
 
     -- Already deduped to one row per (student_number, academic_year, startdate)
-    -- in int_focus__student_enrollment, so the cross with calendar days below
+    -- in int_focus__student_enrollment_roster, so the cross with calendar days below
     -- cannot fan out on Focus's duplicate open stints (#4905).
     enrollments as (
         select
@@ -35,7 +35,7 @@ with
             if(
                 s.startdate is null, e.exitdate, date_sub(e.exitdate, interval 1 day)
             ) as exitdate,
-        from {{ ref("int_focus__student_enrollment") }} as e
+        from {{ ref("int_focus__student_enrollment_roster") }} as e
         -- stint_starts is distinct, so this cannot fan out.
         left join
             stint_starts as s
@@ -93,7 +93,7 @@ with
     ),
 
     -- student_id here is the PREFIXED Focus id, which is what
-    -- int_focus__student_enrollment exposes as student_number despite the name.
+    -- int_focus__student_enrollment_roster exposes as student_number despite the name.
     attendance as (
         select student_id, schoolid, school_date, state_value, daily_code,
         from {{ ref("int_focus__attendance_day") }}

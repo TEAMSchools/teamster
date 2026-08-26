@@ -1,16 +1,20 @@
 models:
   - name: int_focus__student_enrollment
     description: >-
-      Focus enrollment stints with student attributes — decoded grade level (PK
-      becomes -1, KG becomes 0), resolved entry and exit codes, enroll_status (0
-      enrolled, 2 withdrawn, 3 graduated), a June 30 default exitdate for
-      still-open stints, network first-day-of-school point-in-time flags, and
-      rn_year / year_in_school / year_in_network counters mirroring the
-      PowerSchool enrollment-union conventions. One row per Focus enrollment
-      stint. Internal-only — a rpt_ view must sit between this model and any
-      external consumer.
+      Focus student enrollments with their select custom fields decoded to
+      labels — every stg_focus__student_enrollment column plus the
+      int_focus__student_enrollment__pivot labels. This is the model to consume;
+      the pivot is a decode companion that drops entities whose custom fields
+      are all null, so it is not a complete spine on its own. Column docs live
+      on the two upstream models. The denormalized enrollment spine that used to
+      occupy this name — student and school attributes, decoded grade level,
+      entry and exit codes, enroll_status, point-in-time flags and the
+      year-in-school counters — is now int_focus__student_enrollment_roster.
+    config:
+      meta:
+        contains_pii: true
     columns:
-      - name: student_enrollment_id
+      - name: id
         description: >-
           Primary key — Focus student enrollment id; one row per enrollment
           stint.
@@ -21,157 +25,3 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: enrollment_created_at
-        description: >-
-          Timestamp the Focus enrollment record was created. Projected for the
-          same-start-date dedupe tie-break, which needs a real recency signal --
-          Focus assigns ids in batches, so id order and creation order disagree.
-      - name: academic_year
-        description: Focus school year start year (e.g. 2025 = 2025-26).
-      - name: academic_year_display
-        description:
-          Display-formatted academic year spanning both calendar years, e.g.
-          2025-26.
-      - name: schoolid
-        description: Focus school id of the enrollment.
-      - name: school_number
-        description: >-
-          School Number custom field from stg_focus__schools; used by kipptaf's
-          downstream location crosswalk join.
-      - name: school_title
-        description: Full school name from stg_focus__schools.
-      - name: school_state_school_id
-        description: State-assigned school id from stg_focus__schools.
-      - name: state
-        description: State custom field from stg_focus__schools.
-      - name: startdate
-        description: Enrollment start date.
-      - name: exitdate
-        description: >-
-          Enrollment end date, defaulted to June 30 of the academic year when
-          the stint has no end_date (still open).
-      - name: entrycode
-        description: Short name of the code used to enter the enrollment.
-      - name: exitcode
-        description:
-          Short name of the code used to withdraw from the enrollment.
-      - name: grade_level
-        description: >-
-          Numeric grade-level sentinel decoded from grade_level_short_name — PK
-          becomes -1, KG becomes 0, all other grades are their parsed numeric
-          value.
-      - name: grade_level_short_name
-        description: >-
-          Abbreviated grade-level label from stg_focus__school_gradelevels (the
-          rollover/summer code '30' is excluded from the join).
-      - name: student_number
-        description: Focus local student id.
-        config:
-          meta:
-            contains_pii: true
-      - name: network_student_number
-        description: >-
-          Canonical network student number — student_number with the leading
-          8400 Miami-Dade district prefix stripped. Both forms are exposed
-          because student_number holds the prefixed id and account provisioning
-          (stg_people__student_logins) joins on that form.
-        config:
-          meta:
-            contains_pii: true
-      - name: student_first_name
-        description: Student first name.
-        config:
-          meta:
-            contains_pii: true
-      - name: student_last_name
-        description: Student last name.
-        config:
-          meta:
-            contains_pii: true
-      - name: student_name
-        description:
-          Student display name, formatted as last name, comma, first name.
-        config:
-          meta:
-            contains_pii: true
-      - name: student_email
-        description: Student e-mail address.
-        config:
-          meta:
-            contains_pii: true
-      - name: fteid
-        description: Florida Education Identifier.
-        config:
-          meta:
-            contains_pii: true
-      - name: dob
-        description: Student date of birth.
-        config:
-          meta:
-            contains_pii: true
-      - name: enroll_status
-        description: >-
-          Enrollment status sentinel — 0 for enrolled, 2 for withdrawn (a drop
-          code is present), 3 for graduated (the drop code's grad_type is
-          graduated).
-      - name: school_level
-        description: >-
-          School level abbreviation — ES, MS, or HS — mapped from the school's
-          decoded level label in int_focus__schools. Null where the school
-          carries no level, or a level with no abbreviation (Combined).
-      - name: prior_district_label
-        description: Decoded label for the enrollment's prior_district field.
-      - name: prior_state_label
-        description: Decoded label for the enrollment's prior_state field.
-      - name: prior_country_label
-        description: Decoded label for the enrollment's prior_country field.
-      - name: educational_choice_label
-        description:
-          Decoded label for the enrollment's educational_choice field.
-      - name: student_offender_transfer_label
-        description: >-
-          Decoded label for the enrollment's student_offender_transfer field.
-      - name: first_day_of_school
-        description: >-
-          Network first day of school for the enrollment's academic year, from
-          int_focus__school_year_first_day.
-      - name: is_enrolled_fdos
-        description: >-
-          True when the enrollment's start date is on or before the first day of
-          school.
-      - name: is_enrolled_oct01
-        description:
-          True when the enrollment spans October 1 of the academic year.
-      - name: is_enrolled_oct15
-        description:
-          True when the enrollment spans October 15 of the academic year.
-      - name: is_enrolled_mar15
-        description: >-
-          True when the enrollment spans March 15 of the following calendar
-          year.
-      - name: is_pre_year_withdrawal
-        description: >-
-          True when the enrollment's exit date falls before the first day of
-          school.
-      - name: rn_year
-        description: >-
-          Row number of the enrollment stint within student plus academic year,
-          ordered by latest exit date first; 1 marks the canonical stint counted
-          for that year.
-      - name: rn_all
-        description: >-
-          Row number of the enrollment stint within student across all years,
-          ordered by latest academic year then latest exit and start date; 1
-          marks the student's most recent stint. Consumers resolving a
-          student-level value from Focus's per-stint columns filter on this
-          rather than repeating the window.
-      - name: year_in_school
-        description: >-
-          Sequential count of academic years the student has been enrolled at
-          this school, computed only for the canonical (rn_year = 1) stint each
-          year; null otherwise.
-      - name: year_in_network
-        description: >-
-          Sequential count of academic years the student has been enrolled
-          anywhere in the network, computed only for the canonical (rn_year = 1)
-          stint each year; null otherwise.

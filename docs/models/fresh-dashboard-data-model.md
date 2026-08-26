@@ -66,10 +66,12 @@ name is a thin `union_relations` wrapper over the four district sources plus
 `region` / `_dbt_source_project` / the `exclude_ids` filter.
 `int_focus__student_enrollments` (plural) is likewise a thin kipptaf wrapper —
 adding the Finalsite-ID crosswalk, the locations crosswalk, `region`,
-`district`, `region_school_level` — over the `focus` package's
-`int_focus__student_enrollment` (singular), which carries the full enrollment
-derivation. The three `stg_focus__*` passthroughs this used to depend on
-(`school_gradelevels`, `student_enrollment_codes`,
+`district`, `region_school_level` — over a `focus` package model. The full
+enrollment derivation lives in `int_focus__student_enrollment_roster`; the
+package's `int_focus__student_enrollment` (singular) is raw staging columns plus
+decoded labels, matching the pattern its siblings follow. The wrapper is
+repointed at the roster in #5001. The three `stg_focus__*` passthroughs this
+used to depend on (`school_gradelevels`, `student_enrollment_codes`,
 `custom_field_select_options`) no longer exist — their source entries were
 removed along with them.
 
