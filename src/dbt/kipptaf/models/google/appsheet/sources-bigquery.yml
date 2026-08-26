@@ -109,10 +109,11 @@ sources:
     description: >
       Frozen Leadership Development relations, retained read-only after the
       workflow moved to Lattice on 2026-07-30. The dbt models that built these
-      are disabled, so nothing refreshes them. Separate source name from
-      google_appsheet on purpose: the schema differs, and the
-      bigquery_table_modified_sensor asset selection is built from source_name
-      == google_appsheet.
+      are disabled, so nothing refreshes them. Registration only -- no dbt node
+      selects from this source; it exists so the archive of record stays
+      documented and queryable. Separate source name from google_appsheet on
+      purpose: the schema differs, and the bigquery_table_modified_sensor asset
+      selection is built from source_name == google_appsheet.
     # Refs #4627
     tables:
       - name: stg_google_appsheet__leadership_development__output_archive
