@@ -90,8 +90,8 @@ unit_tests:
           homeless_primary_nighttime_residence_code: 3
           lunchstatus: F
 
-  - name: test_int_focus__student_enrollment_dedupes_same_start_date_stints
-    model: int_focus__student_enrollment
+  - name: test_int_focus__student_enrollment_roster_dedupes_same_start_date_stints
+    model: int_focus__student_enrollment_roster
     description: >-
       Focus permits two open stints sharing a student, year, and start date.
       Student 1 covers the demotion leg: the schoolid-null stub loses even
@@ -99,19 +99,28 @@ unit_tests:
       stint wins on enrollment_created_at while carrying the LOWER id, so a pass
       only if the ordering reads the timestamp rather than the id.
     given:
-      - input: ref('stg_focus__students')
+      - input: ref('int_focus__students')
         format: sql
         rows: |
-          select 1 as student_id, 'A' as first_name, 'One' as last_name,
+          select 1 as student_id, 1 as student_number, 'A' as first_name,
+            'One' as last_name,
             cast(null as string) as florida_education_identifier,
             cast(null as string) as student_e_mail_address,
-            cast(null as timestamp) as birthdate
+            cast(null as date) as dob
           union all
-          select 2, 'B', 'Two', cast(null as string), cast(null as string),
-            cast(null as timestamp)
-      - input: ref('stg_focus__student_enrollment')
+          select 2, 2, 'B', 'Two', cast(null as string), cast(null as string),
+            cast(null as date)
+      - input: ref('int_focus__student_enrollment')
         format: sql
         rows: |
+          select
+            *,
+            cast(null as string) as prior_district_label,
+            cast(null as string) as prior_state_label,
+            cast(null as string) as prior_country_label,
+            cast(null as string) as educational_choice_label,
+            cast(null as string) as student_offender_transfer_label,
+          from (
           select 10 as id, 1 as student_id, 2026 as syear,
             100 as school_id, cast(null as int64) as grade_id,
             cast(null as int64) as enrollment_code,
@@ -133,11 +142,9 @@ unit_tests:
             cast(null as int64), cast(null as int64),
             date '2026-08-12', cast(null as date),
             timestamp '2026-08-12 00:00:00'
+          )
       # empty: left-joined, contributes nothing to the dedupe under test
       - input: ref('int_focus__schools')
-        rows: []
-      # empty: left-joined, contributes nothing to the dedupe under test
-      - input: ref('int_focus__student_enrollment__pivot')
         rows: []
       # empty: left-joined, contributes nothing to the dedupe under test
       - input: ref('stg_focus__school_gradelevels')
@@ -168,7 +175,7 @@ unit_tests:
       (null daily_code, counts present via state_value). Proves the scaffold
       emits a row for a student Focus never recorded.
     given:
-      - input: ref('int_focus__student_enrollment')
+      - input: ref('int_focus__student_enrollment_roster')
         format: sql
         rows: |
           select 84001 as student_number, 1 as network_student_number,
@@ -233,7 +240,7 @@ unit_tests:
       (2026-08-14) is an in-session day no other stint starts on -- it must NOT
       be trimmed.
     given:
-      - input: ref('int_focus__student_enrollment')
+      - input: ref('int_focus__student_enrollment_roster')
         format: sql
         rows: |
           select 85001 as student_number, 501 as network_student_number,
