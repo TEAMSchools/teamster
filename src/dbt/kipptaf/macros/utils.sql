@@ -8,10 +8,12 @@
     initcap(regexp_extract({{ table }}._dbt_source_project, r'kipp(\w+)'))
 {% endmacro %}
 
-{# Current-state exclusion for regions whose SIS is frozen. `column` is any
-   code-location column -- `_dbt_source_project` on a union model, or
-   `dagster_code_location` / `home_work_location_dagster_code_location` on the
-   staff roster. Add or remove a region in the frozen_code_locations var. #}
+{# Drops code locations whose PowerSchool instance is frozen, for extracts
+   built on PowerSchool current-state. `column` is any code-location column --
+   `_dbt_source_project` on a union model, or `dagster_code_location` /
+   `home_work_location_dagster_code_location` on the staff roster. Add or remove
+   a region in the frozen_powerschool_code_locations var. #}
 {% macro exclude_frozen(column) -%}
-    {{ column }} not in ('{{ var("frozen_code_locations") | join("', '") }}')
+    {%- set locations = var("frozen_powerschool_code_locations") -%}
+    {{ column }} not in ('{{ locations | join("', '") }}')
 {%- endmacro %}

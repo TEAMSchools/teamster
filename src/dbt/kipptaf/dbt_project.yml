@@ -35,11 +35,12 @@ vars:
   # fresh-dashboard skill's "Update the Finalsite recruitment year" procedure
   # before bumping this.
   finalsite_recruitment_year: 2026
-  # Code locations that no longer roster through PowerSchool current-state, so
-  # the current-state extracts exclude them. Miami moved to Focus in AY2026 and
-  # rosters into Clever from there. Historical models must NOT read this var --
+  # Code locations whose PowerSchool instance is frozen. Miami itself is not
+  # frozen -- it moved to Focus in AY2026 and rosters into Clever from there --
+  # but its PowerSchool stops at AY2025, so extracts built on PowerSchool
+  # current-state have to drop it. Historical models must NOT read this var:
   # Miami's frozen PowerSchool history has to stay readable. See #4670.
-  frozen_code_locations: [kippmiami]
+  frozen_powerschool_code_locations: [kippmiami]
 
 models:
   kipptaf:
