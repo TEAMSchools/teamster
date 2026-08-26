@@ -98,29 +98,25 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   from cwd (`trunk check`, `pytest`, `sed -i`) silently operate on the wrong
   checkout's copies and report a false "clean".
 
-- **Worktree Read/Edit/Write must target the worktree path**, not the main
-  checkout: editing `/workspaces/teamster/<path>` instead of
-  `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
-  unchanged and dirties `main` (the worktree commit then reports "nothing to
-  commit").
+- **Worktree file operations must name the worktree path** —
+  `/workspaces/teamster/.worktrees/<branch>/<path>`, never
+  `/workspaces/teamster/<path>`. Editing the main path silently leaves the
+  worktree unchanged and dirties `main`, and the worktree commit then reports
+  "nothing to commit". IDE Pyright diagnostics on worktree files are
+  false-positive-prone for the same reason: it resolves imports against the MAIN
+  checkout, so worktree-only signature or symbol changes surface phantom
+  `unknown import` / `no parameter named X` errors. Trust `uv run` executed
+  inside the worktree, not the IDE.
 
-- **IDE Pyright diagnostics on worktree files are false-positive-prone** — it
-  resolves imports against the MAIN checkout, so worktree-only signature/symbol
-  changes surface phantom `unknown import` / `no parameter named X` errors.
-  Trust `uv run` executed inside the worktree, not the IDE.
-
-- **Worktree file Read/Edit and Bash `cd <worktree>` re-inject that worktree's
-  CLAUDE.md files (~40KB each) into context on every call**; `git -C <worktree>`
-  and `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
+- **Worktree Read/Edit and Bash `cd <worktree>` re-inject that worktree's
+  CLAUDE.md files (~40KB each) on every call**; `git -C <worktree>` and
+  `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
   (content-exempt), do NOT. For a large multi-file worktree refactor, delegate
-  the edits to subagents (their context absorbs the injection) and verify via
-  `git -C <worktree> diff` from the main repo.
-
-- **When subagents aren't available**, edit worktree files by `Write`-ing a
-  Python script to `.claude/scratch/` and running it by ABSOLUTE path from the
-  main repo cwd — `Write` content is injection-exempt and no `cd` occurs, so
-  neither step re-injects. Assert each anchor matches exactly once and abort
-  otherwise; verify with `git -C <worktree> diff`.
+  the edits to subagents — their context absorbs the injection — and verify via
+  `git -C <worktree> diff` from the main repo. With no subagents available,
+  `Write` a Python script to `.claude/scratch/` and run it by ABSOLUTE path from
+  the main repo cwd (neither step re-injects); assert each anchor matches
+  exactly once, abort otherwise, and verify the same way.
 
 - **`git worktree add` with a RELATIVE path resolves against the shell cwd**,
   which drifts after a foreground `cd` into another worktree — pass an ABSOLUTE
@@ -200,12 +196,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   positives — trust `uv run` inside the worktree, not the IDE.
 
 - **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
-  Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
-  window reload left a prior run orphaned-but-alive that kept spawning
-  branches/worktrees and collided with the relaunch. Prefer discrete main-loop
-  `Agent` dispatches for multi-batch work (one unit lost on failure, resumable);
-  if you must run a Workflow, after any reload/relaunch check for and kill a
-  leftover prior run BEFORE relaunching.
+  Codespace** — runs stall mid-run, and a window reload can leave a prior run
+  orphaned-but-alive, still spawning branches and worktrees. Prefer discrete
+  main-loop `Agent` dispatches for multi-batch work (one unit lost on failure,
+  resumable); if you must run a Workflow, check for and kill a leftover prior
+  run after any reload BEFORE relaunching.
 
 - **Workflow run hygiene**: a dead run = its journal
   (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
@@ -234,12 +229,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `git fetch origin main && git merge origin/main`.
 
 - **A CI failure in a file your branch never touched usually means `main`
-  moved** — run `git log <merge-base>..origin/main` before diagnosing. A merged
-  PR that narrowed a contract read as a live production incident this session;
-  merging `main` was the entire fix. A clean prod baseline does NOT rule this
-  out — CI builds `--full-refresh` against deferred upstreams, so prod passing
-  and CI failing is the expected shape. Check git before the warehouse; it is
-  one command and decisive.
+  moved** — run `git log <merge-base>..origin/main` before diagnosing. A clean
+  prod baseline does NOT rule this out — CI builds `--full-refresh` against
+  deferred upstreams, so prod passing and CI failing is the expected shape.
+  Check git before the warehouse; it is one command and decisive.
 
 - **A mid-session Codespace restart can delete `.worktrees/` and desync local
   git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
@@ -317,8 +310,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
   `gh search issues` for a tracker before filing.
 
-- **The `claude-review` bot asserts repo conventions that may not be enforced**
-  (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
+- **The `claude-review` bot asserts repo conventions that may not be enforced.**
   Verify each convention claim against existing models before applying — its
   findings are advisory, and `git grep` settles it faster than complying.
   **Always invoke `superpowers:receiving-code-review` BEFORE processing
@@ -329,42 +321,36 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   an unaddressed review.
 
 - **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
-  authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
-  bless an `order by ... limit 1` pick that violates the SQL guide. Verify a
-  subagent's convention claims (dismissals as much as flags) against the guide
-  text + `git grep` before relaying.
+  authoritative** — verify its convention claims (dismissals as much as flags)
+  against the guide text + `git grep` before relaying.
 
 - **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
   (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
   CodeQL / `claude` are _check runs_ (`get_check_runs` /
-  `commits/<sha>/check-runs`). Check both before calling a PR green.
-  `claude-review` triggers only on PR `opened` / `ready_for_review` (not
-  `synchronize`) — it does NOT re-run when you push fixes, so don't wait or
-  monitor for a re-review after a fix push. A PR with all checks green but
+  `commits/<sha>/check-runs`). Check both before calling a PR green. Trunk's
+  check-runs are RE-CREATED on each push, so a `gh pr checks` poll gating on
+  "nothing pending" can sample the gap between them and report done prematurely
+  — re-check after a delay. A PR with all checks green but
   `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
-  analytics-engineers), not a CI failure. `claude-review` may leave TWO issue
-  comments — an initial "Reviewing…" status stub and a separate final findings
-  comment — and the stub can stay stuck mid-render even after the check-run
-  reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first. A re-fired run creates a NEW comment rather than updating the
-  previous one, even with `use_sticky_comment: true` — poll by enumerating
-  comments, never by a cached comment id. It may instead EDIT its checklist stub
-  comment in place with the findings, minutes AFTER the check-run reports
-  `success` — so a findings-poll must gate on the comment's `updated_at` / body
-  growing, not the check-run conclusion or a naive length threshold (the
-  ~500-char checklist stub trips it). Trunk's check-runs are RE-CREATED on each
-  push, so a `gh pr checks` poll gating on "nothing pending" can sample the gap
-  between them and report done prematurely — re-check after a delay before
-  calling CI complete. To get `claude-review` onto code pushed after its pass,
-  toggle draft state — that re-fires `ready_for_review`. REST
+  analytics-engineers), not a CI failure.
+
+- **`claude-review` fires only on PR `opened` / `ready_for_review`**, never on
+  `synchronize` — it does NOT re-run when you push fixes, so don't wait or
+  monitor for a re-review after a fix push. To get it onto code pushed after its
+  pass, toggle draft state via GraphQL `convertPullRequestToDraft` then
+  `markPullRequestReadyForReview`; REST
   `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
-  `draft: false`, no error); use GraphQL `convertPullRequestToDraft` then
-  `markPullRequestReadyForReview`. It posts as **`github-actions[bot]`**, not a
-  `claude`-named user — filtering comments by a "claude" login returns nothing.
-  Its in-progress stub carries a todo checklist that can exceed 1,200 chars, so
-  gate a findings-poll on the body no longer matching "in progress", not on a
-  length threshold.
+  `draft: false`, no error).
+
+- **Read `claude-review` findings by enumerating ALL issue comments**, newest
+  and longest first. It posts as **`github-actions[bot]`**, not a `claude`-named
+  user, so filtering by a "claude" login returns nothing. It may leave TWO
+  comments (a "Reviewing…" stub plus a findings comment) or instead EDIT the
+  stub in place minutes AFTER the check-run reports `success`, and a re-fired
+  run creates a NEW comment even with `use_sticky_comment: true`. So gate a
+  findings-poll on the body no longer matching "in progress" — never on a cached
+  comment id, a length threshold, or the check-run conclusion.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
@@ -401,9 +387,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a DERIVED value** — line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline, and a plausible
-  substitute string survives eyeballing where a length does not. This session an
-  asserted "tool output renders X as Y" artifact was a plain misread, and it
-  produced a false correction to the user before it was tested.
+  substitute string survives eyeballing where a length does not.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
