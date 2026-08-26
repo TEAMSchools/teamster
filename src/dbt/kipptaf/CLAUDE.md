@@ -231,9 +231,10 @@ absence:
 | `marts/`                               | view (default) | `true`               |
 | `illuminate/dlt/staging/repositories/` | `table`        | `false` (override)   |
 
-**Disabled illuminate repositories**: 365, 413, 428 — disabled in
-`models/illuminate/dlt/staging/repositories/properties.yml`. Check before adding
-`ref()` calls to `int_illuminate__repository_data`.
+The `repositories/` contract override is deliberate — the unpivot macro reads
+columns at parse time, so they cannot be declared. See
+`models/illuminate/CLAUDE.md` for that, the disabled repository list, and the
+`fivetran/`-is-dead warning.
 
 **Disabled integrations** (project-level `+enabled: false`): ACT, ADP Workforce
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
