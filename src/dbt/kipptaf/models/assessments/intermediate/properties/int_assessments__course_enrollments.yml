@@ -6,6 +6,14 @@ models:
       Illuminate assessments are joined against. One row per (student, academic
       year, subject area, date enrolled), deduplicated to the latest exit per
       enrollment span.
+
+
+      Covers Miami through AY2025 only. The student join keys on
+      `student_number` rather than PowerSchool's internal `cc_studentid`, which
+      Focus leaves null -- before that change this model held no Miami rows in
+      any year. Miami AY2026 forward is still excluded, because the `not
+      is_dropped_course` filter drops rows whose flag is null and Focus never
+      sets it. #4996 owns that filter.
     config:
       materialized: table
       meta:
