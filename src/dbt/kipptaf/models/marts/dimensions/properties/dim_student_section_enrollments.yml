@@ -50,8 +50,20 @@ models:
           academic_year, and entrydate. FK to dim_student_enrollments. Resolved
           to the school enrollment stint the section enrollment overlaps (the
           stint covering cc_dateenrolled when one exists, else the earliest
-          overlapping stint). Null only when no enrollment stint overlaps the
-          section enrollment.
+          overlapping stint). Null when no enrollment stint overlaps the section
+          enrollment, which is an expected outcome rather than a defect on its
+          own: alumni placeholder rows match no stint by design, and completed
+          NJ academic years run an 18 to 20% null rate.
+
+          Three populations account for Miami's AY2026 nulls, measured
+          2026-08-26. A schedule row falling outside a same-school stint (1,859
+          rows, #5002). A stale schedule row at a campus the student was
+          reassigned away from, left open in Focus (182 rows, 18 students,
+          #5003) -- null is correct here, since attaching the section to the
+          student's stint at a different campus would emit a wrong key. And a
+          stint dropped by the same-start-date dedupe in
+          int_focus__student_enrollment when a student holds two open stints at
+          different schools (4 rows, 1 student, #4905).
         config:
           meta:
             foreign_key:

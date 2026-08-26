@@ -99,6 +99,19 @@ with
     -- Deduping here, ahead of with_flags, keeps rn_year contiguous --
     -- consumers filter on rn_year = 1 and would lose a student left holding
     -- only rn_year = 2.
+    --
+    -- Measured 2026-08-26: across Focus data back to AY2018 there is exactly
+    -- ONE same-start-date duplicate, and it is two DIFFERENT schools (AY2026).
+    -- Zero same-school duplicates have ever occurred. So this dedupe has never
+    -- fired on the case it was written for, and its only real firing deletes a
+    -- legitimate second stint -- stranding the 4 course enrollments scheduled
+    -- at the dropped school (#5003). Widening the partition key to include
+    -- schoolid is not a one-line fix: both stints default exitdate to June 30,
+    -- so the rn_year row_number would tie nondeterministically, and the
+    -- downstream uniqueness test on int_students__student_enrollment_union
+    -- omits schoolid from its key. Tracked on #4905 rather than patched here.
+    -- The premise is now asserted upstream, where the dropped row still exists:
+    -- tests/stg_focus__student_enrollment__same_startdate_stints_share_school.sql
     -- TODO: drop once Focus stops accepting duplicate open stints (#4905).
     deduplicate as (
         {{

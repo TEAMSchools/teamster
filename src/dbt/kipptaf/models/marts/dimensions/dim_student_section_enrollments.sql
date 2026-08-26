@@ -43,11 +43,32 @@ with
         -- coalesce below is required for Miami to match its current stint.
         -- It is a no-op for NJ: cc_dateleft is null on zero NJ rows. entrydate
         -- and exitdate are never null in student_enrollments, so they need no
-        -- equivalent coalesce. The ~10.5% of Miami rows still unmatched after
-        -- this (same-day stints, cross-school scheduling artifacts) is an
-        -- accepted residual within the NJ completed-year orphan-rate norm,
-        -- tracked in #4970 -- see the rate test in
+        -- equivalent coalesce. The ~10.6% of Miami rows still unmatched after
+        -- this is an accepted residual within the NJ completed-year orphan-rate
+        -- norm -- see the rate test in
         -- tests/test_miami_section_enrollment_orphan_rate.sql.
+        --
+        -- That residual is attributed, not unexplained. Of 2,045 orphaned Miami
+        -- AY2026 rows measured 2026-08-26: 1,859 are schedule rows falling
+        -- outside a stint at the same school (#5002), and 186 belong to a
+        -- section at a school where the student holds no stint (#5003). The 186
+        -- split 182 / 4:
+        --
+        -- 182 rows, 18 students -- stale schedule rows at a prior campus,
+        -- left open when the student was reassigned to another campus. The
+        -- Focus school-to-network mapping was ruled out as a cause: the
+        -- locations crosswalk is 1:1, schedule.school_id agrees with
+        -- course_periods.school_id on every AY2026 row, and the cross-school
+        -- pairs run in both directions within a grade band. A null key is the
+        -- correct outcome -- attaching a section at one campus to a stint at
+        -- another would emit a confidently wrong key. Upstream Ops cleanup.
+        --
+        -- 4 rows, 1 student -- the same-start-date dedupe in
+        -- int_focus__student_enrollment drops one of two open stints held at
+        -- different schools, so the schedule rows at the dropped school have
+        -- no stint to match. Tracked on #4905; asserted upstream by the
+        -- focus package test
+        -- stg_focus__student_enrollment__same_startdate_stints_share_school.sql.
         left join
             student_enrollments as enr
             on cc.students_student_number = enr.student_number
