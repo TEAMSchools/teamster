@@ -2,11 +2,23 @@
 
 ## Layout
 
+| Path            | What it is                                                                                                                                                                        |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/dbt/`      | 15 dbt projects: 5 district (`kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`) plus `kipptaf`, and source-system staging packages the districts consume via `packages.yml` |
+| `src/teamster/` | Dagster. `code_locations/` (5) compose the reusable integrations in `libraries/`                                                                                                  |
+| `src/cube/`     | Cube semantic layer over the warehouse marts; row-level access policies live here                                                                                                 |
+| `.k8s/`         | Helm config for the self-hosted Dagster+ agent                                                                                                                                    |
+| `docs/`         | MkDocs site. `docs/superpowers/` holds specs and plans and is excluded from the nav                                                                                               |
+| `scripts/`      | Standalone `uv run` utilities                                                                                                                                                     |
+| `tests/`        | pytest suites, including the hook regression tests                                                                                                                                |
+
 **Read the relevant subdirectory CLAUDE.md before any work there** (reading,
 explaining, reviewing, or modifying). Project-wide conventions live in this
 file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 ## Working Conventions
+
+### Before you start
 
 - **PII stays local.** Never emit PII values (or screenshots/logs containing
   them) to PR comments, commits, issues, Slack, Asana, scheduled-agent outputs,
@@ -36,6 +48,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   decline — create the branch without an issue via the paths below.
 
 - **Before writing any file (spec, code, config)**: be on the feature branch.
+
+### Branches and worktrees
 
 - **Worktree**: with an issue, `gh issue develop <number> --name <branch>` (no
   `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. If the
@@ -117,6 +131,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
   declined an issue, `git checkout -b <branch>`.
 
+### Git hygiene
+
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
   naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
@@ -131,6 +147,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   hash-derivation examples, plan/spec docs, and inline doc cross-refs. Use
   `--include='*.{sql,yml,md}'` (or drop `--include` entirely) for any rename
   that changes a model or column name.
+
+### Subagents and workflows
 
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
@@ -200,6 +218,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   Codespace → 2; raising it needs a larger machine, whose restart kills
   in-flight runs).
 
+### Merging and resuming
+
 - **`git merge-tree` reads the committed tip, not the index** — a staged-but-
   uncommitted conflict resolution still reports CONFLICT. Commit first, then
   verify with `git merge-tree --write-tree --name-only origin/main <branch>`.
@@ -234,6 +254,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   three-dot PR diff. Restore to the merge-base instead —
   `git checkout $(git merge-base origin/main HEAD) -- <file>` — then verify with
   `git diff --stat origin/main...HEAD`.
+
+### Consent, safety, and verification
 
 - **Auto-classifier doesn't see verbal approval or `AskUserQuestion` answers** —
   only the assistant message immediately preceding the tool call. After
@@ -270,6 +292,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `googleapiclient` `.files()`, OpenAI sub-client) lacks the attribute at call
   time. Before claiming a fix is verified, call the method — minimally against a
   mock or `try` block — not just `hasattr`.
+
+### Pull requests and CI
 
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
@@ -352,6 +376,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
   whose config you edited.
 
+### Tooling discipline
+
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
 
@@ -396,6 +422,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the wrong payload. After any call that creates or updates a resource with
   string fields (issue title, PR body, commit message, etc.), check the returned
   values match intent before moving on.
+
+### Linting and markdown
 
 - **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
   — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
@@ -473,6 +501,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Widening a markdown table cell trips markdownlint MD060** (table column
   style) until `trunk fmt` re-pads the table. Commit and let the fmt hook fix it
   — don't hand-align.
+
+### Environment and external tools
 
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
