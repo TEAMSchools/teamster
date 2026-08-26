@@ -361,10 +361,11 @@ from raw PowerSchool course-enrollment/NJSLA queries, not a CSGF report):
 
 **This closes out the Preliminary Questions task for the 2026-2027 cycle** -- 17
 questions total across four subsections (base, Academic Profile & Grading,
-Alumni Data, Gateway Math Information). Re-run this whole log next cycle rather
-than assuming answers carry forward -- several entries above changed between
-cycles on their own (the Naviance N/A flag, the item-list ownership split) even
-when the underlying fact didn't.
+Alumni Data, Gateway Math Information). **CSGF has reviewed and accepted these
+answers** -- task status should read Completed, not just Ready for Review.
+Re-run this whole log next cycle rather than assuming answers carry forward --
+several entries above changed between cycles on their own (the Naviance N/A
+flag, the item-list ownership split) even when the underlying fact didn't.
 
 ### 5. Verify the Schools tab
 
@@ -538,6 +539,25 @@ Portal regardless of where the data entry happens**:
 - _Portal_ (task tracking + a couple of data-entry tasks): Preliminary
   Questions, High School Grad Data, DSA Signature.
 
+**Front-load the tabs whose underlying data is already closed.** Per the year
+anchoring in "Known data risks" below: 5 of the 8 `rpt_gsheets__csgf_*` models
+(Enrollment, SAT, ACT, AP Offerings, AP Scores) read only
+`current_academic_year - 1` -- last cycle's finalized school year, which cannot
+change -- and the 2 unfiltered ones (HS Grad Data, Intended Postsecondary
+Pathways) already correctly reflect every completed cohort. That's 7 of 8 tabs
+computable the moment Preliminary Questions is done and the Sheet is accessible,
+with no need to wait for the internal deadline crunch. Only the main Portal
+`csgf_enrollment` model (current-year enrollment counts, and the current-year
+side of its retention calc) is genuinely blocked -- it needs this year's Oct 1
+count day to happen first.
+
+**The collection window CSGF actually opens and the date communicated to the
+team don't have to match.** It's fine (and was done deliberately this cycle) to
+tell the team a later "official" start date than when the Portal/Sheet actually
+became accessible, as a buffer so people don't feel rushed. As collection owner,
+check actual access yourself rather than trusting the communicated date, and use
+the gap to get a head start on the 7 already-closed tabs above.
+
 **Working the Sheet:**
 
 - Start with the **Enrollment tab** -- every student on any other tab must also
@@ -579,6 +599,29 @@ live CSGF sheet directly.
 ---
 
 ## Known data risks -- verify before submitting
+
+**Year anchoring across the eight `rpt_gsheets__csgf_*` models** (verified by
+reading each model's SQL directly, not just taken from prior notes -- see
+[issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) for the
+original observation this confirms):
+
+| Model                      | Years of data referenced                                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `csgf_enrollment`          | **Both** -- grain is this year (`current_academic_year`), but `retention_numerator`/`retention_denominator` pull last year's enrollment too via a self-join |
+| `csgf_hs_enrollment`       | Last year only (`current_academic_year - 1`)                                                                                                                |
+| `csgf_hs_sat`              | Last year only                                                                                                                                              |
+| `csgf_hs_act`              | Last year only                                                                                                                                              |
+| `csgf_hs_ap_offerings`     | Last year only                                                                                                                                              |
+| `csgf_hs_ap_scores`        | Last year only                                                                                                                                              |
+| `csgf_hs_grad_data`        | **All years** (unfiltered) -- a year filter exists but only inside the `graduated` CTE, which the final `SELECT` never references (dead code)               |
+| `csgf_hs_postsec_pathways` | **All years** (unfiltered) -- `academic_year` is a plain passthrough column with no `WHERE` on it at all                                                    |
+
+Practical consequence: a Miami (or any region) data problem in _either_ the
+current or prior year can affect `csgf_enrollment`; a problem in _any_
+historical year can affect the two grad/postsec models. It also means 7 of the 8
+models are computable the moment Preliminary Questions is done, without waiting
+on anything about the current in-progress year -- see "Front-load the tabs" in
+the HSDC mechanics section above.
 
 **`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
 cycle -- owner is aware and fixing separately from this skill; check whether
