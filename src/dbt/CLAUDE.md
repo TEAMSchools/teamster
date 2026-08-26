@@ -1072,8 +1072,9 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   `Unrecognized name: a`. It works in Snowflake/DuckDB, so a reviewer may
   propose it to de-duplicate two `CASE`s that share predicates; hoist to a CTE
   or keep the duplication.
-- **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
-  breaks silently when upstream columns change.
+- **No `GROUP BY ALL`, and no positional `GROUP BY`** — list grouping columns
+  explicitly by name. Both `GROUP BY ALL` and `GROUP BY 1, 2, 3` break silently
+  when upstream columns change or the SELECT list is reordered.
 - **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
   a `GROUP BY` with no aggregation, and for pure grain projection (every
   projected column is functionally determined by the partition key, so
@@ -1168,7 +1169,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   similar.
 - **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
   comma after the last column, but `select *` has nothing to trail. Enumerate
-  columns explicitly in each UNION branch.
+  columns explicitly in each UNION branch. Enumerating is also the correctness
+  fix, not just the lint fix — BigQuery matches UNION ALL branches by POSITION,
+  so two `select *` branches whose column order differs bind the wrong columns
+  to each other (a type mismatch fails loudly; two same-typed columns swap
+  silently).
 - **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.
