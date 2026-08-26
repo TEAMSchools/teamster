@@ -194,11 +194,108 @@ function buildSecurityContext(
   };
 }
 
+// --- Internal user emulation (#4526) ---------------------------------------
+// Admin-gated emulation lets a data-team caller resolve another internal user's
+// real context for RLS validation. All of the security reasoning lives in
+// resolveEmulationTarget below; the surface adapters are dumb field maps.
+
+// Who may emulate. v1 source is the CUBE_IMPERSONATORS deployment variable
+// (comma-separated emails). A warehouse-column source
+// (dim_staff_cube_access.is_cube_impersonator) can replace THIS FUNCTION ONLY,
+// later, without touching the resolver or either adapter.
+function parseImpersonators(raw) {
+  return new Set(
+    String(raw ?? "")
+      .split(",")
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function isImpersonator(email, impersonators) {
+  if (!email) return false;
+  return impersonators.has(String(email).toLowerCase());
+}
+
+// The single decision point shared by both emulation surfaces. Returns the
+// caller, the email whose context must actually be resolved, and whether that
+// is an emulation (for the audit line).
+//
+// The decision reads ONLY the caller's own identity, so a non-impersonator who
+// supplies a target — in an `act_as` claim they signed, or a spoofed cubeCloud
+// block — gets their OWN scope, never the target's. Fail-closed: no caller means
+// no emulation and a null target, which resolveAccess turns into the empty
+// default-deny context.
+//
+// CASE IS PRESERVED on the returned emails, deliberately. Comparisons here are
+// case-insensitive, but `target` is handed to resolveAccess, which queries
+// `WHERE google_email = @email` and keys its cache on the raw string. Returning
+// a lowercased email would change resolution for EVERY request (not just
+// emulated ones) and desync this path from checkSqlAuth, which passes the
+// connecting user through verbatim. Every dim_staff_cube_access row is lowercase
+// today, but the model applies no lower() and the column's only test is
+// not_null — incidental, not an invariant to build on.
+function resolveEmulationTarget({
+  callerEmail,
+  requestedTarget,
+  impersonators,
+}) {
+  // Both identities are coerced to "a string or nothing" before any comparison.
+  // On Cube Cloud the target is a pasted JSON value, so it can just as easily be
+  // an object or an array as a string, and a bare `requested.toLowerCase()`
+  // throws a TypeError out of contextToGroups — a 500 instead of a decision.
+  // Treating a non-string as absent is the fail-closed reading: no target means
+  // no emulation, and a non-string caller means no caller, which resolveAccess
+  // turns into the empty default-deny context.
+  const caller = typeof callerEmail === "string" ? callerEmail : null;
+  const requested =
+    typeof requestedTarget === "string" ? requestedTarget : null;
+  // No target, or the caller's own email: an ordinary request, not an emulation
+  // (also keeps no-op self-emulation out of the audit log).
+  const isSelf =
+    caller && requested && requested.toLowerCase() === caller.toLowerCase();
+  if (!requested || isSelf) return { caller, target: caller, emulating: false };
+  if (!isImpersonator(caller, impersonators))
+    return { caller, target: caller, emulating: false };
+  return { caller, target: requested, emulating: true };
+}
+
+// Surface adapter — REST/MCP. The signed JWT carries the caller in `email` and
+// an optional emulation target in `act_as`.
+function emulationInputsFromToken(payload) {
+  return {
+    callerEmail: payload?.email ?? null,
+    requestedTarget: payload?.act_as ?? null,
+  };
+}
+
+// Surface adapter — Cube Cloud. Cube Cloud injects its own context: the console
+// user in `cubeCloud.username`, and the emulation target as a top-level `email`
+// when a Security Context is pasted. With nothing pasted there is no top-level
+// email, so the console user resolves as themselves.
+function emulationInputsFromCubeCloud(securityContext) {
+  return {
+    callerEmail: securityContext?.cubeCloud?.username ?? null,
+    // Cube Cloud merges a pasted Security Context into the top level AND mirrors
+    // it under cubeCloud.userAttributes, so check both — observed on 1.7.14,
+    // where a paste appears in both places and neither is present without one.
+    requestedTarget:
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email ??
+      null,
+  };
+}
+
 module.exports = {
   buildGroups,
   buildSecurityContext,
   computeAllowedAbbreviations,
   computeAllowedDepartmentGroups,
+  emulationInputsFromCubeCloud,
+  emulationInputsFromToken,
+  isImpersonator,
+  parseImpersonators,
+  resolveEmulationTarget,
   STAFF_SENSITIVE_MEMBERS,
   STAFF_SENSITIVE_SCOPE_BY_MEMBER,
 };

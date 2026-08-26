@@ -22,14 +22,29 @@ locations:
           pod_spec_config:
             affinity:
               podAntiAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  - labelSelector:
-                      matchExpressions:
-                        - key: location_name
-                          operator: In
-                          values:
-                            - kippmiami
-                    topologyKey: kubernetes.io/hostname
+                # Preferred, not required. With one replica per location this
+                # spreads nothing; as `required` its only live effect was
+                # forbidding the replacement pod from the outgoing pod's node
+                # during a rollover -- the one node guaranteed to have arm64
+                # Scale-Out capacity sized for a code server and, by the run-pod
+                # anti-affinity, no run pods on it. Under `preferred` that node
+                # becomes FEASIBLE again, which is what removes the NAP wait --
+                # the scheduler still penalizes it, twice counting the hostname
+                # topologySpreadConstraint, and will usually pick elsewhere when
+                # anything else fits. Cross-location spreading is unchanged; it
+                # comes from topologySpreadConstraints in the Helm values.
+                # Rollover co-location risks are modelled in the spec:
+                # docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: location_name
+                            operator: In
+                            values:
+                              - kippmiami
+                      topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: COUCHDROP_SFTP_PASSWORD

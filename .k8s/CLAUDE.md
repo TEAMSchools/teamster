@@ -28,9 +28,17 @@ on GKE Autopilot.
 - **Helm deploy is manual** — editing `values-override.yaml` is fine, but
   changes only take effect after `helm upgrade`. `git push` builds code location
   images, not Helm agent config.
+- `deploymentStartupTimeout` (Helm `workspace` key, chart default 300s) — time
+  the agent waits for the code server Deployment to become ready, i.e. for the
+  pod to be SCHEDULED. Currently set to 900s. This is the timeout that fires
+  during a NAP `FailedScheduling` wait. Raising it also raises the agent's
+  worst-case first reconcile, so the `readinessProbe` `failureThreshold` and
+  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it, along
+  with `install.sh`'s `rollout status --timeout`.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
-  agent waits for a code server gRPC ping after creating the Deployment.
-  Currently set to 300s in `values-override.yaml`.
+  agent waits for a code server gRPC ping after the Deployment exists. Fires on
+  slow definitions import, not on failed placement. Currently set to 300s in
+  `values-override.yaml`.
 
 ## Scheduling
 
@@ -111,10 +119,15 @@ hit built-in login/SFTP-template fields.
   `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
   (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
 - **Orphan cleanup env vars** —
-  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` (set to 900s) and
+  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` (set to 1500s) and
   `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
   quickly orphaned code server Deployments from previous agent IDs are deleted.
-  Do not set grace period below reconciliation time (~3-4 min).
+  Do not set grace period below the WORST-CASE first reconcile, which is
+  `deploymentStartupTimeout` + `serverProcessStartupTimeout` = 1200s, not the
+  ~3-4 min a healthy reconcile takes. Below that, an orphaned code server can be
+  deleted before its replacement is reconciled. Asserted in
+  `tests/test_k8s_config.py` alongside the readinessProbe budget, which is sized
+  against the same number.
 - **Code server ClusterIPs change on every reconcile** —
   `unique_resource_name()` in
   `dagster_cloud/workspace/user_code_launcher/utils.py` appends a fresh
@@ -132,6 +145,25 @@ hit built-in login/SFTP-template fields.
 - `safe-to-evict: "false"` only blocks cluster autoscaler evictions — kubelet
   node-pressure evictions (exit 137, OOM) are unaffected. Scale-Out density
   makes these occasional; Dagster retries automatically.
+- **Do NOT add `safe-to-evict: "false"` to code server pods.** Tried 2026-08-18
+  to stop the 38-59 weekly autoscaler relocations, reverted the same day
+  (#4921). Because it blocks only autoscaler eviction and NOT scheduler
+  preemption, pinning a priority-0 pod removes the graceful way to free its node
+  and leaves only the violent one: capacity fragments, then run pods
+  (priority 1000) preempt code servers to obtain it — and every preemption
+  recreates the Service with a fresh ClusterIP, which is the churn the
+  annotation was meant to reduce. Measured at matched load (~32 run/step pods
+  per 15 min): with it, 18-20 agent gRPC errors and 8-9 `Preempted` per 15 min;
+  without it, 0 and 0 across 12 hours including the nightly wave. **General
+  rule: pinning a low-priority pod against the autoscaler converts graceful
+  relocation into preemption.** The agent and run pods keep the annotation —
+  nothing outranks them the way run pods outrank code servers. Absence is
+  asserted in `tests/test_k8s_config.py`.
+- **Judge a scheduling change only against matched run-pod load.** Code-server
+  churn tracks run-pod volume, so a quiet window reads as success and a busy one
+  as regression. Count `Scheduled` events on `dagster-run-` / `dagster-step-`
+  pods for the same window and discard readings below ~25 per 15 min. Two zero
+  readings during the #4921 investigation were load artifacts, not fixes.
 - **PriorityClass `dagster-run`** (value 1000) on run/step pods makes kubelet
   evict code server pods (default priority 0) first during node memory pressure.
 - **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
@@ -269,10 +301,21 @@ a different pod type.
 - **GCP Error Reporting investigation**: `list_group_stats` (find groups) →
   `list_log_entries` (reconstruct multi-line tracebacks from individual log
   entries) → `k8s_pod` events (find root cause: preemption, OOM, eviction).
-- **Timeout types** (do not conflate): Startup (`serverProcessStartupTimeout`,
-  default 180s) = agent→code server gRPC ping; failure → deployment removed +
-  replacement, causes churn. Sensor execution (300s) = sensor ran too long; code
-  server stays up, no churn.
+- **Timeout types** (do not conflate). Three distinct waits, in the order they
+  occur:
+  1. **Deployment startup** (`deploymentStartupTimeout`, Helm `workspace` key,
+     chart default 300s, set to 900s) — agent waits for the code server
+     Deployment to become ready, i.e. for the pod to be SCHEDULED. This is the
+     one that fires during a NAP `FailedScheduling` wait, and its failure
+     message is `Timed out waiting for deployment {name}` with
+     `Pod status: Pending`. Governs `wait_for_deployment_complete`, not
+     `_wait_for_dagster_server_process`.
+  1. **Server process startup** (`serverProcessStartupTimeout`, Helm `workspace`
+     key, default 180s, set to 300s) — agent waits for a gRPC ping AFTER the
+     Deployment exists. Fires when Dagster definitions are slow to import, not
+     when the pod cannot be placed.
+  1. **Sensor execution** (300s, Dagster+ deployment setting) — sensor ran too
+     long; the code server stays up and no churn results.
 - **Code server startup failure signals**: Check ALL pods for the deployment.
   `Aborted!` stderr = SIGABRT (native crash). `DagsterExecutionInterruptedError`
   = SIGTERM during import (rollover). Silent hang after "Starting Dagster code
@@ -293,9 +336,14 @@ a different pod type.
   `resource.type="gce_subnetwork"` +
   `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
   `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
-- **Autopilot node pre-warming**: Not possible — no DaemonSets, no image
-  pre-pulling, no node lifecycle control. Only levers for cold-node startup
-  latency: image size reduction and Dagster timeout increases.
+- **Autopilot node pre-warming**: no node-lifecycle control — no DaemonSets, no
+  image pre-pulling, no cordon that holds. But capacity CAN be reserved at the
+  workload layer with balloon pods: a Deployment of placeholder pods on a
+  negative `PriorityClass` holds nodes that real pods preempt instantly, and the
+  displaced placeholder then triggers NAP to re-warm the buffer. Google
+  documents this for Autopilot. Not deployed here yet; see
+  `docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md`
+  Phase 2, gated on verifying Warden admits a negative priority value.
 - **CPU limit alert sensitivity**: `GKE Container - High CPU Limit Utilization`
   fires at >90% `ALIGN_MEAN` over 60s with `count=1`. When an asset's `op_tags`
   CPU limit alerts, bump by 250m — re-measure peak with
@@ -317,6 +365,19 @@ a different pod type.
   Dagster+ full deployment settings (see Dagster+ Deployment Settings section)
   expose no tick-retry knob. Terminal `DagsterUserCodeUnreachableError` ticks
   remain terminal.
+- **A timed-out code server deployment is TERMINAL — the agent never retries
+  it.** `_should_trigger_recovery` in
+  `dagster_cloud/workspace/user_code_launcher/user_code_launcher.py` returns
+  `False` when the location is in `control_plane_error_locations` ("control
+  plane agrees there is an error, don't retry"). Recovery fires only when the
+  agent holds a local error while the control plane believes the location is
+  healthy. Normal reconciliation redeploys only when
+  `actual_entry.update_timestamp != desired_entry.update_timestamp`, which
+  changes on a new deploy, and the periodic health check needs a running
+  endpoint that a never-started pod does not have. So a location that fails to
+  schedule stays `ERROR` until someone pushes a commit or clicks redeploy. No
+  agent setting changes this;
+  `DAGSTER_CLOUD_DISABLE_LOCAL_ERROR_SERVER_RECOVERY` only turns recovery off.
 
 ## Dagster+ Deployment Settings
 

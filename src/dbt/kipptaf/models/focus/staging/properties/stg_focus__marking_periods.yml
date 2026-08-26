@@ -1,0 +1,10 @@
+models:
+  - name: stg_focus__marking_periods
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__marking_periods, exposing Miami's school-year, semester,
+      quarter, and progress-period definitions at network level. One row per
+      marking period. Column docs/tests live on the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

@@ -2,23 +2,43 @@ with
     dsos as (
         select
             sr.powerschool_teacher_number,
+            sr.home_work_location_dagster_code_location,
+            sr.home_work_location_powerschool_school_id as school_id,
 
-            coalesce(
-                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            ) as school_id,
+            -- The DSO is the intended ENR "teacher"; School Leader is the backup.
+            -- Every school matches both, so without an explicit rank the pivot's
+            -- row_number tie-break is arbitrary and the two swap between runs.
+            if(sr.job_title = 'School Leader', 2, 1) as sortorder,
         from {{ ref("int_people__staff_roster") }} as sr
-        left join
-            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_reporting_name = ccw.location_name
-            and not ccw.is_pathways
         where
             sr.assignment_status != 'Terminated'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and sr.home_work_location_dagster_code_location != 'kippmiami'
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
                 'Director School Operations',
                 'School Leader'
             )
+    ),
+
+    schools as (
+        -- Matches rpt_clever__schools' filters so an auto-generated ENR section
+        -- can never reference a school that schools.csv omits.
+        select
+            abbreviation,
+            low_grade,
+            high_grade,
+            school_number,
+
+            regexp_extract(
+                _dbt_source_relation, r'(kipp\w+)_'
+            ) as dagster_code_location,
+        from {{ ref("stg_powerschool__schools") }}
+        where
+            state_excludefromreporting = 0
+            and _dbt_source_relation not like '%kippmiami%'
     ),
 
     teachers_long as (
@@ -89,11 +109,12 @@ with
             and st._dbt_source_project = t._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
-            and sec._dbt_source_relation not like '%kipppaterson%'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and sec._dbt_source_relation not like '%kippmiami%'
 
         union all
 
-        /* auto-generate ENR course with DSO "teacher" */
         select
             dsos.school_id as sections_schoolid,
 
@@ -110,7 +131,7 @@ with
                 right('{{ var("current_fiscal_year") }}', 2)
             ) as terms_abbreviation,
 
-            1 as sortorder,
+            dsos.sortorder,
 
             dsos.powerschool_teacher_number as teachernumber,
 
@@ -132,8 +153,9 @@ with
             'Homeroom/advisory' as `subject`,
         from dsos
         inner join
-            {{ ref("stg_powerschool__schools") }} as s
+            schools as s
             on dsos.school_id = s.school_number
+            and dsos.home_work_location_dagster_code_location = s.dagster_code_location
         cross join unnest(generate_array(s.low_grade, s.high_grade)) as grade_level
     ),
 
@@ -153,7 +175,9 @@ with
 
             concat(
                 'teacher_',
-                row_number() over (partition by section_id order by sortorder asc),
+                row_number() over (
+                    partition by section_id order by sortorder asc, teachernumber asc
+                ),
                 '_id'
             ) as input_column,
         from teachers_long

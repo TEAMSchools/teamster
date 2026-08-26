@@ -1,5 +1,15 @@
 models:
   - name: rpt_tableau__ddi_dashboard
+    description: >-
+      Weekly extract behind the DDI Suite dashboard, unioning ES/MS assessment
+      responses, HS assessment responses, and staff walkthrough observations. An
+      assessment response appears for a student when that student was enrolled
+      as of the end of the week the assessment was administered, determined from
+      enrollment dates rather than from whether the student is enrolled today,
+      so students who have since withdrawn or graduated keep their history for
+      as long as the extract's two-year window still covers it. Rows are
+      restricted to students holding a valid enrollment status, and students in
+      an out-of-district placement are excluded.
     columns:
       - name: student_number
         data_type: int64

@@ -9,7 +9,13 @@ on:
       - src/**
       - tests/**
       - scripts/**
+      # A PR editing a workflow runs that PR's own version of it, so a change
+      # here reviews itself. Kept in scope anyway: CI-config defects are exactly
+      # the class this workflow was silently failing to catch.
+      - .github/workflows/**
       - "!**/*.md"
+      - "!**/package.json"
+      - "!**/package-lock.json"
 
 jobs:
   claude-review:
@@ -31,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@e0cf66d1d257526b5d07f141838c338921cb8455 # v1.0.182
+        uses: anthropics/claude-code-action@d40ddef4c030e508327d6e35a9c45f3368482c50 # v1.0.195
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -67,11 +73,12 @@ jobs:
             For SQL and dbt changes, read src/dbt/CLAUDE.md (and the nearest
             per-project CLAUDE.md) and verify the code follows its SQL
             conventions, SQL column ordering (ST06), and SQL formatting
-            sections. Examples: max one level of function nesting, no QUALIFY,
-            no ORDER BY in models, no SELECT DISTINCT or row_number() = 1 to
-            mask upstream duplicates, no subqueries against tables or CTEs, cast
-            early and once, correct ON vs WHERE placement, and no pass-through
-            import CTEs. Cite the specific convention for each violation.
+            sections. Examples (not exhaustive): max one level of function
+            nesting, no QUALIFY, no ORDER BY in models, no SELECT DISTINCT or
+            row_number() = 1 to mask upstream duplicates, no subqueries against
+            tables or CTEs, cast early and once, correct ON vs WHERE placement,
+            and no pass-through import CTEs. Cite the specific convention for
+            each violation.
 
             Environment: you run in GitHub Actions with NO warehouse or data
             access. No BigQuery connection, and none of the cube, dbt, dagster,
@@ -86,11 +93,44 @@ jobs:
             ref()/source() wiring, incremental and materialization config, join
             grain inferred from schema, test coverage, and PII exposure. Before
             reporting a repo-convention violation, confirm the convention
-            against existing models with git grep; do not invent naming or style
-            rules the codebase does not already follow. Report every issue with
-            a severity label; do not withhold lower-severity findings.
+            against existing models with the Grep tool; do not invent naming or
+            style rules the codebase does not already follow. Report every issue
+            you find, including ones you are uncertain about; do not withhold
+            lower-severity findings. Include a confidence level and a severity
+            label for each finding so a human can rank them.
+
+            Response format: lead the comment with a short, plain-language
+            summary for human skimming — the overall verdict and only the
+            highest-severity findings, no jargon. Then add a collapsed
+            <details><summary>Full findings</summary> fold-out listing every
+            finding, including lower-severity and uncertain ones, each with
+            file:line, confidence, severity, and the specific convention or
+            citation. Leave a blank line after <summary>Full findings</summary>
+            before the findings list, or GitHub renders the list as inert HTML
+            instead of markdown. This mirrors this repo's PR/issue template
+            pattern: human-readable content first, denser context folded below.
+
+            Execution model: this job is a single non-interactive turn sequence.
+            There is no wake-up and no second invocation — when you stop
+            producing output the process exits and any unfinished work is lost.
+            Never end a turn waiting on background work. If you dispatch review
+            subagents, dispatch them synchronously (run_in_background: false)
+            and collect their results in the same turn; otherwise review inline.
+            Posting the review with update_claude_comment must be your final
+            action, and must happen even if some checks are still incomplete.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
           display_report: true
-          claude_args: --model sonnet --effort xhigh
+          # A second --allowedTools accumulates with the action's own list
+          # (parse-sdk-options.ts ACCUMULATING_FLAGS) rather than replacing it,
+          # so the comment-update and git-push tools stay allowed. The
+          # --disallowedTools set is upstream's tested workaround for
+          # anthropics/claude-code-action#1462: these tools assume a turn can be
+          # resumed later, which a headless run cannot do. Not gated by
+          # --allowedTools, so denying them explicitly is the only guard.
+          claude_args: >-
+            --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
+            diff:*),Bash(git log:*),Bash(git show:*),Bash(git
+            rev-parse:*),Bash(git merge-base:*)" --disallowedTools
+            "ScheduleWakeup,SendMessage,Monitor,Workflow"

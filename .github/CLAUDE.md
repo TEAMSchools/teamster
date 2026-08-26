@@ -3,17 +3,37 @@
 ## Workflows
 
 - `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `mcp/` (excludes markdown). **Gated to `base=main`
-  (`branches: [main]`)** — a **stacked PR** (base = another feature branch) gets
-  no auto-review. dbt Cloud CI is NOT base-gated: it triggers via dbt Cloud's
-  own GitHub app on PR events, independent of any GH-Actions `branches` filter,
-  so a stacked PR **does** run dbt Cloud CI (verified on #4381) alongside
-  Trunk + Dagster deploy — only `claude-code-review` is skipped. Review a
-  stacked PR via `superpowers:requesting-code-review` or an `@claude` PR comment
-  (`claude.yaml` is comment-triggered, not base-gated). A base-retarget after
-  the parent merges does NOT re-fire `opened`, so `claude-code-review` does not
-  auto-trigger then.
+  `scripts/`, `.github/workflows/` (excludes markdown). A PR editing a workflow
+  runs that PR's own copy of it, so workflow changes review themselves. **Gated
+  to `base=main` (`branches: [main]`)** — a **stacked PR** (base = another
+  feature branch) gets no auto-review. dbt Cloud CI is NOT base-gated: it
+  triggers via dbt Cloud's own GitHub app on PR events, independent of any
+  GH-Actions `branches` filter, so a stacked PR **does** run dbt Cloud CI
+  (verified on #4381) alongside Trunk + Dagster deploy — only
+  `claude-code-review` is skipped. Review a stacked PR via
+  `superpowers:requesting-code-review` or an `@claude` PR comment (`claude.yaml`
+  is comment-triggered, not base-gated). A base-retarget after the parent merges
+  does NOT re-fire `opened`, so `claude-code-review` does not auto-trigger then.
 - `claude.yaml` — responds to `@claude` mentions on issues/PRs.
+- **`claude-code-action` headless deadlock**: the action breaks its SDK loop on
+  the FIRST result (`base-action/src/run-claude-sdk.ts`), so a run that
+  dispatches background subagents ends with them orphaned and reports `success`
+  having posted nothing (upstream #1462 / #1499, unfixed at v1.0.183; ~8-12% of
+  fan-out runs). `Agent`, `Workflow`, `ScheduleWakeup`, `SendMessage` and
+  `Monitor` are NOT gated by `--allowedTools` — deny them via
+  `--disallowedTools` in `claude_args`. A second `--allowedTools` /
+  `--disallowedTools` ACCUMULATES with the action's own list rather than
+  replacing it (`parse-sdk-options.ts` `ACCUMULATING_FLAGS`), so adding tools
+  cannot strip `update_claude_comment`.
+- **Debugging a silent `claude-review`**: `display_report: true` appends the
+  transcript — final assistant message, denied tool calls — to the run's **job
+  summary**, the only place they appear. Not in the REST API, and not in the
+  step log (`show_full_output`-gated). Read it before theorising.
+- **Which ref a workflow runs from**: `pull_request` runs the PR's OWN copy, so
+  a workflow change tests itself on that PR. `issue_comment` (`claude.yaml`)
+  runs the DEFAULT-branch copy — an `@claude` mention cannot exercise an
+  unmerged `claude.yaml`; probe such a change through a `pull_request` workflow
+  instead.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
   `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
@@ -30,6 +50,14 @@
   filter matches the pushed delta (which includes the merge commit), NOT the net
   three-dot PR diff (where the merged-in files, now equal to main, don't
   appear).
+- **A markdown-only commit still re-triggered the `kipptaf` deploy** on
+  `pull_request`, despite `"!**/CLAUDE.md"` in BOTH trigger blocks of
+  `deploy-prod-kipptaf.yaml` (verified: the commit touched 3 files, all `.md`,
+  and a `kipptaf` run appeared for that headSha). This contradicts the
+  pushed-delta model above, which predicts no run — one of the two is
+  incomplete, and no mechanism is established here. Plan for the cost: a
+  docs-only push to a PR is NOT free, so batch doc changes into the code commit
+  rather than splitting them off to "avoid CI".
 - **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
   in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
   etc.). Drift silently skips that district's prod deploy on a shared
@@ -62,6 +90,10 @@
   event — use `!` negation patterns instead (e.g., `!**/*.md`).
 - YAML values should not be redundantly quoted — Trunk flags it. Only quote when
   required (e.g., `!` negation patterns need quotes).
+- Long quoted CLI args in `claude_args` belong in a folded block scalar (`>-`) —
+  prettier reflows the value, and folding turns each inserted newline back into
+  a single space, so the resolved string survives formatting unchanged. Verify
+  by parsing the YAML AFTER the fmt hook runs, not before.
 - Every external action `uses:` is pinned to a full 40-char commit SHA with a
   trailing `# vX.Y.Z` comment (Dependabot's `github-actions` ecosystem proposes
   bumps). Local reusable-workflow refs (`./.github/workflows/*.yaml`) are not
@@ -94,7 +126,7 @@ principal itself.
 | `admins`              | admin     | Global fallback (`*`)                                                         |
 | `platform`            | maintain  | `.github/`, `.devcontainer/`, `.claude/`, `.trunk/`, Dockerfile, scripts, MCP |
 | `data-engineers`      | write     | `src/teamster/`, tests                                                        |
-| `analytics-engineers` | maintain  | All `src/dbt/`                                                                |
+| `analytics-engineers` | maintain  | `src/dbt/`, `src/cube/`, `src/launch/`                                        |
 | `analysts`            | write     | kipptaf folders without staging models (see CODEOWNERS)                       |
 | `data-team`           | write     | docs                                                                          |
 
@@ -104,4 +136,14 @@ principal itself.
 ## Other Files
 
 - `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
+  Three tiers, plain to detailed: "Summary & Motivation" is plain-language, what
+  and why. "Reviewer Notes" is also plain-language — name what's worth a second
+  look and why, a line or two each, not the full reasoning. The "For Claude"
+  fold-out at the end holds the full technical detail behind each Reviewer Notes
+  flag (exact values, edge cases, full reasoning), plus whatever else got
+  simplified or cut from Summary for plain-language readability, AI-involvement
+  notes, and anything a future `@claude` invocation needs.
+- `ISSUE_TEMPLATE/` — `bug_report.md` and `feature_request.md`, each with a "For
+  Claude" section for `@claude`-driven issues; `config.yml` disables blank
+  issues.
 - `actionlint.yaml` — self-hosted runner labels for actionlint.

@@ -13,6 +13,21 @@ models:
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Nightly instead of the default eager table condition, which re-fires
+          # on ANY upstream data change — ~120 executions/day, the highest of
+          # any eager table. Neither consumer sees that churn:
+          # rpt_tableau__gradebook_audit feeds the `gradebook_audit` exposure,
+          # which declares no cron_schedule and so never gets a
+          # ScheduleDefinition (kipptaf/tableau/schedules.py) — its asset has
+          # zero materializations ever; the other exposure,
+          # gradebook_audit_teacher_report, is `enabled: false`. The Google
+          # Sheet extract, rpt_gsheets__gradebook_audit_student_flags, last
+          # built 2026-07-21. 03:00 leads the neighbouring
+          # gradebook_and_gpa_dashboard tick at `0 4 * * *`. Refs #4821
+          automation_condition:
+            cron_schedule: 0 3 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

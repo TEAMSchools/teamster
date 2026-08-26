@@ -67,6 +67,15 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__student_enrollment
+      - name: int_focus__student_contacts
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__student_contacts
       - name: int_focus__course_periods
         config:
           meta:
@@ -121,3 +130,93 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__users
+      - name: stg_focus__co_teachers
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__co_teachers
+      - name: stg_focus__students_join_users
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__students_join_users
+      - name: int_focus__schedule
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__schedule
+      - name: stg_focus__marking_periods
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__marking_periods
+      - name: int_focus__attendance_daily
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__attendance_daily
+      - name: int_focus__ada
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__ada
+      - name: int_focus__attendance_streak
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__attendance_streak
+      - name: int_focus__calendar_day
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__calendar_day
+      - name: int_focus__calendar_week
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__calendar_week
+      - name: int_focus__calendar_rollup
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__calendar_rollup

@@ -2,7 +2,10 @@ models:
   - name: stg_powerschool__cc
     description:
       This table maintains the student schedules. It contains information such
-      as Section ID, Student ID, Term ID and Teacher ID.
+      as Section ID, Student ID, Term ID and Teacher ID. Carries a frozen
+      historical corpus of PowerSchool double-writes — duplicate rows for the
+      same student, section, and dateleft combination. A warn-level uniqueness
+      test on those three columns surfaces them.
     data_tests:
       # TODO(#3915): severity: warn intentional — 24 historical PS double-write
       # groups (frozen corpus, AY <= 2023). Restore to error when Ops cleanup

@@ -5,7 +5,6 @@ with
     ),
 
     assessments_scores as (
-        -- benchmark scores
         select
             bss.academic_year,
             bss.region,
@@ -106,7 +105,6 @@ with
 
         union all
 
-        -- pm scores
         select
             p.academic_year,
             p.region,

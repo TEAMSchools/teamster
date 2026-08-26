@@ -19,12 +19,10 @@ select
     a.is_expected as assign_expected_to_be_scored,
     a.is_expected_scored as assign_expected_with_score,
 
-    -- exempt, nulls and max
     if(a.is_expected_null = 1, true, false) as assign_null_score,
 
     if(a.score_entered > a.totalpointvalue, true, false) as assign_score_above_max,
 
-    -- less than 5 score checks
     if(
         ce.assignment_category_code = 'W'
         and a.is_expected_missing = 0
@@ -49,7 +47,6 @@ select
         false
     ) as assign_f_score_less_5,
 
-    -- miss assign not score 5 for non-hs
     if(
         ce.assignment_category_code = 'W'
         and ce.school_level != 'HS'
@@ -77,7 +74,6 @@ select
         false
     ) as assign_f_missing_score_not_5,
 
-    -- miss assign not score 0 for hs
     if(
         ce.assignment_category_code = 'W'
         and ce.school_level = 'HS'
@@ -114,7 +110,6 @@ select
         false
     ) as assign_s_missing_score_not_0,
 
-    -- 50% s assign min
     if(
         ce.assignment_category_code = 'S'
         and ce.school_level != 'HS'
@@ -132,7 +127,6 @@ select
         false
     ) as assign_s_hs_score_less_50p,
 
-    -- conversion chart
     if(
         a.is_exempt = 0
         and ce.school_level = 'MS'

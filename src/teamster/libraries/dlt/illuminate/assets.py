@@ -97,6 +97,11 @@ def build_illuminate_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource) -> Iterator:
-        yield from dlt.run(context=context, write_disposition="replace")
+        # loader_file_format="parquet": BigQuery schema autodetection rejects the
+        # empty jsonl file dlt writes to truncate a `replace` table whose source
+        # went to 0 rows. See `replace` write-disposition in ../CLAUDE.md (#4733).
+        yield from dlt.run(
+            context=context, write_disposition="replace", loader_file_format="parquet"
+        )
 
     return _assets

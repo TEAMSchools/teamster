@@ -6,7 +6,7 @@ with
             week_start_monday,
             week_end_sunday,
             is_current_week_mon_sun,
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
         where academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
@@ -14,8 +14,11 @@ with
         select
             staffing_model_id, entity, adp_location, valid_from, valid_to, is_staffed,
         from {{ ref("int_seat_tracker__snapshot") }}
-        /* only active seats for the current academic year */
-        where academic_year = {{ var("current_academic_year") }} and is_active
+        /* only active, non-deleted seats for the current academic year */
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and is_active
+            and not is_deleted
     ),
 
     locations as (

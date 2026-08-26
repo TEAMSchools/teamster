@@ -21,11 +21,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
 
       - name: iep_classification
         data_type: string

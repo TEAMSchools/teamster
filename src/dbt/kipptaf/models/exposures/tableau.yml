@@ -75,6 +75,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__grants_timesheets")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -310,7 +311,9 @@ exposures:
           asset:
             metadata:
               id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-              cron_schedule: 0 15 * * *
+              cron_schedule:
+                - 0 6 * * *
+                - 0 15 * * *
   - name: literacy_dashboard
     label: Literacy Dashboard
     type: dashboard
@@ -418,8 +421,6 @@ exposures:
               id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
               cron_schedule:
                 - 0 1 * * *
-                - 40 14 * * 3
-                - 00 11 * * 3
                 - 0 16 * * 5
                 - 0 18 * * *
   - name: apm_dashboard
@@ -642,6 +643,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
+      - ref("rpt_tableau__survey_links")
       - ref("rpt_tableau__survey_completion")
       - ref("rpt_tableau__survey_responses")
     config:
@@ -767,7 +769,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("int_surveys__manager_survey_details")
+      - ref("rpt_tableau__manager_survey_details")
     config:
       meta:
         dagster:
@@ -784,6 +786,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
+      - ref("rpt_tableau__fresh_dashboard_qc")
       - ref("int_tableau__finalsite_student_scaffold")
     config:
       meta:
@@ -809,3 +812,33 @@ exposures:
         dagster:
           kinds:
             - tableau
+  - name: manager_survey_rollup
+    label: Manager Survey Rollup
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__manager_survey_details")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 400e54b2-4b34-4185-b7e6-72765e6f1c86
+  - name: content_team_dashboard
+    label: Content Team Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__content_team")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1

@@ -1,0 +1,97 @@
+models:
+  - name: int_students__students
+    description: >-
+      SIS-agnostic student spine. Unions the PowerSchool student staging view
+      for the three New Jersey regions with Miami student identity conformed
+      from Focus to PowerSchool column names and value domains, holding the
+      unprefix rule that recovers the canonical student number, the race code
+      derivation, and the archive carry-forwards for the fields the archive
+      keeps on its own students table. Focus is Miami's system of record for
+      student identity, so the frozen PowerSchool archive contributes no Miami
+      rows -- including the 493 departed students the Focus seed never received.
+      The archive survives only as a lookup: values with no usable Focus source
+      carry forward from it for returning students, and are null for students
+      new since the freeze. spedlep and lep_status get the same treatment in
+      int_students__student_core_fields, matching where the archive stores them.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+    columns:
+      - name: lunchstatus
+        description: >-
+          Meal eligibility, conformed upstream in int_focus__students. Null for
+          every Miami student today because Focus's free_reduced_meals_program
+          field currently carries only a school-level CEP direct-certification
+          code, not an individual determination -- but the mapping produces F, R
+          or P as soon as Focus records one.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                where: _dbt_source_project = 'kippmiami'
+      - name: student_number
+        description: Canonical network student number.
+      - name: ethnicity
+        description: >-
+          Single-character race code. For Miami, derived from the Focus race
+          flags for every student -- multiple races yield T, a single race
+          yields its code, and no recorded race yields null rather than a
+          fabricated category. This moves 100 of 3,453 returning students off
+          their archive value, 77 of them to null, because the archive's own
+          codes were not a function of the race flags.
+      - name: enroll_status
+        description: >-
+          Enrollment standing. For Miami, taken from the student's most recent
+          Focus stint -- Focus records this per stint while the network treats
+          it as a single current value per student, so the latest academic year
+          and entry date wins, per the `rn_all` ranking computed in
+          `int_focus__student_enrollments`.
+      - name: first_name
+        description: Student's legal first name.
+      - name: middle_name
+        description: Student's legal middle name.
+      - name: last_name
+        description: Student's legal last name.
+      - name: dob
+        description: >-
+          Date of birth. For Miami, taken from Focus rather than the archive --
+          Focus is the live system and the two disagree on only a handful of
+          returning students, all post-freeze corrections.
+      - name: gender
+        description: >-
+          Single-character gender code. For Miami, extracted from the bracketed
+          code in the Focus sex label, matching the archive domain.
+      - name: powerschool_id
+        description: >-
+          Pre-migration student number as Focus recorded it. Populated only for
+          Miami students who predate the SIS migration. Used to verify the
+          unprefix rule, never as a join key.
+      - name: state_studentnumber
+        description: >-
+          Host public school district's identifier for the student, published by
+          dim_students as district_student_identifier. For Miami this is the
+          MDCPS student id, read from Focus's disis_id and left-padded to the 7
+          digits MDCPS issues (Focus stores it as NUMERIC, dropping the leading
+          zero most carry). Populated only for students the PowerSchool
+          migration brought over, so null for anyone enrolled since.
+      - name: florida_student_number
+        description: >-
+          Florida state student number as recorded in Focus. A 10-digit FLDOE
+          identifier, distinct from the MDCPS student id in state_studentnumber
+          and from the FLEID in florida_education_identifier. Currently unread
+          by any consumer.
+      - name: florida_education_identifier
+        description: >-
+          FLEID, the Florida statewide education identifier. Consumed by
+          int_students__student_user_fields as the network fleid.
+      - name: _dbt_source_project
+        description:
+          District code location, passed through from the source union view.
+      - name: _dbt_source_relation
+        description: Source relation, passed through from the source union view.

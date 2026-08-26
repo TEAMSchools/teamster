@@ -1,29 +1,95 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_scores
+    description: >-
+      Score-level detail for the CARAT workbook's average-score views. Reads
+      int_assessments__all_college_assessments, so both official and practice
+      results appear and test_type separates them.
+
+
+      One row per attempt. The workbook's Score Category filter switches the
+      measure between scale_score, each attempt's own score, and
+      max_scale_score, that student's best for the score type — both averaged
+      over the same population of attempts, so a student who tested twice counts
+      twice under either measure. That is intended.
+
+
+      Region, school, and graduation year come from the student's current
+      enrollment rather than their enrollment at test time, because the join
+      carries no academic-year predicate. Deduplicated against byte-identical
+      rows inherited from duplicate kippadb standardized test records; see the
+      inline TODO.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - test_type
+              - score_type
+              - test_date
+              - scale_score
+          config:
+            severity: error
+            # Guards the deduplication, and must match its partition exactly.
+            # test_type is in the key because practice and official reuse the
+            # same score_type strings, so a student could hold both on one date
+            # at one score — a legitimate pair the dedupe keeps and a
+            # test_type-less key would fail on.
     columns:
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
       - name: test_type
         data_type: string
+        description: >-
+          Official or Practice. A row header on the average-score view, so both
+          bands display and can be filtered.
       - name: scope
         data_type: string
+        description: >-
+          Assessment family — SAT, ACT, PSAT 8/9, PSAT10, or PSAT NMSQT. Drives
+          the column headers on the average-score view.
       - name: score_type
         data_type: string
+        description: >-
+          Specific score within the assessment, such as sat_total_score or
+          sat_ebrw. Six sub-test types are excluded by name, so this is a
+          denylist — a new score type upstream is included automatically.
       - name: subject_area
         data_type: string
+        description: Section subject as reported by the source.
       - name: aligned_subject_area
         data_type: string
+        description: >-
+          Subject normalized across assessment families so sections are
+          comparable, with Total covering composite and combined scores. Backs
+          the workbook's Aligned Subject Area filter.
       - name: test_date
         data_type: date
+        description: The date this test was given.
       - name: scale_score
         data_type: numeric
+        description: >-
+          Scale score for this specific sitting. One of the two measures the
+          workbook's Score Category parameter selects between.
       - name: max_scale_score
         data_type: numeric
+        description: >-
+          The student's highest scale score for this score type across all
+          sittings. The other measure the Score Category parameter selects.
       - name: region
         data_type: string
+        description: >-
+          The student's current region, not the region they tested in — scores
+          follow a student who transfers.
       - name: school
         data_type: string
+        description: The student's current school, on the same basis as region.
       - name: graduation_year
         data_type: int64
+        description: >-
+          Expected graduation year, used as the cohort grouping on the
+          average-score view. A small number of rows carry no value and drop out
+          of grouped views.
       - name: ktc_cohort
         data_type: int64
+        description: KIPP Through College cohort year.

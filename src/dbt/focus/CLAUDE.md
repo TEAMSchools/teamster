@@ -97,6 +97,24 @@ positional `custom_N` / `custom_field_N` slots DO resolve to catalog titles
 catalog row): `course_subjects` (no `CourseSubject` class) and
 `master_courses.custom_field_11`.
 
+## Identifier spaces
+
+**Three distinct school identifier spaces.** Focus `schools.id` is an internal
+integer (14, 15, 58...); `school_number` is a Florida school code (`2008A`); the
+network id is `powerschool_school_id`, reachable only via
+`stg_google_sheets__people__locations.focus_school_id`. Joining the wrong one
+null-fills every school attribute with no error.
+
+**Same column name, different concept.** Focus `fteid` holds a Florida education
+identifier string (`FL000007024992`); the network `fteid` is a PowerSchool
+numeric id. Casting fails outright and `safe_cast` would null real data under a
+misleading heading — drop such columns and let the consuming union null-fill.
+
+The student id has the same shape of trap: `students.student_id` is the network
+student number prefixed with `8400` (Miami-Dade's FLDOE district number), and
+`int_focus__student_enrollment.student_number` holds that PREFIXED form despite
+its name, so joining on it by name returns zero matches with no error.
+
 ## Source data conventions
 
 **Soft-delete.** Focus `deleted INT64` is `NULL` for live rows and `1` for
@@ -152,3 +170,10 @@ landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native
 `sources-bigquery.yml` source (hardcoded schema, no target branch) — it reads
 prod in all targets, so kipptaf CI resolves it without seeding `zz_stg`. Only
 the raw dlt tables exist in prod pre-merge; district `stg_focus__*` do not.
+
+This package declares only `dbt_utils` in its own `packages.yml` — models here
+must not reference macros from another source-system package (e.g.
+`finalsite.clean_phone`), since packages are not necessarily installed together
+and a consuming district project may lack it. Phone values are therefore emitted
+raw, as stored in Focus; normalization (E.164) is applied by the downstream
+consumer, not in this package.

@@ -101,10 +101,14 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
     model-level edges (in constraint order, then column order within each
     constraint).  Non-foreign-key constraints are ignored in both locations.
 
-    FK edges come only from literal ``foreign_key`` constraints — never inferred
-    from ``relationships`` data tests.  Every mart (views and table-materialized
-    alike) declares its FKs as constraints, so the constraint blocks are the
-    single source of truth for the diagram.
+    Table-materialized marts cannot carry ``foreign_key`` constraints (they
+    render into the CTAS DDL — see #4587), so they declare the same edge under
+    ``columns[].config.meta.foreign_key`` in the same ``to:`` / ``to_columns:``
+    shape.  Those are read too, immediately after each column's constraints.
+
+    FK edges come only from literal ``foreign_key`` constraints and their
+    ``config.meta.foreign_key`` equivalent — never inferred from
+    ``relationships`` data tests.
     """
     doc = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
     edges: list[FkEdge] = []
@@ -121,6 +125,22 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
                     _warn_if_legacy_expression(constraint, source)
                     continue
                 edges.append(FkEdge(source, column["name"], target))
+
+            # Column-level FK metadata, for table-materialized marts.
+            #
+            # A table mart cannot declare a foreign_key CONSTRAINT: it renders
+            # into the CTAS DDL, and no FK edge under marts/ is also a ref()
+            # edge, so nothing serializes the parent build ahead of the child
+            # (#4587). Those marts record the edge under config.meta.foreign_key
+            # instead, in the same to: / to_columns: shape, so it still reaches
+            # the diagram.
+            meta_fk = (column.get("config") or {}).get("meta", {}).get("foreign_key")
+            if isinstance(meta_fk, Mapping):
+                target = _constraint_target(meta_fk)
+                if target is None:
+                    _warn_if_legacy_expression(meta_fk, source)
+                else:
+                    edges.append(FkEdge(source, column["name"], target))
 
         # Model-level FK constraints.
         for constraint in model.get("constraints", []):

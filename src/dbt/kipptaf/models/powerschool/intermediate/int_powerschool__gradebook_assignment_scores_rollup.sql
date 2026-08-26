@@ -57,7 +57,6 @@ with
         select
             *,
 
-            -- flags
             if(
                 category_code in ('H', 'W', 'F') and totalpointvalue != 10, true, false
             ) as assign_max_score_not_10,

@@ -2,9 +2,11 @@ models:
   - name: rpt_appsheet__leadership_development_roster
     description: >
       Archive only, disabled 2026-07-30. Leadership Development moved to
-      Lattice. This fed the AppSheet app; it joined live
-      int_people__staff_roster, so it was never frozen data and is not
-      registered as an archive source.
+      Lattice. Roster that fed the AppSheet leadership development app — active
+      or on-leave staff, each flagged with an `active` default and a
+      `permission_level` that the app uses to scope what a user can see. It
+      joined live `int_people__staff_roster`, so it was never frozen data and is
+      not registered as an archive source.
     # Refs #4627
     config:
       enabled: false
@@ -33,7 +35,24 @@ models:
         data_type: string
       - name: active
         data_type: boolean
+        description: >
+          Whether the staff member's `job_title` flags them as active in leader
+          performance management by default — true when the title contains
+          Chief, Director, Head, Leader, or President, or equals Controller.
+          Editable per person in the AppSheet app; this is only the default
+          value.
       - name: permission_level
         data_type: int64
+        description: >
+          App access tier derived from `job_title`, `department`, and `entity`,
+          from broadest to narrowest — 7 (Data or Leadership Development
+          department, CEO, or a President title) sees all entities and levels; 6
+          (any Chief title) sees all entities below their own level; 5 (a
+          Managing Director in School Support, or a Head of Schools title) sees
+          their own entity below their own level; 4 (a School Leader title) and
+          3 (a Managing Director within the KIPP TEAM and Family Schools Inc
+          entity) see their own location below their own level; 2 is assigned
+          when the person has direct reports and sees only those reports; 1 is
+          the fallback and sees only their own data.
       - name: reports_to_employee_number
         data_type: int64

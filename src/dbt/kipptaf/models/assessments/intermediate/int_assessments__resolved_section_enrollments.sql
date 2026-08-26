@@ -76,8 +76,6 @@ with
         where test_date is not null and localstudentidentifier is not null
     ),
 
-    -- FL state scores (FLDOE). administration_window is the FL analogue of
-    -- administration_period.
     state_fl_scores as (
         select
             student_number as powerschool_student_number,
@@ -95,9 +93,6 @@ with
         where test_date is not null and student_number is not null
     ),
 
-    -- iReady diagnostics. test_round is the reporting-terms IR window (BOY /
-    -- MOY / EOY / Outside Round); illuminate_subject maps Reading -> Text
-    -- Study, Math -> Mathematics upstream.
     iready_scores as (
         select
             student_id as powerschool_student_number,
@@ -267,7 +262,6 @@ with
         from scores
     ),
 
-    -- tier 1: subject-matching section active on the anchor date (half-open window)
     candidates_subject as (
         select
             s.powerschool_student_number,
@@ -278,10 +272,13 @@ with
             s._dbt_source_project,
             s.source_type,
             s.score_grain_key,
+            s.anchor_date,
 
             ce.cc_dcid,
             ce._dbt_source_project as cc_source_project,
             ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
 
             1 as tier,
 
@@ -304,7 +301,6 @@ with
     -- by the partition key; not a mask for upstream duplicates
     resolved_subject_keys as (select distinct score_grain_key, from candidates_subject),
 
-    -- scores that found no subject section, eligible for the homeroom tier
     scores_unresolved as (
         select s.*,
         from scores_mapped as s
@@ -312,7 +308,6 @@ with
         where cs.score_grain_key is null
     ),
 
-    -- tier 2: the student's homeroom section active on the anchor date
     candidates_homeroom as (
         select
             s.powerschool_student_number,
@@ -323,10 +318,13 @@ with
             s._dbt_source_project,
             s.source_type,
             s.score_grain_key,
+            s.anchor_date,
 
             ce.cc_dcid,
             ce._dbt_source_project as cc_source_project,
             ce.cc_dateleft,
+            ce.powerschool_school_id,
+            ce.region,
 
             2 as tier,
 
@@ -375,6 +373,13 @@ select
     cc_source_project,
     source_type,
     resolution_type,
+
+    -- the resolved section's school and region. Carried so consumers can resolve
+    -- a score's reporting quarter from the score's OWN date (#4484); this model
+    -- is one row per score GRAIN, so its anchor_date cannot stand in for the
+    -- date of every score row sharing that grain.
+    powerschool_school_id,
+    region,
 
     {{ dbt_utils.generate_surrogate_key(["cc_dcid", "cc_source_project"]) }}
     as student_section_enrollment_key,
