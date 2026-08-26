@@ -171,26 +171,21 @@ with
     ),
 
     question_departments as (
-        /* grain projection: the code/name pair a question rates is a property of
-           the question shortname, not of the form it appeared on, so the sheet's
-           (form_id, item_id) rows collapse to one row per shortname. Distinct
-           keys on the pair, so drift in either column would fan this out -- the
-           one_department_per_abbreviation singular test guards against both. */
-        select distinct
+        /* the crosswalk is already one row per abbreviation, so this joins at
+           grain with no projection. Lowered on both sides because sheet entry is
+           not case-constrained; the crosswalk's unique_lowered_abbreviation test
+           is what keeps lowering from collapsing two rows into a fan-out. */
+        select
             rated_department_code,
             rated_department_name,
 
             lower(abbreviation) as question_shortname,
-        from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
+        from {{ ref("stg_google_sheets__google_forms__question_department_crosswalk") }}
         where abbreviation is not null
-    ),
-
-    enriched_keyed as (
-        select *, lower(question_shortname) as question_shortname_key, from enriched
     )
 
 select
-    e.* except (question_shortname_key),
+    e.*,
 
     qd.rated_department_code,
     qd.rated_department_name,
@@ -198,5 +193,6 @@ select
     coalesce(
         cast(e.respondent_employee_number as string), e.respondent_email
     ) as respondent_identifier,
-from enriched_keyed as e
-left join question_departments as qd on e.question_shortname_key = qd.question_shortname
+from enriched as e
+left join
+    question_departments as qd on lower(e.question_shortname) = qd.question_shortname

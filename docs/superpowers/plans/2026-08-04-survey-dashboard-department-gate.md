@@ -8,8 +8,8 @@
 **Goal:** Scope Survey Dashboard support responses to the department each
 question rates, and remove respondent names from every support view.
 
-**Architecture:** The question-to-department mapping is data, carried on the
-existing `src_google_sheets__google_forms__form_items_extension` sheet through
+**Architecture:** The question-to-department mapping is data, carried on its own
+`src_google_sheets__google_forms__question_department_crosswalk` sheet through
 `int_surveys__survey_responses` to `rpt_tableau__survey_responses`. The
 group-to-department authorization is a Tableau calculated field, because
 `ISMEMBEROF()` takes only a literal group name. Neither half works without the
@@ -21,32 +21,45 @@ Tableau Desktop / Tableau Cloud.
 Design:
 `docs/superpowers/specs/2026-08-04-survey-dashboard-department-gate-design.md`
 
-**Status:** Tasks 1 through 6 are done. The sheet carries both columns and 67
-populated rows across 14 agreed department codes, the external is re-staged, the
-chain builds against `staging` with both tests passing, and the join adds no
-rows (3,614,537 staged against 3,614,537 in production). Open question 1 is
-resolved — see _Department taxonomy_ below. Tasks 7 through 10 are Tableau
-workbook edits, blocked until this merges because the calculated fields cannot
-reference columns that do not exist yet.
+**Status:** Tasks 1 through 6 are done. The crosswalk sheet carries 309
+abbreviations with 66 mapped across all 14 agreed department codes, the external
+is staged, the chain builds against `staging` with all four crosswalk tests
+passing, and the join adds no rows. Open question 1 is resolved — see
+_Department taxonomy_ below. Tasks 7 through 10 are Tableau workbook edits,
+blocked until this merges because the calculated fields cannot reference columns
+that do not exist yet.
+
+**Design change after review.** Tasks 1 through 3 originally appended the two
+department columns to the existing `Form Items Extension` sheet and projected
+them to one row per abbreviation with `distinct`. PR #4728 review rejected that
+— the department a question rates is a property of the abbreviation alone, so
+storing it at `(form_id, item_id)` grain forced Ops to enter the same value up
+to four times and made contradictory entries representable. The mapping now
+lives on its own sheet at its own grain, and the `distinct`, its
+grain-projection CTE, and the guard test that propped it up are all gone.
 
 ## Global Constraints
 
 - Target project is `kipptaf`. Every dbt command runs through `uv run`, never a
   bare `dbt`.
-- New column names, verbatim: `rated_department_code`, `rated_department_name`.
-  Both `string`.
-- The sheet's declared `columns:` bind **positionally** after
-  `skip_leading_rows: 1`. Both new columns go at the END of the sheet and at the
-  END of the `columns:` list, in the same order.
-- The source's `sheet_range` is the named range
-  `src_google_forms__form_items_extension`, which spans A:F today. It must be
-  widened to A:H or BigQuery never sees the new columns.
-- `abbreviation` is not unique in the sheet — 356 populated rows, 309 distinct
-  abbreviations, 33 abbreviations on more than one row. Never join it to
-  response rows without projecting to one row per abbreviation first.
-- `abbreviation` is nullable by design: section-header rows carry a `Title` and
-  no abbreviation, and the sheet's unbounded named range yields ~478 fully null
-  phantom rows. Do not add `not_null` to it.
+- Column names, verbatim: `abbreviation`, `rated_department_code`,
+  `rated_department_name`. All three `string`.
+- A sheet's declared `columns:` bind **positionally** after
+  `skip_leading_rows: 1`. Never insert a column into the middle of a mapped tab;
+  reference columns for the humans filling a sheet belong past the last mapped
+  column, outside the named range.
+- The crosswalk's `sheet_range` is the named range
+  `src_google_forms__question_department_crosswalk`, spanning
+  `'Question Department Crosswalk'!A:C`. A range that disagrees with the
+  `columns:` list is a silent error, not a build failure.
+- `abbreviation` is unique on the crosswalk, but only **after lowering** — the
+  join lowers both sides, so uniqueness is asserted on `lower(abbreviation)`,
+  not by a column-level `unique` test.
+- `abbreviation` is nullable in practice: a row-unbounded named range can
+  surface fully-blank phantom rows below the data, which is what makes the
+  sibling `form_items_extension` sheet stage roughly 525 nulls out of 881 rows.
+  Do not add `not_null` to it; filter `where abbreviation is not null` in every
+  consumer.
 - No `ORDER BY`, no `QUALIFY`, no subqueries against tables or CTEs, max one
   level of function nesting, trailing commas in every `SELECT`. See
   `src/dbt/CLAUDE.md` → SQL conventions.
@@ -55,181 +68,184 @@ reference columns that do not exist yet.
 
 ---
 
-### Task 1: Add the two columns to the Google Sheet
+### Task 1: Create the question-department crosswalk sheet
 
 **Owner:** Ops / the user. No repo change. Nothing downstream works until this
-lands, and the dbt tasks below will fail their build until it does.
+lands, and the dbt tasks below fail their build until it does.
 
-**Files:** none. Google Sheet `1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw`,
-tab `Form Items Extension`.
+**Files:** none. Google Sheet `1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw`
+(titled `Google Forms`), a new tab alongside `Form Items Extension`.
 
-- [x] **Step 1: Append two header cells**
+Steps 1 and 2 undo the original approach; Steps 3 through 6 build the crosswalk
+at its own grain.
 
-In row 1, set `G1` to `Rated Department Code` and `H1` to
-`Rated Department Name`. Column F is `URL ID` — the new columns go after it,
-with no blank column between.
+- [x] **Step 1: Delete the two columns from `Form Items Extension`**
 
-- [x] **Step 2: Widen the named range**
+Confirm `G1` reads `Rated Department Code` and `H1` reads
+`Rated Department Name`, then delete columns G and H.
 
-The named range `src_google_forms__form_items_extension` currently covers
-columns A through F. Extend it to A through H: Data → Named ranges →
-`src_google_forms__form_items_extension` → edit the range to
-`'Form Items Extension'!A:H`.
+Both external tables — `kipptaf_google_sheets` and
+`zz_stg_kipptaf_google_sheets` — only ever declared 6 columns, so the delete
+needs no re-staging and breaks nothing.
 
-- [x] **Step 3: Leave the value cells empty for now**
+- [x] **Step 2: Confirm the named range clamped back**
 
-Populating the codes is Task 6, which is blocked on the taxonomy decision. An
-empty column is the correct interim state: every code reads null, which the
-design routes to the restricted default.
+Data → Named ranges → `src_google_forms__form_items_extension` must read
+`'Form Items Extension'!A:F`. Sheets normally clamps it when the columns are
+deleted; if it still reads `A:H`, edit it.
 
-- [x] **Step 4: Confirm the range**
+- [x] **Step 3: Add the crosswalk tab**
 
-Re-open Data → Named ranges and read the range back. It must say `A:H`, not
-`A1:H` or `A:F`.
+Name it `Question Department Crosswalk`, in the same spreadsheet. Drive access
+is already granted there, and multi-source spreadsheets are the norm — one
+spreadsheet backs 10 sources elsewhere in `sources-external.yml`.
+
+- [x] **Step 4: Seed it**
+
+Header row `abbreviation`, `rated_department_code`, `rated_department_name` in
+`A1:C1`, then one row per distinct lowered abbreviation from the form items
+sheet — 309 of them:
+
+```sql
+select distinct lower(abbreviation) as abbreviation,
+from
+    `teamster-332318.kipptaf_google_sheets.src_google_sheets__google_forms__form_items_extension`
+where abbreviation is not null
+order by abbreviation
+```
+
+- [x] **Step 5: Create the named range**
+
+`src_google_forms__question_department_crosswalk` over
+`'Question Department Crosswalk'!A:C`. Reference columns past C are fine and are
+ignored by BigQuery, but they must sit **outside** the range — the source binds
+columns positionally.
+
+- [x] **Step 6: Fill the codes**
+
+Task 6's taxonomy. Verified against the staged table: 66 of 309 abbreviations
+carry a code, all 14 agreed codes are used, each code maps to exactly one
+display name, and the 243 blanks arrive as `NULL` rather than empty string, so
+`accepted_values` passes on them.
 
 ---
 
-### Task 2: Declare the columns on the source and the staging contract
+### Task 2: Add the crosswalk source, staging model, and tests
 
 **Files:**
 
-- Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml` (the
-  `src_google_sheets__google_forms__form_items_extension` block, after the
-  `url_id` column entry)
-- Modify:
+- Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml` — remove
+  the two department columns from
+  `src_google_sheets__google_forms__form_items_extension`, add the
+  `src_google_sheets__google_forms__question_department_crosswalk` source block
+  after it
+- Revert:
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml`
 - Create:
-  `src/dbt/kipptaf/tests/stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation.sql`
+  `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__google_forms__question_department_crosswalk.sql`
+- Create:
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__google_forms__question_department_crosswalk.yml`
+- Create:
+  `src/dbt/kipptaf/tests/stg_google_sheets__google_forms__question_department_crosswalk__unique_lowered_abbreviation.sql`
+- Create:
+  `src/dbt/kipptaf/tests/stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations.sql`
 - Modify: `src/dbt/kipptaf/tests/properties.yml`
+- Delete:
+  `src/dbt/kipptaf/tests/stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation.sql`
 
 **Interfaces:**
 
-- Consumes: the two sheet columns from Task 1.
-- Produces:
-  `stg_google_sheets__google_forms__form_items_extension.rated_department_code`
-  and `.rated_department_name`, both `string`, both nullable, with at most one
-  distinct `(code, name)` pair per `abbreviation`.
+- Consumes: the crosswalk tab from Task 1.
+- Produces: `stg_google_sheets__google_forms__question_department_crosswalk`
+  with `abbreviation`, `rated_department_code`, `rated_department_name`, all
+  `string`, one row per lowered abbreviation.
 
-- [x] **Step 1: Add the two columns to the source**
+The `form_items_extension` revert is mandatory, not cosmetic. Once Task 1
+deletes columns G and H, a source block still declaring 8 columns fails the
+staging contract, which enforces `name` plus `data_type` on every declared
+column.
 
-Append to the `columns:` list of
-`src_google_sheets__google_forms__form_items_extension`, after `url_id`:
+- [x] **Step 1: Swap the source blocks**
 
-```yaml
-- name: rated_department_code
-  data_type: string
-- name: rated_department_name
-  data_type: string
-```
-
-- [x] **Step 2: Add the two columns to the staging properties**
-
-Append to the `columns:` list. The staging model is `select *,` so its SQL is
-untouched; the contract is what needs the declaration.
+Drop `rated_department_code` and `rated_department_name` from the
+`form_items_extension` `columns:` list, then add the new source after it. The
+`sheet_range` is the named range from Task 1 Step 5, not the tab name:
 
 ```yaml
-- name: rated_department_code
-  data_type: string
-  description: >-
-    Stable snake_case code for the department this question rates, hand-entered
-    by Ops. Blank or null on questions that rate no department, which the Survey
-    Dashboard routes to its most restricted audience. Several question
-    abbreviations may share one code -- that is how departments that have merged
-    are expressed.
-- name: rated_department_name
-  data_type: string
-  description: >-
-    Display label for rated_department_code, hand-entered by Ops. Presentation
-    only; authorization matches on the code.
-```
-
-- [x] **Step 3: Write the functional-dependency test**
-
-`int_surveys__survey_responses` projects the mapping to one row per
-`abbreviation` with `distinct`. That is only a projection if every row sharing
-an abbreviation carries the same `(code, name)` **pair** — `distinct` keys on
-every projected column, so two rows agreeing on the code but differing in
-display name survive it and fan the join out just as surely as a wrong code. The
-test asserts one distinct pair per abbreviation, not one distinct code.
-
-```sql
-with
-    sheet_rows as (
-        select
-            format(
-                '%T|%T', rated_department_code, rated_department_name
-            ) as department_mapping,
-
-            lower(abbreviation) as abbreviation,
-        from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
-        where abbreviation is not null
-    ),
-
-    department_mappings as (
-        select
-            abbreviation,
-
-            count(distinct department_mapping) as distinct_department_mappings,
-        from sheet_rows
-        group by abbreviation
-    )
-
-select *,
-from department_mappings
-where distinct_department_mappings > 1
-```
-
-`format('%T|%T', ...)` rather than `concat()` — `concat` returns null when any
-argument is null and would silently miscount violations while the columns are
-still sparsely populated.
-
-Do **not** add `not_null` to `abbreviation` here. Roughly 525 of 881 staged rows
-have a null abbreviation — section headers carry a `Title` and no abbreviation,
-and the row-unbounded named range yields several hundred phantom rows — so the
-test would fail on day one. The `where abbreviation is not null` filters above
-are the intended handling.
-
-- [x] **Step 4: Register the test's description**
-
-Append to `src/dbt/kipptaf/tests/properties.yml`:
-
-```yaml
-- name: stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation
-  description: >-
-    The sheet's grain is (form_id, item_id), so the same question abbreviation
-    recurs across survey forms and years -- dozens of abbreviations sit on more
-    than one row. int_surveys__survey_responses projects the mapping to one row
-    per abbreviation with distinct before joining it to response rows, which is
-    a grain projection only while every row sharing an abbreviation carries the
-    same (rated_department_code, rated_department_name) pair. The pair is what
-    distinct keys on, so drift in EITHER column breaks the projection -- a
-    display-text tweak or re-casing applied to one occurrence of an abbreviation
-    does it just as surely as a wrong code. Distinct then duplicates instead of
-    deduplicating, fanning out survey responses and breaking the response-grain
-    uniqueness test downstream. This test fails loudly on any abbreviation
-    carrying more than one distinct pair.
+- name: src_google_sheets__google_forms__question_department_crosswalk
+  external:
+    options:
+      format: GOOGLE_SHEETS
+      uris:
+        - https://docs.google.com/spreadsheets/d/1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw
+      sheet_range: src_google_forms__question_department_crosswalk
+      skip_leading_rows: 1
   config:
-    severity: error
     meta:
       dagster:
-        ref:
-          name: stg_google_sheets__google_forms__form_items_extension
+        asset_key:
+          - kipptaf
+          - google
+          - sheets
+          - google_forms
+          - question_department_crosswalk
+  columns:
+    - name: abbreviation
+      data_type: string
+    - name: rated_department_code
+      data_type: string
+    - name: rated_department_name
+      data_type: string
 ```
 
-- [x] **Step 5: Parse**
+- [x] **Step 2: Add the staging model**
 
-Run: `uv run dbt parse --project-dir src/dbt/kipptaf --target prod` Expected:
-parses clean, no warnings naming either new column.
+A bare `select *` over the source, matching every other sheet staging model. No
+Dagster Python change is needed — the asset comes from the `asset_key` meta
+above.
 
-- [x] **Step 6: Commit**
+- [x] **Step 3: Declare the staging contract**
+
+`accepted_values` on `rated_department_code` against the 14 agreed codes, at
+`severity: error`. Nulls pass it without an entry: the test compiles to
+`where value not in (...)`, which `NULL` never satisfies.
+
+Do **not** add `not_null` to `abbreviation`. The named range is row-unbounded,
+so BigQuery can surface fully-blank phantom rows below the data — that is what
+makes the sibling `Form Items Extension` sheet stage roughly 525 null
+abbreviations out of 881 rows. Every consumer filters
+`where abbreviation is not null` instead.
+
+- [x] **Step 4: Add the two singular tests**
+
+`unique_lowered_abbreviation` (error) asserts one row per lowered abbreviation.
+It replaces a column-level `unique` rather than joining it: the join in Task 3
+lowers both sides, so `A1` and `a1` would both pass `unique` and then collide,
+fanning out every response for that question. Uniqueness on the lowered value
+subsumes uniqueness on the raw value.
+
+`covers_all_abbreviations` (warn) asserts every non-null abbreviation in the
+form items sheet has a crosswalk row. This is the one failure mode the redesign
+introduces — a question on a new form arrives with no mapping. It fails safe,
+because a null department routes to the most restricted audience, so it warns
+rather than blocking a build.
+
+- [x] **Step 5: Delete the old guard test**
+
+`one_department_per_abbreviation` existed only to make the `distinct` in the old
+join a projection rather than a dedupe. With the mapping stored at grain there
+is nothing to project, so both the test file and its `tests/properties.yml`
+entry go.
+
+- [x] **Step 6: Parse**
 
 ```bash
-git add src/dbt/kipptaf/models/google/sheets/sources-external.yml \
-  src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml \
-  src/dbt/kipptaf/tests/stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation.sql \
-  src/dbt/kipptaf/tests/properties.yml
-git commit -m "feat(dbt): carry the rated department on the form items extension sheet"
+uv run dbt parse --no-partial-parse --project-dir src/dbt/kipptaf --target staging
 ```
+
+A stale partial-parse manifest surfaces as
+`'model...' depends on 'snapshot...' which is not in the graph!` on the next
+`run-operation`. `--no-partial-parse` clears it.
 
 ---
 
@@ -244,49 +260,53 @@ git commit -m "feat(dbt): carry the rated department on the form items extension
 
 **Interfaces:**
 
-- Consumes:
-  `stg_google_sheets__google_forms__form_items_extension.rated_department_code`
-  / `.rated_department_name` from Task 2.
+- Consumes: `stg_google_sheets__google_forms__question_department_crosswalk`
+  from Task 2.
 - Produces: the same two columns on `int_surveys__survey_responses`, one value
-  per response row, null where the question is absent from the sheet.
+  per response row, null where the question is absent from the crosswalk.
 
 - [x] **Step 1: Add the mapping CTE**
 
-Insert after the `enriched` CTE's closing paren, before the final `select`. The
-`distinct` is load-bearing and annotated, per the SQL conventions. Plain columns
-come before the `lower()` expression — ST06 orders simple functions after column
-enumerations, and sqlfluff fails the reverse.
+Insert after the `enriched` CTE's closing paren, before the final `select`.
+There is no `distinct` and no grain projection — the crosswalk is already one
+row per abbreviation. Plain columns come before the `lower()` expression,
+because ST06 orders simple functions after column enumerations and sqlfluff
+fails the reverse.
 
 ```sql
     question_departments as (
-        /* grain projection: the code/name pair a question rates is a property of
-           the question shortname, not of the form it appeared on, so the sheet's
-           (form_id, item_id) rows collapse to one row per shortname. Distinct
-           keys on the pair, so drift in either column would fan this out -- the
-           one_department_per_abbreviation singular test guards against both. */
-        select distinct
+        /* the crosswalk is already one row per abbreviation, so this joins at
+           grain with no projection. Lowered on both sides because sheet entry is
+           not case-constrained; the crosswalk's unique_lowered_abbreviation test
+           is what keeps lowering from collapsing two rows into a fan-out. */
+        select
             rated_department_code,
             rated_department_name,
 
             lower(abbreviation) as question_shortname,
-        from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
+        from
+            {{ ref("stg_google_sheets__google_forms__question_department_crosswalk") }}
         where abbreviation is not null
-    ),
-
-    enriched_keyed as (
-        select *, lower(question_shortname) as question_shortname_key, from enriched
     )
 ```
 
+The `where` clause guards the row-unbounded named range described in Task 2
+Step 3. Phantom rows could not match the join on their own, since `NULL` equals
+nothing, but they would collide with each other under
+`unique_lowered_abbreviation` and fail it spuriously — so every consumer
+filters.
+
 - [x] **Step 2: Rewrite the final select**
 
-`question_shortname_key` exists only to keep the join predicate free of
-one-sided calculations, so it is dropped from the output. `question_shortname`
-itself keeps its original case — consumers depend on that.
+The `lower()` sits in the join predicate. An earlier version materialized it as
+a `question_shortname_key` column in an extra `enriched_keyed` CTE and then
+dropped it again with `except`; that scaffolding bought nothing and is gone.
+`question_shortname` keeps its original case in the output — consumers depend on
+that.
 
 ```sql
 select
-    e.* except (question_shortname_key),
+    e.*,
 
     qd.rated_department_code,
     qd.rated_department_name,
@@ -294,50 +314,16 @@ select
     coalesce(
         cast(e.respondent_employee_number as string), e.respondent_email
     ) as respondent_identifier,
-from enriched_keyed as e
-left join question_departments as qd on e.question_shortname_key = qd.question_shortname
+from enriched as e
+left join
+    question_departments as qd on lower(e.question_shortname) = qd.question_shortname
 ```
 
-- [x] **Step 3: Document the two columns**
+- [x] **Step 3: Declare both columns**
 
-Append to the `columns:` list in the properties yml:
-
-```yaml
-- name: rated_department_code
-  data_type: string
-  description: >-
-    Code for the department this question rates, joined from the form items
-    extension sheet on the lowered question shortname. Null when the question
-    rates no department or is absent from the sheet; the Survey Dashboard treats
-    both the same way.
-- name: rated_department_name
-  data_type: string
-  description: >-
-    Display label for rated_department_code.
-```
-
-- [x] **Step 4: Parse and compile**
-
-Run:
-
-```bash
-uv run dbt parse --project-dir src/dbt/kipptaf --target prod
-uv run dbt compile --select int_surveys__survey_responses \
-  --project-dir src/dbt/kipptaf --target prod
-```
-
-Expected: both succeed. Read
-`src/dbt/kipptaf/target/compiled/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql`
-and confirm the `except (question_shortname_key)` survived and the join is on
-plain columns.
-
-- [x] **Step 5: Commit**
-
-```bash
-git add src/dbt/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql \
-  src/dbt/kipptaf/models/surveys/intermediate/properties/int_surveys__survey_responses.yml
-git commit -m "feat(dbt): join the rated department onto survey responses"
-```
+Add `rated_department_code` and `rated_department_name` to
+`properties/int_surveys__survey_responses.yml` with descriptions naming the
+crosswalk as the source.
 
 ---
 
@@ -421,57 +407,57 @@ git commit -m "feat(dbt): publish the rated department to the Tableau survey ext
 
 ### Task 5: Stage the external and build the chain
 
-**Owner:** the user. `stage_external_sources --target staging` drops and
-recreates a shared `zz_stg` table, so it is authorization-gated and cannot be
-run by an agent. dbt Cloud CI never runs it, which is why CI cannot pass on
-Tasks 2 through 4 until this happens.
-
 **Files:** none.
 
-- [x] **Step 1: Recreate the staging external**
+- [x] **Step 1: Create the staging external**
 
 ```bash
 uv run dbt run-operation stage_external_sources \
-  --args "select: google_sheets.src_google_sheets__google_forms__form_items_extension" \
-  --vars '{ext_full_refresh: true}' --target staging --project-dir src/dbt/kipptaf
+  --args "select: google_sheets.src_google_sheets__google_forms__question_department_crosswalk" \
+  --target staging --project-dir src/dbt/kipptaf
 ```
 
-The selector is `<source_name>.<table_name>` — not project-qualified.
-`ext_full_refresh: true` is required; without it an existing table is skipped
-and the new columns never appear.
+The selector is `<source_name>.<table_name>` — not project-qualified. No
+`ext_full_refresh` is needed or wanted here: the table is new, and the macro
+only skips tables that already exist. That also keeps the run outside the
+authorization gate that a drop-and-recreate of a shared `zz_stg` table trips.
 
-- [x] **Step 2: Build the chain**
+`form_items_extension` needs no re-staging — its external table always declared
+6 columns, so Task 1's column delete brought the sheet back into agreement with
+it.
+
+- [x] **Step 2: Build**
 
 ```bash
-uv run dbt build --select stg_google_sheets__google_forms__form_items_extension+ \
-  --project-dir src/dbt/kipptaf --target staging
+uv run dbt build --target staging --project-dir src/dbt/kipptaf \
+  --select stg_google_sheets__google_forms__question_department_crosswalk \
+  stg_google_sheets__google_forms__question_department_crosswalk__unique_lowered_abbreviation \
+  stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations \
+  int_surveys__survey_responses rpt_tableau__survey_responses
 ```
 
-Expected: the staging model, `int_google_forms__form__items`,
-`int_surveys__survey_responses`, `rpt_tableau__survey_responses`, and
-`fct_survey_responses` all build, and the new functional-dependency test passes
-(trivially, while the column is empty).
+Verified: `PASS=11 WARN=1 ERROR=0`. The crosswalk staged at 309 rows, and
+`accepted_values`, `unique_lowered_abbreviation`, and `covers_all_abbreviations`
+all passed — coverage at 309 of 309.
+
+The one warning is pre-existing and unrelated:
+`dbt_utils_expression_is_true_int_surveys__survey_responses_...` reports 480
+rows in prod as well as in staging. Tracked in #4974.
 
 - [x] **Step 3: Confirm the join added no rows**
 
-Compare against prod, which does not yet have the join:
+The decisive check is the model's own grain test, not a row count.
+`dbt_utils_unique_combination_of_columns` on
+`(survey_id, survey_response_id, survey_question_id, question_shortname, answer)`
+**passed** — that is the exact test a fan-out breaks.
 
-```sql
-select
-  (select count(*) from `teamster-332318.zz_stg_kipptaf_tableau.rpt_tableau__survey_responses`) as staged_rows,
-  (select count(*) from `teamster-332318.kipptaf_tableau.rpt_tableau__survey_responses`) as prod_rows
-```
+Row counts corroborate it. Staged `rpt_tableau__survey_responses` held 3,619,668
+rows against prod's 3,619,735. Diffing the response keys found 1 row prod-only
+and **0 rows staging-only**: a single survey response submitted after `zz_stg`
+was cloned, times its 67 question rows. A left join cannot drop rows, and
+nothing appears in staging that is absent from prod.
 
-Expected: equal. A staged count that is a multiple of prod means the mapping
-fanned out — the `distinct` is not holding, so re-check Task 2's test.
-
-Verified 2026-08-05: 3,614,503 staged and 3,614,503 prod — equal, so the join
-added no rows. `rated_department_code` is non-null on 0 rows, which is correct
-while the sheet columns are still empty. The guard test
-`stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation`
-passed. The one build failure in the run,
-`rpt_clever__enrollments__student_id_resolves_to_students_feed`, is pre-existing
-on `main` and has no lineage overlap with the survey chain.
+115,434 rows carry a department code, across 13 of the 14 codes.
 
 ---
 
@@ -485,23 +471,22 @@ per scope.
 **Files:**
 
 - Modify:
-  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml`
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__google_forms__question_department_crosswalk.yml`
 
 - [x] **Step 1: Fill in the sheet**
 
 For every abbreviation that rates a department, enter the agreed code in column
-G and its label in column H. Leave both blank on `open_ended_*`, `*_overall_*`,
-`supplies`, `respondent_name`, `school_based`, and every section header. Two
-abbreviations break their own naming scheme and must be entered by hand rather
-than pattern-filled: `sre_oe` belongs with `student_recruitment_*`, and
-`teaching_and_learning_oe` belongs with `teaching_learning_*`.
+B and its label in column C of the crosswalk tab. Leave both blank on
+`open_ended_*`, `*_overall_*`, `supplies`, `respondent_name`, `school_based`,
+and every section header. Two abbreviations break their own naming scheme and
+must be entered by hand rather than pattern-filled: `sre_oe` belongs with
+`student_recruitment_*`, and `teaching_and_learning_oe` belongs with
+`teaching_learning_*`.
 
-An abbreviation on more than one row must get the **same code AND the same
-name** on every one of its rows — the display label is part of what makes the
-mapping one row per abbreviation, so a differing name fans out survey responses
-even when the code matches. Copy the pair down rather than retyping it. Task 2's
-test fails on any drift, but catching it in the sheet is cheaper than catching
-it in a failed build.
+One row per abbreviation means there is nothing to copy down and no way to enter
+a contradictory pair — that is the point of the separate sheet. Verified on
+completion: 66 of 309 abbreviations carry a code, all 14 codes are in use, and
+each code maps to exactly one display name.
 
 - [x] **Step 2: Pin the agreed list**
 

@@ -600,23 +600,34 @@ data_tests:
           ref:
             name: int_students__calendar_day
 
-  - name: stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation
+  - name: stg_google_sheets__google_forms__question_department_crosswalk__unique_lowered_abbreviation
     description: >-
-      The sheet's grain is (form_id, item_id), so the same question abbreviation
-      recurs across survey forms and years -- dozens of abbreviations sit on
-      more than one row. int_surveys__survey_responses projects the mapping to
-      one row per abbreviation with distinct before joining it to response rows,
-      which is a grain projection only while every row sharing an abbreviation
-      carries the same (rated_department_code, rated_department_name) pair. The
-      pair is what distinct keys on, so drift in EITHER column breaks the
-      projection -- a display-text tweak or re-casing applied to one occurrence
-      of an abbreviation does it just as surely as a wrong code. Distinct then
-      duplicates instead of deduplicating, fanning out survey responses and
-      breaking the response-grain uniqueness test downstream. This test fails
-      loudly on any abbreviation carrying more than one distinct pair.
+      int_surveys__survey_responses lowers abbreviation on both sides of the
+      department join, because sheet entry is not case-constrained. A plain
+      unique test on the raw column therefore does not protect the join: two
+      rows entered as A1 and a1 both pass it and then collide once lowered,
+      fanning out every response for that question and breaking the
+      response-grain uniqueness test downstream. This test asserts uniqueness on
+      the lowered value, which is the grain the join actually uses, and so
+      subsumes the raw unique test rather than sitting alongside it.
     config:
       severity: error
       meta:
         dagster:
           ref:
-            name: stg_google_sheets__google_forms__form_items_extension
+            name: stg_google_sheets__google_forms__question_department_crosswalk
+
+  - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
+    description: >-
+      The crosswalk is maintained by hand and separately from the form items
+      sheet, so a question added to a new survey form arrives with no crosswalk
+      row and its responses join to a null department. That routes them to the
+      Survey Dashboard's most restricted audience, which fails safe rather than
+      leaking, so this warns rather than errors -- it surfaces the abbreviations
+      Ops still needs to map without blocking a build.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__google_forms__question_department_crosswalk

@@ -80,10 +80,11 @@ models:
       - name: rated_department_code
         data_type: string
         description: >-
-          Code for the department this question rates, joined from the form
-          items extension sheet on the lowered question shortname. Null when the
-          question rates no department or is absent from the sheet; the Survey
-          Dashboard treats both the same way.
+          Code for the department this question rates, joined from
+          stg_google_sheets__google_forms__question_department_crosswalk on the
+          lowered question shortname. Null when the question rates no department
+          or is absent from the crosswalk; the Survey Dashboard treats both the
+          same way.
       - name: rated_department_name
         data_type: string
         description: Display label for rated_department_code.

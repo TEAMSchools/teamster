@@ -92,80 +92,79 @@ That split is the design:
 
 ### Data layer
 
-Extend the **existing** `src_google_sheets__google_forms__form_items_extension`
-source. It is already keyed on `abbreviation` = `question_shortname` and already
-carries `title`, so no new source, staging model, or Dagster asset is needed.
+The mapping gets its **own** sheet:
+`src_google_sheets__google_forms__question_department_crosswalk`, a new
+`Question Department Crosswalk` tab on the same spreadsheet that already backs
+`src_google_sheets__google_forms__form_items_extension`.
 
-Two new columns:
+An earlier version of this design extended the `form_items_extension` source
+instead, on the reasoning that it already carries `abbreviation` and `title` so
+no new source, staging model, or Dagster asset would be needed. That was the
+wrong trade. The department a question rates is a property of the abbreviation
+alone, while that sheet's grain is `(form_id, item_id)` — 356 rows carrying 309
+distinct abbreviations, with 33 abbreviations recurring across up to 4 rows.
+Storing the mapping there forced Ops to enter the same value up to four times,
+made contradictory entries representable, and needed a `distinct` projection
+plus a bespoke guard test to hold the join together. A sheet keyed on
+`abbreviation` needs none of that. The cost is a source block, a two-line
+staging model, and a properties file; sheet sources need no Dagster Python
+change, and 26 of the 88 sheet sources in `sources-external.yml` are already
+standalone crosswalks or lookups.
 
-| Column                  | Type     | Purpose                                                                                                                                      |
-| ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rated_department_code` | `string` | Stable snake_case key the Tableau calc matches. Several question prefixes may share one code — this is how merged departments are expressed. |
-| `rated_department_name` | `string` | Display label for the workbook.                                                                                                              |
+Three columns:
 
-A question that rates no department gets a blank code.
+| Column                  | Type     | Purpose                                                                                                                                  |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `abbreviation`          | `string` | Question shortname, lowercase. The join key.                                                                                             |
+| `rated_department_code` | `string` | Stable snake_case key the Tableau calc matches. Several abbreviations may share one code — this is how merged departments are expressed. |
+| `rated_department_name` | `string` | Display label for the workbook.                                                                                                          |
+
+A question that rates no department gets a blank code, which stages as `NULL`.
 
 #### The sheet's own mechanics
 
-Three properties of this source govern how the columns get added, and getting
-any of them wrong yields a silently wrong column rather than an error:
+Two properties of sheet sources govern how the crosswalk gets built, and getting
+either wrong yields a silently wrong column rather than an error:
 
-- **The declared `columns:` map positionally, not by name.** The sheet's header
-  row reads `Form ID`, `Item ID`, `Question ID`, `Title`, `Abbreviation`,
-  `URL ID`, while `sources-external.yml` declares `form_id` through `url_id`.
-  `skip_leading_rows: 1` discards the header, so BigQuery binds column 1 to the
-  first declared name and so on. The two new columns must therefore be appended
-  at the **end** of both the sheet and the `columns:` list, in the same order.
-- **The `sheet_range` is a named range, not a tab.**
-  `src_google_forms__form_items_extension` currently spans columns A through F
-  of the `Form Items Extension` tab. Appending sheet columns without widening
-  the named range to A through H leaves the new columns invisible to BigQuery.
-- **`abbreviation` is not unique in the sheet.** It carries 356 rows at
-  2026-08-04, 309 distinct abbreviations across 16 forms; 33 abbreviations
-  appear on more than one row, up to 4. See _Join grain_ below.
+- **The declared `columns:` map positionally, not by name.**
+  `skip_leading_rows: 1` discards the header row, so BigQuery binds column 1 to
+  the first declared name and so on. A column inserted into the middle of the
+  tab misaligns everything to its right, `abbreviation` included. Reference
+  columns for the humans filling the sheet are fine, but they belong past the
+  last mapped column.
+- **The `sheet_range` is a named range, not a tab.** The crosswalk's range is
+  `src_google_forms__question_department_crosswalk` over
+  `'Question Department Crosswalk'!A:C`. Columns outside the range are invisible
+  to BigQuery, which is what makes the reference columns safe — and what makes a
+  range that disagrees with the `columns:` list a silent error.
 
-Files changed:
-
-1. `models/google/sheets/sources-external.yml` — two `columns:` entries on the
-   existing source.
-1. `models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml`
-   — declare both columns. The staging model is `select *` so its SQL is
-   untouched, but the directory default enforces a contract and an undeclared
-   sheet column fails the build.
-1. `models/surveys/intermediate/int_surveys__survey_responses.sql` — join the
-   question-to-department mapping and project both columns. This model already
-   owns question identity for both the Google Forms and legacy Alchemer
-   branches, so one join covers every row.
-1. `models/extracts/tableau/rpt_tableau__survey_responses.sql` and its
-   properties — pass both columns through.
+The same two properties governed the original approach, plus a third: appending
+to a shared sheet meant widening an existing named range from `A:F` to `A:H`
+without disturbing the six columns already bound. Reverting it needed only the
+column delete — both external tables declared 6 columns throughout, so neither
+ever saw `G` or `H`.
 
 #### Join grain
 
-The sheet's grain is `(form_id, item_id)`, not `abbreviation` — the same
-question shortname recurs across survey forms and across years. Joining
-`question_shortname = abbreviation` directly would fan out a response row once
-per matching sheet row, up to 4x, and would break the model's own
-`(survey_id, survey_response_id, survey_question_id, question_shortname, answer)`
-uniqueness test.
+The crosswalk is one row per abbreviation, which is the grain
+`int_surveys__survey_responses` joins on, so the join is a plain left join with
+no projection:
 
-The mapping is therefore projected to one row per shortname before the join, as
-a `distinct` over the lowered abbreviation plus the two department columns —
-grain projection, valid only because the department a shortname rates is a
-property of the shortname and not of the form it appeared on.
-
-That premise needs enforcing, because a typo in one of two sheet rows sharing a
-shortname would reintroduce the fan-out. A singular test on the staging model
-fails when any abbreviation carries more than one distinct
-`rated_department_code`. Without it the `distinct` silently duplicates instead
-of deduplicating.
+```sql
+left join
+    question_departments as qd on lower(e.question_shortname) = qd.question_shortname
+```
 
 `question_shortname` is lowered on both sides. `rpt_tableau__survey_responses`
 already publishes `lower(sr.question_shortname)`, and sheet abbreviations are
 entered lowercase but are not constrained to be.
 
-**Left join, deliberately.** A question absent from the sheet yields a null
-code, which lands in the same restricted bucket as a blank one. A survey that
-ships a new question cannot expose it by default.
+That lowering is the one thing that can still break the grain. A column-level
+`unique` on `abbreviation` does not protect it: two rows entered as `A1` and
+`a1` both satisfy `unique` and then collide once lowered, fanning out every
+response for that question. Uniqueness is therefore asserted on the **lowered**
+value, by the `unique_lowered_abbreviation` singular test, which subsumes the
+raw `unique` test rather than sitting alongside it.
 
 ### Tableau layer
 
@@ -329,26 +328,34 @@ deleting dead code:
 Data layer:
 
 - **No `not_null` on `abbreviation`.** An earlier draft of this spec called for
-  one; it would fail on day one. Section-header rows carry a `Title` and no
-  abbreviation, and the sheet's row-unbounded named range yields several hundred
-  fully null phantom rows — roughly 525 of 881 staged rows have a null
-  abbreviation. Both `question_departments` and the guard test below filter
-  `where abbreviation is not null` instead.
-- A singular test asserting one distinct
-  `(rated_department_code, rated_department_name)` **pair** per `abbreviation`.
-  This is the guard that makes the join's `distinct` a projection rather than a
-  dedupe. It must cover the pair, not the code alone: `distinct` keys on every
-  projected column, so two rows sharing an abbreviation and a code but differing
-  in display name would survive it and fan the join out — a display-text tweak
-  or re-casing applied to one occurrence breaks the projection exactly as a
-  wrong code does.
+  one; it would fail the moment the sheet grows blank rows. The named range is
+  row-unbounded, so BigQuery can surface fully-blank phantom rows below the data
+  — that is what makes the sibling `form_items_extension` sheet stage roughly
+  525 null abbreviations out of 881 rows, since its section-header rows also
+  carry a `Title` and no abbreviation. The crosswalk stages clean today at 309
+  rows with no nulls, but every consumer filters
+  `where abbreviation is not null` rather than depending on that.
+- `unique_lowered_abbreviation`, a singular test at `severity: error`, asserting
+  one row per lowered `abbreviation`. This is what protects the join's grain —
+  see _Join grain_ for why the generic `unique` test does not.
+- `covers_all_abbreviations`, a singular test at `severity: warn`, asserting
+  every non-null `abbreviation` in `form_items_extension` has a crosswalk row.
+  This is the one failure mode a separate sheet introduces: a question on a new
+  survey form arrives with no mapping. It fails safe — a null department routes
+  to the most restricted audience — so it warns rather than blocking a build.
+  Passing at 309 of 309.
 - `accepted_values` on `rated_department_code` against the agreed 14 codes.
-  Shipped and passing. The blank case needs **no** entry in the list —
-  `accepted_values` compiles to `where value not in (...)`, which NULL never
-  satisfies, so nulls pass regardless. Adding an empty-string entry would only
-  mask a genuinely empty-string value.
-- Confirm the join adds no rows: `count(*)` on `rpt_tableau__survey_responses`
-  before and after must match.
+  Shipped and passing, with all 14 in use. The blank case needs **no** entry in
+  the list — `accepted_values` compiles to `where value not in (...)`, which
+  `NULL` never satisfies, so nulls pass regardless. Blank sheet cells do stage
+  as `NULL` rather than empty string, confirmed against the staged table. Adding
+  an empty-string entry would only mask a genuinely empty-string value.
+- Confirm the join adds no rows. The decisive check is the model's own
+  `dbt_utils_unique_combination_of_columns` on
+  `(survey_id, survey_response_id, survey_question_id, question_shortname, answer)`
+  — that is the test a fan-out breaks. A `count(*)` comparison against prod
+  corroborates it but cannot stand alone, because `zz_stg` and prod drift by
+  whatever responses arrived since the last clone.
 
 Workbook personas, run with Preview as User:
 
