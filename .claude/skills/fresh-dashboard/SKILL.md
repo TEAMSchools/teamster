@@ -28,9 +28,9 @@ description: >-
   back to `academic_year` for Tableau, so the external column name is unchanged.
 - **Miami is Focus-sourced, not sheet-sourced.** `int_focus__schools` (joined
   through `stg_google_sheets__people__locations` for the abbreviation and the
-  PowerSchool-space `schoolid`) and `int_focus__student_enrollments` supply it.
-  Don't "fix" Miami by onboarding it into `stg_powerschool__schools` — those
-  rows are a frozen pre-migration snapshot and are excluded on purpose.
+  PowerSchool-space `schoolid`) and `int_focus__student_enrollment_roster`
+  supply it. Don't "fix" Miami by onboarding it into `stg_powerschool__schools`
+  — those rows are a frozen pre-migration snapshot and are excluded on purpose.
 - **The scaffold is fully SIS-derived; the scaffold sheet is retired**
   (`enabled: false`). Nothing is hand-entered. See the retired-generator note
   below before offering to add sheet rows.
@@ -763,7 +763,8 @@ AY2024 and around August 26-28 in AY2025.
 
 Edit the `CASE` and nothing else — see the reference doc's _First day of school
 is hardcoded per region_ for why this date lives in this one model and does not
-touch `int_extracts__student_enrollments` or `int_focus__student_enrollments`.
+touch `int_extracts__student_enrollments` or
+`int_focus__student_enrollment_roster`.
 
 There is **no scaffold-sheet pre-flight check** any more — the sheet is retired,
 so the old `-9` row check is gone. Once the year is agreed, the crosswalk key is
@@ -861,9 +862,9 @@ hardcoded, year from `var("finalsite_recruitment_year")`, exposed as
 `false` for nearly every Miami student at a later-starting school, and
 PowerSchool's is per-school. **Do not "fix" this by repointing at the upstream
 flag, and do not change `int_extracts__student_enrollments` or
-`int_focus__student_enrollments`** — they keep their own versions for their
-other consumers. When the enrollment team changes a first day, edit the `CASE`
-in `custom_fdos_dates` and nothing else.
+`int_focus__student_enrollment_roster`** — they keep their own versions for
+their other consumers. When the enrollment team changes a first day, edit the
+`CASE` in `custom_fdos_dates` and nothing else.
 
 **The dates came from SRE, so they are a rollover checklist item** — Step 0f of
 _Update the Finalsite recruitment year_ above. The var carries the year forward

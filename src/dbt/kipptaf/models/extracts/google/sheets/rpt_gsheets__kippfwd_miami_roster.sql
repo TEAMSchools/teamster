@@ -26,14 +26,14 @@ with
             )
     ),
 
-    /* TODO(#4794): int_focus__student_enrollments.enroll_status derives from
+    /* TODO(#4794): int_focus__student_enrollment_roster.enroll_status derives from
        drop-code presence, and Focus stamps W01/W02 rollover codes on nearly
        every span at year end -- it reads 361 of 365 AY2025 students as
        transferred out. Derive locally until that is fixed upstream, then
        delete this CTE and read the upstream column. */
     open_enrollment as (
         select distinct student_number,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where academic_year = {{ var("current_academic_year") }} and exitcode is null
     ),
 
@@ -201,7 +201,7 @@ select
     ) as focus_enrollment_status,
 
     pgc.cumulative_y1_gpa_unweighted as previous_year_gpa,
-from {{ ref("int_focus__student_enrollments") }} as e
+from {{ ref("int_focus__student_enrollment_roster") }} as e
 left join students as s on e.student_number = s.student_id
 left join open_enrollment as oe on e.student_number = oe.student_number
 left join contact_1 as c1 on e.student_number = c1.student_id

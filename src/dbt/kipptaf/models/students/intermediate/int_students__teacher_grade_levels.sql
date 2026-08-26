@@ -51,7 +51,7 @@ with
     -- PowerSchool model derives it from base_powerschool__student_enrollments.
     grade_level_lookup as (
         select student_number, academic_year, grade_level,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_year = 1
     ),
 

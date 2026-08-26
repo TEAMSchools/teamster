@@ -1,7 +1,7 @@
 with
     current_stint as (
         select student_number, enroll_status,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_all = 1
     ),
 
