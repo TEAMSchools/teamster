@@ -11,10 +11,6 @@ select
 
     c.households[safe_offset(0)].id as household_1_id,
 
-    -- record-owner fields carried onto the relationship grain so consumers
-    -- gating on them (e.g. the contact_2 pick) need no extra joins. These
-    -- describe the OWNING contact (`finalsite_enrollment_id`), never the
-    -- related person (`rel_id`).
     (
         select logical_or(ca.value.boolean_value),
         from unnest(c.custom_attributes) as ca

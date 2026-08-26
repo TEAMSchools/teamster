@@ -13,9 +13,23 @@ models:
       client date for iReady, STAR, and DIBELS); tier 2 falls back to the
       homeroom section active on the same anchor date. Scores with no matching
       section in either tier are dropped. The resolution_type column identifies
-      which tier resolved the row.
+      which tier resolved the row. Also carries the resolved section's school
+      and region so consumers can resolve a score's reporting quarter by date.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~93 executions/day on the eager table condition. Its ONLY consumer
+          # is fct_assessment_scores_enrollment_scoped, already on
+          # `0 0,10,13,15,17 * * *`. Sharing that tick lets the deps-in-progress
+          # guard serialize the pass instead of rebuilding per upstream change.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: source_type
         data_type: string
@@ -70,8 +84,10 @@ models:
       - name: administration_period
         data_type: string
         description: >-
-          Administration window label within the academic year. Populated only
-          for state score rows; NULL for internal score rows.
+          Administration window label within the academic year. Populated for
+          state, iReady, STAR, and DIBELS score rows; NULL for internal score
+          rows. For iReady rows this is the reporting-terms window (BOY / MOY /
+          EOY / Outside Round) from `test_round`.
         config:
           meta:
             source_column: int_pearson__all_assessments.administration_period
@@ -80,9 +96,9 @@ models:
         description: >-
           Subject area of the assessment, aligned to illuminate_subject_area
           values in int_assessments__course_enrollments. For internal scores
-          this is the scaffold subject_area; for state scores it is the
-          state-to-course mapped illuminate_subject column from the state
-          intermediates.
+          this is the scaffold subject_area; for state, iReady, STAR, and DIBELS
+          scores it is the `illuminate_subject` column mapped upstream (e.g.
+          Reading -> Text Study, Math -> Mathematics).
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -111,6 +127,25 @@ models:
           Surrogate key derived from (cc_dcid, cc_source_project) of the
           resolved course enrollment, matching
           dim_student_section_enrollments.student_section_enrollment_key.
+      - name: powerschool_school_id
+        data_type: int64
+        description: >-
+          School of the resolved section enrollment. Carried so consumers can
+          resolve a score's reporting quarter for the right school; this model
+          is one row per score grain, so it cannot resolve the quarter itself —
+          scores sharing a grain can carry different dates.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.powerschool_school_id
+      - name: region
+        data_type: string
+        description: >-
+          Short region name (Newark, Camden, Miami, Paterson) of the resolved
+          section enrollment. Pairs with powerschool_school_id when matching the
+          reporting-terms sheet, which keys quarters by school and region.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.region
 
 unit_tests:
   - name: test_subject_section_in_window_wins
@@ -145,6 +180,8 @@ unit_tests:
               cc_dateenrolled: 2024-01-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 111,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
           - {
               powerschool_student_number: 1,
@@ -154,6 +191,8 @@ unit_tests:
               cc_dateenrolled: 2025-09-01,
               cc_dateleft: 2026-06-15,
               cc_dcid: 222,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
       - input: ref('int_pearson__all_assessments')
         rows: []
@@ -205,6 +244,8 @@ unit_tests:
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 333,
+              powerschool_school_id: 179902,
+              region: Camden,
             }
       - input: ref('int_pearson__all_assessments')
         rows: []
@@ -279,6 +320,8 @@ unit_tests:
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 444,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
       - input: ref('int_pearson__all_assessments')
         rows:
@@ -334,6 +377,8 @@ unit_tests:
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
               cc_dcid: 555,
+              powerschool_school_id: 73252,
+              region: Newark,
             }
       - input: ref('int_pearson__all_assessments')
         rows: []

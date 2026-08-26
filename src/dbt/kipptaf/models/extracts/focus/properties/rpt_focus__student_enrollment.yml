@@ -9,15 +9,13 @@ models:
       are excluded until they enroll. Grade is translated inline (`k`→`KG`, else
       zero-padded number); enrollment_code is derived from grade (`E05` for KG,
       `E01` otherwise) and does not change on transfer-out; school maps via
-      `int_people__location_crosswalk`; Focus student id (`student_id`) via
-      `int_finalsite__contact_id_attributes.focus_student_id_prefixed`; and the
-      raw Florida state withdrawal label (carried as `drop_code`) from
-      `int_finalsite__contact_custom_attributes` — together producing the
-      28-column layout consumed by the Focus SFTP transport. The Focus column
-      header casing (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time
-      via `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case. `end_date`, `drop_code`, and `moved_to` populate
-      only for transfer-out rows
+      `int_people__location_crosswalk`; and Focus student id (`student_id`) via
+      `int_finalsite__contact_id_attributes.focus_student_id_prefixed` —
+      together producing the 27-column layout consumed by the Focus SFTP
+      transport. The Focus column header casing (`SYEAR`, `SCHOOL_ID`, etc.) is
+      applied at transport time via `file_config.format.header_replacements`;
+      dbt column names remain lowercase snake_case. `end_date` and `moved_to`
+      populate only for transfer-out rows
       (`int_finalsite__enrollment_lifecycle.is_transfer_out`). This is the
       network desired-state feed — one row per in-scope enrollment across all
       school years. No reconciliation against live Focus happens here; the
@@ -90,14 +88,6 @@ models:
         description:
           Enrollment end date formatted as `YYYYMMDD`; populated only for
           `transfer_out` rows.
-      - name: drop_code
-        data_type: string
-        description:
-          Raw Florida state withdrawal code label from the Finalsite
-          `fl_state_withdraw_codes_ss` custom attribute (e.g. `(W02) In District
-          Transfer`); populated only for `transfer_out` rows, null otherwise.
-          The kippmiami reconciliation layer decodes this label to the Focus
-          `short_name` before import.
       - name: calendar_id
         data_type: string
         description:
@@ -187,14 +177,14 @@ models:
 unit_tests:
   - name: test_student_enrollment_shape
     description:
-      Verifies the 28-column STUDENT_ENROLLMENT layout for new-enrollment rows —
+      Verifies the 27-column STUDENT_ENROLLMENT layout for new-enrollment rows —
       grade is translated inline for both a numbered grade (`5th`→`05`) and
       kindergarten (`k`→`KG`); enrollment_code is E05 for KG and E01 otherwise;
       student_id is sourced from
       int_finalsite__contact_id_attributes.focus_student_id_prefixed; and
-      end_date/drop_code are null for non-transfer rows. A third enrollment with
-      a minted Focus id but no enrollment_start_date (pre-enrollment) is
-      excluded by the enrolled-only filter.
+      end_date is null for non-transfer rows. A third enrollment with a minted
+      Focus id but no enrollment_start_date (pre-enrollment) is excluded by the
+      enrolled-only filter.
     model: rpt_focus__student_enrollment
     given:
       # format: sql (not dict) — is_transfer_out is added in this PR, so the
@@ -277,7 +267,6 @@ unit_tests:
             start_date: "20260812",
             enrollment_code: E01,
             end_date: null,
-            drop_code: null,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,
@@ -307,7 +296,6 @@ unit_tests:
             start_date: "20260812",
             enrollment_code: E05,
             end_date: null,
-            drop_code: null,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,
@@ -331,10 +319,9 @@ unit_tests:
           }
   - name: test_student_enrollment_transfer_out
     description:
-      Verifies that end_date and drop_code populate for a transfer_out row, that
-      enrollment_code keeps its entry value (E01) on transfer_out, that end_date
-      is formatted as YYYYMMDD, and that drop_code carries the raw
-      fl_state_withdraw_codes_ss value.
+      Verifies that end_date populates for a transfer_out row, that
+      enrollment_code keeps its entry value (E01) on transfer_out, and that
+      end_date is formatted as YYYYMMDD.
     model: rpt_focus__student_enrollment
     given:
       # format: sql (not dict) — is_transfer_out is added in this PR, so the
@@ -384,7 +371,6 @@ unit_tests:
             start_date: "20260812",
             enrollment_code: E01,
             end_date: "20270115",
-            drop_code: (W02) In District Transfer,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,
@@ -473,7 +459,6 @@ unit_tests:
             start_date: "20260811",
             enrollment_code: E01,
             end_date: null,
-            drop_code: null,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,
@@ -503,7 +488,6 @@ unit_tests:
             start_date: "20260902",
             enrollment_code: E01,
             end_date: null,
-            drop_code: null,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,

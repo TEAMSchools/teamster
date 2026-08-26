@@ -18,10 +18,6 @@ with
     ),
 
     contacts as (
-        -- One row per (student, contact slot, phone type) for the Clever feed.
-        -- UNPIVOT drops null inputs, so a contact with no phone of a given type
-        -- emits no row for it. contact_1 is the single reportable parent
-        -- (contact_type 'primary'); emergency_1..4 are emergency contacts.
         select
             student_number,
             _dbt_source_project,

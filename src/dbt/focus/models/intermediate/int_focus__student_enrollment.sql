@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     enrollment as (
         select
             s.first_name as student_first_name,
@@ -7,7 +8,12 @@ with
             s.student_e_mail_address as student_email,
             s.student_id as student_number,
 
+            cast(
+                regexp_replace(cast(s.student_id as string), r'^8400', '') as int64
+            ) as network_student_number,
+
             e.id as student_enrollment_id,
+            e.created_at as enrollment_created_at,
             e.syear as academic_year,
             e.school_id as schoolid,
             e.start_date as startdate,
@@ -16,6 +22,7 @@ with
             sch.state_school_id as school_state_school_id,
             sch.school_number,
             sch.state,
+            sch.school_level,
 
             ep.prior_district_label,
             ep.prior_state_label,
@@ -58,23 +65,10 @@ with
                 else 0
             end as enroll_status,
 
-            case
-                sch.school_level_label
-                when 'E - Elementary'
-                then 'ES'
-                when 'M - Middle'
-                then 'MS'
-                when 'H - High'
-                then 'HS'
-            end as school_level,
-
         from {{ ref("stg_focus__students") }} as s
         inner join
             {{ ref("stg_focus__student_enrollment") }} as e
             on s.student_id = e.student_id
-        -- int_focus__schools carries the decoded custom-field labels alongside
-        -- the staging columns; map its level label to the ES/MS/HS abbreviation
-        -- the network contract uses
         left join {{ ref("int_focus__schools") }} as sch on e.school_id = sch.id
         left join
             {{ ref("int_focus__student_enrollment__pivot") }} as ep on e.id = ep.id
@@ -96,7 +90,32 @@ with
             {{ ref("int_focus__school_year_first_day") }} as fd on e.syear = fd.syear
     ),
 
+    -- Focus permits two open stints for the same student, year, and start
+    -- date; SY26 is the first year of Focus data where it has happened. The
+    -- incomplete record is demoted, then the most recently created one wins.
+    -- Recency reads enrollment_created_at, not the id: Focus assigns ids in
+    -- batches, and 20% of SY26 id pairs order differently than creation time,
+    -- so the id alone is not a recency proxy. The id breaks exact ties.
+    -- Deduping here, ahead of with_flags, keeps rn_year contiguous --
+    -- consumers filter on rn_year = 1 and would lose a student left holding
+    -- only rn_year = 2.
+    -- TODO: drop once Focus stops accepting duplicate open stints (#4905).
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="enrollment",
+                partition_by="student_number, academic_year, startdate",
+                order_by="""
+                    (schoolid is null) asc,
+                    enrollment_created_at desc,
+                    student_enrollment_id desc
+                """,
+            )
+        }}
+    ),
+
     with_flags as (
+        -- trunk-ignore(sqlfluff/AM04): deduplicate resolves columns at run time
         select
             *,
 
@@ -122,7 +141,12 @@ with
                 partition by student_number, academic_year
                 order by academic_year desc, exitdate desc
             ) as rn_year,
-        from enrollment
+
+            row_number() over (
+                partition by student_number
+                order by academic_year desc, exitdate desc, startdate desc
+            ) as rn_all,
+        from deduplicate
     ),
 
     with_year_counts as (

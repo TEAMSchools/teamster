@@ -3,15 +3,13 @@ with
         select
             sr.powerschool_teacher_number,
             sr.home_work_location_dagster_code_location,
+            sr.home_work_location_powerschool_school_id as school_id,
 
-            coalesce(
-                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            ) as school_id,
+            -- The DSO is the intended ENR "teacher"; School Leader is the backup.
+            -- Every school matches both, so without an explicit rank the pivot's
+            -- row_number tie-break is arbitrary and the two swap between runs.
+            if(sr.job_title = 'School Leader', 2, 1) as sortorder,
         from {{ ref("int_people__staff_roster") }} as sr
-        left join
-            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_reporting_name = ccw.location_name
-            and not ccw.is_pathways
         where
             sr.assignment_status != 'Terminated'
             -- Miami rosters into Clever directly from Focus; excluded from all
@@ -117,7 +115,6 @@ with
 
         union all
 
-        /* auto-generate ENR course with DSO "teacher" */
         select
             dsos.school_id as sections_schoolid,
 
@@ -134,7 +131,7 @@ with
                 right('{{ var("current_fiscal_year") }}', 2)
             ) as terms_abbreviation,
 
-            1 as sortorder,
+            dsos.sortorder,
 
             dsos.powerschool_teacher_number as teachernumber,
 
@@ -178,7 +175,9 @@ with
 
             concat(
                 'teacher_',
-                row_number() over (partition by section_id order by sortorder asc),
+                row_number() over (
+                    partition by section_id order by sortorder asc, teachernumber asc
+                ),
                 '_id'
             ) as input_column,
         from teachers_long

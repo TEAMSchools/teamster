@@ -106,10 +106,13 @@ models:
             +enabled: false
           stg_powerschool__u_clg_et_stu_alt:
             +enabled: false
-          stg_powerschool__u_expectations:
-            +enabled: false
           stg_powerschool__u_storedgrades_de:
             +enabled: false
+  titan:
+    +materialized: table
+    staging:
+      stg_titan__income_form_data:
+        +enabled: false
 
 sources:
   amplify:
@@ -145,4 +148,8 @@ sources:
       src_pearson__parcc:
         +enabled: false
       src_pearson__student_test_update:
+        +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
         +enabled: false

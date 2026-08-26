@@ -9,9 +9,11 @@ with
             is_custodial,
             is_household_member,
             _dbt_source_project,
-
-            coalesce(finalsite_contact_id, personid) as person_identity,
+            person_identity,
         from {{ ref("int_students__contacts") }}
+        where
+            contact_slot in ('contact_1', 'contact_2')
+            or contact_slot like 'emergency\\_%'
     ),
 
     keyed as (
@@ -28,7 +30,10 @@ with
 
             -- keyed identically to dim_student_contact_persons: parent slots
             -- (contact_1/contact_2) by the person's real identity, emergency by
-            -- student + contact slot
+            -- student + contact slot. Slots outside those two shapes (parent
+            -- slots past contact_2) are excluded in the `contacts` CTE above
+            -- for the same reason the dimension excludes them, so this key
+            -- can never orphan against dim_student_contact_persons.
             if(
                 contact_slot in ('contact_1', 'contact_2'),
                 {{

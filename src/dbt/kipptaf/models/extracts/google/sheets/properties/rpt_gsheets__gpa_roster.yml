@@ -25,6 +25,16 @@ models:
         data_type: string
       - name: is_504
         data_type: boolean
+      - name: unweighted_ada
+        description:
+          Unweighted average daily attendance across the full academic year.
+        data_type: float64
+      - name: weighted_ada
+        description:
+          Weighted average daily attendance across the full academic year. This
+          is the value network reporting uses for high school students from SY26
+          onward.
+        data_type: float64
       - name: gpa_q1
         data_type: float64
       - name: gpa_q2
@@ -60,3 +70,8 @@ models:
           Weighted projected cumulative Y1 GPA, incorporating current
           in-progress grades not yet stored.
         data_type: float64
+      - name: salesforce_contact_id
+        description:
+          Salesforce contact ID for the student, used to join this roster to
+          KIPP Forward records in Salesforce.
+        data_type: string

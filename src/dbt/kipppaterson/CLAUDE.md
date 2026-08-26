@@ -29,6 +29,8 @@ Endpoint-level notes:
   disabled in `dbt_project.yml`
 - `amplify` — both `dds` and `mclass/api` disabled
 - `finalsite`
+- `titan` — `stg_titan__person_data` only; `stg_titan__income_form_data`
+  disabled (parity with Newark and Camden)
 - `deanslist` — `behavior`, `comm_log`, `incidents`, `roster_assignments`,
   `rosters`, `students`, `terms`, and `users` endpoints pulled. The
   `stg_deanslist__dff_stats`, `stg_deanslist__followups`,

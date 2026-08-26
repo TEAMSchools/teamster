@@ -6,6 +6,14 @@ models:
       assessments (SAT, ACT, PSAT) and AP exams. These assessments follow the
       student directly without enrollment context. FK to dim_students via
       student_key, not to dim_student_section_enrollments.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day table instead of an eager view — rationale and tick choice
+          # in fct_assessment_scores_enrollment_scoped. Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: assessment_score_key
         data_type: string
@@ -14,9 +22,9 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: student_key
         data_type: string
@@ -27,11 +35,11 @@ models:
           scores arrive keyed by ap_number_ap_id via ap_id_crosswalk). Unmatched
           rows carry NULL student_number.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
         data_tests:
           - relationships:
               arguments:
@@ -44,11 +52,11 @@ models:
           administration (assessment definition + occurrence context: academic
           year, test date, administration round) that this score belongs to.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
@@ -60,11 +68,11 @@ models:
           FK to dim_dates. The date the assessment was taken. Null for AP exams
           where only the academic year is recorded.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

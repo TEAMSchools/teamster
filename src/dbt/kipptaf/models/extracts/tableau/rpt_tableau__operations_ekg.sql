@@ -86,12 +86,13 @@ with
     final as (
         select
             roster.*,
-            responses_pivoted.*,
+            -- raw form-dropdown text is join-key-only. it carries retired and
+            -- abbreviated aliases, so consumers get school_clean_name instead
+            responses_pivoted.* except (school),
 
             sc.location_grade_band as grade_band,
-            -- the walked school, resolved to its canonical name. distinct from
-            -- roster.location_clean_name, which is the respondent's own location
             sc.location_clean_name as school_clean_name,
+            sc.location_region as school_business_unit_name,
         from responses_pivoted
         left join
             roster

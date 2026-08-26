@@ -74,7 +74,7 @@ left join
     {{ ref("int_people__location_crosswalk") }} as lc
     on eh.home_work_location_name = lc.location_name
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on eh.powerschool_teacher_number = tgl.teachernumber
     and eh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year

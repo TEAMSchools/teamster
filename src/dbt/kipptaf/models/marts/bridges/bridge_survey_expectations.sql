@@ -30,8 +30,6 @@ with
         from {{ ref("int_extracts__student_enrollments") }}
     ),
 
-    /* Staff expectations: primary, active staff during the response window
-       for the SCD / Manager / Support staff surveys. */
     staff as (
         select
             sa.survey_administration_key,
@@ -67,7 +65,6 @@ with
             )
     ),
 
-    /* Student SCD expectations: enrolled students */
     student_scd as (
         select
             sa.survey_administration_key,
@@ -99,7 +96,6 @@ with
         where sa.name = 'School Community Diagnostic Student Survey'
     ),
 
-    /* Family SCD expectations: one per contact person */
     family_scd as (
         select
             sa.survey_administration_key,

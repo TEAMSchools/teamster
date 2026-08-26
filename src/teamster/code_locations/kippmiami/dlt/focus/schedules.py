@@ -10,37 +10,50 @@ config = yaml.safe_load(config_file.read_text())
 
 asset_key_prefix = f"{CODE_LOCATION}/dlt/focus"
 
+# Only the count-only tables (no `cursor_column` -- as of writing, just
+# co_teachers) belong in this tier. Derived from config rather than
+# hardcoded so a table that later loses its cursor joins automatically, and
+# one that gains a real cursor drops out without a code change here.
+daily_full_refresh_targets = [
+    f"{asset_key_prefix}/{a['table_name']}"
+    for a in config["assets"]
+    if a["cursor_column"] is None
+]
+
 focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
-    # "daily" is now three times a day. The name is kept as-is on purpose --
-    # renaming mints a NEW Dagster+ schedule object and abandons this one's
-    # status and tick history.
+    # The name says "daily" but this tier now runs once a day, at 04:00 -- the
+    # 12:00 and 14:00 crons moved to the intraday sensor below. The name is
+    # kept as-is on purpose -- renaming mints a NEW Dagster+ schedule object
+    # and abandons this one's status and tick history.
     name=f"{CODE_LOCATION}__dlt__focus__daily_asset_job_schedule",
-    # 04:00 keeps the pre-dawn pull that every Focus-derived model depends on --
-    # Miami enrollment, attendance, and the FRESH scaffold's Miami rows all read
-    # it, and FRESH's Tableau extract refreshes at 05:00.
+    # This is the daily in-place-edit backstop for the tables whose
+    # `cursor_column` is null: a count+cursor probe can't see an edit that
+    # leaves row count unchanged on a table with no `updated_at` (or
+    # equivalent) to bump, so those tables instead get an unconditional daily
+    # reload. Everything else has a verified-reliable `updated_at`
+    # (`docs/superpowers/specs/2026-08-10-focus-dlt-probe-gated-sync-design.md`),
+    # so `kippmiami__dlt__focus__intraday_sensor` fully gates it and this tier
+    # no longer touches it -- the sensor still probes all 76 tables every 15
+    # minutes and catches adds/removes on the count-only ones too, just not a
+    # silent in-place edit.
     #
-    # 12:00 and 14:00 both refresh the live-Focus snapshot that the rpt_focus__*
-    # import-once anti-joins read; a snapshot older than the last hand-run Focus
-    # import makes the next delivery re-send those records and duplicate them in
-    # Focus. Three snapshots a day means any one of them prevents that -- 14:00
-    # catches the same-day imports, 04:00 is the overnight backstop, and 12:00 is
-    # the last line of defence if both failed.
-    #
-    # 14:00 sits ON the 2pm commitment rather than after it, so it is NOT a
-    # guaranteed catch: an import that runs late lands after this snapshot. The
-    # safe rule for ops is therefore a dependency, not a clock time -- do not
-    # re-run the delivery unless a Focus sync has run SINCE the last import --
-    # and the 04:00 pull is what makes tomorrow's delivery safe regardless.
-    #
-    # 12:00 fires alongside the Finalsite contacts pull, not staggered behind it:
-    # they share no pool and neither gates the other. That matters because the
-    # 12:45 delivery is a plain cron with nothing gating it on this pull
-    # finishing. Observed fire-to-stg_focus latency is 4-7 min against 45 min of
-    # budget; top-of-hour GKE step-pod scheduling wait (3-9 min) only queues the
-    # run, so it fits too. Do not narrow that gap.
-    cron_schedule=["0 4 * * *", "0 12 * * *", "0 14 * * *"],
+    # This tier is NOT the pre-dawn full refresh Focus-derived models
+    # (Miami enrollment, attendance, the FRESH scaffold) depend on anymore --
+    # that data comes from `updated_at`-tracked tables the sensor keeps fresh
+    # continuously, not from here. Losing this tier delays an in-place edit to
+    # a count-only table by up to a day; it has no effect on FRESH's 05:00
+    # Tableau extract or the 13:15 delivery.
+    cron_schedule="0 4 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-    target=[f"{asset_key_prefix}/{a['table_name']}" for a in config["assets"]],
+    target=daily_full_refresh_targets,
+    # The sensor's in-flight guard (probe.py::in_flight_run) skips every tick
+    # while a run launched by this schedule is non-terminal, so a hung run
+    # here can still wedge intraday syncing. 900 is deliberate, not copied:
+    # this tier now loads one small table (100s of rows, not 76), so the
+    # bound isn't sized to load time anymore -- it's sized to roughly one
+    # sensor interval (900s), so a hung run can't wedge intraday syncing for
+    # longer than about one tick.
+    tags={"dagster/max_runtime": "900"},
 )
 
 schedules = [focus_dlt_daily_asset_job_schedule]

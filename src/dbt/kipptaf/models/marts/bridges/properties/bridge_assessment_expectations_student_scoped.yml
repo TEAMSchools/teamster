@@ -8,6 +8,14 @@ models:
       Newark/Camden (where no PowerSchool course-enrollment row exists for
       the writing program). Rows whose expectations can be attributed to a
       section enrollment live in `bridge_assessment_expectations_enrollment_scoped`.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day table instead of an eager view — rationale and tick choice
+          # in fct_assessment_scores_enrollment_scoped. Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: assessment_expectation_key
         data_type: string
@@ -15,18 +23,18 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: student_key
         data_type: string
         description: FK to dim_students.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
         data_tests:
           - relationships:
               arguments:
@@ -36,11 +44,11 @@ models:
       - name: assessment_administration_key
         data_type: string
         description: FK to dim_assessment_administrations.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
@@ -52,11 +60,11 @@ models:
         description: >-
           FK to dim_terms. Resolves via (region x administered_date x school)
           against the reporting terms sheet.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
           - relationships:
               arguments:

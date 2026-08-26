@@ -3,6 +3,16 @@ models:
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Nightly instead of the default eager table condition, which re-fires
+          # on ANY upstream data change — ~113 executions/day. All 10 downstream
+          # exposures are Dagster-scheduled at 02:00 or later (earliest:
+          # kipp_miami_fast_iready_analysis `0 2 * * *`; latest:
+          # attendance_dashboard `0 15 * * *`), so a 01:00 tick leads every
+          # consumer. Refs #4821
+          automation_condition:
+            cron_schedule: 0 1 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

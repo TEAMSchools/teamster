@@ -26,7 +26,6 @@ select
         whomodifiedid
     ),
 
-    /* column transformations */
     assignmentcategoryassocid.int_value as assignmentcategoryassocid,
     assignmentsectionid.int_value as assignmentsectionid,
     teachercategoryid.int_value as teachercategoryid,

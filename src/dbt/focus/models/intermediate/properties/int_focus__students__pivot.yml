@@ -90,6 +90,12 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: homeless_unaccompanied_youth_label
+        description:
+          Decoded label for the homeless_unaccompanied_youth select field.
+        config:
+          meta:
+            contains_pii: true
       - name: idea_educational_environment_label
         description: >-
           Decoded label for the idea_educational_environment select field — the
@@ -124,6 +130,13 @@ models:
         description: >-
           Decoded label for the ese_fefp_code select field — the exceptional
           student education FEFP funding category.
+        config:
+          meta:
+            contains_pii: true
+      - name: gifted_eligibility_label
+        description: >-
+          Decoded label for the gifted_eligibility select field — names the
+          FLDOE criteria paragraph a student was found gifted-eligible under.
         config:
           meta:
             contains_pii: true

@@ -2,15 +2,16 @@ models:
   - name: stg_focus__student_report_card_grades
     description: >-
       Focus student report-card grades — one row per student per course per
-      marking period. Every row Miami carries today is imported course history
+      marking period. Nearly every row is imported course history
       (course_history is Y) spanning school years well before the Focus rollout,
-      so the letter grade, GPA points and credits are denormalized onto the row
-      and the foreign keys a live report card would use — report_card_grade_id,
-      grade_scale_id, course_period_id, course_id — are all empty and are not
-      projected. Add them once Focus starts posting live report-card grades in
-      Miami. Distinct from stg_focus__report_card_grades, which is the grade
-      definition table (the available letter grades and their GPA values), not
-      student grades.
+      so the letter grade, GPA points and credits are denormalized onto the row.
+      Miami began posting live grades in Focus in August 2026; those rows leave
+      course_history empty and do populate the foreign keys a live report card
+      uses — report_card_grade_id, grade_scale_id, course_period_id, course_id —
+      which are still not projected here. Add them once live posting volume
+      warrants it. Distinct from stg_focus__report_card_grades, which is the
+      grade definition table (the available letter grades and their GPA values),
+      not student grades.
     columns:
       - name: id
         description: Primary key — Focus student_report_card_grades id.
@@ -37,17 +38,16 @@ models:
                 severity: error
       - name: marking_period_id
         description: >-
-          Focus marking-period id the grade was earned in. Focus stores this as
-          text on this table alone, so it is cast to an integer here to match
-          stg_focus__marking_periods and every other reference to a marking
-          period. Tested not_null as well as for referential integrity —
-          relationships skips null foreign keys, so it alone would not catch the
-          column going empty.
+          Focus marking-period id the grade was earned in, as an integer to
+          match stg_focus__marking_periods and every other reference to a
+          marking period. Focus stores this as text on this table alone and
+          prefixes live postings with a grade-type token (e.g. DT7181); those
+          values are safe cast to null rather than decoded, so a live-posted
+          grade carries no marking period until the token vocabulary is known.
+          Nullable by design for that reason — only referential integrity is
+          tested, and relationships skips null foreign keys.
         data_type: int
         data_tests:
-          - not_null:
-              config:
-                severity: error
           - relationships:
               arguments:
                 to: ref('stg_focus__marking_periods')
@@ -112,7 +112,7 @@ models:
       - name: course_history
         description: >-
           Whether the row is imported course history rather than a grade posted
-          in Focus. Y on every Miami row today.
+          in Focus. Y on imported rows, empty on grades posted live in Focus.
         data_type: string
       - name: course_flag_1
         description: >-

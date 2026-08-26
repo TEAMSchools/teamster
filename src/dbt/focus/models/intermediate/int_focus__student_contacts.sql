@@ -1,8 +1,4 @@
 with
-    -- one row per (person, phone_type) and one row per person overall, ranked
-    -- by detail_priority then value. phone_type/is_email_title/value are
-    -- already derived in staging; excludes rows that aren't a mapped,
-    -- populated, non-email phone value.
     phones_ranked as (
         select
             person_id,
@@ -63,10 +59,6 @@ select
     p.last_name as contact_last_name,
     p.email,
 
-    -- emitted raw, exactly as stored in Focus (native format for
-    -- natively-entered numbers is (NNN) NNN-NNNN) -- this package has no
-    -- dependency on the finalsite package, so E.164 normalization is deferred
-    -- to the kipptaf consumer in Phase 2 rather than done here
     pt.phone_mobile,
     pt.phone_home,
     pt.phone_work,

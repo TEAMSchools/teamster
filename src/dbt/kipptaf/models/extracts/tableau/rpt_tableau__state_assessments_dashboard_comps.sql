@@ -29,7 +29,6 @@ with
 
         union all
 
-        /* FL */
         select
             academic_year,
             assessment_name,
@@ -56,7 +55,6 @@ with
 
         union all
 
-        /* Google Sheets benchmarks */
         select
             academic_year,
             assessment_name,

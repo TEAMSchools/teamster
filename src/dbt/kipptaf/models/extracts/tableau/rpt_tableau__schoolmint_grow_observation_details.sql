@@ -18,7 +18,6 @@ with
         where srh.assignment_status = 'Leave' or srh.assignment_status_lag = 'Leave'
     )
 
-/* tracking for current year */
 select
     srh.employee_number,
     srh.home_work_location_grade_band as grade_band,
@@ -107,11 +106,6 @@ select
 
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
-    /*
-        round eligibility for PM
-            1: all teachers, regardless of start date
-            2 & 3: Active six weeks prior to lockbox date
-    */
     case
         when r.recent_leave
         then false
@@ -141,12 +135,10 @@ inner join
     )
     and t.academic_year = {{ var("current_academic_year") }}
     and t.type in ('PMS', 'PMC', 'TR')
-/* Adding memberships for teachers*/
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on srh.employee_number = os.employee_number
     and t.academic_year = os.academic_year
-/* Adding memberships for observers*/
 left join
     {{ ref("int_performance_management__observation_details") }} as od
     on srh.employee_number = od.employee_number
@@ -159,7 +151,7 @@ left join
     {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and t.academic_year = tgl.academic_year
@@ -169,12 +161,10 @@ left join
     on srh.employee_number = r.employee_number
     and t.academic_year = r.academic_year
     and t.code = r.code
-/* Adding memberships for teachers*/
 left join
     {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as em
     on t.academic_year = em.academic_year
     and sr.worker_id = em.associate_id
-/* Adding memberships for observers*/
 left join
     {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
     on t.academic_year = emo.academic_year
@@ -196,7 +186,6 @@ where
 
 union all
 
-/* actual responses from past years*/
 select
     srh.employee_number,
     srh.home_work_location_grade_band as grade_band,
@@ -307,7 +296,7 @@ left join
     {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and od.academic_year = tgl.academic_year

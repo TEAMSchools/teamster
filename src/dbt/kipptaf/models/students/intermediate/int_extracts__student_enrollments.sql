@@ -2,7 +2,7 @@ with
     school_year_start as (
         select distinct
             _dbt_source_project, academic_year, schoolid, first_day_school_year,
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
     ),
 
     esms_attend as (
@@ -115,7 +115,9 @@ select
         salesforce_contact_college_match_gpa_band,
         salesforce_contact_owner_name,
         state_studentnumber,
-        `state`
+        `state`,
+        homeless_code,
+        homeless_primary_nighttime_residence_code
     ),
 
     sc.contact_1_name,
@@ -379,6 +381,32 @@ select
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
 
+    /* Labels come from the PowerSchool dropdown definitions; the two Y labels are
+    shortened. Codes outside the mapped set decode to null rather than being
+    guessed at -- a small number of dirty values exist upstream, and the
+    accepted_values tests on the raw codes surface anything new (#4814). */
+    case
+        e.homeless_code
+        when 'N'
+        then 'Not Homeless'
+        when 'Y1'
+        then 'Homeless - With Guardian'
+        when 'Y2'
+        then 'Homeless - Unaccompanied'
+    end as homeless_status,
+
+    case
+        e.homeless_primary_nighttime_residence_code
+        when 1
+        then 'Shelters, transitional housing'
+        when 2
+        then 'Doubled-up'
+        when 3
+        then 'Unsheltered'
+        when 4
+        then 'Hotels or Motels'
+    end as homeless_primary_nighttime_residence,
+
     -- TODO: figure out a better way to track these
     case
         when
@@ -488,13 +516,15 @@ left join
     on e.salesforce_contact_id = ovg.external_student_id
     and e._dbt_source_project = ovg._dbt_source_project
 left join
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
+    -- internal id and is null for every Focus-sourced (Miami) row.
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
-    on e.studentid = ada.studentid
+    on e.student_number = ada.student_number
     and e.academic_year = ada.academic_year
     and e._dbt_source_project = ada._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as adapy
-    on e.studentid = adapy.studentid
+    on e.student_number = adapy.student_number
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join

@@ -147,6 +147,7 @@ class User(DirectoryBaseModel):
     suspensionReason: str | None = None
     suspensionTime: str | None = None
     archived: bool | None = None
+    archivalTime: str | None = None
     changePasswordAtNextLogin: bool | None = None
     ipWhitelisted: bool | None = None
     customerId: str | None = None

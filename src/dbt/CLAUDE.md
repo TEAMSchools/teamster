@@ -2,29 +2,16 @@
 
 ## Overview
 
-Sixteen dbt projects organized into three tiers:
+Three tiers, told apart by name (`ls src/dbt` for the current list):
 
-| Tier                  | Projects                                                                                                                    | Purpose                                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
-| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                                     | Combine source packages for a single district                 |
-| **Network analytics** | `kipptaf`                                                                                                                   | Cross-district marts, reporting, and extracts for the network |
+- **Source-system** (everything not `kipp*`) — clean and contract-enforce raw
+  data from one source system.
+- **District-specific** (`kippnewark`, `kippcamden`, `kippmiami`,
+  `kipppaterson`) — combine source packages for a single district.
+- **Network analytics** (`kipptaf`) — cross-district marts, reporting, and
+  extracts for the network.
 
 ## Project Dependency Map
-
-```text
-amplify ──────┐
-deanslist ────┤
-edplan ───────┤
-finalsite ────┤
-focus ────────┤                ┌─ kippnewark ──┐
-iready ───────┼── (packages) ─┼─ kippcamden ───┼── (sources) ── kipptaf
-overgrad ─────┤                ├─ kippmiami ───┤
-pearson ──────┤                └─ kipppaterson ─┘
-powerschool ──┤
-renlearn ─────┤
-titan ────────┘
-```
 
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
@@ -34,34 +21,45 @@ Authoritative consumer list for a source-system package:
 Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
 source data via `source()`, not as a package.
 
-## District Variable Defaults
+**A model name can exist in both a source-system package and `kipptaf`** (e.g.
+`int_finalsite__student_contacts`). `ref()` resolves to the CURRENT project's
+copy, so when reading a `kipptaf` model's upstream, open the `kipptaf` file —
+the same-named package file is a different model. Confirm with
+`find src/dbt -name '<model>.sql'` before reading.
 
-All district projects share these variables (override via `dbt_project.yml`):
+## District Variables
 
-- `current_academic_year`, `current_fiscal_year` — updated each July; get
-  current values from any district's `dbt_project.yml`
-- `local_timezone` — `America/New_York`
-- `cloud_storage_uri_base` — `gs://teamster-<project>/dagster/<project>`
-  (redirects to `gs://teamster-test/dagster/<project>` when
-  `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`, via inline conditional in each
-  `external.location` template)
+Each project's `vars:` block is the top of its `dbt_project.yml` — read it
+there; source-system projects declare null/zero defaults that consuming
+districts override. `current_academic_year` / `current_fiscal_year` roll over
+each July.
 
-Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
-`renlearn_schema: kippnj_renlearn`. All five `kipp*` projects (the four
-districts plus `kipptaf`) set `bigquery_external_connection_name` to the
-`biglake-teamster-gcs` connection; source-system projects default it to `null`.
-See `kipptaf`'s CLAUDE.md.
-
-## Variable Override Pattern
-
-Source-system projects declare variables with null/zero defaults
-(`bigquery_external_connection_name: null`, `current_academic_year: 0`, etc.).
-Consuming district projects override these in their own `dbt_project.yml`.
+Not visible in the yml: `cloud_storage_uri_base` redirects to
+`gs://teamster-test/dagster/<project>` when
+`DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`, via an inline conditional in each
+`external.location` template.
 
 ## External Table Pattern
 
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
+
+**A brand-new external source cannot be staged until its asset has materialized
+once** — Avro autodetect needs >=1 file. Pre-merge, open the PR non-draft so the
+branch deployment builds, materialize the asset there, then stage with the
+`gs://teamster-test/...` `--vars` override below. Post-merge, launch that asset
+in prod IMMEDIATELY: external sources are excluded from the deps gate
+(`any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)` in
+`core/automation_conditions.py`), so the first post-deploy tick requests the new
+staging model and its `stage_external_sources` fails on the still-empty prod
+prefix.
+
+**Sheets externals need no manual post-merge prod re-stage.** The
+`build_dbt_assets` stage→refresh→build flow re-stages the prod external and
+rebuilds the `stg_` table on the next tick. The "launch that asset in prod
+IMMEDIATELY" rule above is for NEW Avro/GCS sources only. Verify with
+`INFORMATION_SCHEMA.COLUMNS` on the prod external before filing a manual
+re-stage as outstanding work.
 
 **AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
 evolve an Avro source's schema, the new-schema file must sort last — materialize
@@ -240,6 +238,12 @@ config blocks before the move, and rename the model's singular tests and their
 
 ## View→table flips for BigQuery plan depth
 
+**Before re-attempting a materialization or automation-condition change, check
+whether it was already reverted**:
+`git log -S '<config key>' -- <properties yml>`. A reverted perf change reads as
+an obvious win and CI passes for a while — that is how #4464 got re-done here,
+eight days after #4587 reverted it.
+
 A table model with a plan of hundreds of stages (straggler-fragile, e.g.
 [#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
 the depth from view upstreams: BigQuery inlines each view's full SQL per
@@ -348,6 +352,10 @@ re-stage YOUR copy first:
 (personal schema, NOT classifier-blocked, unlike `--target staging`), then
 `dbt build --select <model> --target dev`.
 
+**A view build does not evaluate data.** A bad `cast` in a view-materialized
+model passes `dbt build` and fails only when a downstream TABLE materializes it.
+Never read a green view build as validation of values or types.
+
 **A macro call missing its `{{ }}` fails only at build.** A bare `my_macro()`
 instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluff,
 then fails at BigQuery build with `Function not found`. Build the model to catch
@@ -455,11 +463,14 @@ again.
 
 ## `dbt_utils.union_relations` is compile-time
 
-Compiles to the column intersection from source-table
-`INFORMATION_SCHEMA.COLUMNS`. New columns added at package-level staging don't
-surface at kipptaf-level consumers until district projects rebuild prod. For
-single-PR refactors, add transformations at the kipptaf-level wrapper, not at
-package level.
+Compiles to the column SUPERSET from source-table `INFORMATION_SCHEMA.COLUMNS`,
+null-filling absent columns with `cast(null as <type>)`
+(`dbt_utils/macros/sql/union.sql`). It needs persisted relations, so it cannot
+union a local CTE — for that, BigQuery `full union all corresponding` gives the
+same superset/null-fill semantics. New columns added at package-level staging
+don't surface at kipptaf-level consumers until district projects rebuild prod.
+For single-PR refactors, add transformations at the kipptaf-level wrapper, not
+at package level.
 
 **Value-only vs column change**: a value-only edit to a package model needs no
 staging — the column set is unchanged, so kipptaf CI compiles and corrected
@@ -507,12 +518,32 @@ lingering as a stale prod table is absent from the prod manifest → clone-skipp
 tables by declaring them a BQ-native source (`sources-bigquery.yml`, plain
 hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
 
+## `dbt build --empty` destroys your dev relation contents
+
+`--empty` doesn't just skip reading upstreams — it rebuilds every SELECTED
+relation as `limit 0`, so a `--empty` run over `<model>+` leaves the whole
+descendant graph EMPTY in your dev schema. A validation query run afterwards
+returns 0 rows and looks like catastrophic row loss in the model.
+
+Order matters: run validation queries BEFORE the `--empty` gate, or rebuild
+without `--empty` afterwards. Distinguish this from a real break by checking a
+relation OUTSIDE the `--empty` selection — a source copy that still has rows
+while every selected model is 0 is the signature. Verified this session: a
+409-node `--empty` gate zeroed `int_students__student_enrollments`,
+`int_focus__advisory` and the `base_` passthrough while the unselected
+`zz_<user>_kippnewark_powerschool` source kept its 97,855 rows.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
 dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
+
+The inverse also happens: a stale dev CHILD makes a `relationships` test pass
+VACUOUSLY. A `dbt test` that passes locally and warns in CI with thousands of
+orphans is this, not a regression — confirm by holding the child fixed and
+swapping only the parent.
 
 Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
@@ -542,6 +573,15 @@ hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
 resolved to dev by grepping the compiled SQL (`target/compiled/.../<model>.sql`)
 for `zz_<user>_` refs — dev-schema refs mean `--defer` was shadowed; validate
 against prod (or an ad-hoc prod query) instead.
+
+**`--favor-state` governs refs, NOT `source()`.** kipptaf `sources-kipp*`
+resolve to personal `zz_<user>_*` copies under `target=dev`, so a stale personal
+copy fakes a dev-vs-prod delta that no flag corrects — this produced a phantom
+7,000-row "regression" twice in one session. Validate a filter or union change
+against the SOURCE rows the build actually read (query the `zz_<user>_*` table
+directly), never against prod. Exception: a frozen BQ-native source (e.g.
+`kippmiami_powerschool`) resolves to PROD even under `target=dev` — the opposite
+staleness expectation from its district siblings.
 
 To validate a MODIFIED `rpt_`/view against prod (the deployed view is still the
 OLD code, and a dev build is stale-shadowed), rewrite its compiled SQL
@@ -615,6 +655,17 @@ text-formatted `00000` in Sheets becomes INT64.
       data_type: STRING
 ```
 
+- **Header autodetect needs type variation.** BigQuery only treats row 1 as a
+  header when it differs in type from the data below. An all-STRING range (e.g.
+  a narrowed name-only crosswalk) autodetects as `string_field_0`,
+  `string_field_1` — which fails a contracted `select *`. Declare `columns:`
+  explicitly for any all-string range; `skip_leading_rows: 1` still drops the
+  header.
+- **To narrow a Sheets source, add a new named range and move `sheet_range`**
+  (`src_x` → `src_x_v2`), don't delete sheet columns — AppSheet and other
+  non-dbt consumers read the same tab. Version only the range; keep the source
+  `name:` and Dagster asset key. Precedent:
+  `src_google_sheets__people__locations_v3`.
 - **Phantom empty rows**: a Sheet's full grid (often ~1000 rows) lands as
   null-key rows in the external table → staging `not_null`/`unique` key tests
   fail with ~N results. Filter them in the staging model:
@@ -712,23 +763,7 @@ without it being real drift — normalize before comparing.
 descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
 `extracts/powerschool/` special case before adding either.
 
-### Uniqueness test examples
-
-```yaml
-# single-column uniqueness
-columns:
-  - name: surrogate_key
-    data_tests:
-      - unique
-
-# multi-column uniqueness (when no single column is unique)
-data_tests:
-  - dbt_utils.unique_combination_of_columns:
-      arguments:
-        combination_of_columns:
-          - column_a
-          - column_b
-```
+### Uniqueness tests
 
 **History-carrying staging (active-flag + superseded rows)**: scope the key
 `unique` test `where: <active_flag>` — a plain `unique` false-fails on
@@ -759,9 +794,52 @@ legitimately-superseded inactive rows that repeat the key.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 - **`accepted_values` passes NULLs** — it compiles to
-  `where value not in (...)`, which NULL never satisfies. Pair it with
-  `not_null` on any enum column that must be non-null, including one a
-  `coalesce` makes non-null by construction.
+  `where value not in (...)`, which NULL never satisfies. Every enum column that
+  must be non-null carries `not_null` too, including one a `coalesce` makes
+  non-null by construction. **Never delete a `not_null` from a column that
+  carries `accepted_values`.** It is not vacuous, whatever the SQL looks like —
+  the pairing is the only thing making the enum test reject NULL.
+- **Never add `not_null` to a column that cannot be NULL by construction.** It
+  can never fail, and it still costs a full BigQuery scan per CI run — on a view
+  mart that scan re-expands the entire upstream chain. Non-nullable by
+  construction means every definition site is one of: an unwrapped
+  `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
+  literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
+  above overrides this rule; nothing else does.
+- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
+  properties yml moves the model to `disabled` but leaves every test in `nodes`
+  (verified with `--no-partial-parse`), still scanning the stale prod relation.
+  Add `config: enabled: false` to each test as well.
+
+### Retiring a crosswalk or lookup as redundant
+
+Check the join TYPE per consumer first. An INNER join makes the table a
+membership filter — often gating an outbound feed — not a lookup, and its row
+set may encode no derivable rule. Likewise count the rows any replacement
+`coalesce` fallback actually fires on: one written to preserve a single row
+fired on 251.
+
+### Retiring a model is always a disable, never a delete
+
+Set `config: enabled: false` in the properties yml and leave the `.sql` and the
+prod relation in place. Applies even when the model has no exposure and zero
+remaining `ref()`s — a consumer nobody knew about then degrades to frozen data
+instead of vanishing. Do not propose deletion as the tidier option, and do not
+issue a `drop view` for the orphaned relation. Disabling a model does NOT
+disable its tests (see _Test config defaults_) — add `enabled: false` to each of
+those too.
+
+### Verifying a test-removal PR
+
+Never report a count from the YAML diff — it does not say which dbt nodes
+actually disappeared. `dbt parse` on main and on the branch, then diff the
+`resource_type == 'test'` node names. That fixes the delta and proves nothing
+unintended was dropped.
+
+Parse BOTH sides with `--no-partial-parse` — partial parse caches node
+enable/disable state and under-reports (767 vs 772 tests this session). Re-parse
+main fresh too: the main checkout's manifest is a stale artifact that reports
+since-deleted models as REMOVED and since-added ones as ADDED.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -799,23 +877,6 @@ the lookup and logs `AssetObservation` across all parents instead of an
 `AssetCheckResult` on the intended asset. Always set `package: <source>` for
 source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
 (refs default to kipptaf).
-
-### Generic test syntax (dbt 1.11+)
-
-All generic tests (`relationships`, `accepted_values`,
-`dbt_utils.unique_combination_of_columns`, etc.) require `arguments:` nesting.
-The flat form (without `arguments:`) triggers a deprecation warning:
-
-```yaml
-# wrong — flat
-- accepted_values:
-    values: [a, b]
-
-# right — nested under arguments
-- accepted_values:
-    arguments:
-      values: [a, b]
-```
 
 ### dbt unit-test fixtures
 
@@ -892,8 +953,8 @@ if(
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
 
-Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
-never returns NULL.
+**Never add a `not_null` test to `generate_surrogate_key` output** — it never
+returns NULL, so the test cannot fail. This holds for FK columns as much as PKs.
 
 #### Nullable PK inputs need a fallback, not a null-wrap
 
@@ -1082,6 +1143,12 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   current_date('{{ var("local_timezone") }}')
   ```
 
+- **sqlfluff ST06 buckets `cast()` as a SIMPLE target**, not a calculation. A
+  `cast(...) as x` placed after `date(...)` / `regexp_extract(...)` in the same
+  select list fails ST06. Put every `cast()` after the plain column refs and
+  before any other function call.
+- **BigQuery rejects `\_` in a string literal** (`Illegal escape sequence`).
+  Escaping an underscore in a `LIKE` needs `'%\\_focus%'`.
 - **sqlfluff ST09 (join order)**: ON-clause predicates list the
   earlier-referenced table on the left, including predicates inside a current
   join that reference a prior-joined table. After
@@ -1152,8 +1219,11 @@ alias.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
-- Columns with **per-column** `data_tests:` should be sorted to the top of the
-  `columns:` list for visibility. Model-level composite tests
+- Columns with **per-column** `data_tests:` must be sorted to the top of the
+  `columns:` list for visibility — including after a change that strips a
+  column's last test. Reorder freely under `contract: enforced`: BigQuery
+  matches contract columns by name, not position (`fct_survey_responses` already
+  differs from its `select` order and builds clean). Model-level composite tests
   (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
   they go in the model-level `data_tests:` block ABOVE `columns:`, and their
   referenced columns can stay in their natural / contract order.
@@ -1169,6 +1239,12 @@ alias.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
   descriptions — those go in inline SQL comments at the derivation site.
+- The reverse also holds: rationale that needs no code context belongs in
+  `description:`, not an inline SQL comment. Keep SQL comments to what a reader
+  of that line cannot see — a non-obvious fallback, why a filter exists. A
+  comment longer than the expression it annotates belongs in the properties
+  file; the repo's existing multi-paragraph SQL comments are not a precedent to
+  extend.
 
 ### Flattened child-array model naming
 
@@ -1183,8 +1259,22 @@ new `base_` models.
 
 ### SQL formatting (sqlfluff-enforced)
 
-All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect; trailing commas in
-`SELECT`; single-quoted strings; 88-char lines; reserved words backtick-quoted
-in SQL with `quote: true` in YAML; no self-aliases per AL09 — drop `as <name>`
-when it equals the source column). CI enforces these — **do not flag code that
-already follows them.**
+All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect), enforced by CI —
+**do not flag code that already follows it.**
+
+### Removing comments changes lint/format behavior
+
+- sqlfmt rejoins statements once a mid-statement comment is gone (`from` /
+  `select *,` collapse to one line) — let the pre-commit fmt hook apply it.
+- Deleting `{#- ... #}` blocks can newly expose sqlfluff rules (ST06) on
+  adjacent code that main passes — sqlfluff skips rules near templated slices.
+  If fixing ST06 would reorder a contract/sheet-fixed column list, suppress with
+  the repo-standard `trunk-ignore(sqlfluff/ST06)` instead.
+
+### Verifying a comment-only SQL change
+
+Strip `--`, `/* */`, and `{# #}` comments from the old and new blobs, collapse
+whitespace, and compare — token identity proves no logic change, and it works
+where a dev build cannot (stale personal `zz_` source copies, which
+`--favor-state` does not defer). Compiled-SQL identity via `dbt compile` is the
+equivalent fallback per model.
