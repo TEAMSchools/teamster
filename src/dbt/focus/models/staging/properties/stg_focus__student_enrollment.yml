@@ -162,16 +162,6 @@ models:
           Student offender transfer — Focus custom field. Stored as an encoded
           select option code (decode deferred).
         data_type: string
-
-      - name: second_school
-        description: >-
-          Second School — Focus custom field custom_9, a checkbox, so 'Y' or
-          null rather than an encoded select option. 'Y' marks this enrollment
-          as the student's second school; null marks the primary or home-campus
-          enrollment. Mapped because it is the only signal that disambiguates
-          two concurrent enrollments at different schools -- see the dedupe in
-          int_focus__student_enrollment.
-        data_type: string
         config:
           meta:
             contains_pii: true
