@@ -11,10 +11,6 @@ with
                         "kippcamden_edplan",
                         "int_edplan__njsmart_powerschool_union",
                     ),
-                    source(
-                        "kipppaterson_edplan",
-                        "int_edplan__njsmart_powerschool_union",
-                    ),
                 ]
             )
         }}
