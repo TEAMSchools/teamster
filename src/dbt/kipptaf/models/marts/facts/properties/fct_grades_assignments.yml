@@ -8,6 +8,19 @@ models:
       enrollment period. FK to dim_student_section_enrollments, dim_terms, and
       dim_dates (role-playing via due_date_key). Reaches dim_student_enrollments
       by traversing student_section_enrollment_key.
+
+
+      PowerSchool only. Miami is absent from AY2026 forward, and repointing this
+      model's join keys would not change that, because the gradebook itself has
+      no Focus branch. int_powerschool__gradebook_assignments_scores unions the
+      district PowerSchool packages, and Miami left that package when it moved
+      to Focus, so its archive stops at AY2025 -- 523,021 rows for AY2025 and
+      zero for AY2026, measured against prod. Focus does hold gradebook data
+      (int_focus__gradebook_grades in the focus package), but it has no kipptaf
+      wrapper, so nothing reaches the network layer. Wiring that branch is
+      tracked in #5010, and was ruled out of #4995 on measurement. Miami's null
+      is_dropped_section also trips this model's `not is_dropped_section`
+      filter; that half is #4996.
     columns:
       - name: grades_assignment_key
         data_type: string

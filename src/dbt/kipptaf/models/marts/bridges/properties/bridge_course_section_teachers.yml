@@ -7,6 +7,16 @@ models:
       change. FKs to dim_course_sections via course_section_key and to dim_staff
       via staff_key.
 
+
+      Two SIS branches. PowerSchool sections resolve every role recorded in
+      sectionteacher. Focus sections -- Miami from AY2026 forward -- resolve the
+      lead teacher only, with null effective dates: Focus has no sectionteacher
+      equivalent, does not date a teacher's attachment to a course period, and
+      its co-teachers are not yet surfaced into kipptaf. So Miami carries no
+      Co-teacher, Gradebook Access or Blended Learning rows from AY2026 forward.
+      Miami archive years (AY2025 and earlier) still flow through the
+      PowerSchool branch with their full role set.
+
     constraints:
       - type: primary_key
         columns: [course_section_key, staff_key, effective_start_date]
@@ -48,6 +58,9 @@ models:
           User configurable name uniquely identifying the role to the user
           within a Role Module Required.
 
+          Always 'Lead Teacher' on the Focus branch, which carries no other
+          role.
+
         config:
           meta:
             source_system: PowerSchool
@@ -57,6 +70,7 @@ models:
         data_type: date
         description: >-
           The start date of the association of this teacher to this section.
+          Null on the Focus branch, which does not date the assignment.
 
         config:
           meta:
@@ -66,7 +80,8 @@ models:
       - name: effective_end_date
         data_type: date
         description: >-
-          The end date of the association of this teacher to this section.
+          The end date of the association of this teacher to this section. Null
+          on the Focus branch, which does not date the assignment.
 
         config:
           meta:
