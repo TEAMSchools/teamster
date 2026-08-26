@@ -24,6 +24,6 @@ with
         dbt_utils.deduplicate(
             relation="schedule_raw",
             partition_by="student_id, course_period_id",
-            order_by="(end_date is not null) asc, (mp != 'FY') asc",
+            order_by="(end_date is not null) asc, (mp is distinct from 'FY') asc",
         )
     }}
