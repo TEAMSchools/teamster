@@ -358,13 +358,7 @@ with
             and enr.academic_year <= {{ var("current_academic_year") }}
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
-            /* TODO(#4340): add Paterson once PS gradebook data is populated.
-               That change also has to add a kipppaterson source to
-               int_powerschool__gradescaleitem_lookup, which unions Newark,
-               Camden and Miami only — otherwise the grade_scale_ladder join
-               below finds no scale and need_next_* stays silently null for
-               every Paterson row. */
-            and enr.region in ('Newark', 'Camden')
+            and enr.region in ('Newark', 'Camden', 'Paterson')
     ),
 
     course_enrollments as (

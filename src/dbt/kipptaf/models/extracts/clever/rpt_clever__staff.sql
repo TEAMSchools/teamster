@@ -138,6 +138,28 @@ with
         inner join staff_roster as sr on up.employee_number = sr.employee_number
         inner join schools as sch on sch.schoolstate = 'NJ'
         where g.cn = 'Group Staff NJ Regional'
+
+        union all
+
+        /* School Leader in Residence (Room 9, Newark) also covers Paterson
+           schools -- #4981
+        */
+        select
+            sr.powerschool_teacher_number,
+            sr.user_principal_name,
+            sr.given_name,
+            sr.family_name_1,
+            sr.home_department_name,
+            sr.sam_account_name,
+
+            sch.school_id,
+        from staff_roster as sr
+        inner join
+            schools as sch
+            on sch.dagster_code_location in ('kippnewark', 'kipppaterson')
+        where
+            sr.job_title = 'School Leader in Residence'
+            and sr.home_work_location_reporting_name = 'Room 9'
     )
 
 select distinct  /* some staff are in multiple assignment groups */
