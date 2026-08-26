@@ -1,33 +1,3 @@
-with
-    student_schedule as (
-        select
-            id,
-            syear,
-            school_id,
-            student_id,
-            course_id,
-            course_period_id,
-            mp,
-            course_weight,
-            days,
-            rotation_days,
-            start_date,
-            end_date,
-            fefp_number,
-            dual_enrollment_indicator,
-            class_minutes_weekly,
-            reading_intervention_component,
-            basic_skills_exam,
-            location_of_student,
-            eoc_exam_term,
-            exempt_from_total_clock_hours,
-            exclude_from_fte,
-            pmrn,
-
-            nullif(marking_period_id, 0) as marking_period_id,
-        from {{ ref("stg_focus__schedule") }}
-    )
-
 select
     s.id as student_schedule_id,
     s.syear as academic_year,
@@ -35,7 +5,9 @@ select
     s.student_id,
     s.course_id,
     s.course_period_id,
-    s.marking_period_id,
+    -- resolved, never the raw sentinel: mkp supplies the school's year-level id
+    -- on a full-year row and the schedule's own id on a term-specific one
+    mkp.marking_period_id,
     s.mp,
     s.course_weight,
     s.days,
@@ -82,12 +54,23 @@ select
     mkp.start_date as marking_period_start_date,
     mkp.end_date as marking_period_end_date,
 
-from student_schedule as s
+from {{ ref("stg_focus__schedule") }} as s
 inner join
     {{ ref("stg_focus__course_periods") }} as cp
     on s.course_period_id = cp.course_period_id
 inner join {{ ref("stg_focus__courses") }} as c on s.course_id = c.course_id
--- aliased mkp, not mp: schedule has its own mp column (the FY/SEM/QTR term code)
+/*
+   Focus writes marking_period_id = 0 on a schedule row to mean the full year.
+   It resolves to the school's type = 'year' marking period, per the vendor's
+   documented join. Scoped on syear and school_id as well as the id because
+   each school gets its own year-level row.
+
+   Aliased mkp, not mp: schedule has its own mp column (the FY/SEM/QTR code),
+   which is how a resolved full-year row stays distinguishable from a
+   natively-termed one.
+*/
 left join
     {{ ref("stg_focus__marking_periods") }} as mkp
-    on s.marking_period_id = mkp.marking_period_id
+    on s.syear = mkp.syear
+    and s.school_id = mkp.school_id
+    and s.marking_period_id = if(mkp.type = 'year', 0, mkp.marking_period_id)
