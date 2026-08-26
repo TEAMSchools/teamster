@@ -337,14 +337,61 @@ data_tests:
       Warns when a non-dropped course-enrollment (cc) record overlaps more than
       one school enrollment stint. dim_student_section_enrollments resolves
       these to a single stint (covering-first, else earliest), so a nonzero
-      count is a known, monitored condition (baseline ~147, almost all genuine
-      mid-year drop/re-enroll) rather than a failure. Growth signals new
-      boundary-spanning sections to review.
+      count is a known, monitored condition rather than a failure. Almost all
+      are genuine mid-year drop/re-enroll. Miami contributes 16, and that number
+      is stable across every environment measured. The New Jersey component
+      drifts with the live school year -- it read 135 in one build and 128 in CI
+      hours later -- so treat the total as roughly 150 rather than a fixed
+      number, and watch the Miami component and the trend instead. Miami became
+      visible only with this change, which added the Focus branch upstream and
+      made the test's join, date predicate and drop filter null-safe; earlier
+      baselines predate all three and are not comparable.
     config:
       meta:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: test_miami_section_enrollment_orphan_rate
+    description: >-
+      Warns if Miami's current-year null-student_enrollment_key rate in
+      dim_student_section_enrollments rises materially above where it shipped.
+      Focus leaves a course period's end_date null while the schedule is open
+      (coalesced to an open-ended sentinel for the stint join), so a residual of
+      unmatched rows is expected, not a defect -- same-day stints and
+      cross-school scheduling artifacts, not the null end_date, account for what
+      remains. Shipped at 10.5% (2,025 of 19,295 AY2026 rows); NJ's own
+      completed-year norm runs higher (18.16% AY2024, 19.75% AY2025) once a year
+      is no longer mid-accumulation, so 15% is a real ceiling on the
+      still-growing current year, not an arbitrary number. Tracked in #4970 --
+      do not drive this to zero by widening the overlap predicate, which would
+      attach rows to the wrong stint.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: dim_student_section_enrollments
+
+  - name: test_focus_course_sections_teacher_resolves
+    description: >-
+      Warns on Focus course periods whose lead teacher does not resolve through
+      the staff roster (by `ein`, falling back to email), scoped to the Focus
+      population by year so the frozen Miami PowerSchool archive (which predates
+      the roster and will never resolve) doesn't inflate the count. Measured
+      floor is 80 AY2026 course periods: 67 with no teacher assigned in Focus at
+      all, plus 13 whose assigned user resolves through neither `ein` nor email.
+      Both are source data gaps in Focus / the roster, not a modeling defect.
+      (`int_focus__course_periods` also holds 21 stale AY2025 rows that the
+      year-scope filter correctly excludes here -- a raw, unscoped count over
+      all course periods would show 101 unresolved instead, double-counting that
+      stale year.)
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_sections
 
   - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
     description: >-
