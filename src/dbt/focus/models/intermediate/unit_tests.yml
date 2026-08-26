@@ -95,9 +95,13 @@ unit_tests:
     description: >-
       Focus permits two open stints sharing a student, year, and start date.
       Student 1 covers the demotion leg: the schoolid-null stub loses even
-      though it was created later. Student 2 covers the recency leg: the newer
-      stint wins on enrollment_created_at while carrying the LOWER id, so a pass
-      only if the ordering reads the timestamp rather than the id.
+      though it was created later. Student 2 covers the recency fallback, for
+      two schools with neither marked: the newer stint wins on
+      enrollment_created_at while carrying the LOWER id, so a pass only if the
+      ordering reads the timestamp rather than the id. Student 3 covers the
+      primary leg: two schools with the SECOND one marked and created later, so
+      recency alone would keep the second school and only reading
+      is_second_school first keeps the home campus.
     given:
       - input: ref('stg_focus__students')
         format: sql
@@ -109,6 +113,9 @@ unit_tests:
           union all
           select 2, 'B', 'Two', cast(null as string), cast(null as string),
             cast(null as timestamp)
+          union all
+          select 3, 'C', 'Three', cast(null as string), cast(null as string),
+            cast(null as timestamp)
       - input: ref('stg_focus__student_enrollment')
         format: sql
         rows: |
@@ -117,21 +124,32 @@ unit_tests:
             cast(null as int64) as enrollment_code,
             cast(null as int64) as drop_code,
             date '2026-08-12' as start_date, cast(null as date) as end_date,
+            cast(null as string) as second_school,
             timestamp '2026-07-01 00:00:00' as created_at
           union all
           select 11, 1, 2026, cast(null as int64), cast(null as int64),
             cast(null as int64), cast(null as int64),
-            date '2026-08-12', cast(null as date),
+            date '2026-08-12', cast(null as date), cast(null as string),
             timestamp '2026-08-11 00:00:00'
           union all
           select 25, 2, 2026, 100, cast(null as int64),
             cast(null as int64), cast(null as int64),
-            date '2026-08-12', cast(null as date),
+            date '2026-08-12', cast(null as date), cast(null as string),
             timestamp '2026-07-01 00:00:00'
           union all
           select 24, 2, 2026, 200, cast(null as int64),
             cast(null as int64), cast(null as int64),
-            date '2026-08-12', cast(null as date),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-08-12 00:00:00'
+          union all
+          select 30, 3, 2026, 300, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 31, 3, 2026, 400, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), 'Y',
             timestamp '2026-08-12 00:00:00'
       # empty: left-joined, contributes nothing to the dedupe under test
       - input: ref('int_focus__schools')
@@ -158,6 +176,10 @@ unit_tests:
           academic_year: 2026
           startdate: 2026-08-12
           student_enrollment_id: 24
+        - student_number: 3
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 30
 
   - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
     model: int_focus__attendance_daily
