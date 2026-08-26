@@ -50,7 +50,9 @@ data_tests:
       (#5003). Asserted on the staging model because the dedupe has already
       dropped one row by the intermediate layer, and a uniqueness test on the
       deduped grain cannot fail by construction. Same-school duplicates are out
-      of scope; the dedupe resolves those without a primary marker.
+      of scope; the dedupe resolves those without a primary marker, as are
+      groups where one row has no school at all -- there is no second school to
+      be primary over, and no such row exists in Focus today.
     config:
       severity: error
       meta:

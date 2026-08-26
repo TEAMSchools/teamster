@@ -48,29 +48,17 @@ with
         -- norm -- see the rate test in
         -- tests/test_miami_section_enrollment_orphan_rate.sql.
         --
-        -- That residual is attributed, not unexplained. Of 2,045 orphaned Miami
-        -- AY2026 rows measured 2026-08-26: 1,859 are schedule rows falling
-        -- outside a stint at the same school (#5002), and 186 belong to a
-        -- section at a school where the student holds no stint (#5003). The 186
-        -- split 182 / 4:
+        -- That residual is attributed, not unexplained. Of 2,045 orphaned
+        -- Miami AY2026 rows measured 2026-08-26: 1,859 schedule rows fall
+        -- outside a stint at the same school (#5002); 182 are stale schedule
+        -- rows at a campus the student was reassigned away from, left open in
+        -- Focus (#5003); 4 are courses taken at a second campus, where
+        -- int_focus__student_enrollment keeps only the primary stint (#5003).
+        -- The Focus school-to-network mapping was ruled out for the last two.
         --
-        -- 182 rows, 18 students -- stale schedule rows at a prior campus,
-        -- left open when the student was reassigned to another campus. The
-        -- Focus school-to-network mapping was ruled out as a cause: the
-        -- locations crosswalk is 1:1, schedule.school_id agrees with
-        -- course_periods.school_id on every AY2026 row, and the cross-school
-        -- pairs run in both directions within a grade band. A null key is the
-        -- correct outcome -- attaching a section at one campus to a stint at
-        -- another would emit a confidently wrong key. Upstream Ops cleanup.
-        --
-        -- 4 rows, 1 student -- courses taken at a second campus. Focus
-        -- marks the student's non-primary enrollment with custom field
-        -- custom_9 ("Second School"), and int_focus__student_enrollment keeps
-        -- only the primary stint, so sections scheduled at the second campus
-        -- match no stint. Correct as a null: they are courses taken elsewhere,
-        -- not an enrollment. Before that tie-break existed the dedupe kept the
-        -- SECOND school instead, attributing the student to a campus they do
-        -- not attend.
+        -- All three stay null deliberately: attaching a section at one campus
+        -- to the student's stint at another would emit a confidently wrong
+        -- key, which is worse than no key (#4970).
         left join
             student_enrollments as enr
             on cc.students_student_number = enr.student_number

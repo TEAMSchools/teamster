@@ -17,6 +17,12 @@
 --
 -- Scoped to groups spanning more than one school. A same-school duplicate is a
 -- stub the dedupe resolves on its own terms and needs no primary marker.
+--
+-- count(distinct school_id) skips nulls, so a pair of one null-school row and
+-- one real-school row reads as a single school and is not flagged. That is
+-- deliberate: with a null school there is no second school to be primary over.
+-- Zero enrollment rows in Focus carry a null school_id, measured 2026-08-26
+-- back to AY2018, so the case is theoretical today.
 -- Any returned row is a failure.
 select
     student_id,
