@@ -188,16 +188,42 @@ whether it's already answered by our own data, in this order of preference:
 2. If no dedicated CSGF report exists, fall back to a general source model (e.g.
    `int_extracts__student_enrollments`) and apply the same filters CSGF's own
    report models use for that domain.
-3. Only if neither exists, answer from institutional knowledge -- and flag that
-   as a gap worth building a report for.
+3. For a policy/rule question rather than a population question (e.g. GPA scale,
+   business logic thresholds), check subdirectory `CLAUDE.md` business-rule docs
+   (e.g. `src/dbt/kipptaf/models/students/CLAUDE.md`) before assuming no
+   verifiable source exists -- "not a CSGF report" and "not verifiable" are not
+   the same thing.
+4. Only if none of the above exists, answer from institutional knowledge -- and
+   flag that as a gap worth documenting.
 
 **Keep every check aggregate-level** (counts, distinct schools/regions) -- never
 query for or paste individual student rows into this process. This
 question-answering step needs proof the population exists, not who's in it.
 
+**A nonzero row count proves data exists, not that the network administered
+it.** A question asking what the network/school _administered_ is asking about
+an institutional decision, not a data population -- rows can exist because a
+student took a test independently and the score was still recorded. Cross-check
+against known network strategy (e.g. the `carat-dashboard` reference doc
+documents KTAF's assessment strategy as SAT-based, referring to ACT as
+historical/legacy) before reading "rows exist" as "we administered this."
+
+**Check whether a query's scope covers the full population the question is
+about, and watch for survivorship.** A report or extract limited to a grade band
+(e.g. HS-only, grades 9-12) or a single academic year can structurally miss
+where something actually happens (KTAF's gateway math course, Algebra I, is
+first offered in **8th grade** -- invisible to any HS-scoped query). Even within
+scope, a later-grade count can be inflated by survivorship: students who succeed
+early and move on stop appearing, so the population left in a later grade/cohort
+is disproportionately non-passers or new arrivals, not a representative sample
+of "when this typically happens."
+
 **Preliminary Questions log** (question, this cycle's answer, how it was
 verified -- carry forward and re-verify each cycle rather than assuming the
-answer repeats):
+answer repeats). Entries 2-6 (the "Academic Profile & Grading" subsection) are
+marked **[final -- confirmed against the collection owner's actual portal
+submission]**; entry 1 is unconfirmed against the portal but derived the same
+way.
 
 1. **"Did you operate high schools last year?"** → **Yes** (2026-2027 cycle).
    Verified via `rpt_gsheets__csgf_hs_enrollment` (prod, schema
@@ -206,7 +232,172 @@ answer repeats):
    AY2025 (the 2025-2026 school year). Miami and Paterson have no HS enrollment
    and are correctly absent.
 
-<!-- More Preliminary Questions to capture as they're pasted. -->
+2. **"Did your school or network administer the SAT, ACT, or both to any
+   students last year?"** → **SAT**. `rpt_gsheets__csgf_hs_sat` has 1,590 rows
+   for AY2025; `rpt_gsheets__csgf_hs_act` also has 15 rows, but per the
+   `carat-dashboard` reference doc, KTAF's assessment strategy is SAT-based --
+   those 15 ACT scores are students who took the ACT independently and had the
+   score recorded, not something the network administered. The question asks
+   what _we_ administered, not what data exists -- don't answer "Both" just
+   because both tables have rows.
+
+3. **"Did any of your schools offer AP courses last year?"** → **Yes**.
+   `rpt_gsheets__csgf_hs_ap_offerings` has one row per school with a column per
+   AP course, valued with the grade level(s) it's offered to (not a boolean) --
+   all three HS schools have at least one non-null AP course column for AY2025
+   (e.g. KIPP Newark Collegiate Academy offers AP Biology, AP Calculus AB, AP US
+   History, and AP Computer Science Principles).
+
+4. **"Did any of your schools offer AP tests last year?"** → **Yes**.
+   `rpt_gsheets__csgf_hs_ap_scores` has 1,221 rows for AY2025.
+
+5. **"Are GPAs weighted?"** → **Yes**. In `rpt_gsheets__csgf_hs_enrollment`, 680
+   of 1,710 AY2025 students have
+   `weighted_cumulative_gpa != unweighted_cumulative_gpa` -- the weighted column
+   is a real, distinct calculation, not a duplicate of unweighted.
+
+6. **"What is the grading scale?"** → KTAF uses a plus/minus-based GPA point
+   scale: regular (unweighted) courses cap at **4.33**, advanced/honors
+   (weighted) courses cap at **5.33**. **Correction from an earlier pass of this
+   log**, which flagged this question as unanswerable from a
+   `rpt_gsheets__csgf_*` report -- true, but there's a different verifiable
+   source: business-rule documentation, not a CSGF report. Confirmed two ways:
+   (a)
+   [`src/dbt/kipptaf/models/students/CLAUDE.md`](../../../src/dbt/kipptaf/models/students/CLAUDE.md)
+   documents these exact caps for the KTAF GPA Band rules; (b)
+   `stg_powerschool__storedgrades.gpa_points` for AY2025 Y1 grades has
+   `max = 5.33, min = 0`, matching. **Lesson for this skill's verification-first
+   rule**: "not a CSGF report" and "not verifiable" are not the same thing --
+   check subdirectory `CLAUDE.md` business-rule docs (e.g.
+   `models/students/CLAUDE.md`) before concluding a question is
+   institutional-knowledge-only.
+
+**"Alumni Data" subsection** -- paid-subscription questions are procurement
+facts, not data-population facts. dbt integration presence/absence is
+corroborating evidence at best, never proof -- confirm with whoever manages each
+vendor contract rather than answering from data alone:
+
+7. **"Does your organization have a paid subscription for Overgrad?"** → **Yes**
+   [confirmed]. Matches the data lead: a full dedicated `overgrad` dbt package
+   with a live API integration, wired into both Camden's and Newark's
+   `packages.yml`.
+
+8. **"Does your organization have a paid subscription for National Student
+   Clearinghouse (NSC)?"** → **Yes** [confirmed]. The data lead
+   (`stg_google_sheets__kippadb__nsc_crosswalk`, a maintained
+   college-to-NSC-code reference sheet) pointed the right direction but wasn't
+   proof by itself -- confirmed by the collection owner.
+
+9. **"Does your organization have a paid subscription for Naviance?"** → **No**
+   [confirmed, per last cycle]. Matches the data lead (zero Naviance integration
+   anywhere in the dbt codebase) -- but note this cycle's item-list doc dropped
+   the "N/A" flag on the Naviance HSDC tab that last cycle's doc had. That flip
+   is still unresolved; re-confirm for the current cycle rather than assuming
+   "No" carries forward automatically.
+
+10. **"What is your means of collecting the post-high school plans of your
+    graduating seniors?"** (multi-select) → **[confirmed, partial]** Casey
+    Gibson / Anthony Walters selected **Overgrad, Senior Seminar/Class
+    Requirement, Other**; confirmed NOT selected: **Scoir, Student Information
+    System (SIS)**. The screenshot confirming this was scrolled to show only the
+    bottom of the list -- the top portion (1:1 Counseling/Advising Meetings,
+    Cialfo, Internal Tracker/Spreadsheet, NSC, Naviance) wasn't visible, so
+    their status isn't logged here as confirmed even though Naviance is
+    presumably unselected (subscription is a confirmed No).
+
+11. **"If you have NSC/Naviance/Overgrad AND ALSO utilize additional mechanisms
+    for keeping track of alumni, what are they?"** → **Salesforce** [confirmed].
+    Free text, no dbt data source -- this is exactly the kind of question the
+    verification-first rule can't help with; it was answered directly by the
+    item owners.
+
+**"Gateway Math Information" subsection** (gateway math = Algebra I at KTAF --
+no `rpt_gsheets__csgf_*` report covers this domain, so every answer here came
+from raw PowerSchool course-enrollment/NJSLA queries, not a CSGF report):
+
+12. **"What gateway math course(s) do you offer?"** → **Algebra 1** [confirmed].
+    The course catalog only has Algebra I variants; "Integrated Mathematics I" /
+    "NC Math 1" only appear in the CSGF HS enrollment model's _transfer-student_
+    course-name catch list (matching incoming credits from other states) -- not
+    something KTAF itself teaches. Don't let that list suggest Integrated Math
+    is offered.
+
+13. **"In what grade is gateway math typically first offered to students?"** →
+    **8th** [confirmed] -- **my first answer here was wrong ("10th"), and the
+    reason is a durable lesson, not a one-off mistake.** I queried HS-scoped
+    (grades 9-12) AY2025 course enrollment and saw ~114 students in Algebra I
+    variants at grade 9 vs. ~479 at grade 10, and concluded "10th." Two
+    compounding errors: (a) the query never looked at grade 8 at all, so it
+    structurally couldn't see the actual first-offered grade; (b) even within
+    9-12, the 9th-grade Algebra I count is not the "first attempt" population --
+    students who pass Algebra I in 8th grade and stay at KTAF never re-enroll in
+    it in 9th, so the students left showing up as 9th-grade Algebra I are
+    disproportionately non-passers and new-to-KTAF transfers, not a
+    representative first-attempt cohort. **Lesson for the verification-first
+    rule**: before answering "what grade/when does X typically happen," check
+    whether the query's scope (a report or extract limited to HS, or to one
+    academic year) actually covers the full population the question is about,
+    and whether an observed count could be skewed by survivorship (people who
+    succeed early leave the population you're counting) rather than reflecting
+    the typical pathway.
+
+14. **"What math course do most students take immediately before gateway
+    math?"** → **Math 8** [confirmed] -- matches the "Math Gr8" course found in
+    the data (two name variants, one with a trailing space -- still worth
+    flagging as a catalog cleanup item separately from this submission).
+
+15. **"How does your organization define a student as having passed gateway
+    math?"** → **Earning Course Credit** [confirmed]. Matches the inference from
+    `passed_algebra_i`'s course-grade-only logic.
+
+16. **"Does your organization use a state-administered end-of-course exam for
+    gateway math?"** → **Yes** [confirmed]. Matches `stg_pearson__njsla`'s
+    dedicated "Algebra I" subject rows.
+
+17. **"Does your organization use credit recovery or summer school to support
+    gateway math passage?"** → **Yes** [confirmed] -- the data lead (a generic,
+    subject-untagged "Summer School" course) was suggestive but not proof by
+    itself; confirmed by the item owners.
+
+**This closes out the Preliminary Questions task for the 2026-2027 cycle** -- 17
+questions total across four subsections (base, Academic Profile & Grading,
+Alumni Data, Gateway Math Information). Re-run this whole log next cycle rather
+than assuming answers carry forward -- several entries above changed between
+cycles on their own (the Naviance N/A flag, the item-list ownership split) even
+when the underlying fact didn't.
+
+### 5. Verify the Schools tab
+
+**Trigger:** immediately after Preliminary Questions is done -- per CSGF's
+["Data Collection Portal Overview and Navigation"](https://www.loom.com/share/e746a53871c14a918650e34c9c8cecfe)
+walkthrough video, this is the next step in their intended task order (matches
+the Portal Guide's "complete Preliminary Questions, Schools List, and Growth
+Plans first" instruction).
+
+- Review the Schools List task for accuracy (the roster of schools CSGF has on
+  file for KTAF).
+- **The Schools List task's own in-portal instructions are more specific than
+  the walkthrough video, and take priority where they differ** -- the video's
+  general "submit a ticket to add/remove a school" framing does NOT match what
+  the actual task says:
+  - **Missing school** → self-service: edit → "Add Record" to create it. No
+    ticket needed. New schools get NCES ID `000000000000` and State ID `0000` as
+    placeholders.
+  - **Support ticket needed for exactly one case**: CSGF auto-flips every school
+    they had on file as "planned" for 26-27 to "operational." If one of those
+    isn't actually open yet, that's the ticket-worthy scenario -- not
+    additions/removals in general.
+  - **Marking a school as closed** → self-service: set the **Academic Year
+    Closed** value yourself (see the reference doc's precise definition of that
+    field) on any school that's not operational. No ticket for this either.
+  - Review CSGF's own "Field Definitions" link inside the task for anything
+    field-specific not covered here.
+
+**Lesson: a walkthrough video is a generic/dated overview; the task's own
+in-portal instructions are the live, specific source.** When the two disagree,
+trust the task text open in front of you, not what a linked video said it would
+say. Don't assume a video accurately describes current-cycle behavior just
+because it's linked from this cycle's Portal User Guide.
 
 ---
 

@@ -42,8 +42,16 @@ Definitions worth getting exactly right:
   Turnaround, Virtual, Waldorf, Other); "Other" requires a self-description in
   the next column.
 - **Date of Take over or Merger**: format `MM/YYYY - MM/YYYY`.
-- **Academic Year Opened / Closed**: format `YYYY-YYYY`; Closed only if
-  applicable, otherwise blank.
+- **Academic Year Opened**: format `YYYY-YYYY`.
+- **Academic Year Closed**: format `YYYY-YYYY`. CSGF's own wording: "If School
+  has CLOSED, enter the last academic year that the school was in operation. If
+  not applicable, please leave this colu[mn blank]" (the sheet extraction cut
+  off mid-word here; the ending is inferred from CSGF's boilerplate elsewhere,
+  not verbatim). **This is the last year the school WAS open, not the year it
+  closed** -- a school whose last operating year was 2024-2025 gets `2024-2025`
+  here, not `2025-2026`. Use this field to mark a school no longer in service
+  for the current year (per the CSGF Portal Overview video) rather than leaving
+  a closed school on the active roster.
 - **Next Charter Renewal Date**: format `MM/DD/YYYY`.
 - **Additional Contect** [sic — CSGF's typo, not ours]: conditional — only fill
   in if the school closed at the end of the prior year, or is a
