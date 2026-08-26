@@ -399,6 +399,30 @@ trust the task text open in front of you, not what a linked video said it would
 say. Don't assume a video accurately describes current-cycle behavior just
 because it's linked from this cycle's Portal User Guide.
 
+### 6. Meet with the team to resolve open questions and share the item-list doc
+
+**Trigger:** after the item-list doc is drafted (Step 3) and Preliminary
+Questions are done (Step 4) -- before treating the doc as final.
+
+- The item-list doc is drafted solo first, as working notes -- it will naturally
+  contain open questions to yourself (shared-task ownership that isn't settled
+  yet, coordination questions between two people covering the same Portal task,
+  etc.). Don't share it out with those still unresolved.
+- **Data Team members:** resolve open questions in the team's regular Data Team
+  meeting, then update the doc with the resolution before sharing further.
+- **Teammates outside the Data Team** (Compliance -- Jeff Fleming, Nadja Salem,
+  Susie Chu): reach them via the CSGF-dedicated Slack channel, replacing the
+  in-person kickoff meeting cycles used to have (alongside CSGF's own optional
+  office hours -- see Step 2). Post one message covering:
+  1. What changed in general this cycle (a summary, not the full doc).
+  2. A link to the updated item-list doc, with an explicit ask to read it.
+  3. The Outlook calendar invites they should expect to receive.
+  4. Per-person specifics that affect their own items -- e.g. "you'll need an
+     NSC file in January" for whoever owns HSDC Round 2, or "Finance has two
+     rounds -- unaudited for the October deadline, audited in January" for
+     Compliance. Don't make people extract their own action items from the full
+     doc -- call them out by name.
+
 ---
 
 ## Reference: Portal mechanics
