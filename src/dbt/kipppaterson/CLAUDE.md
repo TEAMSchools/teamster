@@ -12,12 +12,25 @@ models/
     sis/staging/
   pearson/       # district-specific Pearson intermediates (refs pearson package staging)
     intermediate/
+  extracts/      # thin rpt_ wrappers over kipptaf_extracts
+    powerschool/
+  exposures/     # powerschool_autocomm
 ```
 
-PowerSchool data source: **dlt** (the package default; `odbc` and `sftp` are
-off). Paterson disables a set of grad-plan and gradebook `stg_powerschool__*`
-dlt models its PowerSchool instance does not populate — see the
-`powerschool.sis.staging.dlt` block in `dbt_project.yml`.
+`extracts/` holds two wrappers (`rpt_powerschool__autocomm_students`,
+`rpt_powerschool__autocomm_teachers`) over the `kipptaf_extracts` source in
+`models/extracts/sources.yml`. They are contract-columns-only — no uniqueness
+tests, no descriptions; both live on the kipptaf source view. See
+`src/dbt/CLAUDE.md` before adding either.
+
+PowerSchool data source: **dlt** (the package default; `odbc` is archived
+repo-wide per #4442, `sftp` is unused). Paterson disables the grad-plan,
+college-entry, and gradebook-config `stg_powerschool__*` dlt models its
+PowerSchool instance does not populate, plus three intermediates:
+`int_powerschool__section_grade_config` (needs `gradesectionconfig`, empty in
+Paterson's instance) and `int_powerschool__contacts` /
+`int_powerschool__person_contacts` (parity with Newark). See the
+`powerschool.sis` block in `dbt_project.yml`.
 
 ## Source Packages
 
@@ -27,8 +40,10 @@ Endpoint-level notes:
 - `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`
-- `amplify` — both `dds` and `mclass/api` disabled
-- `finalsite`
+- `amplify` — `dds` and `mclass/api` disabled; under `mclass/sftp` only
+  `stg_amplify__mclass__sftp__pm_student_summary_aimline` is disabled
+- `finalsite` — `api` enabled (`contacts`); SFTP `status_report` arrives via the
+  Couchdrop sensor
 - `titan` — `stg_titan__person_data` only; `stg_titan__income_form_data`
   disabled (parity with Newark and Camden)
 - `edplan` — `stg_edplan__njsmart_powerschool` and the regional
