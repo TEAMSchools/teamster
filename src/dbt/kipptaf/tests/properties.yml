@@ -373,6 +373,25 @@ data_tests:
           ref:
             name: dim_student_section_enrollments
 
+  - name: test_focus_course_enrollment_joins_resolve_miami
+    description: >-
+      Fails when either repointed course-enrollment model holds zero Miami rows.
+      Both models once joined students on PowerSchool's internal `cc_studentid`
+      / `studentid`, which Focus leaves null on every row, so both returned no
+      Miami data in any academic year while every test stayed green -- the
+      breakage produced no error, only absent rows. This asserts presence rather
+      than a count, because Miami's volume moves with enrollment and a floor
+      would drift stale or fire on legitimate change, while zero is always
+      wrong. Note this guards the archive years: Miami AY2026 forward stays
+      excluded from both models by their `is_dropped_*` filters until #4996
+      resolves them, so a year-scoped assertion would fail today by design.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_extracts__course_enrollments_by_term
+
   - name: test_focus_course_sections_teacher_resolves
     description: >-
       Warns on Focus course periods whose lead teacher does not resolve through

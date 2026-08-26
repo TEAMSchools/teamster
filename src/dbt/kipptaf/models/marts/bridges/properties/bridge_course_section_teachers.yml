@@ -63,7 +63,7 @@ models:
 
         config:
           meta:
-            source_system: PowerSchool
+            source_system: PowerSchool and Focus
             source_model: stg_powerschool__roledef
             source_column: name
       - name: effective_start_date
@@ -74,7 +74,7 @@ models:
 
         config:
           meta:
-            source_system: PowerSchool
+            source_system: PowerSchool and Focus
             source_model: stg_powerschool__sectionteacher
             source_column: start_date
       - name: effective_end_date
@@ -85,7 +85,7 @@ models:
 
         config:
           meta:
-            source_system: PowerSchool
+            source_system: PowerSchool and Focus
             source_model: stg_powerschool__sectionteacher
             source_column: end_date
     data_tests:

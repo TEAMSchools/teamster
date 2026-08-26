@@ -94,10 +94,14 @@ with
             and sec.terms_academic_year >= fay.min_academic_year
     )
 
-select *,
+-- columns enumerated rather than `select *`: BigQuery binds UNION ALL
+-- branches by position, so two star branches whose column order drifts would
+-- bind the wrong columns to each other, and role / effective_start_date are
+-- not same-typed enough to fail loudly in every case.
+select course_section_key, staff_key, `role`, effective_start_date, effective_end_date,
 from powerschool_teachers
 
 union all
 
-select *,
+select course_section_key, staff_key, `role`, effective_start_date, effective_end_date,
 from focus_teachers
