@@ -32,6 +32,7 @@ select
     custom_3 as prior_country,
     custom_4 as educational_choice,
     custom_6 as student_offender_transfer,
+    custom_9 as second_school,
     custom_18 as resident_status_state_county,
     custom_5 as disaster_affected_student,
     uuid,

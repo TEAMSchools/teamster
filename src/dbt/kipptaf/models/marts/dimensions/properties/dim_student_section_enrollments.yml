@@ -60,10 +60,10 @@ models:
           rows, #5002). A stale schedule row at a campus the student was
           reassigned away from, left open in Focus (182 rows, 18 students,
           #5003) -- null is correct here, since attaching the section to the
-          student's stint at a different campus would emit a wrong key. And a
-          stint dropped by the same-start-date dedupe in
-          int_focus__student_enrollment when a student holds two open stints at
-          different schools (4 rows, 1 student, #4905).
+          student's stint at a different campus would emit a wrong key. And
+          courses taken at a second campus, where Focus marks the non-primary
+          enrollment with custom field custom_9 and only the primary stint is
+          kept (4 rows, 1 student, #5003).
         config:
           meta:
             foreign_key:

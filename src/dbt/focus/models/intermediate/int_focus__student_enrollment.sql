@@ -48,6 +48,10 @@ with
 
             coalesce(e.end_date, date(e.syear + 1, 6, 30)) as exitdate,
 
+            -- Focus custom field custom_9, catalog title "Second School", a
+            -- checkbox. Unchecked marks the primary or home-campus enrollment.
+            coalesce(e.second_school = 'Y', false) as is_second_school,
+
             case
                 g.short_name
                 when 'PK'
@@ -91,34 +95,49 @@ with
     ),
 
     -- Focus permits two open stints for the same student, year, and start
-    -- date; SY26 is the first year of Focus data where it has happened. The
-    -- incomplete record is demoted, then the most recently created one wins.
-    -- Recency reads enrollment_created_at, not the id: Focus assigns ids in
-    -- batches, and 20% of SY26 id pairs order differently than creation time,
-    -- so the id alone is not a recency proxy. The id breaks exact ties.
-    -- Deduping here, ahead of with_flags, keeps rn_year contiguous --
-    -- consumers filter on rn_year = 1 and would lose a student left holding
-    -- only rn_year = 2.
+    -- date. Collapse them to one, ahead of with_flags so rn_year stays
+    -- contiguous -- consumers filter on rn_year = 1 and would lose a student
+    -- left holding only rn_year = 2.
     --
-    -- Measured 2026-08-26: across Focus data back to AY2018 there is exactly
-    -- ONE same-start-date duplicate, and it is two DIFFERENT schools (AY2026).
-    -- Zero same-school duplicates have ever occurred. So this dedupe has never
-    -- fired on the case it was written for, and its only real firing deletes a
-    -- legitimate second stint -- stranding the 4 course enrollments scheduled
-    -- at the dropped school (#5003). Widening the partition key to include
-    -- schoolid is not a one-line fix: both stints default exitdate to June 30,
-    -- so the rn_year row_number would tie nondeterministically, and the
-    -- downstream uniqueness test on int_students__student_enrollment_union
-    -- omits schoolid from its key. Tracked on #4905 rather than patched here.
-    -- The premise is now asserted upstream, where the dropped row still exists:
-    -- tests/stg_focus__student_enrollment__same_startdate_stints_share_school.sql
-    -- TODO: drop once Focus stops accepting duplicate open stints (#4905).
+    -- Tie-break order, most to least decisive:
+    --
+    -- 1. is_second_school asc -- keep the PRIMARY enrollment. Focus custom
+    -- field custom_9 ("Second School") marks the non-primary record, so
+    -- this is the only signal that says which of two concurrent
+    -- enrollments is the student's home campus. Measured 2026-08-26:
+    -- across Focus data back to AY2018 there is exactly ONE
+    -- same-start-date duplicate, it is two DIFFERENT schools, and without
+    -- this term the dedupe kept the SECOND school -- attributing the
+    -- student to a campus they do not attend and stranding the 4 course
+    -- enrollments scheduled at their real one (#5003). Corroborated: the
+    -- primary record carries an enrollment code and the period attendance;
+    -- the second-school record carries neither.
+    -- 2. (schoolid is null) asc -- demote an incomplete stub. Zero such rows
+    -- exist in Focus today; kept as a guard, since a stub is what
+    -- motivated this dedupe originally.
+    -- 3. enrollment_created_at desc -- most recently created wins. Focus
+    -- assigns ids in batches, and 20% of SY26 id pairs order differently
+    -- than creation time, so the id alone is not a recency proxy.
+    -- 4. student_enrollment_id desc -- breaks exact ties.
+    --
+    -- A second-school enrollment is dropped rather than kept, so the course
+    -- enrollments scheduled at that school match no stint and carry a null
+    -- student_enrollment_key in dim_student_section_enrollments. That is the
+    -- correct outcome: they are courses taken at another campus, not a stint.
+    --
+    -- The tie-break depends on custom_9 being populated whenever two stints sit
+    -- at different schools. That premise is asserted upstream, where both rows
+    -- still exist: tests/stg_focus__student_enrollment__one_primary_per_stint.sql
+    -- TODO: drop once Focus stops accepting duplicate open stints -- the
+    -- staging uniqueness tests on stg_focus__student_enrollment are the
+    -- standing signal that it still does.
     deduplicate as (
         {{
             dbt_utils.deduplicate(
                 relation="enrollment",
                 partition_by="student_number, academic_year, startdate",
                 order_by="""
+                    is_second_school asc,
                     (schoolid is null) asc,
                     enrollment_created_at desc,
                     student_enrollment_id desc

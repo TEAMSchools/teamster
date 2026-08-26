@@ -13,7 +13,7 @@ with
         -- dedupes to one row per (student_number, academic_year, startdate), the exact
         -- partition selected here, so today it collapses nothing. It stays because that
         -- upstream dedupe carries a TODO to be removed once Focus stops accepting
-        -- duplicate open stints (#4905) -- and without it, duplicate rows here would
+        -- duplicate open stints -- and without it, duplicate rows here would
         -- fan
         -- out the enrollments semi-join below.
         select distinct student_number, academic_year, startdate,
@@ -22,7 +22,7 @@ with
 
     -- Already deduped to one row per (student_number, academic_year, startdate)
     -- in int_focus__student_enrollment, so the cross with calendar days below
-    -- cannot fan out on Focus's duplicate open stints (#4905).
+    -- cannot fan out on Focus's duplicate open stints.
     enrollments as (
         select
             e.student_number,

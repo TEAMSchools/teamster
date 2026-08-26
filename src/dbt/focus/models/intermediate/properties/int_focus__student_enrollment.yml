@@ -34,6 +34,14 @@ models:
           2025-26.
       - name: schoolid
         description: Focus school id of the enrollment.
+      - name: is_second_school
+        description: >-
+          TRUE when Focus marks this enrollment as the student's second school
+          (custom field custom_9, catalog title "Second School"). Never null --
+          an unchecked box is FALSE, which is the primary or home-campus
+          enrollment. Projected for the same-start-date dedupe, which uses it to
+          keep the primary record when a student holds two concurrent
+          enrollments at different schools.
       - name: school_number
         description: >-
           School Number custom field from stg_focus__schools; used by kipptaf's

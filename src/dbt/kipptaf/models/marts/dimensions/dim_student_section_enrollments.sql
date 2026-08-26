@@ -63,12 +63,14 @@ with
         -- correct outcome -- attaching a section at one campus to a stint at
         -- another would emit a confidently wrong key. Upstream Ops cleanup.
         --
-        -- 4 rows, 1 student -- the same-start-date dedupe in
-        -- int_focus__student_enrollment drops one of two open stints held at
-        -- different schools, so the schedule rows at the dropped school have
-        -- no stint to match. Tracked on #4905; asserted upstream by the
-        -- focus package test
-        -- stg_focus__student_enrollment__same_startdate_stints_share_school.sql.
+        -- 4 rows, 1 student -- courses taken at a second campus. Focus
+        -- marks the student's non-primary enrollment with custom field
+        -- custom_9 ("Second School"), and int_focus__student_enrollment keeps
+        -- only the primary stint, so sections scheduled at the second campus
+        -- match no stint. Correct as a null: they are courses taken elsewhere,
+        -- not an enrollment. Before that tie-break existed the dedupe kept the
+        -- SECOND school instead, attributing the student to a campus they do
+        -- not attend.
         left join
             student_enrollments as enr
             on cc.students_student_number = enr.student_number

@@ -36,25 +36,23 @@ data_tests:
           ref:
             name: stg_focus__people_join_contacts
             package: focus
-  - name: stg_focus__student_enrollment__same_startdate_stints_share_school
+  - name: stg_focus__student_enrollment__one_primary_per_stint
     description: >-
-      Guards the unstated premise of the same-start-date dedupe in
-      int_focus__student_enrollment: two enrollment rows sharing a student,
-      year, and start date must be the same school. Two stints at different
-      schools are distinct enrollments, so demoting one silently deletes it and
-      orphans every schedule row belonging to the dropped school. Asserted on
-      the staging model because the dropped row exists only upstream of the
-      dedupe -- a uniqueness test on the dedupe's own key can never fail by
-      construction. Same-school duplicates are not flagged; those are the case
-      the dedupe exists to resolve.
-
-      TODO(#4905): downgraded to warn for one live Focus record -- a single
-      AY2026 student holds two open stints, same start date, at two different
-      schools, which strands 4 course enrollments (#5003). It is the only
-      violation in Focus data back to AY2018, and the only same-start-date
-      duplicate of any kind. Restore severity: error once Ops corrects it.
+      Guards the tie-break of the same-start-date dedupe in
+      int_focus__student_enrollment. When a student holds two enrollments
+      sharing a year and a start date at different schools, exactly one must
+      leave the Focus "Second School" checkbox (custom_9) unchecked -- that row
+      is the primary, home-campus enrollment, and it is the one the dedupe
+      keeps. Two unchecked rows leave the dedupe with no signal and it picks
+      between two schools arbitrarily; zero unchecked rows mean the primary
+      record is missing. Either way a student is attributed to a campus by
+      accident, which is what happened before the tie-break read this field
+      (#5003). Asserted on the staging model because the dedupe has already
+      dropped one row by the intermediate layer, and a uniqueness test on the
+      deduped grain cannot fail by construction. Same-school duplicates are out
+      of scope; the dedupe resolves those without a primary marker.
     config:
-      severity: warn
+      severity: error
       meta:
         dagster:
           ref:
