@@ -45,19 +45,24 @@ Tesseract feature is used.
 
   ```yaml
   config:
-    materialized: table
-    meta:
-      dagster:
-        # Table, not the marts-default view. Every attendance-star model in
-        # prod is a view today, so a Cube query re-expands the whole chain —
-        # the #4333 defect that #4468 fixed for the assessment star. Nightly
-        # cron rather than eager: the upstreams are eager and would drive
-        # repeated rebuilds of a 3.6M row model for no freshness anyone
-        # consumes. Midnight tick matches int_topline__ada_running_weekly,
-        # the closest sibling off the same upstream, and the KIPP Foundation
-        # criteria require nightly refresh, not intra-day.
-        automation_condition:
-          cron_schedule: 0 0 * * *
+  materialized: table
+  meta:
+    dagster:
+      # Table, not the marts-default view: the kipptaf marts block sets only
+      # +schema and +contract, and 7 of the 10 attendance-star models are
+      # views in prod today, so a Cube query re-expands the whole chain.
+      # That is the #4333 defect #4468 fixed for the assessment star.
+      #
+      # Cron, not eager: the upstreams are eager and would drive repeated
+      # rebuilds of a 3.6M row model for freshness nobody consumes.
+      #
+      # 06:00 and 15:00 match the attendance dashboard's own measured
+      # cadence, verified from 12 consecutive materializations. These are
+      # LOCAL hours, not UTC — the dbt translator passes the code
+      # location's LOCAL_TIMEZONE (America/New_York), so this is 6am and
+      # 3pm Eastern.
+      automation_condition:
+        cron_schedule: 0 6,15 * * *
   ```
 
   Marts default to view: the kipptaf `marts:` block sets only `+schema` and
@@ -978,6 +983,122 @@ the audit trail for a change to a figure that feeds state accountability.
 - [ ] **Step 5: Commit nothing**
 
 This task produces no code. Delete the scratch SQL.
+
+---
+
+### Task 4b: Materialize the attendance star
+
+Independent of the snapshot, and the reason the Cube timings in this plan are
+what they are. Run it before Task 5 so the Cube work is measured against a
+materialized star rather than a view chain.
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/marts/facts/properties/fct_student_attendance_daily.yml`
+- Modify:
+  `src/dbt/kipptaf/models/marts/dimensions/properties/dim_student_enrollments.yml`
+
+**Scope, and what is deliberately NOT in it:**
+
+Seven of the ten marts the attendance cubes read are views in prod. Two are deep
+chains specific to attendance, and those are this task:
+
+| Model                                      | Status                         |
+| ------------------------------------------ | ------------------------------ |
+| `fct_student_attendance_daily`             | view — **materialize**         |
+| `dim_student_enrollments`                  | view — **materialize**         |
+| `dim_locations`                            | view — conformed, out of scope |
+| `dim_school_calendars`                     | view — conformed, out of scope |
+| `dim_terms`                                | view — conformed, out of scope |
+| `dim_student_enrollment_status`            | view — conformed, out of scope |
+| `dim_student_section_enrollments`          | view — conformed, out of scope |
+| `dim_dates`, `dim_regions`, `dim_students` | already tables                 |
+
+The five conformed dimensions are read by every other cube, so materializing
+them changes refresh semantics for assessments, staff, and enrollment consumers
+too. That is a separate decision, and it should be made against the measurement
+this task produces rather than in advance.
+
+**Interfaces:**
+
+- Consumes: nothing. Config-only change.
+- Produces: both models as tables on the attendance dashboard's cadence.
+
+- [ ] **Step 1: Record the before-measurement**
+
+Time the two Cube queries that motivated this work, cold, against the current
+view chain, and write the numbers down. Reference points already measured:
+`count_chronically_absent_year_end` over 3 academic years took 38.4s, and
+`count_chronically_absent_week_end` over one academic year took 51.6s. Reproduce
+both before changing anything — a before-number you did not personally take is
+not a baseline.
+
+- [ ] **Step 2: Add the config to both models**
+
+Same shape as the snapshot's, and the same reasoning: crons here are LOCAL
+hours, not UTC.
+
+```yaml
+config:
+  materialized: table
+  meta:
+    dagster:
+      # 7 of the 10 marts the attendance cubes read are views, so every
+      # Cube query re-expands the chain — the #4333 defect #4468 fixed
+      # for the assessment star. 06:00 and 15:00 match the attendance
+      # dashboard's own measured cadence (12 consecutive
+      # materializations). LOCAL hours: the dbt translator passes the
+      # code location's LOCAL_TIMEZONE, America/New_York.
+      automation_condition:
+        cron_schedule: 0 6,15 * * *
+```
+
+Preserve any config keys already present rather than replacing the block.
+
+- [ ] **Step 3: Build and check that NOTHING moved**
+
+```bash
+uv run dbt build \
+  --select fct_student_attendance_daily dim_student_enrollments \
+  --project-dir src/dbt/kipptaf
+```
+
+Then compare row counts and the chronic-absence figures against prod for AY2025.
+A view-to-table change should move nothing on the day of a build.
+
+- [ ] **Step 4: Check the two things that CAN move, because they are real**
+
+Materializing a view freezes anything non-deterministic at build time. Both of
+these are live in this chain, and both must be reported:
+
+1. **`current_date` freezes.** `fct_student_attendance_daily` filters
+   `calendardate <= current_date(local_timezone)`, and upstream `is_realized`
+   plus every `is_*_record` anchor depends on the same call. As a view these
+   evaluate per query; as a table they are as-of the build. The consequence is
+   not the happy path — it is that **a failed build now silently serves stale
+   point-in-time anchors** where the view self-corrected. Confirm the behaviour
+   and say whether an asset check or freshness policy is warranted.
+1. **Intra-day freshness regresses for Cube.** A view was live; a table is up to
+   9 hours stale between the 15:00 and 06:00 ticks. The Tableau dashboard is
+   already on this cadence so it loses nothing, but Cube and the Cube MCP were
+   reading live. Quantify the worst-case lag and state whether any consumer
+   depends on intra-day attendance.
+
+- [ ] **Step 5: Record the after-measurement and commit**
+
+Re-time both queries from Step 1 against the materialized star. Report the
+delta. If the improvement is small, that is the finding — it would mean the cost
+lives in the five conformed dimensions rather than these two, which is exactly
+the evidence the out-of-scope decision needs.
+
+```bash
+git add src/dbt/kipptaf/models/marts/facts/properties/fct_student_attendance_daily.yml \
+  src/dbt/kipptaf/models/marts/dimensions/properties/dim_student_enrollments.yml
+git commit -m "perf(dbt): materialize the attendance star as tables
+
+Refs #4994"
+```
 
 ---
 

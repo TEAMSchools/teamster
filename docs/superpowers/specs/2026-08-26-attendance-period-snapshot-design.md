@@ -228,16 +228,21 @@ config:
   materialized: table
   meta:
     dagster:
-      # Table, not the marts-default view. Every attendance-star model in
-      # prod is a view today, so a Cube query re-expands the whole chain —
-      # the #4333 defect that #4468 fixed for the assessment star. Nightly
-      # cron rather than eager: the upstreams are eager and would drive
-      # repeated rebuilds of a 3.6M row model for no freshness anyone
-      # consumes. Midnight tick matches int_topline__ada_running_weekly,
-      # the closest sibling off the same upstream, and the KIPP Foundation
-      # criteria require nightly refresh, not intra-day.
+      # Table, not the marts-default view: the kipptaf marts block sets only
+      # +schema and +contract, and 7 of the 10 attendance-star models are
+      # views in prod today, so a Cube query re-expands the whole chain.
+      # That is the #4333 defect #4468 fixed for the assessment star.
+      #
+      # Cron, not eager: the upstreams are eager and would drive repeated
+      # rebuilds of a 3.6M row model for freshness nobody consumes.
+      #
+      # 06:00 and 15:00 match the attendance dashboard's own measured
+      # cadence, verified from 12 consecutive materializations. These are
+      # LOCAL hours, not UTC — the dbt translator passes the code
+      # location's LOCAL_TIMEZONE (America/New_York), so this is 6am and
+      # 3pm Eastern.
       automation_condition:
-        cron_schedule: 0 0 * * *
+        cron_schedule: 0 6,15 * * *
 ```
 
 Eager is not the option here for the same reason it was not for assessments: the
