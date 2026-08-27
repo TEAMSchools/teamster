@@ -169,11 +169,17 @@ with
             --
             -- _dbt_source_project is included because student_enrollment_key
             -- is NULL on every stint-orphaned row network-wide -- without it,
-            -- every orphaned homeroom row (any region) shares one partition,
-            -- and BigQuery sorts NULL is_dropped_* FIRST under asc, so a
-            -- Miami orphan (drop flags always null by design) can outrank an
-            -- NJ orphan for rank = 1. _dbt_source_project is non-null on
-            -- every row, so adding it only tightens the partition.
+            -- every orphaned homeroom row, in any region, shares one
+            -- partition and regions compete with each other for rank = 1.
+            -- _dbt_source_project is non-null on every row, so adding it only
+            -- tightens the partition.
+            --
+            -- The original reason was sharper: Miami's drop flags were null,
+            -- and BigQuery sorts NULL FIRST under asc, so a Miami orphan
+            -- outranked an NJ orphan on the leading term. #4968 made both
+            -- flags non-null in every region, so that specific hazard is gone.
+            -- The partition key stays regardless -- cross-region competition
+            -- for one rank is wrong on its own.
             row_number() over (
                 partition by
                     se._dbt_source_project, se.student_enrollment_key, se.is_homeroom
