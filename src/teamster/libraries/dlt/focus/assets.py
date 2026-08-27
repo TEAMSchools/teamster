@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, get_args
 
 import dlt
@@ -15,7 +15,7 @@ from dlt.extract.items import DataItemWithMeta
 from dlt.extract.resource import DltResource
 from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.helpers import table_rows
-from sqlalchemy import BigInteger
+from sqlalchemy import BigInteger, Float, Numeric
 from sqlalchemy.sql.sqltypes import _AbstractInterval
 from sqlalchemy.types import TypeEngine
 
@@ -133,10 +133,49 @@ def interval_to_microseconds_adapter(col_type: TypeEngine) -> TypeEngine | None:
     return col_type
 
 
+def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
+    """Give unbounded Postgres ``numeric`` an explicit precision and scale.
+
+    Unbounded ``numeric`` reflects as ``precision=None``, which dlt renders as
+    ``decimal128(38, 9)``. pyarrow then refuses to rescale any value needing
+    more than 9 decimal places, and the extract dies with
+    ``Rescaling Decimal value would cause data loss`` —
+    ``student_gpa_calculated.weighted_gpa`` is the first Focus column to hit it.
+
+    ``Numeric(38, 18)`` maps to BigQuery BIGNUMERIC, not NUMERIC, so a dbt
+    staging model over an opted-in table should ``cast(col as numeric)`` to keep
+    contracts on NUMERIC. That retype is also why this is opt-in per table
+    rather than applied to the whole source: 200 NUMERIC columns across 45
+    already-loaded Focus tables would need recreating, and ``replace`` cannot
+    change a column's type in place.
+
+    ``Float`` subclasses ``Numeric`` and also reflects ``precision=None``, so it
+    is returned untouched — otherwise every ``double precision`` column in an
+    opted-in table would land as BIGNUMERIC. (Illuminate's
+    ``unbounded_numeric_adapter`` omits that guard; it has no float columns
+    reaching this path today.)
+    """
+    if isinstance(col_type, Float):
+        return col_type
+
+    if isinstance(col_type, Numeric) and col_type.precision is None:
+        return Numeric(precision=38, scale=18)
+
+    return col_type
+
+
+def _widening_type_adapter(col_type: TypeEngine) -> TypeEngine | None:
+    """Both Focus type adapters, for tables that opt into numeric widening."""
+    return interval_to_microseconds_adapter(widen_unbounded_numeric_adapter(col_type))
+
+
 def _focus_table_items(
     sql_database_credentials: ConnectionStringCredentials,
     table_name: str,
     db_schema: str | None,
+    type_adapter: Callable[
+        [TypeEngine], TypeEngine | None
+    ] = interval_to_microseconds_adapter,
 ) -> Iterator:
     """Yield one Focus table's items, appending a materialize marker if empty.
 
@@ -165,7 +204,7 @@ def _focus_table_items(
             table_adapter_callback=remove_nullability_adapter,
             reflection_level="full_with_precision",
             backend_kwargs={},
-            type_adapter_callback=interval_to_microseconds_adapter,
+            type_adapter_callback=type_adapter,
             included_columns=None,
             excluded_columns=None,
             query_adapter_callback=None,
@@ -189,6 +228,7 @@ def _build_focus_resource(
     table_name: str,
     db_schema: str | None = FOCUS_DB_SCHEMA,
     signature: dict | None = None,
+    widen_numeric: bool = False,
 ) -> DltResource:
     """Build one full-replace dlt resource for a Focus table.
 
@@ -218,6 +258,11 @@ def _build_focus_resource(
             sql_database_credentials=sql_database_credentials,
             table_name=table_name,
             db_schema=db_schema,
+            type_adapter=(
+                _widening_type_adapter
+                if widen_numeric
+                else interval_to_microseconds_adapter
+            ),
         )
 
     return _focus_table
@@ -229,6 +274,7 @@ def build_focus_source(
     tables: list[ProbeTable],
     signatures: dict[str, dict] | None = None,
     db_schema: str | None = FOCUS_DB_SCHEMA,
+    widen_numeric_tables: frozenset[str] = frozenset(),
 ) -> Iterator:
     """One resource per table. The source name must stay `focus` — it is the dlt
     schema name the destination's stored schema and state are keyed on."""
@@ -240,6 +286,7 @@ def build_focus_source(
             table_name=table.name,
             db_schema=db_schema,
             signature=signatures.get(table.name),
+            widen_numeric=table.name in widen_numeric_tables,
         )
 
 
@@ -247,6 +294,7 @@ def build_focus_dlt_assets(
     sql_database_credentials: ConnectionStringCredentials,
     code_location: str,
     tables: list[ProbeTable],
+    widen_numeric_tables: frozenset[str] = frozenset(),
     op_tags: dict[str, object] | None = None,
 ):
     """Build ONE two-mode @dlt_assets over all Focus tables.
@@ -271,7 +319,9 @@ def build_focus_dlt_assets(
         # The full source only defines the asset specs; the op runs a narrowed
         # one.
         dlt_source=build_focus_source(
-            sql_database_credentials=sql_database_credentials, tables=tables
+            sql_database_credentials=sql_database_credentials,
+            tables=tables,
+            widen_numeric_tables=widen_numeric_tables,
         ),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__dlt__{FOCUS_SOURCE_NAME}",
@@ -375,6 +425,7 @@ def build_focus_dlt_assets(
                 sql_database_credentials=sql_database_credentials,
                 tables=selected,
                 signatures=signatures,
+                widen_numeric_tables=widen_numeric_tables,
             ),
             dlt_pipeline=dlt_pipeline,
             dagster_dlt_translator=translator,

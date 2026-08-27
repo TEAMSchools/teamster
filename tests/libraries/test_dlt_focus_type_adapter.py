@@ -1,4 +1,4 @@
-"""Unit tests for the Focus dlt `interval` type adapter (issue #4676).
+"""Unit tests for the Focus dlt type adapters (issues #4676, #5021).
 
 Focus added an `interval` column (`time_limit`) to `public.gradebook_assignments`,
 which dlt cannot map: the reflected type matches none of the branches in
@@ -8,6 +8,12 @@ backend infers `duration[us]` from the `timedelta` values, and dlt raises
 
 `interval_to_microseconds_adapter` declares `BigInteger` for those columns so
 dlt casts the duration to int64 microseconds instead.
+
+`widen_unbounded_numeric_adapter` covers the second case: unbounded Postgres
+`numeric` reflects as `precision=None`, dlt renders it `decimal128(38, 9)`, and
+pyarrow refuses any value needing more than 9 decimal places
+(`student_gpa_calculated.weighted_gpa`). It is opt-in per table, so these tests
+also pin that the opt-in routes to the right adapter.
 """
 
 from datetime import timedelta
@@ -28,12 +34,13 @@ from dlt.sources.sql_database.schema_types import (
     sqla_col_to_column_schema,
 )
 from sqlalchemy import BigInteger, Column, Integer, MetaData, String, Table
-from sqlalchemy.dialects.postgresql import INTERVAL
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, INTERVAL
 from sqlalchemy.sql import sqltypes
 
 from teamster.libraries.dlt.focus.assets import (
     build_focus_dlt_assets,
     interval_to_microseconds_adapter,
+    widen_unbounded_numeric_adapter,
 )
 from teamster.libraries.dlt.probe import ProbeTable
 
@@ -244,3 +251,55 @@ def test_interval_column_with_adapter_loads_as_bigint_microseconds():
         48 * 60 * 60 * 1_000_000,
         -30 * 60 * 1_000_000,
     ]
+
+
+def test_widen_unbounded_numeric_adapter_only_touches_unbounded_numeric():
+    """Unbounded `numeric` gains a scale; bounded numeric and floats do not."""
+    widened = widen_unbounded_numeric_adapter(sqltypes.Numeric())
+
+    assert isinstance(widened, sqltypes.Numeric)
+    assert (widened.precision, widened.scale) == (38, 18)
+
+    bounded = sqltypes.Numeric(precision=10, scale=2)
+    assert widen_unbounded_numeric_adapter(bounded) is bounded
+
+    # Float subclasses Numeric and also reflects precision=None. Without the
+    # guard every `double precision` column would land as BIGNUMERIC.
+    double = DOUBLE_PRECISION()
+    assert widen_unbounded_numeric_adapter(double) is double
+
+
+def test_widening_type_adapter_keeps_the_interval_mapping():
+    """Opting into numeric widening must not drop the interval mapping."""
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    assert isinstance(focus_assets._widening_type_adapter(INTERVAL()), BigInteger)
+
+    widened = focus_assets._widening_type_adapter(sqltypes.Numeric())
+    assert isinstance(widened, sqltypes.Numeric)
+    assert (widened.precision, widened.scale) == (38, 18)
+
+
+def test_widen_numeric_flag_selects_the_type_adapter(monkeypatch):
+    """The per-table opt-in is what reaches `table_rows`, not a source-wide flag."""
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    captured: dict[str, Any] = {}
+
+    def spy_table_rows(**kwargs):
+        captured[kwargs["table"]] = kwargs["type_adapter_callback"]
+        return iter(())
+
+    monkeypatch.setattr(focus_assets, "table_rows", spy_table_rows)
+
+    for table_name, widen in (("plain", False), ("widened", True)):
+        resource = focus_assets._build_focus_resource(
+            sql_database_credentials=ConnectionStringCredentials("sqlite://"),
+            table_name=table_name,
+            db_schema="public",
+            widen_numeric=widen,
+        )
+        list(resource())
+
+    assert captured["plain"] is interval_to_microseconds_adapter
+    assert captured["widened"] is focus_assets._widening_type_adapter
