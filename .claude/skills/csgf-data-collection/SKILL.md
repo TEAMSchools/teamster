@@ -702,6 +702,33 @@ before submitting:**
    `rpt_gsheets__csgf_hs_ap_offerings.sql` for any mismatches -- a plain rename,
    not a new external source or staging sheet.
 
+**`rpt_gsheets__csgf_hs_ap_scores` has the same naming risk, from a different
+upstream.** Its `aptest_name` sources from
+`int_assessments__ap_assessments.ap_course_name` (actual AP exam score data),
+not the College Board crosswalk `hs_ap_offerings` uses -- but confirmed against
+2026-2027 data, it produces the exact same "AP US History" / "AP Pre-Calculus"
+values needing the exact same remap. Both models now carry the same `case`
+statement. **Update both together** whenever CSGF's official AP name list
+changes -- checking one and not the other leaves a silent mismatch in whichever
+model you skipped.
+
+**School names need the same ask-and-confirm check every cycle -- don't assume
+last cycle's names still match.** Raw PowerSchool `school_name` doesn't always
+match CSGF's expected string (`hs_enrollment` and `hs_ap_offerings` both
+special-case `KIPP Cooper Norcross High` -> `KIPP Cooper Norcross High School`
+for this reason). Confirmed against raw data for the 2026-2027 cycle:
+`hs_enrollment` and `hs_ap_offerings` output the full names CSGF expects
+(`KIPP Cooper Norcross High School`, `KIPP Newark Collegiate Academy`,
+`KIPP Newark Lab High School`) -- Newark's two needed no fix, only Cooper
+Norcross did. **`hs_grad_data` is a live open question, not yet confirmed**: it
+outputs abbreviated codes (`KHS`, `NCA`, `NLH`) instead of full names, and it's
+unconfirmed whether that's actually what CSGF's HS Grad Data tab expects.
+
+Each cycle: **ask the collection owner to paste CSGF's current official school
+name list** (same pattern as the AP course name ask above), confirm each model's
+school-name output against it, and edit the `if()`/`case` mapping for any model
+where they don't already match.
+
 ## How the dbt models actually reach CSGF (answered)
 
 The eight `rpt_gsheets__csgf_*` models write out to a KTAF-owned Google Sheet
