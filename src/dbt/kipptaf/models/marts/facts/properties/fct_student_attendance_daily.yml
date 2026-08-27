@@ -22,6 +22,24 @@ models:
       for ADA, `SUM(is_absent) / SUM(is_membership_day)` for absence rate. Use
       the `is_*` flags for categorical breakdowns (Present/Absent/Tardy/
       OSS/ISS) or the `attendance_category` column for a single GROUP BY axis.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Cube is the only exposure on this mart, and it is the deepest view
+          # chain the attendance cubes read. Safe to materialize since
+          # bae9382fb moved every mart FK to config.meta, which retired the
+          # #4587 CTAS-DDL failure class. Scope is this model alone: cd858d891
+          # set the precedent of materializing domain-specific marts and
+          # leaving conformed dims as views.
+          #
+          # 06:00 and 15:00 are the attendance dashboard's observed
+          # materialization times across 12 consecutive runs, so they are when
+          # attendance data actually lands. LOCAL hours, not UTC — the dbt
+          # translator passes the code location's LOCAL_TIMEZONE
+          # (America/New_York).
+          automation_condition:
+            cron_schedule: 0 6,15 * * *
     columns:
       - name: student_attendance_daily_key
         data_type: string
@@ -31,6 +49,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
