@@ -38,11 +38,14 @@ models:
           # 11.1 GiB/day to save 6.6.
           #
           # Both ticks come from int_assessments__response_rollup's own set, so
-          # ~any_deps_in_progress serializes the pass and it builds first. 00:00
-          # precedes this lineage's heaviest reader, a scheduled job at 02:00 ET
-          # feeding the 2 college_assessments sheets; 13:00 serves afternoon
-          # ad-hoc use. All 5 of response_rollup's ticks would cost 6.95 GiB/day
-          # and nothing reads this more than twice a day.
+          # the 2 are requested in one Dagster run and dbt's own DAG ordering
+          # builds response_rollup first. NOT ~any_deps_in_progress: that guard
+          # reads direct deps only, and response_rollup is 2 hops up through
+          # int_assessments__college_assessment_practice. 00:00 precedes this
+          # lineage's heaviest reader, a scheduled job at 02:00 ET feeding the 2
+          # college_assessments sheets; 13:00 serves afternoon ad-hoc use. All 5
+          # of response_rollup's ticks would cost 6.95 GiB/day and nothing reads
+          # this more than twice a day.
           #
           # Trade-off: scores read up to ~13h old. Every consumer is a nightly
           # job, the daily CARAT Tableau extract (0 6 * * *), or ad-hoc, and
