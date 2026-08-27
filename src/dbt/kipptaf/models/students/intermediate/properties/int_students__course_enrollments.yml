@@ -25,16 +25,43 @@ models:
         data_type: int64
       - name: is_dropped_section
         description: >-
-          Whether the student dropped this section. PowerSchool derives it from
-          its `sectionid < 0` convention. Null for Miami: Focus has no drop
-          convention, and a false here would put 19,295 guaranteed-not-dropped
-          rows into every network drop-rate metric.
+          Whether the student unenrolled from this section before its expected
+          end. PowerSchool derives it from its `sectionid < 0` convention. Focus
+          has no equivalent, so the Miami value is an INFERENCE: the schedule
+          row's `end_date` falls before its marking period ends, and the student
+          still holds an open schedule row that year. The second half excludes a
+          withdrawal sweep, which closes every one of a leaver's rows at once
+          and is not a drop -- it stands in for PowerSchool's own `dateleft =
+          exitdate` exclusion. Both regions therefore mean the same thing by the
+          column, reached two different ways. Measured 2026-08-27: 2.97% of
+          Miami AY2026 rows, against 0.23% to 8.55% across the three NJ regions
+          at the same point in the year. See #4968.
         data_type: bool
       - name: is_dropped_course
         description: >-
-          Whether every section of this course was dropped. Null for Miami, for
-          the same reason as `is_dropped_section`.
+          Whether every section of this course was dropped for the student that
+          year. Both regions window `is_dropped_section` over the same scope --
+          one student, one course, one year -- so the values are comparable;
+          PowerSchool reaches that scope through `cc_studyear`, which is a
+          student-and-year composite key rather than a bare year. The Miami
+          value carries the inference described on `is_dropped_section`.
         data_type: bool
+      - name: cc_dateenrolled
+        description: >-
+          For PowerSchool, the date the student joined the section. For Miami,
+          the Focus schedule `start_date`, which is the marking period's start
+          date rather than a join date -- so a future-term row carries a future
+          date. Established on #5002; the measurement lives on
+          `int_focus__schedule`.
+        data_type: date
+      - name: cc_dateleft
+        description: >-
+          For PowerSchool, the date the student left the section. For Miami, the
+          Focus schedule `end_date`, which is null while the row is open -- the
+          normal state, true of 96.8% of Miami AY2026 rows. Downstream joins
+          must coalesce it to an open-ended sentinel rather than compare it
+          directly.
+        data_type: date
       - name: is_homeroom
         description: >-
           Whether this enrollment is a homeroom. PowerSchool from the `HR%`

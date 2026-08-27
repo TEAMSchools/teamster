@@ -57,11 +57,23 @@ models:
           Rotation-day pattern the section meets on, for schools running a
           rotating rather than fixed weekly timetable.
       - name: start_date
-        description: First date the student is scheduled into the section.
+        description: >-
+          First date the schedule row covers. This is the marking period's start
+          date, not the day the student joined the section -- Focus dates a
+          schedule row to its term. Measured on Miami AY2026 (2026-08-27): it
+          equals marking_period_start_date on 90.7% of rows, falls before it on
+          zero rows, and takes only 16 distinct values across 19,363 rows
+          against 3 distinct marking-period starts. The rows that fall later are
+          mid-term adds, dated to the day the row was written. Every Semester 2
+          row is dated to the Semester 2 start, a date months in the future, so
+          it cannot be read as an event date. See #5002.
       - name: end_date
         description: >-
-          Last date the student is scheduled into the section; null while the
-          schedule row is open.
+          Last date the schedule row covers; null while the row is open, which
+          is the normal state. Focus closes a row by setting this rather than by
+          deleting it, so a value here means the student stopped being scheduled
+          into the section. Populated on 3.2% of Miami AY2026 rows, and never at
+          or after the marking period's end. See #4968.
       - name: fefp_number
         description: >-
           Florida Education Finance Program funding category code for the
