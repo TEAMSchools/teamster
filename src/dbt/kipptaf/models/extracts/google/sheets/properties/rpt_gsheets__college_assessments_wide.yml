@@ -1,5 +1,9 @@
 models:
   - name: rpt_gsheets__college_assessments_wide
+    description: >-
+      **Excludes Miami by design.** Same population as
+      `rpt_gsheets__college_assessments_long`: SAT and ACT results for testing
+      grades, which Miami does not have yet. Ratified on #4996.
     config:
       contract:
         enforced: true

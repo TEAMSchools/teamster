@@ -10,6 +10,9 @@ models:
       is_enrolled_recent — the year was completed or the enrollment is currently
       active, so mid-year withdrawals drop. Newark, Camden and Paterson; Miami
       is hard-excluded (region unsupported in the rebuilt dashboard).
+
+      Miami's exclusion is ratified on #4996, matching the hard exclusion
+      already stated above.
     data_tests:
       # TODO(#3915): returns to error when the storedgrades double-write cleanup
       # completes. All duplicates are prior-year storedgrades rows; current-year

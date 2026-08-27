@@ -1,5 +1,10 @@
 models:
   - name: int_tableau__gradebook_audit_student_scaffold
+    description: >-
+      **Excludes Miami by design.** This model is disabled and never compiled,
+      so its Miami scope is moot; if it is ever re-enabled, decide the scope
+      then. It also sits in the gradebook lineage, which has no Focus branch
+      (#5010). Ratified on #4996.
     config:
       materialized: table
       enabled: false

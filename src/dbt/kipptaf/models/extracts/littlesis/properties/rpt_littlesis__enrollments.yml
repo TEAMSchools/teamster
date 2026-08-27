@@ -1,5 +1,11 @@
 models:
   - name: rpt_littlesis__enrollments
+    description: >-
+      Section enrollments for LittleSIS. Network-wide, Miami included, and
+      already served by an explicit Focus branch rather than the PowerSchool leg
+      -- Miami held 13,425 rows in prod as of 2026-08-27. The `not
+      sec.is_dropped_section` filter applies only to the PowerSchool leg.
+      Ratified on #4996.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
