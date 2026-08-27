@@ -11,6 +11,23 @@ models:
       source `fct_grades_term` reads. Note the Miami archive holds zero
       `base_powerschool__final_grades` rows, so Miami's history here begins at
       the Focus cutover.
+
+
+      Keyed on `student_number` rather than PowerSchool's `studentid`.
+      `base_powerschool__final_grades` carries `studentid` but no
+      `student_number`, and the Focus branch has no PowerSchool `studentid` at
+      all — `int_students__student_enrollment_union` leaves `studentid` and
+      `yearid` null on all 10,075 Miami rows. `student_number` is the only
+      student key both branches share, so `fct_grades_term` joins enrollment on
+      it. The swap is row-identical for all 3 NJ regions, measured against prod:
+      `(studentid, yearid)` and `(student_number, academic_year)` are exactly
+      1:1 inside every district.
+
+
+      `cc_dcid` resolves 1:1 with no orphans and no fan-out — every AY2026 Focus
+      grade row matches exactly one `int_focus__schedule` row — which is what
+      makes Miami's `student_section_enrollment_key` resolve against
+      `dim_student_section_enrollments`.
     config:
       materialized: table
     data_tests:
@@ -45,6 +62,15 @@ models:
           >= 1); on the Focus branch from `int_focus__students`, which already
           strips the Miami-Dade district prefix.
         data_type: int64
+        data_tests:
+          # Null only when a PowerSchool final-grade row's student fails the
+          # dcid >= 1 placeholder filter. Measured at 0 rows, but fct_grades_term
+          # joins enrollment on this column, so a future null would silently drop
+          # the row from the fact with nothing else to catch it. Warn, not error:
+          # the drop is a coverage gap, not a corrupt row.
+          - not_null:
+              config:
+                severity: warn
         config:
           meta:
             contains_pii: true

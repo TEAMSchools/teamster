@@ -5,14 +5,8 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- base_powerschool__final_grades carries studentid but no student_number,
-    -- and the Focus branch has no PowerSchool studentid at all --
-    -- int_students__student_enrollment_union leaves studentid and yearid null on
-    -- all 10,075 Miami rows. student_number is the only student key both
-    -- branches share, so it is resolved here and fct_grades_term joins
-    -- enrollment on it. dcid >= 1 is the placeholder filter; the result is
-    -- unique on (id, _dbt_source_project), so this join cannot fan out, and the
-    -- swap is row-identical for all 3 NJ regions when measured against prod.
+    -- dcid >= 1 is the placeholder filter. See the model description for why
+    -- student_number is the join key.
     powerschool_students as (
         select id as studentid, student_number, _dbt_source_project,
         from {{ ref("stg_powerschool__students") }}
@@ -70,19 +64,10 @@ with
             g._dbt_source_project,
 
             -- cc_dcid parity with int_students__course_enrollments, which maps
-            -- Focus's student_schedule_id to cc_dcid. That is what makes
-            -- fct_grades_term's student_section_enrollment_key resolve against
-            -- dim_student_section_enrollments. Verified 1:1 against prod: all
-            -- 1,593 AY2026 grade rows match exactly one schedule row, no
-            -- orphans and no fan-out.
+            -- Focus's student_schedule_id to cc_dcid.
             sch.student_schedule_id as cc_dcid,
 
             g.academic_year,
-
-            -- PowerSchool's yearid is academic_year - 1990. Deriving it keeps
-            -- fct_grades_term's reporting-terms join working unchanged for both
-            -- branches. Focus has no PowerSchool studentid, so that stays null.
-            g.academic_year - 1990 as yearid,
 
             g.marking_period_short_name as storecode,
             g.marking_period_start_date as termbin_start_date,
@@ -94,6 +79,10 @@ with
 
             st.student_number,
             loc.powerschool_school_id as schoolid,
+
+            -- PowerSchool's yearid is academic_year - 1990. Deriving it keeps
+            -- fct_grades_term's reporting-terms join working for both branches.
+            g.academic_year - 1990 as yearid,
 
             cast(null as int64) as studentid,
 
@@ -135,6 +124,9 @@ with
         -- frozen PowerSchool archive for the years the archive covers. The
         -- archive branch above already owns those years, so admit only rows at
         -- or after the cutover -- the same boundary, applied from the other side.
+        -- It also carries an invariant the schedule join depends on: every
+        -- course-history row has a null course_period_id (15,278 of 15,278) and
+        -- would drop out of that inner join anyway.
         cross join sis_cutover as sc
         where g.academic_year >= sc.focus_start_academic_year
     )
