@@ -1,0 +1,147 @@
+models:
+  - name: fct_student_attendance_periods
+    description: >-
+      Student attendance period-snapshot fact. One row per student x location x
+      period type x period start date, accumulating membership and presence over
+      the period to date. Sourced from int_students__attendance_daily joined to
+      int_students__schools for location_key — never joined through
+      dim_student_enrollments, which drops 8.5% of rows. A period with no
+      membership day produces no row; period_end_date is the last membership day
+      observed, which can fall short of the period's calendar end for an
+      in-progress period. Only the year period type is populated so far — month
+      and week periods land in later work.
+    columns:
+      - name: student_attendance_period_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_project,
+          location_key, period_type, and period_start_date. Primary key for this
+          fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+
+      - name: student_key
+        data_type: string
+        description: >-
+          FK to dim_students. Derived from student_number.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+
+      - name: location_key
+        data_type: string
+        description: >-
+          FK to dim_locations. Resolved from int_students__schools joined on
+          schoolid = school_number and _dbt_source_project — never through
+          dim_student_enrollments.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the period belongs to, from
+          int_students__attendance_daily.academic_year.
+
+      - name: period_type
+        data_type: string
+        description: >-
+          Period grain for this row. Only 'year' is populated so far; 'month'
+          and 'week' are added in later work.
+
+      - name: period_start_date
+        data_type: date
+        description: >-
+          First calendar date of the period. For period_type = 'year', the
+          academic year's July 1 start date, regardless of the student's actual
+          entry date.
+
+      - name: period_end_date
+        data_type: date
+        description: >-
+          Last membership day (membershipvalue = 1) observed within the period,
+          not the period's calendar end date. For an in-progress period this is
+          capped by the membership days that have occurred so far, not a future
+          scheduled end.
+
+      - name: n_membership_days_ytd
+        data_type: float64
+        description: >-
+          Count of full membership days (membershipvalue = 1) with a recorded
+          attendance value, accumulated from the period start through
+          period_end_date.
+
+      - name: n_present_days_ytd
+        data_type: float64
+        description: >-
+          Sum of attendancevalue on full membership days (membershipvalue = 1)
+          with a recorded attendance value, accumulated from the period start
+          through period_end_date.
+
+unit_tests:
+  - name: test_periods_year_accumulates_all_membership_days
+    description:
+      One student, one school, three membership days in AY2025. The year row
+      must accumulate every day and end on the last membership day, not the last
+      calendar day.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            date '2025-09-02' as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            1.0 as attendancevalue,
+            false as is_truant
+          union all
+          select
+            123456, 'kippnewark', 100, 2025, date '2025-09-03',
+            date '2025-09-01', 1.0, 0.0, false
+          union all
+          select
+            123456, 'kippnewark', 100, 2025, date '2025-09-04',
+            date '2025-09-01', 1.0, 1.0, false
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '700b7490944a8888b6a9fa3f6920823b' as student_attendance_period_key,
+          'e10adc3949ba59abbe56e057f20f883e' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'year' as period_type,
+          date '2025-07-01' as period_start_date,
+          date '2025-09-04' as period_end_date,
+          3.0 as n_membership_days_ytd,
+          2.0 as n_present_days_ytd
