@@ -45,6 +45,18 @@ models:
         data_type: string
       - name: student_is_frl
         data_type: string
+        description:
+          Includes lunch_status = 'FDC' (Free via Direct Certification --
+          automatic free-meal eligibility via SNAP/TANF/Medicaid, a standard
+          nationwide USDA program category, not state-specific) alongside 'F'
+          and 'R'. FDC's meaning is documented at its true source,
+          stg_powerschool__students.yml ("FDC=Free-DC"); it carries no
+          description anywhere else in the pipeline this model reads through.
+          This matches CSGF's own "FRL or Direct Cert" framing in their field
+          definitions -- confirm with whoever owns PowerSchool lunch-status
+          setup if that framing ever seems off, since this repo's only other
+          reference to it (a Miami-facing mart) came to the same 'F'/'R'/'FDC'
+          grouping independently.
       - name: is_exited_next_year
         data_type: string
         description:

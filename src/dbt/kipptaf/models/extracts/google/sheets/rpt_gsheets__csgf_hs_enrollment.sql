@@ -264,7 +264,7 @@ select
 
     if(e.lep_status, 'Y', 'N') as student_is_el,
 
-    if(e.lunch_status in ('F', 'R'), 'Y', 'N') as student_is_frl,
+    if(e.lunch_status in ('F', 'R', 'FDC'), 'Y', 'N') as student_is_frl,
 
     if(a.student_number is null, 'Y', 'N') as is_exited_next_year,
 
