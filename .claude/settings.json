@@ -151,6 +151,9 @@
       "Read(/env/**)"
     ]
   },
+  "env": {
+    "MCP_TIMEOUT": "90000"
+  },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
