@@ -48,7 +48,6 @@ jobs:
             superpowers@superpowers-dev
             context7@claude-plugins-official
             dagster-expert@dagster
-            dignified-python@dagster
             dbt@dbt-agent-marketplace
 
           # Optional: Add claude_args to customize behavior and configuration
