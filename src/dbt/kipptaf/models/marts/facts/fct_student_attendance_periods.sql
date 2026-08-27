@@ -5,6 +5,7 @@ with
             ada._dbt_source_project,
             ada.academic_year,
             ada.calendardate,
+            ada.week_start_monday,
             ada.membershipvalue,
             ada.attendancevalue,
             ada.is_truant,
@@ -20,17 +21,35 @@ with
         where ada.calendardate <= current_date('{{ var("local_timezone") }}')
     ),
 
-    aggregated as (
+    spine as (
+        select
+            d.*,
+            period_type,
+            case
+                period_type
+                when 'year'
+                then d.year_start_date
+                when 'month'
+                then date_trunc(d.calendardate, month)
+                when 'week'
+                then d.week_start_monday
+            end as period_start_date_key,
+        from daily as d
+        cross join unnest(['year', 'month', 'week']) as period_type
+        with
+        offset as period_offset
+    ),
+
+    per_period as (
         select
             location_key,
             student_number,
             _dbt_source_project,
             academic_year,
+            period_type,
+            period_start_date_key,
 
-            'year' as period_type,
-            year_start_date as period_start_date,
-
-            max(if(membershipvalue = 1, calendardate, null)) as period_end_date,
+            max(if(membershipvalue = 1, calendardate, null)) as period_end_date_key,
 
             sum(
                 if(
@@ -38,7 +57,7 @@ with
                     membershipvalue,
                     0
                 )
-            ) as n_membership_days_ytd,
+            ) as n_membership_days_period,
 
             sum(
                 if(
@@ -46,16 +65,44 @@ with
                     attendancevalue,
                     0
                 )
-            ) as n_present_days_ytd,
-        from daily
+            ) as n_present_days_period,
+        from spine
         group by
             location_key,
             student_number,
             _dbt_source_project,
             academic_year,
             period_type,
-            period_start_date
+            period_start_date_key
         having max(if(membershipvalue = 1, calendardate, null)) is not null
+    ),
+
+    aggregated as (
+        select
+            * except (n_membership_days_period, n_present_days_period),
+
+            sum(n_membership_days_period) over (
+                partition by
+                    location_key,
+                    student_number,
+                    _dbt_source_project,
+                    academic_year,
+                    period_type
+                order by period_start_date_key asc
+                rows between unbounded preceding and current row
+            ) as n_membership_days_ytd,
+
+            sum(n_present_days_period) over (
+                partition by
+                    location_key,
+                    student_number,
+                    _dbt_source_project,
+                    academic_year,
+                    period_type
+                order by period_start_date_key asc
+                rows between unbounded preceding and current row
+            ) as n_present_days_ytd,
+        from per_period
     )
 
 select
@@ -66,7 +113,7 @@ select
                 "_dbt_source_project",
                 "location_key",
                 "period_type",
-                "period_start_date",
+                "period_start_date_key",
             ]
         )
     }} as student_attendance_period_key,
@@ -76,8 +123,8 @@ select
     location_key,
     academic_year,
     period_type,
-    period_start_date,
-    period_end_date,
+    period_start_date_key,
+    period_end_date_key,
     n_membership_days_ytd,
     n_present_days_ytd,
 from aggregated

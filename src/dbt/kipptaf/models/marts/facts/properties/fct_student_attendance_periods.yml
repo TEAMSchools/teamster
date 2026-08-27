@@ -6,17 +6,16 @@ models:
       the period to date. Sourced from int_students__attendance_daily joined to
       int_students__schools for location_key — never joined through
       dim_student_enrollments, which drops 8.5% of rows. A period with no
-      membership day produces no row; period_end_date is the last membership day
-      observed, which can fall short of the period's calendar end for an
-      in-progress period. Only the year period type is populated so far — month
-      and week periods land in later work.
+      membership day produces no row; period_end_date_key is the last membership
+      day observed, which can fall short of the period's calendar end for an
+      in-progress period. Populated for year, month, and week period types.
     columns:
       - name: student_attendance_period_key
         data_type: string
         description: >-
           Surrogate key derived from student_number, _dbt_source_project,
-          location_key, period_type, and period_start_date. Primary key for this
-          fact.
+          location_key, period_type, and period_start_date_key. Primary key for
+          this fact.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -55,6 +54,43 @@ models:
                 to: ref('dim_locations')
                 field: location_key
 
+      - name: period_start_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. First calendar date of the period. For period_type =
+          'year', the academic year's July 1 start date, regardless of the
+          student's actual entry date. For 'month', the first day of the
+          calendar month. For 'week', the PowerSchool school week's Monday
+          (week_start_monday), not a derived ISO week.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: period_end_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. Last membership day (membershipvalue = 1) observed
+          within the period, not the period's calendar end date. For an
+          in-progress period this is capped by the membership days that have
+          occurred so far, not a future scheduled end.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
       - name: academic_year
         data_type: int64
         description: >-
@@ -64,44 +100,31 @@ models:
       - name: period_type
         data_type: string
         description: >-
-          Period grain for this row. Only 'year' is populated so far; 'month'
-          and 'week' are added in later work.
-
-      - name: period_start_date
-        data_type: date
-        description: >-
-          First calendar date of the period. For period_type = 'year', the
-          academic year's July 1 start date, regardless of the student's actual
-          entry date.
-
-      - name: period_end_date
-        data_type: date
-        description: >-
-          Last membership day (membershipvalue = 1) observed within the period,
-          not the period's calendar end date. For an in-progress period this is
-          capped by the membership days that have occurred so far, not a future
-          scheduled end.
+          Period grain for this row: 'year', 'month', or 'week'.
 
       - name: n_membership_days_ytd
         data_type: float64
         description: >-
           Count of full membership days (membershipvalue = 1) with a recorded
-          attendance value, accumulated from the period start through
-          period_end_date.
+          attendance value, accumulated from the start of the academic year
+          through period_end_date_key — not within the period.
 
       - name: n_present_days_ytd
         data_type: float64
         description: >-
           Sum of attendancevalue on full membership days (membershipvalue = 1)
-          with a recorded attendance value, accumulated from the period start
-          through period_end_date.
+          with a recorded attendance value, accumulated from the start of the
+          academic year through period_end_date_key — not within the period.
 
 unit_tests:
   - name: test_periods_year_accumulates_all_membership_days
     description:
       One student, one school, three membership days in AY2025. The year row
       must accumulate every day and end on the last membership day, not the last
-      calendar day.
+      calendar day. The same three days fall in a single month and a single
+      school week, so the month and week rows accumulate identically to the year
+      row here — the distinguishing month/year-to-date behavior is covered by
+      test_periods_month_accumulates_year_to_date below.
     model: fct_student_attendance_periods
     given:
       - input: ref('int_students__attendance_daily')
@@ -141,7 +164,89 @@ unit_tests:
           'loc-abc' as location_key,
           2025 as academic_year,
           'year' as period_type,
-          date '2025-07-01' as period_start_date,
-          date '2025-09-04' as period_end_date,
+          date '2025-07-01' as period_start_date_key,
+          date '2025-09-04' as period_end_date_key,
           3.0 as n_membership_days_ytd,
           2.0 as n_present_days_ytd
+        union all
+        select
+          '13ead5f9d5b68563b7e0fb2988614b3a', 'e10adc3949ba59abbe56e057f20f883e',
+          'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-04',
+          3.0, 2.0
+        union all
+        select
+          'f06146f86d9221643c7cda7ce52fedf1', 'e10adc3949ba59abbe56e057f20f883e',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-04',
+          3.0, 2.0
+
+  - name: test_periods_month_accumulates_year_to_date
+    description:
+      One student with two membership days in September and one in October. The
+      October month row must carry all three days, because chronic absence is a
+      year-to-date measure, not a per-month one. The same fixture also emits a
+      single year row and two week rows (school weeks starting 2025-09-01 and
+      2025-10-06), which this expect block enumerates in full alongside the
+      month rows.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            date '2025-09-02' as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            1.0 as attendancevalue,
+            false as is_truant
+          union all
+          select
+            123456, 'kippnewark', 100, 2025, date '2025-09-03',
+            date '2025-09-01', 1.0, 1.0, false
+          union all
+          select
+            123456, 'kippnewark', 100, 2025, date '2025-10-06',
+            date '2025-10-06', 1.0, 0.0, false
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '700b7490944a8888b6a9fa3f6920823b' as student_attendance_period_key,
+          'e10adc3949ba59abbe56e057f20f883e' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'year' as period_type,
+          date '2025-07-01' as period_start_date_key,
+          date '2025-10-06' as period_end_date_key,
+          3.0 as n_membership_days_ytd,
+          2.0 as n_present_days_ytd
+        union all
+        select
+          '13ead5f9d5b68563b7e0fb2988614b3a', 'e10adc3949ba59abbe56e057f20f883e',
+          'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-03',
+          2.0, 2.0
+        union all
+        select
+          'a02ed9f7470904b9f32076e131e88c29', 'e10adc3949ba59abbe56e057f20f883e',
+          'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-06',
+          3.0, 2.0
+        union all
+        select
+          'f06146f86d9221643c7cda7ce52fedf1', 'e10adc3949ba59abbe56e057f20f883e',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-03',
+          2.0, 2.0
+        union all
+        select
+          '2eb06a2b38e907a8dfc254c14f72af4e', 'e10adc3949ba59abbe56e057f20f883e',
+          'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-06',
+          3.0, 2.0
