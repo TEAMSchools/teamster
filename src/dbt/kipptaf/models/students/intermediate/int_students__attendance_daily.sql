@@ -54,17 +54,12 @@ with
         }}
     ),
 
-    -- Project-scoped, the way int_students__terms is. The frozen Miami
-    -- PowerSchool archive is excluded outright rather than year-scoped.
-    -- Focus re-dated 959 of Miami's AY2025 stints to the real first day of
-    -- school where PowerSchool used a July 1 administrative rollover, and
-    -- entrydate feeds student_enrollment_key, so 153,577 archive rows keyed
-    -- to enrollment records dim_student_enrollments no longer holds. Dropping
-    -- the archive costs Miami AY2020 through AY2025 (793,259 rows, 2,582
-    -- students) and is the ops-migration decision recorded on #4803: Focus is
-    -- the system of record and does not carry that history, so the marts show
-    -- an honest gap rather than an unjoinable one. Re-keying from Focus
-    -- enrollment dates was measured and rejected there.
+    -- Project-scoped, the way int_students__terms is: the frozen Miami
+    -- PowerSchool archive is excluded outright rather than year-scoped,
+    -- because Focus re-dated Miami's enrollment stints and the archive's rows
+    -- no longer join to dim_student_enrollments. See #4803 for the
+    -- measurements and the rejected re-key alternative; the model description
+    -- carries what the marts lose.
     powerschool_conformed as (
         select
             powerschool_deduped.*,
