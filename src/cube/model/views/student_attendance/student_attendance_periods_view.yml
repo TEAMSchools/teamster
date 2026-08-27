@@ -1,0 +1,113 @@
+views:
+  - name: student_attendance_periods_view
+    description: >-
+      Attendance rate as of the end of a period — chronic absence, ADA tier, and
+      truancy. Use this view for "rate as of a period" questions (chronic
+      absence rate this year, ADA tier mix this month, truancy trend by week).
+      For day-level questions — was a student absent on a given date, a calendar
+      heatmap, day-of-week patterns — use student_attendance_view instead; that
+      view carries the row-level daily attendance record, this one carries
+      pre-computed period snapshots.
+
+      Set period_type to year, month, or week to select the grain and group by
+      period_start_date. No anchor filter is needed or accepted — the row
+      already is the period-end value, unlike student_attendance_view's daily
+      CA/tier/truancy measures, which need is_latest_record or a date filter to
+      avoid overcounting. A row exists only for a period in which the student
+      had a membership day at that school, so a withdrawn student stops
+      appearing rather than carrying forward, and a trend's denominator shifts
+      between points.
+
+      Eligibility (count_students) is cumulative from the start of the academic
+      year, so early periods carry a much smaller denominator than later ones —
+      this is expected, not broken data. Example: 2025-08 measured 1,317
+      eligible against 10,513 total enrollments network-wide (12.5%), while
+      pct_chronically_absent itself barely moved (19.49% to 18.53%). All three
+      reconciliation authorities define eligibility this way, and KIPP
+      Foundation chronic-absence criteria item 1 already requires the
+      eligible-student count to be shown beside the rate — always display
+      count_students alongside any rate measure on this view, and especially so
+      for the first weeks or first month of an academic year.
+
+    cubes:
+      - join_path: student_attendance_periods
+        includes:
+          - count_students
+          - count_chronically_absent
+          - pct_chronically_absent
+          - pct_tier_1_2
+          - pct_tier_3
+          - count_truants
+          - pct_truant
+          - period_type
+          - period_start_date
+          - period_end_date
+          - ada_tier
+
+      - join_path: student_attendance_periods.dates
+        prefix: true
+        includes:
+          - academic_year
+          - academic_year_label
+
+      - join_path: student_attendance_periods.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - region_key
+          - grade_band
+
+      - join_path: student_attendance_periods.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+    meta:
+      folders:
+        - name: Attendance
+          members:
+            - period_type
+            - ada_tier
+        - name: Date
+          members:
+            - period_start_date
+            - period_end_date
+            - dates_academic_year
+            - dates_academic_year_label
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_region_key
+            - locations_grade_band
+            - regions_region_name
+            - regions_state
+
+    access_policy:
+      # Row-level location scoping, mirrored from student_attendance_view. A
+      # viewer holds exactly one student-<scope> group (buildGroups); none =>
+      # no group => default-deny. row_level uses this view's flat location
+      # member names (see the includes block above), not cube-qualified
+      # paths.
+      - group: student-region
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)
