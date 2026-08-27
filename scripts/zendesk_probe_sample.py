@@ -187,6 +187,7 @@ def main() -> int:
                 "request_excerpt",
                 "reply_excerpt",
                 "label",
+                "class",
                 "artifact_name",
                 "one_line_fix",
             ]
@@ -205,6 +206,7 @@ def main() -> int:
                     "",
                     "",
                     "",
+                    "",
                 ]
             )
 
@@ -212,6 +214,7 @@ def main() -> int:
     print(f"sample: {len(picked)} rows in partition_sample{suffix}.tsv")
     print("\nLabel each row: self_inflicted | genuine | vendor_or_user_error")
     print("Choosing self_inflicted REQUIRES artifact_name and one_line_fix.")
+    print("Every genuine row REQUIRES class: ticket | request.")
     print("Kill criterion: under 20% self_inflicted in the uncategorized subset.")
     return 0
 
