@@ -93,6 +93,12 @@ with
             s.academic_year as cc_academic_year,
             s.course_period_id as sections_dcid,
             s.course_period_id as cc_sectionid,
+            -- Term dates, not event dates. A Focus schedule start_date is
+            -- the marking period's start, so cc_dateenrolled is the term start
+            -- rather than the day the student joined the section, and every
+            -- future-term row carries a future date. cc_dateleft is null while
+            -- the row is open, which is the normal state. Documented with the
+            -- measurement on int_focus__schedule. See #5002.
             s.start_date as cc_dateenrolled,
             s.end_date as cc_dateleft,
             st.student_number as students_student_number,
@@ -111,12 +117,41 @@ with
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
 
-            -- TODO(#4968): PowerSchool derives both flags from its
-            -- `sectionid < 0` convention. Focus has no drop convention at all,
-            -- so these are null rather than false: Miami is excluded from
-            -- network drop-rate metrics instead of diluting them.
-            cast(null as bool) as is_dropped_section,
-            cast(null as bool) as is_dropped_course,
+            -- Focus has no `sectionid < 0` convention; it closes a schedule
+            -- row by setting end_date. A row whose end_date falls before its
+            -- term ends, while the student still holds an open row, is an
+            -- unenrollment before the expected end -- a dropped section. This
+            -- is an INFERENCE, not a vendor-documented flag, and PowerSchool
+            -- derives the same column a different way, so the two regions reach
+            -- one meaning by two routes.
+            --
+            -- The surviving-open-row test is what excludes a withdrawal sweep:
+            -- leaving the school closes every one of the student's rows at
+            -- once, which is a consequence of leaving rather than a drop. It
+            -- stands in for PowerSchool's own `dateleft = exitdate` exclusion.
+            -- PowerSchool's second exclusion, a year-end close, needs no
+            -- equivalent: zero Focus rows end at or after their term's end.
+            --
+            -- The coalesce is load-bearing, not defensive. end_date is null
+            -- on 96.8% of Miami rows (an open schedule row, the normal state),
+            -- and `null < date` is null, so without it the flag reads null on
+            -- every open row -- reinstating the exact bug this replaces, since
+            -- `not null` is null and silently removes Miami from every report
+            -- using the bare `not is_dropped_section` idiom (#4996).
+            --
+            -- Measured 2026-08-27: 576 of 19,363 Miami AY2026 rows (2.97%)
+            -- across 84 students, against a like-for-like NJ band of 0.23%
+            -- (Paterson) to 8.55% (Camden), with Newark at 2.63%. A derivation
+            -- joined to the student's stint agrees on 19,358 of 19,363 rows.
+            -- See #4968.
+            coalesce(
+                s.end_date < s.marking_period_end_date
+                and countif(s.end_date is null) over (
+                    partition by s.student_id, s.academic_year
+                )
+                > 0,
+                false
+            ) as is_dropped_section,
 
             -- New Jersey state reporting crosswalk; Miami is Florida, so
             -- correctly absent rather than deferred.
@@ -139,6 +174,26 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as sr_email
             on lower(usr.e_mail_address) = lower(sr_email.google_email)
+    ),
+
+    -- is_dropped_course mirrors PowerSchool's derivation in
+    -- base_powerschool__course_enrollments: true only when every section of
+    -- that course is dropped for the student-year. It needs its own scope
+    -- because BigQuery does not allow a window function inside another
+    -- window function's argument.
+    focus_course_dropped as (
+        select
+            *,
+
+            avg(if(is_dropped_section, 1, 0)) over (
+                partition by
+                    _dbt_source_project,
+                    students_student_number,
+                    cc_academic_year,
+                    cc_course_number
+            )
+            = 1.0 as is_dropped_course,
+        from focus_conformed
     )
 
 select *,
@@ -147,4 +202,4 @@ from powerschool_conformed
 full union all corresponding
 
 select *,
-from focus_conformed
+from focus_course_dropped

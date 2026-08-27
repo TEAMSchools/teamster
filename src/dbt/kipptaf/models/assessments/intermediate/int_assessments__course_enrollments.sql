@@ -50,10 +50,12 @@ with
             and ce.cc_academic_year = co.academic_year
             and ce._dbt_source_project = co._dbt_source_project
             and co.rn_year = 1
-        -- TODO(#4996): is_dropped_course is null on every Focus row and
-        -- `not null` is null, so this still removes Miami AY2026 even with the
-        -- join above repointed. Miami's archive years carry real flags and do
-        -- flow through. #4996 owns the coalesce decision for this filter.
+        -- TODO(#4996): is_dropped_course is now non-null for Focus rows
+        -- (#4968), so this filter no longer removes Miami AY2026 wholesale --
+        -- it removes only the rows genuinely flagged dropped. Miami AY2026
+        -- therefore reaches this scaffold for the first time. Whether it
+        -- SHOULD is still #4996's call; this stopped being a null bug and
+        -- became a scope decision.
         where not ce.is_dropped_course
 
         union all

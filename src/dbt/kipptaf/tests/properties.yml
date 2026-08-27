@@ -358,20 +358,46 @@ data_tests:
       dim_student_section_enrollments rises materially above where it shipped.
       Focus leaves a course period's end_date null while the schedule is open
       (coalesced to an open-ended sentinel for the stint join), so a residual of
-      unmatched rows is expected, not a defect -- same-day stints and
-      cross-school scheduling artifacts, not the null end_date, account for what
-      remains. Shipped at 10.5% (2,025 of 19,295 AY2026 rows); NJ's own
-      completed-year norm runs higher (18.16% AY2024, 19.75% AY2025) once a year
-      is no longer mid-accumulation, so 15% is a real ceiling on the
-      still-growing current year, not an arbitrary number. Tracked in #4970 --
-      do not drive this to zero by widening the overlap predicate, which would
-      attach rows to the wrong stint.
+      unmatched rows is expected, not a defect. Re-measured 2026-08-27, the
+      largest cause is degenerate stint windows whose exitdate lands on or
+      before their entrydate (1,332 of 1,886 same-school orphans, tracked on
+      #5024), not the null end_date. Shipped at 10.5% (2,025 of 19,295 AY2026
+      rows); NJ's own completed-year norm runs higher (18.16% AY2024, 19.75%
+      AY2025) once a year is no longer mid-accumulation, so 15% is a real
+      ceiling on the still-growing current year, not an arbitrary number.
+      Tracked in #4970 -- do not drive this to zero by widening the overlap
+      predicate, which would attach rows to the wrong stint.
     config:
       severity: warn
       meta:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: test_miami_section_enrollment_dropped_rate
+    description: >-
+      Warns if Miami's current-year `is_dropped_section` rate leaves the band
+      the inference was validated against, or if the flag goes null again. Focus
+      has no drop convention, so the Miami value is inferred (#4968): the
+      schedule row's end_date falls before its marking period ends, and the
+      student still holds an open schedule row that year. The second half
+      excludes a withdrawal sweep. Both halves are assumptions about Focus
+      behavior, and this test is what notices when either stops holding -- a
+      bulk close of schedule rows, or a change that breaks the sweep exclusion,
+      would show up as a rate spike. Shipped at 2.97% (576 of 19,363 AY2026
+      rows) against a like-for-like NJ band of 0.23% to 8.55% at the same point
+      in the year. The 20% ceiling sits above every NJ completed-year rate
+      (17.35% Camden AY2025 is the highest measured), so it does not fire when
+      Miami's own year finishes accumulating. The null check is the other
+      direction: a regression in the Focus branch would restore the nulls this
+      replaced, and a null flag silently removes Miami from every report using
+      the bare `not is_dropped_section` idiom (#4996).
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_enrollments
 
   - name: test_focus_course_enrollment_joins_resolve_miami
     description: >-
@@ -382,9 +408,12 @@ data_tests:
       breakage produced no error, only absent rows. This asserts presence rather
       than a count, because Miami's volume moves with enrollment and a floor
       would drift stale or fire on legitimate change, while zero is always
-      wrong. Note this guards the archive years: Miami AY2026 forward stays
-      excluded from both models by their `is_dropped_*` filters until #4996
-      resolves them, so a year-scoped assertion would fail today by design.
+      wrong. It stays year-agnostic on purpose. #4968 made the Focus drop flags
+      non-null, so Miami AY2026 now passes `int_assessments__course_enrollments`
+      -- but `int_extracts__course_enrollments_by_term` also requires a non-null
+      `cc_dateleft`, which Focus leaves null on 96.8% of Miami AY2026 rows, so
+      coverage still differs sharply by model and a year-scoped assertion would
+      be measuring two different things at once.
     config:
       severity: error
       meta:
