@@ -1288,6 +1288,9 @@ Refs #4994"
   `src/cube/model/views/student_attendance/student_attendance_view.yml:21-27`
 - Modify: `src/cube/mcp/server.py:369-394`
 - Modify: `src/cube/CLAUDE.md`
+- Modify:
+  `src/dbt/kipptaf/models/marts/facts/properties/fct_student_attendance_periods.yml`
+  (the early-period note only)
 
 **Interfaces:**
 
@@ -1306,6 +1309,21 @@ and `_week_end` for trends. Every sentence is now false. Replace with:
       chronic absence, ADA tier, or truancy rates as of a period, use
       student_attendance_periods_view — those measures are not on this view.
 ```
+
+- [ ] **Step 1b: Document the early-period behaviour**
+
+Eligibility is cumulative, so the first weeks and the first month of an academic
+year carry a much smaller denominator: 2025-08 measured 1,317 eligible against
+10,513 enrollments, 12.5 percent, while the rate barely moved (19.49 to 18.53
+percent). This was accepted deliberately rather than suppressed — all three
+authorities specify it, and KIPP Foundation criteria item 1 already requires the
+student count beside the rate.
+
+Say so in BOTH places a consumer meets it: the snapshot view's description, and
+`fct_student_attendance_periods`'s properties file. State that the count should
+be displayed alongside the rate. Someone who meets an August tile without this
+note will read it as broken data, and that is the failure this step exists to
+prevent.
 
 - [ ] **Step 2: Add the routing rule to the MCP `meta` docstring**
 
