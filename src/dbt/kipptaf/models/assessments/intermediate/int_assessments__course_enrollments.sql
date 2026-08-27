@@ -19,12 +19,12 @@ with
 
             co.grade_level + 1 as illuminate_grade_level_id,
 
-            -- partitioned on students_student_number rather than cc_studentid:
-            -- Focus leaves cc_studentid null on every Miami row, so a partition
-            -- on it collapses all Miami rows into a single group. The two keys
-            -- are exactly 1:1 within every NJ region (verified against prod:
-            -- distinct cc_studentid = distinct students_student_number =
-            -- distinct pairs, in all three), so NJ output does not move.
+            -- Partitioned on `students_student_number`, not `cc_studentid`:
+            -- Focus leaves `cc_studentid` null on every Miami row, so a
+            -- partition on it collapses all Miami rows into 1 group. The 2 keys
+            -- are exactly 1:1 within every NJ region — verified against prod,
+            -- where distinct `cc_studentid`, distinct `students_student_number`
+            -- and distinct pairs all match — so NJ output does not move.
             max(ce.is_advanced_math) over (
                 partition by
                     ce._dbt_source_project,

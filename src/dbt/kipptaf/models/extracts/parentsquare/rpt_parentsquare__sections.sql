@@ -19,12 +19,11 @@ with
     ),
 
     grade_sections as (
+        -- grain projection, not dup-masking
         -- Derived from the (school, grade) pairs students are actually enrolled
-        -- in, not from each school's low_grade..high_grade span, so no empty
-        -- section is emitted and every rpt_parentsquare__rosters row is
+        -- in, not from each school's `low_grade`..`high_grade` span. No empty
+        -- section is emitted, and every `rpt_parentsquare__rosters` row is
         -- guaranteed a section to point at.
-        -- grain projection: every selected column is functionally determined by
-        -- the partition key; not a mask for upstream duplicates.
         select distinct school_id, grade_level, code_location, from enrolled
     ),
 

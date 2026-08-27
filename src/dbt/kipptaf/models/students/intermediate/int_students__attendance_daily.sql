@@ -61,12 +61,12 @@ with
             powerschool_deduped.*,
 
             -- PowerSchool has no analog to Focus's "register never taken"
-            -- signal -- every PowerSchool row IS a recorded attendance row
-            -- (PowerSchool records only absences, so presence is implied).
+            -- signal. Every PowerSchool row IS a recorded attendance row,
+            -- because PowerSchool records only absences and implies presence.
             -- False, not null: this column must never be null network-wide
             -- (see the model's grain/null-scaffold test), and null here would
-            -- misread as "unknown" when it is actually "not the Focus
-            -- recorded-register concept."
+            -- read as "unknown" when it actually means "not the Focus
+            -- recorded-register concept".
             false as is_attendance_recorded,
 
             -- Explicit, system-agnostic discriminator for the calcs CTE's
@@ -98,12 +98,12 @@ with
             true as is_focus_source,
 
             -- Carried through explicitly. Every downstream join keys on
-            -- _dbt_source_project, and student_enrollment_key hashes it, so
-            -- letting it null-fill through `full union all corresponding`
-            -- would break the Miami joins and mis-hash the key. The kipptaf
-            -- passthrough wrapper supplies both: union_relations adds
-            -- _dbt_source_relation and extract_source_project adds
-            -- _dbt_source_project.
+            -- `_dbt_source_project`, and `student_enrollment_key` hashes it,
+            -- so null-filling it through `full union all corresponding` breaks
+            -- the Miami joins and mis-hashes the key. The kipptaf passthrough
+            -- wrapper supplies both: `union_relations` adds
+            -- `_dbt_source_relation`, and `extract_source_project` adds
+            -- `_dbt_source_project`.
             ad._dbt_source_relation,
             ad._dbt_source_project,
 
@@ -237,11 +237,11 @@ with
             ) as is_absent_non_susp,
 
             -- A day that has actually occurred (<= today). The
-            -- membership_reg calendar join emits a row for every in-session
-            -- day in the enrollment span, including future year-end days;
-            -- point-in-time anchors must ignore those or they latch onto the
-            -- future last day of the year and collapse to zero once the fact
-            -- filters to calendardate <= current_date.
+            -- `membership_reg` calendar join emits a row for every in-session
+            -- day in the enrollment span, including future year-end days.
+            -- Point-in-time anchors must ignore those days, or they latch onto
+            -- the future last day of the year and collapse to zero once the
+            -- fact filters to `calendardate` <= `current_date`.
             mem.calendardate
             <= current_date('{{ var("local_timezone") }}') as is_realized,
 
@@ -286,12 +286,13 @@ with
                 partition by schoolid, _dbt_source_project, week_start_monday
             ) as is_enrollment_week_end_record,
 
-            -- Per-stint attendance anchors. Drive the student_attendance
-            -- Cube's latest / month-end / week-end CA snapshots. The stint is
-            -- (student_number, _dbt_source_project, academic_year,
-            -- entrydate) -- the natural key behind student_enrollment_key in
-            -- the fact. Latest is the stint's last realized day; month/week-
-            -- end are its last realized *membership* day in the period.
+            -- Per-stint attendance anchors. These drive the
+            -- `student_attendance` Cube's latest, month-end and week-end CA
+            -- snapshots. The stint is (`student_number`,
+            -- `_dbt_source_project`, `academic_year`, `entrydate`), the
+            -- natural key behind `student_enrollment_key` in the fact. Latest
+            -- is the stint's last realized day; month-end and week-end are its
+            -- last realized membership day in the period.
             calendardate = max(if(is_realized, calendardate, null)) over (
                 partition by
                     student_number, _dbt_source_project, academic_year, entrydate

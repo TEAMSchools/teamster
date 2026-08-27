@@ -17,17 +17,17 @@ with
             regexp_replace(lower(sc.phone_mobile), r'[^0-9x]', '') as phone_mobile,
             regexp_replace(lower(sc.phone_untyped), r'[^0-9x]', '') as phone_untyped,
 
-            -- DeansList routes guardian-only automated messaging (reports,
-            -- texts, emails) by ContactType, so the slot ordinal need not be
-            -- encoded anywhere else; Relationship carries the contact's actual
-            -- relationship to the student for every slot, emergency contacts
-            -- included. Overwriting it with a literal `Emergency N` (the prior
-            -- behavior) discarded a label Finalsite populates on essentially
-            -- every emergency row and left school staff unable to tell a parent
-            -- from a neighbor. Parent slots past contact_2 are excluded by the
-            -- `where` below, upstream of this `case`, so they can never fall
-            -- into the `else` branch and be mislabelled `Emergency`. Carrying a
-            -- third parent into DeansList is deliberately out of scope for now.
+            -- DeansList routes guardian-only automated messaging by
+            -- `ContactType`, so nothing else needs to encode the slot ordinal.
+            -- `Relationship` carries the contact's actual relationship to the
+            -- student for every slot, emergency contacts included. The prior
+            -- behavior overwrote it with a literal `Emergency N`, which
+            -- discarded a label Finalsite populates on nearly every emergency
+            -- row and left school staff unable to tell a parent from a
+            -- neighbor. The `where` below excludes parent slots past
+            -- `contact_2` upstream of this `case`, so they never reach the
+            -- `else` branch. Carrying a third parent into DeansList is out of
+            -- scope for now.
             case
                 sc.contact_slot
                 when 'contact_1'

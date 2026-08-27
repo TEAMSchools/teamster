@@ -308,12 +308,12 @@ with
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
-    -- One row per (scope, subject_area) — matching Official college's
-    -- per-subject grain (Official uses score_type as module_code, e.g.,
-    -- 'sat_math'). Practice derives a parallel module_code by concatenating
-    -- scope and subject_area so SAT Math, SAT Reading, etc. each get their
-    -- own assessment_key.
     -- grain projection, not dup-masking
+    -- One row per (scope, subject_area), matching Official college's per-subject
+    -- grain, where Official uses `score_type` as `module_code` (for example
+    -- 'sat_math'). Practice derives a parallel `module_code` by concatenating
+    -- scope and subject area, so SAT Math and SAT Reading each get their own
+    -- `assessment_key`.
     practice_assessments as (
         select distinct
             scope,

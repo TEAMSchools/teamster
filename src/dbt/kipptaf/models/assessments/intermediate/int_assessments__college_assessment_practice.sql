@@ -96,12 +96,12 @@ with
 
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
-            -- `a.assessment_id` is canonical_assessment_id (response_rollup
-            -- output is canonical-grain). Sheet's assessment_id values
-            -- currently align to canonical (12/12 sheet ids = canonical) since
-            -- Practice SAT/ACT haven't been canonicalized into multi-member
-            -- groups. If multipart Practice administrations are added later,
-            -- the sheet must reference the canonical (lowest) assessment_id.
+            -- `a.assessment_id` is `canonical_assessment_id`, because
+            -- `response_rollup` output is canonical-grain. The sheet's
+            -- `assessment_id` values align to canonical today (12 of 12),
+            -- because Practice SAT/ACT are not canonicalized into multi-member
+            -- groups. If multipart Practice administrations arrive later, the
+            -- sheet must reference the canonical (lowest) `assessment_id`.
             conversion as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
