@@ -306,3 +306,73 @@ def test_stratified_sample_allocates_proportionally():
     counts = collections.Counter(r["s"] for r in picked)
     assert counts["big"] > counts["small"]
     assert counts["small"] >= 1
+
+
+# --- zendesk_merge_labels ---------------------------------------------------
+
+merge_mod = load_script("zendesk_merge_labels")
+
+
+def _labeled(tid: str, label: str, klass: str = "ticket", artifact="", fix=""):
+    return {
+        "ticket_id": tid,
+        "label": label,
+        "class": klass,
+        "artifact_name": artifact,
+        "one_line_fix": fix,
+    }
+
+
+def test_wilson_interval_bounds_are_sane():
+    lo, hi = merge_mod.wilson_interval(0, 100)
+    assert lo == 0.0
+    assert 0.0 < hi < 0.1
+    lo, hi = merge_mod.wilson_interval(100, 100)
+    # Float arithmetic lands at 0.9999999999999999, so min(1.0, hi) cannot
+    # clamp it; assert closeness rather than equality.
+    assert 1.0 - hi < 1e-9
+    lo, hi = merge_mod.wilson_interval(70, 350)
+    assert lo < 0.20 < hi
+
+
+def test_wilson_interval_handles_empty_sample():
+    assert merge_mod.wilson_interval(0, 0) == (0.0, 0.0)
+
+
+def test_self_inflicted_without_artifact_is_demoted():
+    rows = [_labeled("1", "self_inflicted")]
+    problems, demoted = merge_mod.validate(rows)
+    assert demoted == 1
+    assert rows[0]["label"] == "genuine"
+    assert problems == []
+
+
+def test_self_inflicted_with_both_fields_survives():
+    rows = [
+        _labeled("1", "self_inflicted", artifact="the roster sync", fix="derive it")
+    ]
+    _, demoted = merge_mod.validate(rows)
+    assert demoted == 0
+    assert rows[0]["label"] == "self_inflicted"
+
+
+def test_self_inflicted_missing_only_the_fix_is_still_demoted():
+    rows = [_labeled("1", "self_inflicted", artifact="the roster sync")]
+    _, demoted = merge_mod.validate(rows)
+    assert demoted == 1
+
+
+def test_missing_label_and_bad_class_are_flagged():
+    rows = [_labeled("1", ""), _labeled("2", "genuine", klass="banana")]
+    problems, _ = merge_mod.validate(rows)
+    assert any("no label" in p for p in problems)
+    assert any("banana" in p for p in problems)
+
+
+def test_missing_class_is_flagged_on_every_label():
+    rows = [
+        _labeled("1", "genuine", klass=""),
+        _labeled("2", "vendor_or_user_error", klass=""),
+    ]
+    problems, _ = merge_mod.validate(rows)
+    assert sum("no class" in p for p in problems) == 2
