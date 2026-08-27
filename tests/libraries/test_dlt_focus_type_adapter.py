@@ -258,7 +258,7 @@ def test_widen_unbounded_numeric_adapter_only_touches_unbounded_numeric():
     widened = widen_unbounded_numeric_adapter(sqltypes.Numeric())
 
     assert isinstance(widened, sqltypes.Numeric)
-    assert (widened.precision, widened.scale) == (38, 18)
+    assert (widened.precision, widened.scale) == (76, 38)
 
     bounded = sqltypes.Numeric(precision=10, scale=2)
     assert widen_unbounded_numeric_adapter(bounded) is bounded
@@ -277,7 +277,7 @@ def test_widening_type_adapter_keeps_the_interval_mapping():
 
     widened = focus_assets._widening_type_adapter(sqltypes.Numeric())
     assert isinstance(widened, sqltypes.Numeric)
-    assert (widened.precision, widened.scale) == (38, 18)
+    assert (widened.precision, widened.scale) == (76, 38)
 
 
 def test_widen_numeric_flag_selects_the_type_adapter(monkeypatch):

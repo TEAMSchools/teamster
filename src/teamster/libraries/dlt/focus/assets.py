@@ -141,8 +141,16 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
     more than 9 decimal places, and the extract dies with
     ``Rescaling Decimal value would cause data loss`` —
     ``student_gpa_calculated.weighted_gpa`` is the first Focus column to hit it.
+    It also overflowed ``decimal128(38, 18)``, so it carries more than 18
+    decimal places: Focus stores an unrounded division result.
 
-    ``Numeric(38, 18)`` maps to BigQuery BIGNUMERIC, not NUMERIC, so a dbt
+    ``(76, 38)`` is the destination ceiling, not a tuning choice. dlt maps
+    precision above 38 to ``decimal256``, and BigQuery declares exactly
+    ``wei_precision=(76, 38)`` — BIGNUMERIC. Nothing wider exists to fall back
+    to. Postgres ``numeric`` scale is unbounded in principle, so a future column
+    could still overflow this; rounding in the query would be the only fix left.
+
+    ``Numeric(76, 38)`` maps to BigQuery BIGNUMERIC, not NUMERIC, so a dbt
     staging model over an opted-in table should ``cast(col as numeric)`` to keep
     contracts on NUMERIC. That retype is also why this is opt-in per table
     rather than applied to the whole source: 200 NUMERIC columns across 45
@@ -159,7 +167,10 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
         return col_type
 
     if isinstance(col_type, Numeric) and col_type.precision is None:
-        return Numeric(precision=38, scale=18)
+        # ponytail: destination maximum, chosen because Focus is unreachable
+        # from CI so the real scale cannot be measured. Narrow it once a loaded
+        # value can be inspected in BigQuery.
+        return Numeric(precision=76, scale=38)
 
     return col_type
 
