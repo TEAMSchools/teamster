@@ -8,12 +8,6 @@ models:
       variants use; starting SY26, high schools report on the weighted measure.
       Every rate is aggregated in exact decimal and emitted as FLOAT64, so one
       landing on a rounding midpoint resolves the same way in every build.
-    # Table, not the default view: the pivot is a table and
-    # int_powerschool__ada_term_pivot__weighted_year_matches_source compares the two.
-    # As a view this model re-read refreshing attendance sources at query time, so
-    # the guard compared a live rate against the pivot's build-time snapshot (#5023).
-    config:
-      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
