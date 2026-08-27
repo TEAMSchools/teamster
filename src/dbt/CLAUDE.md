@@ -1044,7 +1044,9 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   mid-edit on a `.sql` file where the note feels like natural momentum. The file
   being open is not evidence it's the right place. Keep inline SQL comments to
   what a reader of that exact line cannot see — a non-obvious fallback, why a
-  filter exists.
+  filter exists. Carve-out: TODOs, tracking-issue refs, and migration plumbing
+  stay inline at the derivation site — a defect belongs in the code, not the
+  metadata.
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
