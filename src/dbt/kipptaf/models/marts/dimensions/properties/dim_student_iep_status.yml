@@ -91,6 +91,10 @@ models:
               to_columns: [date_key]
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
 
       - name: effective_date_end_key
         data_type: date
@@ -106,6 +110,10 @@ models:
               to_columns: [date_key]
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
 
       - name: is_current
         data_type: boolean

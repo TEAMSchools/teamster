@@ -28,6 +28,10 @@ models:
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
         config:
           meta:
             source_system: PowerSchool

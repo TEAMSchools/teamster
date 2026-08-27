@@ -87,6 +87,11 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -154,6 +159,11 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: return_date_key
         data_type: date
         description: >-
@@ -165,3 +175,8 @@ models:
             foreign_key:
               to: ref('dim_dates')
               to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
