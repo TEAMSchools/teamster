@@ -10,6 +10,18 @@ adp_wfn_policy = FreshnessPolicy.cron(
     timezone=str(LOCAL_TIMEZONE),
 )
 
+# fct_student_attendance_daily materializes on a 0 6,15 * * * cron. As a table,
+# is_realized and every is_*_record point-in-time anchor freeze at build time
+# instead of self-correcting on read, so a failed build silently serves stale
+# anchors for up to ~15 hours. Deadlines sit one hour after each materialization
+# tick: a normal build (~2.4 min per #4468) clears it comfortably, while a
+# skipped tick trips the policy within the hour instead of going unnoticed.
+attendance_daily_policy = FreshnessPolicy.cron(
+    deadline_cron="0 7,16 * * *",
+    lower_bound_delta=timedelta(hours=1),
+    timezone=str(LOCAL_TIMEZONE),
+)
+
 policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(["kipptaf", "people", "int_people__staff_roster"]): adp_wfn_policy,
     AssetKey(["kipptaf", "people", "int_people__staff_roster_history"]): adp_wfn_policy,
@@ -17,4 +29,7 @@ policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(
         ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]
     ): adp_wfn_policy,
+    AssetKey(
+        ["kipptaf", "marts", "fct_student_attendance_daily"]
+    ): attendance_daily_policy,
 }
