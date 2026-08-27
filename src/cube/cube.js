@@ -221,6 +221,19 @@ const SNAPSHOT_MEASURE_STEMS = {
   student_enrollments: ["count_students"],
 };
 
+// Query member cube-name matching must be boundary-safe. A plain
+// `m.startsWith(cubePrefix)` treats ANY cube/view whose name merely extends
+// cubePrefix as a substring (e.g. student_attendance_periods /
+// student_attendance_periods_view) as if it were student_attendance itself —
+// sweeping its measures into this guard and injecting a filter on a cube the
+// query never joins ("Can't find join path to join ..."). Match only the two
+// real forms in use: the bare cube name (a direct cube query) and
+// `<cube>_view` (the collapsed public view, e.g. student_attendance_view).
+function memberMatchesSnapshotCube(member, cubePrefix) {
+  const memberCube = member.split(".")[0];
+  return memberCube === cubePrefix || memberCube === `${cubePrefix}_view`;
+}
+
 // Turns a jsonwebtoken failure into a message that names the failed check, so a
 // 403 is diagnosable without server access. jsonwebtoken reports both the maxAge
 // cap and the token's own `exp` as TokenExpiredError, distinguished only by the
@@ -457,7 +470,8 @@ module.exports = {
       const stems = SNAPSHOT_MEASURE_STEMS[cubePrefix] ?? [];
       const measures = (query.measures ?? []).filter(
         (m) =>
-          m.startsWith(cubePrefix) && stems.some((stem) => m.includes(stem)),
+          memberMatchesSnapshotCube(m, cubePrefix) &&
+          stems.some((stem) => m.includes(stem)),
       );
       if (!measures.length) continue;
 
