@@ -25,6 +25,7 @@ from __future__ import annotations
 import collections
 import csv
 import json
+import re
 import statistics
 from pathlib import Path
 
@@ -32,6 +33,14 @@ SCRATCH = Path(".claude/scratch/zendesk")
 CORPUS = SCRATCH / "corpus.jsonl"
 TOP_N = 5
 WORKSHEET_SAMPLE = 12
+
+
+WHITESPACE_RE = re.compile(r"\s+")
+
+
+def clean(text: str, limit: int | None = None) -> str:
+    """Flatten to one TSV-safe cell (tabs, newlines, carriage returns)."""
+    return WHITESPACE_RE.sub(" ", text[:limit] if limit else text).strip()
 
 
 def load_corpus() -> list[dict]:
@@ -78,7 +87,7 @@ def main() -> int:
     counts = cell_counts(corpus)
 
     with (SCRATCH / "seasonality.csv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(["category", "week_offset", "sy2024_25", "sy2025_26", "total"])
         for (category, offset), years in sorted(counts.items()):
             c2024 = years.get(2024, 0)
@@ -93,7 +102,7 @@ def main() -> int:
     with (SCRATCH / "seasonality_worksheet.tsv").open(
         "w", newline="", encoding="utf-8"
     ) as f:
-        writer = csv.writer(f, delimiter="\t")
+        writer = csv.writer(f, delimiter="\t", lineterminator="\n")
         writer.writerow(
             [
                 "category",
@@ -117,7 +126,7 @@ def main() -> int:
                             year,
                             t["ticket_id"],
                             t["url"],
-                            t["subject"].replace("\t", " ").replace("\n", " "),
+                            clean(t["subject"]),
                             "",
                         ]
                     )

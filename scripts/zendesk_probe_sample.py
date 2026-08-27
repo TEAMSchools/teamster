@@ -116,8 +116,16 @@ def first_public_reply_body(ticket: dict) -> str:
     return ""
 
 
+WHITESPACE_RE = re.compile(r"\s+")
+
+
 def clean(text: str, limit: int) -> str:
-    return text[:limit].replace("\t", " ").replace("\n", " ")
+    """Flatten to one TSV-safe cell.
+
+    Ticket bodies carry embedded carriage returns as well as tabs and
+    newlines; any of the three splits a cell or a row in Excel and Sheets.
+    """
+    return WHITESPACE_RE.sub(" ", text[:limit]).strip()
 
 
 def select_pool(corpus: list[dict], pool: str) -> list[dict]:
@@ -167,7 +175,7 @@ def main() -> int:
     with (SCRATCH / f"partition_sample{suffix}.tsv").open(
         "w", newline="", encoding="utf-8"
     ) as f:
-        writer = csv.writer(f, delimiter="\t")
+        writer = csv.writer(f, delimiter="\t", lineterminator="\n")
         writer.writerow(
             [
                 "ticket_id",

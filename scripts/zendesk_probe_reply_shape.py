@@ -79,6 +79,14 @@ def classify_reply_shape(
     return "not_a_data_ask"
 
 
+WHITESPACE_RE = re.compile(r"\s+")
+
+
+def clean(text: str, limit: int | None = None) -> str:
+    """Flatten to one TSV-safe cell (tabs, newlines, carriage returns)."""
+    return WHITESPACE_RE.sub(" ", text[:limit] if limit else text).strip()
+
+
 def load_corpus() -> list[dict]:
     with CORPUS.open(encoding="utf-8") as f:
         return [json.loads(line) for line in f]
@@ -105,7 +113,7 @@ def main() -> int:
         rows.append((ticket, reply, shape))
 
     with (SCRATCH / "reply_shape.csv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(["shape", "n_tickets"])
         for shape, n in shapes.most_common():
             writer.writerow([shape, n])
@@ -116,7 +124,7 @@ def main() -> int:
     worksheet.sort(key=lambda item: item[0]["created_at"], reverse=True)
 
     with (SCRATCH / "slug_worksheet.tsv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
+        writer = csv.writer(f, delimiter="\t", lineterminator="\n")
         writer.writerow(
             [
                 "ticket_id",
@@ -129,14 +137,14 @@ def main() -> int:
             ]
         )
         for ticket, reply, shape in worksheet[:WORKSHEET_LIMIT]:
-            excerpt = reply["plain_body"][:300].replace("\t", " ").replace("\n", " ")
+            excerpt = clean(reply["plain_body"], 300)
             writer.writerow(
                 [
                     ticket["ticket_id"],
                     ticket["url"],
                     ticket["category"],
                     shape,
-                    ticket["subject"].replace("\t", " ").replace("\n", " "),
+                    clean(ticket["subject"]),
                     excerpt,
                     "",
                 ]
