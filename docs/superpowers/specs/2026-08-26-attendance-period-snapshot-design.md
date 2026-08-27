@@ -457,6 +457,19 @@ item 1 already requires displaying the number of students in each ADA and CA
 calculation, which makes the small early denominator visible rather than
 misleading; that requirement is what makes accepting this behaviour defensible.
 
+**Decision: accept this behaviour.** No model change, no row suppression, no
+extra flag. Three reasons. It is what New Jersey, Florida, and KIPP Foundation
+all specify — a student cannot be chronically absent on day five. Every row
+already carries `is_ca_eligible`, so a consumer can report eligible against
+total without new columns. And KIPP Foundation criteria item 1 already requires
+displaying the number of students in each ADA and CA calculation, so an August
+count of 1,317 beside the rate reads as thin rather than broken.
+
+What this obliges: the early-period behaviour must be documented where consumers
+meet it — the snapshot view's description and the properties file — not left for
+someone to rediscover from an August tile. That belongs with the other
+documentation surfaces.
+
 Two later months move on the exact-90.0% fix rather than eligibility: 2025-10 by
 +1.20pp and 2026-06 by +2.07pp, because both tend to land cumulative membership
 days on a multiple of 10, which is where an exact 9/10 ratio occurs.
