@@ -23,6 +23,12 @@ models:
 
       See docs/models/carat-dashboard-data-model.md.
     data_tests:
+      # scale_score, not rn_highest. rn_highest is a row_number over
+      # (student, scope, score_type) in all 3 upstream hubs, so a key holding it
+      # is unique by construction and the test cannot fail. scale_score keys on
+      # the data instead, and still tolerates the one legitimate pair the CARAT
+      # doc records: a 2015-10-19 sat_total_score sitting entered twice with
+      # genuinely different scores.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -30,7 +36,7 @@ models:
               - test_type
               - score_type
               - test_date
-              - rn_highest
+              - scale_score
     columns:
       - name: student_number
         data_type: int64
