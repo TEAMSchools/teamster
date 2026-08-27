@@ -109,6 +109,29 @@ Tier 1 plus Tier 2 mean exactly "not chronically absent", which is what a reader
 of the dashboard will assume. The cost is a hair's deviation from KIPP
 Foundation's stated Tier 2 range of 90 to 94%, which goes in the note to them.
 
+Derive both from one expression, so they cannot drift apart again. With Tier 2
+starting strictly above 90.0%, chronic absence is exactly Tier 3 plus Tier 4:
+
+```sql
+case
+    when ytd_membership = 0 then null
+    when ytd_present * 100 >= ytd_membership * 95 then 'Tier 1'
+    when ytd_present * 10 > ytd_membership * 9 then 'Tier 2'
+    when ytd_present * 10 >= ytd_membership * 8 then 'Tier 3'
+    else 'Tier 4'
+end as ada_tier,
+
+ada_tier in ('Tier 3', 'Tier 4') as is_chronically_absent
+```
+
+Integer comparison rather than a threshold on the averaged float, so the 198
+enrollments at exactly 90.0% land in Tier 3 deterministically. The
+`ytd_membership = 0` guard is load-bearing: without it `0 >= 0` makes an
+enrollment with no membership days Tier 3.
+
+Cube computes nothing. Its measures stay `count_distinct` filtered on
+`ada_tier`, as they are today.
+
 ## The model
 
 A new dbt model, one row per enrollment per period.
@@ -146,6 +169,16 @@ something this model should inherit.
 
 The daily fact needs no school column. Cube's existing traversal is adequate for
 day-level queries, and the snapshot gets school from upstream.
+
+That gap is [#4803](https://github.com/TEAMSchools/teamster/issues/4803), a
+sub-issue of the Focus modeling backlog
+([#4985](https://github.com/TEAMSchools/teamster/issues/4985)). It reports 961
+orphaned keys, essentially all Miami AY2025: #4775 made Focus the sole source of
+Miami enrollment, and Focus dates a returning student's stint to the real first
+day of school where PowerSchool used a July 1 rollover, so `entrydate` and
+therefore the surrogate key differ. Sourcing the snapshot from upstream means
+Miami AY2025 attendance is attributed to its schools correctly, which the
+dimension path currently cannot do.
 
 ### Grain is student and school, not the enrollment stint
 
