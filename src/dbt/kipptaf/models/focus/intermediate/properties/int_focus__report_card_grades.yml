@@ -1,0 +1,15 @@
+models:
+  - name: int_focus__report_card_grades
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__report_card_grades — Focus student report-card grades with
+      marking-period context, a resolved grade scale and decoded course flags.
+      Imported course history and live postings share the grain; the DY grade
+      type is already excluded upstream. Read by int_students__final_grades,
+      which conforms these rows to the PowerSchool final-grades shape. Focus is
+      Miami-only today; this shape lets a future region's Focus ingestion union
+      in without a rewrite. Column docs/tests live on the kippmiami source
+      model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
