@@ -281,13 +281,31 @@ or more for the year. This model does not change that logic, only where the
 period-end value is read from. That retires the 9 truancy measures in the three
 anchor families.
 
-**Enrollment headcount does not.** `student_enrollments.count_students` is a
-different cube, a different question, and a different anchor:
-`is_current_record` is per school and as of now, not per stint. It needs either
-its own period snapshot or a narrowed guard, and that decision belongs with
-whoever owns enrollment reporting. **The `queryRewrite` snapshot block therefore
-cannot be fully deleted here** — sequence this work so the attendance stems come
-out and the block shrinks rather than disappears.
+**Enrollment headcount does not, and does not need a snapshot either.**
+`student_enrollments.count_students` is `count_distinct` on
+`student_school_enrollments.student_key` over the same fact. A distinct count is
+idempotent, so a student appearing on 180 days still counts once — there is no
+duplication to correct. The `cube.js` comment claiming an unanchored count
+overcounts because a student "appears in N rows" states the wrong mechanism.
+
+What actually differs is the metric. Unanchored, a date range returns every
+student enrolled at any point in it; the measure is documented as a
+point-in-time headcount. The anchor pins the as-of date.
+
+Enrollment headcount has no cumulative accumulation — no year-to-date rate, no
+eligibility threshold, no period-end value to reconstruct — so a snapshot is
+disproportionate. Three named measures filtering flags the cube already exposes
+as dimensions cover it:
+
+| measure                    | filter                           |
+| -------------------------- | -------------------------------- |
+| `count_students_year_end`  | `is_current_record`              |
+| `count_students_month_end` | `is_enrollment_month_end_record` |
+| `count_students_week_end`  | `is_enrollment_week_end_record`  |
+
+No dbt change, no new model. With those in place the `count_students` stem comes
+out of the guard, and once the attendance stems go too the `queryRewrite`
+snapshot block is empty and deletes cleanly.
 
 ## Documentation surfaces
 
