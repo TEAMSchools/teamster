@@ -558,6 +558,8 @@ models:
         data_type: numeric
       - name: postsec_advisor
         data_type: string
+      - name: college_counselor
+        data_type: string
       - name: recent_cumulative_gpa
         data_type: numeric
       - name: recent_transcript_date
