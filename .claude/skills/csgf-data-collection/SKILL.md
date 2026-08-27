@@ -66,6 +66,12 @@ this skill covers the manual/ownership side only.
   docs here if needed. **This does not substitute for submitting data the way
   CSGF actually requires** (Portal / HSDC Sheet) -- it's a convenience/backup
   location, not a submission channel.
+- ["CSGF Data" Google Sheet](https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM/edit)
+  -- where all eight `rpt_gsheets__csgf_*` dbt models land, one tab per model.
+  This is KTAF's internal staging sheet, not CSGF's own HSDC workbook -- see
+  "How the dbt models actually reach CSGF" below for how data moves from here
+  into CSGF's actual systems. Several tabs carry real student-level rows -- same
+  PII caution as the HSDC workbook.
 
 **CSGF-provided:**
 
@@ -651,19 +657,54 @@ was never updated after Miami's cutover to Focus as its SIS. Concretely:
 school in AY2026 -- KIPP Miami Technical High, ~95 students, mostly grade 9. The
 7 HS-scoped `rpt_gsheets__csgf_*` models are correctly Miami-irrelevant _this_
 cycle (they read AY2025, when Miami had zero HS students), but next cycle they
-roll to AY2026 and will need Miami HS data for the first time ever. Miami's
-PowerSchool-based course/grade ingestion (which those models' lineage depends on
--- `base_powerschool__course_enrollments`, `stg_powerschool__storedgrades`) is
-retired post-Focus-cutover, with no known replacement path for HS course/grade
-data. Whoever runs next cycle's rollover should check this explicitly rather
-than assuming the existing HS models will "just work" once Miami has HS
-enrollees.
+roll to AY2026 and will need Miami HS data for the first time ever.
+
+For `rpt_gsheets__csgf_hs_enrollment` specifically (verified and documented on
+the model itself -- see its properties YAML `description:` for the authoritative
+version): its enrollment/demographic fields come through
+`int_extracts__student_enrollments`, which already includes Miami via Focus, so
+those will be correct. But its course-tag CTEs (`transfer_course_tags` ->
+`stg_powerschool__storedgrades`, `local_course_tags` ->
+`base_powerschool__course_enrollments`) are PowerSchool-only with no Focus
+equivalent wired in -- Miami HS students will get **NULL, not `'N'`**, for
+`has_participated_in_ap_courses` / `_honors_courses` /
+`_dual_enrollment_courses` / `_cte_courses`, since the `course_tags` CTE
+produces no rows for them at all. A Focus course/grade source needs to be added
+to those two CTEs before this model rolls to AY2026. The other 6 HS models
+likely have the same PowerSchool-only gap somewhere in their lineage -- not yet
+verified per-model.
+
+Whoever runs next cycle's rollover should check this explicitly rather than
+assuming the existing HS models will "just work" once Miami has HS enrollees.
+
+## How the dbt models actually reach CSGF (answered)
+
+The eight `rpt_gsheets__csgf_*` models write out to a KTAF-owned Google Sheet
+titled **"CSGF Data"**
+([link](https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM/edit)),
+one tab per model (`Enrollment`, `HS Grad Data`, `HS Enrollment`, and the
+remaining five). **This is not CSGF's HSDC workbook** -- it's an internal
+staging sheet the collection owner reads from to fill CSGF's actual systems.
+Several HS tabs (e.g. `HS Enrollment`) carry real student-level rows -- same PII
+caution as the HSDC workbook: fine to reference structure/column names here,
+never row-level content.
+
+**How the transfer from this sheet into CSGF's systems happens has changed cycle
+to cycle -- don't assume last year's method still applies:**
+
+- **2025-2026 cycle:** no bulk-import existed in the Salesforce Portal, so the
+  collection owner copy-pasted each cell manually from "CSGF Data" into the
+  Portal.
+- **2026-2027 cycle:** the Portal's new Excel export/import feature (see Portal
+  mechanics above) makes bulk upload possible. Plan: reorder "CSGF Data"'s
+  columns/tabs to match each Salesforce grid's Excel template column order, so
+  the data can be copy-pasted directly into that template and bulk-uploaded,
+  instead of cell-by-cell entry. Confirm this reordering is actually completed
+  each cycle before relying on it -- it's a manual alignment step, not
+  automatic.
 
 ## Open questions for this skill (not yet answered)
 
-- Exactly how does data move from the `rpt_gsheets__csgf_*` dbt models into the
-  actual CSGF-owned HSDC Google Sheet -- an automated push, or a manual
-  copy/paste step by the collection owner? Confirm and document once known.
 - Who is the current collection owner / project manager, for reference the next
   time this skill needs updating?
 

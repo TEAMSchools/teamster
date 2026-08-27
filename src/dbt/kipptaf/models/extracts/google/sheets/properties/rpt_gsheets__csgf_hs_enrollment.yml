@@ -1,5 +1,17 @@
 models:
   - name: rpt_gsheets__csgf_hs_enrollment
+    description:
+      Miami opened its first HS in AY2026 (KIPP Miami Technical High). The
+      course-tag CTEs in this model (transfer_course_tags, local_course_tags)
+      read PowerSchool-only sources with no Focus equivalent wired in, while the
+      enrollment and demographic fields come through
+      int_extracts__student_enrollments, which already includes Miami via Focus.
+      Once this model rolls to AY2026 data next cycle, Miami HS students will
+      get correct enrollment and demographic fields but NULL
+      has_participated_in_ap_courses / honors / dual_enrollment / cte_courses
+      values, since the course_tags CTE produces no rows for them at all. A
+      Focus course or grade source needs to be added to those two CTEs before
+      then.
     columns:
       - name: studentid
         data_type: int64
@@ -25,8 +37,6 @@ models:
         data_type: string
       - name: gender
         data_type: string
-      - name: passed_algebra_i
-        data_type: string
       - name: school
         data_type: string
       - name: student_has_iep
@@ -35,3 +45,12 @@ models:
         data_type: string
       - name: student_is_frl
         data_type: string
+      - name: is_exited_next_year
+        data_type: string
+        description:
+          Anchored on is_enrolled_oct01 rather than a live enroll_status value,
+          matching the state count-day convention already used elsewhere in this
+          model and in rpt_gsheets__csgf_enrollment. This means a student who
+          returns the following year but later withdraws mid-year still
+          correctly reads N here, rather than being misread as never having come
+          back.
