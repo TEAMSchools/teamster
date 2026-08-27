@@ -1,10 +1,7 @@
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     term_weeks as (
-        /*
-        grain projection: every selected column is functionally determined
-        by the partition key; not a mask for upstream duplicates
-        */
+        -- grain projection, not dup-masking
         select distinct
             _dbt_source_project,
             region,

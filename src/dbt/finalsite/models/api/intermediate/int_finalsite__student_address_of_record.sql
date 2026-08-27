@@ -49,12 +49,12 @@ with
     ),
 
     sourced as (
-        -- Parent 1's household is the address of record; the student's own is
-        -- the fallback. The reverse order used to be correct because a parent
-        -- carries more households and the old rule withheld on any ambiguity —
-        -- once the contact model picks a winner, the parent's larger household
-        -- count costs nothing. The student tier must stay: some students hold
-        -- an address while their Parent 1 holds none.
+        -- Parent 1's household is the address of record. The student's own
+        -- household is the fallback, and that tier must stay: some students
+        -- hold an address while their Parent 1 holds none. The reverse order
+        -- was correct while the old rule withheld on any ambiguity, because a
+        -- parent carries more households. The contact model now picks a
+        -- winner, so the parent's larger household count costs nothing.
         select
             finalsite_enrollment_id,
             primary_contact_id,

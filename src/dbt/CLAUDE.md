@@ -1088,13 +1088,15 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 - **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
   a `GROUP BY` with no aggregation, and for pure grain projection (every
   projected column is functionally determined by the partition key, so
-  byte-identical tuples coalesce) — annotate the latter with
-  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
-  NEVER `SELECT DISTINCT` or `qualify row_number() over (...) = 1` to mask
-  upstream duplicates, and never `DISTINCT` when a projected column varies
-  within the partition (`min()`, `first_value()`) — use
-  `dbt_utils.deduplicate()` (see _Row picking, dedup & surrogate keys_) with a
-  `-- TODO:` naming the upstream fix.
+  byte-identical tuples coalesce). Annotate the latter with the one-line
+  `grain projection, not dup-masking` — the annotation is what tells a reviewer
+  the `DISTINCT` is deliberate rather than a fan-out mask or a wrong-grain
+  source, so it is required. Name the partition key on the same comment when the
+  `SELECT` list does not make it obvious. NEVER `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` to mask upstream duplicates, and never
+  `DISTINCT` when a projected column varies within the partition (`min()`,
+  `first_value()`) — use `dbt_utils.deduplicate()` (see _Row picking, dedup &
+  surrogate keys_) with a `-- TODO:` naming the upstream fix.
 - **No one-sided calculations in join predicates.** Any expression computable
   from a single table's columns is precomputed as a named column upstream — `ON`
   matches plain columns. Expressions that inherently combine columns from both

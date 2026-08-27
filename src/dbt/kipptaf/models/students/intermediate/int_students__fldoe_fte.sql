@@ -1,12 +1,12 @@
 with
-    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
-    -- internal id and is null for every Focus-sourced (Miami) row, so
-    -- grouping on it collapses every Miami student into one meaningless
-    -- aggregate row per (yearid, fte_survey) -- SQL treats null as a single
+    -- Keyed on `student_number`, not `studentid`. `studentid` is a
+    -- PowerSchool-internal id and is null for every Focus-sourced (Miami) row,
+    -- so grouping on it collapses every Miami student into 1 meaningless
+    -- aggregate row per (`yearid`, `fte_survey`) — SQL treats null as a single
     -- group. This model is Miami-only, so every input row is Focus-sourced.
-    -- studentid is carried through as max(studentid) so nothing reading the
-    -- old column breaks; it stays null here since Miami has no PowerSchool
-    -- studentid.
+    -- `studentid` still comes through as `max(studentid)`, so nothing reading
+    -- the old column breaks. It stays null here, because Miami has no
+    -- PowerSchool `studentid`.
     ada_group as (
         select
             att._dbt_source_relation,

@@ -30,12 +30,12 @@ with
 
             person_identifier as student_number,
 
-            -- Titan ships ~14-month annual windows that overlap at academic-year
-            -- boundaries (current year extends past Sept 30, next year begins
-            -- before Aug 1). Trim each row's end to day-before-next-row's-start
-            -- so cross-value transitions don't produce overlapping spans after
-            -- island collapse. Coalesce the open-ended sentinel so nj_leg can
-            -- use a plain max() without re-handling NULL.
+            -- Titan ships roughly 14-month annual windows that overlap at
+            -- academic-year boundaries: the current year extends past Sept 30,
+            -- and the next year begins before Aug 1. Trim each row's end to the
+            -- day before the next row's start, so cross-value transitions do
+            -- not produce overlapping spans after island collapse. Coalesce the
+            -- open-ended sentinel so `nj_leg` can use a plain `max()`.
             least(
                 coalesce(eligibility_end_date, cast('9999-12-31' as date)),
                 coalesce(
