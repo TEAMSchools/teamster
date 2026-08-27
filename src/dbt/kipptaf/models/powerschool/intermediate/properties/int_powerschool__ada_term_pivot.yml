@@ -203,7 +203,7 @@ unit_tests:
       test silently skipped because null never joins.
     model: int_powerschool__ada_term_pivot
     given:
-      - input: ref("int_powerschool__ada_term")
+      - input: ref('int_powerschool__ada_term')
         format: sql
         rows: |
           /* Student 1: full year. ada_year and ada_weighted_year are
