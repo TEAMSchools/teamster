@@ -13,11 +13,18 @@ models:
 
       Also carries the demographic data and student identifiers the enrollment
       consumers read. Columns PowerSchool supplies and Focus does not are null
-      for Miami -- `is_self_contained` and `is_out_of_district` (no
-      special-programs equivalent in Focus), the KIPP Forward exit codes
-      (`exit_code_kf`, `exit_code_ts`), `advisor_teachernumber` (no network
-      teacher number in Focus), `rn_school`, `rn_undergrad`,
-      `is_enrolled_y1`, `is_enrolled_recent`, `track`, and `cohort_graduated`.
+      for Miami -- `is_self_contained` (a SPED service-delivery fact Focus does
+      not carry, left null rather than asserted false per #4968), the KIPP
+      Forward exit codes (`exit_code_kf`, `exit_code_ts`),
+      `advisor_teachernumber` (no network teacher number in Focus), `rn_school`,
+      `rn_undergrad`, `track`, and `cohort_graduated`.
+
+      `is_enrolled_y1` and `is_enrolled_recent` are derived for Miami from the
+      roster's enrollment dates, using PowerSchool's expressions, and
+      `is_out_of_district` is false there -- the Focus branch already assigns
+      every Miami row a real `reporting_schoolid` and an ES/MS/HS
+      `school_level`, never `OD`. All three were null before #4996, which
+      silently removed Miami from every consumer that filtered on them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
