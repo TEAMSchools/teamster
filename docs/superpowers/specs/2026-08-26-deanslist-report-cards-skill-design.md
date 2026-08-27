@@ -5,8 +5,14 @@ Refs #5016
 ## Context
 
 The progress report cards live in DeansList Report Manager, a hosted browser
-editor. There is no version control, no local runtime, and no test harness. You
-edit four files in textareas and press Save.
+editor. There is no local runtime and no test harness. You edit four files in
+textareas and press Save.
+
+Report Manager does keep a **per-file version history** — each of the four files
+has its own list of saved versions, each with an opaque id and a timestamp — but
+it is reachable only through the UI. No API exposes it, so an agent can neither
+read a version nor restore one. It is the human's rollback, and the skill's job
+is to say when to reach for it and what to record so it stays usable.
 
 Two properties of that environment shape every decision below:
 
@@ -184,8 +190,9 @@ Every change is a splice: a script that reads `as-received`, applies asserted
 edits, and writes `build`. Nothing is hand-edited at either end. That buys three
 things that matter when the only test is a human pasting into a browser:
 provable blast radius (untouched regions stay byte-identical), reproducibility
-(a re-run reproduces the output byte-for-byte), and recoverable state (a bad
-paste is fixed by pasting `as-received` back).
+(a re-run reproduces the output byte-for-byte), and recoverable state — a bad
+paste is fixed either by pasting `as-received` back or by rolling the affected
+file back in the platform's version history.
 
 The step directs the agent to copy `scripts/splice-template.py`, whose skeleton
 is:
@@ -228,6 +235,18 @@ must state which files changed and the paste order (CSS, head, body, JS), plus a
 line count and a distinctive string per file so the human can confirm what
 landed.
 
+Because the platform's version history is per-file and UI-only, the hand-off
+carries two instructions only a human can execute:
+
+- **Before pasting, note the current version id and timestamp for each file
+  about to change.** That makes rollback a named target rather than "whichever
+  one came before the mess." An agent cannot read these, so unrecorded they are
+  effectively lost.
+- **After pasting, check that the changed files' newest version timestamps
+  cluster.** Four files with four independent histories means a partial paste
+  leaves a mixed version state, and a timestamp sitting minutes or days apart
+  from its siblings is the signature of a file that never landed.
+
 Two failure modes named explicitly, with what each looks like:
 
 - **Pasting a subset.** A change spanning JS and head does nothing useful if
@@ -235,6 +254,12 @@ Two failure modes named explicitly, with what each looks like:
   half-finished paste would look like on the page, so it is recognisable rather
   than mysterious.
 - **Pasting a stale file.** The line count and distinctive string are the check.
+
+Rollback therefore has two routes and the skill names both: paste `as-received`
+back, or roll each affected file back in the version history. The second wins
+when the local `as-received` is itself stale, and it is the only route that
+recovers a change someone made directly in the UI without going through the
+chain.
 
 ## The gates
 
