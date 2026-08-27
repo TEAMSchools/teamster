@@ -21,6 +21,10 @@ models:
       tracked in #5010, and was ruled out of #4995 on measurement. Miami's null
       is_dropped_section also trips this model's `not is_dropped_section`
       filter; that half is #4996.
+
+      Miami's absence is ratified as intentional on #4996. The gradebook has no
+      Focus branch, so no filter change here brings Miami back; wiring that
+      branch is #5010.
     columns:
       - name: grades_assignment_key
         data_type: string

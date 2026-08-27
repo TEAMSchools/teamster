@@ -17,6 +17,10 @@ models:
       should be network-wide or NJ-scoped remains #4996's decision; the
       inclusion is a consequence of fixing the flags, not a scope judgment made
       here.
+
+      Network-wide, Miami included. This model already recorded that #4996 owned
+      the decision; the decision is now made and it is INCLUDE. Miami held
+      61,910 rows in prod as of 2026-08-27.
     config:
       materialized: table
       meta:
