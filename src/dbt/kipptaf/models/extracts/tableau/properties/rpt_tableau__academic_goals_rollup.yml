@@ -1,7 +1,7 @@
 models:
   - name: rpt_tableau__academic_goals_rollup
     description: >-
-      Network-wide, Miami included -- the model already carries Miami-specific
+      Network-wide, Miami included — the model already carries Miami-specific
       performance-band logic. Miami held 2,492 AY2026 rows in prod as of
       2026-08-27. Ratified on #4996.
     columns:

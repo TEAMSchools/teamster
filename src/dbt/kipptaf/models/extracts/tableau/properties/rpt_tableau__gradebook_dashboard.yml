@@ -1,9 +1,9 @@
 models:
   - name: rpt_tableau__gradebook_dashboard
     description: >-
-      **Excludes Miami by design.** This model is disabled and never compiled;
-      it is superseded by `rpt_tableau__student_course_grades`, which excludes
-      Miami too. Ratified on #4996.
+      **Not evaluated for Miami.** This model is disabled and never compiled; it
+      is superseded by `rpt_tableau__student_course_grades`, which excludes
+      Miami too. Recorded on #4996.
     config:
       enabled: false
     columns:

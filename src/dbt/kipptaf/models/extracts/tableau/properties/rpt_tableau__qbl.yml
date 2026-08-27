@@ -1,8 +1,8 @@
 models:
   - name: rpt_tableau__qbl
     description: >-
-      **Excludes Miami by design.** This model is disabled and never compiled,
-      and it already filters `co.region != 'Miami'` explicitly. Ratified on
+      **Not evaluated for Miami.** This model is disabled and never compiled,
+      and it already filters `co.region != 'Miami'` explicitly. Recorded on
       #4996.
     config:
       enabled: false

@@ -1,9 +1,9 @@
 models:
   - name: int_gsheets__dds_import
     description: >-
-      **Excludes Miami by design.** This model is disabled and never compiled,
-      so its Miami scope is moot; if it is ever re-enabled, decide the scope
-      then. Ratified on #4996.
+      **Not evaluated for Miami.** This model is disabled and never compiled, so
+      it has no Miami scope to decide; decide one if it is ever re-enabled.
+      Recorded on #4996.
     config:
       enabled: false
     columns:

@@ -5,10 +5,9 @@ models:
       course enrollment overlap with term dates. Students who re-enrolled in the
       same course within a quarter are deduped to the most recent stint.
 
-
       Covers Miami through AY2025 only. The student join keys on
       `student_number` rather than PowerSchool's internal `cc_studentid`, which
-      Focus leaves null -- before that change this model held no Miami rows in
+      Focus leaves null — before that change this model held no Miami rows in
       any year. Miami AY2026 forward is still excluded, because the `not
       is_dropped_section` and `sections_no_of_students != 0` filters both drop
       rows whose value is null and Focus sets neither. #4996 owns those filters.

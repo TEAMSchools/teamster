@@ -6,8 +6,8 @@ models:
       comparison proficiency rates from city, state, and neighborhood school
       benchmarks. One row per student per assessment per academic year.
 
-      Network-wide, Miami included -- this model carries FLDOE FAST results and
-      a Miami-only Civics rule, so Miami is plainly intended. **It returned no
+      Network-wide, Miami included — this model carries FLDOE FAST results and a
+      Miami-only Civics rule, so Miami is plainly intended. **It returned no
       Miami rows in prod as of 2026-08-27.** The grain is an inner join from
       Pearson scores to enrollments on `pearson_local_student_identifier`, which
       is a New Jersey key, so the FLDOE leg never reaches the output. That is a
