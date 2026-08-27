@@ -29,8 +29,7 @@ with
         where m.is_internal_assessment
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_nj_parcc as (
         select distinct
             subject_area,
@@ -53,8 +52,7 @@ with
         where testscalescore is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_nj_njsla as (
         select distinct
             subject_area,
@@ -77,8 +75,7 @@ with
         where testscalescore is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_nj_njsla_science as (
         select distinct
             subject_area,
@@ -101,8 +98,7 @@ with
         where testscalescore is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_nj_njgpa as (
         select distinct
             subject_area,
@@ -125,8 +121,7 @@ with
         where testscalescore is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_fl_fast as (
         select distinct
             assessment_subject as subject_area,
@@ -149,8 +144,7 @@ with
         where scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_fl_fsa as (
         select distinct
             assessment_subject as subject_area,
@@ -173,8 +167,7 @@ with
         where scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_fl_eoc as (
         select distinct
             assessment_subject as subject_area,
@@ -197,8 +190,7 @@ with
         where scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     state_fl_science as (
         select distinct
             assessment_subject as subject_area,
@@ -221,8 +213,7 @@ with
         where scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     iready_assessments as (
         select distinct
             subject as subject_area,
@@ -246,8 +237,7 @@ with
         where overall_scale_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     star_assessments as (
         select distinct
             star_subject as subject_area,
@@ -271,8 +261,7 @@ with
         where completed_date_value is not null and unified_score is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     dibels_assessments as (
         select distinct
             measure_standard as module_code,
@@ -295,8 +284,7 @@ with
         where assessment_type = 'Benchmark' and measure_standard = 'Composite'
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     college_assessments as (
         select distinct
             scope as title,
@@ -325,8 +313,7 @@ with
     -- 'sat_math'). Practice derives a parallel module_code by concatenating
     -- scope and subject_area so SAT Math, SAT Reading, etc. each get their
     -- own assessment_key.
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     practice_assessments as (
         select distinct
             scope,
@@ -352,8 +339,7 @@ with
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     ap_assessments as (
         select distinct
             title,

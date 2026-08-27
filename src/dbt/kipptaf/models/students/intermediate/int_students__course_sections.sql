@@ -1,14 +1,9 @@
 with
-    -- Focus is Miami's system of record from AY2026 forward, but the frozen
-    -- archive still holds Miami AY2020 through AY2025. Scope by year rather
-    -- than excluding Miami wholesale, and derive the boundary so a Focus
-    -- backfill of an earlier year does not silently double-count.
-    -- coalesce guards against an empty int_focus__schedule (e.g. an unbuilt
-    -- --defer dev copy): min(academic_year) with no rows is NULL, and NULL >=
-    -- fay.min_academic_year evaluates to NULL rather than false below, so
-    -- `not (...)` also evaluates to NULL and the WHERE filter drops every
-    -- Miami row instead of keeping the archive. 9999 fails toward preserving
-    -- the data that exists.
+    -- coalesce guards an empty int_focus__schedule (an unbuilt --defer dev
+    -- copy): min(academic_year) over no rows is NULL, and NULL >=
+    -- fay.min_academic_year evaluates to NULL rather than false, so `not (...)`
+    -- is NULL too and the WHERE filter drops every Miami row instead of keeping
+    -- the archive. 9999 fails toward preserving the data that exists.
     focus_academic_year_boundary as (
         select coalesce(min(academic_year), 9999) as min_academic_year,
         from {{ ref("int_focus__schedule") }}
