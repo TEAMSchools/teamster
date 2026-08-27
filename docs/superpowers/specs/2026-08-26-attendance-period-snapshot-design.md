@@ -224,7 +224,16 @@ time_:
 - Anything that today needs an anchor flag.
 
 The rule: "on this day" reads the daily fact, "as of this period" reads the
-snapshot. The snapshot is built from the daily fact, so they cannot disagree.
+snapshot. Both derive from `int_students__attendance_daily`, so they agree on
+attendance values.
+
+They do **not** agree on school attribution until
+[#4803](https://github.com/TEAMSchools/teamster/issues/4803) is fixed. The
+snapshot carries `schoolid` from upstream and attributes every stint; a
+day-level query reaching school through `dim_student_enrollments` loses the 961
+orphaned Miami AY2025 keys to a null location. So a per-school breakdown of the
+daily fact and of the snapshot will differ for Miami AY2025. Document that on
+the snapshot's properties file rather than papering over it.
 
 ## Enrollments that do not span the period
 
