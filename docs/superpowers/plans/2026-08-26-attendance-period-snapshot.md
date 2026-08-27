@@ -1513,6 +1513,8 @@ Refs #4994"
 - Modify:
   `src/dbt/kipptaf/models/marts/facts/properties/fct_student_attendance_periods.yml`
   (the early-period note only)
+- Modify: `src/cube/model/cubes/students/student_enrollments.yml` — **scope
+  addition**, not in this task's original list. See Step 1c.
 
 **Interfaces:**
 
@@ -1547,11 +1549,56 @@ be displayed alongside the rate. Someone who meets an August tile without this
 note will read it as broken data, and that is the failure this step exists to
 prevent.
 
+- [ ] **Step 1c: Correct `count_students` and add a routing rule among the four
+      enrollment measures**
+
+Same defect class as the falsified descriptions on the periods view: a
+description that outlived the mechanism it described.
+
+`count_students` on `student_enrollments` promises point-in-time as-of semantics
+that `queryRewrite` delivered **by injection**. Its own words: "as of the most
+recent in-session school day in your query: the exact date if you filter to one
+... **otherwise each school's latest in-session day in the period**." That
+"otherwise" branch WAS the injection. Task 6 removed this cube from
+`SNAPSHOT_CUBES` and Task 7 deleted the guard entirely, so an unpinned date
+range now returns **ever-enrolled-during-the-range**, not a point-in-time
+headcount.
+
+Two consequences, both currently undocumented:
+
+1. The description's central as-of promise is false for the unpinned case.
+1. Its "a week or month with no in-session days ... reads as 0 in a trend"
+   caveat also described anchored behaviour. Unanchored, such a period has no
+   rows at all, so the group is absent rather than zero — the opposite of what
+   the text says.
+
+Rewrite it to say what the measure now does: distinct students enrolled at any
+point within the queried range, and a point-in-time figure only when a single
+date is pinned. Point at `count_students_year_end`, `_month_end`, and
+`_week_end` for the as-of figure.
+
+Then state the choice explicitly, because four measures now differ in a way the
+names only imply:
+
+| measure                    | semantics                                                              |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `count_students`           | ever-enrolled during the queried range, unless a single date is pinned |
+| `count_students_year_end`  | point-in-time, as of each school's most recent in-session day          |
+| `count_students_month_end` | point-in-time, as of each month's last in-session day                  |
+| `count_students_week_end`  | point-in-time, as of each school week's last in-session day            |
+
+Nothing in the model states this today. An analyst or an LLM picking by name
+alone will read `count_students` as the default and get a different metric than
+they expect — and the number will look plausible.
+
 - [ ] **Step 2: Add the routing rule to the MCP `meta` docstring**
 
 The docstring names the analyst-facing views by example and carries the grain
-rules, but has no rule for choosing between two views of one domain. Add, after
-the existing view examples:
+rules, but has no rule for choosing between two views of one domain, and none
+for choosing among measures WITHIN one view. Both are needed: the attendance
+split is cross-view, but the enrollment headcount choice from Step 1c is four
+measures inside a single view, where picking by name alone silently returns a
+different metric. Add, after the existing view examples:
 
 ```text
     Two views can cover one domain at different grains. Attendance splits this
