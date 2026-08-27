@@ -116,15 +116,25 @@ cubes:
       - name: count_students_month_end
         description: >-
           Distinct students enrolled as of each school's latest in-session day
-          of each calendar month — the month-end headcount. Filters to
-          is_enrollment_month_end_record, so the anchor is baked in and no
+          of each calendar month — the month-end headcount. Filters to the
+          underlying is_enrollment_month_end_record column (exposed as the
+          is_month_end_record dimension), so the anchor is baked in and no
           dates_date_day filter is required; group by dates_month_number /
           dates_month_name (or a monthly dates_date_day granularity) to trend
           it. Matches the topline Total Enrollment methodology — enrollment is
-          by entry/exit dates, not status. A month with no in-session days (e.g.
-          a winter break spanning the whole month) has no point-in-time snapshot
-          and reads as 0 for that month — the daily fact is in-session-days only
-          by design.
+          by entry/exit dates, not status. Read trends on instructional periods,
+          or carry the prior value forward in the BI layer (the daily fact is
+          in-session-days only by design). A month can read 0 for two different
+          reasons that look identical in the output: a month with no in-session
+          days at all (e.g. a winter break spanning the whole month) has no
+          point-in-time snapshot to count; separately, a month that DOES have
+          in-session days but whose month-end anchor day falls outside your
+          query's own date range also reads 0, because this measure's anchor is
+          a filter on the aggregate itself — it zeroes the count rather than
+          dropping the month from the result the way an out-of-range month would
+          be dropped entirely. Don't read a trailing 0 as "enrollment fell to
+          zero" without first checking whether the anchor day was inside your
+          date range.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -135,14 +145,24 @@ cubes:
         description: >-
           Distinct students enrolled as of each school's latest in-session day
           of each PowerSchool school week — the week-end headcount. Filters to
-          is_enrollment_week_end_record, so the anchor is baked in and no
+          the underlying is_enrollment_week_end_record column (exposed as the
+          is_week_end_record dimension), so the anchor is baked in and no
           dates_date_day filter is required; group by
           dates_school_week_start_date (PowerSchool school weeks, not Cube's ISO
           granularity: "week") to trend it. Matches the topline Total Enrollment
-          methodology — enrollment is by entry/exit dates, not status. A week
-          with no in-session days (e.g. winter or February break) has no
-          point-in-time snapshot and reads as 0 for that week — the daily fact
-          is in-session-days only by design.
+          methodology — enrollment is by entry/exit dates, not status. Read
+          trends on instructional periods, or carry the prior value forward in
+          the BI layer (the daily fact is in-session-days only by design). A
+          week can read 0 for two different reasons that look identical in the
+          output: a week with no in-session days at all (e.g. winter or February
+          break) has no point-in-time snapshot to count; separately, a week that
+          DOES have in-session days but whose week-end anchor day falls outside
+          your query's own date range also reads 0, because this measure's
+          anchor is a filter on the aggregate itself — it zeroes the count
+          rather than dropping the week from the result the way an out-of-range
+          week would be dropped entirely. Don't read a trailing 0 as "enrollment
+          fell to zero" without first checking whether the anchor day was inside
+          your date range.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
