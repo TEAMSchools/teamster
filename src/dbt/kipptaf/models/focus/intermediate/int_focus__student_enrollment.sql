@@ -3,7 +3,7 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippmiami_focus", "stg_focus__student_enrollment"),
+                    source("kippmiami_focus", "int_focus__student_enrollment"),
                 ]
             )
         }}
