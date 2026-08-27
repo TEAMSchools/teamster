@@ -27,12 +27,10 @@ with
         }}
     ),
 
-    -- int_focus__student_enrollment_roster carries first_day_of_school but no
-    -- year-end date, and is_enrolled_recent needs one.
-    -- int_students__calendar_week already unions both SIS calendars and remaps
-    -- Focus's internal school id to the network school number -- the same id
-    -- the roster's ps_schoolid carries. School numbers are network-unique, so
-    -- no region filter is needed to keep the join unambiguous.
+    -- The roster has first_day_of_school but no year-end date.
+    -- int_students__calendar_week remaps Focus's internal school id to the
+    -- network school number, which is the id ps_schoolid carries; school
+    -- numbers are network-unique, so no region filter is needed here.
     focus_school_year_end as (
         select
             academic_year, schoolid, max(last_day_school_year) as last_day_school_year,
@@ -117,19 +115,10 @@ with
 
             if(yg.grade_level_prev = enr.grade_level, true, false) as is_retained_year,
 
-            /* PowerSchool derives both of these from enrollment dates. The Focus
-            branch omitted them, so `full union all corresponding` filled null,
-            and `not null` is null in a where clause -- every consumer filtering
-            on either one dropped all of Miami without saying so (#4996).
-            rpt_tableau__miami_fast held zero rows for this reason, and the two
-            rpt_gsheets__csgf_hs_* extracts filter on is_enrolled_recent, so
-            Miami would vanish from both as its high school grows.
-
-            exitdate is never null here -- the roster coalesces a missing
-            end_date to June 30 -- so is_enrolled_y1 is true on every Miami
-            stint. That matches PowerSchool, where it is also true on every row.
-            Reproducing the expression rather than writing `true` keeps the two
-            branches derived the same way if the roster stops coalescing. */
+            -- #4996. PowerSchool's own expressions, reproduced rather than
+            -- simplified: exitdate is never null here because the roster
+            -- coalesces it, so is_enrolled_y1 is always true today, and a
+            -- `true` literal would silently diverge if that ever changes.
             if(enr.exitdate is not null, true, false) as is_enrolled_y1,
 
             case
@@ -142,17 +131,10 @@ with
                 else false
             end as is_enrolled_recent,
 
-            /* PowerSchool reads this off the same specprog row that sets
-            reporting_schoolid and school_level to 'OD'. This branch already
-            gives every Miami row a real reporting_schoolid and an ES/MS/HS
-            school_level, never 'OD', so false records a claim the branch makes
-            already rather than inventing one.
-
-            is_self_contained stays null by deliberate contrast. It is a SPED
-            service-delivery fact Focus does not carry -- ese_fefp_code_label
-            encodes Florida funding levels, not placement -- and false there
-            would assert a verified negative the data cannot support (#4968).
-            rpt_tableau__dibels_dashboard therefore still excludes Miami. */
+            -- #4996. False rather than null: reporting_schoolid and
+            -- school_level above already carry non-OD values for every Miami
+            -- row, and PowerSchool reads this flag off that same specprog row.
+            -- is_self_contained has no such twin, so it stays null (#4968).
             false as is_out_of_district,
         from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
@@ -179,9 +161,8 @@ with
         select
             * except (is_enrolled_y1, is_enrolled_recent),
 
-            -- PowerSchool takes both to the year grain with max() over
-            -- (studentid, yearid), so a student with several stints counts as
-            -- enrolled when any one stint qualifies. Same rule, Focus keys.
+            -- Year grain, matching PowerSchool's max() over
+            -- (studentid, yearid): any qualifying stint counts.
             max(is_enrolled_y1) over (
                 partition by student_number, academic_year
             ) as is_enrolled_y1,
