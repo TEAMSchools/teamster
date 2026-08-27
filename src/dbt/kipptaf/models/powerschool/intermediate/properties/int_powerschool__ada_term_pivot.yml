@@ -8,6 +8,20 @@ models:
       rather than from `int_powerschool__ada_term`.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Twice daily instead of the default eager table condition, which
+          # re-fires on ANY upstream data change through the two intervening
+          # views -- 86 executions/day, 90.8 GiB and 28.6 slot-hours in 24h to
+          # rebuild an 83k-row table. Every exposure that reads an ADA column
+          # refreshes daily: earliest okrts_dashboard and
+          # gradebook_and_gpa_dashboard `0 4 * * *`, plus attendance_dashboard's
+          # afternoon `0 15 * * *`. ops_dashboard is hourly and reachable in the
+          # graph, but projects no ADA column, so it sets no floor here. Same
+          # tick as the earliest consumers; the ~any_deps_in_progress guard
+          # serializes this model ahead of them.
+          automation_condition:
+            cron_schedule: 0 4,15 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
