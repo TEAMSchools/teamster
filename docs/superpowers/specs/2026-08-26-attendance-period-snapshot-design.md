@@ -147,6 +147,8 @@ A new dbt model, one row per enrollment per period.
 | `ytd_ada`               | Cumulative ADA through `period_end_date`                            |
 | `is_ca_eligible`        | `n_membership_days_ytd >= 10`                                       |
 | `is_chronically_absent` | `ytd_ada <= 0.90`, computed on accumulated counts, not the float    |
+| `ada_tier`              | Tier 1 to 4; `is_chronically_absent` derives from it                |
+| `is_truant`             | Truancy status as of `period_end_date`                              |
 
 Rough size: about 14,500 student-school pairs times roughly 51 periods, so
 **under 750K rows against 12.8M**.
@@ -263,6 +265,53 @@ producing rows, a month-over-month CA trend has a shifting denominator. That is
 correct — they are not enrolled — but the composition changes between points, so
 the series is not a fixed cohort.
 
+## Truancy rides along; enrollment headcount does not
+
+`queryRewrite`'s snapshot guard covers four measure stems on
+`student_attendance` — `chronically_absent`, `tier_1_2`, `tier_3`, and `truant`
+— and one on `student_enrollments`, `count_students`. Removing the block means
+answering for all of them, not only chronic absence.
+
+**Truancy moves to this snapshot.** Same fact, same grain, same anchor
+semantics, so it needs one more column, `is_truant`, resolved at
+`period_end_date`. The criteria stay regional and stay in
+`int_students__attendance_daily` where they already are: Miami uses 15 or more
+absences in a 90 day rolling window, the New Jersey regions use a projected 50
+or more for the year. This model does not change that logic, only where the
+period-end value is read from. That retires the 9 truancy measures in the three
+anchor families.
+
+**Enrollment headcount does not.** `student_enrollments.count_students` is a
+different cube, a different question, and a different anchor:
+`is_current_record` is per school and as of now, not per stint. It needs either
+its own period snapshot or a narrowed guard, and that decision belongs with
+whoever owns enrollment reporting. **The `queryRewrite` snapshot block therefore
+cannot be fully deleted here** — sequence this work so the attendance stems come
+out and the block shrinks rather than disappears.
+
+## Documentation surfaces
+
+Three places encode the anchor rules for consumers, and all three reach an LLM
+through the Cube MCP's `meta` tool, so a stale one silently teaches the wrong
+query.
+
+1. **`student_attendance_view` description.** Its second paragraph documents the
+   entire anchor contract: base measures defaulting to year-end, a single
+   `date_day` equality filter for point-in-time, `_month_end` and `_week_end`
+   for trends. Every sentence becomes wrong. Replace with routing — this view
+   answers day-level questions, the snapshot answers rates as of a period.
+1. **The new snapshot view's own description.** State that `period_type` selects
+   the grain, that no anchor filter is needed or accepted, and that a row exists
+   only for a period in which the enrollment had a membership day.
+1. **The MCP `meta` docstring in `src/cube/mcp/server.py`.** It names the
+   analyst-facing views by example and carries the grain and scope rules, but
+   has no rule for choosing between two views of one domain. Add the new view to
+   the examples and state the routing rule there, since that docstring reaches
+   the model on every client.
+
+Nothing else in `mcp/server.py` references anchors, snapshots, or chronic
+absence, so there is nothing to remove there.
+
 ## Cube changes
 
 - `student_attendance` keeps only day-level measures and dimensions.
@@ -304,6 +353,8 @@ Boundary unit tests, since every defect here is a boundary defect:
   each school's threshold is evaluated on that school's days alone.
 - An enrollment at exactly 90.0% ADA is chronically absent AND in Tier 3, never
   Tier 2.
+- Truancy at period end matches the current `_month_end` and `_week_end` truancy
+  measures per region, since the regional criteria are unchanged.
 
 Reconciliation against the figures on
 [#4994](https://github.com/TEAMSchools/teamster/issues/4994): 11,153 counted
