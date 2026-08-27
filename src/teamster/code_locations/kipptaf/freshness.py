@@ -16,6 +16,13 @@ adp_wfn_policy = FreshnessPolicy.cron(
 # anchors for up to ~15 hours. Deadlines sit one hour after each materialization
 # tick: a normal build (~2.4 min per #4468) clears it comfortably, while a
 # skipped tick trips the policy within the hour instead of going unnoticed.
+#
+# Trade-off: a materialization landing before the window opens (e.g. 05:58)
+# reads FAIL at 07:00 and stays FAIL until the NEXT materialization, not just
+# the next tick -- up to ~8 hours if that's the 15:00 run. Low risk here
+# because the asset's automation condition triggers on this same
+# 0 6,15 * * * tick, so a normal run can't land before 06:00 -- only an
+# out-of-band manual/backfill run or instance clock skew would trip this.
 attendance_daily_policy = FreshnessPolicy.cron(
     deadline_cron="0 7,16 * * *",
     lower_bound_delta=timedelta(hours=1),
