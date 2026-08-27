@@ -9,6 +9,20 @@ models:
       membership day produces no row; period_end_date_key is the last membership
       day observed, which can fall short of the period's calendar end for an
       in-progress period. Populated for year, month, and week period types.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Table, not the marts-default view. Every attendance-star model in
+          # prod is a view today, so a Cube query re-expands the whole chain —
+          # the #4333 defect that #4468 fixed for the assessment star. Nightly
+          # cron rather than eager: the upstreams are eager and would drive
+          # repeated rebuilds of a 3.6M row model for no freshness anyone
+          # consumes. Midnight tick matches int_topline__ada_running_weekly,
+          # the closest sibling off the same upstream, and the KIPP Foundation
+          # criteria require nightly refresh, not intra-day.
+          automation_condition:
+            cron_schedule: 0 0 * * *
     columns:
       - name: student_attendance_period_key
         data_type: string
@@ -19,6 +33,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
@@ -116,6 +131,41 @@ models:
           with a recorded attendance value, accumulated from the start of the
           academic year through period_end_date_key — not within the period.
 
+      - name: is_truant
+        data_type: boolean
+        description: >-
+          Truancy status as of period_end_date_key, read from
+          int_students__attendance_daily on that same date. Regional truancy
+          criteria (Miami: 15 or more absences in a 90-day window; the NJ
+          regions: a projected 50 or more for the year) are computed upstream
+          and carried through unchanged here.
+
+      - name: is_ca_eligible
+        data_type: boolean
+        description: >-
+          TRUE when n_membership_days_ytd is 10 or more — the KIPP Foundation
+          chronic-absence eligibility floor, evaluated cumulatively at the
+          individual school (location_key), not within a single period.
+
+      - name: ada_tier
+        data_type: string
+        description: >-
+          Attendance tier from cumulative n_present_days_ytd over
+          n_membership_days_ytd, compared as integer day counts rather than a
+          rounded percentage so the boundary at exactly 90.0 percent sorts
+          deterministically: Tier 1 is 95 percent and above; Tier 2 is strictly
+          above 90.0 percent and below 95 percent; Tier 3 is 80 percent through
+          90.0 percent inclusive; Tier 4 is below 80 percent. Null when
+          n_membership_days_ytd is 0.
+
+      - name: is_chronically_absent
+        data_type: boolean
+        description: >-
+          Derived from ada_tier (Tier 3 or Tier 4), never computed as an
+          independent comparison against the 90.0 percent threshold — the two
+          are the same fact stated once, so they cannot disagree at exactly 90.0
+          percent the way two separately-evaluated expressions did.
+
 unit_tests:
   - name: test_periods_year_accumulates_all_membership_days
     description:
@@ -167,17 +217,21 @@ unit_tests:
           date '2025-07-01' as period_start_date_key,
           date '2025-09-04' as period_end_date_key,
           3.0 as n_membership_days_ytd,
-          2.0 as n_present_days_ytd
+          2.0 as n_present_days_ytd,
+          false as is_truant,
+          false as is_ca_eligible,
+          'Tier 4' as ada_tier,
+          true as is_chronically_absent
         union all
         select
           '13ead5f9d5b68563b7e0fb2988614b3a', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-04',
-          3.0, 2.0
+          3.0, 2.0, false, false, 'Tier 4', true
         union all
         select
           'f06146f86d9221643c7cda7ce52fedf1', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-04',
-          3.0, 2.0
+          3.0, 2.0, false, false, 'Tier 4', true
 
   - name: test_periods_month_accumulates_year_to_date
     description:
@@ -229,24 +283,584 @@ unit_tests:
           date '2025-07-01' as period_start_date_key,
           date '2025-10-06' as period_end_date_key,
           3.0 as n_membership_days_ytd,
-          2.0 as n_present_days_ytd
+          2.0 as n_present_days_ytd,
+          false as is_truant,
+          false as is_ca_eligible,
+          'Tier 4' as ada_tier,
+          true as is_chronically_absent
         union all
         select
           '13ead5f9d5b68563b7e0fb2988614b3a', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-03',
-          2.0, 2.0
+          2.0, 2.0, false, false, 'Tier 1', false
         union all
         select
           'a02ed9f7470904b9f32076e131e88c29', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-06',
-          3.0, 2.0
+          3.0, 2.0, false, false, 'Tier 4', true
         union all
         select
           'f06146f86d9221643c7cda7ce52fedf1', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-03',
-          2.0, 2.0
+          2.0, 2.0, false, false, 'Tier 1', false
         union all
         select
           '2eb06a2b38e907a8dfc254c14f72af4e', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-06',
-          3.0, 2.0
+          3.0, 2.0, false, false, 'Tier 4', true
+
+  - name: test_periods_boundaries
+    description:
+      Four students on the exact boundaries. 9 of 10 present is exactly 90.0
+      percent and must be chronically absent and Tier 3, never Tier 2. 19 of 20
+      is 95 percent and must be Tier 1. A student with 9 membership days is not
+      eligible; 10 is. Truancy is read from the last membership day. Each
+      student's fixture holds week_start_monday constant across every date so
+      the whole span collapses into one week bucket, keeping this expect block
+      to one row per student per period type.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            if(d = date '2025-09-10', 0.0, 1.0) as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+          union all
+          select
+            2, 'kippnewark', 100, 2025, d, date '2025-09-01', 1.0,
+            if(d = date '2025-09-20', 0.0, 1.0), true
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-20'
+          )) as d
+          union all
+          select
+            3, 'kippnewark', 100, 2025, d, date '2025-09-01', 1.0, 1.0, false
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-09'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-09-01' as period_start_date_key,
+          date '2025-09-10' as period_end_date_key,
+          10.0 as n_membership_days_ytd,
+          9.0 as n_present_days_ytd,
+          false as is_truant,
+          true as is_ca_eligible,
+          'Tier 3' as ada_tier,
+          true as is_chronically_absent
+        union all
+        select
+          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
+          10.0, 9.0, false, true, 'Tier 3', true
+        union all
+        select
+          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-10',
+          10.0, 9.0, false, true, 'Tier 3', true
+        union all
+        select
+          'a53f894f683385d739b1fe5f58e1d0fd', 'c81e728d9d4c2f636f067f89cc14862c',
+          'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-20',
+          20.0, 19.0, true, true, 'Tier 1', false
+        union all
+        select
+          'cc15bde19837adf0ca3c82fc3cf7db55', 'c81e728d9d4c2f636f067f89cc14862c',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-20',
+          20.0, 19.0, true, true, 'Tier 1', false
+        union all
+        select
+          '8114c0ba35128911e0dd4006c1d3b085', 'c81e728d9d4c2f636f067f89cc14862c',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-20',
+          20.0, 19.0, true, true, 'Tier 1', false
+        union all
+        select
+          'c68f8476a3d8502bba9c5c6bd4e6ac04', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+          'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-09',
+          9.0, 9.0, false, false, 'Tier 1', false
+        union all
+        select
+          'bd64db5718f8ce814d11702539c835c3', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-09',
+          9.0, 9.0, false, false, 'Tier 1', false
+        union all
+        select
+          '5ca59b51559577d9280fcf75dd346e83', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-09',
+          9.0, 9.0, false, false, 'Tier 1', false
+
+  - name: test_periods_ninety_point_zero_one_is_not_chronically_absent
+    description:
+      The threshold is at or below 90.0 percent, so just above it is not
+      chronically absent. 91 of 101 present is 90.099 percent. Fixed at
+      week_start_monday = 2025-09-01 for the entire span, so the whole 101 days
+      collapse into one week row; month rows still split by real calendar month
+      (September through December).
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            if(
+              d <= date_add(date '2025-09-01', interval 9 day), 0.0, 1.0
+            ) as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-12-10'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-09-01' as period_start_date_key,
+          date '2025-09-30' as period_end_date_key,
+          30.0 as n_membership_days_ytd,
+          20.0 as n_present_days_ytd,
+          false as is_truant,
+          true as is_ca_eligible,
+          'Tier 4' as ada_tier,
+          true as is_chronically_absent
+        union all
+        select
+          '4cdf075f9ff7549905c68d4a795be9c0', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-31',
+          61.0, 51.0, false, true, 'Tier 3', true
+        union all
+        select
+          '6a79e9dc11b65d95ddbd99dbc282a088', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-11-01', date '2025-11-30',
+          91.0, 81.0, false, true, 'Tier 3', true
+        union all
+        select
+          '6a03abbc4acbc01bf6a8760b084a2479', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-12-01', date '2025-12-10',
+          101.0, 91.0, false, true, 'Tier 2', false
+        union all
+        select
+          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-12-10',
+          101.0, 91.0, false, true, 'Tier 2', false
+        union all
+        select
+          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-12-10',
+          101.0, 91.0, false, true, 'Tier 2', false
+
+  - name: test_periods_threshold_is_per_school_not_combined
+    description:
+      Six membership days at each of two schools. Twelve days combined, but the
+      threshold applies per school, so the student is eligible at neither.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            1.0 as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-06'
+          )) as d
+          union all
+          select
+            1, 'kippnewark', 200, 2025, d, date '2025-10-06', 1.0, 1.0, false
+          from unnest(generate_date_array(
+            date '2025-10-06', date '2025-10-11'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select 100 as school_number, 'kippnewark' as _dbt_source_project,
+            'loc-a' as location_key
+          union all
+          select 200, 'kippnewark', 'loc-b'
+    expect:
+      format: sql
+      rows: |
+        select
+          'cebe374c28dbb00b22bcae94c93b5541' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-a' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-09-01' as period_start_date_key,
+          date '2025-09-06' as period_end_date_key,
+          6.0 as n_membership_days_ytd,
+          6.0 as n_present_days_ytd,
+          false as is_truant,
+          false as is_ca_eligible,
+          'Tier 1' as ada_tier,
+          false as is_chronically_absent
+        union all
+        select
+          '238df5c46572a97bde7f0371fd2c0c49', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-06',
+          6.0, 6.0, false, false, 'Tier 1', false
+        union all
+        select
+          '8052fea670655a6213fea532a3a889b7', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-06',
+          6.0, 6.0, false, false, 'Tier 1', false
+        union all
+        select
+          '937d1b375b4c7f3fa310db235e4ef9fc', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-b', 2025, 'month', date '2025-10-01', date '2025-10-11',
+          6.0, 6.0, false, false, 'Tier 1', false
+        union all
+        select
+          'f12f4391b6748c62c7cb92f611705618', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-b', 2025, 'week', date '2025-10-06', date '2025-10-11',
+          6.0, 6.0, false, false, 'Tier 1', false
+        union all
+        select
+          'a271b44d1cf9e31020529f2dbd2fbea8', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-b', 2025, 'year', date '2025-07-01', date '2025-10-11',
+          6.0, 6.0, false, false, 'Tier 1', false
+
+  - name: test_periods_mid_year_leaver_keeps_own_period_end
+    description: A student whose last membership day is 10 October gets an
+      October row dated 10 October, no November row, and a year row.
+      week_start_monday derives from the calendar (date_trunc week(monday)) only
+      because this fixture has no school calendar -- production always reads the
+      real int_students__attendance_daily.week_start_monday. This is the
+      180-enrollment defect on #4994.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date_trunc(d, week(monday)) as week_start_monday,
+            1.0 as membershipvalue,
+            1.0 as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-10-10'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-09-01' as period_start_date_key,
+          date '2025-09-30' as period_end_date_key,
+          30.0 as n_membership_days_ytd,
+          30.0 as n_present_days_ytd,
+          false as is_truant,
+          true as is_ca_eligible,
+          'Tier 1' as ada_tier,
+          false as is_chronically_absent
+        union all
+        select
+          '4cdf075f9ff7549905c68d4a795be9c0', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-10',
+          40.0, 40.0, false, true, 'Tier 1', false
+        union all
+        select
+          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-07',
+          7.0, 7.0, false, false, 'Tier 1', false
+        union all
+        select
+          '92ca9ef1b5c22e320068bafc6ea9670e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-08', date '2025-09-14',
+          14.0, 14.0, false, true, 'Tier 1', false
+        union all
+        select
+          '56f9c5198afcf7d9e05e1b932474a57e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-15', date '2025-09-21',
+          21.0, 21.0, false, true, 'Tier 1', false
+        union all
+        select
+          '76faca85b6ec721db8e904650c7d6fae', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-22', date '2025-09-28',
+          28.0, 28.0, false, true, 'Tier 1', false
+        union all
+        select
+          'a8ec9633ba6a45410e13f8b869013ac6', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-29', date '2025-10-05',
+          35.0, 35.0, false, true, 'Tier 1', false
+        union all
+        select
+          '7af44e38db09779bbbedb2c744b02122', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-10',
+          40.0, 40.0, false, true, 'Tier 1', false
+        union all
+        select
+          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-10-10',
+          40.0, 40.0, false, true, 'Tier 1', false
+
+  - name: test_periods_eligibility_is_cumulative_not_per_period
+    description:
+      Sixty-one membership days through September, then six in October. The
+      October month row is eligible on 67 cumulative days from the year start,
+      even though October alone has only six. Applying the threshold per period
+      would wrongly exclude a short month. week_start_monday derives from the
+      calendar (date_trunc week(monday)) only because this fixture has no school
+      calendar.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date_trunc(d, week(monday)) as week_start_monday,
+            1.0 as membershipvalue,
+            1.0 as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-08-01', date '2025-09-30'
+          )) as d
+          union all
+          select
+            1, 'kippnewark', 100, 2025, d, date_trunc(d, week(monday)),
+            1.0, 1.0, false
+          from unnest(generate_date_array(
+            date '2025-10-01', date '2025-10-06'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          'a88567c722819590e5e9798b7f8fc77a' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-08-01' as period_start_date_key,
+          date '2025-08-31' as period_end_date_key,
+          31.0 as n_membership_days_ytd,
+          31.0 as n_present_days_ytd,
+          false as is_truant,
+          true as is_ca_eligible,
+          'Tier 1' as ada_tier,
+          false as is_chronically_absent
+        union all
+        select
+          '7aebaabbe95966aa7ecf44dfaadfc907', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-30',
+          61.0, 61.0, false, true, 'Tier 1', false
+        union all
+        select
+          '4cdf075f9ff7549905c68d4a795be9c0', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-06',
+          67.0, 67.0, false, true, 'Tier 1', false
+        union all
+        select
+          '4d80691092e798e1e9845fd5fb90955d', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-07-28', date '2025-08-03',
+          3.0, 3.0, false, false, 'Tier 1', false
+        union all
+        select
+          '065eec29c158398492152d90574da55f', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-08-04', date '2025-08-10',
+          10.0, 10.0, false, true, 'Tier 1', false
+        union all
+        select
+          '238f5fd4ab3b401b1a042379417d766c', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-08-11', date '2025-08-17',
+          17.0, 17.0, false, true, 'Tier 1', false
+        union all
+        select
+          '8a023c3dbbf22ea2b4a0223bef5333a7', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-08-18', date '2025-08-24',
+          24.0, 24.0, false, true, 'Tier 1', false
+        union all
+        select
+          'b9c9f8b56541ac1db2a4502d2b7de635', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-08-25', date '2025-08-31',
+          31.0, 31.0, false, true, 'Tier 1', false
+        union all
+        select
+          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-07',
+          38.0, 38.0, false, true, 'Tier 1', false
+        union all
+        select
+          '92ca9ef1b5c22e320068bafc6ea9670e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-08', date '2025-09-14',
+          45.0, 45.0, false, true, 'Tier 1', false
+        union all
+        select
+          '56f9c5198afcf7d9e05e1b932474a57e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-15', date '2025-09-21',
+          52.0, 52.0, false, true, 'Tier 1', false
+        union all
+        select
+          '76faca85b6ec721db8e904650c7d6fae', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-22', date '2025-09-28',
+          59.0, 59.0, false, true, 'Tier 1', false
+        union all
+        select
+          'a8ec9633ba6a45410e13f8b869013ac6', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-29', date '2025-10-05',
+          66.0, 66.0, false, true, 'Tier 1', false
+        union all
+        select
+          '7af44e38db09779bbbedb2c744b02122', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-06',
+          67.0, 67.0, false, true, 'Tier 1', false
+        union all
+        select
+          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-10-06',
+          67.0, 67.0, false, true, 'Tier 1', false
+
+  - name: test_periods_gap_in_enrollment_does_not_carry_values_forward
+    description:
+      Ten membership days in September, a full calendar month with zero
+      membership days in October, then five more in November. The spec forbids
+      carrying a value forward across a gap, so October must emit no row at all
+      -- not a repeat of September's totals -- and November's cumulative counts
+      must add its own five days onto September's ten (15), neither resetting to
+      five nor freezing at ten. week_start_monday is held constant per
+      membership block so each block collapses to one week row.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            1.0 as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+          union all
+          select
+            1, 'kippnewark', 100, 2025, d, date '2025-11-03', 1.0, 1.0, false
+          from unnest(generate_date_array(
+            date '2025-11-01', date '2025-11-05'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-09-01' as period_start_date_key,
+          date '2025-09-10' as period_end_date_key,
+          10.0 as n_membership_days_ytd,
+          10.0 as n_present_days_ytd,
+          false as is_truant,
+          true as is_ca_eligible,
+          'Tier 1' as ada_tier,
+          false as is_chronically_absent
+        union all
+        select
+          '6a79e9dc11b65d95ddbd99dbc282a088', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'month', date '2025-11-01', date '2025-11-05',
+          15.0, 15.0, false, true, 'Tier 1', false
+        union all
+        select
+          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
+          10.0, 10.0, false, true, 'Tier 1', false
+        union all
+        select
+          '37f29e544d47ba89e8b034e70d1d8171', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-11-03', date '2025-11-05',
+          15.0, 15.0, false, true, 'Tier 1', false
+        union all
+        select
+          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-11-05',
+          15.0, 15.0, false, true, 'Tier 1', false
