@@ -1037,6 +1037,14 @@ wins: its test-tiering advice ("avoid liberal `not_null` /
 `config.where`-scoped warn tests, its example SQL is non-BigQuery dialect, and
 validation/profiling goes through BigQuery MCP, not `dbt show`.
 
+- **Before writing or editing any inline SQL comment, stop and ask: would this
+  survive as a properties.yml `description:` instead?** A comment explaining
+  rationale, background, or what/why a model computes belongs in the properties
+  file (see _YAML conventions_ below for the full rule) — not the SQL, even
+  mid-edit on a `.sql` file where the note feels like natural momentum. The file
+  being open is not evidence it's the right place. Keep inline SQL comments to
+  what a reader of that exact line cannot see — a non-obvious fallback, why a
+  filter exists.
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
@@ -1254,10 +1262,8 @@ alias.
   descriptions — those go in inline SQL comments at the derivation site.
 - The reverse also holds: rationale that needs no code context belongs in
   `description:`, not an inline SQL comment. Keep SQL comments to what a reader
-  of that line cannot see — a non-obvious fallback, why a filter exists. A
-  comment longer than the expression it annotates belongs in the properties
-  file; the repo's existing multi-paragraph SQL comments are not a precedent to
-  extend.
+  of that line cannot see — a non-obvious fallback, why a filter exists. The
+  repo's existing multi-paragraph SQL comments are not a precedent to extend.
 
 ### Flattened child-array model naming
 
