@@ -80,6 +80,8 @@ Decisions:
 1. Eligible at **10 or more membership days at the individual school**, counted
    cumulatively across the year, not per period.
 1. Mid-year leavers are **included**.
+1. **Tier 2 starts strictly above 90.0%**, so Tier 3 covers 80% through 90.0%
+   inclusive. See below.
 1. The New Jersey 45-day threshold is out of scope
    ([#5015](https://github.com/TEAMSchools/teamster/issues/5015)).
 
@@ -94,24 +96,52 @@ Three defects this corrects, sized on AY2025:
 `rpt_tableau__okrts_referrals` already uses `unweighted_ada <= 0.90`. The repo
 currently ships two definitions that disagree; this makes them agree.
 
+### The tier boundary has to move with the threshold
+
+`ada_tier` currently assigns Tier 2 at `_running_ada >= 0.90`, so exactly 90.0%
+lands in Tier 2. Once chronic absence is `at or below 90.0%`, the same **198
+AY2025 enrollments** are Tier 2 — which `pct_tier_1_2` reports as on track — and
+chronically absent at the same time.
+
+KIPP Foundation's criteria carry this contradiction themselves, so there is no
+authority to defer to. Moving Tier 2's lower bound to strictly above 90.0% makes
+Tier 1 plus Tier 2 mean exactly "not chronically absent", which is what a reader
+of the dashboard will assume. The cost is a hair's deviation from KIPP
+Foundation's stated Tier 2 range of 90 to 94%, which goes in the note to them.
+
 ## The model
 
 A new dbt model, one row per enrollment per period.
 
-| Column                   | Meaning                                                             |
-| ------------------------ | ------------------------------------------------------------------- |
-| `student_enrollment_key` | The stint                                                           |
-| `schoolid`               | The school the threshold applies at                                 |
-| `period_type`            | `year`, `month`, or `week`                                          |
-| `period_start_date`      | Bucket start; `week` uses the PowerSchool school week               |
-| `period_end_date`        | The enrollment's **own** last membership day in the bucket          |
-| `n_membership_days_ytd`  | Cumulative membership days at this school through `period_end_date` |
-| `ytd_ada`                | Cumulative ADA through `period_end_date`                            |
-| `is_ca_eligible`         | `n_membership_days_ytd >= 10`                                       |
-| `is_chronically_absent`  | `ytd_ada <= 0.90`, computed on accumulated counts, not the float    |
+| Column                  | Meaning                                                             |
+| ----------------------- | ------------------------------------------------------------------- |
+| `student_key`           | The student                                                         |
+| `location_key`          | The school the threshold applies at                                 |
+| `period_type`           | `year`, `month`, or `week`                                          |
+| `period_start_date`     | Bucket start; `week` uses the PowerSchool school week               |
+| `period_end_date`       | The enrollment's **own** last membership day in the bucket          |
+| `n_membership_days_ytd` | Cumulative membership days at this school through `period_end_date` |
+| `ytd_ada`               | Cumulative ADA through `period_end_date`                            |
+| `is_ca_eligible`        | `n_membership_days_ytd >= 10`                                       |
+| `is_chronically_absent` | `ytd_ada <= 0.90`, computed on accumulated counts, not the float    |
 
-Rough size: about 11,300 enrollments times roughly 51 periods, so **under 600K
-rows against 12.8M**.
+Rough size: about 14,500 student-school pairs times roughly 51 periods, so
+**under 750K rows against 12.8M**.
+
+### Grain is student and school, not the enrollment stint
+
+`student_enrollment_key` is keyed on entry date, so a student who exits and
+re-enrolls at the same school becomes two stints with two separate
+accumulations. In AY2025 that is **73 of 14,498 student-school pairs**.
+
+That would break the eligibility rule above. A student with 6 membership days
+before leaving and 6 after returning has 12 days at that school and is eligible,
+but as two stints each falls under 10 and both are excluded.
+
+So the snapshot aggregates across stints, keyed on `student_key` and
+`location_key`. A student who attends two different schools in one year gets a
+row per school, which is what every authority describes: the threshold applies
+per school, not per district. 29 AY2025 students attended more than one school.
 
 Compute `is_chronically_absent` from the accumulated counts rather than by
 comparing the averaged float:
@@ -207,6 +237,12 @@ Boundary unit tests, since every defect here is a boundary defect:
 - A student withdrawn 10 October has an October row dated 10 October, no
   November row, and appears in the year row.
 - A student with 6 days in October but 40 year-to-date is eligible in October.
+- A student with 6 membership days before exiting and 6 after re-enrolling at
+  the same school is eligible, on 12 combined days.
+- A student at two schools in one year gets one row per school per period, and
+  each school's threshold is evaluated on that school's days alone.
+- An enrollment at exactly 90.0% ADA is chronically absent AND in Tier 3, never
+  Tier 2.
 
 Reconciliation against the figures on
 [#4994](https://github.com/TEAMSchools/teamster/issues/4994): 11,153 counted
@@ -217,16 +253,17 @@ days. Month and week counts must not move.
 
 - The New Jersey 45-day figure
   ([#5015](https://github.com/TEAMSchools/teamster/issues/5015)).
-- Pre-aggregations. At under 600K rows they may not be needed; measure first.
+- Pre-aggregations. At under 750K rows they may not be needed; measure first.
   The 55 second MCP deadline issue is real but separate.
-- `student_enrollment_key` splitting a student who exits and re-enrolls at the
-  same school into two calculations. Every authority accumulates days at the
-  school across the year.
-- `ada_tier` label wording. The boundaries match KIPP Foundation; the
-  descriptions in the properties file do not.
 
 ## Open question for KIPP Foundation
 
 Their criteria contradict themselves. Item 1 calls Tier 1 and Tier 2 on track at
 90% or above ADA. Item 8 says chronic absence is ADA at or below 90.0%. A
 student at exactly 90.0% is both.
+
+We resolve it by starting Tier 2 strictly above 90.0%, so Tier 1 plus Tier 2
+means not chronically absent. That deviates from their stated Tier 2 range of 90
+to 94% for students sitting exactly on the line, 198 of them in AY2025. Ask them
+which way they intend it before the figure is reported upward, because the
+answer changes both the tier distribution and the chronic absence count.
