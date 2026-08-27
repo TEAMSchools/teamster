@@ -677,6 +677,31 @@ verified per-model.
 Whoever runs next cycle's rollover should check this explicitly rather than
 assuming the existing HS models will "just work" once Miami has HS enrollees.
 
+**`rpt_gsheets__csgf_hs_ap_offerings` needs two things checked every cycle,
+before submitting:**
+
+1. **Coverage** -- it pivots on a hardcoded list of AP course names, so a
+   newly-offered course not yet added to the pivot's `IN` list drops out
+   silently (no error). Query
+   `stg_google_sheets__collegeboard__ap_course_crosswalk` joined through
+   `base_powerschool__course_enrollments` for the current cycle's actual AP
+   courses taught, and confirm every one is already a pivot column. (Also check
+   for a silent drop one step earlier: any `is_ap_course` row whose PowerSchool
+   subject code has no match in the crosswalk at all -- that `INNER JOIN` drops
+   those rows before they ever reach the pivot.)
+2. **Naming** -- separately from coverage, the model's `ap_courses` CTE remaps a
+   few College Board crosswalk names to CSGF's own official naming for that
+   cycle (confirmed mismatches found in the 2026-2027 cycle: "AP US History" ->
+   "AP United States History," "AP US Government and Politics" -> "AP United
+   States Government and Politics," "AP Pre-Calculus" -> "AP Precalculus").
+   CSGF's exact expected names can change cycle to cycle and don't always match
+   the crosswalk's canonical naming. **Ask whoever's completing the AP Offerings
+   tab for CSGF's current official AP course name list** (visible on the
+   Salesforce Portal's AP Offerings task), diff it against the crosswalk's
+   canonical names, and update the `case` statement in
+   `rpt_gsheets__csgf_hs_ap_offerings.sql` for any mismatches -- a plain rename,
+   not a new external source or staging sheet.
+
 ## How the dbt models actually reach CSGF (answered)
 
 The eight `rpt_gsheets__csgf_*` models write out to a KTAF-owned Google Sheet

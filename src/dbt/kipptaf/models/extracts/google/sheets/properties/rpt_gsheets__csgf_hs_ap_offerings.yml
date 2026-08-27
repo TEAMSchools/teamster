@@ -1,5 +1,18 @@
 models:
   - name: rpt_gsheets__csgf_hs_ap_offerings
+    description:
+      Pivots on a hardcoded list of AP course names, so a newly-offered course
+      not yet added to the pivot's IN list drops out of the extract silently --
+      no error, just a missing column. Before each cycle's submission, confirm
+      the current AY's actual AP courses (query
+      stg_google_sheets__collegeboard__ap_course_crosswalk joined through
+      base_powerschool__course_enrollments) still match this model's pivot list.
+      Separately, the ap_courses CTE's case statement remaps a few College Board
+      crosswalk names to CSGF's own official naming for that cycle (e.g. AP US
+      History -> AP United States History) -- CSGF's exact expected names can
+      change cycle to cycle and don't always match the crosswalk's canonical
+      naming; update that case statement, per the csgf-data-collection skill,
+      whenever CSGF's list changes.
     columns:
       - name: school_name
         data_type: string
@@ -44,6 +57,8 @@ models:
       - name: ap_seminar
         data_type: string
       - name: ap_spanish_language_and_culture
+        data_type: string
+      - name: ap_spanish_literature_and_culture
         data_type: string
       - name: ap_statistics
         data_type: string
