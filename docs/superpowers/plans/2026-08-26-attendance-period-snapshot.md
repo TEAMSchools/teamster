@@ -1114,6 +1114,95 @@ Refs #4994"
 
 ---
 
+### Task 4c: Freshness policy for the materialized fact
+
+Task 4b introduced a hazard and this closes it. Materializing
+`fct_student_attendance_daily` freezes `current_date` at build time, and
+`is_realized` plus every `is_*_record` anchor depends on it. A view
+self-corrected on every read; a table does not. So a **failed build now silently
+serves stale point-in-time anchors**, with a worst-case window of about 15 hours
+between the 15:00 and 06:00 ticks.
+
+This is a Dagster concern, not a dbt one. dbt carries no model freshness config
+anywhere in this repo.
+
+**Files:**
+
+- Modify: `src/teamster/code_locations/kipptaf/freshness.py`
+
+**Interfaces:**
+
+- Consumes: `FreshnessPolicy` and the existing `policies` dict shape.
+  `teamster.core.freshness.apply_freshness_policies` already applies whatever is
+  registered there; no wiring change is needed.
+- Produces: one registered policy on the attendance fact's asset key.
+
+- [ ] **Step 1: Read the existing pattern**
+
+The file is 20 lines. It defines one policy and maps 4 asset keys to it:
+
+```python
+adp_wfn_policy = FreshnessPolicy.cron(
+    deadline_cron="15 1 * * *",
+    lower_bound_delta=timedelta(minutes=45),
+    timezone=str(LOCAL_TIMEZONE),
+)
+```
+
+Follow it. Do not introduce a second mechanism.
+
+- [ ] **Step 2: Add the policy**
+
+The asset key omits dbt subdirectory layers — a mart is `kipptaf/marts/<model>`,
+not `kipptaf/facts/<model>`. So the key is
+`AssetKey(["kipptaf", "marts", "fct_student_attendance_daily"])`.
+
+The materialization cron is `0 6,15 * * *` in local time. Set a deadline that a
+normal build clears but a skipped tick does not. Starting point, adjust with
+justification if the build duration warrants:
+
+```python
+attendance_daily_policy = FreshnessPolicy.cron(
+    deadline_cron="0 7,16 * * *",
+    lower_bound_delta=timedelta(hours=1),
+    timezone=str(LOCAL_TIMEZONE),
+)
+```
+
+A 06:00 build finishing within the hour satisfies the 07:00 deadline. A missed
+06:00 tick trips at 07:00 rather than going unnoticed until someone reads a
+stale figure. #4468 measured a comparable full-star rebuild at about 2.4
+minutes, so an hour is generous rather than tight — say so if you narrow it.
+
+- [ ] **Step 3: Verify the definitions still load**
+
+A wrong asset key registers a policy against nothing and fails silently, which
+is the same class of bug this task exists to prevent. Confirm the key resolves
+to a real asset rather than assuming the string is right.
+
+```bash
+uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitions
+```
+
+If that command is not the right entrypoint for this repo, find the one the
+Dagster CLAUDE.md documents and say which you used.
+
+- [ ] **Step 4: Commit**
+
+Note in the commit body that this touches `src/teamster/`, so it triggers
+`dagster-cloud-deploy` and emits one same-named check-run per code location.
+Wait for ALL of them to reach a terminal conclusion before calling the deploy
+green.
+
+```bash
+git add src/teamster/code_locations/kipptaf/freshness.py
+git commit -m "feat(dagster): freshness policy for the materialized attendance fact
+
+Refs #4994"
+```
+
+---
+
 ### Task 5: Cube cube and view for the snapshot
 
 **Files:**
