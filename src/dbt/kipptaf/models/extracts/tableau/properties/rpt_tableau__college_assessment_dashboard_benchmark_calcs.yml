@@ -34,8 +34,9 @@ models:
           benchmark_goal, Not Met otherwise, No Data if the student has no
           qualifying score.
         data_type: string
-        # No accepted_values test. met_benchmark_goal is a CASE with no ELSE
-        # that emits only Met, Not Met, or No Data, so such a test cannot fail.
+        # No accepted_values test. Every branch of the met_benchmark_goal CASE
+        # emits one of Met, Not Met, or No Data, its `else 'Not Met'` included,
+        # so such a test cannot fail.
       - name: region
         description: KIPP region the student's school belongs to.
         data_type: string
