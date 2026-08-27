@@ -66,12 +66,6 @@ with
                     0
                 )
             ) as n_present_days_period,
-
-            array_agg(
-                if(membershipvalue = 1, is_truant, null) ignore nulls
-                order by calendardate desc
-                limit 1
-            )[safe_offset(0)] as is_truant,
         from spine
         group by
             location_key,
@@ -85,30 +79,44 @@ with
 
     aggregated as (
         select
-            * except (n_membership_days_period, n_present_days_period),
+            pp.* except (n_membership_days_period, n_present_days_period),
 
-            sum(n_membership_days_period) over (
+            -- period_end_date_key is by construction a membership day within
+            -- this same group, so this join lands on exactly the daily row
+            -- whose is_truant applies as of period end -- no ordering needed.
+            sp.is_truant,
+
+            sum(pp.n_membership_days_period) over (
                 partition by
-                    location_key,
-                    student_number,
-                    _dbt_source_project,
-                    academic_year,
-                    period_type
-                order by period_start_date_key asc
+                    pp.location_key,
+                    pp.student_number,
+                    pp._dbt_source_project,
+                    pp.academic_year,
+                    pp.period_type
+                order by pp.period_start_date_key asc
                 rows between unbounded preceding and current row
             ) as n_membership_days_ytd,
 
-            sum(n_present_days_period) over (
+            sum(pp.n_present_days_period) over (
                 partition by
-                    location_key,
-                    student_number,
-                    _dbt_source_project,
-                    academic_year,
-                    period_type
-                order by period_start_date_key asc
+                    pp.location_key,
+                    pp.student_number,
+                    pp._dbt_source_project,
+                    pp.academic_year,
+                    pp.period_type
+                order by pp.period_start_date_key asc
                 rows between unbounded preceding and current row
             ) as n_present_days_ytd,
-        from per_period
+        from per_period as pp
+        inner join
+            spine as sp
+            on pp.location_key = sp.location_key
+            and pp.student_number = sp.student_number
+            and pp._dbt_source_project = sp._dbt_source_project
+            and pp.academic_year = sp.academic_year
+            and pp.period_type = sp.period_type
+            and pp.period_start_date_key = sp.period_start_date_key
+            and pp.period_end_date_key = sp.calendardate
     ),
 
     -- ada_tier must be a real column of a prior CTE before is_chronically_absent

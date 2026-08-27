@@ -864,3 +864,85 @@ unit_tests:
           'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-11-05',
           15.0, 15.0, false, true, 'Tier 1', false
+
+  - name: test_periods_tier_three_four_boundary_at_eighty_percent
+    description:
+      Two students, ten membership days each. 8 of 10 present is exactly 80.0
+      percent and must be Tier 3, never Tier 4. 7 of 10 present is the next
+      achievable value below 80.0 percent at this day count and must be Tier 4.
+      Both are chronically absent either way (Tier 3 and Tier 4 both qualify) --
+      ada_tier is the column under test here, not is_chronically_absent.
+    model: fct_student_attendance_periods
+    given:
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            100 as schoolid,
+            2025 as academic_year,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            1.0 as membershipvalue,
+            if(d <= date '2025-09-08', 1.0, 0.0) as attendancevalue,
+            false as is_truant
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+          union all
+          select
+            2, 'kippnewark', 100, 2025, d, date '2025-09-01', 1.0,
+            if(d <= date '2025-09-07', 1.0, 0.0), false
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+    expect:
+      format: sql
+      rows: |
+        select
+          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          'c4ca4238a0b923820dcc509a6f75849b' as student_key,
+          'loc-abc' as location_key,
+          2025 as academic_year,
+          'month' as period_type,
+          date '2025-09-01' as period_start_date_key,
+          date '2025-09-10' as period_end_date_key,
+          10.0 as n_membership_days_ytd,
+          8.0 as n_present_days_ytd,
+          false as is_truant,
+          true as is_ca_eligible,
+          'Tier 3' as ada_tier,
+          true as is_chronically_absent
+        union all
+        select
+          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
+          10.0, 8.0, false, true, 'Tier 3', true
+        union all
+        select
+          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-10',
+          10.0, 8.0, false, true, 'Tier 3', true
+        union all
+        select
+          'a53f894f683385d739b1fe5f58e1d0fd', 'c81e728d9d4c2f636f067f89cc14862c',
+          'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-10',
+          10.0, 7.0, false, true, 'Tier 4', true
+        union all
+        select
+          'cc15bde19837adf0ca3c82fc3cf7db55', 'c81e728d9d4c2f636f067f89cc14862c',
+          'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
+          10.0, 7.0, false, true, 'Tier 4', true
+        union all
+        select
+          '8114c0ba35128911e0dd4006c1d3b085', 'c81e728d9d4c2f636f067f89cc14862c',
+          'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-10',
+          10.0, 7.0, false, true, 'Tier 4', true
