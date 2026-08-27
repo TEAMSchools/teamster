@@ -2,7 +2,14 @@ with
     -- One row. See int_students__sis_cutover for why the boundary is a floor
     -- and why it is derived from recorded attendance rather than row presence.
     sis_cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
+        select
+            focus_start_academic_year,
+
+            -- PowerSchool yearid form of the same boundary, so the archive
+            -- branch filters on a bare gt.yearid instead of recomputing
+            -- yearid + 1990 per row in WHERE.
+            focus_start_academic_year - 1990 as focus_start_yearid,
+        from {{ ref("int_students__sis_cutover") }}
     ),
 
     -- dcid >= 1 is the placeholder filter. See the model description for why
@@ -65,7 +72,7 @@ with
         where
             not (
                 gt._dbt_source_project = 'kippmiami'
-                and (gt.yearid + 1990) >= sc.focus_start_academic_year
+                and gt.yearid >= sc.focus_start_yearid
             )
     ),
 

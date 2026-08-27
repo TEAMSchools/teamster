@@ -94,8 +94,9 @@ models:
       - name: schoolid
         data_type: int64
         description: >-
-          PowerSchool school id. Resolved on the Focus branch through
-          `stg_google_sheets__people__locations.focus_school_id`.
+          PowerSchool school id. On the Focus branch it is
+          `stg_google_sheets__people__locations.powerschool_school_id`, reached
+          by joining Focus's `school_number` to that model's `focus_school_id`.
       - name: yearid
         data_type: int64
         description: >-
