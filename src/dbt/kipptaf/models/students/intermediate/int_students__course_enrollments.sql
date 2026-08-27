@@ -93,12 +93,8 @@ with
             s.academic_year as cc_academic_year,
             s.course_period_id as sections_dcid,
             s.course_period_id as cc_sectionid,
-            -- Term dates, not event dates. A Focus schedule start_date is
-            -- the marking period's start, so cc_dateenrolled is the term start
-            -- rather than the day the student joined the section, and every
-            -- future-term row carries a future date. cc_dateleft is null while
-            -- the row is open, which is the normal state. Documented with the
-            -- measurement on int_focus__schedule. See #5002.
+            -- Term dates, not event dates -- see the column descriptions. A
+            -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
             s.end_date as cc_dateleft,
             st.student_number as students_student_number,
@@ -117,33 +113,13 @@ with
             -- title instead, matching int_focus__advisory. See #4868.
             coalesce(s.course_title like 'Homeroom%', false) as is_homeroom,
 
-            -- Focus has no `sectionid < 0` convention; it closes a schedule
-            -- row by setting end_date. A row whose end_date falls before its
-            -- term ends, while the student still holds an open row, is an
-            -- unenrollment before the expected end -- a dropped section. This
-            -- is an INFERENCE, not a vendor-documented flag, and PowerSchool
-            -- derives the same column a different way, so the two regions reach
-            -- one meaning by two routes.
-            --
-            -- The surviving-open-row test is what excludes a withdrawal sweep:
-            -- leaving the school closes every one of the student's rows at
-            -- once, which is a consequence of leaving rather than a drop. It
-            -- stands in for PowerSchool's own `dateleft = exitdate` exclusion.
-            -- PowerSchool's second exclusion, a year-end close, needs no
-            -- equivalent: zero Focus rows end at or after their term's end.
-            --
-            -- The coalesce is load-bearing, not defensive. end_date is null
-            -- on 96.8% of Miami rows (an open schedule row, the normal state),
-            -- and `null < date` is null, so without it the flag reads null on
-            -- every open row -- reinstating the exact bug this replaces, since
-            -- `not null` is null and silently removes Miami from every report
-            -- using the bare `not is_dropped_section` idiom (#4996).
-            --
-            -- Measured 2026-08-27: 576 of 19,363 Miami AY2026 rows (2.97%)
-            -- across 84 students, against a like-for-like NJ band of 0.23%
-            -- (Paterson) to 8.55% (Camden), with Newark at 2.63%. A derivation
-            -- joined to the student's stint agrees on 19,358 of 19,363 rows.
-            -- See #4968.
+            -- An inferred flag; the derivation and its measurement are in the
+            -- column description. Two things this expression does not show:
+            -- the window excludes a withdrawal sweep, which closes every one of
+            -- a leaver's rows at once, and the coalesce is required rather than
+            -- defensive -- end_date is null on 96.8% of Miami rows and
+            -- `null < date` is null, so without it the flag reads null on every
+            -- open row. #4968
             coalesce(
                 s.end_date < s.marking_period_end_date
                 and countif(s.end_date is null) over (

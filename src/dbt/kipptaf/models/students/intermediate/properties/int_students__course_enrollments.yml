@@ -40,8 +40,11 @@ models:
       - name: is_dropped_course
         description: >-
           Whether every section of this course was dropped for the student that
-          year. Derived the same way in both regions, from `is_dropped_section`,
-          so the Miami value carries the inference described there.
+          year. Both regions window `is_dropped_section` over the same scope --
+          one student, one course, one year -- so the values are comparable;
+          PowerSchool reaches that scope through `cc_studyear`, which is a
+          student-and-year composite key rather than a bare year. The Miami
+          value carries the inference described on `is_dropped_section`.
         data_type: bool
       - name: cc_dateenrolled
         description: >-
