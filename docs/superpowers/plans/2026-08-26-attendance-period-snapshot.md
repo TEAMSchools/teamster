@@ -249,7 +249,7 @@ with
             academic_year,
             period_type,
             period_start_date
-        having period_end_date is not null
+        having max(if(membershipvalue = 1, calendardate, null)) is not null
     )
 
 select
@@ -452,7 +452,7 @@ cumulative window. `period_start_date` for `week` is the PowerSchool school week
             academic_year,
             period_type,
             period_start_date
-        having period_end_date is not null
+        having max(if(membershipvalue = 1, calendardate, null)) is not null
     ),
 
     aggregated as (
@@ -600,10 +600,202 @@ Append to `unit_tests:`. These are the boundaries every defect on #4994 sat on.
       select 3, 'Tier 1', false, false, false
 ```
 
-Replace `student_number_probe` with whatever passthrough column the model
-exposes for the student; if the model exposes only `student_key`, compute the
-same surrogate key in the `expect` block rather than adding a column solely for
-the test.
+The model exposes `student_key`, not `student_number`, so the `expect` block
+compares on the same surrogate key the model builds. In a dbt unit test the
+`expect` rows are compared to the model's output columns by name, so compute it
+the same way the model does:
+
+```sql
+select
+  to_hex(md5(cast(1 as string))) as student_key,
+  'Tier 3' as ada_tier,
+  true as is_chronically_absent,
+  true as is_ca_eligible,
+  false as is_truant
+```
+
+`dbt_utils.generate_surrogate_key` on BigQuery is `to_hex(md5(...))` over the
+fields joined by `'-'`, with nulls coalesced to
+`'_dbt_utils_surrogate_key_null_'`. With a single non-null field that reduces to
+`to_hex(md5(cast(<field> as string)))`. Verify by running
+`uv run dbt compile --select fct_student_attendance_periods` and reading the
+generated key expression rather than trusting this note.
+
+- [ ] **Step 1b: Write the remaining four boundary tests from the spec**
+
+The spec lists eight boundary cases. Step 1 covers exactly-90.0 percent, the
+Tier 3 placement, and the 10-versus-9-day threshold. These four are the rest,
+and each one guards a defect measured on #4994.
+
+```yaml
+- name: test_periods_ninety_point_zero_one_is_not_chronically_absent
+  description:
+    The threshold is at or below 90.0 percent, so just above it is not
+    chronically absent. 91 of 101 present is 90.099 percent.
+  model: fct_student_attendance_periods
+  given:
+    - input: ref('int_students__attendance_daily')
+      format: sql
+      rows: |
+        select
+          1 as student_number,
+          'kippnewark' as _dbt_source_project,
+          100 as schoolid,
+          2025 as academic_year,
+          d as calendardate,
+          date '2025-09-01' as week_start_monday,
+          1.0 as membershipvalue,
+          if(
+            d <= date_add(date '2025-09-01', interval 9 day), 0.0, 1.0
+          ) as attendancevalue,
+          false as is_truant
+        from unnest(generate_date_array(
+          date '2025-09-01', date '2025-12-10'
+        )) as d
+    - input: ref('int_students__schools')
+      format: sql
+      rows: |
+        select
+          100 as school_number,
+          'kippnewark' as _dbt_source_project,
+          'loc-abc' as location_key
+  expect:
+    format: sql
+    rows: |
+      select 'Tier 2' as ada_tier, false as is_chronically_absent
+
+- name: test_periods_threshold_is_per_school_not_combined
+  description:
+    Six membership days at each of two schools. Twelve days combined, but the
+    threshold applies per school, so the student is eligible at neither.
+  model: fct_student_attendance_periods
+  given:
+    - input: ref('int_students__attendance_daily')
+      format: sql
+      rows: |
+        select
+          1 as student_number,
+          'kippnewark' as _dbt_source_project,
+          100 as schoolid,
+          2025 as academic_year,
+          d as calendardate,
+          date '2025-09-01' as week_start_monday,
+          1.0 as membershipvalue,
+          1.0 as attendancevalue,
+          false as is_truant
+        from unnest(generate_date_array(
+          date '2025-09-01', date '2025-09-06'
+        )) as d
+        union all
+        select
+          1, 'kippnewark', 200, 2025, d, date '2025-10-06', 1.0, 1.0, false
+        from unnest(generate_date_array(
+          date '2025-10-06', date '2025-10-11'
+        )) as d
+    - input: ref('int_students__schools')
+      format: sql
+      rows: |
+        select 100 as school_number, 'kippnewark' as _dbt_source_project,
+          'loc-a' as location_key
+        union all
+        select 200, 'kippnewark', 'loc-b'
+  expect:
+    format: sql
+    rows: |
+      select 'loc-a' as location_key, false as is_ca_eligible
+      union all
+      select 'loc-b', false
+
+- name: test_periods_mid_year_leaver_keeps_own_period_end
+  description: A student whose last membership day is 10 October gets an October
+    row dated 10 October, no November row, and a year row. This is the 180-
+    enrollment defect on #4994.
+  model: fct_student_attendance_periods
+  given:
+    - input: ref('int_students__attendance_daily')
+      format: sql
+      rows: |
+        select
+          1 as student_number,
+          'kippnewark' as _dbt_source_project,
+          100 as schoolid,
+          2025 as academic_year,
+          d as calendardate,
+          date_trunc(d, week(monday)) as week_start_monday,
+          1.0 as membershipvalue,
+          1.0 as attendancevalue,
+          false as is_truant
+        from unnest(generate_date_array(
+          date '2025-09-01', date '2025-10-10'
+        )) as d
+    - input: ref('int_students__schools')
+      format: sql
+      rows: |
+        select
+          100 as school_number,
+          'kippnewark' as _dbt_source_project,
+          'loc-abc' as location_key
+  expect:
+    format: sql
+    rows: |
+      select
+        'month' as period_type,
+        date '2025-10-01' as period_start_date,
+        date '2025-10-10' as period_end_date
+      union all
+      select 'month', date '2025-09-01', date '2025-09-30'
+
+- name: test_periods_eligibility_is_cumulative_not_per_period
+  description:
+    Forty membership days through September, then six in October. The October
+    row is eligible on 46 cumulative days, even though October alone has six.
+    Applying the threshold per period would wrongly exclude a short month.
+  model: fct_student_attendance_periods
+  given:
+    - input: ref('int_students__attendance_daily')
+      format: sql
+      rows: |
+        select
+          1 as student_number,
+          'kippnewark' as _dbt_source_project,
+          100 as schoolid,
+          2025 as academic_year,
+          d as calendardate,
+          date_trunc(d, week(monday)) as week_start_monday,
+          1.0 as membershipvalue,
+          1.0 as attendancevalue,
+          false as is_truant
+        from unnest(generate_date_array(
+          date '2025-08-01', date '2025-09-30'
+        )) as d
+        union all
+        select
+          1, 'kippnewark', 100, 2025, d, date_trunc(d, week(monday)),
+          1.0, 1.0, false
+        from unnest(generate_date_array(
+          date '2025-10-01', date '2025-10-06'
+        )) as d
+    - input: ref('int_students__schools')
+      format: sql
+      rows: |
+        select
+          100 as school_number,
+          'kippnewark' as _dbt_source_project,
+          'loc-abc' as location_key
+  expect:
+    format: sql
+    rows: |
+      select
+        'month' as period_type,
+        date '2025-10-01' as period_start_date,
+        true as is_ca_eligible
+```
+
+The `test_periods_mid_year_leaver_keeps_own_period_end` case uses
+`date_trunc(d, week(monday))` for the week bucket only because these fixtures
+have no school calendar. Production reads `week_start_monday` from
+`int_students__attendance_daily`, which is the PowerSchool school week — never
+derive it.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
