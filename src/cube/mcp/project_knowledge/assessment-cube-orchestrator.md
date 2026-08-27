@@ -49,21 +49,25 @@ Before step 1, do two things:
 
 1. **Calibration first (hard gate).** Before answering any participant query —
    regardless of how urgent or complex the opening request is — check network
-   ADA for the most recent week-end record
-   (`student_attendance_view.avg_daily_attendance`, filtered
-   `is_week_end_record = true`, most recent `dates_school_week_start_date`).
-   Confirm connectivity and data currency, and sanity-check the value against a
-   known figure. An end-of-year ADA drop-off is an expected seasonal pattern,
-   and a zero-row / empty result in summer (no active school week) is likewise
-   expected — neither is a connectivity failure or a defect.
+   ADA for the most recent school week
+   (`student_attendance_view.avg_daily_attendance` grouped by
+   `dates_school_week_start_date`, latest week in the result). Do NOT add an
+   anchor filter: `is_week_end_record` and the other anchor dimensions were
+   retired with the period-snapshot work, and `avg_daily_attendance` is additive
+   over the week. Confirm connectivity and data currency, and sanity-check the
+   value against a known figure. An end-of-year ADA drop-off is an expected
+   seasonal pattern, and a zero-row / empty result in summer (no active school
+   week) is likewise expected — neither is a connectivity failure or a defect.
    - **In summer, check the student count, not just the rate.** The latest
-     week-end record can be a small single-region summer-program cohort with an
+     school week can be a small single-region summer-program cohort with an
      anomalously high ADA — in early August 2026 it was Camden only, 531
      students (against Camden's usual 2,146), at 99.25%, with no other region
-     present. A 99% "network ADA" is not a network figure. Three logged sessions
-     read that same record three different ways. Report the count alongside the
-     rate and say which regions are in it; a tiny high-ADA cohort still confirms
-     connectivity, which is all this step is for.
+     present (measured on the retired week-end anchor, so the exact figures may
+     shift slightly on the un-anchored weekly form above). A 99% "network ADA"
+     is not a network figure. Three logged sessions read that same record three
+     different ways. Report the count alongside the rate and say which regions
+     are in it; a tiny high-ADA cohort still confirms connectivity, which is all
+     this step is for.
 2. **Force-refresh `meta` at session start.** The cached catalog can be stale; a
    stale catalog has already produced a confident-but-wrong "unanswerable" in a
    prior session. If a field or view you need appears to be missing, refresh

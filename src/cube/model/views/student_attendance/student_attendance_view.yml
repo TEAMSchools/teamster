@@ -33,35 +33,10 @@ views:
           - avg_daily_attendance
           - pct_tardy
           - pct_ontime
-          - count_truants
-          - pct_truant
-          - count_truants_year_end
-          - pct_truant_year_end
-          - count_truants_month_end
-          - pct_truant_month_end
-          - count_truants_week_end
-          - pct_truant_week_end
           - count_absent_days
-          - count_chronically_absent
-          - pct_chronically_absent
-          - pct_tier_1_2
-          - pct_tier_3
-          - count_chronically_absent_year_end
-          - pct_chronically_absent_year_end
-          - pct_tier_1_2_year_end
-          - pct_tier_3_year_end
-          - count_chronically_absent_month_end
-          - pct_chronically_absent_month_end
-          - pct_tier_1_2_month_end
-          - pct_tier_3_month_end
-          - count_chronically_absent_week_end
-          - pct_chronically_absent_week_end
-          - pct_tier_1_2_week_end
-          - pct_tier_3_week_end
           - attendance_date
           - attendance_code
           - attendance_category
-          - ada_tier
           - attendance_value
           - membership_value
           - present_weight
@@ -72,10 +47,6 @@ views:
           - is_iss
           - is_suspended
           - is_truant
-          - is_chronically_absent
-          - is_latest_record
-          - is_month_end_record
-          - is_week_end_record
 
       - join_path: student_attendance.dates
         prefix: true
@@ -168,7 +139,6 @@ views:
           members:
             - attendance_code
             - attendance_category
-            - ada_tier
             - attendance_value
             - membership_value
             - present_weight
@@ -179,7 +149,6 @@ views:
             - is_iss
             - is_suspended
             - is_truant
-            - is_chronically_absent
         - name: Date
           members:
             - dates_academic_year
@@ -247,9 +216,6 @@ views:
             - school_calendars_is_membership_day
         - name: Filter
           members:
-            - is_latest_record
-            - is_month_end_record
-            - is_week_end_record
             - dates_school_week_start_date
 
     access_policy:
