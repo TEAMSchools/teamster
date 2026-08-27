@@ -79,6 +79,11 @@ assets:
   # Grades
   - table_name: student_report_card_grades
     cursor_column: updated_at
+  - table_name: student_gpa_calculated
+    cursor_column: updated_at
+    # weighted_gpa is an unbounded Postgres numeric holding more than 9 decimal
+    # places, which the default decimal128(38, 9) cannot represent.
+    widen_unbounded_numeric: true
   - table_name: report_card_grades
     cursor_column: updated_at
   - table_name: report_card_grade_scales
