@@ -128,6 +128,25 @@ A new dbt model, one row per enrollment per period.
 Rough size: about 14,500 student-school pairs times roughly 51 periods, so
 **under 750K rows against 12.8M**.
 
+### Build from the intermediate model, not the fact plus a dim join
+
+Source the snapshot from `int_students__attendance_daily`, which carries
+`schoolid` directly. Measured on AY2025: zero null `schoolid`, and 11,333
+distinct stints against the fact's 11,333 distinct `student_enrollment_key`
+values. Complete coverage, nothing dropped.
+
+Do **not** resolve school by joining the fact to `dim_student_enrollments`. That
+join is lossy: 960 of the 11,333 AY2025 attendance enrollment keys, or 8.5%,
+have no row in that dim at all. Cube reaches school through
+`student_school_enrollments` on the same key, so those rows already carry a null
+location, region, and grade level today, and are invisible to any
+location-scoped `access_policy` filter, because `location IN (...)` never
+matches null. That is a pre-existing defect, tracked separately, and not
+something this model should inherit.
+
+The daily fact needs no school column. Cube's existing traversal is adequate for
+day-level queries, and the snapshot gets school from upstream.
+
 ### Grain is student and school, not the enrollment stint
 
 `student_enrollment_key` is keyed on entry date, so a student who exits and
