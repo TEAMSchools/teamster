@@ -141,9 +141,19 @@ cubes:
 
       - name: is_truant
         description: >-
-          TRUE if the student meets regional truancy criteria. Miami: 15+
-          absences in 90-day rolling window. NJ regions: projected absences
-          reach 50+ for the year.
+          Day-level flag: TRUE if the student met regional truancy criteria as
+          of this date. Miami: 15+ absences in a 90-day rolling window. NJ
+          regions: projected absences reach 50+ for the year.
+
+          Grain trap — this flag is re-stamped on every daily row, and the NJ
+          projection moves as the year progresses. Filtering it over a date
+          range therefore counts students truant on ANY day in the range, not a
+          period-end snapshot, and the count runs high: early in an academic
+          year it runs high several-fold, because one absence in the first days
+          projects past 50 on a one-day denominator. Use this dimension for
+          day-level drill-down (which days was a student flagged), and take the
+          period-end truancy count and rate from
+          student_attendance_periods_view's count_truants / pct_truant.
         sql: is_truant
         type: boolean
         public: true

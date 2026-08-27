@@ -32,8 +32,9 @@ cubes:
           Selects the grain: year, month, or week. Week is the PowerSchool
           school week (not a clean Monday-Sunday ISO grid). Each period_type
           produces exactly one pre-computed row per eligible student per period
-          — no anchor filter is needed or accepted, unlike the daily fact's
-          is_latest_record / is_month_end_record / is_week_end_record flags.
+          — no anchor filter is needed or accepted. The dates join is on
+          period_end_date_key, so a single-date filter selects the periods that
+          ended on that date rather than pinning a point in time within one.
         sql: period_type
         type: string
         public: true

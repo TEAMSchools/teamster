@@ -11,12 +11,12 @@ views:
 
       Set period_type to year, month, or week to select the grain and group by
       period_start_date. No anchor filter is needed or accepted — the row
-      already is the period-end value, unlike student_attendance_view's daily
-      CA/tier/truancy measures, which need is_latest_record or a date filter to
-      avoid overcounting. A row exists only for a period in which the student
-      had a membership day at that school, so a withdrawn student stops
-      appearing rather than carrying forward, and a trend's denominator shifts
-      between points.
+      already is the period-end value, so there is nothing to pin it to: a
+      single-date filter narrows which periods you get back rather than
+      selecting a point in time within one. A row exists only for a period in
+      which the student had a membership day at that school, so a withdrawn
+      student stops appearing rather than carrying forward, and a trend's
+      denominator shifts between points.
 
       Eligibility (count_students) is cumulative from the start of the academic
       year, so early periods carry a much smaller denominator than later ones —
