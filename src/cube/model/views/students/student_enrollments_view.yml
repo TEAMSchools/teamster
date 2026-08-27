@@ -13,6 +13,9 @@ views:
       - join_path: student_enrollments
         includes:
           - count_students
+          - count_students_year_end
+          - count_students_month_end
+          - count_students_week_end
           - student_attendance_daily_key
           - student_enrollment_key
           - is_current_record

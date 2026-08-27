@@ -199,26 +199,22 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 // / is_week_end_record and its measures need the anchor guard. Also add the
 // cube's snapshot measure stems under the same key in SNAPSHOT_MEASURE_STEMS
 // below — a cube in this list with no stems entry matches nothing (guard no-op).
-const SNAPSHOT_CUBES = ["student_attendance", "student_enrollments"];
+const SNAPSHOT_CUBES = ["student_attendance"];
 
 // Per-cube measure-name stems that mark a snapshot measure needing the
 // period-end anchor guard. Keyed per cube (like SNAPSHOT_ANCHOR_OVERRIDES) so a
 // stem matches ONLY its own cube — a flat shared list substring-matches across
-// cubes (e.g. "count_students" would wrongly catch student_attendance's
-// count_students too). Which measures need the guard, by cube:
+// cubes (e.g. a stem defined for one cube could wrongly catch a same-named
+// measure on another). Which measures need the guard, by cube:
 //   student_attendance: chronic absence / ADA tiers / truancy are cumulative
 //     daily flags (re-stamped each row) — count_distinct over a range without an
 //     anchor overcounts. Its ADDITIVE measures (avg_daily_attendance,
 //     count_students, pct_tardy, pct_ontime, count_absent_days) are NOT listed —
 //     they are point-in-time safe and must stay unanchored.
-//   student_enrollments: count_students is count_distinct(student_key) over the
-//     attendance daily fact; a student enrolled across N in-session days appears
-//     in N rows, so an unanchored count over a range overcounts — needs the guard.
-// Both cubes' weekly trends are driven by a school_week_start_date grouping
+// This cube's weekly trends are driven by a school_week_start_date grouping
 // (PowerSchool school weeks), not Cube's ISO granularity: "week".
 const SNAPSHOT_MEASURE_STEMS = {
   student_attendance: ["chronically_absent", "tier_1_2", "tier_3", "truant"],
-  student_enrollments: ["count_students"],
 };
 
 // Query member cube-name matching must be boundary-safe. A plain

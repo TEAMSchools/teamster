@@ -94,3 +94,57 @@ cubes:
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
+
+      - name: count_students_year_end
+        description: >-
+          Distinct students enrolled as of each school's most recent in-session
+          day (today for the current year, the last day of school for completed
+          years) — the year-end / current headcount. Filters to
+          is_current_record, so the anchor is baked in and no dates_date_day
+          filter or grouping is required; this is what count_students returns
+          when queried with no time grouping. Matches the topline Total
+          Enrollment methodology — enrollment is by entry/exit dates, not
+          status. Note: across multiple schools, each is counted as of its own
+          latest in-session day, so a network total can mix as-of dates within
+          the final weeks of a year.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_current_record"
+
+      - name: count_students_month_end
+        description: >-
+          Distinct students enrolled as of each school's latest in-session day
+          of each calendar month — the month-end headcount. Filters to
+          is_enrollment_month_end_record, so the anchor is baked in and no
+          dates_date_day filter is required; group by dates_month_number /
+          dates_month_name (or a monthly dates_date_day granularity) to trend
+          it. Matches the topline Total Enrollment methodology — enrollment is
+          by entry/exit dates, not status. A month with no in-session days (e.g.
+          a winter break spanning the whole month) has no point-in-time snapshot
+          and reads as 0 for that month — the daily fact is in-session-days only
+          by design.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_enrollment_month_end_record"
+
+      - name: count_students_week_end
+        description: >-
+          Distinct students enrolled as of each school's latest in-session day
+          of each PowerSchool school week — the week-end headcount. Filters to
+          is_enrollment_week_end_record, so the anchor is baked in and no
+          dates_date_day filter is required; group by
+          dates_school_week_start_date (PowerSchool school weeks, not Cube's ISO
+          granularity: "week") to trend it. Matches the topline Total Enrollment
+          methodology — enrollment is by entry/exit dates, not status. A week
+          with no in-session days (e.g. winter or February break) has no
+          point-in-time snapshot and reads as 0 for that week — the daily fact
+          is in-session-days only by design.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_enrollment_week_end_record"
