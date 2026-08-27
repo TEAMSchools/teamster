@@ -87,11 +87,11 @@ Decisions:
 
 Three defects this corrects, sized on AY2025:
 
-| Defect                                                   | Enrollments affected                                                                                          |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `_running_ada < 0.90` excludes students at exactly 90.0% | 198 sit there; 119 are missed, and the other 79 are caught only because their float average lands under `0.9` |
-| No minimum-days threshold                                | 147 under 10 days, 116 of them counted chronically absent                                                     |
-| Year-end anchor drops mid-year leavers                   | 180, of which 72 are chronically absent                                                                       |
+| Defect                                                   | Enrollments affected                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_running_ada < 0.90` excludes students at exactly 90.0% | 198, and **all 198** are missed. IEEE division is correctly rounded, so `avg()` over an exact 9/10 ratio always yields the same double as the literal `0.90`, and `0.9 < 0.9` is false every time. An earlier draft claimed 79 were caught by float scatter; there is no scatter, and they do not exist |
+| No minimum-days threshold                                | 147 student-school pairs under 10 cumulative days, of which 100 were counted chronically absent. An earlier draft paired 147 with 116, mixing pair grain and stint grain in one figure                                                                                                                  |
+| Year-end anchor drops mid-year leavers                   | 136 pairs restored, 61 of them chronically absent at pair grain. An earlier draft said 180 and 72, both stint-grain                                                                                                                                                                                     |
 
 `rpt_tableau__okrts_referrals` already uses `unweighted_ada <= 0.90`. The repo
 currently ships two definitions that disagree; this makes them agree.
@@ -136,22 +136,30 @@ Cube computes nothing. Its measures stay `count_distinct` filtered on
 
 A new dbt model, one row per enrollment per period.
 
-| Column                  | Meaning                                                             |
-| ----------------------- | ------------------------------------------------------------------- |
-| `student_key`           | The student                                                         |
-| `location_key`          | The school the threshold applies at                                 |
-| `period_type`           | `year`, `month`, or `week`                                          |
-| `period_start_date`     | Bucket start; `week` uses the PowerSchool school week               |
-| `period_end_date`       | The enrollment's **own** last membership day in the bucket          |
-| `n_membership_days_ytd` | Cumulative membership days at this school through `period_end_date` |
-| `ytd_ada`               | Cumulative ADA through `period_end_date`                            |
-| `is_ca_eligible`        | `n_membership_days_ytd >= 10`                                       |
-| `is_chronically_absent` | `ytd_ada <= 0.90`, computed on accumulated counts, not the float    |
-| `ada_tier`              | Tier 1 to 4; `is_chronically_absent` derives from it                |
-| `is_truant`             | Truancy status as of `period_end_date`                              |
+| Column                  | Meaning                                                                 |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `student_key`           | The student                                                             |
+| `location_key`          | The school the threshold applies at                                     |
+| `period_type`           | `year`, `month`, or `week`                                              |
+| `period_start_date_key` | Bucket start; `week` uses the PowerSchool school week                   |
+| `period_end_date_key`   | The enrollment's **own** last membership day in the bucket              |
+| `n_membership_days_ytd` | Cumulative membership days at this school through `period_end_date_key` |
+| `ytd_ada`               | Cumulative ADA through `period_end_date_key`                            |
+| `is_ca_eligible`        | `n_membership_days_ytd >= 10`                                           |
+| `is_chronically_absent` | `ytd_ada <= 0.90`, computed on accumulated counts, not the float        |
+| `ada_tier`              | Tier 1 to 4; `is_chronically_absent` derives from it                    |
+| `is_truant`             | Truancy status as of `period_end_date_key`                              |
 
-Rough size: about 14,500 student-school pairs times roughly 51 periods, so
-**under 750K rows against 12.8M**.
+Measured size, not estimated: **3.6M rows against the daily fact's 12.8M**, a
+3.5x reduction. One academic year is about 546K rows — roughly 11,200
+student-school pairs times the 51 periods in a year. The model carries the full
+history the daily fact carries, with no academic-year floor, matching its sister
+mart `fct_student_attendance_daily`.
+
+An earlier draft of this spec put the total at under 750K. That was one year's
+worth mistaken for the whole model. The reduction is real but smaller than first
+claimed, so the pre-aggregation question stays genuinely open rather than being
+settled by row count alone.
 
 ### Build from the intermediate model, not the fact plus a dim join
 
@@ -206,6 +214,50 @@ comparing the averaged float:
 cumulative_present * 10 <= cumulative_membership * 9 as is_chronically_absent
 ```
 
+### Materialize it as a table
+
+Materialize as a table on a nightly cron, matching the two precedents in this
+repo — `int_topline__ada_running_weekly` (#4153, midnight cron off the same
+upstream) and `fct_assessment_scores_enrollment_scoped` (#4468, 5x/day because
+Cube needs intra-day assessment freshness). Attendance needs nightly only: the
+KIPP Foundation criteria require a nightly refresh and a visible refresh
+timestamp, not intra-day.
+
+```yaml
+config:
+  materialized: table
+  meta:
+    dagster:
+      # Table, not the marts-default view. Every attendance-star model in
+      # prod is a view today, so a Cube query re-expands the whole chain —
+      # the #4333 defect that #4468 fixed for the assessment star. Nightly
+      # cron rather than eager: the upstreams are eager and would drive
+      # repeated rebuilds of a 3.6M row model for no freshness anyone
+      # consumes. Midnight tick matches int_topline__ada_running_weekly,
+      # the closest sibling off the same upstream, and the KIPP Foundation
+      # criteria require nightly refresh, not intra-day.
+      automation_condition:
+        cron_schedule: 0 0 * * *
+```
+
+Eager is not the option here for the same reason it was not for assessments: the
+upstreams are eager and would drive repeated rebuilds of a 3.6M row model for
+freshness no consumer uses. The kipptaf `marts:` block in `dbt_project.yml` sets
+only `+schema` and `+contract`, so a mart defaults to a view, and prod confirms
+the consequence: `fct_student_attendance_daily`,
+`fct_student_attendance_streaks`, and `dim_student_enrollments` are all views,
+while `fct_assessment_scores_enrollment_scoped` is a table because
+[#4468](https://github.com/TEAMSchools/teamster/pull/4468) materialized the
+assessment star for Cube performance under
+[#4333](https://github.com/TEAMSchools/teamster/issues/4333).
+
+This also revises the performance claim earlier in this spec. The 38.4s and
+51.6s Cube timings are substantially view re-expansion across the attendance
+star, not the inherent cost of selecting a period-end row. Materializing that
+star is a separate, cheaper fix with direct precedent, and it does not replace
+this work — the definition defects and the 30-measure duplication are
+independent of it — but it may deliver most of the speed benefit on its own.
+
 ## Daily fact or period snapshot
 
 Both stay. They answer different questions.
@@ -243,7 +295,7 @@ A student enrolled 1 September and withdrawn 10 October is the case that breaks
 naive designs, and it is worth stating exactly.
 
 - They get a **September row** and an **October row**. The October row's
-  `period_end_date` is 10 October, their own last membership day, not the
+  `period_end_date_key` is 10 October, their own last membership day, not the
   school's month end. `ytd_ada` is their cumulative rate through that date.
 - They get **no November row and none after**. A period with no membership day
   produces no row. Nothing is carried forward, so a withdrawn student never
@@ -274,7 +326,7 @@ answering for all of them, not only chronic absence.
 
 **Truancy moves to this snapshot.** Same fact, same grain, same anchor
 semantics, so it needs one more column, `is_truant`, resolved at
-`period_end_date`. The criteria stay regional and stay in
+`period_end_date_key`. The criteria stay regional and stay in
 `int_students__attendance_daily` where they already are: Miami uses 15 or more
 absences in a 90 day rolling window, the New Jersey regions use a projected 50
 or more for the year. This model does not change that logic, only where the
@@ -377,7 +429,37 @@ Boundary unit tests, since every defect here is a boundary defect:
 Reconciliation against the figures on
 [#4994](https://github.com/TEAMSchools/teamster/issues/4994): 11,153 counted
 today, 180 leavers restored, 119 added at exactly 90.0%, 147 excluded under 10
-days. Month and week counts must not move.
+days.
+
+**Month and week DO move, and an earlier draft of this spec was wrong to predict
+otherwise.** The anchor semantics genuinely do not move — the row population is
+identical apart from the stint-months collapsed by combining re-enrollments, and
+the leaver mechanism contributes exactly zero at month and week grain because
+`is_month_end_record` already requires a membership day. What moves is the two
+DEFINITION changes, which apply at every grain rather than only at the year:
+
+| Grain | CA movement | Buckets moved | Unexplained |
+| ----- | ----------- | ------------- | ----------- |
+| month | -1,530      | 11 of 11      | 0           |
+| week  | -3,493      | 44 of 44      | 0           |
+
+Month attribution: -1,984 from cumulative eligibility, +437 from the exact-90.0%
+fix, +17 from combined stints. Week: -5,159, +1,543, +123. Zero unexplained in
+every bucket at both grains.
+
+The concentration matters more than the totals. **The first month of school
+collapses**: in 2025-08 only 1,317 of 10,513 enrollments are eligible, 12.5%,
+because the 10-day threshold is cumulative. The rate barely moves, 19.49% to
+18.53%, but the count falls 88%. That is arguably correct — a student cannot be
+chronically absent on day five — but a month-over-month series then starts from
+a denominator an eighth the size of the next point's. KIPP Foundation criteria
+item 1 already requires displaying the number of students in each ADA and CA
+calculation, which makes the small early denominator visible rather than
+misleading; that requirement is what makes accepting this behaviour defensible.
+
+Two later months move on the exact-90.0% fix rather than eligibility: 2025-10 by
++1.20pp and 2026-06 by +2.07pp, because both tend to land cumulative membership
+days on a multiple of 10, which is where an exact 9/10 ratio occurs.
 
 ## Out of scope
 

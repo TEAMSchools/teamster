@@ -38,6 +38,30 @@ Tesseract feature is used.
   trailing commas, single quotes, 88-character lines.
 - Always `uv run dbt ...`, never a bare `dbt`.
 - Do not run `trunk fmt` or `trunk check` manually; the pre-commit hook formats.
+- The new fact is materialized as a table on a nightly cron, matching the
+  precedent set by `int_topline__ada_running_weekly` (#4153) and
+  `fct_assessment_scores_enrollment_scoped` (#4468). Exact block, in the
+  properties yml under `models: - name: ...`:
+
+  ```yaml
+  config:
+    materialized: table
+    meta:
+      dagster:
+        # Table, not the marts-default view. Every attendance-star model in
+        # prod is a view today, so a Cube query re-expands the whole chain —
+        # the #4333 defect that #4468 fixed for the assessment star. Nightly
+        # cron rather than eager: the upstreams are eager and would drive
+        # repeated rebuilds of a 3.6M row model for no freshness anyone
+        # consumes. Midnight tick matches int_topline__ada_running_weekly,
+        # the closest sibling off the same upstream, and the KIPP Foundation
+        # criteria require nightly refresh, not intra-day.
+        automation_condition:
+          cron_schedule: 0 0 * * *
+  ```
+
+  Marts default to view: the kipptaf `marts:` block sets only `+schema` and
+  `+contract`. Do not rely on it.
 
 ---
 
@@ -883,6 +907,15 @@ Refs #4994"
 The spec's whole claim is that specific numbers move by specific amounts. Prove
 it before touching Cube.
 
+**The model is not in `kipptaf_marts`.** A local `dbt build` writes to the
+developer's own schema, and the new fact only reaches prod after merge and a
+prod run. Every query in this task reads
+`zz_cristinabaldor_kipptaf_marts.fct_student_attendance_periods`. Comparisons
+against the OLD measures still read
+`kipptaf_marts.fct_student_attendance_daily`, so a reconciliation query joins
+across the two schemas — that is correct, not a mistake to 'fix' by pointing
+both at one schema.
+
 **Files:**
 
 - Create: `.claude/scratch/reconcile_period_snapshot.sql` (throwaway,
@@ -904,7 +937,7 @@ select
     100 * countif(is_chronically_absent and is_ca_eligible)
     / countif(is_ca_eligible), 2
   ) as pct
-from kipptaf_marts.fct_student_attendance_periods
+from zz_cristinabaldor_kipptaf_marts.fct_student_attendance_periods
 where academic_year = 2025 and period_type = 'year'
 ```
 
@@ -979,7 +1012,7 @@ cubes:
 
     joins:
       - name: dates
-        sql: "{dates.date_key} = {CUBE}.period_end_date"
+        sql: "{dates.date_key} = {CUBE}.period_end_date_key"
         relationship: many_to_one
 
       - name: locations
