@@ -135,6 +135,12 @@ with
             -- school_level above already carry non-OD values for every Miami
             -- row, and PowerSchool reads this flag off that same specprog row.
             -- is_self_contained has no such twin, so it stays null (#4968).
+            -- Provisional. TODO(#5041): every Miami student's custom_863 (IDEA
+            -- educational environment) is Z or null today, so false holds. Its
+            -- age 6-21 codes are out-of-district placements, so once Ops
+            -- populates the field, derive this flag from it instead of the
+            -- literal. test_focus__idea_educational_environment_default_only
+            -- warns the day that happens.
             false as is_out_of_district,
         from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
