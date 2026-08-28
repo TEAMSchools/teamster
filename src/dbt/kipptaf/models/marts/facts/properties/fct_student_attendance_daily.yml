@@ -206,6 +206,10 @@ models:
           (student_enrollment_key), ordered by date. Point-in-time — filter to a
           single date to get YTD CA status as of that date. Filtering to a date
           range overcounts by including students CA at any point in the range.
+          This model's boundary (strictly below 90%) differs from the network
+          chronic-absence definition (at or below 90%);
+          `fct_student_attendance_periods` is the authoritative source for
+          chronic absence and ADA tier. The divergence is tracked in #5060.
 
       - name: ada_tier
         data_type: string
@@ -213,7 +217,11 @@ models:
           ADA tier based on cumulative attendance rate through this date. Tier 1
           = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
           (chronic). Tier 4 = below 80% (severe chronic). Partitioned by
-          enrollment stint (student_enrollment_key), ordered by date.
+          enrollment stint (student_enrollment_key), ordered by date. This
+          model's tier boundaries differ from the network definition (Tier 2
+          strictly above 90%, Tier 3 from 80% through 90% inclusive);
+          `fct_student_attendance_periods` is the authoritative source for
+          chronic absence and ADA tier. The divergence is tracked in #5060.
         data_tests:
           - accepted_values:
               arguments:

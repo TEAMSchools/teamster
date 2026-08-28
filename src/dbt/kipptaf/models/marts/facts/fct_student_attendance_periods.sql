@@ -72,7 +72,7 @@ with
             academic_year,
             period_type,
             period_start_date_key
-        having max(if(membershipvalue = 1, calendardate, null)) is not null
+        having period_end_date_key is not null
     ),
 
     aggregated as (

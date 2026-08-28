@@ -42,13 +42,9 @@ views:
           - period_type
           - period_start_date
           - period_end_date
-          - ada_tier
-
-      - join_path: student_attendance_periods.dates
-        prefix: true
-        includes:
           - academic_year
           - academic_year_label
+          - ada_tier
 
       - join_path: student_attendance_periods.locations
         prefix: true
@@ -74,8 +70,8 @@ views:
           members:
             - period_start_date
             - period_end_date
-            - dates_academic_year
-            - dates_academic_year_label
+            - academic_year
+            - academic_year_label
         - name: Location
           members:
             - locations_location_name

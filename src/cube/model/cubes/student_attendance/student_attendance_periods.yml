@@ -59,6 +59,29 @@ cubes:
         type: time
         public: true
 
+      - name: academic_year
+        description: >-
+          Academic year this period belongs to, per the fact's own school-year
+          assignment — not derived from period_end_date's calendar year. The
+          dates join resolves period_end_date_key through a pure July-1 calendar
+          cutover, which can disagree with the fact's assignment across the June
+          30 / July 1 boundary.
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: academic_year_label
+        description: >-
+          Full span label for academic_year (e.g. "2025-2026" for the year
+          beginning July 2025), derived from the fact's own school-year
+          assignment rather than the period_end_date calendar year — see
+          academic_year for why that distinction matters here.
+        sql: >-
+          CONCAT(CAST({CUBE}.academic_year AS STRING), '-',
+          CAST({CUBE}.academic_year + 1 AS STRING))
+        type: string
+        public: true
+
       - name: ada_tier
         description: >-
           Cumulative ADA tier as of period_end_date, based on membership days
