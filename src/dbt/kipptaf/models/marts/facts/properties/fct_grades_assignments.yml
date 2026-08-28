@@ -10,21 +10,13 @@ models:
       by traversing student_section_enrollment_key.
 
 
-      PowerSchool only. Miami is absent from AY2026 forward, and repointing this
-      model's join keys would not change that, because the gradebook itself has
-      no Focus branch. int_powerschool__gradebook_assignments_scores unions the
-      district PowerSchool packages, and Miami left that package when it moved
-      to Focus, so its archive stops at AY2025 -- 523,021 rows for AY2025 and
-      zero for AY2026, measured against prod. Focus does hold gradebook data
-      (int_focus__gradebook_grades in the focus package), but it has no kipptaf
-      wrapper, so nothing reaches the network layer. Wiring that branch is
-      tracked in #5010, and was ruled out of #4995 on measurement. Miami's null
-      is_dropped_section also trips this model's `not is_dropped_section`
-      filter; that half is #4996.
-
-      Miami's absence is ratified as intentional on #4996. The gradebook has no
-      Focus branch, so no filter change here brings Miami back; wiring that
-      branch is #5010.
+      Sourced from int_students__gradebook_assignments_scores, which unions the
+      PowerSchool districts with Miami's Focus gradebook. The Miami PowerSchool
+      branch is scoped to years before Focus coverage begins and the Focus
+      branch to years at or after it, so the frozen archive and the live SIS
+      never overlap. Focus records no missing flag and no numeric grade distinct
+      from the points score, so is_missing and numeric_grade_earned are null on
+      every Miami AY2026 row.
     columns:
       - name: grades_assignment_key
         data_type: string
