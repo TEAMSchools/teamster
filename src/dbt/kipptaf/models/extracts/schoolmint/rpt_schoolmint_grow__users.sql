@@ -39,6 +39,15 @@ with
         where home_work_location_dagster_code_location != 'kipppaterson'
     ),
 
+    grow_schools as (
+        select sch.school_id, lc.location_dagster_code_location as region,
+        from {{ ref("stg_schoolmint_grow__schools") }} as sch
+        left join
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on sch.name = lc.location_name
+        where sch.archived_at is null
+    ),
+
     instructional_managers as (
         select distinct sr.reports_to_employee_number,
         from staff as sr
@@ -58,7 +67,10 @@ with
             sr.google_email as user_email,
             sr.reports_to_employee_number as manager_internal_id,
             sr.home_work_location_reporting_name as school_name,
+            sr.home_work_location_name as school_name_alt,
             sr.home_department_name as course_name,
+            sr.tier,
+            sr.home_work_location_dagster_code_location as region,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,
 
@@ -133,6 +145,17 @@ with
         group by p.user_internal_id
     ),
 
+    regional_scope as (
+        select
+            p.user_internal_id,
+            array_agg(gs.school_id order by gs.school_id) as school_ids,
+        from people as p
+        inner join
+            grow_schools as gs on (p.tier = 'Chief Level' or gs.region = p.region)
+        where 'Regional Admin' in unnest(p.role_names)
+        group by p.user_internal_id
+    ),
+
     roster as (
         select
             p.user_internal_id,
@@ -144,6 +167,22 @@ with
             pra.role_ids,
 
             sch.school_id,
+
+            /*
+                Chief Level sees every active school; the other Regional
+                Admin tiers see their own region. Everyone else gets an
+                empty array. [Training School] has no crosswalk region, so
+                it appears only in the all-schools case.
+            */
+            ifnull(rs.school_ids, []) as regional_admin_school_ids,
+
+            if('Regional Admin' in unnest(p.role_names), 1, 0) as readonly,
+
+            array(
+                select s._id from unnest(u.regional_admin_schools) as s order by s._id
+            ) as regional_admin_school_ids_ws,
+
+            if(u.read_only, 1, 0) as readonly_ws,
 
             u.user_id,
             u.archived_at,
@@ -218,6 +257,7 @@ with
         inner join people_roles as pra on p.user_internal_id = pra.user_internal_id
         inner join
             {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
+        left join regional_scope as rs on p.user_internal_id = rs.user_internal_id
         left join
             {{ ref("stg_schoolmint_grow__users") }} as u
             on p.user_internal_id = u.internal_id_int
@@ -239,6 +279,12 @@ with
             *,
             array_to_string(role_ids, ',') as role_ids_hash,
             array_to_string(role_ids_ws, ',') as role_ids_ws_hash,
+            array_to_string(
+                regional_admin_school_ids, ','
+            ) as regional_admin_school_ids_hash,
+            array_to_string(
+                regional_admin_school_ids_ws, ','
+            ) as regional_admin_school_ids_ws_hash,
         from roster
     ),
 
@@ -251,6 +297,8 @@ with
             role_names,
             school_id,
             role_ids,
+            regional_admin_school_ids,
+            readonly,
             user_id,
             archived_at,
             user_email_ws,
@@ -264,6 +312,8 @@ with
             grade_id,
             role_ids_ws,
             inactive_ws,
+            regional_admin_school_ids_ws,
+            readonly_ws,
             group_type,
 
             {{
@@ -273,6 +323,8 @@ with
                         "course_id",
                         "grade_id",
                         "inactive",
+                        "readonly",
+                        "regional_admin_school_ids_hash",
                         "role_ids_hash",
                         "school_id",
                         "user_email",
@@ -288,6 +340,8 @@ with
                         "course_id_ws",
                         "grade_id_ws",
                         "inactive_ws",
+                        "readonly_ws",
+                        "regional_admin_school_ids_ws_hash",
                         "role_ids_ws_hash",
                         "school_id_ws",
                         "user_email_ws",
@@ -306,6 +360,8 @@ select
     role_names,
     school_id,
     role_ids,
+    regional_admin_school_ids,
+    readonly,
     user_id,
     archived_at,
     user_email_ws,
@@ -319,6 +375,8 @@ select
     grade_id,
     role_ids_ws,
     inactive_ws,
+    regional_admin_school_ids_ws,
+    readonly_ws,
     group_type,
     surrogate_key_source,
     surrogate_key_destination,
