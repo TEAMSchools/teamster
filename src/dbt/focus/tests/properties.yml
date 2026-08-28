@@ -23,6 +23,30 @@ data_tests:
           ref:
             name: int_focus__schools__pivot
             package: focus
+  - name: test_focus__idea_educational_environment_classified
+    description: >-
+      Guards the custom_863 decode that drives is_out_of_district and its three
+      companion columns on the Focus branch of int_students__student_enrollments
+      (#5041). The derivation classifies seven of the field's options -- C
+      correctional facility, D center school, F public residential facility, H
+      hospital/homebound and P private school with public school services are
+      out-of-district placements, matching PowerSchool's definition of the flag
+      exactly; Z (the default) and N/A are no placement. Every other option is
+      one of Florida's age 3-5 codes, left unclassified because Miami enrolls no
+      pre-K and nobody has reviewed whether a 3-5 placement should read as
+      out-of-district. A returned row means such a code landed, so a student now
+      reports as in-district on an unexamined assumption -- classify the code in
+      the derivation rather than widening this test. Null passes, and 190 Miami
+      students have no value today. Asserted on the option code rather than the
+      decoded label because the labels are Focus-editable prose, and left-joined
+      so a stored value matching no option also fails. It inherits the project
+      default warn severity, so it is a signal to act on, not a broken pipeline.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_focus__students
+            package: focus
   - name: focus_unmapped_phone_contact_titles
     description: >-
       Warns when a stg_focus__people_join_contacts row has neither phone_type
