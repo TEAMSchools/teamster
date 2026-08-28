@@ -61,46 +61,33 @@ array branch. Admin plus Coach was not.
 
 ## Decisions
 
-| Decision                                                 | Rationale                                                                                                                                                                            |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Key roles on `job_function`, not `job_title`             | 15 clean values that already encode the org tier. `School Leader`, `Assistant School Leaders` and `Deans` are distinct values, so most substring matching disappears.                |
-| Never assign `Sub Admin`                                 | Region scope plus `readonly` covers every case that motivated it. Removing it from circulation is the point of the change.                                                           |
-| Network leaders get `Regional Admin` over all 28 schools | Same role, wider scope. Keeps one code path instead of two, and keeps `Sub Admin` at zero.                                                                                           |
-| Pair every admin grant with `readonly`                   | Visibility without configuration power. The pattern already exists on 11 users, hand-maintained.                                                                                     |
-| Coach is additive                                        | Fixes the 116. An admin who manages teachers holds both roles.                                                                                                                       |
-| Human Resources does not pass the gate                   | The Employee Relations team rarely uses Grow and can get the same information elsewhere. Excluding it also avoids identifying that team by reporting line, which ADP cannot express. |
+| Decision                                                        | Rationale                                                                                                                                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Key roles on `job_function`, not `job_title`                    | 15 clean values that already encode the org tier. `School Leader`, `Assistant School Leaders` and `Deans` are distinct values, so most substring matching disappears.                |
+| Never assign `Sub Admin`                                        | Region scope plus `readonly` covers every case that motivated it. Removing it from circulation is the point of the change.                                                           |
+| Network leaders get `Regional Admin` over all 28 schools        | Same role, wider scope. Keeps one code path instead of two, and keeps `Sub Admin` at zero.                                                                                           |
+| Pair every admin grant with `readonly`                          | Visibility without configuration power. The pattern already exists on 11 users, hand-maintained.                                                                                     |
+| Coach is additive                                               | Fixes the 116. An admin who manages teachers holds both roles.                                                                                                                       |
+| Human Resources does not pass the gate                          | The Employee Relations team rarely uses Grow and can get the same information elsewhere. Excluding it also avoids identifying that team by reporting line, which ADP cannot express. |
+| No job-title fallback anywhere, including the teacher predicate | A null `job_function` is an ADP data defect. Coding around it hides the defect and preserves the title matching this design exists to remove. Fix the source instead.                |
 
 ## Design
 
 ### Tier resolution
 
-`job_function` is the tier. 38 active staff have a null `job_function`, so the
-admin tiers need a job-title fallback mirroring the one the teacher predicate
-already carries:
+`job_function` is the tier, and it is the only tier input. A staff member whose
+`job_function` is null receives no role at all.
 
-```sql
-coalesce(
-    job_function,
-    case
-        when contains_substr(job_title, 'Chief') then 'Chief Level'
-        when contains_substr(job_title, 'Managing Director')
-        then 'KTAF or Regional Managing Director'
-        when contains_substr(job_title, 'Director') then 'KTAF or Regional Director'
-        when job_title = 'School Leader' then 'School Leader'
-        when contains_substr(job_title, 'Assistant School Leader')
-        then 'Assistant School Leaders'
-        when contains_substr(job_title, 'Dean') then 'Deans'
-    end
-)
-```
+The teacher predicate becomes
+`job_function in ('Teacher', 'Teacher in Residence')`, dropping its
+`job_title like '%Teacher%' or job_title like '%Learning%'` fallback. This is
+the same decision applied consistently.
 
-Order matters. `Managing Director` is tested before `Director`, and
-`Assistant School Leader` before `Dean`, so the more specific pattern wins.
-
-One promotion applies afterwards: a tier of `KTAF or Regional Staff` whose title
+One adjustment applies on top: a tier of `KTAF or Regional Staff` whose title
 contains `Associate Director` is promoted to `KTAF or Regional Director`. ADP
 records three Special Education Associate Directors at staff level, which
-understates them.
+understates them. This is a deliberate, narrow exception, not a general
+fallback.
 
 ### Department gate
 
@@ -135,7 +122,7 @@ qualify.
 | `Assistant School Leaders`           | no            | `School Assistant Admin`      | home school    |
 | `Deans`                              | no            | `School Assistant Admin`      | home school    |
 | `Teacher`, `Teacher in Residence`    | no            | `Teacher`                     | home school    |
-| anything else                        | —             | none                          | —              |
+| null or anything else                | —             | none                          | —              |
 
 ### Additive roles
 
@@ -144,7 +131,7 @@ Each predicate contributes at most one role and none suppresses another:
 
 - the admin role from the matrix, if any
 - `Coach`, when the user is an instructional manager
-- `Teacher`, when the user satisfies the teacher predicate
+- `Teacher`, when `job_function` is `Teacher` or `Teacher in Residence`
 
 A user with no contributing predicate emits an empty array. That case is dropped
 at the `people_roles` inner join today; closing that hole is sub-project 3, not
@@ -163,7 +150,39 @@ where
 
 `A and B or C` parses as `(A and B) or C`, so the second branch applies no
 assignment-status filter and a manager qualifies on terminated reports. Add
-explicit parentheses and apply the status filter to both branches.
+explicit parentheses and apply the status filter to both branches. This alone
+moves the `Coach` population by a small number.
+
+## Data quality dependency
+
+50 active staff have a null `job_function`: 38 outside Paterson and 12 within
+it. The full list, with a suggested `job_function` per row, is exported to
+`.claude/scratch/adp-null-job-function.csv` for the ADP system administrator. 17
+of the 50 have a job title that suggests no obvious value and need a human
+decision.
+
+Because this design adds no fallback, those records cost access until ADP is
+corrected:
+
+| Who                                                                | Effect                                                                     |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| 18 teachers with a null `job_function`                             | lose the `Teacher` role and drop out of the extract                        |
+| 1 School Leadership manager                                        | loses `Coach`, because every teacher they manage has a null `job_function` |
+| Keyna McClinek, Achievement Director, Teaching and Learning, Miami | loses `Sub Admin`, receives nothing                                        |
+| Joezer Antoine and Sharon Rojas, Assistant School Leaders          | lose `School Assistant Admin`, keep `Coach`                                |
+| Quayon Boone, Assistant Dean, Student Support, Newark              | does not gain `School Assistant Admin`                                     |
+
+### Sequencing constraint
+
+Dropping out of the extract is not the same as losing access. There is no revoke
+path yet, so a user the extract stops emitting is simply never sent to Grow
+again — their existing Grow account persists untouched. The practical effect on
+day one is that these people stop being maintained, not that they are locked
+out.
+
+**Sub-project 3 changes that.** Once the revoke path lands, anyone the extract
+does not emit has their roles stripped. The ADP correction must therefore land
+before sub-project 3 ships, or 18 teachers lose Grow access.
 
 ## Output contract
 
@@ -180,32 +199,38 @@ Add one more: no row emits the `Sub Admin` role id.
 
 ## Blast radius
 
-Measured against the current production extract and roster.
+Measured against the current production extract and roster, with no job-title
+fallback anywhere and the precedence bug fixed.
 
-| Change                                          | Count     |
-| ----------------------------------------------- | --------- |
-| `Sub Admin` to `Regional Admin`, region scope   | 42        |
-| `Sub Admin` to `Regional Admin`, all 28 schools | 5         |
-| `Sub Admin` to no access                        | 15        |
-| Admins regaining `Coach`                        | about 113 |
-| New to Grow                                     | 30        |
-| Losing `School Assistant Admin`                 | 4         |
+| Change                                                   | Count     |
+| -------------------------------------------------------- | --------- |
+| `Sub Admin` to `Regional Admin`, region scope            | 41        |
+| `Sub Admin` to `Regional Admin`, all 28 schools          | 5         |
+| `Sub Admin` to nothing, drops out of the extract         | 16        |
+| Teachers dropping out on a null `job_function`           | 18        |
+| Admins regaining `Coach`                                 | about 115 |
+| New to Grow                                              | 28        |
+| Losing `School Assistant Admin` with no replacement      | 6         |
+| Promoted from `School Assistant Admin` to `School Admin` | 2         |
 
-The 15 who lose access are the Executive Assistant and all 14 Human Resources
-staff. The 30 who gain are 17 Assistant Deans in Student Support, 11 regional
-leaders and 2 network leaders. The 4 who lose `School Assistant Admin` matched
-the old title substring but sit outside the `Deans` and
-`Assistant School Leaders` tiers.
+The 16 losing `Sub Admin` outright are the Executive Assistant, all 14 Human
+Resources staff, and Keyna McClinek. The 28 who gain are 16 Assistant Deans in
+Student Support, 10 regional leaders and 2 network leaders.
+
+`Sub Admin` totals 62 today and reaches zero: 41 plus 5 plus 16.
 
 ## Testing
 
 1. dbt unit tests on the role expression, one case per tier, plus a null
-   `job_function` case and an Associate Director case.
+   `job_function` case asserting no role at all and an Associate Director case
+   asserting promotion.
 1. A unit test asserting an instructional manager holding an admin role emits
    both roles, which is the 116-person regression.
+1. A unit test on the corrected instructional-manager predicate, asserting a
+   manager whose only teacher reports are terminated does not qualify.
 1. `uv run dbt build --select rpt_schoolmint_grow__users+` in the worktree.
-1. Compare the built model against production for the six blast-radius counts
-   above before merging.
+1. Compare the built model against production for the blast-radius counts above
+   before merging.
 
 ## Verified by spike
 
@@ -222,7 +247,7 @@ additively without disturbing anything the payload omits.
 
 - **Sub-project 2** — write `regionalAdminSchools` and `readonly` from the sync.
 - **Sub-project 3** — the revoke path, and reconciling the 21 unmanaged admins
-  and 5 terminated accounts.
+  and 5 terminated accounts. Gated on the ADP correction above.
 - **Sub-project 4** — placeholder locations such as `Room 11`, the
   `KIPP Miami - Poinciana Campus` name mismatch, multi-school leaders, and
   per-coach observation groups.
