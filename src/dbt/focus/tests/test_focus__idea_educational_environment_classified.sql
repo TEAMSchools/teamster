@@ -3,17 +3,12 @@
 -- must be one the derivation classifies: C, D, F, H and P are out-of-district
 -- placements, Z and N/A are no placement. Anything else is one of Florida's
 -- age 3-5 options, excluded because Miami enrolls no pre-K -- if one appears,
--- the student reports as in-district on an unexamined assumption. Keyed on the
--- option code, not the label, because the labels are Focus-editable prose.
--- Left join so a stored value that resolves to no option fails too. Any
--- returned row is a warning.
-select stu.student_id, stu.idea_educational_environment, opt.code, opt.label,
-from {{ ref("stg_focus__students") }} as stu
-left join
-    {{ ref("int_focus__custom_field_options") }} as opt
-    on cast(stu.idea_educational_environment as string) in (opt.option_id, opt.code)
-    and opt.column_name = 'custom_863'
-    and opt.source_class = 'SISStudent'
+-- the student reports as in-district on an unexamined assumption. A null code
+-- beside a populated raw value fails too, which is a broken decode join rather
+-- than a new option. Any returned row is a warning.
+select student_id, idea_educational_environment, idea_educational_environment_code,
+from {{ ref("int_focus__students") }}
 where
-    stu.idea_educational_environment is not null
-    and coalesce(opt.code, '?') not in ('Z', 'N/A', 'C', 'D', 'F', 'H', 'P')
+    idea_educational_environment is not null
+    and coalesce(idea_educational_environment_code, '?')
+    not in ('Z', 'N/A', 'C', 'D', 'F', 'H', 'P')

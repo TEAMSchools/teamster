@@ -1,4 +1,15 @@
 with
+    -- custom_863's option code, which int_focus__students__pivot drops -- it
+    -- decodes to labels only. is_out_of_district in
+    -- int_students__student_enrollments keys on the code, not the label,
+    -- because Focus users can edit the labels while the codes are Florida DOE
+    -- values (#5041).
+    idea_educational_environment_options as (
+        select code, cast(option_id as int64) as option_id,
+        from {{ ref("int_focus__custom_field_options") }}
+        where column_name = 'custom_863' and source_class = 'SISStudent'
+    ),
+
     labeled as (
         select
             s.*,
@@ -18,9 +29,15 @@ with
             p.homeless_student_pk_12_label,
             p.homeless_unaccompanied_youth_label,
             p.free_reduced_meals_program_label,
+            p.idea_educational_environment_label,
+
+            ieo.code as idea_educational_environment_code,
         from {{ ref("stg_focus__students") }} as s
         left join
             {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
+        left join
+            idea_educational_environment_options as ieo
+            on s.idea_educational_environment = ieo.option_id
     ),
 
     raced as (

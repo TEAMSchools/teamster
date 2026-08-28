@@ -45,7 +45,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: stg_focus__students
+            name: int_focus__students
             package: focus
   - name: focus_unmapped_phone_contact_titles
     description: >-

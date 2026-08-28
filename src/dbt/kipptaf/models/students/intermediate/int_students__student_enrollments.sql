@@ -66,13 +66,17 @@ with
     -- age 3-5 options are excluded: Miami enrolls no pre-K, so classifying
     -- them would assert a rule nothing has reviewed --
     -- test_focus__idea_educational_environment_classified warns if one lands.
-    focus_out_of_district as (
-        select label, cast(option_id as int64) as option_id,
-        from {{ ref("int_focus__custom_field_options") }}
-        where
-            column_name = 'custom_863'
-            and source_class = 'SISStudent'
-            and code in ('C', 'D', 'F', 'H', 'P')
+    -- Derived in its own CTE because BigQuery has no lateral column aliases,
+    -- so the four columns below cannot share an alias computed beside them.
+    focus_students as (
+        select
+            *,
+            if(
+                idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),
+                true,
+                false
+            ) as is_out_of_district,
+        from {{ ref("int_focus__students") }}
     ),
 
     focus_conformed as (
@@ -148,29 +152,32 @@ with
             -- "Out of District" specprog row, so Focus branches all four on
             -- the same custom_863 match. reporting_schoolid takes the Focus
             -- option id, the analogue of PowerSchool's specprog programid --
-            -- a hospital or a center school has no Florida school number.
-            -- Every Miami row is Z or null today, so all four still resolve to
-            -- the in-district values. is_self_contained has no such source and
-            -- stays null (#4968).
-            if(ood.option_id is not null, true, false) as is_out_of_district,
+            -- a hospital or a center school has no Florida school number. The
+            -- if() form is null-safe on both counts: a roster row with no
+            -- matching student, and a student with no custom_863 value, both
+            -- fall to the in-district branch. Every Miami row is Z or null
+            -- today, so all four still resolve to the in-district values.
+            -- is_self_contained has no such source and stays null (#4968).
+            if(stu.is_out_of_district, true, false) as is_out_of_district,
 
             if(
-                ood.option_id is not null, ood.option_id, enr.reporting_schoolid
+                stu.is_out_of_district,
+                stu.idea_educational_environment,
+                enr.reporting_schoolid
             ) as reporting_schoolid,
 
             if(
-                ood.option_id is not null, ood.label, enr.school
+                stu.is_out_of_district,
+                stu.idea_educational_environment_label,
+                enr.school
             ) as reporting_school_name,
 
-            if(ood.option_id is not null, 'OD', enr.school_level) as school_level,
+            if(stu.is_out_of_district, 'OD', enr.school_level) as school_level,
         from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
-            {{ ref("int_focus__students") }} as stu
+            focus_students as stu
             on enr.network_student_number = stu.student_number
             and enr._dbt_source_project = stu._dbt_source_project
-        left join
-            focus_out_of_district as ood
-            on stu.idea_educational_environment = ood.option_id
         left join
             focus_year_grain as yg
             on enr.network_student_number = yg.network_student_number
