@@ -1,6 +1,9 @@
 # Grow region-scoped admin access
 
-Design for sub-project 1 of four: **role assignment correctness**.
+Design for all four sub-projects, shipping together in one pull request: role
+assignment correctness, region scope delivery, the revoke path, and observation
+groups plus school coverage.
+[#5054](https://github.com/TEAMSchools/teamster/issues/5054) tracks the fourth.
 
 Refs [#5052](https://github.com/TEAMSchools/teamster/issues/5052).
 
@@ -113,8 +116,8 @@ qualify.
 ### Role matrix
 
 The Role column names only the role this sub-project assigns. `readonly` is a
-separate boolean field on the Grow User object, not a role, and this sub-project
-does not write it — sub-project 2 does (see _Out of scope_ below).
+separate boolean field on the Grow User object, not a role — sub-project 2
+writes it (see _Sub-project 2: region scope delivery_ below).
 
 | Tier                                 | Gate required | Role                     | Scope          |
 | ------------------------------------ | ------------- | ------------------------ | -------------- |
@@ -208,31 +211,36 @@ Sub-project 3 still matters for the user record: once its revoke path lands,
 anyone the extract does not emit also has their `roles` stripped, closing the
 gap this section describes for the user-level side.
 
-### Interim Regional Admin scope
+### Why sub-projects 1 and 2 cannot ship separately
 
-Sub-project 2 is what writes `regionalAdminSchools`. Until it ships, a user
-newly granted `Regional Admin` by this sub-project has only whatever scope was
-already set on their account by hand — this sub-project grants the role, not the
-scope.
+Sub-project 2 is what writes `regionalAdminSchools`. A user newly granted
+`Regional Admin` by sub-project 1 has only whatever scope was already set on
+their account by hand — sub-project 1 grants the role, not the scope.
 
 Verified against the live Grow snapshot: of the 46 users converting from
 `Sub Admin` to `Regional Admin` (see _Blast radius_ below), 32 have an EMPTY
-`regionalAdminSchools` and would hold the role over zero schools until
-sub-project 2 ships. The remaining 14 retain an existing manually-set scope and
-are unaffected.
+`regionalAdminSchools` and would hold the role over zero schools if sub-project
+1 shipped alone. The remaining 14 retain an existing manually-set scope and
+would be unaffected. That 32/14 split is why the two sub-projects cannot ship
+separately: shipping them together in the same pull request is what makes the
+split moot, since sub-project 2's `regionalAdminSchools` column lands alongside
+the role grant rather than after it.
 
 ## Output contract
 
 `role_names` gains `Regional Admin` as a common value and loses `Sub Admin`
-entirely. No column is added or removed in this sub-project — the region school
-list arrives in sub-project 2.
+entirely. Sub-project 2 adds two columns:
 
-Both existing model-level tests still apply and must keep passing:
+- `regional_admin_school_ids` — `array<string>`, the Grow school ids the user
+  should be scoped to
+- `readonly` — `bool`, true when the user holds `Regional Admin`
 
-- `array_length(role_ids) >= 1`
+The model-level test `array_length(role_ids) >= 1` is removed by sub-project 3,
+because a no-role user is now emitted deliberately. The other two tests still
+apply and must keep passing:
+
 - `array_length(role_ids) = array_length(role_names)`
-
-Add one more: no row emits the `Sub Admin` role id.
+- no row emits the `Sub Admin` role id
 
 ## Blast radius
 
@@ -290,18 +298,140 @@ later, and both users still hold `readonly: true` and a populated
 Sub-project 2 can therefore write `regionalAdminSchools` and `readonly`
 additively without disturbing anything the payload omits.
 
-## Out of scope
+## Sub-project 2: region scope delivery
 
-- **Sub-project 2** — write `regionalAdminSchools` and `readonly` from the sync.
-- **Sub-project 3** — the revoke path, and reconciling the 21 unmanaged admins
-  and 5 terminated accounts. Gated on the ADP correction above.
-- **Sub-project 4**, tracked in
-  [#5054](https://github.com/TEAMSchools/teamster/issues/5054) — per-coach
-  observation groups, so a coach who is also a teacher stops seeing their peers.
-  Also placeholder locations such as `Room 11`, the
-  `KIPP Miami - Poinciana Campus` name mismatch, and multi-school leaders. That
-  issue depends on this one, because it builds on the additive `group_type`
-  defined above.
+Two new columns on the extract.
+
+`regional_admin_school_ids` is an `array<string>` of Grow school ids:
+
+- a user whose tier is `Chief Level` and whose department passes the gate gets
+  every active Grow school
+- a user on any other `Regional Admin` tier gets the active Grow schools whose
+  region matches their own `home_work_location_dagster_code_location`
+- everyone else gets an empty array
+
+`readonly` is a `bool`, true when the user holds `Regional Admin` and false
+otherwise. School Admin and School Assistant Admin are deliberately NOT readonly
+— they run observations and need write access. Only the network and regional
+tiers get visibility without configuration power, which is the requirement this
+whole design started from.
+
+### Where school region comes from
+
+Grow's own school `region` field is null or empty on all 28 schools, so it
+cannot be used. The source is `int_people__location_crosswalk`, joined to
+`stg_schoolmint_grow__schools` on `location_name = name`. That resolves 27 of
+the 28 active schools, including `Poinciana Campus`, which a roster-derived
+mapping misses because the roster calls it `KIPP Miami - Poinciana Campus`.
+
+`[Training School]` has no region. It is excluded from every region list and
+included only in the `Chief Level` all-schools list.
+
+Campus and office entries — `Room 9`, `Room 10`, `Room 11`, `Poinciana Campus`,
+`KIPP Miami - North Campus` — ARE included in region lists. `Room 9` alone
+carries 59 observers and 13 observees, so excluding them would sever live
+coaching relationships.
+
+### Sync change
+
+`grow_user_sync` adds two fields to the user payload: `regionalAdminSchools`,
+from `regional_admin_school_ids`, and `readonly`.
+
+Both must also join the surrogate keys, on both sides. Without that the sync
+never detects that someone's scope drifted and never corrects a hand-edited one.
+`stg_schoolmint_grow__users` therefore has to start selecting
+`regionalAdminSchools` and `readonly`, which it does not today.
+
+## Sub-project 3: the revoke path
+
+Today a user who matches no role predicate produces an empty role array and is
+dropped at the `people_roles` inner join. The sync never sees them, so it never
+removes anything. 21 people hold admin roles the extract does not manage, 5 of
+them terminated.
+
+The change is small: `people_roles` becomes a LEFT join, so a no-role user
+survives with empty `role_names` and `role_ids`, and the model's final `WHERE`
+keeps them. The sync then sends `roles: []` for that user, stripping their
+roles. Archival stays driven by `inactive` exactly as it is now.
+
+The model-level test `array_length(role_ids) >= 1` is removed, because an empty
+array is now a legitimate, deliberate output rather than a defect.
+
+### What this does not fix
+
+Three of the 21 have no roster record at all, so the extract cannot emit them
+and cannot revoke them. They stay a manual cleanup.
+
+### Sequencing
+
+This sub-project is why the ADP `job_function` correction is urgent rather than
+merely advisable. Once roles can be stripped, the 18 teachers with a null
+`job_function` lose their Grow roles as well as their observation-group
+membership.
+
+## Sub-project 4: observation groups and school coverage
+
+Tracked in [#5054](https://github.com/TEAMSchools/teamster/issues/5054).
+
+### Why a coach-teacher can see their peers
+
+Every school has exactly one observation group, named `Teachers`, holding every
+teacher as an observee and every coach and admin as an observer. Membership is a
+flat pool, so every observer sees every observee. A coach who is also a teacher
+therefore sees peers they do not coach.
+
+### The group model
+
+Verified by API probe against `[Training School]`: a PUT to
+`/external/schools/{id}` carrying an `observationGroups` entry with a `name` and
+no `_id` creates that group and assigns it a real `_id`. The same probe
+confirmed the school PUT REPLACES the array rather than merging it.
+
+Each school keeps its `Teachers` group, matched by name so its existing `_id` is
+reused and nothing recorded against it is orphaned. Its membership changes:
+observees become only those teachers who have no `coach_id`, and observers
+become the school's admins. Today no observee anywhere lacks a `coach_id` — all
+738 have one — so `Teachers` is empty in practice. It exists as a fallback so
+that a teacher without a coach never silently vanishes from observation.
+
+Alongside it, one group per coach at that school. Each holds that coach as the
+sole observer and only their own reports as observees. Peers stop seeing each
+other because no group ever contains two teachers who share no coaching
+relationship.
+
+### Group naming is load-bearing
+
+Because the PUT replaces the array and assigns ids to new entries, sending
+groups without an `_id` on every run would recreate them daily with fresh ids,
+churning group identity and orphaning history. The sync must GET the existing
+groups, match each one, reuse its `_id`, and omit `_id` only for a genuinely new
+group.
+
+Name is the only stable key available, so it must be deterministic and survive a
+person being renamed. Coach group names take the form
+`Coach {employee_number} - {display name}`, and matching is done on the
+`Coach {employee_number}` prefix alone. A display-name change therefore rewrites
+the label without breaking the match.
+
+### School coverage fixes
+
+Three defects in the same school PUT, fixed together because they all live in
+it.
+
+Staff whose home work location is a placeholder — `Room 9`, `Room 10`, `Room 11`
+— never appear in a real school's `school_users` and so land in no observation
+group anywhere. Keyna McClinek and Deanna Applewhaite are both in `Room 11`.
+
+Four staff have a home work location of `KIPP Miami - Poinciana Campus` while
+the Grow school is named `Poinciana Campus`. The join is exact name equality, so
+they are dropped. Routing that join through `int_people__location_crosswalk`
+fixes it and removes the last place where a school name is matched by raw
+string.
+
+`school_users` is filtered to one `school_id` per user, so a School Admin or
+School Assistant Admin covering two campuses is written to only one. The
+`coaches` union already walks the reporting line to reach other schools;
+`admins` and `assistantAdmins` get the same treatment.
 
 ## Observation group membership
 
