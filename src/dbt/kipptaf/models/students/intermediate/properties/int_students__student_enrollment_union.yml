@@ -21,8 +21,6 @@ models:
               - _dbt_source_project
               - academic_year
               - entrydate
-          config:
-            severity: warn
     columns:
       - name: student_number
         description: >-
