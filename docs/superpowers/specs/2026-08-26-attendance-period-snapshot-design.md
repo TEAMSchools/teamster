@@ -314,8 +314,11 @@ naive designs, and it is worth stating exactly.
   month.
 
 This matches what the existing per-stint `is_month_end_record` anchor already
-does, so month and week numbers should not move. Only the year figure changes,
-by the 180 leavers.
+does, so the leaver mechanism itself contributes zero movement at month and week
+grain — only the year figure moves from leavers, restoring the 136 pairs
+described above. Month and week numbers still move overall, driven by the two
+definition changes (cumulative eligibility and the exact-90.0% fix), which apply
+at every grain; see the Impact section below for the sizing.
 
 One property to document for consumers: because a withdrawn student stops
 producing rows, a month-over-month CA trend has a shifting denominator. That is
@@ -404,8 +407,8 @@ independently.
 
 ## Impact
 
-AY2025 chronic absence moves from **24.8% to 26.2%**. The current defects partly
-cancel, so the headline moves less than the composition does.
+AY2025 chronic absence moves from **24.76% to 26.04%**. The current defects
+partly cancel, so the headline moves less than the composition does.
 
 Nothing consumes `fct_student_attendance_daily` today except three dbt tests and
 the `cube.yml` exposure, so no published figure moves on merge. That will not be
@@ -483,8 +486,10 @@ days on a multiple of 10, which is where an exact 9/10 ratio occurs.
 
 - The New Jersey 45-day figure
   ([#5015](https://github.com/TEAMSchools/teamster/issues/5015)).
-- Pre-aggregations. At under 750K rows they may not be needed; measure first.
-  The 55 second MCP deadline issue is real but separate.
+- Pre-aggregations. The real size is 3.6M rows, not the under-750K estimate an
+  earlier draft used for this section — whether they're needed stays a genuinely
+  open question that row count alone doesn't settle; measure first. The 55
+  second MCP deadline issue is real but separate.
 
 ## Open question for KIPP Foundation
 

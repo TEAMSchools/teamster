@@ -996,7 +996,7 @@ because a wider scope was tried, broke production four times, and was reverted.
 - Modify:
   `src/dbt/kipptaf/models/marts/facts/properties/fct_student_attendance_daily.yml`
 
-**History — do not relitigate**
+#### History — do not relitigate
 
 | Date       | Commit              | What                                                                                                                                                                                                                                                                                           |
 | ---------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1012,7 +1012,7 @@ Two conclusions follow, and they set this task's scope:
 1. The precedent materializes **domain-specific marts only**. Conformed
    dimensions stayed views on purpose.
 
-**Scope: one model, and why not the others**
+#### Scope: one model, and why not the others
 
 | Model                                                                                                                    | Consumers                                      | Decision                 |
 | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- | ------------------------ |

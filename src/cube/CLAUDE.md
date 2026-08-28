@@ -342,10 +342,12 @@ period-end value is now materialized in dbt at period grain instead:
 `fct_student_attendance_periods` (year/month/week rows, read via
 `student_attendance_periods_view` filtering its `period_type` dimension) for
 chronic absence / ADA tier / truancy, and the `is_current_record` /
-`is_enrollment_month_end_record` / `is_enrollment_week_end_record` flags on
-`student_enrollments` (read via the named `count_students_year_end` /
-`_month_end` / `_week_end` measures) for enrollment headcount. Cube's job is
-just to filter to the right row — no query-time computation of the anchor.
+`is_month_end_record` / `is_week_end_record` dimensions on `student_enrollments`
+(the latter two exposing the underlying `is_enrollment_month_end_record` /
+`is_enrollment_week_end_record` columns; read via the named
+`count_students_year_end` / `_month_end` / `_week_end` measures) for enrollment
+headcount. Cube's job is just to filter to the right row — no query-time
+computation of the anchor.
 
 Query-time window functions over the daily fact were measured and do not scale:
 a plain additive aggregate by academic year ran 14.3s; a multi-stage
@@ -607,10 +609,12 @@ exercise it; a plain dev server silently default-denies every gated view.
   `dim_staff_work_assignments`). Uncommitted scaffold — revert +
   `grep -r zz_ src/cube` before committing.
 - **`count_students_year_end` (and `_month_end` / `_week_end`) are seasonal.**
-  They anchor to `is_current_record` / `is_enrollment_month_end_record` /
-  `is_enrollment_week_end_record` respectively (→ 0, or an absent group,
-  off-season). The bare `count_students` measure on `student_enrollments` is no
-  longer anchored (Task 7) — validate location scoping with it, or with
+  They anchor to `is_current_record` / `is_month_end_record` /
+  `is_week_end_record` respectively (→ 0, or an absent group, off-season) — the
+  latter two are dimensions exposing the underlying
+  `is_enrollment_month_end_record` / `is_enrollment_week_end_record` columns.
+  The bare `count_students` measure on `student_enrollments` is no longer
+  anchored (Task 7) — validate location scoping with it, or with
   `student_attendance`'s additive `count_students`, over a date range.
 
 ## School weeks vs ISO weeks

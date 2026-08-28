@@ -36,8 +36,6 @@ with
             end as period_start_date_key,
         from daily as d
         cross join unnest(['year', 'month', 'week']) as period_type
-        with
-        offset as period_offset
     ),
 
     per_period as (
@@ -150,6 +148,7 @@ select
                 "student_number",
                 "_dbt_source_project",
                 "location_key",
+                "academic_year",
                 "period_type",
                 "period_start_date_key",
             ]

@@ -761,12 +761,12 @@ observations / benefits groups are emitted but no view consumes them yet
 
 Row-level filtering is enforced **declaratively in each view's `access_policy`**
 — `row_level` filters that interpolate the `securityContext` values
-`resolveAccess` builds — **not** in `queryRewrite`, which now carries only the
-snapshot-anchor guard. Student domains are single collapsed views (no
-summary/detail split); any `student-<scope>` group sees every field, including
-PII, with location scoping applied by the matching policy. Staff is split into
-`staff_directory` (open roster, no PII) and `staff_pii` (the sensitive fields,
-gated per `staff_pii_scope` by a location-and-department remit precomputed into
+`resolveAccess` builds — **not** in `cube.js`, which carries no RLS at all.
+Student domains are single collapsed views (no summary/detail split); any
+`student-<scope>` group sees every field, including PII, with location scoping
+applied by the matching policy. Staff is split into `staff_directory` (open
+roster, no PII) and `staff_pii` (the sensitive fields, gated per
+`staff_pii_scope` by a location-and-department remit precomputed into
 `securityContext`).
 
 ### Cube Cloud One-Time Setup

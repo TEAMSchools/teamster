@@ -29,6 +29,24 @@ attendance_daily_policy = FreshnessPolicy.cron(
     timezone=str(LOCAL_TIMEZONE),
 )
 
+# fct_student_attendance_periods materializes on the same 0 6,15 * * * cron as
+# fct_student_attendance_daily (aligned by Finding 9 of the final review) and
+# is also a table, so a failed build silently keeps serving its last-built
+# rows. Its own named constant, not a reuse of attendance_daily_policy: that
+# policy's comment is specifically about is_realized and the is_*_record
+# point-in-time anchors freezing at build time, and this fact carries none of
+# those -- it has no anchor to freeze. What's at stake here instead is the
+# fact itself: with the queryRewrite snapshot-anchor hook retired, this is now
+# the SOLE source of every published chronic-absence, ADA-tier, and truancy
+# figure. A failed build serves a stale published RATE, network-wide, rather
+# than a stale anchor -- same deadline/window shape as attendance_daily_policy
+# because both share the same materialization cron, but a distinct reason.
+attendance_periods_policy = FreshnessPolicy.cron(
+    deadline_cron="0 7,16 * * *",
+    lower_bound_delta=timedelta(hours=1),
+    timezone=str(LOCAL_TIMEZONE),
+)
+
 policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(["kipptaf", "people", "int_people__staff_roster"]): adp_wfn_policy,
     AssetKey(["kipptaf", "people", "int_people__staff_roster_history"]): adp_wfn_policy,
@@ -39,4 +57,7 @@ policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(
         ["kipptaf", "marts", "fct_student_attendance_daily"]
     ): attendance_daily_policy,
+    AssetKey(
+        ["kipptaf", "marts", "fct_student_attendance_periods"]
+    ): attendance_periods_policy,
 }

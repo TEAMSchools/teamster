@@ -373,8 +373,9 @@ async def meta(
 
     Call with no arguments first to discover which views exist — analyst-facing
     surfaces are views (e.g. `student_attendance_view`,
-    `student_assessment_scores_view`; staff is split into `staff_directory` and
-    `staff_pii` by access tier). Once you know the view(s) you need, pass
+    `student_attendance_periods_view`, `student_assessment_scores_view`; staff
+    is split into `staff_directory` and `staff_pii` by access tier). Once you
+    know the view(s) you need, pass
     `views` to get back just their measures and dimensions — a fraction of the
     full catalog's size, filtered client-side from the same underlying `/meta`
     fetch (Cube's REST API doesn't take a filter param, and its separate
@@ -391,7 +392,7 @@ async def meta(
     filter to either — neither view needs one.
 
     Within one view, measures can also differ by more than grain. On
-    `student_enrollments`, `count_students` counts everyone ever enrolled
+    `student_enrollments_view`, `count_students` counts everyone ever enrolled
     during the queried range (a point-in-time figure only when a single date is
     pinned), while `count_students_year_end` / `_month_end` / `_week_end` are
     point-in-time as of each school's / month's / week's last in-session day.

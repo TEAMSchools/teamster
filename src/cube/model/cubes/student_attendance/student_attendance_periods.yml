@@ -20,8 +20,8 @@ cubes:
       - name: student_attendance_period_key
         description: >-
           Surrogate key derived from student_number, _dbt_source_project,
-          location_key, period_type, and period_start_date_key. Primary key for
-          this fact.
+          location_key, academic_year, period_type, and period_start_date_key.
+          Primary key for this fact.
         sql: student_attendance_period_key
         type: string
         primary_key: true
@@ -62,9 +62,10 @@ cubes:
       - name: ada_tier
         description: >-
           Cumulative ADA tier as of period_end_date, based on membership days
-          accumulated since the start of the academic year. Tier 1 = 95%+ (on
-          track). Tier 2 = 90-94% (at risk). Tier 3 = 80-89% (chronic — also
-          is_chronically_absent). Tier 4 = below 80% (severe chronic — also
+          accumulated since the start of the academic year. Tier 1 is 95% and
+          above (on track). Tier 2 is strictly above 90.0%; Tier 3 includes
+          exactly 90.0%, extending down through 80% inclusive (chronic — also
+          is_chronically_absent). Tier 4 is below 80% (severe chronic — also
           is_chronically_absent). Null when the student has zero membership days
           year-to-date.
         sql: ada_tier
@@ -76,14 +77,13 @@ cubes:
         description: >-
           CA-eligible student-school records in the period
           (n_membership_days_ytd >= 10 — the KIPP Foundation chronic-absence
-          eligibility floor). Counted per school: a student who changed schools
-          mid-period is counted once per school, the same enrollment-stint grain
-          the legacy year-end/month-end/week-end measures on student_attendance
-          use — not a network-wide distinct headcount. This is the shared
-          denominator for every rate measure on this cube — display it alongside
-          a rate whenever population size matters, especially early in an
-          academic year when eligibility is still accumulating and the
-          denominator is a fraction of full enrollment.
+          eligibility floor). Counted per school, not as a network-wide distinct
+          headcount: a student who changed schools mid-period is counted once
+          per school. This is the shared denominator for every rate measure on
+          this cube — display it alongside a rate whenever population size
+          matters, especially early in an academic year when eligibility is
+          still accumulating and the denominator is a fraction of full
+          enrollment.
         sql: student_attendance_period_key
         type: count_distinct
         public: true
@@ -92,9 +92,9 @@ cubes:
 
       - name: count_chronically_absent
         description: >-
-          CA-eligible student-school records with cumulative ADA below 90%
-          (ada_tier Tier 3 or Tier 4) as of period_end_date. Same per-school
-          counting grain as count_students.
+          CA-eligible student-school records with cumulative ADA at or below
+          90.0% (ada_tier Tier 3 or Tier 4) as of period_end_date. Same
+          per-school counting grain as count_students.
         sql: student_attendance_period_key
         type: count_distinct
         public: true
@@ -129,8 +129,9 @@ cubes:
 
       - name: pct_tier_1_2
         description: >-
-          Percentage of CA-eligible students with cumulative ADA at or above 90%
-          (Tier 1 or Tier 2) as of period_end_date. Denominator is
+          Percentage of CA-eligible students with cumulative ADA strictly above
+          90.0% (Tier 1 or Tier 2) as of period_end_date. Tier 2 is strictly
+          above 90.0%; Tier 3 includes exactly 90.0%. Denominator is
           count_students.
         sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students}, 0)"
         type: number
@@ -147,8 +148,10 @@ cubes:
 
       - name: pct_tier_3
         description: >-
-          Percentage of CA-eligible students with cumulative ADA between 80% and
-          89% (Tier 3) as of period_end_date. Denominator is count_students.
+          Percentage of CA-eligible students with cumulative ADA from 80%
+          through 90.0% inclusive (Tier 3) as of period_end_date. Tier 2 is
+          strictly above 90.0%; Tier 3 includes exactly 90.0%. Denominator is
+          count_students.
         sql: "1.0 * {_count_tier_3} / NULLIF({count_students}, 0)"
         type: number
         format: percent

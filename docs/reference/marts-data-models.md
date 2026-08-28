@@ -346,6 +346,22 @@ erDiagram
 | `intervention_type_key`    | `dim_student_attendance_intervention_types` |
 | `student_enrollment_key`   | `dim_student_enrollments`                   |
 
+## fct_student_attendance_periods
+
+```mermaid
+erDiagram
+  fct_student_attendance_periods }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column               | References      |
+| ----------------------- | --------------- |
+| `location_key`          | `dim_locations` |
+| `period_end_date_key`   | `dim_dates`     |
+| `period_start_date_key` | `dim_dates`     |
+| `student_key`           | `dim_students`  |
+
 ## fct_student_attendance_streaks
 
 ```mermaid

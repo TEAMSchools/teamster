@@ -20,27 +20,51 @@ models:
       eligible-student count to be shown beside the rate — display it alongside
       any rate derived from this fact, especially for the first weeks or first
       month of an academic year.
+
+      Mid-year leavers are included by design — a student who withdraws mid-year
+      still accumulates through their last membership day and counts in the year
+      row. The legacy fct_student_attendance_daily year-end anchor excluded a
+      student whose enrollment_status was Transferred Out, but only within the
+      CURRENT academic year (its predicate was enrollment_status != 'Transferred
+      Out' OR NOT is_current_academic_year, so the exclusion never applied to a
+      prior year). That half of the predicate never fired during the AY2025
+      reconciliation, because AY2025 was not the current academic year while the
+      reconciliation ran — so the reconciliation could not size this difference,
+      and a live comparison against the legacy path for the CURRENT academic
+      year (what an AY2026 dashboard will actually show) will differ by an
+      amount no bridge has sized.
     config:
       materialized: table
       meta:
         dagster:
           # Table, not the marts-default view. Every attendance-star model in
           # prod is a view today, so a Cube query re-expands the whole chain —
-          # the #4333 defect that #4468 fixed for the assessment star. Nightly
-          # cron rather than eager: the upstreams are eager and would drive
+          # the #4333 defect that #4468 fixed for the assessment star. Cron
+          # rather than eager: the upstreams are eager and would drive
           # repeated rebuilds of a 3.6M row model for no freshness anyone
-          # consumes. Midnight tick matches int_topline__ada_running_weekly,
-          # the closest sibling off the same upstream, and the KIPP Foundation
-          # criteria require nightly refresh, not intra-day.
+          # consumes. Ticks match fct_student_attendance_daily exactly
+          # (0 6,15 * * *), not the midnight tick this comment used to name —
+          # both facts derive from int_students__attendance_daily, and this
+          # model is now Cube's only chronic-absence/tier/truancy source, so a
+          # split cron would let the two facts disagree on the same attendance
+          # values for up to ~15 hours a day. Aligning them keeps that "both
+          # derive from the same upstream, so they agree" property true after
+          # Task 4b materialized the daily fact as a table. The KIPP
+          # Foundation criteria only require a nightly refresh floor; this
+          # tick clears that floor same as before.
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 0 6,15 * * *
     columns:
       - name: student_attendance_period_key
         data_type: string
         description: >-
           Surrogate key derived from student_number, _dbt_source_project,
-          location_key, period_type, and period_start_date_key. Primary key for
-          this fact.
+          location_key, academic_year, period_type, and period_start_date_key.
+          academic_year is required: week's period_start_date_key
+          (week_start_monday) can carry two different academic years across a
+          June 30 / July 1 school-week boundary, so omitting it lets one
+          calendar week collide into a single row across two academic years.
+          Primary key for this fact.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -220,7 +244,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '700b7490944a8888b6a9fa3f6920823b' as student_attendance_period_key,
+          'd0b048a83abb7e845f5c0e0e9a872270' as student_attendance_period_key,
           'e10adc3949ba59abbe56e057f20f883e' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -235,12 +259,12 @@ unit_tests:
           true as is_chronically_absent
         union all
         select
-          '13ead5f9d5b68563b7e0fb2988614b3a', 'e10adc3949ba59abbe56e057f20f883e',
+          '855469c59ab2c4a17ba744b9d46dbbe1', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-04',
           3.0, 2.0, false, false, 'Tier 4', true
         union all
         select
-          'f06146f86d9221643c7cda7ce52fedf1', 'e10adc3949ba59abbe56e057f20f883e',
+          '3828ea8318c10a073a8bda16efad73b3', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-04',
           3.0, 2.0, false, false, 'Tier 4', true
 
@@ -286,7 +310,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '700b7490944a8888b6a9fa3f6920823b' as student_attendance_period_key,
+          'd0b048a83abb7e845f5c0e0e9a872270' as student_attendance_period_key,
           'e10adc3949ba59abbe56e057f20f883e' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -301,22 +325,22 @@ unit_tests:
           true as is_chronically_absent
         union all
         select
-          '13ead5f9d5b68563b7e0fb2988614b3a', 'e10adc3949ba59abbe56e057f20f883e',
+          '855469c59ab2c4a17ba744b9d46dbbe1', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-03',
           2.0, 2.0, false, false, 'Tier 1', false
         union all
         select
-          'a02ed9f7470904b9f32076e131e88c29', 'e10adc3949ba59abbe56e057f20f883e',
+          '5db60d910a0868b738f5f8fb454e0e36', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-06',
           3.0, 2.0, false, false, 'Tier 4', true
         union all
         select
-          'f06146f86d9221643c7cda7ce52fedf1', 'e10adc3949ba59abbe56e057f20f883e',
+          '3828ea8318c10a073a8bda16efad73b3', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-03',
           2.0, 2.0, false, false, 'Tier 1', false
         union all
         select
-          '2eb06a2b38e907a8dfc254c14f72af4e', 'e10adc3949ba59abbe56e057f20f883e',
+          '54d0c067cb13b32ef9deb87e17ab4418', 'e10adc3949ba59abbe56e057f20f883e',
           'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-06',
           3.0, 2.0, false, false, 'Tier 4', true
 
@@ -371,7 +395,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          '734db45f569c13619c7e7bd8a17ab6d5' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -386,42 +410,42 @@ unit_tests:
           true as is_chronically_absent
         union all
         select
-          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8487a09832a756f6e4237fe5c145b5fd', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
           10.0, 9.0, false, true, 'Tier 3', true
         union all
         select
-          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          '798d919108a1cd4d5eea1dbe405f97b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-10',
           10.0, 9.0, false, true, 'Tier 3', true
         union all
         select
-          'a53f894f683385d739b1fe5f58e1d0fd', 'c81e728d9d4c2f636f067f89cc14862c',
+          '4a22aed5d8416d653ef0f4d6b36dac12', 'c81e728d9d4c2f636f067f89cc14862c',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-20',
           20.0, 19.0, true, true, 'Tier 1', false
         union all
         select
-          'cc15bde19837adf0ca3c82fc3cf7db55', 'c81e728d9d4c2f636f067f89cc14862c',
+          '4fbeaabf2a6f1d1857adf778fec9fdec', 'c81e728d9d4c2f636f067f89cc14862c',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-20',
           20.0, 19.0, true, true, 'Tier 1', false
         union all
         select
-          '8114c0ba35128911e0dd4006c1d3b085', 'c81e728d9d4c2f636f067f89cc14862c',
+          '5caa82b67161ca974f214bbb38455edf', 'c81e728d9d4c2f636f067f89cc14862c',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-20',
           20.0, 19.0, true, true, 'Tier 1', false
         union all
         select
-          'c68f8476a3d8502bba9c5c6bd4e6ac04', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+          '257f2dd1764d2a284b96a22fa66c6a9b', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-09',
           9.0, 9.0, false, false, 'Tier 1', false
         union all
         select
-          'bd64db5718f8ce814d11702539c835c3', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+          '0a80dbf0f92c795c2219156c10683f2d', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-09',
           9.0, 9.0, false, false, 'Tier 1', false
         union all
         select
-          '5ca59b51559577d9280fcf75dd346e83', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+          'badc57be8d4091670ddd4bbbca0bde0c', 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-09',
           9.0, 9.0, false, false, 'Tier 1', false
 
@@ -463,7 +487,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          '734db45f569c13619c7e7bd8a17ab6d5' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -478,27 +502,27 @@ unit_tests:
           true as is_chronically_absent
         union all
         select
-          '4cdf075f9ff7549905c68d4a795be9c0', 'c4ca4238a0b923820dcc509a6f75849b',
+          'c01de65607e04c5974ae1636f2c87ea0', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-31',
           61.0, 51.0, false, true, 'Tier 3', true
         union all
         select
-          '6a79e9dc11b65d95ddbd99dbc282a088', 'c4ca4238a0b923820dcc509a6f75849b',
+          'fc9d4095f3b039fa9a713c9d3bdbc163', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-11-01', date '2025-11-30',
           91.0, 81.0, false, true, 'Tier 3', true
         union all
         select
-          '6a03abbc4acbc01bf6a8760b084a2479', 'c4ca4238a0b923820dcc509a6f75849b',
+          'b29a36320a9dc6d5fb5a8efa02bdfeff', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-12-01', date '2025-12-10',
           101.0, 91.0, false, true, 'Tier 2', false
         union all
         select
-          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8487a09832a756f6e4237fe5c145b5fd', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-12-10',
           101.0, 91.0, false, true, 'Tier 2', false
         union all
         select
-          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          '798d919108a1cd4d5eea1dbe405f97b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-12-10',
           101.0, 91.0, false, true, 'Tier 2', false
 
@@ -541,7 +565,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          'cebe374c28dbb00b22bcae94c93b5541' as student_attendance_period_key,
+          '27c6f1c36f4368eb481fcf495685c2a0' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-a' as location_key,
           2025 as academic_year,
@@ -556,27 +580,27 @@ unit_tests:
           false as is_chronically_absent
         union all
         select
-          '238df5c46572a97bde7f0371fd2c0c49', 'c4ca4238a0b923820dcc509a6f75849b',
+          'da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-06',
           6.0, 6.0, false, false, 'Tier 1', false
         union all
         select
-          '8052fea670655a6213fea532a3a889b7', 'c4ca4238a0b923820dcc509a6f75849b',
+          '4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-06',
           6.0, 6.0, false, false, 'Tier 1', false
         union all
         select
-          '937d1b375b4c7f3fa310db235e4ef9fc', 'c4ca4238a0b923820dcc509a6f75849b',
+          '9e9b848c88984f5670acc00a80e296ce', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-b', 2025, 'month', date '2025-10-01', date '2025-10-11',
           6.0, 6.0, false, false, 'Tier 1', false
         union all
         select
-          'f12f4391b6748c62c7cb92f611705618', 'c4ca4238a0b923820dcc509a6f75849b',
+          '7b533134706fff5aee0a35d64e3d6ea7', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-b', 2025, 'week', date '2025-10-06', date '2025-10-11',
           6.0, 6.0, false, false, 'Tier 1', false
         union all
         select
-          'a271b44d1cf9e31020529f2dbd2fbea8', 'c4ca4238a0b923820dcc509a6f75849b',
+          'eb89d84900014832a74d4cbea609f9fc', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-b', 2025, 'year', date '2025-07-01', date '2025-10-11',
           6.0, 6.0, false, false, 'Tier 1', false
 
@@ -616,7 +640,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          '734db45f569c13619c7e7bd8a17ab6d5' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -631,42 +655,42 @@ unit_tests:
           false as is_chronically_absent
         union all
         select
-          '4cdf075f9ff7549905c68d4a795be9c0', 'c4ca4238a0b923820dcc509a6f75849b',
+          'c01de65607e04c5974ae1636f2c87ea0', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-10',
           40.0, 40.0, false, true, 'Tier 1', false
         union all
         select
-          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8487a09832a756f6e4237fe5c145b5fd', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-07',
           7.0, 7.0, false, false, 'Tier 1', false
         union all
         select
-          '92ca9ef1b5c22e320068bafc6ea9670e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'f10032daa31650ed03b40ebec8689e02', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-08', date '2025-09-14',
           14.0, 14.0, false, true, 'Tier 1', false
         union all
         select
-          '56f9c5198afcf7d9e05e1b932474a57e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'a63b3759da3a30dd3877ff92b9f69a1f', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-15', date '2025-09-21',
           21.0, 21.0, false, true, 'Tier 1', false
         union all
         select
-          '76faca85b6ec721db8e904650c7d6fae', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8e39fd9cf64c764c50ab451d953cc51d', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-22', date '2025-09-28',
           28.0, 28.0, false, true, 'Tier 1', false
         union all
         select
-          'a8ec9633ba6a45410e13f8b869013ac6', 'c4ca4238a0b923820dcc509a6f75849b',
+          '9d6e9879d0c9ff8cdb316b6b4a0f30b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-29', date '2025-10-05',
           35.0, 35.0, false, true, 'Tier 1', false
         union all
         select
-          '7af44e38db09779bbbedb2c744b02122', 'c4ca4238a0b923820dcc509a6f75849b',
+          '65721070167343a632fb38fec2bebb24', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-10',
           40.0, 40.0, false, true, 'Tier 1', false
         union all
         select
-          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          '798d919108a1cd4d5eea1dbe405f97b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-10-10',
           40.0, 40.0, false, true, 'Tier 1', false
 
@@ -714,7 +738,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          'a88567c722819590e5e9798b7f8fc77a' as student_attendance_period_key,
+          '5b96b5f36a94347b5a24ea28dff64042' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -729,72 +753,72 @@ unit_tests:
           false as is_chronically_absent
         union all
         select
-          '7aebaabbe95966aa7ecf44dfaadfc907', 'c4ca4238a0b923820dcc509a6f75849b',
+          '734db45f569c13619c7e7bd8a17ab6d5', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-30',
           61.0, 61.0, false, true, 'Tier 1', false
         union all
         select
-          '4cdf075f9ff7549905c68d4a795be9c0', 'c4ca4238a0b923820dcc509a6f75849b',
+          'c01de65607e04c5974ae1636f2c87ea0', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-10-01', date '2025-10-06',
           67.0, 67.0, false, true, 'Tier 1', false
         union all
         select
-          '4d80691092e798e1e9845fd5fb90955d', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8ee9d4da1f6322a19da74ff5b0456ed1', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-07-28', date '2025-08-03',
           3.0, 3.0, false, false, 'Tier 1', false
         union all
         select
-          '065eec29c158398492152d90574da55f', 'c4ca4238a0b923820dcc509a6f75849b',
+          '87125caad62e0aeda00a3563ac1e82b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-08-04', date '2025-08-10',
           10.0, 10.0, false, true, 'Tier 1', false
         union all
         select
-          '238f5fd4ab3b401b1a042379417d766c', 'c4ca4238a0b923820dcc509a6f75849b',
+          '5393f27a295b96356536a01b225877cf', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-08-11', date '2025-08-17',
           17.0, 17.0, false, true, 'Tier 1', false
         union all
         select
-          '8a023c3dbbf22ea2b4a0223bef5333a7', 'c4ca4238a0b923820dcc509a6f75849b',
+          'ea6f20c650afa16e40875f461ae15b0a', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-08-18', date '2025-08-24',
           24.0, 24.0, false, true, 'Tier 1', false
         union all
         select
-          'b9c9f8b56541ac1db2a4502d2b7de635', 'c4ca4238a0b923820dcc509a6f75849b',
+          '28484a303a4a7be927d6119923f594ab', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-08-25', date '2025-08-31',
           31.0, 31.0, false, true, 'Tier 1', false
         union all
         select
-          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8487a09832a756f6e4237fe5c145b5fd', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-07',
           38.0, 38.0, false, true, 'Tier 1', false
         union all
         select
-          '92ca9ef1b5c22e320068bafc6ea9670e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'f10032daa31650ed03b40ebec8689e02', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-08', date '2025-09-14',
           45.0, 45.0, false, true, 'Tier 1', false
         union all
         select
-          '56f9c5198afcf7d9e05e1b932474a57e', 'c4ca4238a0b923820dcc509a6f75849b',
+          'a63b3759da3a30dd3877ff92b9f69a1f', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-15', date '2025-09-21',
           52.0, 52.0, false, true, 'Tier 1', false
         union all
         select
-          '76faca85b6ec721db8e904650c7d6fae', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8e39fd9cf64c764c50ab451d953cc51d', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-22', date '2025-09-28',
           59.0, 59.0, false, true, 'Tier 1', false
         union all
         select
-          'a8ec9633ba6a45410e13f8b869013ac6', 'c4ca4238a0b923820dcc509a6f75849b',
+          '9d6e9879d0c9ff8cdb316b6b4a0f30b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-29', date '2025-10-05',
           66.0, 66.0, false, true, 'Tier 1', false
         union all
         select
-          '7af44e38db09779bbbedb2c744b02122', 'c4ca4238a0b923820dcc509a6f75849b',
+          '65721070167343a632fb38fec2bebb24', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-10-06', date '2025-10-06',
           67.0, 67.0, false, true, 'Tier 1', false
         union all
         select
-          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          '798d919108a1cd4d5eea1dbe405f97b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-10-06',
           67.0, 67.0, false, true, 'Tier 1', false
 
@@ -842,7 +866,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          '734db45f569c13619c7e7bd8a17ab6d5' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -857,22 +881,22 @@ unit_tests:
           false as is_chronically_absent
         union all
         select
-          '6a79e9dc11b65d95ddbd99dbc282a088', 'c4ca4238a0b923820dcc509a6f75849b',
+          'fc9d4095f3b039fa9a713c9d3bdbc163', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'month', date '2025-11-01', date '2025-11-05',
           15.0, 15.0, false, true, 'Tier 1', false
         union all
         select
-          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8487a09832a756f6e4237fe5c145b5fd', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
           10.0, 10.0, false, true, 'Tier 1', false
         union all
         select
-          '37f29e544d47ba89e8b034e70d1d8171', 'c4ca4238a0b923820dcc509a6f75849b',
+          '26cdf09d187de1420b1dbc0ba3e38797', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-11-03', date '2025-11-05',
           15.0, 15.0, false, true, 'Tier 1', false
         union all
         select
-          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          '798d919108a1cd4d5eea1dbe405f97b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-11-05',
           15.0, 15.0, false, true, 'Tier 1', false
 
@@ -919,7 +943,7 @@ unit_tests:
       format: sql
       rows: |
         select
-          '7aebaabbe95966aa7ecf44dfaadfc907' as student_attendance_period_key,
+          '734db45f569c13619c7e7bd8a17ab6d5' as student_attendance_period_key,
           'c4ca4238a0b923820dcc509a6f75849b' as student_key,
           'loc-abc' as location_key,
           2025 as academic_year,
@@ -934,26 +958,26 @@ unit_tests:
           true as is_chronically_absent
         union all
         select
-          'aad1f8789d1fc2caf330aa3b9cb39a95', 'c4ca4238a0b923820dcc509a6f75849b',
+          '8487a09832a756f6e4237fe5c145b5fd', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
           10.0, 8.0, false, true, 'Tier 3', true
         union all
         select
-          'c9c03fc4e2407c5b2413176ea5f75ac4', 'c4ca4238a0b923820dcc509a6f75849b',
+          '798d919108a1cd4d5eea1dbe405f97b6', 'c4ca4238a0b923820dcc509a6f75849b',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-10',
           10.0, 8.0, false, true, 'Tier 3', true
         union all
         select
-          'a53f894f683385d739b1fe5f58e1d0fd', 'c81e728d9d4c2f636f067f89cc14862c',
+          '4a22aed5d8416d653ef0f4d6b36dac12', 'c81e728d9d4c2f636f067f89cc14862c',
           'loc-abc', 2025, 'month', date '2025-09-01', date '2025-09-10',
           10.0, 7.0, false, true, 'Tier 4', true
         union all
         select
-          'cc15bde19837adf0ca3c82fc3cf7db55', 'c81e728d9d4c2f636f067f89cc14862c',
+          '4fbeaabf2a6f1d1857adf778fec9fdec', 'c81e728d9d4c2f636f067f89cc14862c',
           'loc-abc', 2025, 'week', date '2025-09-01', date '2025-09-10',
           10.0, 7.0, false, true, 'Tier 4', true
         union all
         select
-          '8114c0ba35128911e0dd4006c1d3b085', 'c81e728d9d4c2f636f067f89cc14862c',
+          '5caa82b67161ca974f214bbb38455edf', 'c81e728d9d4c2f636f067f89cc14862c',
           'loc-abc', 2025, 'year', date '2025-07-01', date '2025-09-10',
           10.0, 7.0, false, true, 'Tier 4', true
