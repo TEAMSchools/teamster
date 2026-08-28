@@ -96,6 +96,17 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: idea_educational_environment_code
+        description: >-
+          Focus option code for the idea_educational_environment select field --
+          the Florida DOE value rather than the editable label. Rides through
+          PIVOT as a grouping column rather than a second aggregate, which would
+          rename every *_label column. C, D, F, H and P are the age 6-21
+          out-of-district placements, Z is the default, N/A is explicit
+          not-applicable, and the rest are the age 3-5 options.
+        config:
+          meta:
+            contains_pii: true
       - name: idea_educational_environment_label
         description: >-
           Decoded label for the idea_educational_environment select field — the

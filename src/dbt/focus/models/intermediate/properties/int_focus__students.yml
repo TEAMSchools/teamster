@@ -93,10 +93,10 @@ models:
           Focus option code for custom_863, the IDEA educational environment. C,
           D, F, H and P are the age 6-21 out-of-district placements Florida
           reports; Z is the default and N/A is explicit not-applicable; the
-          remaining codes are the age 3-5 options. Joined in here because the
-          pivot decodes to labels only, and int_students__student_enrollments
-          derives is_out_of_district from this code rather than the editable
-          label.
+          remaining codes are the age 3-5 options. Passed through from
+          int_focus__students__pivot, which decodes it in its own pivot;
+          int_students__student_enrollments derives is_out_of_district from this
+          code rather than the editable label.
       - name: idea_educational_environment_label
         description: >-
           Decoded label for custom_863, passed through from

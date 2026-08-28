@@ -117,18 +117,46 @@ with
     ),
 
     decoded as (
-        select unpivoted.student_id, unpivoted.column_name, `options`.label,
+        select
+            unpivoted.student_id,
+            unpivoted.column_name,
+            `options`.code,
+            `options`.label,
         from unpivoted
         left join
             {{ ref("int_focus__custom_field_options") }} as `options`
             on unpivoted.column_name = `options`.column_name
             and unpivoted.stored_value in (`options`.option_id, `options`.code)
             and `options`.source_class = 'SISStudent'
+    ),
+
+    -- Only custom_863 needs its code decoded today: is_out_of_district in
+    -- int_students__student_enrollments keys on the Florida DOE code rather
+    -- than the label, which Focus users can edit (#5041).
+    decoded_codes as (
+        select student_id, code as idea_educational_environment_code,
+        from decoded
+        where column_name = 'custom_863'
+    ),
+
+    -- The code rides through PIVOT as a grouping column, since PIVOT groups by
+    -- every column it is not given. A second aggregate would decode it too, but
+    -- BigQuery then names outputs {aggregate}_{value} and every existing *_label
+    -- column would be renamed.
+    decoded_labels as (
+        select
+            decoded.student_id,
+            decoded.column_name,
+            decoded.label,
+
+            decoded_codes.idea_educational_environment_code,
+        from decoded
+        left join decoded_codes on decoded.student_id = decoded_codes.student_id
     )
 
 select *,
 from
-    decoded pivot (
+    decoded_labels pivot (
         any_value(label) for column_name in (
             'custom_100000105' as ethnicity_hispanic_or_latino_label,
             'custom_100000104' as race_white_label,

@@ -43,35 +43,32 @@ unit_tests:
             'Student is not homeless-default [N]' as homeless_student_pk_12_label,
             'Z- Not homeless (or student eligible for homeless services) but does not meet the definition of an unaccompanied youth. ' as homeless_unaccompanied_youth_label,
             'CEP NOT Direct Cert [N]' as free_reduced_meals_program_label,
-            cast(null as string) as idea_educational_environment_label
+            cast(null as string) as idea_educational_environment_label,
+            cast(null as string) as idea_educational_environment_code
           union all
           select 2, null, null, null, null, null, null, null, null, null,
             null, null, null,
             'Living in emergency or transitional shel [A]',
             'Y- Yes,who is not in the physical custody of parent or guardian [Y]',
-            'The student is eligible for free meals [F]', null
+            'The student is eligible for free meals [F]', null, null
           union all
           select 3, null, null, null, null, null, null, null, null, null,
             null, null, null,
             'Sharing the housing of other persons [B]',
             'N- No, Is homeless but does not meet the definiton of unaccompanied youth [N]',
-            'Eligible for Reduced Lunch [3]', null
+            'Eligible for Reduced Lunch [3]', null, null
           union all
           select 4, null, null, null, null, null, null, null, null, null,
             null, null, null,
             'Student awaiting foster care [F]', cast(null as string),
-            'Did Not Apply [0]', null
+            'Did Not Apply [0]', null, null
           union all
           select 5, null, null, null, null, null, null, null, null, null,
             null, null, null,
             'Living in cars, parks, temportary trailer parks or campgrounds, train stations, etc. [D]',
             'U - Student is a homeless child or youth (or student eligible for homeless services) under the age of 16 years who is not in the physical custody of a parent or guardian',
             'Eligible for Free Lunch with Direct Cert or extension of eligibility [D]',
-            null
-      # empty: no mock student carries a custom_863 value, so the option-code
-      # join contributes nothing to the conformance under test
-      - input: ref('int_focus__custom_field_options')
-        rows: []
+            null, null
     expect:
       rows:
         - student_id: 1
