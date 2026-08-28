@@ -221,7 +221,33 @@ the 2 facts; the audit cluster keeps reading
 ### Model 4 — `int_students__category_grades`
 
 PowerSchool branch reads `int_powerschool__category_grades`, year-scoped the
-same way.
+same way. Both branches filter `not is_dropped_section`.
+
+#### The dropped-section correction
+
+Revised 2026-08-28. `fct_grades_category` has never filtered
+`is_dropped_section`, unlike `fct_grades_assignments`, which always has. When a
+student leaves a section PowerSchool writes a second `stg_powerschool__cc` row
+with a negated `sectionid`; `cc_abs_sectionid` is the absolute value, so the
+category join matches the dropped stint alongside the live one and the fact
+over-counts.
+
+Measured for AY2026:
+
+| Region     | Category rows | Fact today | With the filter |
+| ---------- | ------------- | ---------- | --------------- |
+| kippnewark | 674,301       | 677,721    | **674,261**     |
+| kippcamden | 242,070       | 244,410    | **242,070**     |
+
+Camden becomes exactly 1:1, which is the proof the join is right once dropped
+stints are excluded. Newark lands 40 short of its category rows; those 40 match
+no live enrollment at all and are a separate pre-existing gap.
+
+**This is the one place New Jersey output moves**, ratified 2026-08-28 as a
+correction rather than a regression. An earlier draft of this spec called for
+preserving the fan verbatim under the NJ-parity constraint, which would have
+carried a known over-count into a new model. Everywhere else NJ stays identical,
+and the PR body states this delta explicitly.
 
 Focus branch aggregates `int_students__gradebook_assignments_scores` — Focus
 rows only — over `(cc_dcid, category, marking_period)`, reusing the conform work
@@ -287,7 +313,11 @@ gradebook holds roughly 2 weeks of a 9-week term.
 1. Zero-orphan FK joins from both facts to `dim_student_section_enrollments` and
    `dim_terms`.
 1. NJ parity, per model and per region, as `count(*)` plus
-   `count(distinct format('%T|%T', ...))` on the key columns, against prod.
+   `count(distinct format("%T|%T", ...))` on the key columns, against prod --
+   except `fct_grades_category` and `int_students__category_grades`, where the
+   ratified dropped-section correction moves Newark to 674,261 and Camden to
+   242,070 for AY2026. Verify those against the filtered baseline, not against
+   today's fact.
 1. `grades_assignment_key` byte-identical for all 3 NJ regions.
 1. Miami AY2026 rows present in both facts, verified by row count.
 1. The Miami archive still readable — AY2020 to AY2025 Miami row counts
@@ -312,6 +342,50 @@ package models are unmodified, so `dbt clone --target staging` seeds
 then `dbt build --select int_focus__gradebook_grades --target staging` so CI
 exercises the corrected test.
 
+## Overlapping-enrollment tests
+
+Revised 2026-08-28: both tests ship in this PR rather than a follow-up.
+
+Source-data-quality assertions belong in the source-system package, not the
+network layer. Both packages already hold that shape —
+`focus/tests/stg_focus__student_enrollment__one_primary_per_stint.sql` and
+`powerschool/tests/int_powerschool__student_enrollment_union_no_shared_stint_boundary.sql`,
+the latter shipping knowingly failing with a documented count. Neither package
+sets a `data_tests` severity, so both inherit the consuming district project's
+`+severity: warn`.
+
+### New: `focus` package overlap test
+
+A student's course periods for one course, in one class period, must not overlap
+by more than a shared boundary day once resolved through the marking period. The
+resolution matters: `int_focus__schedule.end_date` is null on 18,412 of 19,699
+rows because the term boundary lives on the course period's marking period, not
+the schedule row. Without it, the 188 semester-paired course periods (S1 ending
+2027-01-14, S2 starting 2027-01-15) read as concurrent and the test is 100
+percent false positives.
+
+Scoped to a shared `period_id`. Two course periods of one course in _different_
+class periods is the 776-group pattern awaiting an Ops answer; flagging it now
+would ship a test we would delete if Ops rules it valid.
+
+Measured 2026-08-28: **2 failures**, both the same student in 2 different
+courses at `period_id` 2373, where the outgoing section runs 2026-08-12 to
+2026-08-13 while the incoming one starts 2026-08-12 — a 2-day double-booking
+during a section change, not a boundary day.
+
+### Moved: the PowerSchool overlap test
+
+`kipptaf/tests/test_base_powerschool__course_enrollments_no_studyear_course_overlap.sql`
+moves to `powerschool/tests/`. At package level each project holds one district,
+so the `_dbt_source_relation` partition key drops — the package's own
+`base_powerschool__course_enrollments` already windows `is_dropped_course` on
+exactly `(cc_studyear, cc_course_number)`.
+
+The move also fixes a coverage hole this issue exposed. The kipptaf test reads
+`base_powerschool__course_enrollments`, which holds 0 Miami AY2026 rows, so it
+is structurally blind to Miami. It is also currently failing: **15,306 rows
+across all 4 regions**, at kipptaf's project-default warn severity.
+
 ## Out of scope
 
 - The gradebook-audit cluster. It keeps reading
@@ -320,6 +394,11 @@ exercises the corrected test.
 - `student_standard_grades`, still empty upstream.
 - `fct_grades_gpa`, shipped separately under
   [#5021](https://github.com/TEAMSchools/teamster/issues/5021).
+- The `0`-prefixed duplicate Focus section set — 283 groups, concentrated at
+  KIPP Royalty Academy, where a section name appears twice with a `0` prefix at
+  a different `period_id`. An Ops question, not a code fix.
+- Whether a student in 2 sections of one course at _different_ class periods is
+  valid. 776 groups, 457 students, 25 courses. Also an Ops question.
 
 ## Follow-ups found while measuring
 
