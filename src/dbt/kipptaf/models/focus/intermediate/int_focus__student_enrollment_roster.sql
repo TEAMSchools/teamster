@@ -1,9 +1,15 @@
 with
+    -- Reads the roster, not int_focus__student_enrollment. The reshape in #5009
+    -- left the latter a thin staging-plus-pivot-labels view and moved the wide
+    -- spine here, so the five columns excluded below only exist on the roster.
+    -- union_relations resolves its column list at compile time from the
+    -- relation's INFORMATION_SCHEMA, so the stale prod view kept enumerating
+    -- columns the upstream had already dropped and stopped parsing entirely.
     union_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippmiami_focus", "int_focus__student_enrollment"),
+                    source("kippmiami_focus", "int_focus__student_enrollment_roster"),
                 ]
             )
         }}

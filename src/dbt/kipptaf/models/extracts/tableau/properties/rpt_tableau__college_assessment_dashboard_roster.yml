@@ -1,5 +1,9 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_roster
+    description: >-
+      **Excludes Miami by design.** Same college-testing population as the
+      `rpt_gsheets__college_assessments_*` extracts, which Miami has no cohort
+      for yet. Ratified on #4996.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

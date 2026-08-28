@@ -12,9 +12,7 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         where
             sr.assignment_status != 'Terminated'
-            -- Miami rosters into Clever directly from Focus; excluded from all
-            -- six feeds
-            and sr.home_work_location_dagster_code_location != 'kippmiami'
+            and {{ exclude_frozen("sr.home_work_location_dagster_code_location") }}
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
@@ -38,7 +36,7 @@ with
         from {{ ref("stg_powerschool__schools") }}
         where
             state_excludefromreporting = 0
-            and _dbt_source_relation not like '%kippmiami%'
+            and {{ exclude_frozen("_dbt_source_project") }}
     ),
 
     teachers_long as (
@@ -109,9 +107,7 @@ with
             and st._dbt_source_project = t._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
-            -- Miami rosters into Clever directly from Focus; excluded from all
-            -- six feeds
-            and sec._dbt_source_relation not like '%kippmiami%'
+            and {{ exclude_frozen("sec._dbt_source_project") }}
 
         union all
 
