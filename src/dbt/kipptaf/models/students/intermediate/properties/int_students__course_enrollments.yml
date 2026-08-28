@@ -20,29 +20,36 @@ models:
               - cc_dcid
               - _dbt_source_project
     columns:
-      - name: cc_dateleft
+      - name: scheduled_end_date
         description: >-
-          Scheduled end of the section enrollment, not a departure date, and
-          never null in either branch. For PowerSchool, `cc.dateleft`, which for
-          an open enrollment is the day after the section's term ends --
-          `terms_lastday` + 1 on 58,772 of the roughly 61,000 open NJ AY2026
-          rows. For Miami, the Focus schedule `end_date` when the student
-          actually left, otherwise `marking_period_end_date`, the last day of
-          the term rather than the day after it.
+          When this section enrollment ends, whether or not the student left
+          early. Non-null on every row in both SIS branches, so a consumer
+          bounding an enrollment window reads this rather than `cc_dateleft`.
 
-          The two branches therefore differ by one day for an open enrollment,
-          which is deliberate. Miami's marking periods abut its quarter
-          boundaries, so PowerSchool's exclusive form lands on the next
-          quarter's start date and a consumer comparing it inclusively invents
-          rows for terms the student was never in. Before #5043 the Focus branch
-          left this null on 95.8% of rows, which made every downstream
-          comparison unknown; #5043 supersedes the "downstream joins must
-          coalesce it" guidance from #5002.
+          The two SIS record it differently and neither is wrong. PowerSchool
+          has no separate departure date, so `cc_dateleft` is already this
+          concept -- the actual leave date when the student left, the term end
+          plus a day while the enrollment is open. Focus keeps the two apart, so
+          this resolves to the schedule `end_date` when the student left and
+          `marking_period_end_date` otherwise.
+
+          Added on #5043. Before it, consumers compared `cc_dateleft` directly
+          and every Focus row with an open enrollment -- 95.8% of Miami AY2026
+          -- made the comparison unknown and dropped out.
         data_type: date
         data_tests:
           - not_null:
               config:
                 severity: error
+      - name: cc_dateleft
+        description: >-
+          The date the student left the section, where the SIS records one. For
+          PowerSchool this doubles as the scheduled end, because PowerSchool
+          conflates the two. For Miami it is the Focus schedule `end_date`,
+          which is null while the enrollment is open -- the normal state, true
+          of 95.8% of Miami AY2026 rows. Read `scheduled_end_date` instead of
+          coalescing this one; #5043 added it for exactly that purpose.
+        data_type: date
       - name: cc_dcid
         description: >-
           Course enrollment identifier. For Miami, the Focus

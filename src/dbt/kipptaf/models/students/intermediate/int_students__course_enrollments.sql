@@ -37,6 +37,12 @@ with
             csc.is_advanced_math,
             csc.discipline,
 
+            -- PowerSchool has no separate departure date: cc_dateleft is the
+            -- actual leave date when the student left and the term end plus a
+            -- day while the enrollment is open. It is therefore already the
+            -- neutral concept, and is non-null on all 751,359 rows since 2004.
+            a.cc_dateleft as scheduled_end_date,
+
             {{ extract_region("a") }} as region,
 
             case
@@ -91,22 +97,13 @@ with
             -- Term dates, not event dates -- see the column descriptions. A
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
+            s.end_date as cc_dateleft,
 
-            -- Focus leaves end_date null while the enrollment is open, which
-            -- made every downstream comparison unknown and dropped the row.
-            -- Fill it with the marking period's last day, which is populated
-            -- on every Focus row. Deliberately NOT PowerSchool's own
-            -- convention, the day AFTER the term ends (terms_lastday + 1 on
-            -- 58,772 of the roughly 61,000 open NJ AY2026 rows): Miami's
-            -- marking periods abut its quarter boundaries, so an exclusive
-            -- bound lands on the next quarter's start date and a consumer
-            -- comparing it inclusively invents course-quarter rows for
-            -- quarters the student was never in -- 1,712 of them, measured on
-            -- int_extracts__course_enrollments_by_term. The last-day form
-            -- costs a one-day difference against NJ and invents nothing.
-            -- #5043 supersedes the "stays null" half of #5002; the start-date
-            -- semantics above are unchanged.
-            coalesce(s.end_date, s.marking_period_end_date) as cc_dateleft,
+            -- Focus records the departure and the scheduled term end as two
+            -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
+            -- neutral column from whichever this SIS actually has, rather than
+            -- back-filling PowerSchool's conflated column. #5043
+            coalesce(s.end_date, s.marking_period_end_date) as scheduled_end_date,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
