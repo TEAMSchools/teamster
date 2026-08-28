@@ -8,7 +8,7 @@ Cloud deployment: [`docs/guides/cube.md`](../../docs/guides/cube.md).
 
 ```text
 src/cube/
-  cube.js                   # Auth, group resolution, queryRewrite, sql-user gating
+  cube.js                   # Auth, group resolution, sql-user gating
   package.json              # Cube server + bigquery driver + googleapis
   .env.example              # Hook-blocked for Claude — but its local values are
                             # documented verbatim in docs/guides/cube.md, so read
@@ -135,11 +135,11 @@ school_calendars) go in `cubes/conformed/`.
 ## View access policies
 
 Views own access entirely via `access_policy:` — RLS is Cube-native and
-declarative, not injected server-side. `cube.js`'s `queryRewrite` carries none
-of it (see `cube.js` security model below). Each policy matches one
-scope-specific group emitted by `access.buildGroups`; a viewer holds exactly one
-group per domain axis, so exactly one policy per view is ever active — no AND/OR
-combination to reason about.
+declarative, not injected server-side; `cube.js` carries none of it (see
+`cube.js` security model below). Each policy matches one scope-specific group
+emitted by `access.buildGroups`; a viewer holds exactly one group per domain
+axis, so exactly one policy per view is ever active — no AND/OR combination to
+reason about.
 
 - **Student views are single, collapsed views** — each student domain
   (`student_attendance_view`, `student_assessment_scores_view`,
@@ -219,7 +219,9 @@ Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
 [`access.js`](access.js) before modifying. All pure access helpers live in
 `access.js` (unit-tested); `cube.js` owns BigQuery reads, caching, and the two
 auth hooks. RLS itself lives entirely in per-view `access_policy` (see View
-access policies above) — `queryRewrite` retains only the snapshot-anchor guard.
+access policies above). `cube.js` has no `queryRewrite` hook at all — its whole
+exported surface is `driverFactory`, `contextToGroups`, `checkAuth`,
+`checkSqlAuth`, and `canSwitchSqlUser`.
 
 - **`resolveAccess(email)`** is the shared identity-resolution function, called
   from both auth hooks below (not from `contextToGroups`). It reads one row from
@@ -318,26 +320,6 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   flat `staff-compensation` / `-observations` / `-benefits` (emitted per
   non-`none` scope; no view consumes them yet). `none` on any axis → no group
   for that axis → default-deny on the views gated by it.
-- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
-  For cubes built on fact tables with cumulative daily-status flags (values
-  re-stamped on every row — overcounts without a point-in-time anchor), or a
-  `count_distinct` over a daily grain (a member appearing on N days counts N
-  without an anchor). `queryRewrite` auto-injects `is_latest_record`,
-  `is_month_end_record`, or `is_week_end_record` depending on query granularity.
-  To add a new domain: append the cube `name:` to `SNAPSHOT_CUBES` and add its
-  snapshot measure name stems under that **same cube key** in
-  `SNAPSHOT_MEASURE_STEMS` (a per-cube map — stems are NOT shared across cubes,
-  so e.g. `count_students` is a snapshot stem for `student_enrollments` but not
-  `student_attendance`, whose `count_students` is stint-keyed and
-  additive-safe). The cube must expose `is_latest_record`,
-  `is_month_end_record`, and `is_week_end_record` dimensions. To change a cube's
-  no-granularity default anchor (e.g. enrollment uses `is_current_record`, the
-  per-school period-end-as-of-now flag, instead of the `is_latest_record`
-  default), add a per-cube entry to `SNAPSHOT_ANCHOR_OVERRIDES`. **The injected
-  anchor is a query-level filter, so it constrains every measure in the query**
-  — do not put an additive measure (e.g. `avg_daily_attendance`) and a guarded
-  snapshot measure in the same request, or the additive one is wrongly anchored
-  ([#4160](https://github.com/TEAMSchools/teamster/issues/4160)).
 - **`access_policy` blocks, it does not strip.** When a user requests a member
   their tier excludes, Cube denies the whole query — it does not silently drop
   the column and return the rest. BI tools connected via the SQL API (Superset)
@@ -349,6 +331,30 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
+
+## Semi-additive / period-end snapshot measures
+
+Period-end values (chronic absence, ADA tier, truancy rate, enrollment headcount
+as of a period) are no longer computed by a query-time anchor injected in
+`cube.js` — that mechanism (`queryRewrite`, `SNAPSHOT_CUBES`,
+`SNAPSHOT_MEASURE_STEMS`, `SNAPSHOT_ANCHOR_OVERRIDES`) was retired. Each
+period-end value is now materialized in dbt at period grain instead:
+`fct_student_attendance_periods` (year/month/week rows, read via
+`student_attendance_periods_view` filtering its `period_type` dimension) for
+chronic absence / ADA tier / truancy, and the `is_current_record` /
+`is_enrollment_month_end_record` / `is_enrollment_week_end_record` flags on
+`student_enrollments` (read via the named `count_students_year_end` /
+`_month_end` / `_week_end` measures) for enrollment headcount. Cube's job is
+just to filter to the right row — no query-time computation of the anchor.
+
+Query-time window functions over the daily fact were measured and do not scale:
+a plain additive aggregate by academic year ran 14.3s; a multi-stage
+`grain.include` with no window ran 14.9s–30.6s; a multi-stage `rank` timed out
+past 150s. The retired anchor-flag path was itself not fast either — the legacy
+`_year_end` measure over 3 academic years ran 38.4s, and `_week_end` over one
+academic year ran 51.6s, inside the Cube MCP server's 55-second poll deadline —
+the same failure [#4333](https://github.com/TEAMSchools/teamster/issues/4333)
+fixed for the assessment cubes.
 
 ## MCP access (cube)
 
@@ -600,9 +606,12 @@ exercise it; a plain dev server silently default-denies every gated view.
   it; redirecting it breaks its surrogate-key join to prod
   `dim_staff_work_assignments`). Uncommitted scaffold — revert +
   `grep -r zz_ src/cube` before committing.
-- **`count_students` is seasonal.** On `student_enrollments` it anchors to
-  `is_current_record` (→ 0 off-season); validate location scoping with
-  `student_attendance`'s additive `count_students` over a date range.
+- **`count_students_year_end` (and `_month_end` / `_week_end`) are seasonal.**
+  They anchor to `is_current_record` / `is_enrollment_month_end_record` /
+  `is_enrollment_week_end_record` respectively (→ 0, or an absent group,
+  off-season). The bare `count_students` measure on `student_enrollments` is no
+  longer anchored (Task 7) — validate location scoping with it, or with
+  `student_attendance`'s additive `count_students`, over a date range.
 
 ## School weeks vs ISO weeks
 
@@ -615,11 +624,13 @@ diverge from ISO Monday). Both topline surfaces key on school weeks:
 cleanly via the join) rather than a raw fact column — Cube can throw "not found"
 on a `DATE` fact column cast to `TIMESTAMP` in a BigQuery view.
 
-**Snapshot guard drives the week period off `dates_school_week_start_date`
-grouping, not Cube's native `granularity: "week"` (ISO).** The guard detects a
-weekly trend when any query member's last dotted segment equals
-`dates_school_week_start_date`; ISO `granularity: "week"` throws for snapshot
-measures. `_week_end` named measures require this grouping.
+**`_week_end` named measures (e.g. `count_students_week_end`) require grouping
+by `dates_school_week_start_date`, not Cube's native `granularity: "week"`
+(ISO).** The underlying `is_*_week_end_record` flag is keyed to the PowerSchool
+school week, so grouping by ISO `granularity: "week"` compiles and runs — it
+does not throw — but silently buckets by the wrong week boundary and returns a
+meaningless breakdown. There is no query-time guard catching this anymore; the
+caller has to group correctly.
 
 ## `prefix: true` join member names
 

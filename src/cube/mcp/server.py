@@ -382,6 +382,22 @@ async def meta(
     mint) — so it avoids exceeding a response size budget on large models
     without any extra round trip once the full catalog is cached.
 
+    Two views can cover one domain at different grains. Attendance splits this
+    way: `student_attendance_view` answers day-level questions (was a student
+    absent on a date, calendar heatmaps, day-of-week patterns), while
+    `student_attendance_periods_view` answers rates as of a period (chronic
+    absence, ADA tier, truancy) via its `period_type` dimension. Pick by whether
+    the question is about a day or about a period, and do not add an anchor
+    filter to either — neither view needs one.
+
+    Within one view, measures can also differ by more than grain. On
+    `student_enrollments`, `count_students` counts everyone ever enrolled
+    during the queried range (a point-in-time figure only when a single date is
+    pinned), while `count_students_year_end` / `_month_end` / `_week_end` are
+    point-in-time as of each school's / month's / week's last in-session day.
+    Picking by name alone silently returns a different metric — check the
+    measure's own description for its as-of semantics before choosing one.
+
     Access is group-driven and default-deny: an empty catalog (`cubes: []`)
     usually means the requester lacks the required `cube-*` Workspace group, not
     a missing model.

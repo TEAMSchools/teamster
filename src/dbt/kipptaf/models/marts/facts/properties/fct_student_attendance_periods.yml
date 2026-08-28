@@ -9,6 +9,17 @@ models:
       membership day produces no row; period_end_date_key is the last membership
       day observed, which can fall short of the period's calendar end for an
       in-progress period. Populated for year, month, and week period types.
+
+      Eligibility (is_ca_eligible) is cumulative from the start of the academic
+      year, so early periods carry a much smaller eligible count than later ones
+      — this is expected, not broken data. Example: 2025-08 measured 1,317
+      eligible against 10,513 total enrollments network-wide (12.5%), while the
+      chronic-absence rate itself barely moved (19.49% to 18.53%). All three
+      reconciliation authorities define eligibility this way, and KIPP
+      Foundation chronic-absence criteria item 1 already requires the
+      eligible-student count to be shown beside the rate — display it alongside
+      any rate derived from this fact, especially for the first weeks or first
+      month of an academic year.
     config:
       materialized: table
       meta:
