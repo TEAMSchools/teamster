@@ -1,21 +1,21 @@
 models:
   - name: rpt_gsheets__csgf_hs_enrollment
-    description:
-      High-school enrollment and Algebra I outcomes for Charter School
-      Growth Fund reporting. Network-wide, Miami included, on the same
-      reasoning as `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter,
-      no Miami rows yet only because the window is the prior academic year.
-      Ratified on #4996. Miami opened its first HS in AY2026 (KIPP Miami
-      Technical High). The course-tag CTEs in this model
-      (transfer_course_tags, local_course_tags) read PowerSchool-only
-      sources with no Focus equivalent wired in, while the enrollment and
-      demographic fields come through int_extracts__student_enrollments,
-      which already includes Miami via Focus. Once this model rolls to
-      AY2026 data next cycle, Miami HS students will get correct enrollment
-      and demographic fields but NULL has_participated_in_ap_courses /
-      honors / dual_enrollment / cte_courses values, since the course_tags
-      CTE produces no rows for them at all. A Focus course or grade source
-      needs to be added to those two CTEs before then.
+    description: >-
+      High-school enrollment and Algebra I outcomes for Charter School Growth
+      Fund reporting. Network-wide, Miami included, on the same reasoning as
+      `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter, no Miami rows yet
+      only because the window is the prior academic year. Ratified on #4996.
+      Miami opened its first HS in AY2026 (KIPP Miami Technical High). The
+      course-tag CTEs in this model (transfer_course_tags, local_course_tags)
+      read PowerSchool-only sources with no Focus equivalent wired in, while the
+      enrollment and demographic fields come through
+      int_extracts__student_enrollments, which already includes Miami via Focus.
+      Once this model rolls to AY2026 data next cycle, Miami HS students will
+      get correct enrollment and demographic fields but NULL
+      has_participated_in_ap_courses / honors / dual_enrollment / cte_courses
+      values, since the course_tags CTE produces no rows for them at all. A
+      Focus course or grade source needs to be added to those two CTEs before
+      then.
     columns:
       - name: studentid
         data_type: int64

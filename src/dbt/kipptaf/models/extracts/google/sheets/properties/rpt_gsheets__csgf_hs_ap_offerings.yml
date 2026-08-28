@@ -1,24 +1,23 @@
 models:
   - name: rpt_gsheets__csgf_hs_ap_offerings
-    description:
-      High-school AP course offerings for Charter School Growth Fund
-      reporting. Network-wide, Miami included -- there is no region filter,
-      so Miami enters the population as its high school grows. It has no
-      rows yet because the reporting window is the prior academic year,
-      before Miami had a high school. Note the `is_enrolled_recent` filter,
-      which was null for Miami until #5038. Ratified on #4996. Separately,
-      pivots on a hardcoded list of AP course names, so a newly-offered
-      course not yet added to the pivot's IN list drops out of the extract
-      silently -- no error, just a missing column. Before each cycle's
-      submission, confirm the current AY's actual AP courses (query
-      stg_google_sheets__collegeboard__ap_course_crosswalk joined through
-      base_powerschool__course_enrollments) still match this model's pivot
-      list. The ap_courses CTE's case statement also remaps a few College
-      Board crosswalk names to CSGF's own official naming for that cycle
-      (e.g. AP US History -> AP United States History) -- CSGF's exact
-      expected names can change cycle to cycle and don't always match the
-      crosswalk's canonical naming; update that case statement, per the
-      csgf-data-collection skill, whenever CSGF's list changes.
+    description: >-
+      High-school AP course offerings for Charter School Growth Fund reporting.
+      Network-wide, Miami included -- there is no region filter, so Miami enters
+      the population as its high school grows. It has no rows yet because the
+      reporting window is the prior academic year, before Miami had a high
+      school. Note the `is_enrolled_recent` filter, which was null for Miami
+      until #5038. Ratified on #4996. Separately, pivots on a hardcoded list of
+      AP course names, so a newly-offered course not yet added to the pivot's IN
+      list drops out of the extract silently -- no error, just a missing column.
+      Before each cycle's submission, confirm the current AY's actual AP courses
+      (query stg_google_sheets__collegeboard__ap_course_crosswalk joined through
+      base_powerschool__course_enrollments) still match this model's pivot list.
+      The ap_courses CTE's case statement also remaps a few College Board
+      crosswalk names to CSGF's own official naming for that cycle (e.g. AP US
+      History -> AP United States History) -- CSGF's exact expected names can
+      change cycle to cycle and don't always match the crosswalk's canonical
+      naming; update that case statement, per the csgf-data-collection skill,
+      whenever CSGF's list changes.
     columns:
       - name: school_name
         data_type: string
