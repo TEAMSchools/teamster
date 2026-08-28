@@ -13,12 +13,13 @@ models:
 
       `assignmentsectionid` is PowerSchool's one-row-per-assignment-per-section
       key; on the Focus branch it is Focus's assignment-to-course-period join
-      row id (`stg_focus__gradebook_assignments_join_course_periods.id`), the
-      closest Focus analog at the same grain. `students_dcid` is PowerSchool's
-      internal student id; on the Focus branch it is Focus's internal student
-      row id (`gradebook_grades.student_id`) — join to other Focus-branch data
-      by this column, and to PowerSchool-branch enrollment data by
-      `student_number`, which both branches carry.
+      row id (`int_focus__gradebook_grades.assignment_course_period_id`,
+      resolved by the focus package), the closest Focus analog at the same
+      grain. `students_dcid` is PowerSchool's internal student id; on the Focus
+      branch it is Focus's internal student row id
+      (`gradebook_grades.student_id`) — join to other Focus-branch data by this
+      column, and to PowerSchool-branch enrollment data by `student_number`,
+      which both branches carry.
 
 
       Focus scores of `-1` are a not-yet-graded / excused sentinel, not a value
@@ -55,8 +56,8 @@ models:
         description: >-
           PowerSchool's one-row-per-assignment-per-section id. On the Focus
           branch, the assignment-to-course-period join row id
-          (`stg_focus__gradebook_assignments_join_course_periods.id`), the
-          closest Focus analog at the same grain.
+          (`int_focus__gradebook_grades.assignment_course_period_id`, resolved
+          by the focus package), the closest Focus analog at the same grain.
         data_type: int64
       - name: sectionsdcid
         description: >-

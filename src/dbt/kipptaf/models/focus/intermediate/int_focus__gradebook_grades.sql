@@ -1,3 +1,6 @@
+-- passes through the package's assignment_course_period_id (int_focus,
+-- #5010) so int_students__gradebook_assignments_scores no longer re-joins
+-- stg_focus__gradebook_assignments_join_course_periods for it.
 with
     union_relations as (
         {{

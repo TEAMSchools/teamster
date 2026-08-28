@@ -81,6 +81,11 @@ models:
         description: Identifier of the user who last updated the score.
       - name: last_updated_date
         description: Source last-updated timestamp.
+      - name: assignment_course_period_id
+        description: >-
+          Focus gradebook_assignments_join_course_periods id — one row per
+          assignment per course period, the exact grain of PowerSchool's
+          assignmentsectionid. Null alongside a null course_period_id.
       - name: course_period_id
         description: >-
           Course period the score belongs to, resolved by intersecting the

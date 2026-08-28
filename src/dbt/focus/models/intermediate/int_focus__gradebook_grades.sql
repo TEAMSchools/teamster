@@ -12,6 +12,7 @@ with
         select
             gg.id as student_gradebook_grade_id,
 
+            ajcp.id as assignment_course_period_id,
             ajcp.course_period_id,
             ajcp.marking_period_id,
             ajcp.assigned_date,
@@ -44,6 +45,7 @@ select
     gg.last_updated_user,
     gg.last_updated_date,
 
+    gcp.assignment_course_period_id,
     gcp.course_period_id,
     gcp.marking_period_id,
     gcp.assigned_date,

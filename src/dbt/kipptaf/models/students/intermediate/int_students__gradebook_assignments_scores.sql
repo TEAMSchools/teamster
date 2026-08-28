@@ -35,10 +35,11 @@ with
 
             -- PowerSchool's assignmentsectionid is one row per assignment per
             -- section. Focus's exact analog is the assignment-to-course-period
-            -- join row, whose id carries that same grain. Keeping the column
-            -- name means fct_grades_assignments' surrogate key expression is
-            -- untouched, so no NJ hash moves.
-            ajcp.id as assignmentsectionid,
+            -- join row, whose id carries that same grain; the focus package
+            -- already resolves it onto gg. Keeping the column name means
+            -- fct_grades_assignments' surrogate key expression is untouched,
+            -- so no NJ hash moves.
+            gg.assignment_course_period_id as assignmentsectionid,
 
             gg.course_period_id as sectionsdcid,
 
@@ -115,13 +116,6 @@ with
             ) as is_expected,
 
         from {{ ref("int_focus__gradebook_grades") }} as gg
-        -- inner, not left: a score with no course-period link cannot reach a
-        -- section enrollment and so cannot reach either fact.
-        inner join
-            {{ ref("stg_focus__gradebook_assignments_join_course_periods") }} as ajcp
-            on gg.assignment_id = ajcp.assignment_id
-            and gg.course_period_id = ajcp.course_period_id
-            and gg.marking_period_id = ajcp.marking_period_id
         inner join
             {{ ref("stg_focus__marking_periods") }} as mp
             on gg.marking_period_id = mp.marking_period_id
