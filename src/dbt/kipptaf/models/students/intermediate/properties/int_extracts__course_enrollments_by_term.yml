@@ -19,15 +19,16 @@ models:
       PowerSchool quirk it targets — a section holding enrollment rows while
       recording its count as zero, 202 New Jersey rows in AY2026.
 
-      `cc_dateleft` is null while a Focus enrollment is open, true of 95.8% of
-      Miami rows, so the quarter join dropped all but 230 of the survivors. It
-      now coalesces to `terms_lastday`, the section's term end, rather than to a
-      far-future date, which would fan semester and quarter enrollments into
-      quarters their term never covered.
+      `cc_dateleft` was null while a Focus enrollment was open, true of 95.8% of
+      Miami rows, so the quarter join dropped all but 230 of the survivors. That
+      one is not fixed here. It is fixed at the Focus leg of
+      `int_students__course_enrollments`, which now conforms the column to
+      PowerSchool's convention — the day after the section's term ends — so this
+      model compares it directly, unchanged.
 
-      Neither change moves New Jersey: both columns are non-null on every NJ
-      row, and the new predicates are identical to the old ones on non-null
-      values.
+      Neither change moves New Jersey: `sections_no_of_students` is non-null on
+      every NJ row, so the new predicate is identical to the old one there, and
+      the conforming change touches only the Focus leg.
     config:
       schema: extracts
       materialized: table
@@ -1214,11 +1215,11 @@ models:
       - name: dateleft
         data_type: date
         description: >
-          Enrollment end date for the stint. For PowerSchool, the raw
-          `cc_dateleft`. For Miami, `cc_dateleft` coalesced to `terms_lastday`,
-          the section's term end, because Focus leaves the end date null while
-          the enrollment is open. Never null, so it cannot be read as a
-          still-enrolled signal. #5043
+          Raw `cc_dateleft` for the enrolled course section stint. Non-null in
+          both SIS branches, and for an open enrollment it is the day after the
+          section's term ends rather than a departure date, so it cannot be read
+          as a still-enrolled signal. See the column description on
+          `int_students__course_enrollments`.
         config:
           meta:
             source_system: PowerSchool
@@ -1237,9 +1238,8 @@ models:
       - name: dateleft_alt
         data_type: date
         description: >
-          Effective enrollment end date. Clamps `dateleft` -- already coalesced
-          to `terms_lastday` for Miami -- to last_day_school_year when the value
-          extends past the school year.
+          Effective enrollment end date. Clamps cc_dateleft to
+          last_day_school_year when the raw value extends past the school year.
         config:
           meta:
             source_system: PowerSchool

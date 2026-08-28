@@ -56,19 +56,6 @@ with
         }}
     ),
 
-    -- Focus leaves cc_dateleft null while an enrollment is open, the normal
-    -- state for 95.8% of Miami AY2026 rows (#5002). Every comparison below
-    -- would then be unknown and the row would drop, so coalesce once here. The
-    -- sentinel is the section's term end, not a far-future date: a far-future
-    -- date fans semester and quarter enrollments into quarters their term
-    -- never covered, 3,938 spurious rows measured on #5043. PowerSchool never
-    -- leaves cc_dateleft null, so this is a no-op for New Jersey.
-    course_enrollments as (
-        select
-            * except (cc_dateleft), coalesce(cc_dateleft, terms_lastday) as cc_dateleft,
-        from {{ ref("base_powerschool__course_enrollments") }}
-    ),
-
     schedule_by_terms as (
         select
             e._dbt_source_project,
@@ -117,7 +104,7 @@ with
                 e.cc_dateleft
             ) as dateleft_alt,
 
-        from course_enrollments as e
+        from {{ ref("base_powerschool__course_enrollments") }} as e
         inner join
             quarters as q
             on e.cc_academic_year = q.academic_year

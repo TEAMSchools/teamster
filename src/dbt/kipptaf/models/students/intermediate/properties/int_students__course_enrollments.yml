@@ -20,20 +20,24 @@ models:
               - cc_dcid
               - _dbt_source_project
     columns:
-      - name: terms_firstday
+      - name: cc_dateleft
         description: >-
-          First day of the section's term. For PowerSchool, from the section's
-          term record. For Miami, the schedule row's
-          `marking_period_start_date`, populated on every row. Added on #5043;
-          null for Miami before that.
-        data_type: date
-      - name: terms_lastday
-        description: >-
-          Last day of the section's term. For PowerSchool, from the section's
-          term record. For Miami, the schedule row's `marking_period_end_date`,
-          populated on every row. This is the sentinel to coalesce `cc_dateleft`
-          to for an open Focus enrollment. Added on #5043; null for Miami before
-          that.
+          Scheduled end of the section enrollment, not a departure date, and
+          never null in either branch. For PowerSchool, `cc.dateleft`, which for
+          an open enrollment is the day after the section's term ends --
+          `terms_lastday` + 1 on 58,772 of the roughly 61,000 open NJ AY2026
+          rows. For Miami, the Focus schedule `end_date` when the student
+          actually left, otherwise `marking_period_end_date`, the last day of
+          the term rather than the day after it.
+
+          The two branches therefore differ by one day for an open enrollment,
+          which is deliberate. Miami's marking periods abut its quarter
+          boundaries, so PowerSchool's exclusive form lands on the next
+          quarter's start date and a consumer comparing it inclusively invents
+          rows for terms the student was never in. Before #5043 the Focus branch
+          left this null on 95.8% of rows, which made every downstream
+          comparison unknown; #5043 supersedes the "downstream joins must
+          coalesce it" guidance from #5002.
         data_type: date
         data_tests:
           - not_null:
@@ -75,16 +79,6 @@ models:
           date rather than a join date -- so a future-term row carries a future
           date. Established on #5002; the measurement lives on
           `int_focus__schedule`.
-        data_type: date
-      - name: cc_dateleft
-        description: >-
-          For PowerSchool, the date the student left the section. For Miami, the
-          Focus schedule `end_date`, which is null while the row is open -- the
-          normal state, true of 96.8% of Miami AY2026 rows. Downstream joins
-          must coalesce it rather than compare it directly, and the sentinel is
-          `terms_lastday`, not a far-future date: a far-future date fans
-          semester and quarter enrollments into terms they never covered, 3,938
-          spurious quarter rows measured on #5043.
         data_type: date
       - name: is_homeroom
         description: >-

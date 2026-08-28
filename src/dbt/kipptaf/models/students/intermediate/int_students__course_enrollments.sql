@@ -91,16 +91,22 @@ with
             -- Term dates, not event dates -- see the column descriptions. A
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
-            s.end_date as cc_dateleft,
 
-            -- PowerSchool's section term window, null on every Miami row until
-            -- now. Focus's equivalent is the schedule row's marking period,
-            -- populated on all 19,398 AY2026 rows. A consumer needing an end
-            -- date for an open enrollment coalesces cc_dateleft to
-            -- terms_lastday rather than to a far-future date, which would fan
-            -- semester and quarter rows into terms they never covered. #5043
-            s.marking_period_start_date as terms_firstday,
-            s.marking_period_end_date as terms_lastday,
+            -- Focus leaves end_date null while the enrollment is open, which
+            -- made every downstream comparison unknown and dropped the row.
+            -- Fill it with the marking period's last day, which is populated
+            -- on every Focus row. Deliberately NOT PowerSchool's own
+            -- convention, the day AFTER the term ends (terms_lastday + 1 on
+            -- 58,772 of the roughly 61,000 open NJ AY2026 rows): Miami's
+            -- marking periods abut its quarter boundaries, so an exclusive
+            -- bound lands on the next quarter's start date and a consumer
+            -- comparing it inclusively invents course-quarter rows for
+            -- quarters the student was never in -- 1,712 of them, measured on
+            -- int_extracts__course_enrollments_by_term. The last-day form
+            -- costs a one-day difference against NJ and invents nothing.
+            -- #5043 supersedes the "stays null" half of #5002; the start-date
+            -- semantics above are unchanged.
+            coalesce(s.end_date, s.marking_period_end_date) as cc_dateleft,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
