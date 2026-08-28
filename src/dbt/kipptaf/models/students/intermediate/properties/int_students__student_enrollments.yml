@@ -20,11 +20,16 @@ models:
       `rn_undergrad`, `track`, and `cohort_graduated`.
 
       `is_enrolled_y1` and `is_enrolled_recent` are derived for Miami from the
-      roster's enrollment dates, using PowerSchool's expressions, and
-      `is_out_of_district` is false there -- the Focus branch already assigns
-      every Miami row a real `reporting_schoolid` and an ES/MS/HS
-      `school_level`, never `OD`. All three were null before #4996, which
-      silently removed Miami from every consumer that filtered on them.
+      roster's enrollment dates, using PowerSchool's expressions.
+      `is_out_of_district` is derived from `custom_863`, the IDEA educational
+      environment, with `reporting_schoolid`, `reporting_school_name` and
+      `school_level` branching on the same match -- PowerSchool derives all
+      four from one special-programs record, so Focus branches all four on one
+      option (#5041). Every Miami student holds `custom_863`'s default today,
+      so the flag resolves false for every Miami row, exactly as it did while
+      it was a literal. `is_enrolled_y1`, `is_enrolled_recent` and
+      `is_out_of_district` were all null before #4996, which silently removed
+      Miami from every consumer that filtered on them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -55,10 +60,16 @@ models:
       - name: is_out_of_district
         data_type: boolean
         description: >-
-          Whether the student is served in an out-of-district placement. Always
-          false for Miami, which is consistent with the reporting school and
-          school level the Focus branch assigns every Miami row -- PowerSchool
-          derives all three from the same special-programs record.
+          Whether the student is served in an out-of-district placement.
+          PowerSchool reads it off an "Out of District" special program. Miami
+          derives it from `custom_863`, the IDEA educational environment, and it
+          is true for the age 6-21 options that place a student at another
+          institution -- correctional facility, center school, public
+          residential facility, hospital or homebound, and private school with
+          public school services -- which is PowerSchool's out-of-district set
+          exactly. Florida's age 3-5 options are excluded, since Miami enrolls
+          no pre-K. Every Miami student holds the default option today, so this
+          resolves false for every Miami row.
         data_tests:
           - not_null
       - name: homeless_code
@@ -453,10 +464,24 @@ models:
           exclude Miami.
       - name: reporting_schoolid
         data_type: int64
+        description: >-
+          School the enrollment reports under. Matches `schoolid` unless
+          `is_out_of_district` is true, in which case PowerSchool supplies the
+          special program's `programid` and Miami supplies the `custom_863`
+          option id -- a hospital or a center school has no Florida school
+          number to use instead.
       - name: reporting_school_name
         data_type: string
+        description: >-
+          Name of the school named by `reporting_schoolid`. The real school name
+          for an in-district enrollment; for an out-of-district placement, the
+          PowerSchool special-program name, or for Miami the decoded
+          `custom_863` option label.
       - name: school_level
         data_type: string
+        description: >-
+          ES, MS or HS for an in-district enrollment, or `OD` when
+          `is_out_of_district` is true, matching `reporting_schoolid`.
       - name: _dbt_source_project
         data_type: string
         description: |

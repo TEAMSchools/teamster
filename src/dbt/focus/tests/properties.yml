@@ -23,24 +23,24 @@ data_tests:
           ref:
             name: int_focus__schools__pivot
             package: focus
-  - name: test_focus__idea_educational_environment_default_only
+  - name: test_focus__idea_educational_environment_classified
     description: >-
-      Tripwire for the provisional `false as is_out_of_district` on the Focus
-      branch of int_students__student_enrollments (#5041). custom_863, the IDEA
-      educational environment select field, holds the Z default or null for
-      every Miami student today, so the literal is correct. Its age 6-21 codes
-      -- C correctional facility, D center school, F public residential
-      facility, H hospital/homebound, P private school with public school
-      services -- are out-of-district placements, matching PowerSchool's
-      definition of the flag exactly. So the day Ops populates this field, the
-      literal goes silently wrong and a student at a hospital or a center school
-      still reports as in-district. When this warns, the action is to wire
-      custom_863 into is_out_of_district, not to widen or silence the test. Null
-      passes: 190 Miami students have no value and that is fine. N/A passes too
-      -- it is not a placement. Asserted on the option code rather than the
+      Guards the custom_863 decode that drives is_out_of_district and its three
+      companion columns on the Focus branch of int_students__student_enrollments
+      (#5041). The derivation classifies seven of the field's options -- C
+      correctional facility, D center school, F public residential facility, H
+      hospital/homebound and P private school with public school services are
+      out-of-district placements, matching PowerSchool's definition of the flag
+      exactly; Z (the default) and N/A are no placement. Every other option is
+      one of Florida's age 3-5 codes, left unclassified because Miami enrolls no
+      pre-K and nobody has reviewed whether a 3-5 placement should read as
+      out-of-district. A returned row means such a code landed, so a student now
+      reports as in-district on an unexamined assumption -- classify the code in
+      the derivation rather than widening this test. Null passes, and 190 Miami
+      students have no value today. Asserted on the option code rather than the
       decoded label because the labels are Focus-editable prose, and left-joined
       so a stored value matching no option also fails. It inherits the project
-      default warn severity: a signal to act on, not a broken pipeline.
+      default warn severity, so it is a signal to act on, not a broken pipeline.
     config:
       meta:
         dagster:

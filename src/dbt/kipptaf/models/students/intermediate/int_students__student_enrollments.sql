@@ -59,6 +59,22 @@ with
         where rn_year = 1
     ),
 
+    -- Focus's stand-in for PowerSchool's "Out of District" special-program
+    -- row (#5041). custom_863, the IDEA educational environment, is the only
+    -- Focus field recording a placement at another institution, and its age
+    -- 6-21 options are exactly PowerSchool's out-of-district set. Florida's
+    -- age 3-5 options are excluded: Miami enrolls no pre-K, so classifying
+    -- them would assert a rule nothing has reviewed --
+    -- test_focus__idea_educational_environment_classified warns if one lands.
+    focus_out_of_district as (
+        select label, cast(option_id as int64) as option_id,
+        from {{ ref("int_focus__custom_field_options") }}
+        where
+            column_name = 'custom_863'
+            and source_class = 'SISStudent'
+            and code in ('C', 'D', 'F', 'H', 'P')
+    ),
+
     focus_conformed as (
         select
             enr._dbt_source_relation,
@@ -80,9 +96,7 @@ with
             enr.is_enrolled_mar15,
             enr.dob,
             enr.state,
-            enr.school_level,
             enr.school_abbreviation,
-            enr.reporting_schoolid,
 
             stu.spedlep,
             stu.lep_status,
@@ -108,7 +122,6 @@ with
             enr.student_last_name as last_name,
             enr.student_name as lastfirst,
             enr.school as school_name,
-            enr.school as reporting_school_name,
             enr.network_student_number as student_number,
 
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
@@ -131,22 +144,33 @@ with
                 else false
             end as is_enrolled_recent,
 
-            -- #4996. False rather than null: reporting_schoolid and
-            -- school_level above already carry non-OD values for every Miami
-            -- row, and PowerSchool reads this flag off that same specprog row.
-            -- is_self_contained has no such twin, so it stays null (#4968).
-            -- Provisional. TODO(#5041): every Miami student's custom_863 (IDEA
-            -- educational environment) is Z or null today, so false holds. Its
-            -- age 6-21 codes are out-of-district placements, so once Ops
-            -- populates the field, derive this flag from it instead of the
-            -- literal. test_focus__idea_educational_environment_default_only
-            -- warns the day that happens.
-            false as is_out_of_district,
+            -- #4996, #5041. PowerSchool drives these four columns off one
+            -- "Out of District" specprog row, so Focus branches all four on
+            -- the same custom_863 match. reporting_schoolid takes the Focus
+            -- option id, the analogue of PowerSchool's specprog programid --
+            -- a hospital or a center school has no Florida school number.
+            -- Every Miami row is Z or null today, so all four still resolve to
+            -- the in-district values. is_self_contained has no such source and
+            -- stays null (#4968).
+            if(ood.option_id is not null, true, false) as is_out_of_district,
+
+            if(
+                ood.option_id is not null, ood.option_id, enr.reporting_schoolid
+            ) as reporting_schoolid,
+
+            if(
+                ood.option_id is not null, ood.label, enr.school
+            ) as reporting_school_name,
+
+            if(ood.option_id is not null, 'OD', enr.school_level) as school_level,
         from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
             {{ ref("int_focus__students") }} as stu
             on enr.network_student_number = stu.student_number
             and enr._dbt_source_project = stu._dbt_source_project
+        left join
+            focus_out_of_district as ood
+            on stu.idea_educational_environment = ood.option_id
         left join
             focus_year_grain as yg
             on enr.network_student_number = yg.network_student_number
