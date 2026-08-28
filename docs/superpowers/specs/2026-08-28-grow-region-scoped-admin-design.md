@@ -248,23 +248,30 @@ additively without disturbing anything the payload omits.
 - **Sub-project 2** — write `regionalAdminSchools` and `readonly` from the sync.
 - **Sub-project 3** — the revoke path, and reconciling the 21 unmanaged admins
   and 5 terminated accounts. Gated on the ADP correction above.
-- **Sub-project 4** — placeholder locations such as `Room 11`, the
-  `KIPP Miami - Poinciana Campus` name mismatch, multi-school leaders, and
-  per-coach observation groups.
+- **Sub-project 4**, tracked in
+  [#5054](https://github.com/TEAMSchools/teamster/issues/5054) — per-coach
+  observation groups, so a coach who is also a teacher stops seeing their peers.
+  Also placeholder locations such as `Room 11`, the
+  `KIPP Miami - Poinciana Campus` name mismatch, and multi-school leaders. That
+  issue depends on this one, because it builds on the additive `group_type`
+  defined above.
 
-## Open question
+## Observation group membership
 
-`group_type` must become additive alongside the roles, but who may be _observed_
-is a policy call this design does not settle.
-
-Today any admin resolves to `observers` and is therefore never an observee, so
+`group_type` becomes additive alongside the roles. Today it is a first-match
+CASE, so any admin resolves to `observers` and is therefore never an observee —
 nobody can observe a School Leader, an Assistant School Leader or a Dean.
-Proposed default:
+
+The two memberships are now independent predicates:
 
 - `observers` when the user holds any admin role or `Coach`
-- `observees` when the user is a `Teacher`, or holds `School Admin` or
+- `observees` when the user holds `Teacher`, `School Admin` or
   `School Assistant Admin`
 - `Regional Admin` alone does not make someone an observee
 
-This would newly allow school leadership to be observed by their manager.
-Confirm before implementation.
+School leadership therefore becomes observable by their manager, which is a
+deliberate change from current behaviour.
+
+The emitted string keeps its existing shape, `observees`, `observers` or
+`observees;observers`, because `grow_user_sync` tests it with `in`. A user who
+satisfies neither predicate emits an empty string and contributes to no group.
