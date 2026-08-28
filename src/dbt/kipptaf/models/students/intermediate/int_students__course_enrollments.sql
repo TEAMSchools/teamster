@@ -41,7 +41,7 @@ with
             -- actual leave date when the student left and the term end plus a
             -- day while the enrollment is open. It is therefore already the
             -- neutral concept, and is non-null on all 751,359 rows since 2004.
-            a.cc_dateleft as scheduled_end_date,
+            a.cc_dateleft as exit_date,
 
             {{ extract_region("a") }} as region,
 
@@ -103,7 +103,7 @@ with
             -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
             -- neutral column from whichever this SIS actually has, rather than
             -- back-filling PowerSchool's conflated column. #5043
-            coalesce(s.end_date, s.marking_period_end_date) as scheduled_end_date,
+            coalesce(s.end_date, s.marking_period_end_date) as exit_date,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,
