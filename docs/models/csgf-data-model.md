@@ -142,10 +142,18 @@ Raw PowerSchool `school_name` doesn't always match CSGF's expected string —
 `csgf_hs_enrollment` and `csgf_hs_ap_offerings` both special-case
 `KIPP Cooper Norcross High` → `KIPP Cooper Norcross High School` for this
 reason. Confirmed for 2026-2027: both models' full-name output matches CSGF's
-expected names for all three current HS schools. **`csgf_hs_grad_data` is an
-open question, not yet confirmed** — it outputs abbreviated codes (`KHS`, `NCA`,
-`NLH`) instead of full names, and whether that's actually what CSGF's HS Grad
-Data tab expects has not been checked against the template.
+expected names for all three current HS schools.
+
+`csgf_hs_grad_data` had the same gap — it output abbreviated codes (`KHS`,
+`NCA`, `NLH`) instead of full names. Fixed by switching from
+`school_abbreviation` to `school_name` (with the same Cooper Norcross remap),
+confirmed against CSGF's Portal task labels (`KIPP Newark Lab High School` /
+`KIPP Newark Collegiate Academy` / `KIPP Cooper Norcross High School`).
+
+`csgf_enrollment`'s Paterson remap had the inverse problem — it was outputting
+`KIPP Paterson MS` / `KIPP Paterson ES`, missing "Prep." Fixed against CSGF's
+own Portal school-list export, which has `KIPP Paterson Prep MS` /
+`KIPP Paterson Prep ES` on file.
 
 ### `csgf_hs_grad_data`'s cohort scope — resolved
 
@@ -206,9 +214,12 @@ of the time. Everything else above is a genuine departure.
 
 ## Open items
 
-- `csgf_hs_grad_data`'s school-name format (abbreviated `KHS`/`NCA`/`NLH` vs.
-  full names) — unresolved. Cohort scope is now resolved (see above).
 - The other five HS-scoped models' Miami/Focus course-data gap for next cycle —
   only verified for `csgf_hs_enrollment` so far.
 - None of the eight models currently have a uniqueness test, which this repo's
   convention requires for `rpt_` models — not yet addressed.
+- CSGF's own Portal school-list is missing three real Miami schools (KIPP Miami
+  Technical High, KIPP Legacy Elementary, KIPP Legacy Middle) — confirmed via
+  CSGF's school-list CSV export. This is a Portal data-entry gap on CSGF's side
+  (add via "Add Record"), not a dbt fix; tracked as the collection owner's
+  action item, not this repo's.

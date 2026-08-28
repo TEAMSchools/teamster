@@ -65,3 +65,9 @@ models:
         data_type: string
       - name: school
         data_type: string
+        description:
+          Remaps stg_powerschool__schools' "Paterson Prep Middle School" /
+          "Paterson Prep Elementary School" to "KIPP Paterson Prep MS" / "KIPP
+          Paterson Prep ES" -- verified against CSGF's own Portal school-list
+          export, which carries the "Prep" in both names. A prior version of
+          this remap dropped "Prep" and didn't match.
