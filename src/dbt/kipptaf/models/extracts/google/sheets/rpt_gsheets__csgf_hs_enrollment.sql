@@ -2,26 +2,12 @@ with
     transfer_course_tags as (
         select
             studentid,
-            grade_level,
 
             0 as is_dual_course,
 
             0 as is_cte_course,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            if(grade like 'F%', 0, 1) as passed_class,
-
-            if(
-                course_name like '%Alg%'
-                or course_name like '%ALG%'
-                or course_name like '%Alb%'
-                or course_name like 'Math%'
-                or course_name = 'GSE Coord Alegbra'
-                or course_name = 'NC Math 1',
-                1,
-                0
-            ) as is_alg_i_course,
 
             if(course_name like 'AP%', 1, 0) as is_ap_course,
 
@@ -38,7 +24,7 @@ with
                 'Albegra 1',
                 'ALG 1',
                 'Alg I',
-                'Alg 1'
+                'Alg 1',
                 'ALG I CP',
                 'Algebra',
                 'Algebra 1',
