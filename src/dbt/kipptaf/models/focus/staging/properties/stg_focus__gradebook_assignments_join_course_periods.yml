@@ -1,0 +1,13 @@
+models:
+  - name: stg_focus__gradebook_assignments_join_course_periods
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__gradebook_assignments_join_course_periods. One row per
+      assignment per course period per marking period — the exact grain of
+      PowerSchool's assignmentsectionid, which is why
+      int_students__gradebook_assignments_scores uses this table's `id` as the
+      Focus-side assignment-section identity. Column docs/tests live on the
+      kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
