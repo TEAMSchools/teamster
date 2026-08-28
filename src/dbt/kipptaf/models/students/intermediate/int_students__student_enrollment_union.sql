@@ -44,20 +44,12 @@ with
         from focus_conformed
     )
 
--- PowerSchool keeps the current enrollment in `students` and prior stints in
--- `reenrollments`. A re-entry backdated to a still-open stint's entrydate
--- therefore yields two rows on (student_number, _dbt_source_project,
--- academic_year, entrydate) -- the grain `student_enrollment_key` hashes -- and
--- every mart joining that key double-counts the student. Keep the year's
--- primary stint: rn_year is already ranked exitdate desc upstream, so the
--- survivor is the open stint and its year_in_school / year_in_network stay
--- populated. This drops rows, never key values, so no existing hash changes and
--- no downstream foreign key is orphaned. See #5045.
-select *,
-from unioned
-qualify
-    row_number() over (
-        partition by student_number, _dbt_source_project, academic_year, entrydate
-        order by rn_year
-    )
-    = 1
+    -- TODO(#5045): remove once Ops corrects the backdated PowerSchool re-entry
+    -- dates that put two stints on one entrydate.
+    {{
+        dbt_utils.deduplicate(
+            relation="unioned",
+            partition_by="student_number, _dbt_source_project, academic_year, entrydate",
+            order_by="rn_year asc",
+        )
+    }}

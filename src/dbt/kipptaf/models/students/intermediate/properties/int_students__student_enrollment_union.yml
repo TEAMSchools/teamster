@@ -11,6 +11,22 @@ models:
       Miami rows at all -- including its alumni graduate placeholders. Replaces
       `int_powerschool__student_enrollment_union` as the canonical
       enrollment-grain source for marts.
+
+
+      Deduplicated to one row per (`student_number`, `_dbt_source_project`,
+      `academic_year`, `entrydate`) -- the grain `student_enrollment_key`
+      hashes. PowerSchool holds a student's current enrollment in `students` and
+      their earlier stints in `reenrollments`, so a re-entry backdated onto a
+      still-open stint puts two rows on one entrydate and every mart joining
+      that key double-counts the student. The survivor is the year's primary
+      stint (`rn_year` 1), which is the open one because `rn_year` is ranked
+      exitdate descending upstream, and which is the row carrying
+      `year_in_school` and `year_in_network`. Deduplicating drops rows, never
+      key values, so no existing hash changes and no downstream foreign key is
+      orphaned. The matching test on `int_powerschool__student_enrollment_union`
+      stays `severity: warn` on purpose -- it keeps alerting on the underlying
+      PowerSchool data-entry error, which only Ops can correct. Tracked in
+      #5045.
     config:
       materialized: table
     data_tests:
@@ -21,6 +37,8 @@ models:
               - _dbt_source_project
               - academic_year
               - entrydate
+          config:
+            severity: error
     columns:
       - name: student_number
         description: >-
