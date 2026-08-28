@@ -70,7 +70,21 @@ with
     -- so the four columns below cannot share an alias computed beside them.
     focus_students as (
         select
-            *,
+            _dbt_source_project,
+            ethnicity,
+            gender,
+            gifted_and_talented,
+            homeless_code,
+            homeless_primary_nighttime_residence_code,
+            idea_educational_environment,
+            idea_educational_environment_label,
+            is_homeless,
+            lep_status,
+            lunchstatus,
+            spedlep,
+            state_studentnumber,
+            student_number,
+
             if(
                 idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),
                 true,
@@ -257,7 +271,6 @@ with
     ),
 
     powerschool_conformed as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 

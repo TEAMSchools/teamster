@@ -1,9 +1,11 @@
 models:
   - name: int_focus__students__pivot
     description: >-
-      Decoded labels for the SISStudent select custom fields, one row per
-      student_id. Join to stg_focus__students on student_id for the codes. A
-      null label means the student had no code for that field.
+      SISStudent select custom fields decoded three ways, one row per student_id
+      -- value_ is the raw stored option id or code, code_ is the Focus option
+      code, and label_ is the human label. BigQuery names multi-aggregate PIVOT
+      outputs {aggregate}_{field}, which is why the prefix leads. A null label
+      means the student had no value for that field.
     config:
       meta:
         contains_pii: true
@@ -17,296 +19,995 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: ethnicity_hispanic_or_latino_label
-        description:
+      - name: value_ethnicity_hispanic_or_latino
+        description: >-
+          Stored value for the ethnicity_hispanic_or_latino select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_ethnicity_hispanic_or_latino
+        description: >-
+          Focus option code for the ethnicity_hispanic_or_latino select field --
+          the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_ethnicity_hispanic_or_latino
+        description: >-
           Decoded label for the ethnicity_hispanic_or_latino select field.
         config:
           meta:
             contains_pii: true
-      - name: race_white_label
-        description: Decoded label for the race_white select field.
+      - name: value_race_white
+        description: >-
+          Stored value for the race_white select field -- the option id or code
+          Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: race_black_or_african_american_label
-        description:
+      - name: code_race_white
+        description: >-
+          Focus option code for the race_white select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_race_white
+        description: >-
+          Decoded label for the race_white select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_race_black_or_african_american
+        description: >-
+          Stored value for the race_black_or_african_american select field --
+          the option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_race_black_or_african_american
+        description: >-
+          Focus option code for the race_black_or_african_american select field
+          -- the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_race_black_or_african_american
+        description: >-
           Decoded label for the race_black_or_african_american select field.
         config:
           meta:
             contains_pii: true
-      - name: race_asian_label
-        description: Decoded label for the race_asian select field.
+      - name: value_race_asian
+        description: >-
+          Stored value for the race_asian select field -- the option id or code
+          Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: sex_label
-        description: Decoded label for the sex select field.
+      - name: code_race_asian
+        description: >-
+          Focus option code for the race_asian select field -- the stable
+          import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: race_american_indian_or_alaska_native_label
-        description:
+      - name: label_race_asian
+        description: >-
+          Decoded label for the race_asian select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_sex
+        description: >-
+          Stored value for the sex select field -- the option id or code Focus
+          persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_sex
+        description: >-
+          Focus option code for the sex select field -- the stable import/export
+          value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_sex
+        description: >-
+          Decoded label for the sex select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_race_american_indian_or_alaska_native
+        description: >-
+          Stored value for the race_american_indian_or_alaska_native select
+          field -- the option id or code Focus persists on the student record,
+          before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_race_american_indian_or_alaska_native
+        description: >-
+          Focus option code for the race_american_indian_or_alaska_native select
+          field -- the stable import/export value, as opposed to the editable
+          label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_race_american_indian_or_alaska_native
+        description: >-
           Decoded label for the race_american_indian_or_alaska_native field.
         config:
           meta:
             contains_pii: true
-      - name: race_native_hawaiian_or_other_pacific_islander_label
-        description:
+      - name: value_race_native_hawaiian_or_other_pacific_islander
+        description: >-
+          Stored value for the race_native_hawaiian_or_other_pacific_islander
+          select field -- the option id or code Focus persists on the student
+          record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_race_native_hawaiian_or_other_pacific_islander
+        description: >-
+          Focus option code for the
+          race_native_hawaiian_or_other_pacific_islander select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_race_native_hawaiian_or_other_pacific_islander
+        description: >-
           Decoded label for the race_native_hawaiian_or_other_pacific_islander
           field.
         config:
           meta:
             contains_pii: true
-      - name: residence_county_label
-        description: Decoded label for the residence_county select field.
+      - name: value_residence_county
+        description: >-
+          Stored value for the residence_county select field -- the option id or
+          code Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: language_label
-        description: Decoded label for the language select field.
+      - name: code_residence_county
+        description: >-
+          Focus option code for the residence_county select field -- the stable
+          import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: primary_language_spoken_in_home_label
-        description:
+      - name: label_residence_county
+        description: >-
+          Decoded label for the residence_county select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_language
+        description: >-
+          Stored value for the language select field -- the option id or code
+          Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_language
+        description: >-
+          Focus option code for the language select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_language
+        description: >-
+          Decoded label for the language select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_primary_language_spoken_in_home
+        description: >-
+          Stored value for the primary_language_spoken_in_home select field --
+          the option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_primary_language_spoken_in_home
+        description: >-
+          Focus option code for the primary_language_spoken_in_home select field
+          -- the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_primary_language_spoken_in_home
+        description: >-
           Decoded label for the primary_language_spoken_in_home select field.
         config:
           meta:
             contains_pii: true
-      - name: free_reduced_meals_program_label
+      - name: value_free_reduced_meals_program
         description: >-
-          Decoded label for the free_reduced_meals_program select field — the
+          Stored value for the free_reduced_meals_program select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_free_reduced_meals_program
+        description: >-
+          Focus option code for the free_reduced_meals_program select field --
+          the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_free_reduced_meals_program
+        description: >-
+          >- Decoded label for the free_reduced_meals_program select field — the
           student's free or reduced-price meal eligibility basis.
         config:
           meta:
             contains_pii: true
-      - name: native_language_student_label
-        description: Decoded label for the native_language_student select field.
+      - name: value_native_language_student
+        description: >-
+          Stored value for the native_language_student select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
         config:
           meta:
             contains_pii: true
-      - name: homeless_student_pk_12_label
-        description: Decoded label for the homeless_student_pk_12 select field.
+      - name: code_native_language_student
+        description: >-
+          Focus option code for the native_language_student select field -- the
+          stable import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: homeless_unaccompanied_youth_label
-        description:
+      - name: label_native_language_student
+        description: >-
+          Decoded label for the native_language_student select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_homeless_student_pk_12
+        description: >-
+          Stored value for the homeless_student_pk_12 select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_homeless_student_pk_12
+        description: >-
+          Focus option code for the homeless_student_pk_12 select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_homeless_student_pk_12
+        description: >-
+          Decoded label for the homeless_student_pk_12 select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_homeless_unaccompanied_youth
+        description: >-
+          Stored value for the homeless_unaccompanied_youth select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_homeless_unaccompanied_youth
+        description: >-
+          Focus option code for the homeless_unaccompanied_youth select field --
+          the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_homeless_unaccompanied_youth
+        description: >-
           Decoded label for the homeless_unaccompanied_youth select field.
         config:
           meta:
             contains_pii: true
-      - name: idea_educational_environment_code
+      - name: value_idea_educational_environment
+        description: >-
+          Stored value for the idea_educational_environment select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_idea_educational_environment
         description: >-
           Focus option code for the idea_educational_environment select field --
-          the Florida DOE value rather than the editable label. Rides through
-          PIVOT as a grouping column rather than a second aggregate, which would
-          rename every *_label column. C, D, F, H and P are the age 6-21
-          out-of-district placements, Z is the default, N/A is explicit
-          not-applicable, and the rest are the age 3-5 options.
+          the stable import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: idea_educational_environment_label
+      - name: label_idea_educational_environment
         description: >-
-          Decoded label for the idea_educational_environment select field — the
-          IDEA educational environment reported for the student.
+          >- Decoded label for the idea_educational_environment select field —
+          the IDEA educational environment reported for the student.
         config:
           meta:
             contains_pii: true
-      - name: english_language_learner_pk_12_label
-        description:
+      - name: value_english_language_learner_pk_12
+        description: >-
+          Stored value for the english_language_learner_pk_12 select field --
+          the option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_english_language_learner_pk_12
+        description: >-
+          Focus option code for the english_language_learner_pk_12 select field
+          -- the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_english_language_learner_pk_12
+        description: >-
           Decoded label for the english_language_learner_pk_12 select field.
         config:
           meta:
             contains_pii: true
-      - name: pe_waiver_label
-        description: Decoded label for the pe_waiver select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: graduation_option_label
-        description: Decoded label for the graduation_option select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: doe_test_accommodations_access_for_ells_label
+      - name: value_pe_waiver
         description: >-
-          Decoded label for the doe_test_accommodations_access_for_ells select
-          field — the ACCESS for ELLs testing accommodation.
+          Stored value for the pe_waiver select field -- the option id or code
+          Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: ese_fefp_code_label
+      - name: code_pe_waiver
         description: >-
-          Decoded label for the ese_fefp_code select field — the exceptional
+          Focus option code for the pe_waiver select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_pe_waiver
+        description: >-
+          Decoded label for the pe_waiver select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_graduation_option
+        description: >-
+          Stored value for the graduation_option select field -- the option id
+          or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_graduation_option
+        description: >-
+          Focus option code for the graduation_option select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_graduation_option
+        description: >-
+          Decoded label for the graduation_option select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_doe_test_accommodations_access_for_ells
+        description: >-
+          Stored value for the doe_test_accommodations_access_for_ells select
+          field -- the option id or code Focus persists on the student record,
+          before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_doe_test_accommodations_access_for_ells
+        description: >-
+          Focus option code for the doe_test_accommodations_access_for_ells
+          select field -- the stable import/export value, as opposed to the
+          editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_doe_test_accommodations_access_for_ells
+        description: >-
+          >- Decoded label for the doe_test_accommodations_access_for_ells
+          select field — the ACCESS for ELLs testing accommodation.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_ese_fefp_code
+        description: >-
+          Stored value for the ese_fefp_code select field -- the option id or
+          code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_ese_fefp_code
+        description: >-
+          Focus option code for the ese_fefp_code select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_ese_fefp_code
+        description: >-
+          >- Decoded label for the ese_fefp_code select field — the exceptional
           student education FEFP funding category.
         config:
           meta:
             contains_pii: true
-      - name: gifted_eligibility_label
+      - name: value_gifted_eligibility
         description: >-
-          Decoded label for the gifted_eligibility select field — names the
+          Stored value for the gifted_eligibility select field -- the option id
+          or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_gifted_eligibility
+        description: >-
+          Focus option code for the gifted_eligibility select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_gifted_eligibility
+        description: >-
+          >- Decoded label for the gifted_eligibility select field — names the
           FLDOE criteria paragraph a student was found gifted-eligible under.
         config:
           meta:
             contains_pii: true
-      - name: prekindergarten_program_participation_label
+      - name: value_prekindergarten_program_participation
         description: >-
-          Decoded label for the prekindergarten_program_participation select
+          Stored value for the prekindergarten_program_participation select
+          field -- the option id or code Focus persists on the student record,
+          before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_prekindergarten_program_participation
+        description: >-
+          Focus option code for the prekindergarten_program_participation select
+          field -- the stable import/export value, as opposed to the editable
+          label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_prekindergarten_program_participation
+        description: >-
+          >- Decoded label for the prekindergarten_program_participation select
           field.
         config:
           meta:
             contains_pii: true
-      - name: country_of_birth_label
-        description: Decoded label for the country_of_birth select field.
+      - name: value_country_of_birth
+        description: >-
+          Stored value for the country_of_birth select field -- the option id or
+          code Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: year_entered_ninth_grade_label
+      - name: code_country_of_birth
         description: >-
-          Decoded label for the year_entered_ninth_grade select field. Currently
-          null for every row — the only stored value points at a select option
-          that is soft-deleted in Focus, and its label was the placeholder
-          00000000. Labels will resolve once Focus stores a live option.
+          Focus option code for the country_of_birth select field -- the stable
+          import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: florida_first_start_program_participant_label
+      - name: label_country_of_birth
         description: >-
-          Decoded label for the florida_first_start_program_participant select
-          field.
+          Decoded label for the country_of_birth select field.
         config:
           meta:
             contains_pii: true
-      - name: even_start_family_literacy_program_participant_label
+      - name: value_year_entered_ninth_grade
         description: >-
-          Decoded label for the even_start_family_literacy_program_participant
+          Stored value for the year_entered_ninth_grade select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_year_entered_ninth_grade
+        description: >-
+          Focus option code for the year_entered_ninth_grade select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_year_entered_ninth_grade
+        description: >-
+          >- Decoded label for the year_entered_ninth_grade select field.
+          Currently null for every row — the only stored value points at a
+          select option that is soft-deleted in Focus, and its label was the
+          placeholder 00000000. Labels will resolve once Focus stores a live
+          option.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_florida_first_start_program_participant
+        description: >-
+          Stored value for the florida_first_start_program_participant select
+          field -- the option id or code Focus persists on the student record,
+          before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_florida_first_start_program_participant
+        description: >-
+          Focus option code for the florida_first_start_program_participant
+          select field -- the stable import/export value, as opposed to the
+          editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_florida_first_start_program_participant
+        description: >-
+          >- Decoded label for the florida_first_start_program_participant
           select field.
         config:
           meta:
             contains_pii: true
-      - name: multi_birth_for_faster_label
+      - name: value_even_start_family_literacy_program_participant
         description: >-
-          Decoded label for the multi_birth_for_faster select field — the
+          Stored value for the even_start_family_literacy_program_participant
+          select field -- the option id or code Focus persists on the student
+          record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_even_start_family_literacy_program_participant
+        description: >-
+          Focus option code for the
+          even_start_family_literacy_program_participant select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_even_start_family_literacy_program_participant
+        description: >-
+          >- Decoded label for the
+          even_start_family_literacy_program_participant select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_multi_birth_for_faster
+        description: >-
+          Stored value for the multi_birth_for_faster select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_multi_birth_for_faster
+        description: >-
+          Focus option code for the multi_birth_for_faster select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_multi_birth_for_faster
+        description: >-
+          >- Decoded label for the multi_birth_for_faster select field — the
           multiple-birth indicator reported through FASTER.
         config:
           meta:
             contains_pii: true
-      - name: resident_status_label
-        description: Decoded label for the resident_status select field.
+      - name: value_resident_status
+        description: >-
+          Stored value for the resident_status select field -- the option id or
+          code Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: screening_for_hearing_grade_kg_label
+      - name: code_resident_status
         description: >-
-          Decoded label for the screening_for_hearing_grade_kg select field —
+          Focus option code for the resident_status select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_resident_status
+        description: >-
+          Decoded label for the resident_status select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_screening_for_hearing_grade_kg
+        description: >-
+          Stored value for the screening_for_hearing_grade_kg select field --
+          the option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_screening_for_hearing_grade_kg
+        description: >-
+          Focus option code for the screening_for_hearing_grade_kg select field
+          -- the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_screening_for_hearing_grade_kg
+        description: >-
+          >- Decoded label for the screening_for_hearing_grade_kg select field —
           the kindergarten hearing screening result reported through FASTER.
         config:
           meta:
             contains_pii: true
-      - name: screening_for_vision_problems_label
-        description:
+      - name: value_screening_for_vision_problems
+        description: >-
+          Stored value for the screening_for_vision_problems select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_screening_for_vision_problems
+        description: >-
+          Focus option code for the screening_for_vision_problems select field
+          -- the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_screening_for_vision_problems
+        description: >-
           Decoded label for the screening_for_vision_problems select field.
         config:
           meta:
             contains_pii: true
-      - name: birth_date_verification_label
+      - name: value_birth_date_verification
         description: >-
-          Decoded label for the birth_date_verification select field — the
+          Stored value for the birth_date_verification select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_birth_date_verification
+        description: >-
+          Focus option code for the birth_date_verification select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_birth_date_verification
+        description: >-
+          >- Decoded label for the birth_date_verification select field — the
           document used to verify date of birth.
         config:
           meta:
             contains_pii: true
-      - name: aice_diploma_label
-        description: Decoded label for the aice_diploma select field.
+      - name: value_aice_diploma
+        description: >-
+          Stored value for the aice_diploma select field -- the option id or
+          code Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: diploma_florida_seal_of_fine_arts_designation_label
+      - name: code_aice_diploma
         description: >-
-          Decoded label for the diploma_florida_seal_of_fine_arts_designation
+          Focus option code for the aice_diploma select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_aice_diploma
+        description: >-
+          Decoded label for the aice_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_diploma_florida_seal_of_fine_arts_designation
+        description: >-
+          Stored value for the diploma_florida_seal_of_fine_arts_designation
+          select field -- the option id or code Focus persists on the student
+          record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_diploma_florida_seal_of_fine_arts_designation
+        description: >-
+          Focus option code for the
+          diploma_florida_seal_of_fine_arts_designation select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_diploma_florida_seal_of_fine_arts_designation
+        description: >-
+          >- Decoded label for the diploma_florida_seal_of_fine_arts_designation
           select field.
         config:
           meta:
             contains_pii: true
-      - name: residency_for_tuition_purposes_label
-        description:
+      - name: value_residency_for_tuition_purposes
+        description: >-
+          Stored value for the residency_for_tuition_purposes select field --
+          the option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_residency_for_tuition_purposes
+        description: >-
+          Focus option code for the residency_for_tuition_purposes select field
+          -- the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_residency_for_tuition_purposes
+        description: >-
           Decoded label for the residency_for_tuition_purposes select field.
         config:
           meta:
             contains_pii: true
-      - name: bright_futures_volunteer_service_requirement_met_label
+      - name: value_bright_futures_volunteer_service_requirement_met
         description: >-
-          Decoded label for the bright_futures_volunteer_service_requirement_met
-          select field.
+          Stored value for the bright_futures_volunteer_service_requirement_met
+          select field -- the option id or code Focus persists on the student
+          record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: national_merit_scholar_label
-        description: Decoded label for the national_merit_scholar select field.
+      - name: code_bright_futures_volunteer_service_requirement_met
+        description: >-
+          Focus option code for the
+          bright_futures_volunteer_service_requirement_met select field -- the
+          stable import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: national_achievement_scholar_label
-        description:
+      - name: label_bright_futures_volunteer_service_requirement_met
+        description: >-
+          >- Decoded label for the
+          bright_futures_volunteer_service_requirement_met select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_national_merit_scholar
+        description: >-
+          Stored value for the national_merit_scholar select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_national_merit_scholar
+        description: >-
+          Focus option code for the national_merit_scholar select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_national_merit_scholar
+        description: >-
+          Decoded label for the national_merit_scholar select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_national_achievement_scholar
+        description: >-
+          Stored value for the national_achievement_scholar select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_national_achievement_scholar
+        description: >-
+          Focus option code for the national_achievement_scholar select field --
+          the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_national_achievement_scholar
+        description: >-
           Decoded label for the national_achievement_scholar select field.
         config:
           meta:
             contains_pii: true
-      - name: national_hispanic_scholar_label
-        description:
+      - name: value_national_hispanic_scholar
+        description: >-
+          Stored value for the national_hispanic_scholar select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_national_hispanic_scholar
+        description: >-
+          Focus option code for the national_hispanic_scholar select field --
+          the stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_national_hispanic_scholar
+        description: >-
           Decoded label for the national_hispanic_scholar select field.
         config:
           meta:
             contains_pii: true
-      - name: aice_program_participant_label
-        description:
+      - name: value_aice_program_participant
+        description: >-
+          Stored value for the aice_program_participant select field -- the
+          option id or code Focus persists on the student record, before
+          decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_aice_program_participant
+        description: >-
+          Focus option code for the aice_program_participant select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_aice_program_participant
+        description: >-
           Decoded label for the aice_program_participant select field.
         config:
           meta:
             contains_pii: true
-      - name: ib_diploma_label
-        description: Decoded label for the ib_diploma select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: college_ready_diploma_label
-        description: Decoded label for the college_ready_diploma select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: differentiated_diploma_label
-        description: Decoded label for the differentiated_diploma select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: additional_school_year_label
-        description: Decoded label for the additional_school_year select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: migrant_status_term_label
-        description: Decoded label for the migrant_status_term select field.
-        config:
-          meta:
-            contains_pii: true
-      - name: basis_of_entry_label
+      - name: value_ib_diploma
         description: >-
-          Decoded label for the basis_of_entry select field — the basis on which
-          the student entered the district.
+          Stored value for the ib_diploma select field -- the option id or code
+          Focus persists on the student record, before decoding.
         config:
           meta:
             contains_pii: true
-      - name: first_basis_of_exit_label
+      - name: code_ib_diploma
         description: >-
-          Decoded label for the first_basis_of_exit select field — the basis on
-          which the student first exited.
+          Focus option code for the ib_diploma select field -- the stable
+          import/export value, as opposed to the editable label.
         config:
           meta:
             contains_pii: true
-      - name: single_ethnicity_label
-        description: Decoded label for the single_ethnicity select field.
+      - name: label_ib_diploma
+        description: >-
+          Decoded label for the ib_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_college_ready_diploma
+        description: >-
+          Stored value for the college_ready_diploma select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_college_ready_diploma
+        description: >-
+          Focus option code for the college_ready_diploma select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_college_ready_diploma
+        description: >-
+          Decoded label for the college_ready_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_differentiated_diploma
+        description: >-
+          Stored value for the differentiated_diploma select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_differentiated_diploma
+        description: >-
+          Focus option code for the differentiated_diploma select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_differentiated_diploma
+        description: >-
+          Decoded label for the differentiated_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_additional_school_year
+        description: >-
+          Stored value for the additional_school_year select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_additional_school_year
+        description: >-
+          Focus option code for the additional_school_year select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_additional_school_year
+        description: >-
+          Decoded label for the additional_school_year select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_migrant_status_term
+        description: >-
+          Stored value for the migrant_status_term select field -- the option id
+          or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_migrant_status_term
+        description: >-
+          Focus option code for the migrant_status_term select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_migrant_status_term
+        description: >-
+          Decoded label for the migrant_status_term select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_basis_of_entry
+        description: >-
+          Stored value for the basis_of_entry select field -- the option id or
+          code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_basis_of_entry
+        description: >-
+          Focus option code for the basis_of_entry select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_basis_of_entry
+        description: >-
+          >- Decoded label for the basis_of_entry select field — the basis on
+          which the student entered the district.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_first_basis_of_exit
+        description: >-
+          Stored value for the first_basis_of_exit select field -- the option id
+          or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_first_basis_of_exit
+        description: >-
+          Focus option code for the first_basis_of_exit select field -- the
+          stable import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_first_basis_of_exit
+        description: >-
+          >- Decoded label for the first_basis_of_exit select field — the basis
+          on which the student first exited.
+        config:
+          meta:
+            contains_pii: true
+      - name: value_single_ethnicity
+        description: >-
+          Stored value for the single_ethnicity select field -- the option id or
+          code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_single_ethnicity
+        description: >-
+          Focus option code for the single_ethnicity select field -- the stable
+          import/export value, as opposed to the editable label.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_single_ethnicity
+        description: >-
+          Decoded label for the single_ethnicity select field.
         config:
           meta:
             contains_pii: true
