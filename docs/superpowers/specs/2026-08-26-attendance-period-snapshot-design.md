@@ -194,7 +194,7 @@ dimension path currently cannot do.
 
 `student_enrollment_key` is keyed on entry date, so a student who exits and
 re-enrolls at the same school becomes two stints with two separate
-accumulations. In AY2025 that is **73 of 14,498 student-school pairs**.
+accumulations. In AY2025 that is **32 of 11,243 student-school pairs**.
 
 That would break the eligibility rule above. A student with 6 membership days
 before leaving and 6 after returning has 12 days at that school and is eligible,
@@ -209,19 +209,25 @@ Compute `is_chronically_absent` from the accumulated counts rather than by
 comparing the averaged float:
 
 ```sql
--- 198 AY2025 enrollments sit at exactly 90.0%. Comparing the float average
--- sorts 79 of them one way and 119 the other, on representation alone.
+-- 198 AY2025 enrollments sit at exactly 90.0%. IEEE division is correctly
+-- rounded, so the float average lands on the same double as the literal
+-- 0.90 for all 198 -- there is no scatter. Accumulated integer counts keep
+-- the at-or-below boundary exact regardless.
 cumulative_present * 10 <= cumulative_membership * 9 as is_chronically_absent
 ```
 
 ### Materialize it as a table
 
-Materialize as a table on a nightly cron, matching the two precedents in this
-repo — `int_topline__ada_running_weekly` (#4153, midnight cron off the same
-upstream) and `fct_assessment_scores_enrollment_scoped` (#4468, 5x/day because
-Cube needs intra-day assessment freshness). Attendance needs nightly only: the
-KIPP Foundation criteria require a nightly refresh and a visible refresh
-timestamp, not intra-day.
+Materialize as a table, ticking `0 6,15 * * *` — the same tick as
+`fct_student_attendance_daily`, not the midnight cron this section used to name.
+Both facts are tables off the same upstream, `int_students__attendance_daily`,
+so split ticks would let them disagree on the same attendance values by up to
+~15 hours a day, and this spec asserts elsewhere that they agree on attendance
+values. Matching ticks is what makes that claim true. Nightly refresh is a floor
+the 06:00 and 15:00 ticks clear, not a ceiling: the KIPP Foundation criteria
+require a nightly refresh and a visible refresh timestamp, not intra-day
+freshness. `0 6,15 * * *` is also the tick the implementation plan's Global
+Constraints name.
 
 ```yaml
 config:
@@ -436,8 +442,8 @@ Boundary unit tests, since every defect here is a boundary defect:
 
 Reconciliation against the figures on
 [#4994](https://github.com/TEAMSchools/teamster/issues/4994): 11,153 counted
-today, 180 leavers restored, 119 added at exactly 90.0%, 147 excluded under 10
-days.
+today, 136 pairs restored (61 chronically absent), 198 added at exactly 90.0%,
+147 excluded under 10 days (100 of them counted chronically absent).
 
 **Month and week DO move, and an earlier draft of this spec was wrong to predict
 otherwise.** The anchor semantics genuinely do not move — the row population is
