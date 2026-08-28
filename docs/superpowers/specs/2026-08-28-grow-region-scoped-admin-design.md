@@ -422,11 +422,36 @@ Staff whose home work location is a placeholder — `Room 9`, `Room 10`, `Room 1
 — never appear in a real school's `school_users` and so land in no observation
 group anywhere. Keyna McClinek and Deanna Applewhaite are both in `Room 11`.
 
-Four staff have a home work location of `KIPP Miami - Poinciana Campus` while
-the Grow school is named `Poinciana Campus`. The join is exact name equality, so
-they are dropped. Routing that join through `int_people__location_crosswalk`
-fixes it and removes the last place where a school name is matched by raw
-string.
+Four staff have a home work location whose reporting name is
+`KIPP Miami - Poinciana Campus`, while the Grow school is named
+`Poinciana Campus`. The `roster` CTE joins `stg_schoolmint_grow__schools` on
+`home_work_location_reporting_name` alone, by exact string equality, so those
+four are dropped.
+
+Routing the join through `int_people__location_crosswalk` does NOT fix this: the
+crosswalk has no row for `KIPP Miami - Poinciana Campus` either. Nor does simply
+switching to `home_work_location_name`, which matches `Poinciana Campus`
+correctly but then fails on `KIPP Hatch Middle` and `KIPP Sumner Elementary`,
+whose plain names are `KIPP Hatch Academy` and `KIPP Sumner Academy`. That would
+trade 4 dropped staff for 81.
+
+The fix is to accept either name:
+
+```sql
+inner join
+    {{ ref("stg_schoolmint_grow__schools") }} as sch
+    on sch.name in (p.school_name, p.school_name_alt)
+```
+
+where `school_name` stays `home_work_location_reporting_name` and
+`school_name_alt` is the new `home_work_location_name`. Verified against every
+active non-Paterson location: each one matches exactly one Grow school under
+this predicate, so the join cannot fan out and no location is left unmatched.
+
+The existing test `int_people__staff_roster__locations_resolve_to_crosswalk`
+does not catch this, because it checks `home_work_location_name` while this
+model joins on `home_work_location_reporting_name`. The two disagree on exactly
+three locations.
 
 `school_users` is filtered to one `school_id` per user, so a School Admin or
 School Assistant Admin covering two campuses is written to only one. The
