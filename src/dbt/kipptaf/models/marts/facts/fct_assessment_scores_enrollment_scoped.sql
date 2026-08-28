@@ -279,13 +279,13 @@ with
         }}
     ),
 
-    -- DIBELS benchmark composites are unique at this grain upstream
-    -- (verified); no dedupe needed.
+    -- Unique at the (student, year, period, date, measure_standard) grain --
+    -- re-verified 2026-08-28 at the widened grain: 313,268 rows, 313,268
+    -- distinct eight-input keys. No dedupe needed.
     dibels_scores as (
         select
             student_number,
             academic_year,
-            measure_standard as module_code,
             illuminate_subject,
             `period` as administration_period,
             client_date as test_date,
@@ -294,16 +294,24 @@ with
             measure_standard_level as proficiency_level,
 
             'dibels' as score_source,
+            'Composite' as module_code,
 
             cast(measure_standard_score as numeric) as scale_score,
             cast(measure_percentile as numeric) as national_percentile,
 
             measure_standard_level_int >= 3 as is_mastery,
+
+            if(measure_standard = 'Composite', 'overall', 'group') as response_type,
+
+            case
+                when measure_standard != 'Composite' then measure_standard
+            end as response_type_code,
+
+            case
+                when measure_standard != 'Composite' then measure_name
+            end as response_type_description,
         from {{ ref("int_amplify__all_assessments") }}
-        where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
-            and client_date is not null
+        where assessment_type = 'Benchmark' and client_date is not null
     ),
 
     vendor_all as (
@@ -320,6 +328,10 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+
+            cast(null as string) as response_type,
+            cast(null as string) as response_type_code,
+            cast(null as string) as response_type_description,
         from iready_scores
 
         union all
@@ -337,6 +349,10 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+
+            cast(null as string) as response_type,
+            cast(null as string) as response_type_code,
+            cast(null as string) as response_type_description,
         from star_scores
 
         union all
@@ -354,6 +370,9 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
         from dibels_scores
     ),
 
@@ -558,6 +577,7 @@ select
                 "va.administration_period",
                 "va.module_code",
                 "va.test_date",
+                "va.response_type_code",
             ]
         )
     }} as assessment_score_key,
@@ -608,10 +628,10 @@ select
     va.national_percentile,
     va.proficiency_level,
     va.is_mastery,
+    va.response_type,
+    va.response_type_code,
+    va.response_type_description,
 
-    cast(null as string) as response_type,
-    cast(null as string) as response_type_code,
-    cast(null as string) as response_type_description,
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
