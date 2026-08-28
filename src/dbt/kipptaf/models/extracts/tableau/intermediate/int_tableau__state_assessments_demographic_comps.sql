@@ -271,7 +271,9 @@ with
         inner join
             {{ ref("int_fldoe__all_assessments") }} as a
             on e.academic_year = a.academic_year
-            and e.state_studentnumber = a.student_id
+            -- network student_number, the same key the NJ legs above use;
+            -- Miami state_studentnumber reads fleid, null under Focus (#5042)
+            and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
             and a.results_type = 'Actual'
             and a.scale_score is not null
