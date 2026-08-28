@@ -283,86 +283,85 @@ facts, not data-population facts. dbt integration presence/absence is
 corroborating evidence at best, never proof -- confirm with whoever manages each
 vendor contract rather than answering from data alone:
 
-7. **"Does your organization have a paid subscription for Overgrad?"** → **Yes**
-   [confirmed]. Matches the data lead: a full dedicated `overgrad` dbt package
-   with a live API integration, wired into both Camden's and Newark's
-   `packages.yml`.
+**7.** **"Does your organization have a paid subscription for Overgrad?"** →
+**Yes** [confirmed]. Matches the data lead: a full dedicated `overgrad` dbt
+package with a live API integration, wired into both Camden's and Newark's
+`packages.yml`.
 
-8. **"Does your organization have a paid subscription for National Student
-   Clearinghouse (NSC)?"** → **Yes** [confirmed]. The data lead
-   (`stg_google_sheets__kippadb__nsc_crosswalk`, a maintained
-   college-to-NSC-code reference sheet) pointed the right direction but wasn't
-   proof by itself -- confirmed by the collection owner.
+**8.** **"Does your organization have a paid subscription for National Student
+Clearinghouse (NSC)?"** → **Yes** [confirmed]. The data lead
+(`stg_google_sheets__kippadb__nsc_crosswalk`, a maintained college-to-NSC-code
+reference sheet) pointed the right direction but wasn't proof by itself --
+confirmed by the collection owner.
 
-9. **"Does your organization have a paid subscription for Naviance?"** → **No**
-   [confirmed, per last cycle]. Matches the data lead (zero Naviance integration
-   anywhere in the dbt codebase) -- but note this cycle's item-list doc dropped
-   the "N/A" flag on the Naviance HSDC tab that last cycle's doc had. That flip
-   is still unresolved; re-confirm for the current cycle rather than assuming
-   "No" carries forward automatically.
+**9.** **"Does your organization have a paid subscription for Naviance?"** →
+**No** [confirmed, per last cycle]. Matches the data lead (zero Naviance
+integration anywhere in the dbt codebase) -- but note this cycle's item-list doc
+dropped the "N/A" flag on the Naviance HSDC tab that last cycle's doc had. That
+flip is still unresolved; re-confirm for the current cycle rather than assuming
+"No" carries forward automatically.
 
-10. **"What is your means of collecting the post-high school plans of your
-    graduating seniors?"** (multi-select) → **[confirmed]** Selected: **Senior
-    Seminar/Class Requirement, Overgrad, Other**. Confirmed NOT selected:
-    **Naviance** (item 9's no-subscription answer). The remaining options on the
-    full 10-item list (1:1 Counseling/Advising Meetings, Cialfo, Internal
-    Tracker/Spreadsheet, National Student Clearinghouse (NSC), Scoir, Student
-    Information System (SIS)) were not called out as selected, so treat them as
-    not selected unless told otherwise.
+**10.** **"What is your means of collecting the post-high school plans of your
+graduating seniors?"** (multi-select) → **[confirmed]** Selected: **Senior
+Seminar/Class Requirement, Overgrad, Other**. Confirmed NOT selected:
+**Naviance** (item 9's no-subscription answer). The remaining options on the
+full 10-item list (1:1 Counseling/Advising Meetings, Cialfo, Internal
+Tracker/Spreadsheet, National Student Clearinghouse (NSC), Scoir, Student
+Information System (SIS)) were not called out as selected, so treat them as not
+selected unless told otherwise.
 
-11. **"If you have NSC/Naviance/Overgrad AND ALSO utilize additional mechanisms
-    for keeping track of alumni, what are they?"** → **Salesforce** [confirmed].
-    Free text, no dbt data source -- this is exactly the kind of question the
-    verification-first rule can't help with; it was answered directly by the
-    item owners.
+**11.** **"If you have NSC/Naviance/Overgrad AND ALSO utilize additional
+mechanisms for keeping track of alumni, what are they?"** → **Salesforce**
+[confirmed]. Free text, no dbt data source -- this is exactly the kind of
+question the verification-first rule can't help with; it was answered directly
+by the item owners.
 
 **"Gateway Math Information" subsection** (gateway math = Algebra I at KTAF --
 no `rpt_gsheets__csgf_*` report covers this domain, so every answer here came
 from raw PowerSchool course-enrollment/NJSLA queries, not a CSGF report):
 
-12. **"What gateway math course(s) do you offer?"** → **Algebra 1** [confirmed].
-    The course catalog only has Algebra I variants; "Integrated Mathematics I" /
-    "NC Math 1" only appear in the CSGF HS enrollment model's _transfer-student_
-    course-name catch list (matching incoming credits from other states) -- not
-    something KTAF itself teaches. Don't let that list suggest Integrated Math
-    is offered.
+**12.** **"What gateway math course(s) do you offer?"** → **Algebra 1**
+[confirmed]. The course catalog only has Algebra I variants; "Integrated
+Mathematics I" / "NC Math 1" only appear in the CSGF HS enrollment model's
+_transfer-student_ course-name catch list (matching incoming credits from other
+states) -- not something KTAF itself teaches. Don't let that list suggest
+Integrated Math is offered.
 
-13. **"In what grade is gateway math typically first offered to students?"** →
-    **8th** [confirmed] -- **my first answer here was wrong ("10th"), and the
-    reason is a durable lesson, not a one-off mistake.** I queried HS-scoped
-    (grades 9-12) AY2025 course enrollment and saw ~114 students in Algebra I
-    variants at grade 9 vs. ~479 at grade 10, and concluded "10th." Two
-    compounding errors: (a) the query never looked at grade 8 at all, so it
-    structurally couldn't see the actual first-offered grade; (b) even within
-    9-12, the 9th-grade Algebra I count is not the "first attempt" population --
-    students who pass Algebra I in 8th grade and stay at KTAF never re-enroll in
-    it in 9th, so the students left showing up as 9th-grade Algebra I are
-    disproportionately non-passers and new-to-KTAF transfers, not a
-    representative first-attempt cohort. **Lesson for the verification-first
-    rule**: before answering "what grade/when does X typically happen," check
-    whether the query's scope (a report or extract limited to HS, or to one
-    academic year) actually covers the full population the question is about,
-    and whether an observed count could be skewed by survivorship (people who
-    succeed early leave the population you're counting) rather than reflecting
-    the typical pathway.
+**13.** **"In what grade is gateway math typically first offered to students?"**
+→ **8th** [confirmed] -- **my first answer here was wrong ("10th"), and the
+reason is a durable lesson, not a one-off mistake.** I queried HS-scoped (grades
+9-12) AY2025 course enrollment and saw ~114 students in Algebra I variants at
+grade 9 vs. ~479 at grade 10, and concluded "10th." Two compounding errors: (a)
+the query never looked at grade 8 at all, so it structurally couldn't see the
+actual first-offered grade; (b) even within 9-12, the 9th-grade Algebra I count
+is not the "first attempt" population -- students who pass Algebra I in 8th
+grade and stay at KTAF never re-enroll in it in 9th, so the students left
+showing up as 9th-grade Algebra I are disproportionately non-passers and
+new-to-KTAF transfers, not a representative first-attempt cohort. **Lesson for
+the verification-first rule**: before answering "what grade/when does X
+typically happen," check whether the query's scope (a report or extract limited
+to HS, or to one academic year) actually covers the full population the question
+is about, and whether an observed count could be skewed by survivorship (people
+who succeed early leave the population you're counting) rather than reflecting
+the typical pathway.
 
-14. **"What math course do most students take immediately before gateway
-    math?"** → **Math 8** [confirmed] -- matches the "Math Gr8" course found in
-    the data (two name variants, one with a trailing space -- still worth
-    flagging as a catalog cleanup item separately from this submission).
+**14.** **"What math course do most students take immediately before gateway
+math?"** → **Math 8** [confirmed] -- matches the "Math Gr8" course found in the
+data (two name variants, one with a trailing space -- still worth flagging as a
+catalog cleanup item separately from this submission).
 
-15. **"How does your organization define a student as having passed gateway
-    math?"** → **Earning Course Credit** [confirmed]. Matches the inference from
-    `passed_algebra_i`'s course-grade-only logic.
+**15.** **"How does your organization define a student as having passed gateway
+math?"** → **Earning Course Credit** [confirmed]. Matches the inference from
+`passed_algebra_i`'s course-grade-only logic.
 
-16. **"Does your organization use a state-administered end-of-course exam for
-    gateway math?"** → **Yes** [confirmed]. Matches `stg_pearson__njsla`'s
-    dedicated "Algebra I" subject rows.
+**16.** **"Does your organization use a state-administered end-of-course exam
+for gateway math?"** → **Yes** [confirmed]. Matches `stg_pearson__njsla`'s
+dedicated "Algebra I" subject rows.
 
-17. **"Does your organization use credit recovery or summer school to support
-    gateway math passage?"** → **Yes** [confirmed] -- the data lead (a generic,
-    subject-untagged "Summer School" course) was suggestive but not proof by
-    itself; confirmed by the item owners.
+**17.** **"Does your organization use credit recovery or summer school to
+support gateway math passage?"** → **Yes** [confirmed] -- the data lead (a
+generic, subject-untagged "Summer School" course) was suggestive but not proof
+by itself; confirmed by the item owners.
 
 **This closes out the Preliminary Questions task for the 2026-2027 cycle** -- 17
 questions total across four subsections (base, Academic Profile & Grading,
@@ -774,8 +773,8 @@ surfaces every cycle without blocking a build.
 ## How the dbt models actually reach CSGF (answered)
 
 The eight `rpt_gsheets__csgf_*` models write out to a KTAF-owned Google Sheet
-titled **"CSGF Data"**
-([link](https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM/edit)),
+titled
+[**"CSGF Data"**](https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM/edit),
 one tab per model (`Enrollment`, `HS Grad Data`, `HS Enrollment`, and the
 remaining five). **This is not CSGF's HSDC workbook** -- it's an internal
 staging sheet the collection owner reads from to fill CSGF's actual systems.
