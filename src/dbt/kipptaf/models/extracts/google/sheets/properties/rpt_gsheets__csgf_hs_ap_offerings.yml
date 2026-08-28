@@ -16,6 +16,8 @@ models:
     columns:
       - name: school_name
         data_type: string
+        data_tests:
+          - unique
       - name: ap_african_american_studies
         data_type: string
       - name: ap_art_history

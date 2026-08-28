@@ -644,9 +644,10 @@ cohort expected to graduate the current year, one row per school, with an
 explicit instruction to leave rows blank for a school with no 12th graders that
 year -- not one row per cohort ever recorded. Fixed by moving the filter onto
 the live query path and removing the dead CTE. See
-`docs/models/csgf-data-model.md` for the full writeup. Still open: whether this
-model's `school` output (abbreviated `KHS`/`NCA`/ `NLH` codes) should be full
-names like the other models -- unconfirmed against CSGF's template.
+`docs/models/csgf-data-model.md` for the full writeup. Its `school` output also
+used to be abbreviated codes (`KHS`/`NCA`/`NLH`) -- fixed to full names
+(`KIPP Newark Lab High School` / etc.), confirmed against CSGF's Portal task
+labels.
 
 **`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
 cycle -- owner is aware and fixing separately from this skill; check whether
@@ -739,14 +740,36 @@ for this reason). Confirmed against raw data for the 2026-2027 cycle:
 `hs_enrollment` and `hs_ap_offerings` output the full names CSGF expects
 (`KIPP Cooper Norcross High School`, `KIPP Newark Collegiate Academy`,
 `KIPP Newark Lab High School`) -- Newark's two needed no fix, only Cooper
-Norcross did. **`hs_grad_data` is a live open question, not yet confirmed**: it
-outputs abbreviated codes (`KHS`, `NCA`, `NLH`) instead of full names, and it's
-unconfirmed whether that's actually what CSGF's HS Grad Data tab expects.
+Norcross did. `hs_grad_data` had the same abbreviated-code gap (`KHS`, `NCA`,
+`NLH`); fixed the same way, confirmed against CSGF's Portal task labels.
+
+Separately, `rpt_gsheets__csgf_enrollment`'s Paterson remap was outputting
+`KIPP Paterson MS` / `KIPP Paterson ES`, missing "Prep" -- fixed against CSGF's
+own Portal school-list export (`KIPP Paterson Prep MS` /
+`KIPP Paterson Prep ES`).
 
 Each cycle: **ask the collection owner to paste CSGF's current official school
 name list** (same pattern as the AP course name ask above), confirm each model's
 school-name output against it, and edit the `if()`/`case` mapping for any model
 where they don't already match.
+
+**`rpt_gsheets__csgf_hs_postsec_pathways` can emit more than one row per student
+per year -- routed to Casey Gibson (KIPP Forward data owner) to decide, not
+resolved here.** The model joins one row per matching
+`base_kippadb__application` record where
+`matriculation_decision = 'Matriculated (Intent to Enroll)'`, with no dedup/pick
+logic. Confirmed in prod: a student can have that flag set on more than one
+application in the same year (e.g. intent flagged at two different colleges
+before choosing) -- this is apparently real per the collection owner, not a bug
+by itself. But at least one case also showed a literal duplicate application
+record (same student, same college, same decision, twice) mixed into the same
+rows, which is not explained by the legitimate-multiple case. Ask Casey: (1)
+does CSGF's Intended Postsecondary Pathways task expect one row per student per
+year, or is more than one acceptable when a student has multiple matriculation
+intents; (2) should exact-duplicate application records be deduped before they
+reach this extract. A `dbt_utils.unique_combination_of_columns` test on
+`(academic_year, student_number)` is in place at `severity: warn` so this
+surfaces every cycle without blocking a build.
 
 ## How the dbt models actually reach CSGF (answered)
 

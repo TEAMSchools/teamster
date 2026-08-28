@@ -13,6 +13,12 @@ models:
       instructions ("if the school did not have 12th graders in [year], leave
       all rows blank") that one row per school for the current cohort is
       correct.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cohort
+              - school
     columns:
       - name: cohort
         data_type: int64
