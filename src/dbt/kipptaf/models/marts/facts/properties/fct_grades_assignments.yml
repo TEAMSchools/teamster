@@ -94,7 +94,7 @@ models:
         quote: true
         data_type: string
         description: >-
-          Name of the assignment as entered in the PowerSchool gradebook.
+          Name of the assignment as the teacher entered it in the gradebook.
 
       - name: category_name
         data_type: string
@@ -155,12 +155,14 @@ models:
       - name: is_missing
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as missing in PowerSchool.
+          TRUE if the assignment is flagged as missing. NULL on Focus rows —
+          Focus records no missing flag on a gradebook score.
 
       - name: is_late
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as late in PowerSchool.
+          TRUE if the assignment is flagged as late. On Focus rows this is the
+          score's late flag.
 
       - name: is_exempt
         data_type: boolean
