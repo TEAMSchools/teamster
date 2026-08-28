@@ -137,11 +137,13 @@ with
     people_roles as (
         select
             p.user_internal_id,
-            array_agg(rn order by r.role_id) as role_names,
-            array_agg(r.role_id order by r.role_id) as role_ids,
+            ifnull(array_agg(rn ignore nulls order by r.role_id), []) as role_names,
+            ifnull(
+                array_agg(r.role_id ignore nulls order by r.role_id), []
+            ) as role_ids,
         from people as p
-        cross join unnest(p.role_names) as rn
-        inner join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
+        left join unnest(p.role_names) as rn
+        left join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
         group by p.user_internal_id
     ),
 

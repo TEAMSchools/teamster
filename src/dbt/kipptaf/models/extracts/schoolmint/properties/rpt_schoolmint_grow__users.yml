@@ -16,9 +16,6 @@ models:
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
-            expression: array_length(role_ids) >= 1
-      - dbt_utils.expression_is_true:
-          arguments:
             expression: array_length(role_ids) = array_length(role_names)
       - dbt_utils.expression_is_true:
           arguments:
@@ -150,6 +147,100 @@ models:
           `array_to_string(role_ids_ws, ',')` for the role component).
 
 unit_tests:
+  - name: unit_grow_users_emits_no_role_users
+    description:
+      Pins the revoke path. A staff member who matches no role predicate is
+      emitted with empty role arrays rather than dropped, so the sync can strip
+      their Grow roles. Today they vanish at the people_roles inner join and the
+      sync never sees them.
+    model: rpt_schoolmint_grow__users
+    given:
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              500 as employee_number,
+              'norole@apps.teamschools.org' as google_email,
+              cast(null as int64) as reports_to_employee_number,
+              'KIPP TEAM Academy' as home_work_location_reporting_name,
+              'KIPP TEAM Academy' as home_work_location_name,
+              'Finance' as home_department_name,
+              'kippnewark' as home_work_location_dagster_code_location,
+              'No' as given_name,
+              'Role' as family_name_1,
+              'Active' as assignment_status,
+              'KTAF or Regional Director' as job_function,
+              'Director' as job_title,
+              cast(null as int64) as primary_grade_level_taught,
+              'norole@apps.teamschools.org' as user_principal_name,
+              cast(null as date) as worker_termination_date
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+              'KIPP TEAM Academy' as location_name,
+              'kippnewark' as location_dagster_code_location
+      - input: ref('stg_schoolmint_grow__roles')
+        format: sql
+        rows: |
+          select 'r-coach' as role_id, 'Coach' as name
+          union all
+          select 'r-teacher', 'Teacher'
+          union all
+          select 'r-saa', 'School Assistant Admin'
+          union all
+          select 'r-sa', 'School Admin'
+          union all
+          select 'r-ra', 'Regional Admin'
+      - input: ref('stg_schoolmint_grow__schools')
+        format: sql
+        rows: |
+          select
+              'sch-team' as school_id,
+              'KIPP TEAM Academy' as name,
+              cast(null as string) as archived_at
+      - input: ref('stg_schoolmint_grow__users')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as user_id,
+              cast(null as int64) as internal_id_int,
+              cast(null as string) as archived_at,
+              cast(null as string) as email,
+              cast(null as string) as name,
+              cast(null as string) as coach,
+              cast(null as bool) as inactive,
+              cast(null as bool) as read_only,
+              cast(null as string) as default_information_course,
+              cast(null as string) as default_information_grade_level,
+              cast(null as string) as default_information_school,
+              cast(
+                  null as array<struct<`_id` string, name string>>
+              ) as roles,
+              cast(
+                  null as array<struct<name string, `_id` string>>
+              ) as regional_admin_schools
+          from unnest([1])
+          where false
+      - input: ref('stg_schoolmint_grow__generic_tags')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as tag_id,
+              cast(null as string) as name,
+              cast(null as string) as abbreviation,
+              cast(null as string) as tag_type
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - {
+            user_internal_id: 500,
+            role_names: [],
+            role_ids: [],
+            group_type: "",
+          }
+
   - name: unit_grow_users_teacher_predicate_and_coach_precedence
     description:
       Pins the two fixes in Task 1. A teacher is identified by job_function
@@ -275,6 +366,7 @@ unit_tests:
     expect:
       rows:
         - { user_internal_id: 1, role_names: [Teacher] }
+        - { user_internal_id: 2, role_names: [] }
         - { user_internal_id: 10, role_names: [Coach, School Assistant Admin] }
         - { user_internal_id: 11, role_names: [School Assistant Admin] }
         - { user_internal_id: 12, role_names: [School Assistant Admin] }
@@ -431,9 +523,11 @@ unit_tests:
         - { user_internal_id: 100, role_names: [Regional Admin] }
         - { user_internal_id: 101, role_names: [Regional Admin] }
         - { user_internal_id: 102, role_names: [Regional Admin] }
+        - { user_internal_id: 103, role_names: [] }
         - { user_internal_id: 104, role_names: [Regional Admin] }
         - { user_internal_id: 105, role_names: [School Admin] }
         - { user_internal_id: 106, role_names: [School Assistant Admin] }
+        - { user_internal_id: 107, role_names: [] }
         - { user_internal_id: 108, role_names: [Coach, School Assistant Admin] }
         - { user_internal_id: 109, role_names: [Teacher] }
 
