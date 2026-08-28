@@ -1213,7 +1213,12 @@ models:
             source_column: cc_dateenrolled
       - name: dateleft
         data_type: date
-        description: Raw cc_dateleft for the enrolled course section stint.
+        description: >
+          Enrollment end date for the stint. For PowerSchool, the raw
+          `cc_dateleft`. For Miami, `cc_dateleft` coalesced to `terms_lastday`,
+          the section's term end, because Focus leaves the end date null while
+          the enrollment is open. Never null, so it cannot be read as a
+          still-enrolled signal. #5043
         config:
           meta:
             source_system: PowerSchool
@@ -1232,8 +1237,9 @@ models:
       - name: dateleft_alt
         data_type: date
         description: >
-          Effective enrollment end date. Clamps cc_dateleft to
-          last_day_school_year when the raw value extends past the school year.
+          Effective enrollment end date. Clamps `dateleft` -- already coalesced
+          to `terms_lastday` for Miami -- to last_day_school_year when the value
+          extends past the school year.
         config:
           meta:
             source_system: PowerSchool

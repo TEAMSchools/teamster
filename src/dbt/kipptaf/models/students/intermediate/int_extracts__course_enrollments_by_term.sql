@@ -130,7 +130,7 @@ with
             -- Focus records no section student count, so this column is null on
             -- every Miami row. Null is not the PowerSchool quirk the filter
             -- targets -- a section holding enrollment rows while recording its
-            -- count as zero, 215 of 64,699 New Jersey rows. A section with
+            -- count as zero, 202 New Jersey rows in AY2026. A section with
             -- nobody in it produces no enrollment rows at all, so it cannot
             -- reach this model; #5043 measured Miami's smallest section at 1
             -- student. Keep null, drop only a literal 0.

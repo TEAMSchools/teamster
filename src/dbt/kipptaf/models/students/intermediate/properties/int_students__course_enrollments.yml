@@ -20,6 +20,25 @@ models:
               - cc_dcid
               - _dbt_source_project
     columns:
+      - name: terms_firstday
+        description: >-
+          First day of the section's term. For PowerSchool, from the section's
+          term record. For Miami, the schedule row's
+          `marking_period_start_date`, populated on every row. Added on #5043;
+          null for Miami before that.
+        data_type: date
+      - name: terms_lastday
+        description: >-
+          Last day of the section's term. For PowerSchool, from the section's
+          term record. For Miami, the schedule row's `marking_period_end_date`,
+          populated on every row. This is the sentinel to coalesce `cc_dateleft`
+          to for an open Focus enrollment. Added on #5043; null for Miami before
+          that.
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: cc_dcid
         description: >-
           Course enrollment identifier. For Miami, the Focus
@@ -67,25 +86,6 @@ models:
           semester and quarter enrollments into terms they never covered, 3,938
           spurious quarter rows measured on #5043.
         data_type: date
-      - name: terms_firstday
-        description: >-
-          First day of the section's term. For PowerSchool, from the section's
-          term record. For Miami, the schedule row's
-          `marking_period_start_date`, populated on every row. Added on #5043;
-          null for Miami before that.
-        data_type: date
-      - name: terms_lastday
-        description: >-
-          Last day of the section's term. For PowerSchool, from the section's
-          term record. For Miami, the schedule row's `marking_period_end_date`,
-          populated on every row. This is the sentinel to coalesce `cc_dateleft`
-          to for an open Focus enrollment. Added on #5043; null for Miami before
-          that.
-        data_type: date
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: is_homeroom
         description: >-
           Whether this enrollment is a homeroom. PowerSchool from the `HR%`
