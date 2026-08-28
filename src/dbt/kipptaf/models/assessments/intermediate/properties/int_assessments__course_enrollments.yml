@@ -6,6 +6,21 @@ models:
       Illuminate assessments are joined against. One row per (student, academic
       year, subject area, date enrolled), deduplicated to the latest exit per
       enrollment span.
+
+
+      The student join keys on `student_number` rather than PowerSchool's
+      internal `cc_studentid`, which Focus leaves null -- before that change
+      this model held no Miami rows in any year. Miami AY2026 forward was then
+      still excluded, because the `not is_dropped_course` filter drops rows
+      whose flag is null and Focus set no flag. #4968 made both Focus drop flags
+      non-null, so Miami AY2026 now reaches this scaffold. Whether this model
+      should be network-wide or NJ-scoped remains #4996's decision; the
+      inclusion is a consequence of fixing the flags, not a scope judgment made
+      here.
+
+      Network-wide, Miami included. This model already recorded that #4996 owned
+      the decision; the decision is now made and it is INCLUDE. Miami held
+      61,910 rows in prod as of 2026-08-27.
     config:
       materialized: table
       meta:

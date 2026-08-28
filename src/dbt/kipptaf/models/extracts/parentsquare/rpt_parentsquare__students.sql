@@ -1,9 +1,3 @@
--- Neither `student_email` nor `state_student_id` is sent. Both are optional in
--- ParentSquare's spec, and Ops excluded them: a student email address triggers
--- ParentSquare's automatic account-creation mail to every student in the file
--- (~6,800 for Newark) and student logins are not part of this deployment, while
--- the state id has no consumer on the ParentSquare side. Adding either back is a
--- column add here plus a properties entry — no upstream change.
 select
     student_first_name as first_name,
     student_last_name as last_name,

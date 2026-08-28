@@ -89,12 +89,12 @@ with
             end as lep_status,
 
             -- FLDOE homeless codes describe the student's nighttime residence. Any
-            -- residence type means homeless; N is the not-homeless default. The network
-            -- domain splits homeless by custody instead, so the separate
+            -- residence type means homeless, and N is the not-homeless default. The
+            -- network domain splits homeless by custody instead, so the separate
             -- unaccompanied-youth field decides Y2 versus Y1. That field is a
-            -- five-option select, not a flag -- Y, C and U all mean unaccompanied,
-            -- while N means homeless but accompanied and Z means not homeless, so a
-            -- null check would mislabel an accompanied homeless student as Y2.
+            -- 5-option select, not a flag: Y, C and U all mean unaccompanied, N
+            -- means homeless but accompanied, and Z means not homeless. A null check
+            -- would therefore mislabel an accompanied homeless student as Y2.
             case
                 when homeless_c = 'N'
                 then 'N'

@@ -30,9 +30,3 @@ where
        for AY2025 that was 382 of 398 grade-12 students, reporting the cohort at
        0 percent attainment. */
     and sr.is_enrolled_recent
-    /* TODO(#4581): Paterson is excluded until int_powerschool__gpa_term and
-       int_powerschool__gpa_cumulative union kipppaterson (both are
-       newark/camden/miami only today). Without this, Paterson HS students carry
-       null GPA measures yet still count in org-level denominators, silently
-       deflating the rate. */
-    and sr._dbt_source_project != 'kipppaterson'

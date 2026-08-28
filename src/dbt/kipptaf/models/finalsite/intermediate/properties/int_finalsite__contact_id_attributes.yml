@@ -4,8 +4,8 @@ models:
       Network-wide union of the per-region Finalsite
       `int_finalsite__contact_id_attributes` models (one row per contact, the
       `id_attributes` identifiers pivoted to columns). Enabled only where the
-      Finalsite API layer is wired (today KIPP Miami); carries
-      `_dbt_source_relation`.
+      Finalsite API layer is wired — today KIPP Miami, Newark, Camden and
+      Paterson; carries `_dbt_source_relation`.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -13,3 +13,10 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: focus_student_id_prefixed
+        data_type: string
+        description:
+          The 8400-prefixed Focus student id the `rpt_focus__*` extracts
+          consume, produced by the per-region package model. Null outside Miami,
+          which is what limits those extracts to Miami rows when they filter on
+          it being non-null.

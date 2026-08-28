@@ -61,9 +61,8 @@ with
             e._dbt_source_project,
             e.cc_academic_year,
             e.cc_schoolid,
-            e.cc_studentid,
             e.cc_dateenrolled as dateenrolled,
-            e.cc_dateleft as dateleft,
+            e.exit_date as dateleft,
             e.cc_sectionid as sectionid,
             e.cc_course_number as course_number,
             e.sections_dcid,
@@ -73,6 +72,11 @@ with
             e.courses_course_name as course_name,
             e.courses_excludefromgpa as exclude_from_gpa,
             e.sections_termid as termid,
+
+            -- cc_studentid is null on every Focus row, so this model carried
+            -- zero Miami rows in every year. student_number carries both SIS
+            -- branches and is 1:1 with cc_studentid throughout NJ.
+            e.students_student_number as student_number,
             e.teachernumber as teacher_number,
             e.teacher_lastfirst as teacher_name,
             e.is_ap_course,
@@ -95,9 +99,9 @@ with
             ) as dateenrolled_alt,
 
             if(
-                e.cc_dateleft > q.last_day_school_year,
+                e.exit_date > q.last_day_school_year,
                 q.last_day_school_year,
-                e.cc_dateleft
+                e.exit_date
             ) as dateleft_alt,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
@@ -107,8 +111,17 @@ with
             and e.cc_schoolid = q.schoolid
             and e._dbt_source_project = q._dbt_source_project
             and e.cc_dateenrolled <= q.quarter_end_date_alt
-            and e.cc_dateleft >= q.quarter_start_date_alt
-        where not e.is_dropped_section and e.sections_no_of_students != 0
+            and e.exit_date >= q.quarter_start_date_alt
+        where
+            not e.is_dropped_section
+            -- Focus records no section student count, so this column is null on
+            -- every Miami row. Null is not the PowerSchool quirk the filter
+            -- targets -- a section holding enrollment rows while recording its
+            -- count as zero, 202 New Jersey rows in AY2026. A section with
+            -- nobody in it produces no enrollment rows at all, so it cannot
+            -- reach this model; #5043 measured Miami's smallest section at 1
+            -- student. Keep null, drop only a literal 0.
+            and e.sections_no_of_students is distinct from 0
     ),
 
     days_course_enrolled as (
@@ -116,7 +129,7 @@ with
             s._dbt_source_project,
             s.cc_academic_year,
             s.cc_schoolid,
-            s.cc_studentid,
+            s.student_number,
             s.course_number,
             s.`quarter`,
 
@@ -135,7 +148,7 @@ with
             s._dbt_source_project,
             s.cc_academic_year,
             s.cc_schoolid,
-            s.cc_studentid,
+            s.student_number,
             s.course_number,
             s.`quarter`
     ),
@@ -188,7 +201,7 @@ with
                 partition by
                     s._dbt_source_project,
                     s.cc_academic_year,
-                    s.cc_studentid,
+                    s.student_number,
                     s.course_number,
                     s.`quarter`
                 order by e.exitdate desc, s.dateleft desc
@@ -199,7 +212,7 @@ with
             schedule_by_terms as s
             on e.academic_year = s.cc_academic_year
             and e.schoolid = s.cc_schoolid
-            and e.studentid = s.cc_studentid
+            and e.student_number = s.student_number
             and e._dbt_source_project = s._dbt_source_project
             and e.entrydate <= s.dateleft_alt
             and e.exitdate >= s.dateenrolled_alt
@@ -207,7 +220,7 @@ with
             days_course_enrolled as d
             on s.cc_academic_year = d.cc_academic_year
             and s.cc_schoolid = d.cc_schoolid
-            and s.cc_studentid = d.cc_studentid
+            and s.student_number = d.student_number
             and s.course_number = d.course_number
             and s.`quarter` = d.`quarter`
             and s._dbt_source_project = d._dbt_source_project

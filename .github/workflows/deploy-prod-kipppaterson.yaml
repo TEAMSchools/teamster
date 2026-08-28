@@ -17,6 +17,7 @@ on:
       - uv.lock
       - src/dbt/amplify/**
       - src/dbt/deanslist/**
+      - src/dbt/edplan/**
       - src/dbt/finalsite/**
       - src/dbt/kipppaterson/**
       - src/dbt/pearson/**
@@ -29,6 +30,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/edplan/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/sftp/**
@@ -48,6 +50,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/edplan/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/sftp/**

@@ -1,6 +1,6 @@
 with
     entry_cohort as (
-        select co.school_name, co.student_number, 1 as is_entry_cohort
+        select co.school_name, co.student_number, 1 as is_entry_cohort,
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         where
@@ -12,7 +12,7 @@ with
     ),
 
     transfer_in as (
-        select co.student_number, co.school_name, 1 as is_transfer_in
+        select co.student_number, co.school_name, 1 as is_transfer_in,
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         where
@@ -27,7 +27,7 @@ with
     ),
 
     transfer_out as (
-        select co.student_number, co.school_name, 1 as is_transfer_out
+        select co.student_number, co.school_name, 1 as is_transfer_out,
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         where
@@ -55,7 +55,7 @@ with
                 when co.academic_year + 1 = co.cohort and co.exitcode = 'G1'
                 then 1
                 else 0
-            end as is_4yr_grad
+            end as is_4yr_grad,
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         left join
@@ -102,7 +102,7 @@ select
             (sum(gr.is_entry_cohort) + sum(gr.is_transfer_in)) - sum(gr.is_transfer_out)
         ),
         3
-    ) as pct_grad
+    ) as pct_grad,
 
 from grad_roster as gr
 group by gr.cohort, gr.school_name

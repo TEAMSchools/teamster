@@ -26,13 +26,13 @@ with
             and calendardate <= current_date('{{ var("local_timezone") }}')
     ),
 
-    -- Keyed on student_number, not studentid: studentid is a PowerSchool-internal
-    -- id and is null for every Focus-sourced (Miami) row, so grouping on it
-    -- collapses every Miami Focus student into one meaningless aggregate row per
-    -- (kippmiami, academic_year, semester, term) -- SQL treats null as a single
-    -- group. studentid is carried through as max(studentid) so the NJ-only
-    -- downstream consumers that join on it keep working untouched; it stays null
-    -- for Focus rows, which is correct.
+    -- Keyed on `student_number`, not `studentid`. `studentid` is a
+    -- PowerSchool-internal id and is null for every Focus-sourced (Miami) row,
+    -- so grouping on it collapses every Miami Focus student into 1 meaningless
+    -- aggregate row per (kippmiami, `academic_year`, `semester`, `term`) — SQL
+    -- treats null as a single group. `studentid` still comes through as
+    -- `max(studentid)`, so the NJ-only downstream consumers that join on it keep
+    -- working. It stays null for Focus rows, which is correct.
     ada_by_term as (
         select
             _dbt_source_project,

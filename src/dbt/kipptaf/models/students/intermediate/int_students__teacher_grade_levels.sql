@@ -25,13 +25,13 @@ with
             and ct.syear = s.academic_year
     ),
 
-    -- Focus staff ids are not network teacher/employee numbers. Staff Number
-    -- Identifier, Local (a populated custom field on the Focus user) carries
-    -- the network employee_number as a string -- verified against prod: every
+    -- Focus staff ids are not network teacher or employee numbers. Staff Number
+    -- Identifier, Local — a populated custom field on the Focus user — carries
+    -- the network `employee_number` as a string. Verified against prod: every
     -- non-null AY2026 lead-teacher id (77 of 77) and co-teacher id (21 of 21)
-    -- resolves to a kippmiami roster employee_number through this field. ein
-    -- (Focus's own EIN field) resolves fewer of the same ids and never
-    -- disagrees where both are populated, so this field is preferred.
+    -- resolves to a kippmiami roster `employee_number` through this field. The
+    -- `ein` field resolves fewer of the same ids and never disagrees where both
+    -- are populated, so this field wins.
     identified as (
         select
             ts.student_id,
@@ -51,7 +51,7 @@ with
     -- PowerSchool model derives it from base_powerschool__student_enrollments.
     grade_level_lookup as (
         select student_number, academic_year, grade_level,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_year = 1
     ),
 

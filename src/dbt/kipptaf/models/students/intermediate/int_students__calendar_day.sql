@@ -1,8 +1,8 @@
 with
-    -- Focus's school_id is its internal id (14, 15, 58...), not the network
-    -- school number, and it differs from the "school_number" the focus package
+    -- Focus's `school_id` is its internal id (14, 15, 58...), not the network
+    -- school number, and it differs from the `school_number` the focus package
     -- exposes (a Florida code like 2332A). Resolve through both hops. The inner
-    -- join is also the filter that drops Focus's three non-instructional schools
+    -- join is also the filter that drops Focus's 3 non-instructional schools
     -- (Applicants, Virtual Franchise, ZZ Course History), which have no
     -- locations row.
     focus_schools as (
@@ -22,12 +22,12 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- LEFT JOIN: stg_powerschool__terms only carries isyearrec = 1 windows, and
-    -- some real calendar days (mostly August pre-service dates, plus a 15-day
-    -- Paterson gap) fall outside every window. An INNER JOIN here silently
-    -- dropped those days from the model -- and from dim_school_calendars, which
-    -- reads this model directly. yearid is NULL for a day with no covering
-    -- term; nothing downstream requires it (or academic_year) to be non-null.
+    -- LEFT JOIN: `stg_powerschool__terms` carries only `isyearrec` = 1 windows,
+    -- and some real calendar days fall outside every window — mostly August
+    -- pre-service dates, plus a 15-day Paterson gap. An INNER JOIN silently
+    -- dropped those days from this model and from `dim_school_calendars`, which
+    -- reads it directly. `yearid` is null for a day with no covering term, and
+    -- nothing downstream requires it or `academic_year` to be non-null.
     powerschool_dated as (
         select
             cd._dbt_source_relation,
@@ -68,14 +68,14 @@ with
     ),
 
     -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project is what preserves
-    -- Miami AY2020 through AY2025. A no-term day is never dropped here, even
-    -- for Miami -- see is_focus_covered_year above.
+    -- does not cover. Scoping by year rather than by project preserves Miami
+    -- AY2020 through AY2025. A no-term day is never dropped here, even for
+    -- Miami — see `is_focus_covered_year` above.
     --
-    -- Dual-exposes the neutral (school_date, academic_year, is_in_session,
-    -- is_in_membership) alongside the legacy names (date_value, yearid,
-    -- insession, membershipvalue) that dim_school_calendars and the NJ-parity
-    -- gate read. See "Dual-exposed names" in the plan.
+    -- Dual-exposes the neutral names (`school_date`, `academic_year`,
+    -- `is_in_session`, `is_in_membership`) alongside the legacy names
+    -- (`date_value`, `yearid`, `insession`, `membershipvalue`) that
+    -- `dim_school_calendars` and the NJ-parity gate read.
     powerschool_conformed as (
         select
             _dbt_source_relation,

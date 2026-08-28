@@ -68,13 +68,13 @@ with
     ),
 
     emergency_long as (
-        -- Positional passthrough: emergency_N is the emrg_N custom-field set
-        -- as-is. Finalsite emergency contacts are custom fields on the
+        -- Positional passthrough: `emergency_N` is the `emrg_N` custom-field
+        -- set as-is. Finalsite emergency contacts are custom fields on the
         -- student's own record, not relationship rows, so they never reach the
-        -- relationship-type filter above. The shape here mirrors
-        -- int_finalsite__student_contacts, which cannot be ref'd — it excludes
-        -- Miami to avoid double-counting against the PowerSchool branch of
-        -- int_students__contacts.
+        -- relationship-type filter above. The shape mirrors
+        -- `int_finalsite__student_contacts`, which this model cannot `ref` —
+        -- that model excludes Miami to avoid double-counting against the
+        -- PowerSchool branch of `int_students__contacts`.
         select
             a.emrg_1_name_first_name as first_name,
             a.emrg_1_name_middle_name as middle_name,
@@ -334,10 +334,10 @@ with
             * except (student_relation, contact_gender),
 
             case
-                -- The next several branches are case-sensitive exact matches
-                -- against controlled-vocabulary fields (Finalsite's guardian
-                -- rel_type, or emrg_N_relationship_ss) -- lowercase 'parent',
-                -- 'guardian', and 'stepparent' below are deliberately
+                -- The next several branches are case-sensitive exact
+                -- matches against controlled-vocabulary fields: Finalsite's
+                -- guardian `rel_type`, or `emrg_N_relationship_ss`. The
+                -- lowercase 'parent', 'guardian' and 'stepparent' below stay
                 -- distinct from the Title-Case free-text fallback further
                 -- down, which would otherwise swallow them before their
                 -- gender split ran.
@@ -374,14 +374,14 @@ with
                 then 'Aunt'
                 when student_relation = 'Great Uncle'
                 then 'Uncle'
-                -- emrg_N_relationship_txt is free text (case and padding not
-                -- guaranteed) -- match it case/whitespace-insensitively, but
-                -- still emit the canonical Title-Case Focus value. Every name
-                -- in this list is a single word, so initcap() reconstructs it
-                -- correctly. Placed last so it only catches values the
-                -- case-sensitive branches above didn't -- otherwise a bare
-                -- lowercase 'parent'/'guardian'/'stepparent' guardian
-                -- rel_type would be swallowed here before its gender split.
+                -- `emrg_N_relationship_txt` is free text, so case and
+                -- padding are not guaranteed. Match it case- and
+                -- whitespace-insensitively, but still emit the canonical
+                -- Title-Case Focus value. Every name in this list is a single
+                -- word, so `initcap()` reconstructs it correctly. This branch
+                -- is last so it catches only values the case-sensitive
+                -- branches above missed. Otherwise it swallows a lowercase
+                -- guardian `rel_type` before its gender split runs.
                 when
                     lower(trim(student_relation)) in (
                         'mother',
@@ -425,18 +425,18 @@ with
     ),
 
     household_compared as (
-        -- resides_with_stud / custody: the first contact per student is
-        -- always Y; a later contact is Y only when it shares a household
-        -- with that first contact. Household membership rather than an
-        -- address string comparison -- '123 Main St' vs '123 Main Street',
-        -- or a unit number that sits in address on one row and address2 on
-        -- the other, would both read as a false N. N is an explicit default
-        -- when household membership is unknown on either side, not a guess.
+        -- `resides_with_stud` / `custody`: the first contact per student is
+        -- always Y. A later contact is Y only when it shares a household with
+        -- that first contact. Household membership beats an address string
+        -- comparison: '123 Main St' against '123 Main Street', or a unit
+        -- number that sits in `address` on one row and `address2` on the
+        -- other, both read as a false N. N is an explicit default when
+        -- household membership is unknown on either side, not a guess.
         --
-        -- "First contact" here means sort_order = 1 -- the same ordering
-        -- `ranked` (above) uses, read directly off sort_order rather than
-        -- re-deriving it from a second copy of the same five-column ORDER BY,
-        -- so the two can't silently drift apart.
+        -- "First contact" means `sort_order` = 1, the same ordering `ranked`
+        -- above uses. Reading `sort_order` directly beats re-deriving it from
+        -- a second copy of the same 5-column ORDER BY, which could silently
+        -- drift.
         select
             *,
 
@@ -582,16 +582,16 @@ with
 
     custody_flagged as (
         -- Derived once here and projected as both RESIDES_WITH_STUD and
-        -- CUSTODY in the final select below -- BigQuery has no lateral
-        -- column aliases, so sort_order (added by ranked, above) can't be
-        -- read in the same select list that produces it.
+        -- CUSTODY in the final select below. BigQuery has no lateral column
+        -- aliases, so the select list that produces `sort_order` (added by
+        -- `ranked` above) cannot also read it.
         --
-        -- sort_order = 1 assumes the student's first contact is a guardian --
-        -- zero students currently have emergency contacts but no guardian
-        -- rows, so an emergency contact never actually lands at sort_order 1
-        -- today. If that ever changes, an emergency contact would land
-        -- sort_order 1 and get Y here regardless of what Finalsite says about
-        -- them living with the student.
+        -- `sort_order` = 1 assumes the student's first contact is a guardian.
+        -- No student currently has emergency contacts but no guardian rows,
+        -- so an emergency contact never lands at `sort_order` 1 today. If that
+        -- changes, an emergency contact lands at `sort_order` 1 and gets Y
+        -- here regardless of what Finalsite says about them living with the
+        -- student.
         select
             * except (shared_household_count),
 

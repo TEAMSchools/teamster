@@ -7,7 +7,11 @@
   `<=`, `>=`). Read the stored body back and verify after writing. They also
   entity-encode `&`→`&amp;` and `"`→`&#34;` (not strip) — harmless in rendered
   prose but rendered literally inside code spans and in titles, so avoid `&` /
-  `"` in PR/issue titles and code spans (use "and" / single quotes).
+  `"` in PR/issue titles and code spans (use "and" / single quotes). Corollary:
+  the encoding is RE-APPLIED on every write, so round-tripping a fetched body
+  back through `update_pull_request` double-encodes what is already there
+  (`&amp;` → `&amp;amp;`). Edit a PR body with
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` instead.
 - **The `mcp__github__*` read tools also sanitize on OUTPUT**:
   `pull_request_read` / `issue_read` strip `<...>` and encode `'`→`&#39;` in the
   body they return, so a just-written body read back through them shows phantom

@@ -24,13 +24,12 @@ with
             fs.schoolid,
         from {{ ref("stg_focus__marking_periods") }} as mp
         inner join focus_schools as fs on mp.school_id = fs.focus_school_id
-        -- Progress periods have no PowerSchool terms equivalent. The 2018
+        -- Progress periods have no PowerSchool `terms` equivalent. The 2018
         -- floor is Miami's first school year: Focus carries a full
-        -- year/semester/quarter set for two schools in every syear back to
-        -- 1980, which would fabricate history here. Both filters stay in this
-        -- model rather than in staging -- 321 report card grade rows point at
-        -- pre-2018 marking periods, so flooring the staging model orphans
-        -- them.
+        -- year/semester/quarter set for 2 schools in every syear back to 1980,
+        -- which would fabricate history here. Both filters stay in this model
+        -- rather than in staging, because 321 report card grade rows point at
+        -- pre-2018 marking periods and flooring the staging model orphans them.
         where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2018
     ),
 
@@ -73,14 +72,14 @@ with
         from {{ ref("int_powerschool__terms") }}
     ),
 
-    -- A small number of historical quarters (a handful of non-instructional
-    -- schoolids, mostly pre-2018) exist in int_powerschool__terms via its
-    -- termbins join but have no corresponding Q1-Q4 row in the raw terms
-    -- table at all -- verified against prod (kippnewark/kippcamden schoolids
+    -- A small number of historical quarters exist in `int_powerschool__terms`
+    -- via its `termbins` join but have no corresponding Q1-Q4 row in the raw
+    -- `terms` table — a handful of non-instructional schoolids, mostly
+    -- pre-2018, verified against prod (kippnewark and kippcamden schoolids
     -- 73252, 73253, 133570965, 179902). A left join from the raw side would
-    -- silently drop those quarters' dates entirely. Full join instead, so an
-    -- unmatched quarter survives as its own row (every raw-only column
-    -- null-fills, matching a row Focus never carried).
+    -- silently drop those quarters' dates. Full join instead, so an unmatched
+    -- quarter survives as its own row and every raw-only column null-fills,
+    -- which matches a row Focus never carried.
     powerschool_joined as (
         select
             p.* except (

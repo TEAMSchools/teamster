@@ -1,0 +1,72 @@
+models:
+  - name: int_students__course_sections
+    description: >-
+      SIS-neutral course section spine. Each row is one section for one academic
+      year. Unions the four PowerSchool district `base_powerschool__sections`
+      sources with Miami's Focus course periods, conformed inline to the
+      PowerSchool column vocabulary. The Miami PowerSchool branch is scoped to
+      years before Focus coverage begins, so the frozen archive keeps serving
+      Miami AY2020 through AY2025. The boundary is derived from the Focus
+      schedule rather than hardcoded, so a Focus backfill of an earlier year
+      moves it instead of double-counting that year. Replaces
+      `base_powerschool__sections` as the canonical section-grain source.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sections_dcid
+              - _dbt_source_project
+    columns:
+      - name: sections_dcid
+        description: >-
+          Section identifier. For Miami, the Focus `course_period_id`, which is
+          the section analogue.
+        data_type: int64
+      - name: sections_schoolid
+        description: >-
+          Network school number. For Miami, resolved from Focus's internal
+          school id through `int_focus__schools.school_number` and then the
+          locations crosswalk. Focus's own `school_id` is a small internal
+          integer, not the network identifier.
+        data_type: int64
+      - name: sections_course_number
+        description: >-
+          Course number. For Miami, the Focus course `short_name`, which holds
+          the Florida state course code.
+        data_type: string
+      - name: teachernumber
+        description: >-
+          Lead teacher's PowerSchool teacher number. For Miami, resolved from
+          the Focus `teacher_id` through `int_focus__users` to the staff roster:
+          first by `ein`, falling back to a case-insensitive match on email for
+          a user whose `ein` doesn't resolve. See
+          `test_focus_course_sections_teacher_resolves` for how much of the
+          Focus population resolves through each path.
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teachernumber
+      - name: is_homeroom
+        description: >-
+          Whether this section is a homeroom. Derived per branch: PowerSchool
+          from the `HR%` course-number convention, Focus from a `Homeroom%`
+          course title, because Focus's own homeroom boolean is null on every
+          row. Focus coverage is elementary-only, tracked on #4868.
+        data_type: bool
+      - name: is_ap_course
+        description: >-
+          Whether this section is an AP course, from the New Jersey state course
+          crosswalk. Null for Miami, which is Florida and has no such crosswalk.
+        data_type: bool
+      - name: terms_academic_year
+        description: Academic year of the section.
+        data_type: int64
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`).
+        data_type: string
