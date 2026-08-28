@@ -181,18 +181,29 @@ inner join in `rpt_tableau__okrts_behavior` drops all 23,652 Paterson behavior
 rows. Paterson's 843 students are already in the enrollment spine, so 2 sheet
 rows fix it.
 
-Spreadsheet `1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo`, owned by the
-dashboard owner.
+Spreadsheet `1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo`, titled **People**,
+owned by the dashboard owner.
 
-Tab `src_people__location_crosswalk_v2`:
+The `sheet_range` values in `sources-external.yml` are **named ranges, not tab
+names**, so searching the workbook for them finds nothing. Both ranges start at
+row 1 and are row-open, so appended rows are picked up. Both are column-bounded
+— `Locations` is `A:S`, `Location Crosswalk` is `A:B` — so do not add columns.
+Sheet headers use spaces and BigQuery normalizes them to underscores, so
+`Deanslist School ID` in the sheet is `Deanslist_School_ID` in dbt.
+
+| Named range in dbt                        | Tab to edit          | `gid`       |
+| ----------------------------------------- | -------------------- | ----------- |
+| `src_people__location_crosswalk_v2`       | `Location Crosswalk` | `81209161`  |
+| `src_google_sheets__people__locations_v3` | `Locations`          | `179943835` |
+
+Tab `Location Crosswalk`, 2 new rows:
 
 | `Name`             | `Clean_Name`                      |
 | ------------------ | --------------------------------- |
 | `Paterson Prep ES` | `Paterson Prep Elementary School` |
 | `Paterson Prep MS` | `Paterson Prep Middle School`     |
 
-Tab `src_google_sheets__people__locations_v3`, column `Deanslist_School_ID`,
-currently blank for both rows:
+Tab `Locations`, column `Deanslist School ID`, verified blank for both rows:
 
 | `Name`                            | `Deanslist_School_ID` |
 | --------------------------------- | --------------------- |
@@ -211,6 +222,12 @@ About 20 models read `deanslist_school_id`. Two of them —
 `location_deanslist_school_id is not null` filters and will start including it.
 That is the intended outcome, and it is why the ID fill gets its own
 verification step rather than riding along with the alias rows.
+
+Do not edit the sheet that `rpt_gsheets__people__location_crosswalk` writes.
+That extract publishes a flattened copy of `int_people__location_crosswalk` out
+to an AppSheet-backed sheet, carrying `Name` and `Deanslist_School_ID` together
+in one table, so it looks like the place to edit. It reads from the crosswalk
+rather than into it, and the next run overwrites anything typed there.
 
 ## Validation
 
