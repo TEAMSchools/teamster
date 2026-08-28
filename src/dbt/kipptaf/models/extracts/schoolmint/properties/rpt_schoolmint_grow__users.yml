@@ -5,13 +5,14 @@ models:
       ADP / staff roster) against the current destination state in SchoolMint
       Grow. Drives `grow_user_sync` create / update / archive / restore
       decisions via `surrogate_key_source` vs `surrogate_key_destination`.
-      Excludes Paterson staff, who do not use Grow. The Teacher predicate is ADP
-      `job_function` of "Teacher" or "Teacher in Residence", falling back to a
-      job title containing "Teacher" or "Learning" while `job_function` is null
-      on a new work assignment. Users matching both the Coach predicate
-      (instructional manager) and the Teacher predicate receive both roles in
-      `role_names` / `role_ids`. Admin classifications take precedence over
-      Coach / Teacher.
+      Excludes Paterson staff, who do not use Grow. Roles are assigned from the
+      ADP `job_function` tier, gated by `home_department_name` for Director tier
+      and above; `Sub Admin` is never assigned, because region-scoped `Regional
+      Admin` replaces it. A null `job_function` yields no role at all and is
+      treated as an ADP data defect rather than patched over with a job title.
+      The one title exception is `Associate Director`, promoted from staff tier
+      to Director tier. Every role predicate is independent, so a user who
+      matches both an admin tier and the Coach predicate receives both.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
@@ -19,6 +20,9 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: array_length(role_ids) = array_length(role_names)
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "'Sub Admin' not in unnest(role_names)"
     columns:
       - name: user_internal_id
         data_type: int64
@@ -40,9 +44,10 @@ models:
       - name: role_names
         data_type: array<string>
         description: >
-          Human-readable role labels (`Sub Admin`, `Regional Admin`, `School
-          Admin`, `School Assistant Admin`, `Coach`, `Teacher`), ordered
-          alphabetically by `role_id` so elements align with `role_ids`.
+          Human-readable role labels (`Regional Admin`, `School Admin`, `School
+          Assistant Admin`, `Coach`, `Teacher`), ordered alphabetically by
+          `role_id` so elements align with `role_ids`. `Sub Admin` is never
+          emitted.
       - name: school_id
         data_type: string
         description: >
@@ -108,9 +113,11 @@ models:
       - name: group_type
         data_type: string
         description: >
-          Observation-group membership directive consumed by `grow_user_sync`:
-          `observers` for admins, `observees;observers` for users that include
-          `Coach` in `role_names`, otherwise `observees`.
+          Observation-group membership directive consumed by `grow_user_sync`.
+          Observee and observer are independent: `observees` covers `Teacher`,
+          `School Admin` and `School Assistant Admin`, `observers` covers any
+          admin role plus `Coach`, and a user who matches both gets
+          `observees;observers`. Empty string when the user matches neither.
       - name: surrogate_key_source
         data_type: string
         description: >
@@ -132,8 +139,8 @@ unit_tests:
       instructional-manager predicate is parenthesised, so a manager whose only
       report is terminated no longer qualifies as Coach -- the signal is now the
       absence of Coach on that manager's row (row 12), not the absence of the
-      row itself, since Task 2 makes Coach additive rather than suppressed by an
-      admin role.
+      row itself. Row 12 appears because the tier logic grants `School Assistant
+      Admin` to the `Deans` tier without consulting the department gate.
     model: rpt_schoolmint_grow__users
     given:
       - input: ref('int_people__staff_roster')
