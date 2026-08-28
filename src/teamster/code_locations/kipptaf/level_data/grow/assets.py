@@ -139,6 +139,8 @@ def grow_user_sync(
             },
             "coach": u["coach_id"],
             "roles": list(u["role_ids"]),
+            "regionalAdminSchools": list(u["regional_admin_school_ids"]),
+            "readonly": bool(u["readonly"]),
         }
 
         # reset request_args after the restore branch may have mutated it
