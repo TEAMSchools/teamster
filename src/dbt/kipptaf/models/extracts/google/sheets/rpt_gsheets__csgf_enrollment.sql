@@ -228,9 +228,9 @@ select
     case
         s.`name`
         when 'Paterson Prep Middle School'
-        then 'KIPP Paterson MS'
+        then 'KIPP Paterson Prep MS'
         when 'Paterson Prep Elementary School'
-        then 'KIPP Paterson ES'
+        then 'KIPP Paterson Prep ES'
         else s.`name`
     end as school,
 
