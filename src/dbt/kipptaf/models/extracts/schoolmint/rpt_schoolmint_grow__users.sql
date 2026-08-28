@@ -4,12 +4,12 @@ with
             *,
 
             /*
-                job_function (ADP codes TEACH / TIR) is not set on newly created
-                work assignments, so fall back to the job title until it fills in
+                job_function is the only tier input. A null job_function is an
+                ADP data defect and is deliberately not patched over here --
+                see docs/superpowers/specs/2026-08-28-grow-region-scoped-admin-design.md
             */
             coalesce(
-                job_function in ('Teacher', 'Teacher in Residence'),
-                job_title like '%Teacher%' or job_title like '%Learning%'
+                job_function in ('Teacher', 'Teacher in Residence'), false
             ) as is_teacher,
         from {{ ref("int_people__staff_roster") }}
         where home_work_location_dagster_code_location != 'kipppaterson'
@@ -21,9 +21,11 @@ with
         join staff as srm on sr.reports_to_employee_number = srm.employee_number
         where
             sr.assignment_status in ('Active', 'Leave')
-            and sr.is_teacher
-            or srm.home_department_name
-            in ('School Support', 'Student Support', 'KIPP Forward')
+            and (
+                sr.is_teacher
+                or srm.home_department_name
+                in ('School Support', 'Student Support', 'KIPP Forward')
+            )
     ),
 
     people as (

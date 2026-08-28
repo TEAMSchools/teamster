@@ -122,3 +122,115 @@ models:
         description: >
           Hash of the destination-state fields (uses
           `array_to_string(role_ids_ws, ',')` for the role component).
+
+unit_tests:
+  - name: unit_grow_users_teacher_predicate_and_coach_precedence
+    description:
+      Pins the two fixes in Task 1. A teacher is identified by job_function
+      alone, so a staff member titled "Teacher" with a null job_function is no
+      longer a teacher and no longer makes their manager a Coach. The
+      instructional-manager predicate is parenthesised, so a manager in a
+      coaching department whose only report is terminated no longer qualifies.
+    model: rpt_schoolmint_grow__users
+    given:
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              1 as employee_number,
+              'teach1@apps.teamschools.org' as google_email,
+              10 as reports_to_employee_number,
+              'KIPP TEAM Academy' as home_work_location_reporting_name,
+              'Elementary' as home_department_name,
+              'kippnewark' as home_work_location_dagster_code_location,
+              'Ada' as given_name,
+              'Real' as family_name_1,
+              'Active' as assignment_status,
+              'Teacher' as job_function,
+              'Teacher' as job_title,
+              5 as primary_grade_level_taught,
+              'areal@apps.teamschools.org' as user_principal_name,
+              cast(null as date) as worker_termination_date
+          union all
+          select
+              2, 'teach2@apps.teamschools.org', 11, 'KIPP TEAM Academy',
+              'Elementary', 'kippnewark', 'Nul', 'Function', 'Active',
+              cast(null as string), 'Teacher', 5,
+              'nfunction@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              3, 'term@apps.teamschools.org', 12, 'KIPP TEAM Academy',
+              'Student Support', 'kippnewark', 'Gone', 'Already', 'Terminated',
+              'Teacher', 'Teacher', 5, 'galready@apps.teamschools.org',
+              date '2024-06-30'
+          union all
+          select
+              10, 'mgr1@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
+              'Real', 'Manager', 'Active', 'Assistant School Leaders',
+              'Assistant School Leader', cast(null as int64),
+              'rmanager@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              11, 'mgr2@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
+              'Nulls', 'Only', 'Active', 'Assistant School Leaders',
+              'Assistant School Leader', cast(null as int64),
+              'nonly@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              12, 'mgr3@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'Student Support', 'kippnewark',
+              'Term', 'Reports', 'Active', 'Deans', 'Dean',
+              cast(null as int64), 'treports@apps.teamschools.org',
+              cast(null as date)
+      - input: ref('stg_schoolmint_grow__roles')
+        format: sql
+        rows: |
+          select 'r-coach' as role_id, 'Coach' as name
+          union all
+          select 'r-teacher', 'Teacher'
+          union all
+          select 'r-saa', 'School Assistant Admin'
+          union all
+          select 'r-sa', 'School Admin'
+          union all
+          select 'r-ra', 'Regional Admin'
+      - input: ref('stg_schoolmint_grow__schools')
+        format: sql
+        rows: |
+          select 'sch-team' as school_id, 'KIPP TEAM Academy' as name
+      - input: ref('stg_schoolmint_grow__users')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as user_id,
+              cast(null as int64) as internal_id_int,
+              cast(null as string) as archived_at,
+              cast(null as string) as email,
+              cast(null as string) as name,
+              cast(null as string) as coach,
+              cast(null as bool) as inactive,
+              cast(null as string) as default_information_course,
+              cast(null as string) as default_information_grade_level,
+              cast(null as string) as default_information_school,
+              cast(
+                  null as array<struct<`_id` string, name string>>
+              ) as roles
+          from unnest([1])
+          where false
+      - input: ref('stg_schoolmint_grow__generic_tags')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as tag_id,
+              cast(null as string) as name,
+              cast(null as string) as abbreviation,
+              cast(null as string) as tag_type
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - { user_internal_id: 1, role_names: [Teacher] }
+        - { user_internal_id: 10, role_names: [School Assistant Admin] }
+        - { user_internal_id: 11, role_names: [School Assistant Admin] }
