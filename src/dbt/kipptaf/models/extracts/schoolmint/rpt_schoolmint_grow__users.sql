@@ -11,6 +11,30 @@ with
             coalesce(
                 job_function in ('Teacher', 'Teacher in Residence'), false
             ) as is_teacher,
+
+            /*
+                ADP records some Associate Directors at staff level, which
+                understates them. This is the one deliberate title exception.
+            */
+            if(
+                job_function = 'KTAF or Regional Staff'
+                and contains_substr(job_title, 'Associate Director'),
+                'KTAF or Regional Director',
+                job_function
+            ) as tier,
+
+            home_department_name in (
+                'Teaching and Learning',
+                'School Support',
+                'Teacher Development',
+                'New Teacher Development',
+                'Special Education',
+                'School Leadership',
+                'Leadership Development',
+                'KIPP Forward',
+                'Special Projects',
+                'Executive'
+            ) as passes_department_gate,
         from {{ ref("int_people__staff_roster") }}
         where home_work_location_dagster_code_location != 'kipppaterson'
     ),
@@ -46,65 +70,47 @@ with
                 cast(sr.primary_grade_level_taught as string)
             ) as grade_abbreviation,
 
-            coalesce(
-                case
-                    /* network admins */
-                    when sr.home_department_name = 'Executive'
-                    then ['Sub Admin']
-                    when sr.job_title = 'Head of Schools'
-                    then ['Regional Admin']
-                    when
-                        sr.home_department_name in (
-                            'Teaching and Learning',
-                            'School Support',
-                            'New Teacher Development',
-                            'Special Projects'
-                        )
-                        and (
-                            contains_substr(sr.job_title, 'Chief')
-                            or contains_substr(sr.job_title, 'Leader')
-                            or contains_substr(sr.job_title, 'Director')
-                        )
-                    then ['Sub Admin']
-                    when sr.job_title = 'Achievement Director'
-                    then ['Sub Admin']
-                    when
-                        sr.home_department_name = 'Special Education'
-                        and contains_substr(sr.job_title, 'Director')
-                    then ['Sub Admin']
-                    when sr.home_department_name = 'Human Resources'
-                    then ['Sub Admin']
-                    /* school admins */
-                    when sr.job_title = 'School Leader'
-                    then ['School Admin']
-                    when
-                        sr.home_department_name = 'School Leadership'
-                        and (
-                            contains_substr(sr.job_title, 'Assistant School Leader')
-                            or contains_substr(sr.job_title, 'Dean')
-                            or sr.job_title = 'School Leader in Residence'
-                        )
-                    then ['School Assistant Admin']
-                end,
-                /* basic roles: Coach and Teacher are independent; a user can be both */
-                array(
-                    select rn
-                    from
-                        unnest(
-                            [
-                                if(
-                                    sr.employee_number in (
-                                        select reports_to_employee_number
-                                        from instructional_managers
-                                    ),
-                                    'Coach',
-                                    null
+            /*
+                Every predicate is independent and contributes at most one role.
+                Nothing suppresses anything else, which is what lets an admin
+                who manages teachers keep Coach.
+
+                Chief Level and the three Director tiers both resolve to
+                Regional Admin here; they differ only in school scope, which
+                sub-project 2 supplies.
+            */
+            array(
+                select rn
+                from
+                    unnest(
+                        [
+                            case
+                                when
+                                    sr.tier in (
+                                        'Chief Level',
+                                        'EDs, HOSs, MDOs',
+                                        'KTAF or Regional Managing Director',
+                                        'KTAF or Regional Director'
+                                    )
+                                    and sr.passes_department_gate
+                                then 'Regional Admin'
+                                when sr.tier = 'School Leader'
+                                then 'School Admin'
+                                when sr.tier in ('Assistant School Leaders', 'Deans')
+                                then 'School Assistant Admin'
+                            end,
+                            if(
+                                sr.employee_number in (
+                                    select reports_to_employee_number
+                                    from instructional_managers
                                 ),
-                                if(sr.is_teacher, 'Teacher', null)
-                            ]
-                        ) as rn
-                    where rn is not null
-                )
+                                'Coach',
+                                null
+                            ),
+                            if(sr.is_teacher, 'Teacher', null)
+                        ]
+                    ) as rn
+                where rn is not null
             ) as role_names,
         from staff as sr
         where

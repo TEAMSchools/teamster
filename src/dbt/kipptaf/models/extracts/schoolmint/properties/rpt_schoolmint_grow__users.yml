@@ -129,8 +129,11 @@ unit_tests:
       Pins the two fixes in Task 1. A teacher is identified by job_function
       alone, so a staff member titled "Teacher" with a null job_function is no
       longer a teacher and no longer makes their manager a Coach. The
-      instructional-manager predicate is parenthesised, so a manager in a
-      coaching department whose only report is terminated no longer qualifies.
+      instructional-manager predicate is parenthesised, so a manager whose only
+      report is terminated no longer qualifies as Coach -- the signal is now the
+      absence of Coach on that manager's row (row 12), not the absence of the
+      row itself, since Task 2 makes Coach additive rather than suppressed by an
+      admin role.
     model: rpt_schoolmint_grow__users
     given:
       - input: ref('int_people__staff_roster')
@@ -232,5 +235,150 @@ unit_tests:
     expect:
       rows:
         - { user_internal_id: 1, role_names: [Teacher] }
-        - { user_internal_id: 10, role_names: [School Assistant Admin] }
+        - { user_internal_id: 10, role_names: [Coach, School Assistant Admin] }
         - { user_internal_id: 11, role_names: [School Assistant Admin] }
+        - { user_internal_id: 12, role_names: [School Assistant Admin] }
+
+  - name: unit_grow_users_role_matrix
+    description:
+      Pins the tier-times-gate role matrix. One row per tier that grants a role,
+      plus a Director in a department outside the gate proving the gate blocks,
+      an Associate Director proving the one title promotion, a null job_function
+      proving no fallback exists, and an admin who manages a teacher proving
+      Coach is additive rather than replaced.
+    model: rpt_schoolmint_grow__users
+    given:
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              100 as employee_number,
+              'chief@apps.teamschools.org' as google_email,
+              cast(null as int64) as reports_to_employee_number,
+              'KIPP TEAM Academy' as home_work_location_reporting_name,
+              'Teaching and Learning' as home_department_name,
+              'kippnewark' as home_work_location_dagster_code_location,
+              'Chief' as given_name,
+              'Academic' as family_name_1,
+              'Active' as assignment_status,
+              'Chief Level' as job_function,
+              'Chief Academic Officer' as job_title,
+              cast(null as int64) as primary_grade_level_taught,
+              'chief@apps.teamschools.org' as user_principal_name,
+              cast(null as date) as worker_termination_date
+          union all
+          select
+              101, 'hos@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'School Support', 'kippnewark',
+              'Head', 'Schools', 'Active', 'EDs, HOSs, MDOs',
+              'Head of Schools', cast(null as int64),
+              'hos@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              102, 'md@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'Special Education', 'kippnewark',
+              'Managing', 'Director', 'Active',
+              'KTAF or Regional Managing Director', 'Managing Director',
+              cast(null as int64), 'md@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              103, 'blocked@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'Finance', 'kippnewark',
+              'Gated', 'Out', 'Active', 'KTAF or Regional Director',
+              'Director', cast(null as int64),
+              'blocked@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              104, 'assoc@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'Special Education', 'kippnewark',
+              'Assoc', 'Promoted', 'Active', 'KTAF or Regional Staff',
+              'Associate Director', cast(null as int64),
+              'assoc@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              105, 'sl@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
+              'School', 'Leader', 'Active', 'School Leader', 'School Leader',
+              cast(null as int64), 'sl@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              106, 'dean@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'Student Support', 'kippnewark',
+              'Assistant', 'Dean', 'Active', 'Deans', 'Assistant Dean',
+              cast(null as int64), 'dean@apps.teamschools.org',
+              cast(null as date)
+          union all
+          select
+              107, 'nulljf@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'Teaching and Learning', 'kippnewark',
+              'Null', 'Tier', 'Active', cast(null as string),
+              'Achievement Director', cast(null as int64),
+              'nulljf@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              108, 'coachadmin@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
+              'Coaching', 'Admin', 'Active', 'Assistant School Leaders',
+              'Assistant School Leader', cast(null as int64),
+              'coachadmin@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              109, 'report@apps.teamschools.org', 108,
+              'KIPP TEAM Academy', 'Elementary', 'kippnewark',
+              'Real', 'Teacher', 'Active', 'Teacher', 'Teacher', 5,
+              'report@apps.teamschools.org', cast(null as date)
+      - input: ref('stg_schoolmint_grow__roles')
+        format: sql
+        rows: |
+          select 'r-coach' as role_id, 'Coach' as name
+          union all
+          select 'r-teacher', 'Teacher'
+          union all
+          select 'r-saa', 'School Assistant Admin'
+          union all
+          select 'r-sa', 'School Admin'
+          union all
+          select 'r-ra', 'Regional Admin'
+      - input: ref('stg_schoolmint_grow__schools')
+        format: sql
+        rows: |
+          select 'sch-team' as school_id, 'KIPP TEAM Academy' as name
+      - input: ref('stg_schoolmint_grow__users')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as user_id,
+              cast(null as int64) as internal_id_int,
+              cast(null as string) as archived_at,
+              cast(null as string) as email,
+              cast(null as string) as name,
+              cast(null as string) as coach,
+              cast(null as bool) as inactive,
+              cast(null as string) as default_information_course,
+              cast(null as string) as default_information_grade_level,
+              cast(null as string) as default_information_school,
+              cast(
+                  null as array<struct<`_id` string, name string>>
+              ) as roles
+          from unnest([1])
+          where false
+      - input: ref('stg_schoolmint_grow__generic_tags')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as tag_id,
+              cast(null as string) as name,
+              cast(null as string) as abbreviation,
+              cast(null as string) as tag_type
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - { user_internal_id: 100, role_names: [Regional Admin] }
+        - { user_internal_id: 101, role_names: [Regional Admin] }
+        - { user_internal_id: 102, role_names: [Regional Admin] }
+        - { user_internal_id: 104, role_names: [Regional Admin] }
+        - { user_internal_id: 105, role_names: [School Admin] }
+        - { user_internal_id: 106, role_names: [School Assistant Admin] }
+        - { user_internal_id: 108, role_names: [Coach, School Assistant Admin] }
+        - { user_internal_id: 109, role_names: [Teacher] }
