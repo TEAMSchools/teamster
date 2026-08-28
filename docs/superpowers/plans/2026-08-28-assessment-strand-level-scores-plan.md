@@ -54,13 +54,15 @@ gains `response_type_code` as an eighth input.
 - **Do not run `trunk fmt` or `trunk check` manually except** on `.md` files
   before pushing, per `src/dbt/CLAUDE.md`. The pre-commit hook formats; the
   pre-push hook checks.
-- **Verified prod baselines** (2026-08-28) that later assertions compare
-  against: fact total 14,569,177; `response_type IS NULL` 1,441,444, of which
-  Illuminate 1,073,422, i-Ready 240,749, DIBELS 57,546, state 62,378, STAR
-  7,349. `int_iready__domain_unpivot` 1,635,032 rows; 1,572,858 after the
-  `Not Assessed` and null filters; 1,453,102 after excluding
-  `comprehension_overall`. DIBELS Benchmark rows: 58,124 Composite, 255,144
-  subtest.
+- **Order-of-magnitude prod figures** (2026-08-28). These are NOT the assertion
+  basis — Task 2 captures the authoritative baseline into
+  `docs/superpowers/plans/2026-08-28-strand-scores-baseline.md`, and every
+  before/after assertion compares against that file. Fact total 14,569,177;
+  `response_type IS NULL` 1,441,444, of which Illuminate 1,073,422, i-Ready
+  240,749, DIBELS 57,546, state 62,378, STAR 7,349. `int_iready__domain_unpivot`
+  1,635,032 rows; 1,572,858 after the `Not Assessed` and null filters; 1,453,102
+  after excluding `comprehension_overall`. DIBELS Benchmark rows: 58,124
+  Composite, 255,144 subtest.
 
 ---
 
@@ -490,9 +492,16 @@ uv run dbt build --project-dir /workspaces/teamster/.worktrees/anthonygwalters/f
 ```
 
 Expected: success; `accepted_values` and `not_null` pass. Then assert against
-the Task 2 baseline, per `score_source`: `count(response_type = 'overall')`
-after == `count(response_type is null)` before, and
-`count(response_type = 'not_taken')` == 1,073,422.
+the **captured values in
+`docs/superpowers/plans/2026-08-28-strand-scores-baseline.md`**, per
+`score_source`: `count(response_type = 'overall')` after ==
+`count(response_type is null)` before, and `count(response_type = 'not_taken')`
+== the baseline's captured Illuminate null count.
+
+Assert against the baseline doc, never against the literals in this plan or the
+spec. Production drifts — a re-capture on 2026-08-28 moved the fact total by
++193 rows in under four hours, mixed direction, with an identical category set.
+The literals here are order-of-magnitude documentation only.
 
 - [ ] **Step 6: Commit**
 
