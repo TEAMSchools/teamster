@@ -111,8 +111,10 @@ cubes:
           Count of enrollment records (stints), NOT a student headcount —
           count_distinct on student_enrollment_key. Alumni-inclusive and spans
           all academic years (a multi-stint student counts once per stint; a
-          graduate retains a placeholder stint per year). For a point-in-time
-          student headcount use the student_enrollments cube's count_students.
+          graduate retains a placeholder stint per year). For a distinct student
+          headcount use the student_enrollments cube's count_students
+          (ever-enrolled in the queried range) or its count_students_year_end /
+          _month_end / _week_end measures for a point-in-time as-of figure.
         sql: student_enrollment_key
         type: count_distinct
         public: true

@@ -160,6 +160,18 @@ cubes:
 
     measures:
       - name: count_students
+        description: >-
+          Count of distinct enrollment stints (student_enrollment_key) with a
+          membership day in the queried range — NOT a distinct-student
+          headcount. A student with two stints at the same school (e.g.
+          re-enrolled) counts twice. Additive over the range by design and
+          deliberately left unanchored to any point-in-time filter — unlike this
+          cube's chronic-absence / ADA-tier / truancy measures, which are
+          re-stamped daily flags that need a period-end anchor to avoid
+          overcounting, this measure does not. For a distinct-student headcount,
+          use student_enrollments_view's count_students (ever-enrolled in the
+          queried range by default) or its count_students_year_end / _month_end
+          / _week_end measures for a point-in-time as-of figure.
         sql: student_enrollment_key
         type: count_distinct
         public: true

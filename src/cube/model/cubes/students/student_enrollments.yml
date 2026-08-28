@@ -41,8 +41,10 @@ cubes:
       - name: is_current_record
         description: >-
           TRUE on the school's latest attendance day that has occurred (per
-          school × academic year, capped at today). Default point-in-time
-          enrollment anchor — drives count_students at year / no grouping.
+          school × academic year, capped at today). Point-in-time enrollment
+          anchor baked into count_students_year_end's filter — count_students
+          itself is unanchored (ever-enrolled in the queried range; see its
+          description).
         sql: is_current_record
         type: boolean
         public: true
@@ -108,12 +110,11 @@ cubes:
           day (today for the current year, the last day of school for completed
           years) — the year-end / current headcount. Filters to
           is_current_record, so the anchor is baked in and no dates_date_day
-          filter or grouping is required; this is what count_students returns
-          when queried with no time grouping. Matches the topline Total
-          Enrollment methodology — enrollment is by entry/exit dates, not
-          status. Note: across multiple schools, each is counted as of its own
-          latest in-session day, so a network total can mix as-of dates within
-          the final weeks of a year.
+          filter or grouping is required. Matches the topline Total Enrollment
+          methodology — enrollment is by entry/exit dates, not status. Note:
+          across multiple schools, each is counted as of its own latest
+          in-session day, so a network total can mix as-of dates within the
+          final weeks of a year.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true

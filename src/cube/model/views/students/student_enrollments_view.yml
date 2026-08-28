@@ -1,13 +1,16 @@
 views:
   - name: student_enrollments_view
     description: >-
-      Point-in-time student enrollment — row-level (one row per enrolled
-      student-day, for roster exports and questions like "who was enrolled on
-      October 1?"; pin a single date by filtering dates_date_day) and aggregate
-      headcount breakdowns in a single view.
+      Student enrollment — row-level (one row per enrolled student-day, for
+      roster exports and questions like "who was enrolled on October 1?"; pin a
+      single date by filtering dates_date_day) and aggregate headcount
+      breakdowns in a single view.
 
-      count_students is point-in-time (as of the most recent in-session day in
-      the query, or the pinned date).
+      count_students counts everyone enrolled at any point in the queried range
+      (ever-enrolled), not a point-in-time headcount, unless a single date is
+      pinned via dates_date_day. For a point-in-time as-of headcount at year,
+      month, or week grain, use count_students_year_end,
+      count_students_month_end, or count_students_week_end instead.
 
     cubes:
       - join_path: student_enrollments
