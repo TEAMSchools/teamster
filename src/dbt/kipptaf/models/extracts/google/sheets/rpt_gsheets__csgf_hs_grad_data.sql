@@ -70,19 +70,11 @@ with
             transfer_out as tr
             on co.student_number = tr.student_number
             and co.school = tr.school
-        where co.school_level = 'HS' and co.rn_year = 1 and co.rn_undergrad = 1
-    ),
-
-    graduated as (
-        select school_name, count(student_number) as total_grads,
-        from {{ ref("int_extracts__student_enrollments") }}
         where
-            cohort = {{ var("current_academic_year") }}
-            and academic_year = {{ var("current_academic_year") - 1 }}
-            and grade_level != 99
-            and not is_out_of_district
-            and enroll_status = 3
-        group by school_name
+            co.school_level = 'HS'
+            and co.rn_year = 1
+            and co.rn_undergrad = 1
+            and co.cohort = {{ var("current_academic_year") }}
     )
 
 select

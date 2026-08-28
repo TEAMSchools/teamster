@@ -43,7 +43,7 @@ section for that mechanism in full.
 | `csgf_hs_act`              | One row per ACT section score     | Last year only                                                                                      |
 | `csgf_hs_ap_offerings`     | One row per school (wide-pivoted) | Last year only                                                                                      |
 | `csgf_hs_ap_scores`        | One row per AP exam taken         | Last year only                                                                                      |
-| `csgf_hs_grad_data`        | One row per cohort × school       | **All years** (unfiltered — see [Known risks](#known-risks))                                        |
+| `csgf_hs_grad_data`        | One row per school                | Current cohort only (`cohort = current_academic_year`)                                              |
 | `csgf_hs_postsec_pathways` | One row per grade-12 student      | **All years** (unfiltered)                                                                          |
 
 Year anchoring is deliberately inconsistent across these eight models — this was
@@ -51,10 +51,11 @@ flagged in [issue #4897](https://github.com/TEAMSchools/teamster/issues/4897)
 and confirmed here by reading each model's SQL directly, not by trusting the
 issue's description. Practical consequence: a data problem in either the current
 or prior year can affect `csgf_enrollment`; a problem in _any_ historical year
-can affect the two "all years" models. It also means 7 of the 8 models are
-computable as soon as CSGF's Preliminary Questions task is done, without waiting
-on anything about the current in-progress year — only `csgf_enrollment`'s
-current-year grain needs this year's Oct 1 count day to have happened.
+can affect `csgf_hs_postsec_pathways`, the one remaining unfiltered model. It
+also means 7 of the 8 models are computable as soon as CSGF's Preliminary
+Questions task is done, without waiting on anything about the current
+in-progress year — only `csgf_enrollment`'s current-year grain needs this year's
+Oct 1 count day to have happened.
 
 All six HS-scoped models filter to `school_level = 'HS'`, which today means
 Camden (KIPP Cooper Norcross High) and Newark (KIPP Newark Collegiate Academy,
@@ -146,41 +147,37 @@ open question, not yet confirmed** — it outputs abbreviated codes (`KHS`, `NCA
 `NLH`) instead of full names, and whether that's actually what CSGF's HS Grad
 Data tab expects has not been checked against the template.
 
-### `csgf_hs_grad_data`'s cohort scope is an open design question
+### `csgf_hs_grad_data`'s cohort scope — resolved
 
-The model computes a `graduated` CTE with a real year filter
+[Issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) originally
+flagged this as an open design question: the model had a `graduated` CTE with a
+real cohort filter
 (`cohort = current_academic_year AND academic_year = current_academic_year - 1`)
-that is **never referenced** by the final `SELECT` — dead code, confirmed by
-reading the whole file. The final output (from `grad_roster`, which has no
-year/cohort filter beyond `school_level = 'HS'`) is unfiltered, so it returns
-every cohort ever recorded, not just the current one.
-[Issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) flagged this
-as a decision nobody's made yet — whether the sheet should carry one cohort or
-all of them — and documented it rather than changing it. Still open.
+that was **never referenced** by the final `SELECT` — dead code. The live query
+path (`grad_roster`, filtered only by `school_level = 'HS'`) was unfiltered by
+cohort, so it returned every cohort ever recorded — confirmed in prod: one
+school alone had 20 rows, spanning cohorts 2011-2030, instead of one.
 
-!!! warning "SED field definition — unresolved conflict, do not treat either
-claim as settled" CSGF's new "Socioeconomically Disadvantaged (SED)" field on
-the HS Enrollment tab instructs submitters to "use what is valid for the state."
-`csgf_hs_enrollment`'s `student_is_frl` was widened this cycle to include
-`lunch_status = 'FDC'` alongside `'F'` and `'R'`, on the understanding that
-`FDC` means "Free via Direct Certification" — a federal/nationwide USDA
-meal-program category, not state-specific, which most states (including NJ)
-incorporate into their own economically-disadvantaged definitions. That reading
-is backed by this repo's own documented source (`stg_powerschool__students.yml`:
-`"FDC=Free-DC"`).
+CSGF's own Salesforce Portal task purpose settles this: the task explicitly
+calculates the 4-year graduation rate for the cohort that entered 9th grade four
+years prior and is expected to graduate this year, with the instruction "if the
+school did not have 12th graders in [year], leave all rows blank" — i.e. one row
+per school for the current cohort, not one row per cohort ever recorded. Fixed
+by moving the dead CTE's cohort filter onto the live `grad_roster` query path
+and removing the dead `graduated` CTE entirely. Confirmed against prod: three
+schools, three rows, all cohort 2026.
 
-    A separate claim — first relayed as "Florida Direct Certification," then
-    reasserted as "FDC is valid for Florida" — says `FDC` is a
-    Florida-specific code, which would make it invalid for NJ's SED
-    definition (KTAF's HS-operating regions, Camden and Newark, are both in
-    NJ, not Florida). Both claims could be true of *different* things that
-    happen to share the abbreviation `FDC`, or one is simply wrong about
-    *this specific field*. **This has not been independently verified either
-    way** — confirm with whoever owns PowerSchool lunch-status setup, or
-    with NJ's own state SED/economically-disadvantaged regulatory
-    definition, before trusting `student_is_frl`'s current logic for SED
-    purposes specifically. It may be correct for KTAF's general FRL flag
-    even if it turns out wrong for the NJ-specific SED field.
+!!! note "SED field uses the same FRL definition" CSGF's new "Socioeconomically
+Disadvantaged (SED)" field on the HS Enrollment tab instructs submitters to "use
+what is valid for the state." `csgf_hs_enrollment`'s `student_is_frl` was
+widened this cycle to include `lunch_status = 'FDC'` alongside `'F'` and `'R'` —
+`FDC` means "Free via Direct Certification" (automatic free-meal eligibility via
+SNAP/TANF/Medicaid), a federal mechanism valid in every state's own
+economically-disadvantaged definition, NJ included. This reading is backed by
+this repo's own documented source (`stg_powerschool__students.yml`:
+`"FDC=Free-DC"`) and matches CSGF's own "FRL or Direct Cert" framing elsewhere
+in their field definitions. The SED field reuses this same `student_is_frl`
+value rather than a separate column.
 
 ## Exit-code reference
 
@@ -209,10 +206,8 @@ of the time. Everything else above is a genuine departure.
 
 ## Open items
 
-- Whether `student_is_frl`'s FDC inclusion is correct for the new SED field
-  specifically (see the warning above) — unresolved.
-- `csgf_hs_grad_data`'s cohort scope (one vs. all) and school-name format
-  (abbreviated vs. full) — both unresolved.
+- `csgf_hs_grad_data`'s school-name format (abbreviated `KHS`/`NCA`/`NLH` vs.
+  full names) — unresolved. Cohort scope is now resolved (see above).
 - The other five HS-scoped models' Miami/Focus course-data gap for next cycle —
   only verified for `csgf_hs_enrollment` so far.
 - None of the eight models currently have a uniqueness test, which this repo's

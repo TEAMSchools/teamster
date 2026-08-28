@@ -1,5 +1,18 @@
 models:
   - name: rpt_gsheets__csgf_hs_grad_data
+    description:
+      One row per school, scoped to the current cohort only (co.cohort =
+      var("current_academic_year") in grad_roster) -- per CSGF's own Salesforce
+      Portal task purpose, this calculates the official 4-year graduation rate
+      for the cohort that entered 9th grade four years prior and is expected to
+      graduate this year, not every cohort ever recorded. A prior version had no
+      cohort filter on the live query path (a cohort-filtered "graduated" CTE
+      existed but was never referenced, confirmed dead by reading the whole
+      file) and produced one row PER COHORT per school -- e.g. 20 rows for a
+      single school spanning cohorts 2011-2030. Confirmed against CSGF's task
+      instructions ("if the school did not have 12th graders in [year], leave
+      all rows blank") that one row per school for the current cohort is
+      correct.
     columns:
       - name: cohort
         data_type: int64

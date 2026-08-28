@@ -549,13 +549,15 @@ Portal regardless of where the data entry happens**:
 anchoring in "Known data risks" below: 5 of the 8 `rpt_gsheets__csgf_*` models
 (Enrollment, SAT, ACT, AP Offerings, AP Scores) read only
 `current_academic_year - 1` -- last cycle's finalized school year, which cannot
-change -- and the 2 unfiltered ones (HS Grad Data, Intended Postsecondary
-Pathways) already correctly reflect every completed cohort. That's 7 of 8 tabs
-computable the moment Preliminary Questions is done and the Sheet is accessible,
-with no need to wait for the internal deadline crunch. Only the main Portal
-`csgf_enrollment` model (current-year enrollment counts, and the current-year
-side of its retention calc) is genuinely blocked -- it needs this year's Oct 1
-count day to happen first.
+change. HS Grad Data is scoped to the current cohort (a fixed number known well
+in advance, not something that becomes true only after a future date), so it's
+computable now too. Postsecondary Pathways is unfiltered and already correctly
+reflects every completed cohort. That's 7 of 8 tabs computable the moment
+Preliminary Questions is done and the Sheet is accessible, with no need to wait
+for the internal deadline crunch. Only the main Portal `csgf_enrollment` model
+(current-year enrollment counts, and the current-year side of its retention
+calc) is genuinely blocked -- it needs this year's Oct 1 count day to happen
+first.
 
 **The collection window CSGF actually opens and the date communicated to the
 team don't have to match.** It's fine (and was done deliberately this cycle) to
@@ -623,15 +625,29 @@ original observation this confirms):
 | `csgf_hs_act`              | Last year only                                                                                                                                              |
 | `csgf_hs_ap_offerings`     | Last year only                                                                                                                                              |
 | `csgf_hs_ap_scores`        | Last year only                                                                                                                                              |
-| `csgf_hs_grad_data`        | **All years** (unfiltered) -- a year filter exists but only inside the `graduated` CTE, which the final `SELECT` never references (dead code)               |
+| `csgf_hs_grad_data`        | Current cohort only (`cohort = current_academic_year`) -- fixed this cycle, see below                                                                       |
 | `csgf_hs_postsec_pathways` | **All years** (unfiltered) -- `academic_year` is a plain passthrough column with no `WHERE` on it at all                                                    |
 
 Practical consequence: a Miami (or any region) data problem in _either_ the
 current or prior year can affect `csgf_enrollment`; a problem in _any_
-historical year can affect the two grad/postsec models. It also means 7 of the 8
-models are computable the moment Preliminary Questions is done, without waiting
-on anything about the current in-progress year -- see "Front-load the tabs" in
-the HSDC mechanics section above.
+historical year can affect `csgf_hs_postsec_pathways`, the one remaining
+unfiltered model. It also means 7 of the 8 models are computable the moment
+Preliminary Questions is done, without waiting on anything about the current
+in-progress year -- see "Front-load the tabs" in the HSDC mechanics section
+above.
+
+**`csgf_hs_grad_data`'s cohort scope, resolved.** It used to have a real cohort
+filter sitting in a dead `graduated` CTE the final `SELECT` never referenced, so
+the live query returned every cohort ever recorded -- one school alone had 20
+rows (cohorts 2011-2030) instead of one. CSGF's own Salesforce Portal task
+purpose settled this: the task calculates the 4-year graduation rate for the
+cohort expected to graduate the current year, one row per school, with an
+explicit instruction to leave rows blank for a school with no 12th graders that
+year -- not one row per cohort ever recorded. Fixed by moving the filter onto
+the live query path and removing the dead CTE. See
+`docs/models/csgf-data-model.md` for the full writeup. Still open: whether this
+model's `school` output (abbreviated `KHS`/`NCA`/ `NLH` codes) should be full
+names like the other models -- unconfirmed against CSGF's template.
 
 **`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
 cycle -- owner is aware and fixing separately from this skill; check whether
