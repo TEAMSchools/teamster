@@ -572,11 +572,9 @@ tagging.
   current code and data. Issue bodies drift — code moves, data changes, prior
   PRs land. Re-run the diagnostic before designing.
 
-- **Continuous execution exceptions**: `superpowers:subagent-driven-development`
-  and `superpowers:executing-plans` push you to execute every task without
-  pausing to check in. Pause anyway to ask the user before (a) opening a
-  tracking issue, (b) creating a branch or worktree, (c) modifying protected
-  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
+- **Ponytail yields to superpowers process skills**: when both trigger, run the
+  superpowers skill (`brainstorming`, `test-driven-development`, etc.) —
+  ponytail governs the size of what gets built inside it, not whether it runs.
 
 - **At the investigation→build pivot, ask about `superpowers:brainstorming`** —
   a design settled in conversation doesn't waive it on its own. Ask the user
