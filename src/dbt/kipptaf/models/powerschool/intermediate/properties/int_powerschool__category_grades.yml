@@ -1,5 +1,13 @@
 models:
   - name: int_powerschool__category_grades
+    description: |
+      Union of category grades from Newark and Camden PowerSchool instances.
+      Paterson is intentionally absent due to missing GradeBook plugin deployment.
+      Miami is intentionally absent from AY2026 forward — Focus is Miami's
+      gradebook, and `int_students__category_grades` supplies Miami's category
+      grades from `int_focus__gradebook_grades`. The frozen Miami PowerSchool
+      archive is deliberately excluded here; restoring pre-cutover history is an
+      Ops data-migration question. See #5010.
     columns:
       - name: _dbt_source_relation
         data_type: string
