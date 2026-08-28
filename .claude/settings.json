@@ -1,4 +1,7 @@
 {
+  "env": {
+    "MCP_TIMEOUT": "90000"
+  },
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
@@ -151,9 +154,6 @@
       "Read(/env/**)"
     ]
   },
-  "env": {
-    "MCP_TIMEOUT": "90000"
-  },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
@@ -239,6 +239,12 @@
       }
     },
     "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers"
+      }
+    },
+    "superpowers-dev": {
       "source": {
         "source": "github",
         "repo": "obra/superpowers"
