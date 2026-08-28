@@ -409,11 +409,11 @@ data_tests:
       than a count, because Miami's volume moves with enrollment and a floor
       would drift stale or fire on legitimate change, while zero is always
       wrong. It stays year-agnostic on purpose. #4968 made the Focus drop flags
-      non-null, so Miami AY2026 now passes `int_assessments__course_enrollments`
-      -- but `int_extracts__course_enrollments_by_term` also requires a non-null
-      `cc_dateleft`, which Focus leaves null on 96.8% of Miami AY2026 rows, so
-      coverage still differs sharply by model and a year-scoped assertion would
-      be measuring two different things at once.
+      non-null, and #5043 filled `cc_dateleft` on the Focus branch and made the
+      section-count filter null-safe, so both models now carry Miami AY2026. The
+      assertion stays presence-only and year-agnostic anyway: the two models
+      reach Miami through different filters, so a year-scoped count would be
+      measuring two different things at once.
     config:
       severity: error
       meta:
