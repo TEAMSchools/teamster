@@ -1206,6 +1206,126 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ---
 
+## Task 5b: Drop kippmiami from the 2 gradebook PowerSchool unions
+
+Ratified 2026-08-28. Miami's PowerSchool gradebook archive must not reach the
+network gradebook layer at all: Focus is Miami's gradebook now, and the missing
+pre-cutover history is an Ops data-migration question, not something these
+models should paper over by half-surfacing an archive.
+
+Found during Task 5. `fct_grades_assignments` holds **zero** Miami rows today,
+in every year — not by design, but because it joined
+`ce.cc_studentid = enr.studentid` and `int_students__student_enrollment_union`
+carries a NULL `studentid` on all 10,078 Miami rows across 2018-2026. Task 5's
+swap to `student_number` repairs that join, which would have admitted ~2,388,890
+Miami archive rows (AY2019-2025) as a side effect. Removing Miami from the union
+is the decided resolution.
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments.sql`
+- Modify:
+  `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__gradebook_assignments.yml`
+- Modify:
+  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__category_grades.sql`
+- Modify:
+  `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__category_grades.yml`
+
+**Interfaces:**
+
+- Consumes: nothing from earlier tasks.
+- Produces: both unions covering Newark, Camden and Paterson only. Tasks 3, 4
+  and 6 keep their `focus_academic_year_boundary` guards unchanged — those
+  become belt-and-braces rather than load-bearing.
+
+**Measured blast radius (controller, prod, 2026-08-28)** — only one live
+consumer loses rows:
+
+| Consumer                                    | Miami rows lost                     |
+| ------------------------------------------- | ----------------------------------- |
+| `rpt_tableau__gradebook_dashboard`          | 12,650                              |
+| `rpt_tableau__gradebook_gpa`                | 0                                   |
+| `rpt_tableau__student_course_grades`        | 0                                   |
+| `rpt_tableau__assignment_checks`            | 0                                   |
+| `rpt_tableau__gradebook_assignments`        | 0                                   |
+| `int_powerschool__category_grades_pivot`    | 0 — unions its own district sources |
+| `int_tableau__gradebook_audit_*` (3 models) | 0 — all `enabled: false`            |
+
+- [ ] **Step 1: Remove the Miami source from the assignments union**
+
+In `int_powerschool__gradebook_assignments.sql`, delete this entry from the
+`relations=[...]` list, leaving Newark, Camden and Paterson:
+
+```sql
+                    source(
+                        "kippmiami_powerschool",
+                        "int_powerschool__gradebook_assignments",
+                    ),
+```
+
+- [ ] **Step 2: Remove the Miami source from the category-grades union**
+
+In `int_powerschool__category_grades.sql`, delete this entry:
+
+```sql
+                    source(
+                        "kippmiami_powerschool", "int_powerschool__category_grades"
+                    ),
+```
+
+That file already carries a header comment explaining why kipppaterson is
+absent. Extend it rather than replacing it, adding:
+
+```sql
+ * kippmiami_powerschool is intentionally absent from AY2026 forward —
+ * Focus is Miami's gradebook, and int_students__category_grades supplies
+ * Miami's category grades from int_focus__gradebook_grades. The frozen
+ * PowerSchool archive is deliberately not surfaced here: restoring the
+ * pre-cutover history is an Ops data-migration question. Ratified on #5010.
+```
+
+- [ ] **Step 3: Update both properties descriptions**
+
+State in each model's description that the union covers Newark, Camden and
+Paterson; that Miami's gradebook lives in Focus and reaches the network layer
+through `int_students__gradebook_assignments_scores` /
+`int_students__category_grades`; and that the frozen PowerSchool archive is
+deliberately excluded, with pre-cutover history owned by Ops. Reference #5010.
+
+- [ ] **Step 4: Confirm no Miami rows survive either union**
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-focus-gradebook-category-facts && \
+  uv run dbt build \
+  --select int_powerschool__gradebook_assignments int_powerschool__category_grades \
+  --project-dir src/dbt/kipptaf
+```
+
+Expected: both compile and build. A `union_relations` view resolves its column
+intersection from the remaining relations, so removing one source is a
+column-set change only if Miami carried a column the others lack — confirm the
+compiled column list is unchanged by diffing `dbt compile` output before and
+after, and report it.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-gradebook-category-facts add \
+  src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments.sql \
+  src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__gradebook_assignments.yml \
+  src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__category_grades.sql \
+  src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__category_grades.yml
+git -C /workspaces/teamster/.worktrees/cbini/fix/claude-focus-gradebook-category-facts \
+  commit -m "fix(dbt): drop kippmiami from the gradebook and category PowerSchool unions
+
+Refs #5010
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
+```
+
+---
+
 ## Task 6: Repoint `fct_grades_category`
 
 `int_students__category_grades` already resolved `cc_dcid` and `region`, so this
