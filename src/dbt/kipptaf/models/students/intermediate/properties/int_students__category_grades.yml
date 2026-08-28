@@ -1,0 +1,114 @@
+models:
+  - name: int_students__category_grades
+    description: >-
+      SIS-neutral category-grade spine. Each row is one student's grade in one
+      grading-category (Formative/Homework/Summative/Work Habits) for one
+      grading period in one course section. Unions the PowerSchool NJ/Miami
+      `int_powerschool__category_grades` branch with a Focus branch computed
+      here, conformed to the PowerSchool column vocabulary.
+      `fct_grades_category` reads this model.
+
+
+      Focus posts no category grade of its own — there is no
+      `student_gradebook_category_grades` table — so the Focus branch computes
+      the category percent from the assignment scores that make it up
+      (`int_students__gradebook_assignments_scores`), weighted by points
+      possible. Only the `F`/`H`/`S`/`W` category codes are emitted; the `Q`
+      (term/quarter final) storecode reaches the marts through
+      `int_students__final_grades` / `fct_grades_term`, not here.
+
+
+      The PowerSchool branch's join to enrollment filters `not
+      is_dropped_section` on both sides — a correction this model makes versus
+      the current `fct_grades_category`, which never applied that filter and so
+      over-counts: when a student leaves a section, PowerSchool writes a second
+      `cc` row with a negated `sectionid` (`cc_abs_sectionid` is the absolute
+      value), and an unfiltered join matches the dropped stint alongside the
+      live one. The join predicate itself
+      (`studentid`/`sectionid`/`yearid`/`_dbt_source_project`) is lifted
+      verbatim from today's `fct_grades_category` rather than resolved against
+      `sections_dcid` — `int_powerschool__category_grades.sectionid` lives in a
+      different id space from `int_students__course_enrollments.sections_dcid`.
+      Tracked in #3900.
+
+
+      `citizenship_grade` and `percent_grade_y1_running` are null on every Focus
+      row — Focus has no citizenship grade and no year-to-date rollup.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cc_dcid
+              - _dbt_source_project
+              - storecode
+              - storecode_type
+    columns:
+      - name: _dbt_source_project
+        description: District code location this row originated from.
+        data_type: string
+      - name: cc_dcid
+        description: >-
+          Course enrollment identifier, matching
+          `int_students__course_enrollments`.
+        data_type: int64
+      - name: region
+        description: Region derived from _dbt_source_project.
+        data_type: string
+      - name: schoolid
+        description: Network-aligned school id.
+        data_type: int64
+      - name: yearid
+        description: >-
+          PowerSchool year id. Derived as academic_year - 1990 on the Focus
+          branch, matching int_students__final_grades.
+        data_type: int64
+      - name: academic_year
+        description: School year in start-year form.
+        data_type: int64
+      - name: storecode
+        description: >-
+          Grading-category and grading-period code, e.g. F1, H2. On the Focus
+          branch, the category code concatenated with the marking period's
+          quarter number.
+        data_type: string
+      - name: storecode_type
+        description: >-
+          Grading-category code — F (Formative), H (Homework), S (Summative), or
+          W (Work Habits). Q (term final) is never emitted here; it reaches the
+          marts through int_students__final_grades / fct_grades_term.
+        data_type: string
+      - name: storecode_order
+        description:
+          Grading-period number within the storecode, e.g. the "1" in F1.
+        data_type: string
+      - name: reporting_term
+        description: Reporting-term code derived from storecode_order, e.g. RT1.
+        data_type: string
+      - name: quarter
+        description:
+          Grading-period label, e.g. Q1. On the Focus branch, the marking
+          period's short_name.
+        data_type: string
+      - name: percent_grade
+        description: >-
+          Category percent grade. On the Focus branch, computed from the sum of
+          points earned over the sum of points possible across the scored
+          assignments in this category and grading period, excluding
+          not-yet-graded scores.
+        data_type: float64
+      - name: citizenship_grade
+        description: >-
+          Citizenship grade. Null on every Focus row — Focus has no citizenship
+          grade.
+        data_type: string
+      - name: percent_grade_y1_running
+        description: >-
+          Year-to-date running average of percent_grade within the same
+          category. Null on every Focus row — Focus has no year-to-date rollup.
+        data_type: float64
+      - name: is_current
+        description:
+          True when today falls within this grading period's date range.
+        data_type: bool
