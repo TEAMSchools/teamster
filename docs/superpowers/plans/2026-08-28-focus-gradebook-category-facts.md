@@ -1054,6 +1054,30 @@ to:
 from {{ ref("int_students__gradebook_assignments_scores") }} as asg
 ```
 
+- [ ] **Step 3b: Repoint the surrogate key's third input**
+
+Step 2 removed `students_dcid` from the `course_enrollments` CTE, so the key
+expression must read it from the scores model instead or the model will not
+compile. The VALUE is identical on every NJ row —
+`int_powerschool__gradebook_assignments_scores` sources `students_dcid` from the
+same course enrollment — so no NJ hash moves. Find:
+
+```sql
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "asg.assignmentsectionid",
+                "asg._dbt_source_project",
+                "ce.students_dcid",
+            ]
+        )
+    }} as grades_assignment_key,
+```
+
+Change the third input only, from `"ce.students_dcid"` to `"asg.students_dcid"`.
+Leave the other 2 inputs and their order untouched — the hash is
+input-order-sensitive and Step 6 checks it byte-for-byte.
+
 - [ ] **Step 4: Fix the 2 joins**
 
 Replace the `course_enrollments` join with:
