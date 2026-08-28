@@ -66,7 +66,9 @@ models:
         quote: true
         data_type: string
         description: >-
-          Type code distinguishing quarter grades (Q) from exam grades (E).
+          Gradebook category type code: Q for the quarter-overall grade, or H,
+          W, F, S for Homework, Work Habits, Formative, and Summative
+          categories.
 
       - name: order
         quote: true

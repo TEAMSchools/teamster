@@ -1,13 +1,4 @@
 with
-    -- coalesce guards an empty int_focus__schedule (an unbuilt --defer dev
-    -- copy): min() over no rows is NULL, `academic_year >= NULL` is NULL, so
-    -- `not (...)` is NULL and the filter would drop every Miami archive row
-    -- instead of keeping it. Same guard as int_students__course_enrollments.
-    focus_academic_year_boundary as (
-        select coalesce(min(academic_year), 9999) as min_academic_year,
-        from {{ ref("int_focus__schedule") }}
-    ),
-
     powerschool_conformed as (
         select
             asg._dbt_source_project,
@@ -36,12 +27,6 @@ with
             cast(null as int64) as marking_period_id,
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }} as asg
-        cross join focus_academic_year_boundary as fay
-        where
-            not (
-                asg._dbt_source_project = 'kippmiami'
-                and asg.academic_year >= fay.min_academic_year
-            )
     ),
 
     focus_conformed as (

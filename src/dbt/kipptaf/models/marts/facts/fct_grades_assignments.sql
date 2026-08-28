@@ -83,7 +83,7 @@ select
     asg.totalpointvalue as max_points,
     asg.assign_final_score_percent as score_percent,
 
-    if(asg.is_missing = 1, true, false) as is_missing,
+    if(asg.is_missing is null, null, asg.is_missing = 1) as is_missing,
     if(asg.is_late = 1, true, false) as is_late,
     if(asg.is_exempt = 1, true, false) as is_exempt,
     asg.is_expected,

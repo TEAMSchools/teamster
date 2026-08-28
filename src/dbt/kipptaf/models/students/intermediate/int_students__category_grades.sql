@@ -1,9 +1,4 @@
 with
-    focus_academic_year_boundary as (
-        select coalesce(min(academic_year), 9999) as min_academic_year,
-        from {{ ref("int_focus__schedule") }}
-    ),
-
     course_enrollments as (
         select
             _dbt_source_project,
@@ -38,7 +33,6 @@ with
             cg.percent_grade_y1_running,
             cg.is_current,
         from {{ ref("int_powerschool__category_grades") }} as cg
-        cross join focus_academic_year_boundary as fay
         -- not is_dropped_section is the correction this model makes.
         -- fct_grades_category never filtered it, so it over-counts: when a
         -- student leaves a section PowerSchool writes a second cc row with a
@@ -54,11 +48,6 @@ with
             and cg.yearid = ce.cc_yearid
             and cg._dbt_source_project = ce._dbt_source_project
             and not ce.is_dropped_section
-        where
-            not (
-                cg._dbt_source_project = 'kippmiami'
-                and cg.academic_year >= fay.min_academic_year
-            )
     ),
 
     -- PowerSchool category storecodes are per-quarter, so a Focus score

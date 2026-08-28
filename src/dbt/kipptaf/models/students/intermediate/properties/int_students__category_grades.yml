@@ -3,10 +3,11 @@ models:
     description: >-
       SIS-neutral category-grade spine. Each row is one student's grade in one
       grading-category (Formative/Homework/Summative/Work Habits) for one
-      grading period in one course section. Unions the PowerSchool NJ/Miami
-      `int_powerschool__category_grades` branch with a Focus branch computed
-      here, conformed to the PowerSchool column vocabulary.
-      `fct_grades_category` reads this model.
+      grading period in one course section. Unions the PowerSchool NJ
+      `int_powerschool__category_grades` branch (Newark, Camden, Paterson —
+      Miami's PowerSchool category-grade archive is excluded in every year) with
+      a Focus branch computed here for Miami, conformed to the PowerSchool
+      column vocabulary. `fct_grades_category` reads this model.
 
 
       Focus posts no category grade of its own — there is no

@@ -3,13 +3,12 @@ models:
     description: >-
       SIS-neutral assignment-score spine. Each row is one student's score on one
       gradebook assignment. Unions
-      `int_powerschool__gradebook_assignments_scores` (the four PowerSchool
-      districts, minus Miami's Focus-covered years) with Miami's Focus gradebook
-      grades, conformed inline to the PowerSchool column vocabulary. The Miami
-      PowerSchool branch is scoped to years before Focus coverage begins (the
-      `min(academic_year)` of `int_focus__schedule`), and the Focus branch
-      carries every year Focus has data for, so the frozen archive and the live
-      SIS never overlap.
+      `int_powerschool__gradebook_assignments_scores` (the three PowerSchool
+      districts — Newark, Camden, Paterson) with Miami's Focus gradebook grades,
+      conformed inline to the PowerSchool column vocabulary. Miami's PowerSchool
+      gradebook archive is excluded in every year — Focus is Miami's sole
+      gradebook source, and the Focus branch carries every year Focus has data
+      for.
 
 
       `assignmentsectionid` is PowerSchool's one-row-per-assignment-per-section

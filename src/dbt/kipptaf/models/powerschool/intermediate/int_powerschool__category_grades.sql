@@ -6,10 +6,10 @@
  * category_quarter_percent_grade until the plugin is deployed.
  * Tracked: https://github.com/TEAMSchools/teamster/issues/3908
  *
- * kippmiami_powerschool is intentionally absent from AY2026 forward —
- * Focus is Miami's gradebook, and int_students__category_grades supplies
- * Miami's category grades from int_focus__gradebook_grades. The frozen
- * PowerSchool archive is deliberately not surfaced here: restoring the
+ * kippmiami_powerschool is intentionally absent — in every year, not just
+ * AY2026 forward. Focus is Miami's gradebook, and int_students__category_grades
+ * supplies Miami's category grades from int_focus__gradebook_grades. The
+ * frozen PowerSchool archive is deliberately not surfaced here: restoring the
  * pre-cutover history is an Ops data-migration question. Ratified on #5010.
  */
 with

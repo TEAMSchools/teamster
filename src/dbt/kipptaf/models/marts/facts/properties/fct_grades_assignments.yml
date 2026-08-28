@@ -11,12 +11,11 @@ models:
 
 
       Sourced from int_students__gradebook_assignments_scores, which unions the
-      PowerSchool districts with Miami's Focus gradebook. The Miami PowerSchool
-      branch is scoped to years before Focus coverage begins and the Focus
-      branch to years at or after it, so the frozen archive and the live SIS
-      never overlap. Focus records no missing flag and no numeric grade distinct
-      from the points score, so is_missing and numeric_grade_earned are null on
-      every Miami AY2026 row.
+      three NJ PowerSchool districts with Miami's Focus gradebook. Miami's
+      PowerSchool gradebook archive is excluded in every year — Focus is Miami's
+      sole gradebook source. Focus records no missing flag and no numeric grade
+      distinct from the points score, so is_missing and numeric_grade_earned are
+      null on every Miami row.
     columns:
       - name: grades_assignment_key
         data_type: string

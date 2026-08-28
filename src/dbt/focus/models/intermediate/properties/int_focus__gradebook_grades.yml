@@ -27,6 +27,8 @@ models:
             combination_of_columns:
               - student_gradebook_grade_id
               - course_period_id
+          config:
+            severity: error
     columns:
       - name: student_gradebook_grade_id
         description: >-
