@@ -61,6 +61,27 @@ with
             )
     ),
 
+    -- PowerSchool category storecodes are per-quarter, so a Focus score
+    -- against a semester/year/progress-period marking period has no quarter
+    -- storecode analog. mp.type = 'quarter' alone still carries short_names
+    -- outside the Q<digits> shape (1NW/2NW/3NW/4NW, bare numbers, SS1), which
+    -- an unanchored digit-suffix match would turn into a NULL storecode
+    -- (colliding every such row together in the grain test) or a
+    -- nonsense/duplicate order (PP11 -> '11', SS1 -> '1' colliding with
+    -- Q1 -> '1'). Scoping to the anchored Q<digits> form here, once, keeps a
+    -- non-quarter marking period out of the output entirely instead of
+    -- producing a NULL or nonsense storecode.
+    focus_quarter_marking_periods as (
+        select
+            marking_period_id,
+            short_name,
+            start_date,
+            end_date,
+            regexp_extract(short_name, r'^Q(\d+)$') as quarter_number,
+        from {{ ref("stg_focus__marking_periods") }}
+        where type = 'quarter'
+    ),
+
     -- Focus posts no category grade of its own -- there is no
     -- student_gradebook_category_grades table -- so the category percent is
     -- computed from the scores that make it up.
@@ -80,13 +101,11 @@ with
 
             asg.category_code as storecode_type,
 
-            regexp_extract(mp.short_name, r'(\d+)$') as storecode_order,
+            mp.quarter_number as storecode_order,
 
-            concat(
-                asg.category_code, regexp_extract(mp.short_name, r'(\d+)$')
-            ) as storecode,
+            concat(asg.category_code, mp.quarter_number) as storecode,
 
-            concat('RT', regexp_extract(mp.short_name, r'(\d+)$')) as reporting_term,
+            concat('RT', mp.quarter_number) as reporting_term,
 
             mp.short_name as quarter,
 
@@ -111,8 +130,9 @@ with
 
         from {{ ref("int_students__gradebook_assignments_scores") }} as asg
         inner join
-            {{ ref("stg_focus__marking_periods") }} as mp
+            focus_quarter_marking_periods as mp
             on asg.marking_period_id = mp.marking_period_id
+            and mp.quarter_number is not null
         inner join
             course_enrollments as ce
             on asg.student_number = ce.students_student_number
@@ -131,6 +151,7 @@ with
             ce.cc_schoolid,
             asg.academic_year,
             asg.category_code,
+            mp.quarter_number,
             mp.short_name,
             mp.start_date,
             mp.end_date

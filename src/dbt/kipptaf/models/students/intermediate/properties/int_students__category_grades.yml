@@ -13,9 +13,13 @@ models:
       `student_gradebook_category_grades` table — so the Focus branch computes
       the category percent from the assignment scores that make it up
       (`int_students__gradebook_assignments_scores`), weighted by points
-      possible. Only the `F`/`H`/`S`/`W` category codes are emitted; the `Q`
-      (term/quarter final) storecode reaches the marts through
-      `int_students__final_grades` / `fct_grades_term`, not here.
+      possible. On the Focus branch only `F`/`H`/`S`/`W` category codes are
+      emitted, scoped to true quarter marking periods (Focus's own quarter final
+      grade reaches the marts through `int_students__final_grades` /
+      `fct_grades_term`, not here). The PowerSchool branch passes
+      `storecode_type` straight through with no filter, so PowerSchool's full
+      domain — `Q` (quarter final) included — reaches this model unchanged for
+      the NJ regions.
 
 
       The PowerSchool branch's join to enrollment filters `not
@@ -75,9 +79,12 @@ models:
         data_type: string
       - name: storecode_type
         description: >-
-          Grading-category code — F (Formative), H (Homework), S (Summative), or
-          W (Work Habits). Q (term final) is never emitted here; it reaches the
-          marts through int_students__final_grades / fct_grades_term.
+          Grading-category code. On the Focus branch, always F (Formative), H
+          (Homework), S (Summative), or W (Work Habits) — Focus's own quarter
+          final grade reaches the marts through int_students__final_grades /
+          fct_grades_term, not here. On the PowerSchool branch, passed through
+          unchanged from int_powerschool__category_grades, which also carries Q
+          (quarter final) for the NJ regions.
         data_type: string
       - name: storecode_order
         description:
