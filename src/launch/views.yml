@@ -1,0 +1,48 @@
+# Catalog views — presentation only.
+#
+# Membership is NOT defined here. A tool appears in a view when that view's id
+# is in the tool's `audiences` list in links.yml. The `all` view is special: it
+# always renders every entry regardless of tags.
+#
+# Intro copy below was carried over from the existing Google Site and should be
+# rewritten before launch — see README.md.
+
+- id: all
+  title: "Data: All Tools"
+  intro: >
+    An alphabetical list of all our data tools, all in one place.
+  renders: everything
+  sort: name
+
+- id: teachers
+  title: "Data: For Teachers"
+  intro: >
+    Teachers have access to data for their classrooms, students, and their own
+    personal information, like performance management ratings. Coaches also have
+    this information for the teachers on their teams.
+  sort: name
+
+- id: leaders
+  title: "Data: For Leaders"
+  intro: >
+    Data tools curated for those in school leadership positions. Assistant
+    School Leaders see data for their schools and the instructors at them.
+    School Leaders also see data for all teammates at their school.
+  sort: name
+
+- id: ops
+  title: "Data: For Operations"
+  intro: >
+    Data tools curated for those in operations departments and leadership roles.
+    DSOs and DCOs see data for their individual schools and campuses.
+  sort: name
+
+- id: region
+  title: "Data: For Regional and CMO"
+  intro: >
+    Data tools curated for those who serve multiple schools in a region, like
+    Heads of Schools and MDSOs, or departments like KIPP Forward, Special
+    Education, and Teaching and Learning. Regional teammates see data for the
+    schools they serve; CMO teammates see data relevant to their domains across
+    all schools.
+  sort: name

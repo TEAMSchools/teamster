@@ -8,9 +8,11 @@ models:
       Student-grain as-of-today measures (cumulative GPA, needed-GPA, 1/2/4-week
       lookbacks) populate current-year rows only. Students filtered to
       is_enrolled_recent — the year was completed or the enrollment is currently
-      active, so mid-year withdrawals drop. Newark and Camden only — Miami is
-      hard-excluded (region unsupported in the rebuilt dashboard) and Paterson
-      is pending gradebook data.
+      active, so mid-year withdrawals drop. Newark, Camden and Paterson; Miami
+      is hard-excluded (region unsupported in the rebuilt dashboard).
+
+      Miami's exclusion is ratified on #4996, matching the hard exclusion
+      already stated above.
     data_tests:
       # TODO(#3915): returns to error when the storedgrades double-write cleanup
       # completes. All duplicates are prior-year storedgrades rows; current-year
@@ -38,7 +40,8 @@ models:
         description: Display form of the academic year (e.g. 2025-26).
       - name: region
         data_type: string
-        description: District region (Newark or Camden; see model description).
+        description: >-
+          District region (Newark, Camden or Paterson; see model description).
       - name: school_level
         data_type: string
         description: School level (ES/MS/HS) from the year's enrollment.
@@ -144,6 +147,14 @@ models:
       - name: ada
         data_type: float64
         description: Average daily attendance for the year.
+      - name: unweighted_ada
+        data_type: float64
+        description: Unweighted average daily attendance for the year.
+      - name: weighted_ada
+        data_type: float64
+        description: >-
+          Weighted average daily attendance for the year, the value used for
+          high school students from SY26 onward.
       - name: ada_above_or_at_80
         data_type: boolean
         description: ADA at or above 80 percent.

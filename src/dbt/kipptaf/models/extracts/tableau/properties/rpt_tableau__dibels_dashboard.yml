@@ -1,5 +1,15 @@
 models:
   - name: rpt_tableau__dibels_dashboard
+    description: >-
+      Amplify DIBELS benchmark and progress-monitoring results. Network-wide,
+      Miami included in principle — Miami is a DIBELS region with 48 AY2026 rows
+      in the expected-assessments sheet and 20,698 AY2025 Amplify results. **In
+      practice Miami still returns no rows here.** The grain filter reads `not
+      s.is_self_contained`, which is null for every Miami row because Focus
+      records no self-contained placement. #4968 and #5038 both decline to
+      assert false for a fact the data does not carry, so Miami stays out until
+      Focus supplies a placement field or Ops confirms a mapping. Ratified on
+      #4996.
     columns:
       - name: _dbt_source_relation
         data_type: string

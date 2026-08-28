@@ -50,6 +50,14 @@
   filter matches the pushed delta (which includes the merge commit), NOT the net
   three-dot PR diff (where the merged-in files, now equal to main, don't
   appear).
+- **A markdown-only commit still re-triggered the `kipptaf` deploy** on
+  `pull_request`, despite `"!**/CLAUDE.md"` in BOTH trigger blocks of
+  `deploy-prod-kipptaf.yaml` (verified: the commit touched 3 files, all `.md`,
+  and a `kipptaf` run appeared for that headSha). This contradicts the
+  pushed-delta model above, which predicts no run — one of the two is
+  incomplete, and no mechanism is established here. Plan for the cost: a
+  docs-only push to a PR is NOT free, so batch doc changes into the code commit
+  rather than splitting them off to "avoid CI".
 - **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
   in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
   etc.). Drift silently skips that district's prod deploy on a shared
@@ -118,7 +126,7 @@ principal itself.
 | `admins`              | admin     | Global fallback (`*`)                                                         |
 | `platform`            | maintain  | `.github/`, `.devcontainer/`, `.claude/`, `.trunk/`, Dockerfile, scripts, MCP |
 | `data-engineers`      | write     | `src/teamster/`, tests                                                        |
-| `analytics-engineers` | maintain  | All `src/dbt/`                                                                |
+| `analytics-engineers` | maintain  | `src/dbt/`, `src/cube/`, `src/launch/`                                        |
 | `analysts`            | write     | kipptaf folders without staging models (see CODEOWNERS)                       |
 | `data-team`           | write     | docs                                                                          |
 
@@ -128,4 +136,14 @@ principal itself.
 ## Other Files
 
 - `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
+  Three tiers, plain to detailed: "Summary & Motivation" is plain-language, what
+  and why. "Reviewer Notes" is also plain-language — name what's worth a second
+  look and why, a line or two each, not the full reasoning. The "For Claude"
+  fold-out at the end holds the full technical detail behind each Reviewer Notes
+  flag (exact values, edge cases, full reasoning), plus whatever else got
+  simplified or cut from Summary for plain-language readability, AI-involvement
+  notes, and anything a future `@claude` invocation needs.
+- `ISSUE_TEMPLATE/` — `bug_report.md` and `feature_request.md`, each with a "For
+  Claude" section for `@claude`-driven issues; `config.yml` disables blank
+  issues.
 - `actionlint.yaml` — self-hosted runner labels for actionlint.

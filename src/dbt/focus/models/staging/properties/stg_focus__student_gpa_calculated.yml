@@ -1,0 +1,126 @@
+models:
+  - name: stg_focus__student_gpa_calculated
+    description: >-
+      Focus's own GPA and class-rank calculations. One row per student per
+      school. Every row carries `marking_period_id = -1`, which the vendor
+      defines as the course-history GPA — GPA over grades imported into a
+      student's official academic history, not GPA for work done in the current
+      marking period. There is no term-grained row in this table.
+
+
+      Coverage is narrow and that is a property of the source, not of this
+      model. Measured on the first prod load: 441 rows for 319 students, against
+      1,757 Miami students enrolled in AY2026. Every student with imported
+      course history has a row here, all 290 of them with no exceptions, plus 29
+      more. Rows appear at every grade level from K through 9, so this is not a
+      high-school-only table.
+
+
+      `gpa` and `cumulative_gpa` are the same measure at different rounding —
+      they differ by at most 0.0005 across every populated row — as are
+      `weighted_gpa` and `cumulative_weighted_gpa`. Prefer the cumulative pair
+      downstream.
+
+
+      The five decimal columns arrive from dlt as BIGNUMERIC, because
+      `weighted_gpa` is an unbounded Postgres `numeric` carrying up to 20
+      decimal places and needs the `widen_unbounded_numeric` dlt adapter to load
+      at all. They are cast to NUMERIC here, which keeps this package's decimal
+      vocabulary consistent and costs at most 5e-10 of rounding.
+
+
+      The 21 `custom_*_gpa`, `custom_*_rank` and `ncaa_gpa` columns in the
+      source are omitted: all are 100% null, as is `mp`. Add one when Focus
+      starts populating it.
+    columns:
+      - name: id
+        description: Primary key — Focus student GPA calculation id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id. Note this is the network student number prefixed
+          with `8400` (Miami-Dade's FLDOE district number), not the bare student
+          number.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: school_id
+        description: >-
+          Focus school the calculation belongs to. A student can hold a row at
+          more than one school — 122 of 319 students did on the first load — so
+          the grain is student and school, not student alone.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: marking_period_id
+        description: >-
+          Marking period the calculation covers. `-1` marks the course-history
+          GPA, per Focus SIS Level 1 Certification, Day 2. It is the only value
+          present.
+        data_type: int
+      - name: grade_id
+        description: >-
+          Grade level the student held when the calculation ran. Null on the
+          rows that carry no `grade_total`.
+        data_type: int
+      - name: grade_total
+        description: Number of grades the calculation was computed over.
+        data_type: int
+      - name: class_rank
+        description: >-
+          Class rank Focus computed. Populated on 3 of 441 rows on the first
+          load, so it is not yet usable as a reporting measure.
+        data_type: int
+      - name: weighted_class_rank
+        description: Class rank by weighted GPA. Populated on 3 of 441 rows.
+        data_type: int
+      - name: unweighted_class_rank
+        description: Class rank by unweighted GPA. Populated on 3 of 441 rows.
+        data_type: int
+      - name: rank_last_modified
+        description: Date Focus last recomputed the rank for this row.
+        data_type: date
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: gpa
+        description: >-
+          Unweighted GPA over the student's course history. Equal to
+          `cumulative_gpa` to within 0.0005 on every populated row.
+        data_type: numeric
+      - name: weighted_gpa
+        description: >-
+          Weighted GPA over the student's course history. Equal to
+          `cumulative_weighted_gpa` to within 0.0005 on every populated row.
+        data_type: numeric
+      - name: cumulative_gpa
+        description: Cumulative unweighted GPA.
+        data_type: numeric
+      - name: cumulative_weighted_gpa
+        description: Cumulative weighted GPA.
+        data_type: numeric
+      - name: cumulative_credits
+        description: Credits the cumulative GPA was computed over.
+        data_type: numeric

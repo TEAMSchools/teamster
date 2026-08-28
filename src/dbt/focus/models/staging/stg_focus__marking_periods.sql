@@ -29,4 +29,9 @@ select
     uuid,
     created_at,
     updated_at,
+
+    if(short_name in ('Q1', 'Q2'), 'S1', 'S2') as quarter_semester,
+
+    current_date('{{ var("local_timezone") }}')
+    between start_date and end_date as is_within_dates,
 from {{ source("focus", "marking_periods") }}

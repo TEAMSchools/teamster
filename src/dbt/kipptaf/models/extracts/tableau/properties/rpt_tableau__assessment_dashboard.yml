@@ -1,5 +1,11 @@
 models:
   - name: rpt_tableau__assessment_dashboard
+    description: >-
+      Internal assessment results for the DDI Suite dashboard. Network-wide,
+      Miami included: Miami held 281,010 AY2025 rows in prod as of 2026-08-27.
+      Miami has no AY2026 rows yet because its AY2026 Illuminate results have
+      not landed upstream, not because this model filters it out. Ratified on
+      #4996.
     columns:
       - name: student_number
         data_type: int64
@@ -105,3 +111,10 @@ models:
         data_type: boolean
       - name: dibels_most_recent_composite
         data_type: string
+      - name: state_test_proficiency
+        data_type: string
+        description: >-
+          Prior-year state test proficiency for this student and subject — NJSLA
+          aggregated proficiency in New Jersey, FAST PM3 administration in
+          Florida. Populated only where the subject resolves to ELA or Math, and
+          set to the literal No Test when the student has no prior-year result.

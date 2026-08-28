@@ -1,0 +1,164 @@
+models:
+  - name: int_students__final_grades
+    description: >-
+      SIS-neutral term final-grade spine. Each row is one student's grade in one
+      section for one grading period. Unions the four PowerSchool district
+      `base_powerschool__final_grades` branches with Miami's Focus report-card
+      grades, conformed inline to the PowerSchool column vocabulary. The Miami
+      PowerSchool branch is scoped to years before Focus coverage begins, and
+      the Focus branch to years at or after it, so the frozen archive and the
+      live SIS never overlap. Replaces `base_powerschool__final_grades` as the
+      source `fct_grades_term` reads. Note the Miami archive holds zero
+      `base_powerschool__final_grades` rows, so Miami's history here begins at
+      the Focus cutover.
+
+
+      Keyed on `student_number` rather than PowerSchool's `studentid`.
+      `base_powerschool__final_grades` carries `studentid` but no
+      `student_number`, and the Focus branch has no PowerSchool `studentid` at
+      all — `int_students__student_enrollment_union` leaves `studentid` and
+      `yearid` null on all 10,075 Miami rows. `student_number` is the only
+      student key both branches share, so `fct_grades_term` joins enrollment on
+      it. The swap is row-identical for all 3 NJ regions, measured against prod:
+      `(studentid, yearid)` and `(student_number, academic_year)` are exactly
+      1:1 inside every district.
+
+
+      `cc_dcid` resolves 1:1 with no orphans and no fan-out — every AY2026 Focus
+      grade row matches exactly one `int_focus__schedule` row — which is what
+      makes Miami's `student_section_enrollment_key` resolve against
+      `dim_student_section_enrollments`.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cc_dcid
+              - storecode
+              - _dbt_source_project
+    columns:
+      - name: cc_dcid
+        description: >-
+          Course enrollment identifier, matching
+          `int_students__course_enrollments`. For Miami, the Focus
+          `student_schedule_id` resolved from `int_focus__schedule` on
+          (student_id, course_period_id, academic_year) — verified 1:1 with no
+          orphans and no fan-out.
+        data_type: int64
+      - name: _dbt_source_relation
+        description: Source relation this row was unioned from.
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
+      - name: studentid
+        description: >-
+          PowerSchool internal student id. Null on every Focus row — Focus has
+          no PowerSchool student id. Join on student_number instead.
+        data_type: int64
+      - name: student_number
+        description: >-
+          Network student number, the only student key both branches carry. On
+          the PowerSchool branch resolved from `stg_powerschool__students` (dcid
+          >= 1); on the Focus branch from `int_focus__students`, which already
+          strips the Miami-Dade district prefix.
+        data_type: int64
+        data_tests:
+          # Null only when a PowerSchool final-grade row's student fails the
+          # dcid >= 1 placeholder filter. Measured at 0 rows, but fct_grades_term
+          # joins enrollment on this column, so a future null would silently drop
+          # the row from the fact with nothing else to catch it. Warn, not error:
+          # the drop is a coverage gap, not a corrupt row.
+          - not_null:
+              config:
+                severity: warn
+        config:
+          meta:
+            contains_pii: true
+      - name: yearid
+        description: >-
+          PowerSchool year id. Derived as academic_year - 1990 on the Focus
+          branch so the reporting-terms join works for both branches.
+        data_type: int64
+      - name: schoolid
+        description: >-
+          Network-aligned school id. On the Focus branch resolved through
+          `stg_google_sheets__people__locations.focus_school_id`, matching what
+          `int_students__course_enrollments` does.
+        data_type: int64
+      - name: academic_year
+        description: School year in start-year form.
+        data_type: int64
+      - name: storecode
+        description: >-
+          Grading-period code. On the Focus branch the marking period's
+          short_name (Q1, Q2, ...), which shares a domain with
+          `stg_google_sheets__reporting__terms.name`.
+        data_type: string
+      - name: termbin_start_date
+        description: >-
+          Grading-period start date. On the Focus branch the marking period's
+          start_date.
+        data_type: date
+      - name: termbin_end_date
+        description: >-
+          Grading-period end date. On the Focus branch the marking period's
+          end_date.
+        data_type: date
+      - name: term_percent_grade
+        description: Term percent grade. Focus's percent_grade.
+        data_type: float64
+      - name: term_letter_grade
+        description: Term letter grade. Focus's grade_title.
+        data_type: string
+      - name: term_grade_points
+        description: Term grade points. Focus's gpa_points.
+        data_type: float64
+      - name: potential_credit_hours
+        description: Credit hours the grade can earn. Focus's credits.
+        data_type: float64
+      - name: exclude_from_gpa
+        description: >-
+          1 when the grade is excluded from GPA. PowerSchool stores the
+          exclusion; Focus stores the inclusion as affects_gpa, inverted here.
+        data_type: int64
+      - name: term_percent_grade_adjusted
+        description: >-
+          Adjusted term percent grade. Null on every Focus row — Focus posts no
+          adjusted variant.
+        data_type: float64
+      - name: term_letter_grade_adjusted
+        description: >-
+          Adjusted term letter grade. Null on every Focus row — Focus posts no
+          adjusted variant.
+        data_type: string
+      - name: y1_percent_grade
+        description: >-
+          Year-to-date percent grade. Null on every Focus row — Focus has no
+          year-to-date rollup.
+        data_type: float64
+      - name: y1_percent_grade_adjusted
+        description: >-
+          Adjusted year-to-date percent grade. Null on every Focus row.
+        data_type: float64
+      - name: y1_letter_grade
+        description: >-
+          Year-to-date letter grade. Null on every Focus row.
+        data_type: string
+      - name: y1_letter_grade_adjusted
+        description: >-
+          Adjusted year-to-date letter grade. Null on every Focus row.
+        data_type: string
+      - name: y1_grade_points
+        description: >-
+          Year-to-date grade points. Null on every Focus row.
+        data_type: float64
+      - name: citizenship
+        description: >-
+          Citizenship grade. Null on every Focus row — Focus has no citizenship
+          grade.
+        data_type: string
+      - name: lastgradeupdate
+        description: >-
+          Date the grade was last changed. Null on every Focus row — Focus's
+          modified_date is null on every student_report_card_grades row.
+        data_type: date

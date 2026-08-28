@@ -40,7 +40,7 @@ select
 from terms as t
 left join {{ ref("dim_regions") }} as dr on t.city = dr.`name`
 left join
-    {{ ref("stg_powerschool__schools") }} as sch
+    {{ ref("int_students__schools") }} as sch
     on t.school_id = sch.school_number
     and t.school_id <> 0
     and dr.dagster_code_location = sch._dbt_source_project

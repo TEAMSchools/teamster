@@ -7,6 +7,18 @@ models:
       source for assessment-administration bridges.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~95 executions/day on the eager table condition. Same downstream
+          # closure as int_assessments__course_enrollments: the assessment star
+          # on `0 0,10,13,15,17 * * *` plus topline weeklies on `0 0 * * *`.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

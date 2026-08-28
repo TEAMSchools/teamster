@@ -7,20 +7,32 @@ models:
       primary, falling back to financial; `contact_2`, the second parent from
       the student's household 1) plus emergency contacts (`emergency_1` through
       `emergency_4`). `ContactType` distinguishes `Parent1` / `Parent2` /
-      `Emergency` so DeansList can scope automated guardian messaging; emergency
-      contacts additionally carry a numbered `Emergency N` relationship, while
-      parents keep their real Finalsite relationship. Column names match the
-      DeansList import template headers exactly. Delivered by the Dagster asset
+      `Emergency` so DeansList can scope automated guardian messaging, and every
+      contact carries its real Finalsite relationship to the student. Column
+      names match the DeansList import template headers exactly. Rows are
+      ordered per student with parents before emergency contacts, since
+      DeansList displays contacts in the file's row order. Sourced from
+      `int_students__contacts`, filtered to the NJ regions because that model
+      also carries Miami's Focus contacts. `IntegrationKey` gives DeansList a
+      stable id for each contact row, so two contacts sharing a name no longer
+      collapse into one on import. Delivered by the Dagster asset
       `kipptaf/extracts/deanslist/contacts_txt`.
     data_tests:
+      # The source grain is (student, contact_slot), but the DeansList template
+      # fixes the header set so the slot cannot be projected — name plus
+      # relationship is the closest key the output can carry. warn, not error:
+      # two emergency slots can legitimately hold the same person for one
+      # student, a Finalsite data-entry gap rather than an extract defect.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - StudentID
               - ContactType
+              - ParentFirstName
+              - ParentLastName
               - Relationship
           config:
-            severity: error
+            severity: warn
     columns:
       - name: StudentID
         data_type: int64
@@ -50,11 +62,13 @@ models:
       - name: Relationship
         data_type: string
         description:
-          Relationship of the contact to the student. For parents (`contact_1`
-          and `contact_2`) this is the Finalsite `rel_type` (`parent`,
-          `stepparent`, `guardian`, `grandparent`, etc.). For emergency contacts
-          this is `Emergency N`, numbered by the Finalsite emergency slot
-          (`emergency_1` through `emergency_4`).
+          Relationship of the contact to the student, for every slot. Parents
+          (`contact_1` and `contact_2`) carry the Finalsite `rel_type`
+          (`parent`, `stepparent`, `guardian`, `grandparent`, etc.); emergency
+          contacts carry the relationship recorded on their emergency
+          custom-field set (`Mother`, `Grandmother`, `Aunt`, `Neighbor`, etc.),
+          which is populated on nearly every emergency row. Null where Finalsite
+          holds an emergency contact with no relationship recorded.
         data_tests:
           - not_null
       - name: ContactType
@@ -86,7 +100,12 @@ models:
             contains_pii: true
       - name: CellPhone
         data_type: string
-        description: Parent contact's phone number typed `Cell`, if any.
+        description:
+          Parent contact's phone number typed `Cell`. Falls back to the
+          contact's untyped number when Finalsite holds one with no type label
+          selected — that number reaches none of the typed columns, and the
+          DeansList template has no header of its own for it, so without the
+          fallback the contact arrives with no callable number at all.
         config:
           meta:
             contains_pii: true
@@ -102,63 +121,94 @@ models:
           Always null — the header is required by the DeansList template, but
           Finalsite parent-language data is not maintained reliably enough to
           send.
-
+      - name: IntegrationKey
+        data_type: string
+        description:
+          Stable per-contact key DeansList uses to match an imported row to the
+          contact record it already holds. Without it DeansList keys rows on a
+          hash of the contact's name, so two contacts sharing a name collapse
+          into one and a family loses a contact. Formatted `{StudentID}-{contact
+          key}`, where the contact key is the contact's `person_identity` from
+          `int_students__contacts` for `Parent1`/`Parent2` and the contact slot
+          (`emergency_1` through `emergency_4`) for `Emergency`. Parents key on
+          the person rather than the slot because parent slots are ranked
+          upstream, so a `primary` flag change swaps `Parent1` and `Parent2` — a
+          slot-keyed row would keep its key and take on the other parent's
+          details. Emergency contacts have no `person_identity`; they are scalar
+          custom fields on the student's own Finalsite record. Same split as
+          `bridge_student_contacts.student_contact_person_key`, with the student
+          prefix taking it from that model's person grain down to DeansList's
+          (student, contact) grain — without it a parent with two enrolled
+          children would get one key for two rows. Left readable rather than
+          hashed like that marts key — the longest value is 43 characters
+          against DeansList's 64-character limit, so staff can trace a row back
+          to its Finalsite contact by eye. No region component, since
+          `student_number` is unique across the three NJ regions this extract
+          covers.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          # A duplicate means one person holds two `primary`/`financial`
+          # relationships to the same student upstream — a Finalsite data-entry
+          # dup, not an extract defect, and DeansList collapsing the two rows is
+          # the right outcome. warn, matching the name-level test above.
+          - unique:
+              config:
+                severity: warn
 unit_tests:
-  - name: test_family_contacts_emergency_numbering
+  - name: test_family_contacts_slot_contact_types
     description:
       One enrolled student with two parents plus all four emergency slots.
-      Asserts the parents keep their Finalsite relationship and get
-      Parent1/Parent2 contact types, and each emergency slot is relabeled
-      Emergency N by slot number with an Emergency contact type (exercising
-      every case branch).
+      Asserts contact_1 and contact_2 map to Parent1/Parent2 and every emergency
+      slot maps to Emergency (exercising each case branch), and that all six
+      rows pass their Finalsite relationship through unchanged rather than
+      having the emergency ones overwritten with a slot ordinal.
     model: rpt_deanslist__family_contacts
     given:
-      - input: ref('int_finalsite__student_contacts')
+      - input: ref('int_students__contacts')
         format: sql
         rows: |
           select
-            'enr-001' as finalsite_enrollment_id,
+            123456 as student_number,
             'kippnewark' as _dbt_source_project,
             'contact_1' as contact_slot,
+            'ct-alice' as person_identity,
             'parent' as relationship,
             'Alice' as contact_first_name,
             'Johnson' as contact_last_name,
-            'alice@example.com' as email,
+            'alice@example.com' as email_current,
             '+19292255670' as phone_home,
             cast(null as string) as phone_work,
-            '+18623007240x216' as phone_mobile
+            '+18623007240x216' as phone_mobile,
+            cast(null as string) as phone_untyped
           union all
           select
-            'enr-001', 'kippnewark', 'contact_2', 'parent',
+            123456, 'kippnewark', 'contact_2', 'ct-adam', 'parent',
             'Adam', 'Johnson', 'adam@example.com', cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
-            'enr-001', 'kippnewark', 'emergency_1', 'grandparent',
+            123456, 'kippnewark', 'emergency_1', cast(null as string),
+            'grandparent',
             'Bob', 'Smith', cast(null as string), cast(null as string),
-            cast(null as string), '+13055550200'
+            cast(null as string), '+13055550200', cast(null as string)
           union all
           select
-            'enr-001', 'kippnewark', 'emergency_2', 'aunt',
+            123456, 'kippnewark', 'emergency_2', cast(null as string), 'aunt',
             'Carol', 'Diaz', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
-            'enr-001', 'kippnewark', 'emergency_3', 'uncle',
+            123456, 'kippnewark', 'emergency_3', cast(null as string), 'uncle',
             'Dan', 'Evans', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
-            'enr-001', 'kippnewark', 'emergency_4', 'neighbor',
+            123456, 'kippnewark', 'emergency_4', cast(null as string),
+            'neighbor',
             'Erin', 'Fox', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
-      - input: ref('int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select
-            'enr-001' as finalsite_enrollment_id,
-            'kippnewark' as _dbt_source_project,
-            '123456' as powerschool_student_number
+            cast(null as string), cast(null as string), cast(null as string)
       - input: ref('stg_powerschool__students')
         format: sql
         rows: |
@@ -179,6 +229,7 @@ unit_tests:
             Relationship: parent,
             ContactType: Parent1,
             Language: null,
+            IntegrationKey: 123456-ct-alice,
           }
         - {
             StudentID: 123456,
@@ -191,6 +242,7 @@ unit_tests:
             Relationship: parent,
             ContactType: Parent2,
             Language: null,
+            IntegrationKey: 123456-ct-adam,
           }
         - {
             StudentID: 123456,
@@ -200,9 +252,10 @@ unit_tests:
             WorkPhone: null,
             CellPhone: "13055550200",
             Email: null,
-            Relationship: Emergency 1,
+            Relationship: grandparent,
             ContactType: Emergency,
             Language: null,
+            IntegrationKey: 123456-emergency_1,
           }
         - {
             StudentID: 123456,
@@ -212,9 +265,10 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: null,
-            Relationship: Emergency 2,
+            Relationship: aunt,
             ContactType: Emergency,
             Language: null,
+            IntegrationKey: 123456-emergency_2,
           }
         - {
             StudentID: 123456,
@@ -224,9 +278,10 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: null,
-            Relationship: Emergency 3,
+            Relationship: uncle,
             ContactType: Emergency,
             Language: null,
+            IntegrationKey: 123456-emergency_3,
           }
         - {
             StudentID: 123456,
@@ -236,61 +291,52 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: null,
-            Relationship: Emergency 4,
+            Relationship: neighbor,
             ContactType: Emergency,
             Language: null,
+            IntegrationKey: 123456-emergency_4,
           }
 
   - name: test_family_contacts_excludes_ineligible
     description:
       Locks the eligibility filters. Three primary-parent contacts, each valid
-      but for one disqualifier — a non-NJ region (Miami), a non-enrolled student
-      (enroll_status != 0), and a null PowerSchool crosswalk — plus one fully
-      eligible NJ student. Only the eligible student is emitted.
+      but for one disqualifier — a non-NJ region (Miami, which reaches
+      int_students__contacts through its Focus branch), a non-enrolled student
+      (enroll_status != 0), and a null student number — plus one fully eligible
+      NJ student. Only the eligible student is emitted.
     model: rpt_deanslist__family_contacts
     given:
-      - input: ref('int_finalsite__student_contacts')
+      - input: ref('int_students__contacts')
         format: sql
         rows: |
           select
-            'enr-ok' as finalsite_enrollment_id,
+            200001 as student_number,
             'kippnewark' as _dbt_source_project,
             'contact_1' as contact_slot,
+            'ct-gina' as person_identity,
             'parent' as relationship,
             'Gina' as contact_first_name,
             'Hill' as contact_last_name,
-            cast(null as string) as email,
+            cast(null as string) as email_current,
             cast(null as string) as phone_home,
             cast(null as string) as phone_work,
-            cast(null as string) as phone_mobile
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
           union all
           select
-            'enr-mia', 'kippmiami', 'contact_1', 'parent',
+            200002, 'kippmiami', 'contact_1', 'ct-hank', 'parent',
             'Hank', 'Ito', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
-            'enr-unenr', 'kippnewark', 'contact_1', 'parent',
+            200003, 'kippnewark', 'contact_1', 'ct-ivy', 'parent',
             'Ivy', 'Jones', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
           union all
           select
-            'enr-noxwalk', 'kippnewark', 'contact_1', 'parent',
+            cast(null as int64), 'kippnewark', 'contact_1', 'ct-kim', 'parent',
             'Kim', 'Lee', cast(null as string), cast(null as string),
-            cast(null as string), cast(null as string)
-      - input: ref('int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select
-            'enr-ok' as finalsite_enrollment_id,
-            'kippnewark' as _dbt_source_project,
-            '200001' as powerschool_student_number
-          union all
-          select 'enr-mia', 'kippmiami', '200002'
-          union all
-          select 'enr-unenr', 'kippnewark', '200003'
-          union all
-          select 'enr-noxwalk', 'kippnewark', cast(null as string)
+            cast(null as string), cast(null as string), cast(null as string)
       - input: ref('stg_powerschool__students')
         format: sql
         rows: |
@@ -315,4 +361,272 @@ unit_tests:
             Relationship: parent,
             ContactType: Parent1,
             Language: null,
+            IntegrationKey: 200001-ct-gina,
+          }
+
+  - name: test_family_contacts_excludes_third_parent_slot
+    description:
+      Locks the exclusion of parent slots past contact_2. Before the slot filter
+      was added, a contact_3 row fell into the `else` branch of the ContactType
+      case and was mislabeled Emergency -- a real parent exported to DeansList
+      under a label that routes guardian-only automated messaging. Feeds one
+      contact_1, one contact_2, one contact_3, and one emergency_1 row for the
+      same student; asserts contact_3 produces no output row at all (not even as
+      a mislabeled Emergency row) while contact_1, contact_2, and emergency_1
+      all still appear under their correct ContactType.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            300001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'ct-one' as person_identity,
+            'parent' as relationship,
+            'Jane' as contact_first_name,
+            'One' as contact_last_name,
+            'jane1@example.com' as email_current,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
+          union all
+          select
+            300001, 'kippnewark', 'contact_2', 'ct-two', 'parent',
+            'Jane', 'Two', 'jane2@example.com', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string)
+          union all
+          select
+            300001, 'kippnewark', 'contact_3', 'ct-three', 'parent',
+            'Jane', 'Three', 'jane3@example.com', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string)
+          union all
+          select
+            300001, 'kippnewark', 'emergency_1', cast(null as string),
+            'neighbor',
+            'Jane', 'Four', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string)
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            300001 as student_number,
+            0 as enroll_status,
+            'kippnewark' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 300001,
+            ParentFirstName: Jane,
+            ParentLastName: One,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: jane1@example.com,
+            Relationship: parent,
+            ContactType: Parent1,
+            Language: null,
+            IntegrationKey: 300001-ct-one,
+          }
+        - {
+            StudentID: 300001,
+            ParentFirstName: Jane,
+            ParentLastName: Two,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: jane2@example.com,
+            Relationship: parent,
+            ContactType: Parent2,
+            Language: null,
+            IntegrationKey: 300001-ct-two,
+          }
+        - {
+            StudentID: 300001,
+            ParentFirstName: Jane,
+            ParentLastName: Four,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: neighbor,
+            ContactType: Emergency,
+            Language: null,
+            IntegrationKey: 300001-emergency_1,
+          }
+
+  - name: test_family_contacts_untyped_phone_fills_cellphone
+    description:
+      Locks the untyped-phone fallback. Finalsite lets a number be saved with no
+      Cell/Home/Work label, and such a number reaches none of the three typed
+      columns — before the fallback the contact shipped to DeansList with every
+      phone field blank. contact_1 carries only an untyped number and must
+      surface it as CellPhone; contact_2 carries both a typed Cell and an
+      untyped number, and the typed Cell must win rather than being displaced.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            'kippcamden' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'ct-nan' as person_identity,
+            'parent' as relationship,
+            'Nan' as contact_first_name,
+            'Untyped' as contact_last_name,
+            cast(null as string) as email_current,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile,
+            '+18564730100' as phone_untyped
+          union all
+          select
+            400001, 'kippcamden', 'contact_2', 'ct-ted', 'parent',
+            'Ted', 'Typed', cast(null as string), cast(null as string),
+            cast(null as string), '+18564730200', '+18564730300'
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            400001 as student_number,
+            0 as enroll_status,
+            'kippcamden' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 400001,
+            ParentFirstName: Nan,
+            ParentLastName: Untyped,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: "18564730100",
+            Email: null,
+            Relationship: parent,
+            ContactType: Parent1,
+            Language: null,
+            IntegrationKey: 400001-ct-nan,
+          }
+        - {
+            StudentID: 400001,
+            ParentFirstName: Ted,
+            ParentLastName: Typed,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: "18564730200",
+            Email: null,
+            Relationship: parent,
+            ContactType: Parent2,
+            Language: null,
+            IntegrationKey: 400001-ct-ted,
+          }
+
+  - name: test_family_contacts_integration_key_separates_same_name_contacts
+    description:
+      Locks IntegrationKey against the duplicate-collapse bug it exists to fix.
+      DeansList keys unkeyed rows on a hash of the contact's name, so one
+      student with two same-named parents and two same-named emergency contacts
+      loses one of each. Feeds exactly that student and asserts all four rows
+      carry distinct keys. It also locks the parent key against the slot — both
+      parent keys are the contact's `person_identity` with no slot token, so a
+      `primary` flag change upstream that swaps Parent1 and Parent2 moves each
+      key with its person rather than leaving it on the slot.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            500001 as student_number,
+            'kipppaterson' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'ct-pat' as person_identity,
+            'parent' as relationship,
+            'Pat' as contact_first_name,
+            'Ramos' as contact_last_name,
+            cast(null as string) as email_current,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_untyped
+          union all
+          select
+            500001, 'kipppaterson', 'contact_2', 'ct-alex', 'stepparent',
+            'Pat', 'Ramos', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string)
+          union all
+          select
+            500001, 'kipppaterson', 'emergency_1', cast(null as string),
+            'Aunt',
+            'Sam', 'Ramos', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string)
+          union all
+          select
+            500001, 'kipppaterson', 'emergency_2', cast(null as string),
+            'Uncle',
+            'Sam', 'Ramos', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string)
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            500001 as student_number,
+            0 as enroll_status,
+            'kipppaterson' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 500001,
+            ParentFirstName: Pat,
+            ParentLastName: Ramos,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: parent,
+            ContactType: Parent1,
+            Language: null,
+            IntegrationKey: 500001-ct-pat,
+          }
+        - {
+            StudentID: 500001,
+            ParentFirstName: Pat,
+            ParentLastName: Ramos,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: stepparent,
+            ContactType: Parent2,
+            Language: null,
+            IntegrationKey: 500001-ct-alex,
+          }
+        - {
+            StudentID: 500001,
+            ParentFirstName: Sam,
+            ParentLastName: Ramos,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Aunt,
+            ContactType: Emergency,
+            Language: null,
+            IntegrationKey: 500001-emergency_1,
+          }
+        - {
+            StudentID: 500001,
+            ParentFirstName: Sam,
+            ParentLastName: Ramos,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Uncle,
+            ContactType: Emergency,
+            Language: null,
+            IntegrationKey: 500001-emergency_2,
           }

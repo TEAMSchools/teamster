@@ -216,6 +216,17 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: homeless_unaccompanied_youth
+        description: >-
+          Focus select-field option id for Homeless Unaccompanied Youth. A
+          five-option field — Y for not in a parent's or guardian's custody, C
+          and U for the certified over-16 and under-16 variants of the same, N
+          for homeless but accompanied, Z for not homeless. Decoded to a label
+          in int_focus__students__pivot.
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
       - name: idea_educational_environment
         description: IDEA Educational Environment
         data_type: int
@@ -248,6 +259,14 @@ models:
             contains_pii: true
       - name: ese_fefp_code
         description: ESE FEFP Code
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: gifted_eligibility
+        description: >-
+          Gifted Eligibility — the FLDOE criteria paragraph a student was
+          determined gifted-eligible under, or Z for not eligible.
         data_type: int
         config:
           meta:

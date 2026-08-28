@@ -149,6 +149,12 @@ models:
         data_type: string
       - name: ugrad_status
         data_type: string
+      - name: is_ba_grad_ever_int
+        data_type: int64
+      - name: is_aa_grad_ever_int
+        data_type: int64
+      - name: is_cte_grad_ever_int
+        data_type: int64
       - name: is_4yr_ba_grad_int
         data_type: int64
       - name: is_5yr_ba_grad_int
@@ -551,6 +557,8 @@ models:
       - name: cur_cumulative_credits_earned
         data_type: numeric
       - name: postsec_advisor
+        data_type: string
+      - name: college_counselor
         data_type: string
       - name: recent_cumulative_gpa
         data_type: numeric

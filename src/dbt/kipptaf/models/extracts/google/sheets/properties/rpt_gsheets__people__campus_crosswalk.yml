@@ -1,0 +1,55 @@
+models:
+  - name: rpt_gsheets__people__campus_crosswalk
+    description: |
+      Seat Tracker AppSheet feed. Reproduces the pre-2026-08-11 schema of
+      `stg_google_sheets__people__campus_crosswalk`, which the app read
+      directly until the source sheet was refactored down to
+      `Name` + `Location_Name` and every attribute moved to the `Locations`
+      tab. Column names, order, and types are 1:1 with that old table so the
+      app only has to repoint its data source. Every attribute column
+      describes the child `Location_Name`, not the parent campus `Name` —
+      campus rows in the `Locations` tab carry blank abbreviation and grade
+      band and zero school IDs.
+    columns:
+      - name: Location_Name
+        description: |
+          Canonical location name of the child school. Join key to
+          `int_people__staff_roster.home_work_location_reporting_name` and to
+          `int_people__location_crosswalk.location_clean_name`.
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: Name
+        description: |
+          Parent campus the location rolls up to. Repeats across sibling
+          schools sharing a campus, and equals `Location_Name` for a location
+          that is itself a campus.
+        data_type: string
+      - name: Region
+        description: |
+          Legal-entity name the child school rolls up to (e.g. TEAM Academy
+          Charter School, KIPP Miami).
+        data_type: string
+      - name: Grade_Band
+        description: Grade band served by the child school (e.g. ES, MS, HS).
+        data_type: string
+      - name: PowerSchool_School_ID
+        description: PowerSchool school ID of the child school.
+        data_type: int64
+      - name: Reporting_School_ID
+        description: |
+          Reporting school ID of the child school. AppSheet keys the Seat
+          Tracker campus table on this column.
+        data_type: int64
+      - name: Abbreviation
+        description: |
+          Short abbreviation for the child school. Not populated for every
+          location.
+        data_type: string
+      - name: Is_Pathways
+        description: |
+          True when the child school is a KIPP Forward post-secondary
+          (Pathways) program.
+        data_type: boolean

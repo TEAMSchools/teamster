@@ -2,6 +2,7 @@ snapshots:
   - name: snapshot_leadership_development__output
     relation: ref("stg_google_appsheet__leadership_development__output")
     config:
+      enabled: false
       schema: google_appsheet
       strategy: timestamp
       unique_key: assignment_id
@@ -25,6 +26,7 @@ snapshots:
         - staffing_model_id
       updated_at: edited_at
       dbt_valid_to_current: "'9999-12-31'"
+      hard_deletes: new_record
       meta:
         dagster:
           group: google_appsheet

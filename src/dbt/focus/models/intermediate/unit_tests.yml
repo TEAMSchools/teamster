@@ -1,0 +1,420 @@
+unit_tests:
+  - name: test_int_focus__students_homeless_and_meal_conform
+    model: int_focus__students
+    given:
+      - input: ref('stg_focus__students')
+        format: sql
+        rows: |
+          select 1 as student_id, 793 as homeless_student_pk_12,
+            427 as homeless_unaccompanied_youth,
+            15 as free_reduced_meals_program,
+            cast(null as timestamp) as birthdate,
+            cast(null as numeric) as disis_id
+          union all
+          select 2, 789, 425, 24, cast(null as timestamp), cast(null as numeric)
+          union all
+          select 3, 790, 426, 21, cast(null as timestamp), cast(null as numeric)
+          union all
+          select 4, 794, cast(null as int64), 19, cast(null as timestamp),
+            cast(null as numeric)
+          union all
+          select 5, 791, 7261, 22, cast(null as timestamp), cast(null as numeric)
+      - input: ref('int_focus__students__pivot')
+        format: sql
+        rows: |
+          select 1 as student_id,
+            cast(null as string) as ethnicity_hispanic_or_latino_label,
+            cast(null as string) as race_white_label,
+            cast(null as string) as race_black_or_african_american_label,
+            cast(null as string) as race_asian_label,
+            cast(null as string) as sex_label,
+            cast(null as string) as race_american_indian_or_alaska_native_label,
+            cast(null as string)
+              as race_native_hawaiian_or_other_pacific_islander_label,
+            cast(null as string) as residence_county_label,
+            cast(null as string) as language_label,
+            cast(null as string) as ese_fefp_code_label,
+            cast(null as string) as english_language_learner_pk_12_label,
+            cast(null as string) as gifted_eligibility_label,
+            'Student is not homeless-default [N]' as homeless_student_pk_12_label,
+            'Z- Not homeless (or student eligible for homeless services) but does not meet the definition of an unaccompanied youth. ' as homeless_unaccompanied_youth_label,
+            'CEP NOT Direct Cert [N]' as free_reduced_meals_program_label
+          union all
+          select 2, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Living in emergency or transitional shel [A]',
+            'Y- Yes,who is not in the physical custody of parent or guardian [Y]',
+            'The student is eligible for free meals [F]'
+          union all
+          select 3, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Sharing the housing of other persons [B]',
+            'N- No, Is homeless but does not meet the definiton of unaccompanied youth [N]',
+            'Eligible for Reduced Lunch [3]'
+          union all
+          select 4, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Student awaiting foster care [F]', cast(null as string),
+            'Did Not Apply [0]'
+          union all
+          select 5, null, null, null, null, null, null, null, null, null,
+            null, null, null,
+            'Living in cars, parks, temportary trailer parks or campgrounds, train stations, etc. [D]',
+            'U - Student is a homeless child or youth (or student eligible for homeless services) under the age of 16 years who is not in the physical custody of a parent or guardian',
+            'Eligible for Free Lunch with Direct Cert or extension of eligibility [D]'
+    expect:
+      rows:
+        - student_id: 1
+          homeless_code: N
+          is_homeless: false
+          homeless_primary_nighttime_residence_code: null
+          lunchstatus: null
+        - student_id: 2
+          homeless_code: Y2
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: 1
+          lunchstatus: F
+        - student_id: 3
+          homeless_code: Y1
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: 2
+          lunchstatus: R
+        - student_id: 4
+          homeless_code: Y1
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: null
+          lunchstatus: P
+        - student_id: 5
+          homeless_code: Y2
+          is_homeless: true
+          homeless_primary_nighttime_residence_code: 3
+          lunchstatus: F
+
+  - name: test_int_focus__student_enrollment_roster_dedupes_same_start_date_stints
+    model: int_focus__student_enrollment_roster
+    description: >-
+      Focus permits two open stints sharing a student, year, and start date.
+      Student 1 covers the demotion leg: the schoolid-null stub loses even
+      though it was created later. Student 2 covers the recency fallback, for
+      two schools with neither marked: the newer stint wins on
+      enrollment_created_at while carrying the LOWER id, so a pass only if the
+      ordering reads the timestamp rather than the id. Student 3 covers the
+      primary leg: two schools with the SECOND one marked and created later, so
+      recency alone would keep the second school and only reading
+      is_second_school first keeps the home campus.
+    given:
+      - input: ref('int_focus__students')
+        format: sql
+        rows: |
+          select 1 as student_id, 1 as student_number, 'A' as first_name,
+            'One' as last_name,
+            cast(null as string) as florida_education_identifier,
+            cast(null as string) as student_e_mail_address,
+            cast(null as date) as dob
+          union all
+          select 2, 2, 'B', 'Two', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 3, 3, 'C', 'Three', cast(null as string), cast(null as string),
+            cast(null as date)
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select
+            *,
+            cast(null as string) as prior_district_label,
+            cast(null as string) as prior_state_label,
+            cast(null as string) as prior_country_label,
+            cast(null as string) as educational_choice_label,
+            cast(null as string) as student_offender_transfer_label,
+          from (
+          select 10 as id, 1 as student_id, 2026 as syear,
+            100 as school_id, cast(null as int64) as grade_id,
+            cast(null as int64) as enrollment_code,
+            cast(null as int64) as drop_code,
+            date '2026-08-12' as start_date, cast(null as date) as end_date,
+            cast(null as string) as second_school,
+            timestamp '2026-07-01 00:00:00' as created_at
+          union all
+          select 11, 1, 2026, cast(null as int64), cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-08-11 00:00:00'
+          union all
+          select 25, 2, 2026, 100, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 24, 2, 2026, 200, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-08-12 00:00:00'
+          union all
+          select 30, 3, 2026, 300, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 31, 3, 2026, 400, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), 'Y',
+            timestamp '2026-08-12 00:00:00'
+          )
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('int_focus__schools')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('stg_focus__school_gradelevels')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('stg_focus__student_enrollment_codes')
+        rows: []
+      # empty: left-joined, contributes nothing to the dedupe under test
+      - input: ref('int_focus__school_year_first_day')
+        rows: []
+    expect:
+      rows:
+        - student_number: 1
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 10
+        - student_number: 2
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 24
+        - student_number: 3
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 30
+
+  - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
+    model: int_focus__attendance_daily
+    description: >-
+      Four students on one in-session day inside one stint. Student 84001 is
+      absent unexcused (daily_code U, unconformed), 84002 absent excused (AE),
+      84003 present (null daily_code), and 84004 has no attendance row at all
+      (null daily_code, counts present via state_value). Proves the scaffold
+      emits a row for a student Focus never recorded.
+    given:
+      - input: ref('int_focus__student_enrollment_roster')
+        format: sql
+        rows: |
+          select 84001 as student_number, 1 as network_student_number,
+            2026 as academic_year, 58 as schoolid,
+            date '2026-08-12' as startdate, date '2027-06-03' as exitdate,
+            5 as grade_level
+          union all
+          select 84002, 2, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+          union all
+          select 84003, 3, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+          union all
+          select 84004, 4, 2026, 58, date '2026-08-12', date '2027-06-03', 5
+      - input: ref('stg_focus__attendance_calendar')
+        format: sql
+        rows: |
+          select 58 as school_id, 2026 as syear,
+            date '2026-08-12' as school_date
+      - input: ref('int_focus__attendance_day')
+        format: sql
+        rows: |
+          select 84001 as student_id, 58 as schoolid,
+            date '2026-08-12' as school_date,
+            cast(0 as numeric) as state_value, 'U' as daily_code
+          union all
+          select 84002, 58, date '2026-08-12', cast(0 as numeric), 'AE'
+          union all
+          select 84003, 58, date '2026-08-12', cast(1 as numeric),
+            cast(null as string)
+    expect:
+      rows:
+        - student_number: 1
+          daily_code: U
+          state_value: 0.0
+          academic_year: 2026
+          is_attendance_recorded: true
+        - student_number: 2
+          daily_code: AE
+          state_value: 0.0
+          academic_year: 2026
+          is_attendance_recorded: true
+        - student_number: 3
+          daily_code: null
+          state_value: 1.0
+          academic_year: 2026
+          is_attendance_recorded: true
+        - student_number: 4
+          daily_code: null
+          state_value: 1.0
+          academic_year: 2026
+          is_attendance_recorded: false
+
+  - name: test_int_focus__attendance_daily_transfer_day_and_single_day_stint
+    model: int_focus__attendance_daily
+    description: >-
+      Pins down the stint_starts/enrollments trim. Student 501 transfers from
+      school 58 to school 59 on 2026-08-12 (stint A's exitdate equals stint B's
+      startdate) -- the shared day must appear exactly once, attributed to the
+      ARRIVING school 59, not the departing school 58. Student 502 is a
+      single-day stint (startdate = exitdate = 2026-08-13) -- without the
+      e.startdate <> s.startdate guard it would self-match in stint_starts and
+      lose its only day. Student 503 is a normal multi-day stint whose exitdate
+      (2026-08-14) is an in-session day no other stint starts on -- it must NOT
+      be trimmed.
+    given:
+      - input: ref('int_focus__student_enrollment_roster')
+        format: sql
+        rows: |
+          select 85001 as student_number, 501 as network_student_number,
+            2026 as academic_year, 58 as schoolid,
+            date '2026-08-10' as startdate, date '2026-08-12' as exitdate,
+            5 as grade_level
+          union all
+          select 85001, 501, 2026, 59, date '2026-08-12', date '2026-08-14', 5
+          union all
+          select 85002, 502, 2026, 58, date '2026-08-13', date '2026-08-13', 5
+          union all
+          select 85003, 503, 2026, 58, date '2026-08-10', date '2026-08-14', 5
+      - input: ref('stg_focus__attendance_calendar')
+        format: sql
+        rows: |
+          select 58 as school_id, 2026 as syear, date '2026-08-10' as school_date
+          union all
+          select 58, 2026, date '2026-08-11'
+          union all
+          select 58, 2026, date '2026-08-12'
+          union all
+          select 58, 2026, date '2026-08-13'
+          union all
+          select 58, 2026, date '2026-08-14'
+          union all
+          select 59, 2026, date '2026-08-12'
+          union all
+          select 59, 2026, date '2026-08-13'
+          union all
+          select 59, 2026, date '2026-08-14'
+      # empty: attendance is not under test here -- only membership day counts
+      # and the school each shared/boundary day attaches to.
+      - input: ref('int_focus__attendance_day')
+        rows: []
+    expect:
+      rows:
+        - student_number: 501
+          schoolid: 58
+          school_date: 2026-08-10
+        - student_number: 501
+          schoolid: 58
+          school_date: 2026-08-11
+        - student_number: 501
+          schoolid: 59
+          school_date: 2026-08-12
+        - student_number: 501
+          schoolid: 59
+          school_date: 2026-08-13
+        - student_number: 501
+          schoolid: 59
+          school_date: 2026-08-14
+        - student_number: 502
+          schoolid: 58
+          school_date: 2026-08-13
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-10
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-11
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-12
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-13
+        - student_number: 503
+          schoolid: 58
+          school_date: 2026-08-14
+
+  - name: test_int_focus__schedule_full_year_sentinel_resolves
+    model: int_focus__schedule
+    description: >-
+      Focus writes marking_period_id = 0 to mean the full year. Row 1 carries
+      the sentinel and must resolve to its own school's type = 'year' marking
+      period, not the decoy year row belonging to school 200 — a pass only if
+      the join is scoped on school_id. Row 2 is term-specific and must pass
+      through untouched.
+    given:
+      - input: ref('stg_focus__schedule')
+        format: sql
+        rows: |
+          select 1 as id, 2026 as syear, 100 as school_id, 10 as student_id,
+            20 as course_id, 30 as course_period_id, 0 as marking_period_id,
+            'FY' as mp, cast(null as string) as course_weight,
+            cast(null as string) as days,
+            cast(null as string) as rotation_days,
+            cast(null as date) as start_date, cast(null as date) as end_date,
+            cast(null as string) as fefp_number,
+            cast(null as string) as dual_enrollment_indicator,
+            cast(null as string) as class_minutes_weekly,
+            cast(null as string) as reading_intervention_component,
+            cast(null as string) as basic_skills_exam,
+            cast(null as string) as location_of_student,
+            cast(null as string) as eoc_exam_term,
+            cast(null as string) as exempt_from_total_clock_hours,
+            cast(null as string) as exclude_from_fte,
+            cast(null as string) as pmrn
+          union all
+          select 2, 2026, 100, 10, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as date),
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('stg_focus__marking_periods')
+        format: sql
+        rows: |
+          select 500 as marking_period_id, 2026 as syear, 100 as school_id,
+            'Full Year' as title, 'FY' as short_name, 'year' as type,
+            date '2026-08-10' as start_date, date '2027-06-11' as end_date
+          union all
+          select 501, 2026, 100, 'Quarter 1', 'Q1', 'quarter',
+            date '2026-08-10', date '2026-10-16'
+          union all
+          select 600, 2026, 200, 'Full Year', 'FY', 'year',
+            date '2026-08-10', date '2027-06-11'
+      - input: ref('stg_focus__course_periods')
+        format: sql
+        rows: |
+          select 30 as course_period_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as string) as custom_title,
+            cast(null as int64) as teacher_id, cast(null as string) as room,
+            cast(null as int64) as period_id,
+            cast(null as int64) as calendar_id,
+            cast(null as int64) as team_id,
+            cast(null as int64) as grade_scale_id,
+            cast(null as string) as credits,
+            cast(null as string) as does_attendance,
+            cast(null as string) as does_grades,
+            cast(null as string) as does_gpa
+      - input: ref('stg_focus__courses')
+        format: sql
+        rows: |
+          select 20 as course_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as int64) as subject_id,
+            cast(null as int64) as grad_subject_id,
+            cast(null as string) as grade_level,
+            cast(null as numeric) as credit_hours,
+            cast(null as numeric) as course_hours,
+            cast(null as string) as homeroom
+    expect:
+      rows:
+        - student_schedule_id: 1
+          mp: FY
+          marking_period_id: 500
+          marking_period_type: year
+          marking_period_start_date: 2026-08-10
+        - student_schedule_id: 2
+          mp: QTR
+          marking_period_id: 501
+          marking_period_type: quarter
+          marking_period_start_date: 2026-08-10

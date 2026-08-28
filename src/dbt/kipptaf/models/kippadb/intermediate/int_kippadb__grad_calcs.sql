@@ -1,6 +1,20 @@
 select
     e.student,
 
+    if(e.ba_status = 'Graduated', 1, 0) as is_ba_grad_ever_int,
+
+    if(e.aa_status = 'Graduated', 1, 0) as is_aa_grad_ever_int,
+
+    if(e.cte_status = 'Graduated', 1, 0) as is_cte_grad_ever_int,
+
+    if(
+        e.ba_status = 'Graduated'
+        or e.aa_status = 'Graduated'
+        or e.cte_status = 'Graduated',
+        1,
+        0
+    ) as is_grad_ever,
+
     if(
         e.ba_status = 'Graduated'
         and e.ba_actual_end_date <= date((c.contact_kipp_hs_class + 4), 08, 31),
@@ -106,34 +120,14 @@ select
         0
     ) as is_6yr_cte_grad_int,
 
-    if(
-        (
+    case
+        when
             e.ba_status = 'Graduated'
-            or e.aa_status = 'Graduated'
-            or e.cte_status = 'Graduated'
-        )
-        and e.ugrad_actual_end_date <= current_date('{{ var("local_timezone") }}'),
-        1,
-        0
-    ) as is_grad_ever,
-
-    case
-        when
-            e.ugrad_status = 'Graduated'
-            and e.ugrad_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+            and e.ba_actual_end_date <= date_add(c.contact_birthdate, interval 25 year)
         then 1
         when
-            e.cte_status = 'Graduated'
-            and e.cte_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_ugrad_cte_grad_int,
-
-    case
-        when
-            e.ugrad_status = 'Graduated'
-            and e.ugrad_actual_end_date
-            <= date_add(c.contact_birthdate, interval 25 year)
+            e.aa_status = 'Graduated'
+            and e.aa_actual_end_date <= date_add(c.contact_birthdate, interval 25 year)
         then 1
         when
             e.cte_status = 'Graduated'
@@ -144,24 +138,36 @@ select
 
     case
         when
-            e.ugrad_status = 'Graduated'
-            and e.ugrad_actual_end_date <= date((c.contact_kipp_hs_class + 4), 08, 31)
+            e.ba_status = 'Graduated'
+            and e.ba_actual_end_date <= date((c.contact_kipp_hs_class + 4), 08, 31)
+        then 1
+        when
+            e.aa_status = 'Graduated'
+            and e.aa_actual_end_date <= date((c.contact_kipp_hs_class + 4), 08, 31)
         then 1
         else 0
     end as is_4yr_ugrad_grad_int,
 
     case
         when
-            e.ugrad_status = 'Graduated'
-            and e.ugrad_actual_end_date <= date((c.contact_kipp_hs_class + 5), 08, 31)
+            e.ba_status = 'Graduated'
+            and e.ba_actual_end_date <= date((c.contact_kipp_hs_class + 5), 08, 31)
+        then 1
+        when
+            e.aa_status = 'Graduated'
+            and e.aa_actual_end_date <= date((c.contact_kipp_hs_class + 5), 08, 31)
         then 1
         else 0
     end as is_5yr_ugrad_grad_int,
 
     case
         when
-            e.ugrad_status = 'Graduated'
-            and e.ugrad_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+            e.ba_status = 'Graduated'
+            and e.ba_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+        then 1
+        when
+            e.aa_status = 'Graduated'
+            and e.aa_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
         then 1
         else 0
     end as is_6yr_ugrad_grad_int,

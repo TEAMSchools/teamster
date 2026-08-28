@@ -132,6 +132,7 @@ select
 
     scf.spedlep,
     scf.lep_status,
+    scf.homeless_code,
     scf.is_homeless,
     scf.prevstudentid,
 

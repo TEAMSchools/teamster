@@ -1,5 +1,10 @@
 models:
   - name: rpt_gsheets__college_assessments_long
+    description: >-
+      **Excludes Miami by design.** SAT and ACT results for students in testing
+      grades. Miami's high school starts at grade 9 and has no college-testing
+      cohort yet, so there is nothing for Miami to report. Revisit when Miami
+      reaches grade 11. Ratified on #4996.
     columns:
       - name: region
         data_type: string
@@ -55,6 +60,17 @@ models:
         data_type: numeric
       - name: test_type
         data_type: string
+        description: >-
+          The test itself — SAT, PSAT 8/9, PSAT10, PSAT NMSQT, ACT. Named
+          test_type for historical reasons; administration_type is what
+          distinguishes an official sitting from a practice one.
+      - name: administration_type
+        data_type: string
+        description: >-
+          Official or Practice. Practice rows come from Illuminate and are
+          converted onto the same scale as their official counterpart, so scores
+          are comparable, but an official attainment decision should filter to
+          Official.
       - name: test_date
         data_type: date
       - name: test_subject

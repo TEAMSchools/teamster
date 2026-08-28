@@ -30,39 +30,41 @@ with
             ti_serv_speech,
         from {{ ref("stg_edplan__njsmart_powerschool") }}
 
-        union all
+        {% if var("edplan_has_archive") %}
+            union all
 
-        select
-            row_hash,
-            student_number,
-            state_studentnumber,
-            academic_year,
-            fiscal_year,
-            effective_date,
-            effective_end_date,
-            spedlep,
-            special_education_code,
-            special_education,
-            nj_se_consenttoimplementdate,
-            nj_se_delayreason,
+            select
+                row_hash,
+                student_number,
+                state_studentnumber,
+                academic_year,
+                fiscal_year,
+                effective_date,
+                effective_end_date,
+                spedlep,
+                special_education_code,
+                special_education,
+                nj_se_consenttoimplementdate,
+                nj_se_delayreason,
 
-            null as nj_se_earlyintervention,
+                null as nj_se_earlyintervention,
 
-            nj_se_eligibilityddate,
-            nj_se_initialiepmeetingdate,
-            nj_se_lastiepmeetingdate,
-            nj_se_parentalconsentdate,
-            nj_se_parentalconsentobtained,
-            nj_se_placement,
-            nj_se_reevaluationdate,
-            nj_se_referraldate,
-            nj_timeinregularprogram,
-            ti_serv_counseling,
-            ti_serv_occup,
-            ti_serv_other,
-            ti_serv_physical,
-            ti_serv_speech,
-        from {{ source("edplan", "stg_edplan__njsmart_powerschool_archive") }}
+                nj_se_eligibilityddate,
+                nj_se_initialiepmeetingdate,
+                nj_se_lastiepmeetingdate,
+                nj_se_parentalconsentdate,
+                nj_se_parentalconsentobtained,
+                nj_se_placement,
+                nj_se_reevaluationdate,
+                nj_se_referraldate,
+                nj_timeinregularprogram,
+                ti_serv_counseling,
+                ti_serv_occup,
+                ti_serv_other,
+                ti_serv_physical,
+                ti_serv_speech,
+            from {{ source("edplan", "stg_edplan__njsmart_powerschool_archive") }}
+        {% endif %}
     )
 
 select

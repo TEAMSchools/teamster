@@ -15,6 +15,7 @@ select
     actual_college_graduation_date__c as actual_college_graduation_date,
     actual_hs_graduation_date__c as actual_hs_graduation_date,
     advising_provider__c as advising_provider,
+    college_counselor__c as college_counselor_id,
     college_graduated_from__c as college_graduated_from,
     college_match_display_gpa__c as college_match_display_gpa,
     current_college_cumulative_gpa__c as current_college_cumulative_gpa,

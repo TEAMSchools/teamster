@@ -1,0 +1,90 @@
+models:
+  - name: int_students__student_enrollment_union
+    description: >-
+      SIS-agnostic student enrollment spine. Each row is one student-school
+      enrollment event (entry into a school for an academic year, including
+      re-enrollments). Unions the four PowerSchool district
+      `int_powerschool__student_enrollment_union` sources with Miami's Focus
+      enrollment stints, conformed inline to the PowerSchool column vocabulary.
+      Focus is Miami's system of record for enrollment and carries the full
+      history back to AY2018, so the frozen PowerSchool archive contributes no
+      Miami rows at all -- including its alumni graduate placeholders. Replaces
+      `int_powerschool__student_enrollment_union` as the canonical
+      enrollment-grain source for marts.
+
+
+      Deduplicated to one row per (`student_number`, `_dbt_source_project`,
+      `academic_year`, `entrydate`) -- the grain `student_enrollment_key`
+      hashes. PowerSchool holds a student's current enrollment in `students` and
+      their earlier stints in `reenrollments`, so a re-entry backdated onto a
+      still-open stint puts two rows on one entrydate and every mart joining
+      that key double-counts the student. The survivor is the year's primary
+      stint (`rn_year` 1), which is the open one because `rn_year` is ranked
+      exitdate descending upstream, and which is the row carrying
+      `year_in_school` and `year_in_network`. Deduplicating drops rows, never
+      key values, so no existing hash changes and no downstream foreign key is
+      orphaned. The matching test on `int_powerschool__student_enrollment_union`
+      stays `severity: warn` on purpose -- it keeps alerting on the underlying
+      PowerSchool data-entry error, which only Ops can correct. Tracked in
+      #5045.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+              - academic_year
+              - entrydate
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: >-
+          Canonical network student number. For Miami, recovered by stripping
+          the leading 8400 Miami-Dade district prefix from the Focus id -- the
+          upstream Focus column of this name holds the prefixed form, so joining
+          on it by name returns zero matches with no error.
+      - name: entrydate
+        description: >-
+          First day of the enrollment stint. For Miami, taken from the Focus
+          startdate, which records the actual first day of attendance rather
+          than PowerSchool's July 1 administrative rollover for returning
+          students, so Miami's historical enrollment keys differ from the ones
+          the archive produced.
+      - name: exitdate
+        description: >-
+          Last day of the enrollment stint, or null while the stint is open.
+      - name: schoolid
+        description: >-
+          Network school number. For Miami, resolved from Focus's internal
+          school id through the locations crosswalk -- Focus's own schoolid is a
+          small internal integer, not the network identifier.
+      - name: enroll_status
+        description: >-
+          Enrollment standing for this stint. For Miami, taken from Focus, which
+          varies this per stint rather than repeating a single student-level
+          value.
+      - name: grade_level
+        description: Numeric grade level for the stint.
+      - name: rn_year
+        description: >-
+          Sequence of this stint within the student's academic year.
+      - name: year_in_school
+        description: Count of years the student has attended this school.
+      - name: year_in_network
+        description: Count of years the student has attended any network school.
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`). For the PowerSchool branch, extracted from
+          `_dbt_source_relation` at the union point. For the Miami Focus branch,
+          passed through from `int_focus__student_enrollment_roster`, which
+          already derives it correctly from its own Focus-relation name.
+        data_type: string
+      - name: region
+        description: >-
+          Title-case district short name (`Newark`, `Camden`, `Miami`,
+          `Paterson`). Use for region-scoped filters in mart consumers.
+        data_type: string

@@ -1,4 +1,58 @@
 data_tests:
+  - name: test_kippfwd_goals_over_time_collapse
+    description: >-
+      int_google_sheets__kippfwd__goals_unpivot collapses the goals sheet's
+      grade rows to one row for the over time branch, taking the over time goal
+      where the sheet states one and the per-grade goal otherwise. Either path
+      is a silent pick if the values being collapsed disagree, so the failure is
+      a wrong network goal reported without complaint rather than an error.
+      Fires on both shapes -- an over time goal stated inconsistently across a
+      score type's grade rows, or a per-grade goal that disagrees where no over
+      time goal exists to override it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals
+
+  - name: test_kippfwd_goals_long_join_grain
+    description: >-
+      rpt_gsheets__college_assessments_long joins the All Grades benchmark goals
+      on test type and score type alone, with no academic year binding, and
+      resolves its pivot with any_value(). A second academic year stating a goal
+      for a key that already has one would double every matching score row and
+      pick a threshold arbitrarily, so the failure is a silently wrong reported
+      threshold rather than an error -- which is the wrong loudness for a
+      warning. The goals model already spans two academic years and stays
+      unambiguous only because the earlier rows are practice ACT while the later
+      ACT rows are official, a property of the data rather than of the model.
+      int_google_sheets__kippfwd__goals_unpivot's own uniqueness test carries
+      academic_year and so cannot catch this.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_google_sheets__kippfwd__goals_unpivot
+
+  - name: test_kippfwd_miami_roster_current_year_not_empty
+    description: >-
+      rpt_gsheets__kippfwd_miami_roster must hold at least one row for
+      var("current_academic_year"). This is the exact regression this model
+      shipped once already -- the prior version verified only the prior academic
+      year and silently produced zero current-year rows after the July rollover,
+      because Miami PowerSchool holds no current-year data and the model still
+      read PowerSchool-anchored joins for its year filter. Fails loudly if the
+      current year ever again comes back empty, instead of only being caught by
+      manual spot-checking.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_gsheets__kippfwd_miami_roster
+
   - name: test_int_finalsite__status_order_matches_crosswalk_ranking
     description: >-
       detailed_status_ranking (stg_google_sheets__finalsite__status_crosswalk,
@@ -112,8 +166,13 @@ data_tests:
       simultaneously-active classifications for the same student in the same
       source — most often caused by EdPlan emitting two snapshot rows with
       overlapping date ranges and different `spedlep` values.
+
+      TODO(#4801): downgraded to warn for one bad Focus record — enrollment
+      771691 carries an end date two years past its school year, so it contains
+      two of the same student's other AY2021 stints. Restore severity: error
+      once Ops corrects it.
     config:
-      severity: error
+      severity: warn
       meta:
         dagster:
           ref:
@@ -139,8 +198,12 @@ data_tests:
       not overlap. The NJ leg trims each Titan annual window's end to
       day-before-next-row's-start so academic-year boundary overlaps don't
       surface in the dim.
+
+      TODO(#4801): downgraded to warn for the same bad Focus record as the IEP
+      span test — enrollment 771691. Restore severity: error once Ops corrects
+      it.
     config:
-      severity: error
+      severity: warn
       meta:
         dagster:
           ref:
@@ -225,6 +288,20 @@ data_tests:
           ref:
             name: int_assessments__resolved_section_enrollments
 
+  - name: fct_assessment_scores_enrollment_scoped__term_covers_assessment_date
+    description: >-
+      Asserts that each score's resolved reporting quarter contains the date the
+      score was administered or taken. Any resolution grain coarser than the
+      score row — through the section enrollment, or through the per-score-grain
+      anchor date in int_assessments__resolved_section_enrollments — assigns
+      quarters that do not cover the row's own date, which is the #4484 defect.
+      Failure rows name the score, its date, and the quarter it landed in.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: fct_assessment_scores_enrollment_scoped
+
   - name: int_collegeboard__ap_unpivot__crosswalk_resolves
     description: >-
       Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
@@ -260,14 +337,109 @@ data_tests:
       Warns when a non-dropped course-enrollment (cc) record overlaps more than
       one school enrollment stint. dim_student_section_enrollments resolves
       these to a single stint (covering-first, else earliest), so a nonzero
-      count is a known, monitored condition (baseline ~147, almost all genuine
-      mid-year drop/re-enroll) rather than a failure. Growth signals new
-      boundary-spanning sections to review.
+      count is a known, monitored condition rather than a failure. Almost all
+      are genuine mid-year drop/re-enroll. Miami contributes 16, and that number
+      is stable across every environment measured. The New Jersey component
+      drifts with the live school year -- it read 135 in one build and 128 in CI
+      hours later -- so treat the total as roughly 150 rather than a fixed
+      number, and watch the Miami component and the trend instead. Miami became
+      visible only with this change, which added the Focus branch upstream and
+      made the test's join, date predicate and drop filter null-safe; earlier
+      baselines predate all three and are not comparable.
     config:
       meta:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: test_miami_section_enrollment_orphan_rate
+    description: >-
+      Warns if Miami's current-year null-student_enrollment_key rate in
+      dim_student_section_enrollments rises materially above where it shipped.
+      Focus leaves a course period's end_date null while the schedule is open
+      (coalesced to an open-ended sentinel for the stint join), so a residual of
+      unmatched rows is expected, not a defect. Re-measured 2026-08-27, the
+      largest cause is degenerate stint windows whose exitdate lands on or
+      before their entrydate (1,332 of 1,886 same-school orphans, tracked on
+      #5024), not the null end_date. Shipped at 10.5% (2,025 of 19,295 AY2026
+      rows); NJ's own completed-year norm runs higher (18.16% AY2024, 19.75%
+      AY2025) once a year is no longer mid-accumulation, so 15% is a real
+      ceiling on the still-growing current year, not an arbitrary number.
+      Tracked in #4970 -- do not drive this to zero by widening the overlap
+      predicate, which would attach rows to the wrong stint.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: dim_student_section_enrollments
+
+  - name: test_miami_section_enrollment_dropped_rate
+    description: >-
+      Warns if Miami's current-year `is_dropped_section` rate leaves the band
+      the inference was validated against, or if the flag goes null again. Focus
+      has no drop convention, so the Miami value is inferred (#4968): the
+      schedule row's end_date falls before its marking period ends, and the
+      student still holds an open schedule row that year. The second half
+      excludes a withdrawal sweep. Both halves are assumptions about Focus
+      behavior, and this test is what notices when either stops holding -- a
+      bulk close of schedule rows, or a change that breaks the sweep exclusion,
+      would show up as a rate spike. Shipped at 2.97% (576 of 19,363 AY2026
+      rows) against a like-for-like NJ band of 0.23% to 8.55% at the same point
+      in the year. The 20% ceiling sits above every NJ completed-year rate
+      (17.35% Camden AY2025 is the highest measured), so it does not fire when
+      Miami's own year finishes accumulating. The null check is the other
+      direction: a regression in the Focus branch would restore the nulls this
+      replaced, and a null flag silently removes Miami from every report using
+      the bare `not is_dropped_section` idiom (#4996).
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_enrollments
+
+  - name: test_focus_course_enrollment_joins_resolve_miami
+    description: >-
+      Fails when either repointed course-enrollment model holds zero Miami rows.
+      Both models once joined students on PowerSchool's internal `cc_studentid`
+      / `studentid`, which Focus leaves null on every row, so both returned no
+      Miami data in any academic year while every test stayed green -- the
+      breakage produced no error, only absent rows. This asserts presence rather
+      than a count, because Miami's volume moves with enrollment and a floor
+      would drift stale or fire on legitimate change, while zero is always
+      wrong. It stays year-agnostic on purpose. #4968 made the Focus drop flags
+      non-null, and #5043 made the section-count filter null-safe and added
+      `scheduled_end_date`, so both models now carry Miami AY2026. The assertion
+      stays presence-only and year-agnostic anyway: the two models reach Miami
+      through different filters, so a year-scoped count would be measuring two
+      different things at once.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_extracts__course_enrollments_by_term
+
+  - name: test_focus_course_sections_teacher_resolves
+    description: >-
+      Warns on Focus course periods whose lead teacher does not resolve through
+      the staff roster (by `ein`, falling back to email), scoped to the Focus
+      population by year so the frozen Miami PowerSchool archive (which predates
+      the roster and will never resolve) doesn't inflate the count. Measured
+      floor is 80 AY2026 course periods: 67 with no teacher assigned in Focus at
+      all, plus 13 whose assigned user resolves through neither `ein` nor email.
+      Both are source data gaps in Focus / the roster, not a modeling defect.
+      (`int_focus__course_periods` also holds 21 stale AY2025 rows that the
+      year-scope filter correctly excludes here -- a raw, unscoped count over
+      all course periods would show 101 unresolved instead, double-counting that
+      stale year.)
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_sections
 
   - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
     description: >-
@@ -379,6 +551,23 @@ data_tests:
           ref:
             name: int_people__staff_roster
 
+  - name: rpt_clever__sections__enr_teacher_id_is_the_dso
+    description: >-
+      The auto-generated ENR sections must list the school's DSO as their
+      primary teacher, never the School Leader. Both titles match the same
+      filter in rpt_clever__sections, so the pick is stable only because
+      sortorder ranks them -- without that rank the two swap on BigQuery's scan
+      order, which is how ~90 sections silently changed hands and tripped
+      Clever's churn alert in August 2026. Errors rather than warns: Clever
+      derives each section's display name from its primary teacher, so a
+      regression here rewrites every ENR section name in the feed.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__sections
+
   - name: rpt_clever__school_id_resolves_to_schools_feed
     description: >-
       Cross-feed referential integrity for the six Clever SFTP extracts -- every
@@ -402,11 +591,117 @@ data_tests:
       student_id in enrollments must exist in students. students is scoped to
       the current academic year and enrollments is not, so a region whose SIS is
       frozen at a prior year keeps shipping course enrollments for students that
-      no longer appear in the student feed. Errors rather than warns for the
-      same reason as the school_id check.
+      no longer appear in the student feed. Warns rather than errors, unlike the
+      school_id check, because the two feeds rebuild asymmetrically under
+      state:modified+ -- students descends from
+      int_extracts__student_enrollments while enrollments descends only from the
+      powerschool staging models, so a PR touching the enrollment chain rebuilds
+      one side and reads the other frozen from the staging defer copies. That
+      vintage gap alone produces orphans and blocks CI on changes that cannot
+      affect feed membership.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__students
+
+  - name: rpt_parentsquare__sections__staff_id_resolves_at_its_own_school
+    description: >-
+      Every ParentSquare section's owner must hold a staff row at that section's
+      own school, not merely somewhere in staff.csv. The relationships test on
+      sections.staff_id is single-column, so an owner drawn from another region
+      satisfies it while dangling in this region's file -- and these views span
+      every NJ region, with each district wrapper slicing one region out. The
+      staff feed fans a leader across the schools of their own region only, so
+      (school_id, staff_id) is the pair that has to resolve. Errors rather than
+      warns: ParentSquare rejects a section naming a staff member it has no
+      record of at that school, which fails the whole sections import rather
+      than one row.
     config:
       severity: error
       meta:
         dagster:
           ref:
-            name: rpt_clever__students
+            name: rpt_parentsquare__sections
+
+  - name: rpt_parentsquare__students__every_student_has_a_roster_row
+    description: >-
+      Every student in the ParentSquare students feed must also appear in the
+      rosters feed. A student present in students.csv with no roster row is not
+      a vendor error -- ParentSquare accepts both files -- but that student sits
+      in no school-and-grade section, so they silently drop out of every
+      audience the feed exists to build. The rosters relationships tests only
+      check the child-to-parent direction, so nothing else catches this. It
+      matters because five models independently restate the same
+      enrolled-student filter (_dbt_source_project, academic_year, rn_year,
+      is_out_of_district, enroll_status) and the design's guarantee that rosters
+      covers students rests on those copies staying textually identical. This
+      test is what makes that a checked invariant rather than an assumption.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_parentsquare__students
+
+  - name: test_focus_unprefix_rule_holds
+    description: >-
+      Focus records the pre-migration student number on returning students, so
+      it is an independent check on the unprefix rule: stripping the 8400 prefix
+      must land on the same value Focus already stored. Warn rather than error,
+      because the one known anomalous id (a 10-digit value carrying no 8400
+      prefix) passes through deliberately and is an Ops correction in Focus, not
+      a modeling defect.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__students
+
+  - name: int_students__calendar_day__zero_enrollment_in_session_days
+    description: >-
+      Focus in-session days at a school that enrolled nobody that year. Five
+      Focus schools carry unfiltered 212-day calendars including holidays and
+      breaks; two of them are closed but still map to live network location
+      keys, so their days reach dim_school_calendars. The fix belongs in Focus
+      configuration, so this warns rather than errors -- it makes the rows
+      visible without hiding them.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__calendar_day
+
+  - name: stg_google_sheets__google_forms__question_department_crosswalk__unique_lowered_abbreviation
+    description: >-
+      int_surveys__survey_responses lowers abbreviation on both sides of the
+      department join, because sheet entry is not case-constrained. A plain
+      unique test on the raw column therefore does not protect the join: two
+      rows entered as A1 and a1 both pass it and then collide once lowered,
+      fanning out every response for that question and breaking the
+      response-grain uniqueness test downstream. This test asserts uniqueness on
+      the lowered value, which is the grain the join actually uses, and so
+      subsumes the raw unique test rather than sitting alongside it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__google_forms__question_department_crosswalk
+
+  - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
+    description: >-
+      The crosswalk is maintained by hand and separately from the form items
+      sheet, so a question added to a new survey form arrives with no crosswalk
+      row and its responses join to a null department. That routes them to the
+      Survey Dashboard's most restricted audience, which fails safe rather than
+      leaking, so this warns rather than errors -- it surfaces the abbreviations
+      Ops still needs to map without blocking a build.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__google_forms__question_department_crosswalk

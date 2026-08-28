@@ -272,9 +272,6 @@ with
             and courses_credittype in ('ENG', 'MATH')
     ),
 
-    -- pseudonymous, stable per-student token (hash of student_number). The raw
-    -- number is used for the joins below but never emitted; the extract is
-    -- de-identified at the source and shared under the research agreement.
     roster as (
         select
             *,

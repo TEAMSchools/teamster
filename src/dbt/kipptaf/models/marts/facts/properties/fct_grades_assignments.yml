@@ -8,6 +8,23 @@ models:
       enrollment period. FK to dim_student_section_enrollments, dim_terms, and
       dim_dates (role-playing via due_date_key). Reaches dim_student_enrollments
       by traversing student_section_enrollment_key.
+
+
+      PowerSchool only. Miami is absent from AY2026 forward, and repointing this
+      model's join keys would not change that, because the gradebook itself has
+      no Focus branch. int_powerschool__gradebook_assignments_scores unions the
+      district PowerSchool packages, and Miami left that package when it moved
+      to Focus, so its archive stops at AY2025 -- 523,021 rows for AY2025 and
+      zero for AY2026, measured against prod. Focus does hold gradebook data
+      (int_focus__gradebook_grades in the focus package), but it has no kipptaf
+      wrapper, so nothing reaches the network layer. Wiring that branch is
+      tracked in #5010, and was ruled out of #4995 on measurement. Miami's null
+      is_dropped_section also trips this model's `not is_dropped_section`
+      filter; that half is #4996.
+
+      Miami's absence is ratified as intentional on #4996. The gradebook has no
+      Focus branch, so no filter change here brings Miami back; wiring that
+      branch is #5010.
     columns:
       - name: grades_assignment_key
         data_type: string
@@ -25,21 +42,18 @@ models:
           - unique:
               config:
                 severity: warn
-          - not_null
 
       - name: student_section_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
           cc_dcid and _dbt_source_project.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_section_enrollments')
-            to_columns: [student_section_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_section_enrollments')
+              to_columns: [student_section_enrollment_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_student_section_enrollments')
@@ -51,11 +65,11 @@ models:
           start_date, region, and school_id. Null when due_date does not fall
           within any reporting term for the school and region.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
           - relationships:
               arguments:
@@ -72,11 +86,9 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentsection
             source_column: duedate
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

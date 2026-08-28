@@ -26,6 +26,12 @@ models:
               - contact_slot
           config:
             severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              regexp_contains(contact_slot, r'^(contact_[0-9]+|emergency_[1-4])$')
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: integer
@@ -37,21 +43,13 @@ models:
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1`, `contact_2`, or
-          `emergency_1` through `emergency_4`.
+          Which contact this row represents. Parent slots are numbered densely
+          from `contact_1` with no fixed upper bound — families with more
+          recorded parent-type relationships get more slots. `emergency_1`
+          through `emergency_4` are the four fixed `custom_attributes` `emrg_N`
+          sets mapped positionally.
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - accepted_values:
-              arguments:
-                values:
-                  - contact_1
-                  - contact_2
-                  - emergency_1
-                  - emergency_2
-                  - emergency_3
-                  - emergency_4
               config:
                 severity: error
       - name: _dbt_source_project
@@ -70,6 +68,21 @@ models:
           regions. Used with `_dbt_source_project` to key the contact person in
           the dimension — the id space is per-source-system, so the region is
           always part of the key.
+      - name: person_identity
+        data_type: string
+        description:
+          The contact's identity as a person, independent of the student they
+          are attached to and the slot they occupy — the Finalsite contact UUID
+          on the Finalsite branch, the Focus person id on the Focus branch. Null
+          for every emergency slot on both branches, which are scalar custom
+          fields on the student's own record rather than linked contact records;
+          a consumer keying on a person falls back to (student, slot) there.
+          `dim_student_contact_persons`, `bridge_student_contacts`, and
+          `rpt_deanslist__family_contacts` all key on this column, so they agree
+          on who is the same person.
+        config:
+          meta:
+            contains_pii: true
       - name: finalsite_contact_id
         data_type: string
         description:
@@ -80,6 +93,25 @@ models:
       - name: contact_name
         data_type: string
         description: The contact's full name.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_first_name
+        data_type: string
+        description:
+          The contact's given name as a discrete field, for receivers that
+          require first and last name separately rather than a single full-name
+          string. Sourced from the Finalsite contact record on the Finalsite
+          branch and from the Focus person record on the Miami branch, so it is
+          never derived by splitting `contact_name`.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_last_name
+        data_type: string
+        description:
+          The contact's family name as a discrete field, the companion to
+          `contact_first_name`. Same per-branch sourcing.
         config:
           meta:
             contains_pii: true
@@ -118,11 +150,23 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: phone_untyped
+        data_type: string
+        description:
+          The contact's first phone number carrying no type label, if any.
+          Finalsite lets a number be saved without selecting a type, and such a
+          number reaches none of the typed columns above — this is where it
+          lands, so a consumer can still reach the family. Always null on the
+          Focus branch, which types every number it stores.
+        config:
+          meta:
+            contains_pii: true
       - name: phone_primary
         data_type: string
         description:
-          The contact's first/best phone number regardless of type — a fallback
-          for phones the typed columns miss.
+          The contact's first/best phone number regardless of type, whether or
+          not a type label is set. To recover a number the typed columns miss,
+          use `phone_untyped`, which reports only genuinely untyped numbers.
         config:
           meta:
             contains_pii: true
@@ -177,6 +221,8 @@ unit_tests:
             'Mother' as relationship,
             1 as sort_order,
             'Guardian A' as contact_name,
+            'Guardian' as contact_first_name,
+            'A' as contact_last_name,
             '305-555-0001' as phone_mobile,
             cast(null as string) as phone_home,
             cast(null as string) as phone_daytime,
@@ -192,13 +238,13 @@ unit_tests:
             '8400123456' as local_student_id
           union all
           select
-            1, 20, 'Father', 2, 'Guardian B',
+            1, 20, 'Father', 2, 'Guardian B', 'Guardian', 'B',
             '305-555-0002', null, null, null, '305-555-0002',
             true, true, false, true,
             'kippmiami', 'b@example.org', '1 Main St', '8400123456'
           union all
           select
-            1, 30, 'Neighbor', 3, 'Guardian C',
+            1, 30, 'Neighbor', 3, 'Guardian C', 'Guardian', 'C',
             '305-555-0003', null, null, null, '305-555-0003',
             false, false, false, false,
             'kippmiami', 'c@example.org', '2 Other St', '8400123456'
@@ -209,11 +255,14 @@ unit_tests:
             cast(null as string) as contact_slot,
             cast(null as string) as finalsite_contact_id,
             cast(null as string) as contact_name,
+            cast(null as string) as contact_first_name,
+            cast(null as string) as contact_last_name,
             cast(null as string) as relationship,
             cast(null as string) as phone_mobile,
             cast(null as string) as phone_home,
             cast(null as string) as phone_daytime,
             cast(null as string) as phone_work,
+            cast(null as string) as phone_untyped,
             cast(null as string) as phone_primary,
             cast(null as bool) as is_emergency,
             cast(null as bool) as is_pickup,

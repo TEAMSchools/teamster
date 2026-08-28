@@ -178,13 +178,29 @@ over per-region finalsite sources.
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
 
-This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
-view lives in kipptaf sourcing district data via `source()`, and each district
-has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
-contract-columns-only — NO data tests or descriptions (those live on the kipptaf
-view). A new kipptaf region source (`sources-kipp*.yml`) needs the
-`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
-can't read it.
+This cross-project shape generalizes (e.g. finalsite→focus,
+`extracts/parentsquare/`): the heavy `rpt_*` view lives in kipptaf sourcing
+district data via `source()`, and each district has a thin wrapper sourcing
+`kipptaf_extracts`. The wrapper is contract-columns-only — NO data tests or
+descriptions (those live on the kipptaf view). A new kipptaf region source
+(`sources-kipp*.yml`) needs the `dev`/`staging` (`zz_stg_`)/prod schema branch,
+or single-PR cross-project CI can't read it.
+
+**The wrapper's region filter is a `code_location` column** the kipptaf view
+exposes (`_dbt_source_project as code_location`, or the roster's
+`home_work_location_dagster_code_location` for staff feeds) — the wrapper then
+filters `where code_location = '{{ project_name }}'` and does NOT project it.
+Don't expose `_dbt_source_project` under its own name for this; `code_location`
+is what `rpt_powerschool__autocomm_students` and `rpt_parentsquare__*` use.
+
+**Widening a Newark-only view to NJ is not just a filter swap** — a bare
+`cross join` to schools fans a region's staff across every NJ school, and an
+ungrouped `min()` pick over a sibling feed assigns one owner network-wide that
+dangles in every other region's file while a single-column `relationships` test
+still passes. Region-key both, and check school-number / `student_number`
+collisions and enum-domain tests (e.g. grade level) against prod before
+implementing, since widening changes the population every error-severity test
+runs over.
 
 **finalsite→focus exception**: the kippmiami `rpt_focus__*` are NOT thin
 pass-throughs — they are the reconciliation layer (import-once / diff against
@@ -194,6 +210,14 @@ actual SFTP feed. Per feed: addresses/contacts/demographics import-once
 (presence anti-join, with a null/street-line gate #4320); enrollment diffs and
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
+
+## Reuse existing entity identity
+
+**Before deriving an entity key in a new model, grep the marts.**
+`dim_student_contact_persons` and `bridge_student_contacts` already define
+`person_identity` and `student_contact_person_key`; an extract that invents its
+own contact key silently disagrees with them. A shared identity expression
+belongs in the `int_` model every consumer reads, not copy-pasted per consumer.
 
 ## `dbt_project.yml` Inherited Defaults
 
@@ -207,9 +231,10 @@ absence:
 | `marts/`                               | view (default) | `true`               |
 | `illuminate/dlt/staging/repositories/` | `table`        | `false` (override)   |
 
-**Disabled illuminate repositories**: 365, 413, 428 — disabled in
-`models/illuminate/dlt/staging/repositories/properties.yml`. Check before adding
-`ref()` calls to `int_illuminate__repository_data`.
+The `repositories/` contract override is deliberate — the unpivot macro reads
+columns at parse time, so they cannot be declared. See
+`models/illuminate/CLAUDE.md` for that, the disabled repository list, and the
+`fivetran/`-is-dead warning.
 
 **Disabled integrations** (project-level `+enabled: false`): ACT, ADP Workforce
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
@@ -217,48 +242,13 @@ Facebook, Illuminate Fivetran, Instagram.
 
 ## Known Upstream Issues
 
-**`int_people__location_crosswalk`** is NOT a union model — it has no
-`_dbt_source_relation`. Match the other side's `_dbt_source_project` against
-`location_dagster_code_location` for cross-region joins. Each row is one alias
-(alternate spelling of `location_name`) — consumers that join on an aliased name
-(e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
-Canonical-grain consumers (1 row per logical school) should use
-`stg_google_sheets__people__locations` instead.
-
-**`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
-`Location_Name` only. `Name` is the parent campus and repeats across sibling
-schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
-children).
-
-**`stg_powerschool__students` phantom rows**: PowerSchool retains 4 placeholder
-rows (one per district) with
-`dcid = -100, student_number = 0, enroll_status = -100`. The kipptaf-level view
-filters them via `where dcid >= 1`. Apply the same filter if reading a
-per-region source-system staging table directly.
-
-**`stg_powerschool__students` `enroll_status = 1` is invalid.** Filter
-`enroll_status IN (0, 2, 3)` (active / withdrawn / graduated) when resolving
-identity or attributing facts to a student. `-1` is pre-registered (not yet
-enrolled); `1` is inactive — never report against either.
-
-**`int_powerschool__student_enrollment_union` graduate placeholders**: rows with
-`enroll_status = 3` have NULL `entrydate` / `exitdate`, one row per
-`academic_year` per (student, district). `generate_surrogate_key` inputs that
-include `academic_year` hash uniquely; omitting `academic_year` collides.
-Date-range joins on `entrydate` silently drop these rows. Retain them for KIPP
-Forward / kippadb alumni reporting — derived enrollment models must not drop
-them, and `dim_student_enrollments` stays alumni-inclusive.
-
-**`enroll_status` is student-level, not per-stint.** Sourced from
-`stg_powerschool__students` and copied identically to every row in
-`int_powerschool__student_enrollment_union`. Don't expect different stints for
-the same student to carry different values. **For point-in-time or historical
-enrollment counts, filter by enrollment dates (`entrydate`/`exitdate` covering
-the target date), NOT `enroll_status`** — status is current-only, so a status
-filter drops a mid-year withdrawal even from dates they were still enrolled
-(~887 students network-wide for AY2025) and never reflects
-status-on-a-past-date. Topline `Total Enrollment` counts by dates, not status;
-match that for reconciliation.
+**Miami is the exception, deliberately.** Focus is Miami's sole enrollment
+source and has no placeholder equivalent, so the Focus cutover removed Miami's
+1,002 placeholder rows (420 students, AY2022-AY2025) — from the spine in #4775
+and from `base_powerschool__student_enrollments` in #4868. The
+retain-graduate-placeholder rule below still binds the three NJ regions. Do not
+"restore" Miami placeholders by reviving the frozen archive branch; that was
+decided against on 2026-08-14.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
 `enroll_status`.** `count_students` in the `student_enrollments` Cube derives
@@ -279,78 +269,51 @@ must take the per-school last in-session day
 in-progress period — a global max silently drops early-ending schools (e.g. all
 of Miami).
 
-**`dim_terms.type` is KIPP-managed, not PowerSchool-derived.** Values from
-`stg_google_sheets__reporting__terms` — RT (reporting term, quarter grain), ATT
-(attendance, semester/year grain only), LIT, AR, REP, SURVEY, etc. Quarter
-attendance rows live under `type='RT'` matching `term_name='Q1'..'Q4'` — NOT
-`type='ATT'`, NOT keyed by `term_code='RT1'..'RT4'`.
+Model and column semantics for these live in each model's properties yml. What
+stays here is what to do and what not to do.
 
-**`base_powerschool__course_enrollments` PowerSchool double-writes**: a frozen
-historical corpus of duplicate `cc` rows for the same
-`(student, section, dateleft)`, surfaced by a warn-level
-`dbt_utils.unique_combination_of_columns(studentid, sectionid, dateleft)` test
-on `stg_powerschool__cc`. Tracked in
-[#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
-[#3915](https://github.com/TEAMSchools/teamster/issues/3915).
-
-- When date-range joining `base_powerschool__course_enrollments`, filter
-  `is_dropped_section` first.
-- Do not add defensive dedupes (`qualify row_number() = 1` or
-  `dbt_utils.deduplicate()`) for the residual fan-out.
-- Downgrade the affected mart PK uniqueness test to `severity: warn` with a
-  `TODO(#3915)` so it returns to error when source cleanup completes.
-- `base_powerschool__student_enrollments` date-range joins currently need no
-  tiebreaker.
-
-**`_dagster_partition_key` in SchoolMint Grow staging** is the Grow `archived`
-flag (`'f'` = not archived, `'t'` = archived). Most Grow staging models filter
-to `'f'`; `stg_schoolmint_grow__rubrics__measurement_groups__measurements` and
-`stg_schoolmint_grow__measurements` intentionally do not, so observation FKs to
-archived rubrics/measurements still resolve. Don't re-add the filter to those
-two models without understanding the FK-coverage tradeoff.
-
-**`stg_google_sheets__people__locations` column naming**: `location_region`
-holds long-form entity names (`TEAM Academy Charter School`,
-`KIPP Cooper Norcross Academy`, `KIPP Miami`, `KIPP Paterson`); `city` holds the
-short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
-lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
-use `dim_regions.dagster_code_location`.
-
-**`dim_staff` is all-time staff (~4,600), not active-only.** For an active-staff
-grain, spine on `dim_staff_work_assignments` where `is_current` (which already
-excludes terminated staff via termination date). Do NOT filter
-`dim_work_assignment_status.status_name != 'Terminated'` to get "active" — that
-assignment-status field is misaligned with the roster's `worker_status_code` and
-over-drops (~100 roster-active staff). The roster active+primary set (~1,526)
-runs ~30 larger than the marts' current-primary set (hire/term timing). `entity`
-(KTAF vs Region) derives from `business_unit_name`
-(`KIPP TEAM and Family Schools Inc.` = KTAF, else Region).
-
-**`stg_renlearn__star` is the consolidated STAR model** — the Nov-2025
-"consolidate star calcs" refactor disabled `int_renlearn__star_rollup`
-(`config: enabled: false`; leave it) and folded the derived columns
-(`academic_year`, `star_subject`/`star_discipline`, `administration_window`
-Fall/Winter/Spring→BOY/MOY/EOY, benchmark int-flags, `rn_subject_*`) into this
-kipptaf-level `union_relations` view (materialized table). All STAR consumers
-read it. Edit/consume STAR here, not the rollup.
-
-**`stg_adp_workforce_now__workers` has no SCD2 tombstone for disappearance.** A
-worker hard-deleted or merged in ADP (vanishes from the daily `asOfDate`
-snapshots with no `Terminated` status row) keeps its final row open at
-`9999-12-31` / `is_current_record = true` indefinitely — a ghost that flows into
-`stg_people__employee_numbers` (`is_active`), `int_people__staff_roster`, and
-the `rpt_idauto__staff_roster` (RapidIdentity login) feed, causing
-phantom-identity login issues. Fix by rematerializing the ADP `workers`
-partitions spanning the record's active dates (the `asOfDate` re-pull drops it);
-downstream tables rebuild via automation. Detection check tracked in
-[#4407](https://github.com/TEAMSchools/teamster/issues/4407).
-
-**`stg_people__employee_numbers` assigns one number per ADP `associate_id` in
-first-appearance order** (`max(employee_number) + row_number`). A lower number
-means the associate was seen in ADP earlier, NOT an earlier hire date
-(`worker_original_hire_date` is editable). One person with duplicate ADP worker
-records gets multiple active employee numbers, and the LDAP UPN attaches only to
-whichever `employee_number` the account was provisioned under.
+- **`stg_powerschool__students`** — never resolve identity or attribute facts
+  against `enroll_status` `-1` or `1`. Apply the `dcid >= 1` placeholder filter
+  when reading a per-region staging table directly.
+- **`int_powerschool__student_enrollment_union`** — retain graduate placeholder
+  rows; derived enrollment models and `dim_student_enrollments` stay
+  alumni-inclusive. Include `academic_year` in surrogate key inputs.
+- **`stg_powerschool__cc` double-writes** — filter `is_dropped_section` first
+  when date-range joining `base_powerschool__course_enrollments`. Do NOT add
+  defensive dedupes (`qualify row_number() = 1` or `dbt_utils.deduplicate()`)
+  for the residual fan-out. Downgrade the affected mart PK uniqueness test to
+  `severity: warn` with a `TODO(#3915)` so it returns to error when source
+  cleanup completes. `base_powerschool__student_enrollments` date-range joins
+  currently need no tiebreaker. Tracked in
+  [#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
+  [#3915](https://github.com/TEAMSchools/teamster/issues/3915).
+- **`int_people__location_crosswalk`** — consumers joining on an aliased name
+  (e.g. `fct_staff_observations` on `gro.school_name`) must use this model.
+  Canonical-grain consumers, meaning one row per logical school, use
+  `stg_google_sheets__people__locations`.
+- **`stg_google_sheets__people__campus_crosswalk`** — do not reintroduce a
+  `Campus_Name` scalar on the locations sheet.
+- **`stg_google_sheets__people__locations`** — to map `_dbt_source_project` to a
+  region, use `dim_regions.dagster_code_location`, not this model.
+- **SchoolMint Grow archived rows** — `stg_schoolmint_grow__measurements` and
+  `stg_schoolmint_grow__rubrics__measurement_groups__measurements` deliberately
+  do not filter to non-archived. Don't re-add the filter to those two without
+  understanding the FK-coverage tradeoff.
+- **`dim_staff`** — do NOT filter
+  `dim_work_assignment_status.status_name != 'Terminated'` to get "active". That
+  field is misaligned with the roster's `worker_status_code` and over-drops
+  roughly 100 roster-active staff. The roster active-and-primary set (~1,526)
+  runs ~30 larger than the marts' current-primary set, from hire and termination
+  timing. On the `rpt_tableau__*` extracts, `entity` (KTAF vs Region) derives
+  from `business_unit_name` — `KIPP TEAM and Family Schools Inc.` is KTAF,
+  anything else is Region.
+- **`stg_renlearn__star`** — `int_renlearn__star_rollup` is disabled
+  (`config: enabled: false`); leave it. Edit and consume STAR at
+  `stg_renlearn__star`.
+- **`stg_adp_workforce_now__workers` ghosts** — fix by rematerializing the ADP
+  `workers` partitions spanning the record's active dates; the re-pull drops the
+  ghost and downstream tables rebuild via automation. Detection check tracked in
+  [#4407](https://github.com/TEAMSchools/teamster/issues/4407).
 
 ## Exposures
 
@@ -390,6 +353,21 @@ dbt Cloud project ID: `211862`.
 
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
+
+A refactor touching many models pulls them into `state:modified+`, so CI builds
+models it has never built — expect latent `severity: error` failures unrelated
+to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
+prod for the same count before assuming you caused it, and budget for triage
+when scoping a wide sweep.
+
+`state:modified+` is branch-vs-deferred-environment, NOT commit-vs-commit. A
+docs-only or `.md`-only push to a branch that already modifies dbt models
+re-runs the whole selection — measured at 918 relations and ~4.5 min on a
+13-file PR whose last commit touched only `.md`. Batch doc commits before
+pushing, or land them in a separate PR. Verify what a run actually built with
+`creation_time` in `region-us.INFORMATION_SCHEMA.TABLES` filtered to
+`dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
+proxies.
 
 CI is scoped to the kipptaf project only. PRs touching only a district project
 (kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
@@ -488,3 +466,7 @@ snapshot — before removing it.
   `models/marts/`. Actively being developed; see
   `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
   discipline, and strict-chain rules.
+
+New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
+Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward
+choice, and the older ones are not being renamed.

@@ -1,0 +1,219 @@
+models:
+  - name: stg_focus__schedule
+    description: >-
+      Focus student schedules — one row per student enrolled in a course period
+      for a marking period. The columns projected here are the ones Miami
+      populates; the wider Focus schedule table carries a large block of Florida
+      adult-education, clock-hour and functioning-level fields that are empty in
+      Miami and are left out until they carry data.
+    columns:
+      - name: id
+        description:
+          Primary key — Focus schedule id; one row per scheduled section.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id scheduled into the section.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+      - name: course_period_id
+        description: >-
+          Focus course-period (section) id the student is scheduled into.
+          int_focus__schedule joins this to stg_focus__course_periods, so an
+          orphan here would silently drop the row downstream.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__course_periods')
+                field: course_period_id
+              config:
+                severity: error
+      - name: course_id
+        description: >-
+          Focus course id the scheduled section belongs to. int_focus__schedule
+          joins this to stg_focus__courses, so an orphan here would silently
+          drop the row downstream.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__courses')
+                field: course_id
+              config:
+                severity: error
+      - name: syear
+        description: >-
+          Focus school year start year of the schedule row (e.g. 2025 =
+          2025-26).
+        data_type: int
+      - name: school_id
+        description: Focus school id the scheduled section is taught at.
+        data_type: int
+      - name: marking_period_id
+        description: >-
+          Focus marking-period id the schedule row covers. Focus stores 0 rather
+          than null for a full-year schedule, so this does not resolve to
+          stg_focus__marking_periods directly — int_focus__schedule resolves the
+          0 to the school's type = 'year' marking period.
+        data_type: int
+      - name: mp
+        description: >-
+          Term the schedule row covers as a code — FY full year, SEM semester,
+          QTR quarter. Pairs with marking_period_id, which is 0 whenever this is
+          FY.
+        data_type: string
+      - name: course_weight
+        description: >-
+          Weighting applied to the course when computing GPA for this scheduled
+          section.
+        data_type: string
+      - name: days
+        description: >-
+          Days of the week the section meets, as the concatenated weekday
+          initials Focus stores (M, T, W, H for Thursday, F, S, U).
+        data_type: string
+      - name: rotation_days
+        description: >-
+          Rotation-day pattern the section meets on, for schools running a
+          multi-day rotating timetable rather than a fixed weekly one.
+        data_type: string
+      - name: start_date
+        description: >-
+          First date the student is scheduled into the section. Reflects
+          mid-term schedule changes, so it is not always the term start.
+        data_type: date
+      - name: end_date
+        description: >-
+          Last date the student is scheduled into the section, set when a
+          student drops the section mid-term. Null while the schedule row is
+          open — which is every row in Miami today.
+        data_type: date
+      - name: modified_date
+        description: Timestamp the schedule row was last changed in Focus.
+        data_type: timestamp
+      - name: modified_by
+        description: Focus user id that last changed the schedule row.
+        data_type: string
+      - name: age_inst_setting
+        description: >-
+          Adult and career education instructional setting code, reported to the
+          state for adult-education sections.
+        data_type: string
+      - name: age_online_course
+        description: >-
+          Adult and career education online-course indicator, reported to the
+          state for adult-education sections.
+        data_type: string
+      - name: cte_de_location
+        description: >-
+          Location where career and technical dual-enrollment instruction takes
+          place, as a state reporting code.
+        data_type: string
+      - name: de_inst_type
+        description: >-
+          Dual-enrollment instruction type, distinguishing how a dual-enrollment
+          course is delivered.
+        data_type: string
+      - name: de_student_type
+        description: >-
+          Dual-enrollment student type, distinguishing the basis on which the
+          student is dual-enrolled.
+        data_type: string
+      - name: online_course
+        description: >-
+          Whether the scheduled section is delivered as an online course, as a
+          state reporting code.
+        data_type: string
+      - name: math_intervention
+        description: >-
+          Mathematics intervention indicator for the scheduled section, reported
+          to the state.
+        data_type: string
+      - name: fefp_number
+        description: >-
+          FEFP Number custom field — the Florida Education Finance Program
+          category the section is funded under. Stores the option code; the
+          readable label lives in the custom-field option crosswalk.
+        data_type: string
+      - name: dual_enrollment_indicator
+        description: >-
+          Dual Enrollment Indicator custom field, distinguishing academic,
+          vocational, CTE-certificate and early-admission dual enrollment.
+          Stores the option code.
+        data_type: string
+      - name: class_minutes_weekly
+        description: >-
+          Class Minutes Weekly custom field — scheduled instructional minutes
+          per week for the section. Stored as text in Focus, not a number.
+        data_type: string
+      - name: reading_intervention_component
+        description: >-
+          Reading Intervention Component custom field, marking the section as
+          Tier 2 targeted or Tier 3 intensive reading intervention. Stores the
+          option code.
+        data_type: string
+      - name: basic_skills_exam
+        description: >-
+          Basic Skills Exam custom field, recording the basis on which a student
+          satisfies or is exempt from the basic-skills requirement. Stores the
+          option code.
+        data_type: string
+      - name: pmrn
+        description: >-
+          PMRN custom field — a checkbox marking the section for the Progress
+          Monitoring and Reporting Network. No option list exists for this
+          field, so the stored value is carried through undecoded.
+        data_type: string
+      - name: location_of_student
+        description: >-
+          Location of Student custom field, recording where the student sits for
+          a virtual course. Stores the option code.
+        data_type: string
+      - name: eoc_exam_term
+        description: >-
+          EOC Exam Term custom field, recording which term the end-of-course
+          exam falls in. Stores the option code.
+        data_type: string
+      - name: exempt_from_total_clock_hours
+        description: >-
+          Exempt from Total Clock Hours custom field — a checkbox excluding the
+          section from clock-hour totals. No option list exists for this field,
+          so the stored value is carried through undecoded.
+        data_type: string
+      - name: exclude_from_fte
+        description: >-
+          Exclude from FTE custom field — a checkbox excluding the section from
+          full-time-equivalent funding counts. No option list exists for this
+          field, so the stored value is carried through undecoded.
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

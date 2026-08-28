@@ -18,7 +18,8 @@ with
                 term when 'Q2' then 'Q1' when 'Q3' then 'Q2' when 'Q4' then 'Q3'
             end as prior_quarter,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
+        where term is not null
 
         union all
 
@@ -38,7 +39,7 @@ with
 
             cast(null as string) as prior_quarter,
 
-        from {{ ref("stg_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
         where isyearrec = 1
     ),
 
@@ -179,6 +180,8 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
             enr.ada,
+            enr.unweighted_ada,
+            enr.weighted_ada,
             enr.ada_above_or_at_80,
             enr.hos,
             enr.school_leader,
@@ -355,13 +358,7 @@ with
             and enr.academic_year <= {{ var("current_academic_year") }}
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
-            /* TODO(#4340): add Paterson once PS gradebook data is populated.
-               That change also has to add a kipppaterson source to
-               int_powerschool__gradescaleitem_lookup, which unions Newark,
-               Camden and Miami only — otherwise the grade_scale_ladder join
-               below finds no scale and need_next_* stays silently null for
-               every Paterson row. */
-            and enr.region in ('Newark', 'Camden')
+            and enr.region in ('Newark', 'Camden', 'Paterson')
     ),
 
     course_enrollments as (
@@ -899,6 +896,8 @@ select
     s.is_counseling_services,
     s.is_student_athlete,
     s.ada,
+    s.unweighted_ada,
+    s.weighted_ada,
     s.ada_above_or_at_80,
 
     s.`quarter`,

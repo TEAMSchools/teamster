@@ -12,8 +12,7 @@ with
             phone_primary,
             address_home,
             _dbt_source_project,
-
-            coalesce(finalsite_contact_id, personid) as person_identity,
+            person_identity,
         from {{ ref("int_students__contacts") }}
     ),
 
@@ -39,7 +38,9 @@ with
     ),
 
     /* emergency contacts have no stable person record under the Finalsite 2+4
-       shape, so each (student, slot) is its own person keyed by student + slot. */
+       shape, so each (student, slot) is its own person keyed by student + slot.
+       Matched positively on 'emergency_' slots so unrecognised parent slots are
+       dropped rather than misfiled as emergency contacts. */
     emergency_persons as (
         select
             student_number,
@@ -54,7 +55,7 @@ with
             address_home,
             _dbt_source_project,
         from contacts
-        where contact_slot not in ('contact_1', 'contact_2')
+        where contact_slot like 'emergency\\_%'
     )
 
 select

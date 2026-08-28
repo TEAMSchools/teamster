@@ -33,7 +33,6 @@ with
             co.lep_status,
             co.status_504,
 
-            -- exemption source fields (preserved through pivot for reason labels)
             nj.math_state_assessment_name,
             nj.state_assessment_name,
             sub.ps_grad_path_code,
@@ -41,7 +40,6 @@ with
 
             subj as `subject`,
 
-            -- display string is student-scoped, not test-scoped
             concat(co.student_name, ' - ', co.student_number) as student,
 
             case
@@ -129,7 +127,6 @@ with
             any_value(special_education_code) as special_education_code,
             any_value(is_self_contained) as is_self_contained,
 
-            -- exemption source fields
             any_value(math_state_assessment_name) as math_state_assessment_name,
             any_value(state_assessment_name) as state_assessment_name,
             max(
@@ -139,12 +136,10 @@ with
                 case when `subject` = 'MATH' then ps_grad_path_code end
             ) as math_grad_path_code,
 
-            -- per-subject test codes
             max(case when `subject` = 'ENG' then test_code end) as ela_test_code,
             max(case when `subject` = 'MATH' then test_code end) as math_test_code,
             max(case when `subject` = 'SCI' then test_code end) as sci_test_code,
 
-            -- per-subject extended time
             max(
                 case when `subject` = 'ENG' then has_extended_time end
             ) as ela_has_extended_time,
@@ -181,7 +176,6 @@ select
     math_has_extended_time,
     sci_has_extended_time,
 
-    -- why is ELA exempt? (null = not exempt)
     case
         when ela_test_code is not null
         then null
@@ -196,7 +190,6 @@ select
         else 'ELA Exempt - Other'
     end as ela_exemption_reason,
 
-    -- why is Math exempt? (null = not exempt)
     case
         when math_test_code is not null
         then null
@@ -207,7 +200,6 @@ select
         else 'Math Exempt - Other'
     end as math_exemption_reason,
 
-    -- summary visual flag for quick stakeholder scan (null = no exemptions)
     case
         when ela_test_code is null and math_test_code is null
         then 'ELA and Math Exempt'

@@ -17,9 +17,7 @@ with
         where
             not is_prestart
             and worker_status_code != 'Terminated'
-            -- Miami rosters into Clever directly from Focus; excluded from all
-            -- six feeds
-            and home_work_location_dagster_code_location != 'kippmiami'
+            and {{ exclude_frozen("home_work_location_dagster_code_location") }}
 
         union all
 
@@ -39,7 +37,7 @@ with
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
         where
-            dagster_code_location != 'kippmiami'
+            {{ exclude_frozen("dagster_code_location") }}
             -- int_people__temp_staff gates on idauto_status and the AD account
             -- flag, neither of which flips on offboarding. A populated
             -- idauto_person_term_date is the only termination signal it carries.
@@ -58,12 +56,13 @@ with
         from {{ ref("stg_powerschool__schools") }}
         where
             state_excludefromreporting = 0
-            and _dbt_source_relation not like '%kippmiami%'
+            and {{ exclude_frozen("_dbt_source_project") }}
     ),
 
     assignments as (
-        /* - School staff assigned to primary school only
-           - Campus staff assigned to all schools at campus
+        /* School and campus staff assigned to their primary school only. The
+           campus crosswalk previously overrode the school id here, but it
+           resolved to the same value the roster already carries.
         */
         select
             sr.powerschool_teacher_number,
@@ -73,27 +72,14 @@ with
             sr.home_department_name,
             sr.sam_account_name,
 
-            cast(
-                coalesce(
-                    ccw.powerschool_school_id,
-                    sr.home_work_location_powerschool_school_id
-                ) as string
-            ) as school_id,
+            cast(sr.home_work_location_powerschool_school_id as string) as school_id,
         from staff_roster as sr
-        left join
-            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_reporting_name = ccw.location_name
-            and not ccw.is_pathways
         where
             sr.home_department_name not in ('Data', 'Teaching and Learning')
-            and coalesce(
-                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            )
-            != 0
+            and sr.home_work_location_powerschool_school_id != 0
 
         union all
 
-        /* T&L/EDs/Data to all schools under CMO */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -116,7 +102,6 @@ with
 
         union all
 
-        /* all region */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -134,7 +119,6 @@ with
 
         union all
 
-        /* all NJ */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -152,6 +136,28 @@ with
         inner join staff_roster as sr on up.employee_number = sr.employee_number
         inner join schools as sch on sch.schoolstate = 'NJ'
         where g.cn = 'Group Staff NJ Regional'
+
+        union all
+
+        /* School Leader in Residence (Room 9, Newark) also covers Paterson
+           schools -- #4981
+        */
+        select
+            sr.powerschool_teacher_number,
+            sr.user_principal_name,
+            sr.given_name,
+            sr.family_name_1,
+            sr.home_department_name,
+            sr.sam_account_name,
+
+            sch.school_id,
+        from staff_roster as sr
+        inner join
+            schools as sch
+            on sch.dagster_code_location in ('kippnewark', 'kipppaterson')
+        where
+            sr.job_title = 'School Leader in Residence'
+            and sr.home_work_location_reporting_name = 'Room 9'
     )
 
 select distinct  /* some staff are in multiple assignment groups */
