@@ -244,7 +244,7 @@ models:
             contains_pii: true
       - name: label_free_reduced_meals_program
         description: >-
-          >- Decoded label for the free_reduced_meals_program select field — the
+          Decoded label for the free_reduced_meals_program select field — the
           student's free or reduced-price meal eligibility basis.
         config:
           meta:
@@ -328,8 +328,8 @@ models:
             contains_pii: true
       - name: label_idea_educational_environment
         description: >-
-          >- Decoded label for the idea_educational_environment select field —
-          the IDEA educational environment reported for the student.
+          Decoded label for the idea_educational_environment select field — the
+          IDEA educational environment reported for the student.
         config:
           meta:
             contains_pii: true
@@ -412,8 +412,8 @@ models:
             contains_pii: true
       - name: label_doe_test_accommodations_access_for_ells
         description: >-
-          >- Decoded label for the doe_test_accommodations_access_for_ells
-          select field — the ACCESS for ELLs testing accommodation.
+          Decoded label for the doe_test_accommodations_access_for_ells select
+          field — the ACCESS for ELLs testing accommodation.
         config:
           meta:
             contains_pii: true
@@ -433,7 +433,7 @@ models:
             contains_pii: true
       - name: label_ese_fefp_code
         description: >-
-          >- Decoded label for the ese_fefp_code select field — the exceptional
+          Decoded label for the ese_fefp_code select field — the exceptional
           student education FEFP funding category.
         config:
           meta:
@@ -454,7 +454,7 @@ models:
             contains_pii: true
       - name: label_gifted_eligibility
         description: >-
-          >- Decoded label for the gifted_eligibility select field — names the
+          Decoded label for the gifted_eligibility select field — names the
           FLDOE criteria paragraph a student was found gifted-eligible under.
         config:
           meta:
@@ -477,7 +477,7 @@ models:
             contains_pii: true
       - name: label_prekindergarten_program_participation
         description: >-
-          >- Decoded label for the prekindergarten_program_participation select
+          Decoded label for the prekindergarten_program_participation select
           field.
         config:
           meta:
@@ -519,11 +519,10 @@ models:
             contains_pii: true
       - name: label_year_entered_ninth_grade
         description: >-
-          >- Decoded label for the year_entered_ninth_grade select field.
-          Currently null for every row — the only stored value points at a
-          select option that is soft-deleted in Focus, and its label was the
-          placeholder 00000000. Labels will resolve once Focus stores a live
-          option.
+          Decoded label for the year_entered_ninth_grade select field. Currently
+          null for every row — the only stored value points at a select option
+          that is soft-deleted in Focus, and its label was the placeholder
+          00000000. Labels will resolve once Focus stores a live option.
         config:
           meta:
             contains_pii: true
@@ -545,8 +544,8 @@ models:
             contains_pii: true
       - name: label_florida_first_start_program_participant
         description: >-
-          >- Decoded label for the florida_first_start_program_participant
-          select field.
+          Decoded label for the florida_first_start_program_participant select
+          field.
         config:
           meta:
             contains_pii: true
@@ -568,8 +567,8 @@ models:
             contains_pii: true
       - name: label_even_start_family_literacy_program_participant
         description: >-
-          >- Decoded label for the
-          even_start_family_literacy_program_participant select field.
+          Decoded label for the even_start_family_literacy_program_participant
+          select field.
         config:
           meta:
             contains_pii: true
@@ -589,7 +588,7 @@ models:
             contains_pii: true
       - name: label_multi_birth_for_faster
         description: >-
-          >- Decoded label for the multi_birth_for_faster select field — the
+          Decoded label for the multi_birth_for_faster select field — the
           multiple-birth indicator reported through FASTER.
         config:
           meta:
@@ -631,7 +630,7 @@ models:
             contains_pii: true
       - name: label_screening_for_hearing_grade_kg
         description: >-
-          >- Decoded label for the screening_for_hearing_grade_kg select field —
+          Decoded label for the screening_for_hearing_grade_kg select field —
           the kindergarten hearing screening result reported through FASTER.
         config:
           meta:
@@ -674,7 +673,7 @@ models:
             contains_pii: true
       - name: label_birth_date_verification
         description: >-
-          >- Decoded label for the birth_date_verification select field — the
+          Decoded label for the birth_date_verification select field — the
           document used to verify date of birth.
         config:
           meta:
@@ -717,7 +716,7 @@ models:
             contains_pii: true
       - name: label_diploma_florida_seal_of_fine_arts_designation
         description: >-
-          >- Decoded label for the diploma_florida_seal_of_fine_arts_designation
+          Decoded label for the diploma_florida_seal_of_fine_arts_designation
           select field.
         config:
           meta:
@@ -761,8 +760,8 @@ models:
             contains_pii: true
       - name: label_bright_futures_volunteer_service_requirement_met
         description: >-
-          >- Decoded label for the
-          bright_futures_volunteer_service_requirement_met select field.
+          Decoded label for the bright_futures_volunteer_service_requirement_met
+          select field.
         config:
           meta:
             contains_pii: true
@@ -965,8 +964,8 @@ models:
             contains_pii: true
       - name: label_basis_of_entry
         description: >-
-          >- Decoded label for the basis_of_entry select field — the basis on
-          which the student entered the district.
+          Decoded label for the basis_of_entry select field — the basis on which
+          the student entered the district.
         config:
           meta:
             contains_pii: true
@@ -986,8 +985,8 @@ models:
             contains_pii: true
       - name: label_first_basis_of_exit
         description: >-
-          >- Decoded label for the first_basis_of_exit select field — the basis
-          on which the student first exited.
+          Decoded label for the first_basis_of_exit select field — the basis on
+          which the student first exited.
         config:
           meta:
             contains_pii: true
