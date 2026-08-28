@@ -151,6 +151,9 @@
       "Read(/env/**)"
     ]
   },
+  "env": {
+    "MCP_TIMEOUT": "90000"
+  },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
@@ -212,7 +215,6 @@
     "commit-commands@claude-plugins-official": true,
     "dagster-expert@dagster": true,
     "dbt@dbt-agent-marketplace": true,
-    "dignified-python@dagster": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "superpowers@superpowers-marketplace": true

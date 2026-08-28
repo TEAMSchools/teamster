@@ -13,8 +13,18 @@ models:
 
       Also carries the demographic data and student identifiers the enrollment
       consumers read. Columns PowerSchool supplies and Focus does not are null
-      for Miami -- special-program placement, the KIPP Forward exit codes, and
-      the advisor teacher number.
+      for Miami -- `is_self_contained` (a SPED service-delivery fact Focus does
+      not carry, left null rather than asserted false per #4968), the KIPP
+      Forward exit codes (`exit_code_kf`, `exit_code_ts`),
+      `advisor_teachernumber` (no network teacher number in Focus), `rn_school`,
+      `rn_undergrad`, `track`, and `cohort_graduated`.
+
+      `is_enrolled_y1` and `is_enrolled_recent` are derived for Miami from the
+      roster's enrollment dates, using PowerSchool's expressions, and
+      `is_out_of_district` is false there -- the Focus branch already assigns
+      every Miami row a real `reporting_schoolid` and an ES/MS/HS
+      `school_level`, never `OD`. All three were null before #4996, which
+      silently removed Miami from every consumer that filtered on them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -24,6 +34,33 @@ models:
               - schoolid
               - entrydate
     columns:
+      - name: is_enrolled_y1
+        data_type: boolean
+        description: >-
+          Whether the student held an enrollment at any point in the academic
+          year. Derived from the enrollment dates on both SIS branches, taken to
+          the year grain so any qualifying stint counts. True on every row in
+          every region today, because neither branch leaves an exit date unset.
+        data_tests:
+          - not_null
+      - name: is_enrolled_recent
+        data_type: boolean
+        description: >-
+          Whether the student completed the academic year or is currently
+          enrolled. Mid-year withdrawals are false, which is how consumers drop
+          them. Derived on both SIS branches from the enrollment dates against
+          the last day of the school year, taken to the year grain.
+        data_tests:
+          - not_null
+      - name: is_out_of_district
+        data_type: boolean
+        description: >-
+          Whether the student is served in an out-of-district placement. Always
+          false for Miami, which is consistent with the reporting school and
+          school level the Focus branch assigns every Miami row -- PowerSchool
+          derives all three from the same special-programs record.
+        data_tests:
+          - not_null
       - name: homeless_code
         data_type: string
         data_tests:
@@ -371,15 +408,11 @@ models:
         data_type: int64
       - name: year_in_network
         data_type: int64
-      - name: is_enrolled_y1
-        data_type: boolean
       - name: is_enrolled_oct01
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
       - name: is_enrolled_mar15
-        data_type: boolean
-      - name: is_enrolled_recent
         data_type: boolean
       - name: is_retained_year
         data_type: boolean
@@ -411,8 +444,13 @@ models:
         data_type: int64
       - name: is_self_contained
         data_type: boolean
-      - name: is_out_of_district
-        data_type: boolean
+        description: >-
+          Whether the student is served in a self-contained classroom. Null for
+          Miami: Focus records no placement fact, and the nearest field
+          (`ese_fefp_code_label`) encodes Florida funding levels rather than
+          placement, so false would assert a verified negative the data cannot
+          support. Consumers that filter `not is_self_contained` therefore still
+          exclude Miami.
       - name: reporting_schoolid
         data_type: int64
       - name: reporting_school_name

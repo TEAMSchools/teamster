@@ -29,7 +29,11 @@ models:
               - scale_score
           config:
             severity: error
-            # Guards the deduplication, and must match its partition exactly.
+            # Cannot fail: bigquery__deduplicate compiles to
+            # `group by <partition_by>`, and this key IS that partition, so the
+            # macro guarantees it. Kept only because every rpt_ model needs a
+            # uniqueness test -- the falsifiable grain claim lives upstream on
+            # int_assessments__all_college_assessments.
             # test_type is in the key because practice and official reuse the
             # same score_type strings, so a student could hold both on one date
             # at one score — a legitimate pair the dedupe keeps and a

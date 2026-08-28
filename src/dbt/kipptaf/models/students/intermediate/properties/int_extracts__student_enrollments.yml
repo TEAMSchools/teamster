@@ -1,5 +1,11 @@
 models:
   - name: int_extracts__student_enrollments
+    description: >-
+      Network-wide enrollment extract, Miami included. Miami held 1,760 AY2026
+      rows in prod as of 2026-08-27. Consumers that filter on `is_enrolled_y1`,
+      `is_enrolled_recent` or `is_out_of_district` dropped Miami entirely until
+      #5038 populated those flags upstream; `is_self_contained` is still null
+      for Miami by design. Ratified on #4996.
     config:
       schema: extracts
       materialized: table

@@ -4,6 +4,21 @@ models:
       One row per student per academic year per course per quarter based on
       course enrollment overlap with term dates. Students who re-enrolled in the
       same course within a quarter are deduped to the most recent stint.
+
+      Covers Miami through AY2025 only. The student join keys on
+      `student_number` rather than PowerSchool's internal `cc_studentid`, which
+      Focus leaves null — before that change this model held no Miami rows in
+      any year. Miami AY2026 forward is still excluded, because the `not
+      is_dropped_section` and `sections_no_of_students != 0` filters both drop
+      rows whose value is null and Focus sets neither. #4996 owns those filters.
+
+      Network-wide, Miami included by decision, but **still excluded in
+      practice** and deliberately not fixed by #5038. Miami held 50,155 AY2025
+      rows and zero AY2026 rows in prod as of 2026-08-27. The remaining block is
+      `sections_no_of_students != 0`: that column is null on all 19,363 Miami
+      AY2026 course enrollments, so the comparison is null and the row drops.
+      Populating it is a Focus-package change, not an enrollment-flag fix.
+      Ratified on #4996.
     config:
       schema: extracts
       materialized: table
@@ -22,12 +37,18 @@ models:
           automation_condition:
             cron_schedule: 0 2 * * *
     data_tests:
+      # grain keyed on student_number, not studentid: studentid is null on
+      # every Focus row, so Miami's rows would all collide on a null key.
+      # student_number is non-null on both SIS branches and matches the
+      # model's own dedup partition. It is also the stricter assertion --
+      # distinct student_number equals the row count exactly, where distinct
+      # studentid does not.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_project
               - academic_year
-              - studentid
+              - student_number
               - course_number
               - quarter
           config:
@@ -38,7 +59,9 @@ models:
       - name: studentid
         data_type: int64
         description:
-          The internal number and ID of the associated Students record.
+          The internal number and ID of the associated Students record. Null for
+          Miami from AY2026 forward -- Focus has no equivalent internal id. Use
+          student_number to identify a student across both SIS branches.
         config:
           meta:
             source_system: PowerSchool
@@ -1240,7 +1263,8 @@ models:
       - name: rn
         data_type: int64
         description: >
-          Row number within (project, academic_year, studentid, course_number,
-          quarter), ordered by school exitdate desc then CC dateleft desc.
-          Always 1 in this model's output — filtered by a WHERE clause after
-          computing the window, not QUALIFY. Retained for downstream reference.
+          Row number within (project, academic_year, student_number,
+          course_number, quarter), ordered by school exitdate desc then CC
+          dateleft desc. Always 1 in this model's output — filtered by a WHERE
+          clause after computing the window, not QUALIFY. Retained for
+          downstream reference.

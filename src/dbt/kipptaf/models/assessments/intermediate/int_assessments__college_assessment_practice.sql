@@ -48,8 +48,7 @@ with
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
-            a.response_type_description,  -- Group name
-            /* Points earned... looks to be # of questions correct on Illuminate */
+            a.response_type_description,
             a.points,
 
             ssk.test_type,
@@ -65,7 +64,7 @@ with
             ssk.expected_total_subjects_tested,
             ssk.course_discipline,
 
-            initcap(a.response_type) as response_type,  -- Group or overall
+            initcap(a.response_type) as response_type,
 
             format_date('%B', a.date_taken) as test_month,
 
@@ -97,12 +96,12 @@ with
 
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
-            -- `a.assessment_id` is canonical_assessment_id (response_rollup
-            -- output is canonical-grain). Sheet's assessment_id values
-            -- currently align to canonical (12/12 sheet ids = canonical) since
-            -- Practice SAT/ACT haven't been canonicalized into multi-member
-            -- groups. If multipart Practice administrations are added later,
-            -- the sheet must reference the canonical (lowest) assessment_id.
+            -- `a.assessment_id` is `canonical_assessment_id`, because
+            -- `response_rollup` output is canonical-grain. The sheet's
+            -- `assessment_id` values align to canonical today (12 of 12),
+            -- because Practice SAT/ACT are not canonicalized into multi-member
+            -- groups. If multipart Practice administrations arrive later, the
+            -- sheet must reference the canonical (lowest) `assessment_id`.
             conversion as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
@@ -110,7 +109,6 @@ with
     ),
 
     scores as (
-        -- group scores
         select
             academic_year,
             powerschool_student_number,
@@ -144,7 +142,6 @@ with
 
         union all
 
-        -- subject scores
         select
             academic_year,
             powerschool_student_number,
@@ -182,7 +179,6 @@ with
 
         union all
 
-        -- total scores
         select
             academic_year,
             powerschool_student_number,

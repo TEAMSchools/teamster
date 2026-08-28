@@ -36,7 +36,7 @@ with
                     c.`quarter`
             ) as days_in_quarter,
 
-        from {{ ref("int_powerschool__calendar_week") }} as c
+        from {{ ref("int_students__calendar_week") }} as c
         inner join
             {{ ref("int_students__terms") }} as t
             on c.academic_year = t.academic_year
@@ -61,7 +61,6 @@ with
             e._dbt_source_project,
             e.cc_academic_year,
             e.cc_schoolid,
-            e.cc_studentid,
             e.cc_dateenrolled as dateenrolled,
             e.cc_dateleft as dateleft,
             e.cc_sectionid as sectionid,
@@ -73,6 +72,11 @@ with
             e.courses_course_name as course_name,
             e.courses_excludefromgpa as exclude_from_gpa,
             e.sections_termid as termid,
+
+            -- cc_studentid is null on every Focus row, so this model carried
+            -- zero Miami rows in every year. student_number carries both SIS
+            -- branches and is 1:1 with cc_studentid throughout NJ.
+            e.students_student_number as student_number,
             e.teachernumber as teacher_number,
             e.teacher_lastfirst as teacher_name,
             e.is_ap_course,
@@ -116,7 +120,7 @@ with
             s._dbt_source_project,
             s.cc_academic_year,
             s.cc_schoolid,
-            s.cc_studentid,
+            s.student_number,
             s.course_number,
             s.`quarter`,
 
@@ -124,7 +128,7 @@ with
 
         from schedule_by_terms as s
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as c
+            {{ ref("int_students__calendar_week") }} as c
             on s.cc_academic_year = c.academic_year
             and s.cc_schoolid = c.schoolid
             and s._dbt_source_project = c._dbt_source_project
@@ -135,7 +139,7 @@ with
             s._dbt_source_project,
             s.cc_academic_year,
             s.cc_schoolid,
-            s.cc_studentid,
+            s.student_number,
             s.course_number,
             s.`quarter`
     ),
@@ -188,7 +192,7 @@ with
                 partition by
                     s._dbt_source_project,
                     s.cc_academic_year,
-                    s.cc_studentid,
+                    s.student_number,
                     s.course_number,
                     s.`quarter`
                 order by e.exitdate desc, s.dateleft desc
@@ -199,7 +203,7 @@ with
             schedule_by_terms as s
             on e.academic_year = s.cc_academic_year
             and e.schoolid = s.cc_schoolid
-            and e.studentid = s.cc_studentid
+            and e.student_number = s.student_number
             and e._dbt_source_project = s._dbt_source_project
             and e.entrydate <= s.dateleft_alt
             and e.exitdate >= s.dateenrolled_alt
@@ -207,7 +211,7 @@ with
             days_course_enrolled as d
             on s.cc_academic_year = d.cc_academic_year
             and s.cc_schoolid = d.cc_schoolid
-            and s.cc_studentid = d.cc_studentid
+            and s.student_number = d.student_number
             and s.course_number = d.course_number
             and s.`quarter` = d.`quarter`
             and s._dbt_source_project = d._dbt_source_project

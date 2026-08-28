@@ -64,8 +64,8 @@ models:
           Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
           `kipppaterson`). For the PowerSchool branch, extracted from
           `_dbt_source_relation` at the union point. For the Miami Focus branch,
-          passed through from `int_focus__student_enrollments`, which already
-          derives it correctly from its own Focus-relation name.
+          passed through from `int_focus__student_enrollment_roster`, which
+          already derives it correctly from its own Focus-relation name.
         data_type: string
       - name: region
         description: >-

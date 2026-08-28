@@ -57,7 +57,7 @@ with
             row_number() over (
                 partition by student_number order by academic_year desc, exitdate desc
             ) as rn_all,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
     ),
 
     focus_students as (

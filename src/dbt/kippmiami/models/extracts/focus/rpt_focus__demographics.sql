@@ -1,6 +1,4 @@
 with
-    -- import once: send a student's demographics only if the student is not yet
-    -- in Focus. Existing Focus demographics are never overwritten.
     focus_students as (
         select distinct cast(student_id as string) as student_id,
         from {{ ref("stg_focus__students") }}

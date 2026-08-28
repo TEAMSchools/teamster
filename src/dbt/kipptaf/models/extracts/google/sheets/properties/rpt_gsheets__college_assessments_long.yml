@@ -1,5 +1,10 @@
 models:
   - name: rpt_gsheets__college_assessments_long
+    description: >-
+      **Excludes Miami by design.** SAT and ACT results for students in testing
+      grades. Miami's high school starts at grade 9 and has no college-testing
+      cohort yet, so there is nothing for Miami to report. Revisit when Miami
+      reaches grade 11. Ratified on #4996.
     columns:
       - name: region
         data_type: string

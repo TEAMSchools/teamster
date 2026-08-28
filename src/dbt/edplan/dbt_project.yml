@@ -26,6 +26,9 @@ clean-targets: # directories to be removed by `dbt clean`
 
 vars:
   bigquery_external_connection_name: null
+  # Newark and Camden hold a one-time NJSMART archive table; regions
+  # onboarded after that load (Paterson) set this false.
+  edplan_has_archive: true
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models

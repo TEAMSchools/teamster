@@ -1,4 +1,3 @@
-/* KNJ specific departments = all CMO schools */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     sr.powerschool_teacher_number as `01 Local User ID`,
@@ -29,7 +28,6 @@ where
 
 union all
 
-/* Campus-based staff = all schools at campus */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     sr.powerschool_teacher_number as `01 Local User ID`,
@@ -60,7 +58,6 @@ where
 
 union all
 
-/* School-based staff = only respective school */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     powerschool_teacher_number as `01 Local User ID`,
@@ -86,7 +83,6 @@ where
 
 union all
 
-/* Temps */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     employee_id as `01 Local User ID`,

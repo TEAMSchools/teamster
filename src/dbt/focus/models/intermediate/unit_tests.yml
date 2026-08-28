@@ -90,54 +90,79 @@ unit_tests:
           homeless_primary_nighttime_residence_code: 3
           lunchstatus: F
 
-  - name: test_int_focus__student_enrollment_dedupes_same_start_date_stints
-    model: int_focus__student_enrollment
+  - name: test_int_focus__student_enrollment_roster_dedupes_same_start_date_stints
+    model: int_focus__student_enrollment_roster
     description: >-
       Focus permits two open stints sharing a student, year, and start date.
       Student 1 covers the demotion leg: the schoolid-null stub loses even
-      though it was created later. Student 2 covers the recency leg: the newer
-      stint wins on enrollment_created_at while carrying the LOWER id, so a pass
-      only if the ordering reads the timestamp rather than the id.
+      though it was created later. Student 2 covers the recency fallback, for
+      two schools with neither marked: the newer stint wins on
+      enrollment_created_at while carrying the LOWER id, so a pass only if the
+      ordering reads the timestamp rather than the id. Student 3 covers the
+      primary leg: two schools with the SECOND one marked and created later, so
+      recency alone would keep the second school and only reading
+      is_second_school first keeps the home campus.
     given:
-      - input: ref('stg_focus__students')
+      - input: ref('int_focus__students')
         format: sql
         rows: |
-          select 1 as student_id, 'A' as first_name, 'One' as last_name,
+          select 1 as student_id, 1 as student_number, 'A' as first_name,
+            'One' as last_name,
             cast(null as string) as florida_education_identifier,
             cast(null as string) as student_e_mail_address,
-            cast(null as timestamp) as birthdate
+            cast(null as date) as dob
           union all
-          select 2, 'B', 'Two', cast(null as string), cast(null as string),
-            cast(null as timestamp)
-      - input: ref('stg_focus__student_enrollment')
+          select 2, 2, 'B', 'Two', cast(null as string), cast(null as string),
+            cast(null as date)
+          union all
+          select 3, 3, 'C', 'Three', cast(null as string), cast(null as string),
+            cast(null as date)
+      - input: ref('int_focus__student_enrollment')
         format: sql
         rows: |
+          select
+            *,
+            cast(null as string) as prior_district_label,
+            cast(null as string) as prior_state_label,
+            cast(null as string) as prior_country_label,
+            cast(null as string) as educational_choice_label,
+            cast(null as string) as student_offender_transfer_label,
+          from (
           select 10 as id, 1 as student_id, 2026 as syear,
             100 as school_id, cast(null as int64) as grade_id,
             cast(null as int64) as enrollment_code,
             cast(null as int64) as drop_code,
             date '2026-08-12' as start_date, cast(null as date) as end_date,
+            cast(null as string) as second_school,
             timestamp '2026-07-01 00:00:00' as created_at
           union all
           select 11, 1, 2026, cast(null as int64), cast(null as int64),
             cast(null as int64), cast(null as int64),
-            date '2026-08-12', cast(null as date),
+            date '2026-08-12', cast(null as date), cast(null as string),
             timestamp '2026-08-11 00:00:00'
           union all
           select 25, 2, 2026, 100, cast(null as int64),
             cast(null as int64), cast(null as int64),
-            date '2026-08-12', cast(null as date),
+            date '2026-08-12', cast(null as date), cast(null as string),
             timestamp '2026-07-01 00:00:00'
           union all
           select 24, 2, 2026, 200, cast(null as int64),
             cast(null as int64), cast(null as int64),
-            date '2026-08-12', cast(null as date),
+            date '2026-08-12', cast(null as date), cast(null as string),
             timestamp '2026-08-12 00:00:00'
+          union all
+          select 30, 3, 2026, 300, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          union all
+          select 31, 3, 2026, 400, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', cast(null as date), 'Y',
+            timestamp '2026-08-12 00:00:00'
+          )
       # empty: left-joined, contributes nothing to the dedupe under test
       - input: ref('int_focus__schools')
-        rows: []
-      # empty: left-joined, contributes nothing to the dedupe under test
-      - input: ref('int_focus__student_enrollment__pivot')
         rows: []
       # empty: left-joined, contributes nothing to the dedupe under test
       - input: ref('stg_focus__school_gradelevels')
@@ -158,6 +183,10 @@ unit_tests:
           academic_year: 2026
           startdate: 2026-08-12
           student_enrollment_id: 24
+        - student_number: 3
+          academic_year: 2026
+          startdate: 2026-08-12
+          student_enrollment_id: 30
 
   - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
     model: int_focus__attendance_daily
@@ -168,7 +197,7 @@ unit_tests:
       (null daily_code, counts present via state_value). Proves the scaffold
       emits a row for a student Focus never recorded.
     given:
-      - input: ref('int_focus__student_enrollment')
+      - input: ref('int_focus__student_enrollment_roster')
         format: sql
         rows: |
           select 84001 as student_number, 1 as network_student_number,
@@ -233,7 +262,7 @@ unit_tests:
       (2026-08-14) is an in-session day no other stint starts on -- it must NOT
       be trimmed.
     given:
-      - input: ref('int_focus__student_enrollment')
+      - input: ref('int_focus__student_enrollment_roster')
         format: sql
         rows: |
           select 85001 as student_number, 501 as network_student_number,
@@ -303,3 +332,89 @@ unit_tests:
         - student_number: 503
           schoolid: 58
           school_date: 2026-08-14
+
+  - name: test_int_focus__schedule_full_year_sentinel_resolves
+    model: int_focus__schedule
+    description: >-
+      Focus writes marking_period_id = 0 to mean the full year. Row 1 carries
+      the sentinel and must resolve to its own school's type = 'year' marking
+      period, not the decoy year row belonging to school 200 — a pass only if
+      the join is scoped on school_id. Row 2 is term-specific and must pass
+      through untouched.
+    given:
+      - input: ref('stg_focus__schedule')
+        format: sql
+        rows: |
+          select 1 as id, 2026 as syear, 100 as school_id, 10 as student_id,
+            20 as course_id, 30 as course_period_id, 0 as marking_period_id,
+            'FY' as mp, cast(null as string) as course_weight,
+            cast(null as string) as days,
+            cast(null as string) as rotation_days,
+            cast(null as date) as start_date, cast(null as date) as end_date,
+            cast(null as string) as fefp_number,
+            cast(null as string) as dual_enrollment_indicator,
+            cast(null as string) as class_minutes_weekly,
+            cast(null as string) as reading_intervention_component,
+            cast(null as string) as basic_skills_exam,
+            cast(null as string) as location_of_student,
+            cast(null as string) as eoc_exam_term,
+            cast(null as string) as exempt_from_total_clock_hours,
+            cast(null as string) as exclude_from_fte,
+            cast(null as string) as pmrn
+          union all
+          select 2, 2026, 100, 10, 20, 30, 501, 'QTR', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as date),
+            cast(null as date), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('stg_focus__marking_periods')
+        format: sql
+        rows: |
+          select 500 as marking_period_id, 2026 as syear, 100 as school_id,
+            'Full Year' as title, 'FY' as short_name, 'year' as type,
+            date '2026-08-10' as start_date, date '2027-06-11' as end_date
+          union all
+          select 501, 2026, 100, 'Quarter 1', 'Q1', 'quarter',
+            date '2026-08-10', date '2026-10-16'
+          union all
+          select 600, 2026, 200, 'Full Year', 'FY', 'year',
+            date '2026-08-10', date '2027-06-11'
+      - input: ref('stg_focus__course_periods')
+        format: sql
+        rows: |
+          select 30 as course_period_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as string) as custom_title,
+            cast(null as int64) as teacher_id, cast(null as string) as room,
+            cast(null as int64) as period_id,
+            cast(null as int64) as calendar_id,
+            cast(null as int64) as team_id,
+            cast(null as int64) as grade_scale_id,
+            cast(null as string) as credits,
+            cast(null as string) as does_attendance,
+            cast(null as string) as does_grades,
+            cast(null as string) as does_gpa
+      - input: ref('stg_focus__courses')
+        format: sql
+        rows: |
+          select 20 as course_id, cast(null as string) as title,
+            cast(null as string) as short_name,
+            cast(null as int64) as subject_id,
+            cast(null as int64) as grad_subject_id,
+            cast(null as string) as grade_level,
+            cast(null as numeric) as credit_hours,
+            cast(null as numeric) as course_hours,
+            cast(null as string) as homeroom
+    expect:
+      rows:
+        - student_schedule_id: 1
+          mp: FY
+          marking_period_id: 500
+          marking_period_type: year
+          marking_period_start_date: 2026-08-10
+        - student_schedule_id: 2
+          mp: QTR
+          marking_period_id: 501
+          marking_period_type: quarter
+          marking_period_start_date: 2026-08-10

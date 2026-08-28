@@ -1,0 +1,48 @@
+models:
+  - name: int_students__courses
+    description: >-
+      SIS-neutral course spine. One row per course per source project. Unions
+      `stg_powerschool__courses` with Miami's Focus courses, conformed to the
+      PowerSchool column vocabulary and deduplicated to the most recent school
+      year per course number. Exists so `dim_courses` can resolve the course FK
+      for Miami sections.
+
+      Unlike its two sibling models (`int_students__course_enrollments`,
+      `int_students__course_sections`), this model deliberately does NOT
+      year-scope Miami's PowerSchool catalog out once Focus coverage begins --
+      both the frozen archive and Focus land under `_dbt_source_project =
+      'kippmiami'`. This is intentional: `dim_course_sections.course_key` hashes
+      `(courses_course_number, _dbt_source_project)`, and the archive's sections
+      hash their PowerSchool course numbers, so those catalog rows must survive
+      or every archive section orphans its course FK. Do not "restore
+      consistency" with the siblings by adding a year filter here -- that
+      reintroduces the orphan bug commit e4561a67e1 fixed. A Focus/PowerSchool
+      `course_number` collision under `kippmiami` would surface as an
+      error-severity uniqueness failure, not silent corruption -- zero
+      collisions today across 1,350 Focus short names.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - course_number
+              - _dbt_source_project
+    columns:
+      - name: course_number
+        description: >-
+          Course number. For Miami, the Focus course `short_name`, which holds
+          the Florida state course code. This must match the
+          `sections_course_number` that `int_students__course_sections` writes
+          for Focus, because `dim_course_sections.course_key` is derived from
+          it.
+        data_type: string
+      - name: credittype
+        description: >-
+          Credit type. Null for Miami: Focus has no equivalent field.
+        data_type: string
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`).
+        data_type: string

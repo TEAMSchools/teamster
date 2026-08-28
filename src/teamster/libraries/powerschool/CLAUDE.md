@@ -32,7 +32,7 @@ for large-table efficiency. Key parameters:
 vary by table: `students`/`storedgrades` use `transaction_date` (no
 `whenmodified` column); `assignmentscore` uses `whenmodified` and keys on
 `assignmentscoreid` (no `dcid`). Source of truth:
-`code_locations/kippnewark/powerschool/assets.py` + `config/*.yaml`. Verify real
+`code_locations/kippnewark/powerschool/sis/dlt/config/assets.yaml`. Verify real
 Oracle column names/case without a tunnel by querying the landed
 `kippnewark_powerschool.src_powerschool__*` external tables via the BigQuery
 MCP.

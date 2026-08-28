@@ -1,18 +1,22 @@
 # Pull Request
 
+> **Write this whole PR in plain language.** Read `.github/PLAIN_LANGUAGE.md`
+> and follow it: every sentence does a job, one idea per sentence, active voice,
+> common words. Only the "For Claude" fold-out at the bottom is exempt.
+
 ## Summary & Motivation
 
-> Plain language, no jargon — what changed and why. A reviewer skimming just
-> this section should understand the change. Save tradeoffs, edge cases, and
-> verification detail for "Reviewer Notes" below.
+> What changed and why. A reviewer skimming just this section should understand
+> the change. Save tradeoffs, edge cases, and verification detail for "Reviewer
+> Notes" below.
 
 "When merged, this pull request will..."
 
 ## Reviewer Notes
 
-> Optional. Plain language, like Summary above — name what's worth a second look
-> and why, in a line or two each. Full technical detail, exact values, and edge
-> cases belong in "For Claude" below. Delete if there's nothing here.
+> Optional. Name what's worth a second look and why, in a line or two each. Full
+> technical detail, exact values, and edge cases belong in "For Claude" below.
+> Delete if there's nothing here.
 
 ## Self-review
 

@@ -1,5 +1,10 @@
 models:
   - name: int_powerschool__gradebook_assignments_scores
+    description: >-
+      PowerSchool gradebook assignments and scores. **Excludes Miami from AY2026
+      by design**, and by name: this unions the district PowerSchool packages,
+      and Miami left that package when it moved to Focus. Its archive stops at
+      AY2025. The Focus gradebook branch is #5010. Ratified on #4996.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -2,16 +2,33 @@ models:
   - name: stg_focus__student_report_card_grades
     description: >-
       Focus student report-card grades — one row per student per course per
-      marking period. Nearly every row is imported course history
+      marking period per grade type. Most rows are imported course history
       (course_history is Y) spanning school years well before the Focus rollout,
-      so the letter grade, GPA points and credits are denormalized onto the row.
-      Miami began posting live grades in Focus in August 2026; those rows leave
-      course_history empty and do populate the foreign keys a live report card
-      uses — report_card_grade_id, grade_scale_id, course_period_id, course_id —
-      which are still not projected here. Add them once live posting volume
-      warrants it. Distinct from stg_focus__report_card_grades, which is the
-      grade definition table (the available letter grades and their GPA values),
-      not student grades.
+      so the letter grade, GPA points and credits are denormalized onto the row
+      and the report-card foreign keys are null. Miami began posting live grades
+      in Focus in August 2026; those rows leave course_history empty, carry a
+      grade_type_token, and populate report_card_grade_id, grade_scale_id,
+      course_period_id and percent_grade. Distinct from
+      stg_focus__report_card_grades, which is the grade definition table (the
+      available letter grades and their GPA values), not student grades.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - course_period_id
+              - marking_period_id
+              - grade_type_token
+          config:
+            # Scoped to live-posted rows. Imported course history carries no
+            # token and no course_period_id, and legitimately repeats a
+            # (student, marking period) pair across transcript courses -- 15,278
+            # historical rows collapse to 2,160 on this combination. On the
+            # tokened rows the grain is exact: 3,074 rows, 3,074 distinct. This
+            # is the test that catches a token strip -- without grade_type_token
+            # the same 3,074 rows collapse to 1,542.
+            where: grade_type_token is not null
+            severity: error
     columns:
       - name: id
         description: Primary key — Focus student_report_card_grades id.
@@ -41,11 +58,9 @@ models:
           Focus marking-period id the grade was earned in, as an integer to
           match stg_focus__marking_periods and every other reference to a
           marking period. Focus stores this as text on this table alone and
-          prefixes live postings with a grade-type token (e.g. DT7181); those
-          values are safe cast to null rather than decoded, so a live-posted
-          grade carries no marking period until the token vocabulary is known.
-          Nullable by design for that reason — only referential integrity is
-          tested, and relationships skips null foreign keys.
+          prefixes live postings with a grade-type token (e.g. DT7181); the
+          token is stripped into grade_type_token and the digit tail cast here,
+          so every row resolves — imported and live alike.
         data_type: int
         data_tests:
           - relationships:
@@ -54,10 +69,68 @@ models:
                 field: marking_period_id
               config:
                 severity: error
+      - name: report_card_grade_id
+        description: >-
+          Focus report_card_grades id of the grade definition this posting used.
+          Populated on every live-posted row and null on imported course
+          history. This is the path to the grade scale —
+          int_focus__report_card_grades resolves scale_id through it rather than
+          reading grade_scale_id below.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__report_card_grades')
+                field: id
+              config:
+                severity: error
+      - name: grade_scale_id
+        description: >-
+          Focus report_card_grade_scales id as stored on the row. Populated on
+          DT rows only — never on a DY row and never on imported course history
+          — so its apparent coverage tracks the DT share of rows rather than a
+          data-quality gap. Prefer the scale resolved through
+          report_card_grade_id, which covers every live-posted row.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__report_card_grade_scales')
+                field: id
+              config:
+                severity: error
+      - name: course_period_id
+        description: >-
+          Focus course period the grade was posted against. Populated on every
+          live-posted row and null on imported course history, whose course is
+          carried as free text in course_title.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__course_periods')
+                field: course_period_id
+              config:
+                severity: error
+      - name: grade_type_token
+        description: >-
+          Alpha prefix Focus writes on marking_period_id for a live posting, per
+          the Focus SIS Level 1 Certification documentation — DT is the running
+          gradebook (the live grade, posted by a staff account), DY is
+          yesterday's grade (a daily snapshot written by the cron admin
+          account), E is an exam. Null on imported course history, which carries
+          no prefix. Part of the grain: DT and DY are two rows for the same
+          student, course period and marking period.
+        data_type: string
+      - name: percent_grade
+        description: >-
+          Numeric percent behind the letter grade. Populated on live-posted rows
+          only; imported course history carries the letter grade alone.
+        data_type: numeric
       - name: syear
         description: >-
           Focus school year start year the grade was earned in (e.g. 2025 =
-          2025-26). Spans many years before the Focus rollout because the rows
+          2025-26). Spans many years before the Focus rollout because most rows
           are imported course history.
         data_type: int
       - name: school_id
@@ -80,7 +153,7 @@ models:
         description: >-
           Course name as it appeared on the imported transcript. Free text, not
           joined to stg_focus__courses — the course foreign key is empty on
-          these rows.
+          those rows.
         data_type: string
       - name: grade_title
         description: >-
@@ -111,8 +184,10 @@ models:
         data_type: string
       - name: course_history
         description: >-
-          Whether the row is imported course history rather than a grade posted
-          in Focus. Y on imported rows, empty on grades posted live in Focus.
+          Whether the row belongs to the student's official academic history
+          rather than being a grade posted live in Focus. Y on imported rows,
+          empty on live postings — AY2026 grades are not in official history
+          yet.
         data_type: string
       - name: course_flag_1
         description: >-

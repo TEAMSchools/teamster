@@ -1,4 +1,3 @@
-/* KIPP Forward Career Launch Survey */
 select
     ri.response_date_submitted,
     ri.respondent_salesforce_id,
@@ -20,7 +19,6 @@ where ri.survey_id = 6734664
 
 union all
 
-/* KIPP Forward Career Launch Survey - OLD */
 select
     safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
 
@@ -40,7 +38,6 @@ where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
 
 union all
 
-/* KIPP Forward Career Launch Survey */
 select
     safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
 
@@ -60,7 +57,6 @@ where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
 
 union all
 
-/* KIPP Forward Career Launch Survey - Bulk Add */
 select
     null as response_date_submitted,
     contact_id as respondent_salesforce_id,

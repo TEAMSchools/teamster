@@ -14,7 +14,6 @@ with
             and enrollment_type = 'New'
     )
 
--- latest status: deferred and waitlisted
 select
     s.enrollment_academic_year as academic_year,
     s.org,
@@ -65,7 +64,6 @@ where
 
 union all
 
--- latest status: enrollment in progress
 select
     s.enrollment_academic_year as academic_year,
     s.org,
@@ -219,7 +217,6 @@ where
 
 union all
 
--- benchmark conversions
 select
     s.enrollment_academic_year as academic_year,
     s.org,

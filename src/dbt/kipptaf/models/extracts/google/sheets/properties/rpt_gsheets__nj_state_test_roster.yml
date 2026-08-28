@@ -1,5 +1,18 @@
 models:
   - name: rpt_gsheets__nj_state_test_roster
+    description: >
+      NJ state test roster for Google Sheets — one row per student in the
+      current academic year's ELA, Math, and Science testing population, pivoted
+      from a per-subject long roster into one wide row per student.
+      Test-eligibility source fields (`math_state_assessment_name`,
+      `state_assessment_name`, `ps_grad_path_code`, `is_exempt_state_testing`)
+      are carried through that pivot even though they aren't projected directly,
+      so the exemption reason columns below can still be derived after the
+      per-subject rows collapse to one row per student.
+
+      **Excludes Miami by design.** This is New Jersey state test registration,
+      so Florida students have no place in it; the model already filters
+      `co.region != 'Miami'` explicitly. Ratified on #4996.
     columns:
       - name: region
         data_type: string
@@ -7,6 +20,10 @@ models:
         data_type: string
       - name: student
         data_type: string
+        description: >
+          Display label for the roster row — the student's name and
+          `student_number` concatenated. Scoped to the student, not to any one
+          subject's test.
       - name: enroll_status
         data_type: int64
       - name: grade_level
@@ -41,7 +58,23 @@ models:
         data_type: boolean
       - name: ela_exemption_reason
         data_type: string
+        description: >
+          Why the student has no `ela_test_code` — null when the student is
+          assigned an ELA test. In priority order, reflects an IEP
+          graduation-pathway exemption, a DLM plus ACCESS exemption for students
+          with both an IEP and English-learner status, a DLM alternate
+          assessment, an ACCESS-only English-learner exemption, or an
+          unclassified other exemption.
       - name: math_exemption_reason
         data_type: string
+        description: >
+          Why the student has no `math_test_code` — null when the student is
+          assigned a Math test. In priority order, reflects an IEP
+          graduation-pathway exemption, a DLM alternate assessment, or an
+          unclassified other exemption.
       - name: subject_exemption_flag
         data_type: string
+        description: >
+          Quick summary flag for stakeholders scanning the roster — null when
+          the student has both an ELA and a Math test code, otherwise names
+          which subject or subjects are exempt.

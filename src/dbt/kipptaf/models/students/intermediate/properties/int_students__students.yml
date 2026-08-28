@@ -50,7 +50,8 @@ models:
           Enrollment standing. For Miami, taken from the student's most recent
           Focus stint -- Focus records this per stint while the network treats
           it as a single current value per student, so the latest academic year
-          and entry date wins.
+          and entry date wins, per the `rn_all` ranking computed in
+          `int_focus__student_enrollment_roster`.
       - name: first_name
         description: Student's legal first name.
       - name: middle_name

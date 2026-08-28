@@ -26,6 +26,9 @@ vars:
   current_academic_year: 2026
   current_fiscal_year: 2027
   cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
+  # Paterson's EdPlan feed starts in FY27, after the one-time NJSMART
+  # archive load, so there is no archive table to union in.
+  edplan_has_archive: false
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
 models:
@@ -57,6 +60,11 @@ models:
         staging:
           stg_amplify__mclass__sftp__pm_student_summary_aimline:
             +enabled: false
+  edplan:
+    +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
   deanslist:
     +materialized: table
     staging:
