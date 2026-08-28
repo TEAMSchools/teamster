@@ -175,27 +175,39 @@ with
                 when
                     exists (
                         select 1
-                        from unnest(p.role_names) as rn
+                        from unnest(pra.role_names) as rn
                         where
                             rn in ('Teacher', 'School Admin', 'School Assistant Admin')
                     )
                     and exists (
                         select 1
-                        from unnest(p.role_names) as rn
-                        where rn like '%Admin%' or rn = 'Coach'
+                        from unnest(pra.role_names) as rn
+                        where
+                            rn in (
+                                'Regional Admin',
+                                'School Admin',
+                                'School Assistant Admin',
+                                'Coach'
+                            )
                     )
                 then 'observees;observers'
                 when
                     exists (
                         select 1
-                        from unnest(p.role_names) as rn
-                        where rn like '%Admin%' or rn = 'Coach'
+                        from unnest(pra.role_names) as rn
+                        where
+                            rn in (
+                                'Regional Admin',
+                                'School Admin',
+                                'School Assistant Admin',
+                                'Coach'
+                            )
                     )
                 then 'observers'
                 when
                     exists (
                         select 1
-                        from unnest(p.role_names) as rn
+                        from unnest(pra.role_names) as rn
                         where
                             rn in ('Teacher', 'School Admin', 'School Assistant Admin')
                     )

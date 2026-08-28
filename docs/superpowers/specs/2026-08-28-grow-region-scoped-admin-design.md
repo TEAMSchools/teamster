@@ -112,17 +112,21 @@ qualify.
 
 ### Role matrix
 
-| Tier                                 | Gate required | Role                          | Scope          |
-| ------------------------------------ | ------------- | ----------------------------- | -------------- |
-| `Chief Level`                        | yes           | `Regional Admin` + `readonly` | all 28 schools |
-| `EDs, HOSs, MDOs`                    | yes           | `Regional Admin` + `readonly` | home region    |
-| `KTAF or Regional Managing Director` | yes           | `Regional Admin` + `readonly` | home region    |
-| `KTAF or Regional Director`          | yes           | `Regional Admin` + `readonly` | home region    |
-| `School Leader`                      | no            | `School Admin`                | home school    |
-| `Assistant School Leaders`           | no            | `School Assistant Admin`      | home school    |
-| `Deans`                              | no            | `School Assistant Admin`      | home school    |
-| `Teacher`, `Teacher in Residence`    | no            | `Teacher`                     | home school    |
-| null or anything else                | —             | none                          | —              |
+The Role column names only the role this sub-project assigns. `readonly` is a
+separate boolean field on the Grow User object, not a role, and this sub-project
+does not write it — sub-project 2 does (see _Out of scope_ below).
+
+| Tier                                 | Gate required | Role                     | Scope          |
+| ------------------------------------ | ------------- | ------------------------ | -------------- |
+| `Chief Level`                        | yes           | `Regional Admin`         | all 28 schools |
+| `EDs, HOSs, MDOs`                    | yes           | `Regional Admin`         | home region    |
+| `KTAF or Regional Managing Director` | yes           | `Regional Admin`         | home region    |
+| `KTAF or Regional Director`          | yes           | `Regional Admin`         | home region    |
+| `School Leader`                      | no            | `School Admin`           | home school    |
+| `Assistant School Leaders`           | no            | `School Assistant Admin` | home school    |
+| `Deans`                              | no            | `School Assistant Admin` | home school    |
+| `Teacher`, `Teacher in Residence`    | no            | `Teacher`                | home school    |
+| null or anything else                | —             | none                     | —              |
 
 ### Additive roles
 
@@ -174,15 +178,48 @@ corrected:
 
 ### Sequencing constraint
 
-Dropping out of the extract is not the same as losing access. There is no revoke
-path yet, so a user the extract stops emitting is simply never sent to Grow
-again — their existing Grow account persists untouched. The practical effect on
-day one is that these people stop being maintained, not that they are locked
-out.
+Dropping out of the extract does not affect the user record the same way it
+affects observation-group membership, and the two must not be conflated.
 
-**Sub-project 3 changes that.** Once the revoke path lands, anyone the extract
-does not emit has their roles stripped. The ADP correction must therefore land
-before sub-project 3 ships, or 18 teachers lose Grow access.
+The `grow_user_sync` user PUT **merges** — a field the payload omits is left
+alone (see _Verified by spike_ below). A user the extract stops emitting is
+simply never sent a user PUT again, so their `roles` and other user-level fields
+persist untouched. For roles alone, dropping out of the extract really is inert
+on day one.
+
+Observation-group membership is different, and it ships with sub-project 1, not
+sub-project 3. In
+`src/teamster/code_locations/kipptaf/level_data/grow/assets.py`, the school PUT
+rebuilds `observationGroups.observees`, `observationGroups.observers`, `admins`,
+and `assistantAdmins` from `school_users`, which is filtered from the same
+extract. That payload is complete, not incremental, and it is sent for every
+school on every run. A user absent from the extract is therefore REMOVED from
+all four lists the first time the sync runs after they drop out — not
+eventually, and not only once a revoke path ships.
+
+**Consequence: the 18 teachers with a null `job_function`** (see _Data quality
+dependency_ above) lose their spot in the Teachers observation group immediately
+on the first sync after this change ships, even though their Grow user roles
+remain untouched. **The ADP correction must therefore land before this change
+ships**, not before sub-project 3 as previously stated — waiting until
+sub-project 3 leaves those 18 teachers unobservable in the interim.
+
+Sub-project 3 still matters for the user record: once its revoke path lands,
+anyone the extract does not emit also has their `roles` stripped, closing the
+gap this section describes for the user-level side.
+
+### Interim Regional Admin scope
+
+Sub-project 2 is what writes `regionalAdminSchools`. Until it ships, a user
+newly granted `Regional Admin` by this sub-project has only whatever scope was
+already set on their account by hand — this sub-project grants the role, not the
+scope.
+
+Verified against the live Grow snapshot: of the 46 users converting from
+`Sub Admin` to `Regional Admin` (see _Blast radius_ below), 32 have an EMPTY
+`regionalAdminSchools` and would hold the role over zero schools until
+sub-project 2 ships. The remaining 14 retain an existing manually-set scope and
+are unaffected.
 
 ## Output contract
 
@@ -212,12 +249,22 @@ fallback anywhere and the precedence bug fixed.
 | New to Grow                                              | 28        |
 | Losing `School Assistant Admin` with no replacement      | 6         |
 | Promoted from `School Assistant Admin` to `School Admin` | 2         |
+| Coach-only users losing observee status                  | 6         |
 
 The 16 losing `Sub Admin` outright are the Executive Assistant, all 14 Human
 Resources staff, and Keyna McClinek. The 28 who gain are 16 Assistant Deans in
 Student Support, 10 regional leaders and 2 network leaders.
 
 `Sub Admin` totals 62 today and reaches zero: 41 plus 5 plus 16.
+
+The 6 coach-only users hold `Coach` with no `Teacher` and no admin role. Today
+they resolve to `observees;observers`, because the current first-match CASE
+treats any `Coach` as sufficient for both memberships. Under the additive
+`group_type` (see _Observation group membership_ below), `observers` still
+follows from `Coach`, but `observees` now requires `Teacher`, `School Admin`, or
+`School Assistant Admin` — none of which these 6 hold. They move to `observers`
+alone and stop being observable by their own manager. This is spec-compliant,
+not a regression, and was previously unenumerated.
 
 ## Testing
 
