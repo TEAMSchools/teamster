@@ -11,14 +11,23 @@ models:
       any year.
 
       Miami is included by decision (ratified on #4996) and, since #5043, in
-      practice. Focus records no section student count, so
-      `sections_no_of_students` is null on every Miami row, and the
-      `sections_no_of_students != 0` filter dropped all 19,363 Miami AY2026
-      enrollments against 50,155 AY2025 rows. That filter targets a PowerSchool
-      quirk — a section holding enrollment rows while recording its count as
-      zero, 215 of 64,699 New Jersey rows — which a null is not, so the
-      predicate is now null-safe. Deriving a real Focus section count remains
-      open on #5043.
+      practice. Two null comparisons had kept it out, both fixed there.
+
+      `sections_no_of_students` is null on every Focus row, because Focus
+      records no section student count, so the `!= 0` filter dropped all 19,398
+      AY2026 enrollments. The predicate is now null-safe and still excludes the
+      PowerSchool quirk it targets — a section holding enrollment rows while
+      recording its count as zero, 202 New Jersey rows in AY2026.
+
+      `cc_dateleft` is null while a Focus enrollment is open, true of 95.8% of
+      Miami rows, so the quarter join dropped all but 230 of the survivors. It
+      now coalesces to `terms_lastday`, the section's term end, rather than to a
+      far-future date, which would fan semester and quarter enrollments into
+      quarters their term never covered.
+
+      Neither change moves New Jersey: both columns are non-null on every NJ
+      row, and the new predicates are identical to the old ones on non-null
+      values.
     config:
       schema: extracts
       materialized: table

@@ -92,6 +92,15 @@ with
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
             s.end_date as cc_dateleft,
+
+            -- PowerSchool's section term window, null on every Miami row until
+            -- now. Focus's equivalent is the schedule row's marking period,
+            -- populated on all 19,398 AY2026 rows. A consumer needing an end
+            -- date for an open enrollment coalesces cc_dateleft to
+            -- terms_lastday rather than to a far-future date, which would fan
+            -- semester and quarter rows into terms they never covered. #5043
+            s.marking_period_start_date as terms_firstday,
+            s.marking_period_end_date as terms_lastday,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,

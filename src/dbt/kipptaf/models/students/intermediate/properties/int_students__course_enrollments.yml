@@ -62,9 +62,30 @@ models:
           For PowerSchool, the date the student left the section. For Miami, the
           Focus schedule `end_date`, which is null while the row is open -- the
           normal state, true of 96.8% of Miami AY2026 rows. Downstream joins
-          must coalesce it to an open-ended sentinel rather than compare it
-          directly.
+          must coalesce it rather than compare it directly, and the sentinel is
+          `terms_lastday`, not a far-future date: a far-future date fans
+          semester and quarter enrollments into terms they never covered, 3,938
+          spurious quarter rows measured on #5043.
         data_type: date
+      - name: terms_firstday
+        description: >-
+          First day of the section's term. For PowerSchool, from the section's
+          term record. For Miami, the schedule row's
+          `marking_period_start_date`, populated on every row. Added on #5043;
+          null for Miami before that.
+        data_type: date
+      - name: terms_lastday
+        description: >-
+          Last day of the section's term. For PowerSchool, from the section's
+          term record. For Miami, the schedule row's `marking_period_end_date`,
+          populated on every row. This is the sentinel to coalesce `cc_dateleft`
+          to for an open Focus enrollment. Added on #5043; null for Miami before
+          that.
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: is_homeroom
         description: >-
           Whether this enrollment is a homeroom. PowerSchool from the `HR%`
