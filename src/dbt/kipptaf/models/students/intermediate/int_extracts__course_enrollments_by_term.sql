@@ -62,7 +62,7 @@ with
             e.cc_academic_year,
             e.cc_schoolid,
             e.cc_dateenrolled as dateenrolled,
-            e.cc_dateleft as dateleft,
+            e.exit_date as dateleft,
             e.cc_sectionid as sectionid,
             e.cc_course_number as course_number,
             e.sections_dcid,
@@ -99,9 +99,9 @@ with
             ) as dateenrolled_alt,
 
             if(
-                e.cc_dateleft > q.last_day_school_year,
+                e.exit_date > q.last_day_school_year,
                 q.last_day_school_year,
-                e.cc_dateleft
+                e.exit_date
             ) as dateleft_alt,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
@@ -111,8 +111,17 @@ with
             and e.cc_schoolid = q.schoolid
             and e._dbt_source_project = q._dbt_source_project
             and e.cc_dateenrolled <= q.quarter_end_date_alt
-            and e.cc_dateleft >= q.quarter_start_date_alt
-        where not e.is_dropped_section and e.sections_no_of_students != 0
+            and e.exit_date >= q.quarter_start_date_alt
+        where
+            not e.is_dropped_section
+            -- Focus records no section student count, so this column is null on
+            -- every Miami row. Null is not the PowerSchool quirk the filter
+            -- targets -- a section holding enrollment rows while recording its
+            -- count as zero, 202 New Jersey rows in AY2026. A section with
+            -- nobody in it produces no enrollment rows at all, so it cannot
+            -- reach this model; #5043 measured Miami's smallest section at 1
+            -- student. Keep null, drop only a literal 0.
+            and e.sections_no_of_students is distinct from 0
     ),
 
     days_course_enrolled as (
