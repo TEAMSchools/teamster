@@ -61,6 +61,20 @@ readable. The 2 facts repoint at those models.
   from inside the worktree.
 - **Commit messages** use conventional commits and end with the
   `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>` trailer.
+- **A local `dbt build` proves compilation, not values.** It writes to the dev
+  schema (`zz_<GITHUB_USER>_<dataset>`), which holds a small stale subset —
+  measured 2026-08-28 at 697 rows for `int_focus__gradebook_grades` against
+  prod's 4,839, with zero of prod's 91 duplicate ids. A test passing there can
+  be vacuous. **Implementers:** run the build, report that it compiled and which
+  tests ran, and do NOT claim a value-level result from it. **Controller:**
+  every `count(*)` / distinct-key expectation in this plan is verified by the
+  controller against prod via the BigQuery MCP, by running the model's logic
+  against prod upstream tables (`kipptaf_students.*`, `kipptaf_powerschool.*`,
+  `kippmiami_focus.*`) before the model exists in prod. Where a verification
+  step below names a prod path for a model this plan creates, that table does
+  not exist yet — the controller substitutes the model's SQL against prod
+  upstreams, and the authoritative row-count check happens on the dbt Cloud CI
+  PR-branch build (`dbt_cloud_pr_<job>_<pr>_<schema>`) after Task 9 pushes.
 
 ---
 
