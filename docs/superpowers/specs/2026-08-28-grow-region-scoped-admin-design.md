@@ -418,9 +418,20 @@ the label without breaking the match.
 Three defects in the same school PUT, fixed together because they all live in
 it.
 
-Staff whose home work location is a placeholder — `Room 9`, `Room 10`, `Room 11`
-— never appear in a real school's `school_users` and so land in no observation
-group anywhere. Keyna McClinek and Deanna Applewhaite are both in `Room 11`.
+An earlier draft of this spec claimed that staff whose home work location is a
+placeholder such as `Room 9`, `Room 10` or `Room 11` land in no observation
+group at all. That is false, and no fix is needed. Those Rooms are themselves
+Grow schools, so staff based there join the Room's own group: `Room 9` currently
+holds 13 observees and 59 observers, `Room 10` holds 1 and 15, and `Room 11`
+holds 0 and 20.
+
+`Room 11` holding no observees is correct rather than broken — everyone based
+there is regional staff carrying an admin or coach role, so none of them is an
+observee. A regional leader based in a Room still reaches the schools where
+their reports sit, because the `coaches` union in the school PUT follows the
+reporting line rather than the home school. Deanna Applewhaite, based in
+`Room 11`, reaches `KIPP Miami - North Campus` and `KIPP Royalty Academy` that
+way.
 
 Four staff have a home work location whose reporting name is
 `KIPP Miami - Poinciana Campus`, while the Grow school is named
