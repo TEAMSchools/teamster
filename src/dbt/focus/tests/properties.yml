@@ -84,3 +84,23 @@ data_tests:
           ref:
             name: stg_focus__student_enrollment
             package: focus
+  - name: int_focus__schedule__no_overlapping_course_periods
+    description: >-
+      A student must not sit in two course periods of the same course, in the
+      same class period, at overlapping times. Resolved through the marking
+      period: int_focus__schedule.end_date is null on 18,412 of 19,699 rows
+      because Focus bounds a schedule row by its course period's marking period,
+      so a literal reading makes every Semester 1 row collide with its Semester
+      2 partner (188 false pairs). Scoped to a shared period_id -- the same
+      course in different class periods is a separate 776-group pattern with Ops
+      for a ruling. Failing with 2 rows as of 2026-08-28, both the same student
+      in two courses at period_id 2373, where the outgoing section runs
+      2026-08-12 to 2026-08-13 while the incoming one starts 2026-08-12. Runs at
+      the consuming district project's default warn severity. Any returned row
+      is a failure.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_focus__schedule
+            package: focus
