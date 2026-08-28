@@ -15,6 +15,8 @@ models:
         data_type: string
       - name: inactive
         data_type: boolean
+      - name: read_only
+        data_type: boolean
       - name: internal_id_int
         data_type: int64
       - name: default_information_course
@@ -26,6 +28,9 @@ models:
       - name: roles
         data_type: |
           array<struct<name string, _id string, category string, district string>>
+      - name: regional_admin_schools
+        data_type: |
+          array<struct<name string, _id string>>
       # - name: accounting_id
       #   data_type: string
       # - name: calendar_email
