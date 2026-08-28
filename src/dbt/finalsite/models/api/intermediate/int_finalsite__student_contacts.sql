@@ -1,12 +1,10 @@
 with
     parent_candidates as (
-        -- A parent candidate is any relationship flagged `primary` or
-        -- `financial` whose related contact is an ADULT. Finalsite marks adults
-        -- with status `not_in_workflow`; every other status (enrolled, inquiry,
-        -- waitlisted, ...) belongs to a student record, and a student is never
-        -- a parent. This guard -- not `rel_type` -- is what keeps a co-resident
-        -- sibling out of a parent slot, which matters because an adult sibling
-        -- CAN legitimately be a guardian and must still qualify.
+        -- The adult guard, not `rel_type`, is what keeps a co-resident sibling
+        -- out of a parent slot. Filtering on `rel_type` would also drop an
+        -- adult sibling who is a legitimate guardian. Finalsite marks adults
+        -- with status `not_in_workflow`; every other status belongs to a
+        -- student record, and a student is never a parent.
         select
             r.finalsite_enrollment_id,
             r.relationship_id,

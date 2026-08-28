@@ -1037,6 +1037,16 @@ wins: its test-tiering advice ("avoid liberal `not_null` /
 `config.where`-scoped warn tests, its example SQL is non-BigQuery dialect, and
 validation/profiling goes through BigQuery MCP, not `dbt show`.
 
+- **Before writing or editing any inline SQL comment, stop and ask: would this
+  survive as a properties.yml `description:` instead?** A comment explaining
+  rationale, background, or what/why a model computes belongs in the properties
+  file (see _YAML conventions_ below for the full rule) — not the SQL, even
+  mid-edit on a `.sql` file where the note feels like natural momentum. The file
+  being open is not evidence it's the right place. Keep inline SQL comments to
+  what a reader of that exact line cannot see — a non-obvious fallback, why a
+  filter exists. Carve-out: TODOs, tracking-issue refs, and migration plumbing
+  stay inline at the derivation site — a defect belongs in the code, not the
+  metadata.
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
@@ -1078,13 +1088,15 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
 - **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
   a `GROUP BY` with no aggregation, and for pure grain projection (every
   projected column is functionally determined by the partition key, so
-  byte-identical tuples coalesce) — annotate the latter with
-  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
-  NEVER `SELECT DISTINCT` or `qualify row_number() over (...) = 1` to mask
-  upstream duplicates, and never `DISTINCT` when a projected column varies
-  within the partition (`min()`, `first_value()`) — use
-  `dbt_utils.deduplicate()` (see _Row picking, dedup & surrogate keys_) with a
-  `-- TODO:` naming the upstream fix.
+  byte-identical tuples coalesce). Annotate the latter with the one-line
+  `grain projection, not dup-masking` — the annotation is what tells a reviewer
+  the `DISTINCT` is deliberate rather than a fan-out mask or a wrong-grain
+  source, so it is required. Name the partition key on the same comment when the
+  `SELECT` list does not make it obvious. NEVER `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` to mask upstream duplicates, and never
+  `DISTINCT` when a projected column varies within the partition (`min()`,
+  `first_value()`) — use `dbt_utils.deduplicate()` (see _Row picking, dedup &
+  surrogate keys_) with a `-- TODO:` naming the upstream fix.
 - **No one-sided calculations in join predicates.** Any expression computable
   from a single table's columns is precomputed as a named column upstream — `ON`
   matches plain columns. Expressions that inherently combine columns from both
@@ -1254,10 +1266,8 @@ alias.
   descriptions — those go in inline SQL comments at the derivation site.
 - The reverse also holds: rationale that needs no code context belongs in
   `description:`, not an inline SQL comment. Keep SQL comments to what a reader
-  of that line cannot see — a non-obvious fallback, why a filter exists. A
-  comment longer than the expression it annotates belongs in the properties
-  file; the repo's existing multi-paragraph SQL comments are not a precedent to
-  extend.
+  of that line cannot see — a non-obvious fallback, why a filter exists. The
+  repo's existing multi-paragraph SQL comments are not a precedent to extend.
 
 ### Flattened child-array model naming
 

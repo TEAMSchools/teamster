@@ -27,6 +27,17 @@ with
         }}
     ),
 
+    -- The roster has first_day_of_school but no year-end date.
+    -- int_students__calendar_week remaps Focus's internal school id to the
+    -- network school number, which is the id ps_schoolid carries; school
+    -- numbers are network-unique, so no region filter is needed here.
+    focus_school_year_end as (
+        select
+            academic_year, schoolid, max(last_day_school_year) as last_day_school_year,
+        from {{ ref("int_students__calendar_week") }}
+        group by academic_year, schoolid
+    ),
+
     -- One row per Miami student per year, carrying the prior year's grade so
     -- boy_status and is_retained_year reproduce the PowerSchool derivation.
     -- rn_year = 1 picks the primary stint, matching the year grain PowerSchool
@@ -44,7 +55,7 @@ with
             lag(academic_year) over (
                 partition by network_student_number order by academic_year asc
             ) as academic_year_prev,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_year = 1
     ),
 
@@ -103,7 +114,29 @@ with
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
 
             if(yg.grade_level_prev = enr.grade_level, true, false) as is_retained_year,
-        from {{ ref("int_focus__student_enrollments") }} as enr
+
+            -- #4996. PowerSchool's own expressions, reproduced rather than
+            -- simplified: exitdate is never null here because the roster
+            -- coalesces it, so is_enrolled_y1 is always true today, and a
+            -- `true` literal would silently diverge if that ever changes.
+            if(enr.exitdate is not null, true, false) as is_enrolled_y1,
+
+            case
+                when enr.exitdate >= sye.last_day_school_year
+                then true
+                when
+                    current_date('{{ var("local_timezone") }}')
+                    between enr.startdate and enr.exitdate
+                then true
+                else false
+            end as is_enrolled_recent,
+
+            -- #4996. False rather than null: reporting_schoolid and
+            -- school_level above already carry non-OD values for every Miami
+            -- row, and PowerSchool reads this flag off that same specprog row.
+            -- is_self_contained has no such twin, so it stays null (#4968).
+            false as is_out_of_district,
+        from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
             {{ ref("int_focus__students") }} as stu
             on enr.network_student_number = stu.student_number
@@ -118,11 +151,25 @@ with
             and enr.academic_year = adv.academic_year
             and enr.schoolid = adv.schoolid
             and enr._dbt_source_project = adv._dbt_source_project
+        left join
+            focus_school_year_end as sye
+            on enr.academic_year = sye.academic_year
+            and enr.ps_schoolid = sye.schoolid
     ),
 
     focus_windowed as (
         select
-            *,
+            * except (is_enrolled_y1, is_enrolled_recent),
+
+            -- Year grain, matching PowerSchool's max() over
+            -- (studentid, yearid): any qualifying stint counts.
+            max(is_enrolled_y1) over (
+                partition by student_number, academic_year
+            ) as is_enrolled_y1,
+
+            max(is_enrolled_recent) over (
+                partition by student_number, academic_year
+            ) as is_enrolled_recent,
 
             max(if(year_in_school = 1, cohort_primary, null)) over (
                 partition by student_number, schoolid

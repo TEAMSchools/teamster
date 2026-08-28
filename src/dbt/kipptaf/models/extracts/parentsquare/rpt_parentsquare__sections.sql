@@ -19,12 +19,11 @@ with
     ),
 
     grade_sections as (
+        -- grain projection, not dup-masking
         -- Derived from the (school, grade) pairs students are actually enrolled
-        -- in, not from each school's low_grade..high_grade span, so no empty
-        -- section is emitted and every rpt_parentsquare__rosters row is
+        -- in, not from each school's `low_grade`..`high_grade` span. No empty
+        -- section is emitted, and every `rpt_parentsquare__rosters` row is
         -- guaranteed a section to point at.
-        -- grain projection: every selected column is functionally determined by
-        -- the partition key; not a mask for upstream duplicates.
         select distinct school_id, grade_level, code_location, from enrolled
     ),
 
@@ -45,19 +44,12 @@ with
         group by code_location
     )
 
--- One synthetic section per (school, grade). The Integration Planner sets
--- granularity at "School + Grade Level only" (question 5) and excludes
--- teacher-classroom rostering, so these stand in for real course sections: they
--- give ParentSquare the grade-level grouping it needs to satisfy sections.csv and
--- rosters.csv without importing any teacher. Mirrors the auto-generated ENR
--- section pattern in rpt_clever__sections.
---
--- The owner join is a LEFT join deliberately. `section_owner` groups by region, so
--- a region whose Ops group is emptied or renamed contributes no owner row — an
--- inner join would silently drop that region's sections entirely, and a zero-row
--- sections.csv is skipped by the extract factory, leaving ParentSquare on a stale
--- file with nothing failing. Preserving the section with a null owner is what lets
--- the `not_null` test on staff_id fire instead.
+-- Mirrors the auto-generated ENR section pattern in rpt_clever__sections.
+-- The owner join is LEFT on purpose. `section_owner` groups by region, so a
+-- region whose Ops group is emptied or renamed contributes no owner row. An
+-- inner join drops that region's sections, and the extract factory skips a
+-- zero-row sections.csv, so ParentSquare keeps a stale file and nothing fails.
+-- A null owner keeps the section and lets the `not_null` test on staff_id fire.
 select
     a.school_id,
     a.code_location,

@@ -7,6 +7,18 @@ models:
       year are reached via dim_student_enrollments and dim_terms — not stored on
       the fact. FK to dim_student_enrollments, dim_dates, and dim_terms.
 
+      Miami carries no attendance before AY2026. The frozen Miami PowerSchool
+      archive (AY2020 through AY2025) was dropped in #4803: Focus re-dated
+      Miami's enrollment stints to the real first day of school where
+      PowerSchool used a July 1 administrative rollover, so 153,577 archive rows
+      carried a student_enrollment_key that no longer resolved to
+      dim_student_enrollments. Re-keying those rows from Focus enrollment dates
+      was measured and rejected in favor of the ops migration — Focus is the
+      system of record and does not carry pre-AY2026 attendance, so the gap is
+      deliberate rather than a modeling defect. fct_student_attendance_streaks
+      still carries Miami absence streaks for those years from an independent
+      leg, so the two facts disagree on Miami history by design.
+
       Four numeric attendance measures coexist — use the right one for the
       question:
 
@@ -68,6 +80,16 @@ models:
               arguments:
                 to: ref('dim_student_enrollments')
                 field: student_enrollment_key
+              config:
+                # Baseline, not a target. 2,286 rows across 15 enrollment keys
+                # predate the Focus cutover and are unrelated to it: 10 Newark
+                # stints (AY2016-2024), 4 Camden (AY2020, AY2023), 1 Paterson
+                # (AY2025). #4803 took this from 155,863 down to the residue by
+                # dropping the frozen Miami PowerSchool archive, whose 153,577
+                # AY2025 rows keyed to enrollment records Focus re-dated. Warn
+                # above the residue so a NEW orphan source stays visible; do
+                # not raise the threshold to silence one.
+                warn_if: ">2286"
       - name: date_key
         data_type: date
         description: >-

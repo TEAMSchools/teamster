@@ -6,8 +6,10 @@ models:
       sources with Miami's Focus course periods, conformed inline to the
       PowerSchool column vocabulary. The Miami PowerSchool branch is scoped to
       years before Focus coverage begins, so the frozen archive keeps serving
-      Miami AY2020 through AY2025. Replaces `base_powerschool__sections` as the
-      canonical section-grain source.
+      Miami AY2020 through AY2025. The boundary is derived from the Focus
+      schedule rather than hardcoded, so a Focus backfill of an earlier year
+      moves it instead of double-counting that year. Replaces
+      `base_powerschool__sections` as the canonical section-grain source.
     config:
       materialized: table
     data_tests:

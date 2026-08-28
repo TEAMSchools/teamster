@@ -12,6 +12,9 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  # Archive only. Leadership Development moved to Lattice on 2026-07-30 and the
+  # upstream dbt models are disabled. If an Apps Script on this sheet still
+  # mails reminders, it has to be stopped in the sheet itself. Refs #4627
   - name: leadership_pm_reminders
     label: Leadership PM Reminders
     type: application
@@ -21,6 +24,7 @@ exposures:
     depends_on:
       - ref("rpt_gsheets__leadership_pm_reminders")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -797,7 +801,7 @@ exposures:
     type: analysis
     owner:
       name: Data Team - grangel
-    url: https://docs.google.com/spreadsheets/d/1e52D42Zhlhasj-_Tf429ZWxJdtSr05YedsI4Ur0Tva8
+    url: https://docs.google.com/spreadsheets/d/1d9hApvHMf_865-rQgXwnpxcbOLhiMaP6tkDz_YZTdSU
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_student_flags")
     config:
@@ -814,6 +818,7 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_template")
+      - ref("rpt_gsheets__gradebook_audit_current_expectations")
     config:
       meta:
         dagster:

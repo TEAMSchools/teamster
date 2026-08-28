@@ -293,6 +293,7 @@ select
     c.exit_grade_level,
     c.powerschool_enroll_status,
     c.contact_postsec_advisor_name as postsec_advisor,
+    c.contact_college_counselor_name as college_counselor,
     c.best_guess_pathway as bgp,
     c.desired_pathway,
     c.is_ed_ea,

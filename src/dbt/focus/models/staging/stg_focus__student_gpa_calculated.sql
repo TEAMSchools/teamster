@@ -1,0 +1,21 @@
+select
+    id,
+    student_id,
+    school_id,
+    syear,
+    marking_period_id,
+    grade_id,
+    grade_total,
+    class_rank,
+    weighted_class_rank,
+    unweighted_class_rank,
+    rank_last_modified,
+    created_at,
+    updated_at,
+
+    cast(gpa as numeric) as gpa,
+    cast(weighted_gpa as numeric) as weighted_gpa,
+    cast(cumulative_gpa as numeric) as cumulative_gpa,
+    cast(cumulative_weighted_gpa as numeric) as cumulative_weighted_gpa,
+    cast(cumulative_credits as numeric) as cumulative_credits,
+from {{ source("focus", "student_gpa_calculated") }}

@@ -1,5 +1,12 @@
 models:
   - name: rpt_tableau__gradebook_gpa
+    description: >-
+      Network-wide, Miami included by decision, though it returned no Miami rows
+      in any year in prod as of 2026-08-27 — not even AY2024 or AY2025, when
+      Miami was still on PowerSchool. The block is `not enr.is_out_of_district`,
+      null for Miami until #5038. Miami's GPA columns stay null after that,
+      because `int_powerschool__gpa_term` is PowerSchool-only; the Focus GPA
+      branch is #5021. Ratified on #4996.
     # TODO(#3900): residual warn-level violations trace to the known
     # base_powerschool__course_enrollments double-write duplicates.
     data_tests:

@@ -342,6 +342,15 @@ sources:
                 - dlt
                 - focus
                 - student_report_card_grades
+      - name: student_gpa_calculated
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - student_gpa_calculated
       - name: report_card_grades
         config:
           meta:

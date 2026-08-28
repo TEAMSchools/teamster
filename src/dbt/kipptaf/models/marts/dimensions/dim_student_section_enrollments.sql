@@ -38,16 +38,39 @@ with
         -- alumni placeholder rows (enroll_status=3) have NULL entrydate/exitdate
         -- and match no stint here, producing a NULL student_enrollment_key
         --
-        -- Focus leaves a course period's end_date null while the schedule is
-        -- still open (PowerSchool always populates cc_dateleft), so the
-        -- coalesce below is required for Miami to match its current stint.
-        -- It is a no-op for NJ: cc_dateleft is null on zero NJ rows. entrydate
+        -- The coalesce below is now dead and kept only as a guard: #5043 made
+        -- cc_dateleft non-null on both SIS branches and added a not_null test
+        -- on it, so the sentinel can no longer fire. It was required while
+        -- Focus left an open schedule's end_date null. Drop it whenever this
+        -- model is next touched. entrydate
         -- and exitdate are never null in student_enrollments, so they need no
-        -- equivalent coalesce. The ~10.5% of Miami rows still unmatched after
-        -- this (same-day stints, cross-school scheduling artifacts) is an
-        -- accepted residual within the NJ completed-year orphan-rate norm,
-        -- tracked in #4970 -- see the rate test in
+        -- equivalent coalesce. The ~10.6% of Miami rows still unmatched after
+        -- this is an accepted residual within the NJ completed-year orphan-rate
+        -- norm -- see the rate test in
         -- tests/test_miami_section_enrollment_orphan_rate.sql.
+        --
+        -- That residual is attributed, not unexplained. Of the orphaned
+        -- Miami AY2026 rows, 1,886 hold a stint at the same school and fail the
+        -- overlap; re-measured 2026-08-27 they split three ways:
+        -- * 1,332 -- the STINT window is degenerate, with an exitdate on or
+        -- before its entrydate. Nothing can overlap a window of zero or
+        -- negative length, so no schedule date would fix these (#5024).
+        -- * 478 -- the schedule row was closed on or before the stint's
+        -- entrydate, so the student never attended the section.
+        -- * 76 -- a future-term row (Semester 2, Quarter 2) for a student who
+        -- already exited. cc_dateenrolled is the term start, so it lands
+        -- after the exit by design (#5002).
+        -- Zero rows have cc_dateenrolled before the stint's entrydate, which
+        -- rules out the mid-term-joiner mechanism #4970 proposed.
+        --
+        -- The rest sit at a different campus: stale schedule rows left open
+        -- after a reassignment, and courses taken at a second campus where
+        -- int_focus__student_enrollment keeps only the primary stint (#5003).
+        -- The Focus school-to-network mapping was ruled out for both.
+        --
+        -- All three stay null deliberately: attaching a section at one campus
+        -- to the student's stint at another would emit a confidently wrong
+        -- key, which is worse than no key (#4970).
         left join
             student_enrollments as enr
             on cc.students_student_number = enr.student_number
@@ -147,11 +170,17 @@ with
             --
             -- _dbt_source_project is included because student_enrollment_key
             -- is NULL on every stint-orphaned row network-wide -- without it,
-            -- every orphaned homeroom row (any region) shares one partition,
-            -- and BigQuery sorts NULL is_dropped_* FIRST under asc, so a
-            -- Miami orphan (drop flags always null by design) can outrank an
-            -- NJ orphan for rank = 1. _dbt_source_project is non-null on
-            -- every row, so adding it only tightens the partition.
+            -- every orphaned homeroom row, in any region, shares one
+            -- partition and regions compete with each other for rank = 1.
+            -- _dbt_source_project is non-null on every row, so adding it only
+            -- tightens the partition.
+            --
+            -- The original reason was sharper: Miami's drop flags were null,
+            -- and BigQuery sorts NULL FIRST under asc, so a Miami orphan
+            -- outranked an NJ orphan on the leading term. #4968 made both
+            -- flags non-null in every region, so that specific hazard is gone.
+            -- The partition key stays regardless -- cross-region competition
+            -- for one rank is wrong on its own.
             row_number() over (
                 partition by
                     se._dbt_source_project, se.student_enrollment_key, se.is_homeroom

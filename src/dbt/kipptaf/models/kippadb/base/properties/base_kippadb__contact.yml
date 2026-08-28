@@ -31,6 +31,8 @@ models:
         data_type: date
       - name: contact_advising_provider
         data_type: string
+      - name: contact_college_counselor_id
+        data_type: string
       - name: contact_college_graduated_from
         data_type: string
       - name: contact_college_match_display_gpa
@@ -145,6 +147,11 @@ models:
         data_type: string
       - name: contact_postsec_advisor_name
         data_type: string
+      - name: contact_college_counselor_name
+        data_type: string
+        description:
+          Derived from contact_college_counselor_id, resolved against the
+          counselor's own contact record.
       - name: contact_lastfirst
         data_type: string
         description: Derived from first_name, last_name.

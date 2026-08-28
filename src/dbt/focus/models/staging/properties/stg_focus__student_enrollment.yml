@@ -165,6 +165,17 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: second_school
+        description: >-
+          Second School — Focus custom field, a checkbox. Y marks an enrollment
+          record at a school other than the student's primary or home campus;
+          null marks the primary record, so a null check is the way to filter to
+          home-campus enrollments. No option list exists for a checkbox field,
+          so the stored value is carried through undecoded.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: resident_status_state_county
         description: >-
           Resident Status, State/County — Focus custom field. Stored as an
