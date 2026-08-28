@@ -112,7 +112,16 @@ with
             and e._dbt_source_project = q._dbt_source_project
             and e.cc_dateenrolled <= q.quarter_end_date_alt
             and e.cc_dateleft >= q.quarter_start_date_alt
-        where not e.is_dropped_section and e.sections_no_of_students != 0
+        where
+            not e.is_dropped_section
+            -- Focus records no section student count, so this column is null on
+            -- every Miami row. Null is not the PowerSchool quirk the filter
+            -- targets -- a section holding enrollment rows while recording its
+            -- count as zero, 215 of 64,699 New Jersey rows. A section with
+            -- nobody in it produces no enrollment rows at all, so it cannot
+            -- reach this model; #5043 measured Miami's smallest section at 1
+            -- student. Keep null, drop only a literal 0.
+            and e.sections_no_of_students is distinct from 0
     ),
 
     days_course_enrolled as (
