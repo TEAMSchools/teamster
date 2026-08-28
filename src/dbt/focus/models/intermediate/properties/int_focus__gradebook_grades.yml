@@ -95,6 +95,32 @@ models:
         description: >-
           Marking period the assignment belongs to for that course period. Null
           alongside a null course_period_id.
+      - name: academic_year
+        description: >-
+          School year of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
+      - name: marking_period_short_name
+        description: >-
+          Abbreviated label of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
+      - name: marking_period_type
+        description: >-
+          Type (e.g. year, semester, quarter, progress) of the score's marking
+          period, denormalized from marking_period_id to match
+          int_focus__report_card_grades. Null alongside a null
+          marking_period_id.
+      - name: marking_period_start_date
+        description: >-
+          First date of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
+      - name: marking_period_end_date
+        description: >-
+          Last date of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
       - name: assigned_date
         description: Date the assignment was assigned to the student's section.
       - name: due_date

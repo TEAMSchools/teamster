@@ -50,7 +50,7 @@ with
 
             st.student_number,
 
-            mp.syear as academic_year,
+            gg.academic_year,
             gg.marking_period_id,
 
             -- Focus stores day boundaries in local time as UTC: a due date
@@ -117,10 +117,13 @@ with
 
         from {{ ref("int_focus__gradebook_grades") }} as gg
         inner join
-            {{ ref("stg_focus__marking_periods") }} as mp
-            on gg.marking_period_id = mp.marking_period_id
-        inner join
             {{ ref("int_focus__students") }} as st on gg.student_id = st.student_id
+        -- gg.academic_year is null wherever gg.marking_period_id is null (see
+        -- int_focus__gradebook_grades). The prior inner join to
+        -- stg_focus__marking_periods dropped those rows as a side effect; this
+        -- filter preserves that exclusion explicitly now that academic_year
+        -- comes from gg directly.
+        where gg.academic_year is not null
     )
 
 select *,
