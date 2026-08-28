@@ -125,8 +125,8 @@ with
             if(gg.exclude_from_average, 1, 0) as is_exempt,
             if(gg.assignment_exclude_from_average, 0, 1) as iscountedinfinalgrade,
 
-            not (
-                gg.exclude_from_average or gg.assignment_exclude_from_average
+            (
+                not (gg.exclude_from_average or gg.assignment_exclude_from_average)
             ) as is_expected,
 
         from {{ ref("int_focus__gradebook_grades") }} as gg

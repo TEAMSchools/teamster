@@ -57,4 +57,4 @@ inner join
     -- ordered pair: compares each combination once, never a row to itself
     and a.course_period_id < b.course_period_id
     and a.effective_start_date < b.effective_end_date
-    and b.effective_start_date < a.effective_end_date
+    and a.effective_end_date > b.effective_start_date

@@ -107,7 +107,7 @@ with
 
             concat('RT', mp.quarter_number) as reporting_term,
 
-            mp.short_name as quarter,
+            mp.short_name as `quarter`,
 
             -- Weighted by points possible, and scored rows only: a not-yet-
             -- graded score (the -1 sentinel, already nulled upstream) must not
