@@ -199,15 +199,6 @@ with
 
         from course_tags_union
         group by region, studentid
-    ),
-
-    current_year_students as (
-        select distinct student_number
-        from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and rn_year = 1
-            and is_enrolled_oct01
     )
 
 select
@@ -215,6 +206,7 @@ select
     e.grade_level as grade,
     e.cumulative_y1_gpa_unweighted as unweighted_cumulative_gpa,
     e.cumulative_y1_gpa as weighted_cumulative_gpa,
+    e.exited_hs,
 
     c.has_participated_in_ap_courses,
     c.has_participated_in_honors_courses,
@@ -266,11 +258,8 @@ select
 
     if(e.lunch_status in ('F', 'R', 'FDC'), 'Y', 'N') as student_is_frl,
 
-    if(a.student_number is null, 'Y', 'N') as is_exited_next_year,
-
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join course_tags as c on e.studentid = c.studentid and e.region = c.region
-left join current_year_students as a on e.student_number = a.student_number
 where
     e.academic_year = {{ var("current_academic_year") - 1 }}
     and e.school_level = 'HS'

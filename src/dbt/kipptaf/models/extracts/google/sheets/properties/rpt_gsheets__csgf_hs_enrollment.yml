@@ -57,12 +57,14 @@ models:
           setup if that framing ever seems off, since this repo's only other
           reference to it (a Miami-facing mart) came to the same 'F'/'R'/'FDC'
           grouping independently.
-      - name: is_exited_next_year
+      - name: exited_hs
         data_type: string
         description:
-          Anchored on is_enrolled_oct01 rather than a live enroll_status value,
-          matching the state count-day convention already used elsewhere in this
-          model and in rpt_gsheets__csgf_enrollment. This means a student who
-          returns the following year but later withdraws mid-year still
-          correctly reads N here, rather than being misread as never having come
-          back.
+          Whether the student graduated or completed high school -- per CSGF's
+          own clarification on this field ("this essentially is asking if the
+          student graduated or completed high school"), not the broader "did not
+          return the following year" reading the field's plain-language wording
+          might suggest. Sourced from
+          int_extracts__student_enrollments.exited_hs, shared with
+          rpt_gsheets__csgf_hs_postsec_pathways -- keep both in sync, they read
+          the same upstream column now rather than each computing it separately.

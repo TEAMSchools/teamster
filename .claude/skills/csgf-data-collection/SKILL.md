@@ -569,8 +569,12 @@ the gap to get a head start on the 7 already-closed tabs above.
 - Start with the **Enrollment tab** -- every student on any other tab must also
   have an Enrollment row, and vice versa (every completer goes on Enrollment
   even if they don't appear elsewhere).
-- Fill the min/max weighted and unweighted GPA cells (K4/L4 in CSGF's template)
-  -- leaving them blank flags ALL GPA data as errors, not just those cells.
+- Fill the min/max weighted and unweighted GPA cells (K4/L4 in CSGF's template,
+  labeled "Numeric value between 0 and your max Unweighted/Weighted GPA") --
+  leaving them blank flags ALL GPA data as errors, not just those cells. These
+  are the same values as the "grading scale" Preliminary Question (Q6 in that
+  log, above): **unweighted max = 4.33, weighted max = 5.33**. Confirm these
+  haven't changed each cycle rather than assuming they carry forward.
 - Tasks marked "Not Applicable" by your Preliminary Questions answers should
   stay that way -- if one looks wrong (e.g. stuck on "Not Started" when it
   should be N/A), file a support ticket rather than editing the status yourself.
