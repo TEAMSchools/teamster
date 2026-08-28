@@ -818,7 +818,7 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_template")
-      - ref("stg_powerschool__u_expectations")
+      - ref("rpt_gsheets__gradebook_audit_current_expectations")
     config:
       meta:
         dagster:
