@@ -20,6 +20,38 @@ models:
               - cc_dcid
               - _dbt_source_project
     columns:
+      - name: exit_date
+        description: >-
+          When this section enrollment ends, whether or not the student left
+          early. Non-null on every row in both SIS branches, so a consumer
+          bounding an enrollment window reads this rather than `cc_dateleft`.
+          Named for `dim_student_section_enrollments.exit_date`, which is this
+          value and until #5043 aliased `cc_dateleft` itself.
+
+          The two SIS record it differently and neither is wrong. PowerSchool
+          has no separate departure date, so `cc_dateleft` is already this
+          concept -- the actual leave date when the student left, the term end
+          plus a day while the enrollment is open. Focus keeps the two apart, so
+          this resolves to the schedule `end_date` when the student left and
+          `marking_period_end_date` otherwise.
+
+          Added on #5043. Before it, consumers compared `cc_dateleft` directly
+          and every Focus row with an open enrollment -- 95.8% of Miami AY2026
+          -- made the comparison unknown and dropped out.
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: cc_dateleft
+        description: >-
+          The date the student left the section, where the SIS records one. For
+          PowerSchool this doubles as the scheduled end, because PowerSchool
+          conflates the two. For Miami it is the Focus schedule `end_date`,
+          which is null while the enrollment is open -- the normal state, true
+          of 95.8% of Miami AY2026 rows. Read `exit_date` instead of coalescing
+          this one; #5043 added it for exactly that purpose.
+        data_type: date
       - name: cc_dcid
         description: >-
           Course enrollment identifier. For Miami, the Focus
@@ -56,14 +88,6 @@ models:
           date rather than a join date -- so a future-term row carries a future
           date. Established on #5002; the measurement lives on
           `int_focus__schedule`.
-        data_type: date
-      - name: cc_dateleft
-        description: >-
-          For PowerSchool, the date the student left the section. For Miami, the
-          Focus schedule `end_date`, which is null while the row is open -- the
-          normal state, true of 96.8% of Miami AY2026 rows. Downstream joins
-          must coalesce it to an open-ended sentinel rather than compare it
-          directly.
         data_type: date
       - name: is_homeroom
         description: >-

@@ -38,10 +38,11 @@ with
         -- alumni placeholder rows (enroll_status=3) have NULL entrydate/exitdate
         -- and match no stint here, producing a NULL student_enrollment_key
         --
-        -- Focus leaves a course period's end_date null while the schedule is
-        -- still open (PowerSchool always populates cc_dateleft), so the
-        -- coalesce below is required for Miami to match its current stint.
-        -- It is a no-op for NJ: cc_dateleft is null on zero NJ rows. entrydate
+        -- The coalesce below is now dead and kept only as a guard: #5043 made
+        -- cc_dateleft non-null on both SIS branches and added a not_null test
+        -- on it, so the sentinel can no longer fire. It was required while
+        -- Focus left an open schedule's end_date null. Drop it whenever this
+        -- model is next touched. entrydate
         -- and exitdate are never null in student_enrollments, so they need no
         -- equivalent coalesce. The ~10.6% of Miami rows still unmatched after
         -- this is an accepted residual within the NJ completed-year orphan-rate
