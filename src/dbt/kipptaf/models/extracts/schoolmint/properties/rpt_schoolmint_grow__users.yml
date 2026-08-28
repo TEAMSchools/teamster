@@ -382,3 +382,93 @@ unit_tests:
         - { user_internal_id: 106, role_names: [School Assistant Admin] }
         - { user_internal_id: 108, role_names: [Coach, School Assistant Admin] }
         - { user_internal_id: 109, role_names: [Teacher] }
+
+  - name: unit_grow_users_group_type_additive
+    description:
+      Pins observee and observer membership as two independent predicates. A
+      School Assistant Admin who coaches is now both, where the old first-match
+      CASE made every admin an observer only. A Regional Admin is an observer
+      but never an observee. A plain teacher stays an observee.
+    model: rpt_schoolmint_grow__users
+    given:
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              200 as employee_number,
+              'ra@apps.teamschools.org' as google_email,
+              cast(null as int64) as reports_to_employee_number,
+              'KIPP TEAM Academy' as home_work_location_reporting_name,
+              'School Support' as home_department_name,
+              'kippnewark' as home_work_location_dagster_code_location,
+              'Regional' as given_name,
+              'Leader' as family_name_1,
+              'Active' as assignment_status,
+              'EDs, HOSs, MDOs' as job_function,
+              'Head of Schools' as job_title,
+              cast(null as int64) as primary_grade_level_taught,
+              'ra@apps.teamschools.org' as user_principal_name,
+              cast(null as date) as worker_termination_date
+          union all
+          select
+              201, 'saa@apps.teamschools.org', cast(null as int64),
+              'KIPP TEAM Academy', 'School Leadership', 'kippnewark',
+              'Assistant', 'Leader', 'Active', 'Assistant School Leaders',
+              'Assistant School Leader', cast(null as int64),
+              'saa@apps.teamschools.org', cast(null as date)
+          union all
+          select
+              202, 'teach@apps.teamschools.org', 201,
+              'KIPP TEAM Academy', 'Elementary', 'kippnewark',
+              'Plain', 'Teacher', 'Active', 'Teacher', 'Teacher', 5,
+              'teach@apps.teamschools.org', cast(null as date)
+      - input: ref('stg_schoolmint_grow__roles')
+        format: sql
+        rows: |
+          select 'r-coach' as role_id, 'Coach' as name
+          union all
+          select 'r-teacher', 'Teacher'
+          union all
+          select 'r-saa', 'School Assistant Admin'
+          union all
+          select 'r-sa', 'School Admin'
+          union all
+          select 'r-ra', 'Regional Admin'
+      - input: ref('stg_schoolmint_grow__schools')
+        format: sql
+        rows: |
+          select 'sch-team' as school_id, 'KIPP TEAM Academy' as name
+      - input: ref('stg_schoolmint_grow__users')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as user_id,
+              cast(null as int64) as internal_id_int,
+              cast(null as string) as archived_at,
+              cast(null as string) as email,
+              cast(null as string) as name,
+              cast(null as string) as coach,
+              cast(null as bool) as inactive,
+              cast(null as string) as default_information_course,
+              cast(null as string) as default_information_grade_level,
+              cast(null as string) as default_information_school,
+              cast(
+                  null as array<struct<`_id` string, name string>>
+              ) as roles
+          from unnest([1])
+          where false
+      - input: ref('stg_schoolmint_grow__generic_tags')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as tag_id,
+              cast(null as string) as name,
+              cast(null as string) as abbreviation,
+              cast(null as string) as tag_type
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - { user_internal_id: 200, group_type: observers }
+        - { user_internal_id: 201, group_type: observees;observers }
+        - { user_internal_id: 202, group_type: observees }

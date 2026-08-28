@@ -166,15 +166,41 @@ with
 
             if(u.inactive, 1, 0) as inactive_ws,
 
+            /*
+                Observee and observer are independent. An admin who coaches is
+                both; Regional Admin is an observer only, because a regional
+                leader is not observed inside a school's Teachers group.
+            */
             case
                 when
                     exists (
-                        select 1 from unnest(p.role_names) as rn where rn like '%Admin%'
+                        select 1
+                        from unnest(p.role_names) as rn
+                        where
+                            rn in ('Teacher', 'School Admin', 'School Assistant Admin')
+                    )
+                    and exists (
+                        select 1
+                        from unnest(p.role_names) as rn
+                        where rn like '%Admin%' or rn = 'Coach'
+                    )
+                then 'observees;observers'
+                when
+                    exists (
+                        select 1
+                        from unnest(p.role_names) as rn
+                        where rn like '%Admin%' or rn = 'Coach'
                     )
                 then 'observers'
-                when 'Coach' in unnest(p.role_names)
-                then 'observees;observers'
-                else 'observees'
+                when
+                    exists (
+                        select 1
+                        from unnest(p.role_names) as rn
+                        where
+                            rn in ('Teacher', 'School Admin', 'School Assistant Admin')
+                    )
+                then 'observees'
+                else ''
             end as group_type,
         from people as p
         inner join people_roles as pra on p.user_internal_id = pra.user_internal_id
