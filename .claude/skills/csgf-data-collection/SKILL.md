@@ -302,14 +302,13 @@ vendor contract rather than answering from data alone:
    "No" carries forward automatically.
 
 10. **"What is your means of collecting the post-high school plans of your
-    graduating seniors?"** (multi-select) → **[confirmed, partial]** Casey
-    Gibson / Anthony Walters selected **Overgrad, Senior Seminar/Class
-    Requirement, Other**; confirmed NOT selected: **Scoir, Student Information
-    System (SIS)**. The screenshot confirming this was scrolled to show only the
-    bottom of the list -- the top portion (1:1 Counseling/Advising Meetings,
-    Cialfo, Internal Tracker/Spreadsheet, NSC, Naviance) wasn't visible, so
-    their status isn't logged here as confirmed even though Naviance is
-    presumably unselected (subscription is a confirmed No).
+    graduating seniors?"** (multi-select) → **[confirmed]** Selected: **Senior
+    Seminar/Class Requirement, Overgrad, Other**. Confirmed NOT selected:
+    **Naviance** (item 9's no-subscription answer). The remaining options on the
+    full 10-item list (1:1 Counseling/Advising Meetings, Cialfo, Internal
+    Tracker/Spreadsheet, National Student Clearinghouse (NSC), Scoir, Student
+    Information System (SIS)) were not called out as selected, so treat them as
+    not selected unless told otherwise.
 
 11. **"If you have NSC/Naviance/Overgrad AND ALSO utilize additional mechanisms
     for keeping track of alumni, what are they?"** → **Salesforce** [confirmed].

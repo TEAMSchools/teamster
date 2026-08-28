@@ -1,6 +1,6 @@
 with
     entry_cohort as (
-        select co.school, co.student_number, 1 as is_entry_cohort
+        select co.school_name, co.student_number, 1 as is_entry_cohort
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         where
@@ -12,7 +12,7 @@ with
     ),
 
     transfer_in as (
-        select co.student_number, co.school, 1 as is_transfer_in
+        select co.student_number, co.school_name, 1 as is_transfer_in
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         where
@@ -27,7 +27,7 @@ with
     ),
 
     transfer_out as (
-        select co.student_number, co.school, 1 as is_transfer_out
+        select co.student_number, co.school_name, 1 as is_transfer_out
 
         from {{ ref("int_extracts__student_enrollments") }} as co
         where
@@ -39,7 +39,7 @@ with
 
     grad_roster as (
         select
-            co.school,
+            co.school_name,
             co.cohort,
             co.student_number,
 
@@ -61,15 +61,15 @@ with
         left join
             entry_cohort as ec
             on co.student_number = ec.student_number
-            and co.school = ec.school
+            and co.school_name = ec.school_name
         left join
             transfer_in as ti
             on co.student_number = ti.student_number
-            and co.school = ti.school
+            and co.school_name = ti.school_name
         left join
             transfer_out as tr
             on co.student_number = tr.student_number
-            and co.school = tr.school
+            and co.school_name = tr.school_name
         where
             co.school_level = 'HS'
             and co.rn_year = 1
@@ -79,7 +79,12 @@ with
 
 select
     gr.cohort,
-    gr.school,
+
+    if(
+        gr.school_name = 'KIPP Cooper Norcross High',
+        'KIPP Cooper Norcross High School',
+        gr.school_name
+    ) as school,
 
     sum(gr.is_entry_cohort) as total_9_entry,
 
@@ -100,4 +105,4 @@ select
     ) as pct_grad
 
 from grad_roster as gr
-group by gr.cohort, gr.school
+group by gr.cohort, gr.school_name
