@@ -10,6 +10,21 @@ models:
     config:
       materialized: table
     columns:
+      - name: relative_placement
+        data_type: string
+        description:
+          Domain-specific relative grade-level placement from the diagnostic.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 1 Grade Level Below
+                  - 2 Grade Levels Below
+                  - 3 or More Grade Levels Below
+                  - Early On Grade Level
+                  - Mid or Above Grade Level
+                  - Not Assessed
+
       - name: student_id
         data_type: int64
         description: PowerSchool student number for the student tested.
@@ -49,10 +64,6 @@ models:
       - name: placement
         data_type: string
         description: Domain-specific placement label from the diagnostic.
-      - name: relative_placement
-        data_type: string
-        description:
-          Domain-specific relative grade-level placement from the diagnostic.
       - name: scale_score
         data_type: int64
         description: Domain-specific i-Ready scale score from the diagnostic.
