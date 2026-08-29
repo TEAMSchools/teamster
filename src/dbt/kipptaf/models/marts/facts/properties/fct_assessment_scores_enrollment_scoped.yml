@@ -208,27 +208,36 @@ models:
       - name: response_type_code
         data_type: string
         description: >-
-          Breakdown identifier for group and standard response types: the
-          domain_name for an i-Ready domain, or the measure_standard for a
-          DIBELS subtest. Null for overall and not_taken rows. Serves as the
-          surrogate-key discriminator distinguishing vendor breakdown rows
-          within the same assessment and administration.
+          Breakdown identifier, populated as custom_code for an Illuminate
+          standard row, domain_name for an i-Ready domain, or measure_standard
+          for a DIBELS subtest. Null on Illuminate group rows — the
+          reporting-group branch carries no equivalent code — and on all overall
+          and not_taken rows. Serves as a surrogate-key discriminator
+          distinguishing breakdown rows that would otherwise collide on
+          assessment, administration, and student.
 
       - name: response_type_description
         data_type: string
         description: >-
-          Human-readable label for the response_type_code breakdown: a rendered
-          domain name for i-Ready, or the measure_name for DIBELS. Null for
-          overall and not_taken rows.
+          Human-readable label for the response_type_code breakdown: an
+          Illuminate standard's own description or its reporting-group label, a
+          rendered domain name for i-Ready, or the measure_name for DIBELS.
+          Populated for every group and standard row; null only for overall and
+          not_taken rows.
 
       - name: response_type_root_description
         data_type: string
         description: >-
-          Description of the root (top-level) response type in an Illuminate
-          hierarchy. Null for every non-Illuminate source: the i-Ready
-          comprehension rollup parent domain is excluded from this fact rather
-          than represented as a hierarchy, so vendor breakdown rows (i-Ready
-          domains, DIBELS subtests) have no parent to describe.
+          Description of the root (top-level) standard in the Illuminate
+          standards hierarchy. Populated only where an Illuminate standard row
+          resolves a parent standard; null for Illuminate group rows, which have
+          no root-standard concept. Has no vendor or state equivalent — the
+          vendor and state branches of the final SELECT hardcode this column
+          NULL directly, independent of any hierarchy decision. (For i-Ready
+          specifically, the parent of its comprehension domains,
+          comprehension_overall, is excluded from the fact outright to avoid
+          double-counting the proficiency measure — a related but separate
+          reason vendor rows never carry a root description.)
 
       - name: is_replacement
         data_type: boolean
