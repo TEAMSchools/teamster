@@ -171,24 +171,40 @@ expected to vary run to run.
 
 ## What rollback does NOT undo
 
-The vendor `assessment_score_key` values do not return to their pre-change
-values. The revert restores the 7-input surrogate-key definition, but that
-produces **different** hash values than either the pre-change key or the 8-input
-key introduced by this change — reverting a hash input does not replay history,
-it computes a third set of values. Concretely:
+Rollback **does** restore the pre-change `assessment_score_key` values for every
+row that survives the revert. `dbt_utils.generate_surrogate_key` is a
+deterministic function of its inputs — it coalesces each input to a string,
+joins with `-`, and hashes the result — so reverting to the same 7-input list,
+over the same source rows with the same values, reproduces the original hashes
+exactly. This includes DIBELS: Task 3 changed `module_code` from
+`measure_standard` to the literal `'Composite'`, but on revert `module_code`
+returns to `measure_standard` **and** the `measure_standard = 'Composite'`
+filter comes back with it, so the value is `'Composite'` either way. i-Ready
+(`subject`) and STAR are untouched. The warehouse genuinely returns to its prior
+state.
 
-- Any system that persisted the 8-input key values during the period this change
-  was live (a downstream export, a cached join, an external reconciliation) will
-  not match either the pre-change key or the post-rollback key. There is no key
-  value in this rollback's output that matches what that system holds.
-- This is irreversible by nature of surrogate-key hashing, not a defect in the
-  runbook. If any consumer is known to have persisted `assessment_score_key`
-  values, that consumer needs a separate remediation (a re-sync against the
-  rolled-back table) — it is not something re-running this runbook can fix.
+What rollback cannot fix is an external system that **captured the 8-input key
+values while the change was live** (a downstream export, a cached join, an
+external reconciliation). Those values existed only during that window — they
+are a snapshot of a mid-change state, not a permanent property of the warehouse.
+After rollback they match nothing, because the rows they referred to now carry
+their original 7-input keys again. Concretely:
+
+- The exposure is bounded and specific: it is a mid-window snapshot problem,
+  scoped to whatever external system persisted `assessment_score_key` between
+  the forward merge and this rollback — not an irreversible property of
+  surrogate-key hashing in general.
+- If any consumer is known to have persisted `assessment_score_key` values
+  during that window, that consumer needs a separate remediation (a re-sync
+  against the rolled-back table) — it is not something re-running this runbook
+  can fix.
 
 State this to any stakeholder asking whether rollback is a full undo: it is, for
-the data shape and the fact/Cube behavior, and it is not, for any externally
-persisted vendor key value.
+the data shape, the fact/Cube behavior, and the key values themselves — the
+warehouse's `assessment_score_key` values return to exactly what they were
+pre-change. The gap is narrower: any external system that captured 8-input key
+values during the live window holds a snapshot that matches neither the
+pre-change nor the post-rollback state.
 
 ## The merge gate
 
