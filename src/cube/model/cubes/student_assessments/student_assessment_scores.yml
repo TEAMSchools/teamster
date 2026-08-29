@@ -147,9 +147,13 @@ cubes:
     measures:
       - name: count_scores
         description: >-
-          Scored-response count. COUNT(*) over the unique PK
-          (assessment_score_key) — additive, so pre-aggregations roll it up to
-          any grain.
+          Count of scored responses — excludes not_taken rows (no response
+          recorded). COUNT(*) over the unique PK (assessment_score_key),
+          filtered to response_type != 'not_taken' — additive, so
+          pre-aggregations roll it up to any grain. Expected effect: global
+          unfiltered pct_proficient moves from 45.80% to 49.54% (measured on
+          this branch), since the ~1.07M not_taken rows (no response, so never
+          proficient) no longer inflate the denominator.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
@@ -158,6 +162,7 @@ cubes:
         filters:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+          - sql: "{CUBE}.response_type != 'not_taken'"
 
       - name: count_students
         description: >-
@@ -183,6 +188,7 @@ cubes:
         filters:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+          - sql: "{CUBE}.response_type != 'not_taken'"
 
       - name: pct_proficient
         description: >-
@@ -244,10 +250,14 @@ cubes:
       - name: avg_scale_score
         description: >-
           Grain: recomputes at any query grain, but meaningful only within a
-          single assessment source/subject/grade — scale scores are not
-          comparable across sources, so pooling them is a silent-failure trap
-          (numerically valid, semantically meaningless). Average scale score,
-          built from additive primitives so pre-aggregations roll it up.
+          single assessment source/subject/grade and response type — scale
+          scores are not comparable across sources, so pooling them is a
+          silent-failure trap (numerically valid, semantically meaningless).
+          Scoping to DIBELS and one subject alone still pools a Composite score
+          with an ORF words-per-minute rate, since both are DIBELS scale_score
+          rows at different response types — response_type must also be held
+          constant. Average scale score, built from additive primitives so
+          pre-aggregations roll it up.
         sql: "{_sum_scale_score} / NULLIF({_count_scale_score}, 0)"
         type: number
         public: true
@@ -263,6 +273,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
+          - sql: "{CUBE}.response_type != 'not_taken'"
 
       - name: _count_scores_formative
         description: >-
@@ -274,6 +285,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
+          - sql: "{CUBE}.response_type != 'not_taken'"
 
       - name: pct_proficient_formative
         description: >-
@@ -300,6 +312,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} = 'CRQ'"
+          - sql: "{CUBE}.response_type != 'not_taken'"
 
       - name: _count_scores_crq
         description: >-
@@ -311,6 +324,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} = 'CRQ'"
+          - sql: "{CUBE}.response_type != 'not_taken'"
 
       - name: pct_proficient_crq
         description: >-
@@ -333,7 +347,18 @@ cubes:
       # it, so the name must be here (and exposed on the view) or a name-grouped
       # query falls back to the fact. The key adds cardinality; the name is 1:1
       # with the key (adds width, not rows).
-      - name: proficiency_rollup
+      #
+      # Renamed proficiency_rollup -> proficiency_rollup_v2 (this change): the
+      # rollup is ~12 yearly partitions with no incremental: true and no
+      # update_window, so each partition is served from its last successful
+      # build until replaced. This change flips response_type on every
+      # historical row (not_taken now excluded, and vendor rows newly carry
+      # populated response_type_code/description). Without the rename, the ~12
+      # partitions would rebuild independently against the same pre-agg name,
+      # and a multi-year query could silently mix old-vocabulary partitions
+      # with new-vocabulary ones mid-sweep — partial history, no error. The
+      # rename forces one clean full rebuild under a new name instead.
+      - name: proficiency_rollup_v2
         measures:
           - student_assessment_scores.count_scores
           - student_assessment_scores._sum_proficient
@@ -346,13 +371,30 @@ cubes:
           - student_assessments.module_type
           - student_assessments.academic_subject
           - student_assessments.grade_level_tested
+          # assessment_type (illuminate / state / iready / dibels / star /
+          # college) is near-functionally-determined by module_code above, so
+          # it costs close to zero added rollup rows. It is included anyway
+          # because without it no source-scoped query — the documented way to
+          # select i-Ready or DIBELS specifically — can hit the rollup; such a
+          # query would silently fall back to the ~14.2M-row fact instead.
+          - student_assessments.assessment_type
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
-          # response_type (overall / strand / standard) and its human-readable
-          # description are both functionally determined by response_type_code
-          # above (zero added rows). They serve standard-level cuts: filter
-          # response_type = 'standard' and break out by response_type_description
-          # (the IEP-vs-gen-ed-by-standard pilot pattern, WG 2026-07-02).
+          # Functional determination here is mixed, not uniform (do not
+          # assert "zero added rows" for this pair):
+          #   - For the vendor breakdown rows this change adds (i-Ready
+          #     domains, DIBELS subtests), response_type_code IS populated and
+          #     does determine response_type / response_type_description —
+          #     true for the first time as of this change.
+          #   - For Illuminate 'group' rows, response_type_code is still NULL
+          #     across the board while response_type_description varies
+          #     (verified: of 2,867,069 'group' rows, zero have a populated
+          #     code, all have a populated description) — so response_type_code
+          #     alone does NOT determine response_type_description for
+          #     Illuminate, and the rollup does gain rows here.
+          # They serve standard-level cuts: filter response_type = 'standard'
+          # and break out by response_type_description (the
+          # IEP-vs-gen-ed-by-standard pilot pattern, WG 2026-07-02).
           - student_assessment_scores.response_type
           - student_assessment_scores.response_type_description
           - students.race
