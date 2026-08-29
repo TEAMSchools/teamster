@@ -254,8 +254,11 @@ Apply to every assessment source unless a source section overrides them.
   build the rollup explicitly from the module types you intend.
   `pct_proficient_crq` isolates CRQ. (Whether to pool across module types or
   report per-instrument is an open decision — flag it.)
-- **`response_type`:** `overall` / `standard` / `group`. Use `overall` unless a
-  standard/group breakdown is requested.
+- **`response_type`:** `overall` / `standard` / `group` / `not_taken`. Use
+  `overall` unless a standard/group breakdown is requested. `not_taken` is
+  Illuminate-only — it marks an assessment the student was expected to take but
+  has no recorded response for; exclude it explicitly if you are not
+  deliberately including no-shows (proficiency measures already exclude it).
 - **Bands:** `performance_band_label_number` applies, but read the Shared
   conventions entry first — the number is only meaningful inside the
   assessment's own band set, and the sets differ on cut points, band count, and
