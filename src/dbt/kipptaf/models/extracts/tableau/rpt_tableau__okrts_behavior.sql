@@ -70,9 +70,12 @@ with
             w.week_end_sunday,
             w.date_count as days_in_session,
 
-            /* Normalize the extracted value, not the raw one -- an equality
-               test placed before the regex would miss 'TEAMwork (Community)'.
-               The workbook's colour map and sort only know 'Teamwork'. */
+            /* `Values` logs TEAMwork while `Values (5)` and `Values (10 Point
+               Bonus)` log Teamwork, so without this the same value splits into
+               two members inside one year. The workbook's colour map and manual
+               sort only know 'Teamwork'. Normalizing the EXTRACTED value rather
+               than the raw one also catches any future parenthesized form,
+               which an equality test placed ahead of the regex would miss. */
             case
                 when bt.behavior_extracted = 'TEAMwork'
                 then 'Teamwork'

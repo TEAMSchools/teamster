@@ -40,6 +40,8 @@ with
         from
             unnest(
                 [
+                    -- Compliance sweeps, operational noise, and points tracked
+                    -- outside the behavior taxonomy. Deliberate, not oversights.
                     'Uniform',
                     'Dress Code',
                     'System Behaviors',
