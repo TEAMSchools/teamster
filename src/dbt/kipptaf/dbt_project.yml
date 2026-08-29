@@ -42,6 +42,15 @@ vars:
   # Miami's frozen PowerSchool history has to stay readable. See #4670.
   frozen_powerschool_code_locations: [kippmiami]
 
+  # Code locations whose DeansList feed has stopped, mapped to the first academic
+  # year to exclude. These locations stay in the enrollment spine, so extracts
+  # that left-join it would otherwise render a stopped feed as zero activity
+  # rather than no data. Year-scoped on purpose -- history before the cutover has
+  # to stay readable. Miami's last behavior row is 2026-06-25; its replacement
+  # behavior platform lands in Q2 and this entry comes out then. See #5062.
+  deanslist_stopped_code_locations:
+    kippmiami: 2026
+
 models:
   kipptaf:
     act:
