@@ -70,23 +70,41 @@ Net effect on production, relative to the `a9f529336` baseline:
    rows survive a partial refresh:
 
    ```bash
-   uv run dbt build --select fct_assessment_scores_enrollment_scoped+ --full-refresh
+   uv run dbt build --project-dir src/dbt/kipptaf \
+     --select fct_assessment_scores_enrollment_scoped+ --full-refresh
    ```
 
-1. **Re-upload the prior knowledge-base files** to the Cube MCP knowledge base.
-   The prior (pre-change) content for each of the three files is the parent of
-   `6f0528531`:
+   `--project-dir` is required — the model lives in `src/dbt/kipptaf`, and
+   running `dbt` from the repo root without it errors immediately with no
+   `dbt_project.yml` found (see `src/dbt/CLAUDE.md`). If this rollback is
+   executed from a worktree rather than the main checkout, qualify the path with
+   the worktree root instead: `--project-dir <worktree>/src/dbt/kipptaf`.
+
+1. **Re-upload the prior knowledge-base files** to the claude.ai Project. The
+   prior (pre-change) content for each of the three files is the parent of
+   `6f0528531`; save each to a file before uploading:
 
    ```bash
-   git show 6f0528531^:src/cube/mcp/project_knowledge/README.md
-   git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md
-   git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-reference.md
+   git show 6f0528531^:src/cube/mcp/project_knowledge/README.md \
+     > README.md
+   git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md \
+     > assessment-cube-orchestrator.md
+   git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-reference.md \
+     > assessment-cube-reference.md
    ```
 
-   Upload each of these three versions through the Cube MCP knowledge-base admin
-   surface. This is a manual step — it is not run by CI or by merging the revert
-   PR. See the merge-gate section below for why this step's timing matters as
-   much as the step itself.
+   The upload mechanism is documented in
+   `src/cube/mcp/project_knowledge/README.md`: "The repo is the source of truth;
+   the claude.ai Project is the deployment target — edit here, open a PR, then
+   re-upload the changed file(s) to the Project." On rollback this runs in
+   reverse — the repo has already reverted to the prior files, so upload the
+   three saved files above as **project knowledge** in the shared claude.ai
+   Project (the same Project set up per that README's "Setup (per Project)"
+   section). The operator executing this step needs access to that claude.ai
+   Project; if they don't have it, find whoever does before proceeding — this is
+   not a step to work around. This is a manual step — it is not run by CI or by
+   merging the revert PR. See the merge-gate section below for why this step's
+   timing matters as much as the step itself.
 
 1. **Rename the pre-aggregation back**, so Cube treats it as a new
    pre-aggregation and forces a clean rebuild rather than reusing partitions
