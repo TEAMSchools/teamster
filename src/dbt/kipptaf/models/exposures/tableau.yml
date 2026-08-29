@@ -263,6 +263,7 @@ exposures:
       - ref("rpt_tableau__okrts_behavior")
       - ref("rpt_tableau__okrts_referrals")
       - ref("rpt_tableau__suspension_over_time")
+      - ref("rpt_tableau__home_instruction")
     config:
       meta:
         dagster:
