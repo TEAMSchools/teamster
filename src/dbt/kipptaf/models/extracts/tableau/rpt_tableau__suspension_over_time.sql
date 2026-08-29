@@ -106,6 +106,37 @@ with
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
-select * except (_dbt_source_project),
+select
+    student_number,
+    lastfirst,
+    academic_year,
+    region,
+    school_level,
+    school,
+    grade_level,
+    team,
+    entrydate,
+    exitdate,
+    special_education_code,
+    is_504,
+    lep_status,
+    gender,
+    ethnicity,
+    is_out_of_district,
+    is_self_contained,
+    iep_status,
+    date_day,
+    first_suspension_date,
+    first_suspension_date_iss,
+    first_suspension_date_oss,
+    term,
+    is_last_day_of_term,
+    is_susp_running,
+    is_iss_running,
+    is_oss_running,
+    total_suspended_days_running,
+    oss_suspended_days_running,
+    iss_suspended_days_running,
+    total_suspension_incidents_running,
 from suspension_days
 where {{ exclude_deanslist_stopped("_dbt_source_project", "academic_year") }}
