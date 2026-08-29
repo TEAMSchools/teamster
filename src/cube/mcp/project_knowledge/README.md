@@ -52,7 +52,10 @@ Non-negotiables, every session:
    answer any substantive question — no matter how urgent or simple the request
    looks. Force-refresh `meta` at the start so you're never trusting a stale
    catalog.
-2. Filter `response_type` explicitly on every assessment query.
+2. Filter `response_type` explicitly on every assessment query. It is
+   non-nullable with four values (`overall`, `group`, `standard`,
+   `not_taken`) — never filter for a null/not-set `response_type` to reach
+   vendor or state rows; use `response_type = 'overall'` instead.
 3. Log every query as you go — never skip logging, never batch it to the end.
    Flag trips, inferences, and low-confidence answers in real time.
 4. State your confidence (High / Medium / Low) and name every assumption you

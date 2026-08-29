@@ -20,15 +20,40 @@ Apply to every assessment source unless a source section overrides them.
   - Treat this list as current, not closed: other categories exist upstream
     (`college`, `ap`, `state_nj_parcc`, `state_fl_fsa`, plus `_unknown`
     fallbacks) but carry no scores on this view today.
-- **`response_type` — always filter it explicitly.** Values: `overall`,
-  `standard`, `group`, `null` (singular `standard` / `group`, not the older
-  `standards` / `groups`). Not additive across types. Default to `overall`
-  unless a standard- or group-level breakdown is explicitly requested. Only
-  Illuminate populates `standard` / `group`; every other source is
-  `response_type = null` (overall only). To isolate those null rows, filter with
-  operator `notSet` (or `set` for present) — `equals "null"` matches the literal
-  string, not SQL NULL, and silently returns zero rows. This holds for any NULL
-  filter.
+- **`response_type` — always filter it explicitly. The column is non-nullable**,
+  with exactly four values (singular `standard` / `group`, not the older
+  `standards` / `groups`): `overall`, `group`, `standard`, `not_taken`. Not
+  additive across types. Default to `overall` unless a standard- or group-level
+  breakdown is explicitly requested.
+  - **`overall`** — the summary row for every source (Illuminate, i-Ready,
+    DIBELS, STAR, NJ state, FL state). Filter `response_type = 'overall'` to
+    isolate it — this is the only cross-source filter that yields one row per
+    sitting. (Older guidance said to isolate the non-Illuminate sources with
+    operator `notSet`, because `response_type` used to be `null` for every one
+    of them. That idiom now returns zero rows — the column is populated on every
+    row — so use `response_type = 'overall'` wherever `notSet` used to be the
+    instruction.)
+  - **`group`** — named breakdowns: Illuminate reporting groups, and now also
+    i-Ready domains and DIBELS subtests.
+  - **`standard`** — Illuminate standards only.
+  - **`not_taken`** — an Illuminate assessment a student was expected to take
+    but has no recorded response for.
+  - `response_type_code` is populated on Illuminate `standard` rows and on
+    vendor `group` rows (i-Ready domain codes, DIBELS subtest codes) — it is
+    **NULL on Illuminate `group` rows.** Do not assume `group` always carries a
+    code.
+- **Querying the i-Ready/DIBELS breakdowns:** filter `response_type = 'group'`
+  and break out by `response_type_description` (the domain or subtest name);
+  combine with `assessment_type` to pick `iready` vs `dibels` specifically,
+  since `group` also covers Illuminate reporting groups. `assessment_type` is
+  now carried in the pre-aggregation, so these queries hit the rollup rather
+  than falling through to a live query.
+- **Proficiency measures exclude `not_taken`.** `count_scores`, the
+  `_sum_proficient`-derived measures, and the formative/CRQ pairs
+  (`pct_proficient_formative`, `pct_proficient_crq`) all exclude `not_taken`
+  rows now — a student who was not tested no longer silently drags down the
+  denominator. This moved the topline Illuminate `pct_proficient` from 45.80% to
+  49.54%. The backing pre-aggregation is renamed `proficiency_rollup_v2`.
 - **Headline metric: `pct_proficient`.** It is the one score measure comparable
   across the incompatible scales of all sources (proficient scores / total).
   `is_mastery` is the underlying per-score proficient flag. `scale_score`,
@@ -106,10 +131,11 @@ Apply to every assessment source unless a source section overrides them.
   student's actual grade use `grade_level`; for the grade an assessment targets
   use `grade_level_tested`.
   - **`grade_level_tested` is populated for Illuminate (99.8%) and every state
-    source, and is null on all 302,907 i-Ready, DIBELS, and STAR rows.** Filter
-    a vendor diagnostic by it and you get zero rows with no error. This has cost
-    two logged sessions a false "no data." For vendor sources, always use
-    `grade_level`.
+    source, and is null on every i-Ready, DIBELS, and STAR row — across every
+    `response_type` value, including the `group`-level domain/subtest rows.**
+    Filter a vendor diagnostic by it and you get zero rows with no error. This
+    has cost two logged sessions a false "no data." For vendor sources, always
+    use `grade_level`.
   - The two also answer different questions where both exist, so a result can
     change materially depending which you pick — say which one you used.
 - **Section/teacher rollups: filter `enrollment_resolution = subject_section`**
@@ -140,8 +166,10 @@ Apply to every assessment source unless a source section overrides them.
   trap.
 - **Domain rollup: `response_type_root_description`** is the CCSS domain rollup
   — reliable for CCSS-aligned content, unreliable for FL state-aligned
-  standards. Illuminate only (null elsewhere, since `response_type` is null
-  elsewhere).
+  standards. Illuminate only — the vendor and state branches hardcode it NULL;
+  there is no vendor or state equivalent. (i-Ready domains and DIBELS subtests
+  surface through `response_type_description` at `response_type = 'group'`
+  instead, not through this field.)
 - **The view is enrollment-scoped — its totals are not the vendor's or the
   state's totals.** A score appears only if it resolves to a section enrollment;
   scores that don't resolve are out of scope by design. For 2025-26 i-Ready that
@@ -266,7 +294,12 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): Math and ELA.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every
   i-Ready row** — filtering by it returns zero rows silently.
-- `response_type = null` (overall only — no standards breakdown).
+- **`response_type`:** `overall` is the summary row for every sitting; i-Ready
+  now also populates `group` for domain-level breakdowns (see Shared conventions
+  — filter `response_type = 'group'`, break out by `response_type_description`,
+  and pair with `assessment_type = 'iready'`). No `standard` breakdown exists
+  for i-Ready. Default to `overall` unless a domain breakdown is explicitly
+  requested.
 - **Proficiency:** `proficiency_level` is i-Ready's grade-level placement scale
   — `3 or More Grade Levels Below`, `2 Grade Levels Below`,
   `1 Grade Level Below`, `Early On Grade Level`, `Mid or Above Grade Level`.
@@ -317,15 +350,20 @@ Apply to every assessment source unless a source section overrides them.
 - **`is_replacement` is Illuminate-only by design** — null for i-Ready (and all
   vendor/state sources), not a gap. Genuine multiple sittings occur even within
   a single benchmark window, so dedup to the most recent `date_taken` per
-  student per window before computing anything student-level. **The rate varies
-  enormously by slice**, so treat the dedup as standing practice rather than
-  something to skip when it looks unnecessary: Camden grade 6 ELA runs 1.55% at
-  BOY, **15.38% at MOY**, and 3.06% at EOY, while Newark grades 3-4 Math runs
-  0.08% / 0.57% / 0.75% across the same rounds. Most windows sit under 2%; one
-  measured window hit one student in six. It is genuine repeat testing, not a
-  section-join fan-out. Skipping the dedup inflates any student-level count or
-  growth figure. (Which sitting is _authoritative_ for reporting is an open
-  decision; most-recent-by-date is the working convention, not ratified policy.)
+  student per window before computing anything student-level — **scope this
+  dedup to `response_type = 'overall'` rows.** At the current grain, an i-Ready
+  sitting also produces `group`-level domain rows alongside its `overall` row;
+  deduping across all `response_type` values collapses a subject's `overall` row
+  together with its domain rows into one, silently destroying the domain
+  breakdown. **The rate varies enormously by slice**, so treat the dedup as
+  standing practice rather than something to skip when it looks unnecessary:
+  Camden grade 6 ELA runs 1.55% at BOY, **15.38% at MOY**, and 3.06% at EOY,
+  while Newark grades 3-4 Math runs 0.08% / 0.57% / 0.75% across the same
+  rounds. Most windows sit under 2%; one measured window hit one student in six.
+  It is genuine repeat testing, not a section-join fan-out. Skipping the dedup
+  inflates any student-level count or growth figure. (Which sitting is
+  _authoritative_ for reporting is an open decision; most-recent-by-date is the
+  working convention, not ratified policy.)
 - **Query this view, not the upstream i-Ready model.** i-Ready arrives with
   fiscal-year re-pull duplicates — the same physical test landing under two
   partitions. The mart collapses them, so counts here are right; a query
@@ -347,7 +385,12 @@ Apply to every assessment source unless a source section overrides them.
   share will look worse than i-Ready's for the same students — one logged
   session saw 22% versus 10% in the same grade. Compare each instrument to
   itself over time, never to the other.
-- `response_type = null` (overall only).
+- **`response_type`:** `overall` is the summary row for every sitting; DIBELS
+  now also populates `group` for subtest-level breakdowns (see Shared
+  conventions — filter `response_type = 'group'`, break out by
+  `response_type_description`, and pair with `assessment_type = 'dibels'`). No
+  `standard` breakdown exists for DIBELS. Default to `overall` unless a subtest
+  breakdown is explicitly requested.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated. `performance_band_label_number` is null.
@@ -369,7 +412,8 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): ELA and Math.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every STAR
   row.**
-- `response_type = null` (overall only).
+- `response_type = 'overall'` (overall only — no group or standard breakdown for
+  STAR).
 - **Proficiency:** `proficiency_level` is `Level 1`–`Level 5` (a share of rows
   have null `proficiency_level` / `is_mastery`). `performance_band_label_number`
   is null.
@@ -388,7 +432,8 @@ Apply to every assessment source unless a source section overrides them.
 - `assessment_type` values: `state_nj_njsla` (NJSLA ELA/Math),
   `state_nj_njsla_science` (NJSLA Science), `state_nj_njgpa` (NJGPA). `category`
   carries the subject (ELA / Math / Science).
-- `response_type = null` (overall only — no standards breakdown for state).
+- `response_type = 'overall'` (overall only — no group or standard breakdown for
+  state).
 - **Proficiency:** `proficiency_level` is the state achievement level;
   `is_mastery` is the proficient flag. `performance_band_label_number` is null.
 - **Time:** `academic_year` / `academic_year_label` now resolve for state
@@ -428,7 +473,8 @@ Apply to every assessment source unless a source section overrides them.
 - `assessment_type` values: `state_fl_fast` (FAST ELA/Math), `state_fl_science`
   (Science), `state_fl_eoc` (end-of-course, e.g. Civics). `category` carries the
   subject.
-- `response_type = null` (overall only).
+- `response_type = 'overall'` (overall only — no group or standard breakdown for
+  FL state).
 - **Proficiency:** `is_mastery` is the proficient flag — for FAST this matches
   Level 3+. `proficiency_level` carries the achievement level.
   `performance_band_label_number` is null.
