@@ -45,10 +45,14 @@ Net effect on production, relative to the `a9f529336` baseline:
   `pct_proficient` moved from 45.80% (baseline) to 49.54%.
 - The Cube pre-aggregation was renamed from `proficiency_rollup` to
   `proficiency_rollup_v2`.
-- Three files under `src/cube/mcp/project_knowledge/` changed (`README.md`,
-  `assessment-cube-orchestrator.md`, `assessment-cube-reference.md`). These
-  deploy by **manual re-upload** to the Cube MCP knowledge base — merging the PR
-  does not publish them.
+- Three files under `src/cube/mcp/project_knowledge/` changed
+  (`assessment-cube-orchestrator.md`, `assessment-cube-reference.md`,
+  `README.md`). Merging the PR does not publish any of them — they deploy by two
+  distinct manual mechanisms: `assessment-cube-orchestrator.md` and
+  `assessment-cube-reference.md` are re-uploaded as **project knowledge**, and
+  the **Project instructions** text inside `README.md` is pasted into the
+  claude.ai Project's custom-instructions field. See the merge-gate section
+  below for both.
 
 ## Rollback steps
 
@@ -80,31 +84,46 @@ Net effect on production, relative to the `a9f529336` baseline:
    executed from a worktree rather than the main checkout, qualify the path with
    the worktree root instead: `--project-dir <worktree>/src/dbt/kipptaf`.
 
-1. **Re-upload the prior knowledge-base files** to the claude.ai Project. The
-   prior (pre-change) content for each of the three files is the parent of
-   `6f0528531`; save each to a file before uploading:
+1. **Restore the prior claude.ai Project knowledge and instructions.** This is
+   two distinct mechanisms, not one — do not treat it as "re-upload three
+   files." The prior (pre-change) content for all three files is the parent of
+   `6f0528531`. Retrieve all three, saving each to a file:
 
    ```bash
-   git show 6f0528531^:src/cube/mcp/project_knowledge/README.md \
-     > README.md
    git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md \
      > assessment-cube-orchestrator.md
    git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-reference.md \
      > assessment-cube-reference.md
+   git show 6f0528531^:src/cube/mcp/project_knowledge/README.md \
+     > README.md
    ```
 
-   The upload mechanism is documented in
-   `src/cube/mcp/project_knowledge/README.md`: "The repo is the source of truth;
-   the claude.ai Project is the deployment target — edit here, open a PR, then
-   re-upload the changed file(s) to the Project." On rollback this runs in
-   reverse — the repo has already reverted to the prior files, so upload the
-   three saved files above as **project knowledge** in the shared claude.ai
-   Project (the same Project set up per that README's "Setup (per Project)"
-   section). The operator executing this step needs access to that claude.ai
-   Project; if they don't have it, find whoever does before proceeding — this is
-   not a step to work around. This is a manual step — it is not run by CI or by
-   merging the revert PR. See the merge-gate section below for why this step's
-   timing matters as much as the step itself.
+   `src/cube/mcp/project_knowledge/README.md` documents the deployment split.
+   Its **Setup (per Project)** section says: "Upload both `.md` files above as
+   project knowledge in the shared claude.ai Project" — meaning
+   `assessment-cube-orchestrator.md` and `assessment-cube-reference.md` only;
+   `README.md` itself is never uploaded as project knowledge. Separately, its
+   setup step 2 says to paste the text under **Project instructions** into the
+   Project's custom-instructions field, and Task 8's change to `README.md`
+   landed inside that Project-instructions section. So restoring the prior state
+   means:
+
+   1. Upload the two saved content files (`assessment-cube-orchestrator.md`,
+      `assessment-cube-reference.md`) as **project knowledge**, replacing the
+      current versions.
+   1. Open the saved `README.md`, find its **Project instructions** section, and
+      paste that text into the Project's custom-instructions field, replacing
+      what is there now.
+
+   Treating this as "re-upload three files" would put the wrong artifact
+   (`README.md`) in as project knowledge and silently skip the
+   custom-instructions paste — leaving the agent protocol stale even though the
+   re-upload looks complete. That is the same silent-failure shape the
+   merge-gate section warns about. The operator executing this step needs access
+   to the shared claude.ai Project; if they don't have it, find whoever does
+   before proceeding — this is not a step to work around. This is a manual step
+   — it is not run by CI or by merging the revert PR. See the merge-gate section
+   below for why this step's timing matters as much as the step itself.
 
 1. **Rename the pre-aggregation back**, so Cube treats it as a new
    pre-aggregation and forces a clean rebuild rather than reusing partitions
@@ -226,28 +245,35 @@ pre-change nor the post-rollback state.
 
 ## The merge gate
 
-The knowledge-base re-upload (rollback step 3, or the corresponding forward
-re-upload of the current knowledge-base files when this change originally
-merged) must **precede** the model merge, not follow it, and needs a named owner
-in the PR before merge. `fct_assessment_scores_enrollment_scoped` rebuilds on
-the cron `0 0,10,13,15,17 * * *` — the data change lands within hours of a
-merge, with nothing in CI or the merge process gating it against the
-knowledge-base state.
+The claude.ai Project update — both the project-knowledge upload and the
+custom-instructions paste (rollback step 3, or the corresponding forward update
+when this change originally merged) — must **precede** the model merge, not
+follow it, and needs a named owner in the PR before merge.
+`fct_assessment_scores_enrollment_scoped` rebuilds on the cron
+`0 0,10,13,15,17 * * *` — the data change lands within hours of a merge, with
+nothing in CI or the merge process gating it against the Project's state.
 
-If the re-upload lags behind the merge (or, on rollback, behind the revert),
-every agent following the published knowledge-base guidance queries against a
-schema the guidance no longer describes correctly. Concretely, on the forward
-path: an agent following pre-change guidance during the gap between merge and
-re-upload would query for a data shape that no longer exists, and the
-established failure mode for this class of mismatch is a silent zero-row result
-for i-Ready, DIBELS, STAR and both state score sources — not an error, just no
-rows. The same risk applies symmetrically to the rollback: a re-upload that lags
-a revert leaves the guidance describing the unified `response_type` model
-against a fact table that has already reverted to the pre-change shape.
+This is two mechanisms, both gated the same way: uploading
+`assessment-cube-orchestrator.md` and `assessment-cube-reference.md` as project
+knowledge, and pasting `README.md`'s **Project instructions** section into the
+Project's custom-instructions field. Both must land before (or together with)
+the merge — a partial update, where one lands and the other doesn't, leaves the
+agent working from a stale protocol exactly as if neither had been done.
 
-Name an owner for the re-upload step in the PR body (either the merge PR or the
-revert PR) before merging. Do not treat "someone will do it after merge" as a
-plan.
+If either half lags behind the merge (or, on rollback, behind the revert), every
+agent following the published guidance queries against a schema the guidance no
+longer describes correctly. Concretely, on the forward path: an agent following
+pre-change guidance during the gap between merge and the Project update would
+query for a data shape that no longer exists, and the established failure mode
+for this class of mismatch is a silent zero-row result for i-Ready, DIBELS, STAR
+and both state score sources — not an error, just no rows. The same risk applies
+symmetrically to the rollback: a Project update that lags a revert leaves the
+guidance describing the unified `response_type` model against a fact table that
+has already reverted to the pre-change shape.
+
+Name an owner for both halves of the Project update in the PR body (either the
+merge PR or the revert PR) before merging. Do not treat "someone will do it
+after merge" as a plan.
 
 ## Saved-consumer audit (prerequisite, not follow-up)
 
@@ -281,11 +307,13 @@ explicit action items before merge:
    completed, by a human with Cube Cloud access, before the forward change (or
    its revert, if the renamed pre-aggregation needs the same validation) is
    merged.
-1. **Knowledge-base re-upload.** A named owner must re-upload the three
-   `src/cube/mcp/project_knowledge/` files (forward: the versions this change
-   introduces; rollback: the prior versions at `6f0528531^`) through the Cube
-   MCP knowledge-base admin surface, timed to precede the corresponding model
-   merge or revert per the merge-gate section above.
+1. **claude.ai Project update.** A named owner must, in the shared claude.ai
+   Project: (a) upload `assessment-cube-orchestrator.md` and
+   `assessment-cube-reference.md` as project knowledge (forward: the versions
+   this change introduces; rollback: the prior versions at `6f0528531^`), and
+   (b) paste the corresponding `README.md` **Project instructions** text into
+   the Project's custom-instructions field. Both halves, timed to precede the
+   corresponding model merge or revert per the merge-gate section above.
 1. **Consumer announcement.** A human with access to the analytics/BI consumer
    audience must send the saved-consumer announcement described above, before
    merge, since the audience it targets cannot be reached through any
