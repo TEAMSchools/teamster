@@ -379,20 +379,42 @@ click.
 
 ### Build
 
+PR 1 changes one model, so it builds one model:
+
+```bash
+uv run dbt build --project-dir <worktree>/src/dbt/kipptaf \
+  --select rpt_tableau__okrts_behavior
+```
+
+PR 2 touches all three, and must name all three:
+
 ```bash
 uv run dbt build --project-dir <worktree>/src/dbt/kipptaf \
   --select rpt_tableau__okrts_behavior rpt_tableau__okrts_referrals \
            rpt_tableau__suspension_over_time
 ```
 
-Naming all three is required. `rpt_tableau__okrts_behavior` is a leaf — nothing
+Naming them is required there. `rpt_tableau__okrts_behavior` is a leaf — nothing
 in `src/dbt/` refs it but the exposure — so `+` selects nothing extra and the
-other two changed models would go unbuilt, with contracts enforced.
+other two would go unbuilt, with contracts enforced.
+
+A local build of either may fail on the unselected upstream
+`stg_deanslist__behavior` with `_dbt_source_project not found`. That is a stale
+personal dev copy, not a defect in this change; re-run with
+`--defer --favor-state --state <prod manifest>`.
 
 ## Ship sequence
 
+Revised for the two-part split — see the banner at the top of this document.
+
 1. Sheet edits. **Done 2026-08-28.**
-1. One PR: macro and var, 3 models, 1 yml, 1 exposure. Scope is `kipptaf` only.
+1. **PR 1, the taxonomy fix.** `rpt_tableau__okrts_behavior` plus its yml, the
+   unmapped-category test plus its yml, and the exposure edit. 5 files, no
+   shared macro, no project var. Scope is `kipptaf` only.
+1. **PR 2, the Miami stopped-feed exclusion.** The `exclude_deanslist_stopped`
+   macro, the `deanslist_stopped_code_locations` var, and the outer-select
+   wrapping in all 3 OKRTS extracts. Held back because a shared macro and a
+   project-level var deserve their own review.
 1. Prod materializes on the models' own dbt automation conditions
    (`dbt_table_automation_condition` / `dbt_view_automation_condition`), not on
    the `okrts_dashboard` schedule — that schedule only refreshes the Tableau

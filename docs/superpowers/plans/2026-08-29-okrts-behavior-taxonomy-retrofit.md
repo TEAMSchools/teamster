@@ -57,15 +57,20 @@ window functions keep their semantics.
 
 ## File Structure
 
-| File                                                              | Responsibility                                        | Task |
-| ----------------------------------------------------------------- | ----------------------------------------------------- | ---- |
-| `src/dbt/kipptaf/dbt_project.yml`                                 | `deanslist_stopped_code_locations` var                | 1    |
-| `src/dbt/kipptaf/macros/utils.sql`                                | `exclude_deanslist_stopped` macro                     | 1    |
-| `.../extracts/tableau/rpt_tableau__suspension_over_time.sql`      | Miami exclusion; proves the macro                     | 1    |
-| `.../extracts/tableau/rpt_tableau__okrts_behavior.sql`            | Taxonomy derivation, new column, normalization, Miami | 2    |
-| `.../extracts/tableau/properties/rpt_tableau__okrts_behavior.yml` | `behavior_category` contract entry                    | 2    |
-| `.../extracts/tableau/rpt_tableau__okrts_referrals.sql`           | Miami exclusion preserving `is_week_ytd`              | 3    |
-| `src/dbt/kipptaf/models/exposures/tableau.yml`                    | `okrts_dashboard` lineage fix                         | 4    |
+`Ships in` records the split: PR 1 is the taxonomy fix that carries this plan,
+PR 2 is the Miami stopped-feed exclusion held back for its own review.
+
+| File                                                                       | Responsibility                                 | Task     | Ships in |
+| -------------------------------------------------------------------------- | ---------------------------------------------- | -------- | -------- |
+| `src/dbt/kipptaf/dbt_project.yml`                                          | `deanslist_stopped_code_locations` var         | 1        | PR 2     |
+| `src/dbt/kipptaf/macros/utils.sql`                                         | `exclude_deanslist_stopped` macro              | 1        | PR 2     |
+| `.../extracts/tableau/rpt_tableau__suspension_over_time.sql`               | Miami exclusion; proves the macro              | 1        | PR 2     |
+| `.../extracts/tableau/rpt_tableau__okrts_behavior.sql`                     | Taxonomy derivation, new column, normalization | 2        | PR 1     |
+| `.../extracts/tableau/rpt_tableau__okrts_behavior.sql`                     | Outer-select wrapping for the Miami predicate  | 2        | PR 2     |
+| `.../extracts/tableau/properties/rpt_tableau__okrts_behavior.yml`          | `behavior_category` contract entry             | 2        | PR 1     |
+| `.../extracts/tableau/rpt_tableau__okrts_referrals.sql`                    | Miami exclusion preserving `is_week_ytd`       | 3        | PR 2     |
+| `src/dbt/kipptaf/models/exposures/tableau.yml`                             | `okrts_dashboard` lineage fix                  | 4        | PR 1     |
+| `.../kipptaf/tests/rpt_tableau__okrts_behavior__all_categories_mapped.sql` | Unmapped-category detector                     | fix wave | PR 1     |
 
 ---
 
