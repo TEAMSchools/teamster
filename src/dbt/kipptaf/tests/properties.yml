@@ -676,6 +676,21 @@ data_tests:
           ref:
             name: stg_google_sheets__google_forms__question_department_crosswalk
 
+  - name: rpt_tableau__okrts_behavior__all_categories_mapped
+    description: >-
+      Fires when stg_deanslist__behavior holds a behavior_category that is
+      neither mapped in rpt_tableau__okrts_behavior's category_type CASE nor on
+      the test's deliberate-exclusion list. Such a category is dropped from the
+      OKRTS extract silently, which is how the AY2026 taxonomy change went
+      unnoticed. A hit means either map it in the CASE, or add it to the
+      exclusion list if it is intentionally out of scope.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_deanslist__behavior
+
   - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
     description: >-
       The crosswalk is maintained by hand and separately from the form items
