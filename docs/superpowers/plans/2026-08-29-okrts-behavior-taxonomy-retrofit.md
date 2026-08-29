@@ -22,6 +22,14 @@ window functions keep their semantics.
 **Spec:**
 `docs/superpowers/specs/2026-08-28-okrts-behavior-taxonomy-retrofit-design.md`
 
+> **Executed, then split.** All 5 tasks below were completed. Afterwards the
+> Miami stopped-feed exclusion was moved to its own pull request, so Task 1,
+> Task 3, and the outer-select wrapping in Task 2 are **not** part of the PR
+> that carries this plan. They remain here as the executed record and as the
+> design for that second PR. What shipped alongside this document is the
+> taxonomy work: the `category_type` derivation, `behavior_category`, the
+> `TEAMwork` normalization, the unmapped-category test, and the exposure fix.
+
 ## Global Constraints
 
 - **Worktree:**

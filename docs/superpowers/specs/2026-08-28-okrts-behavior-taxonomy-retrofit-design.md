@@ -9,6 +9,15 @@ Revised after two adversarial reviews. Every claim below was verified against
 production or source; the "Corrections from review" section at the end records
 what the first draft got wrong.
 
+> **Ships in two parts.** This document designs the whole retrofit, but the
+> Miami stopped-feed exclusion — the `exclude_deanslist_stopped` macro, the
+> `deanslist_stopped_code_locations` var, and the changes to
+> `rpt_tableau__okrts_referrals` and `rpt_tableau__suspension_over_time` — was
+> split into its own pull request. It introduces a shared macro and a
+> project-level var, which deserve their own review rather than riding along
+> with the taxonomy fix. The sections below describing it are the design for
+> that second PR, not for the one carrying this document.
+
 ## Problem
 
 The new culture policy renamed and added behavior categories in Newark, Camden,

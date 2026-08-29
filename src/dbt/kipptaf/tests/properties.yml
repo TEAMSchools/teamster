@@ -678,21 +678,12 @@ data_tests:
 
   - name: rpt_tableau__okrts_behavior__all_categories_mapped
     description: >-
-      rpt_tableau__okrts_behavior derives category_type from a case over
-      behavior_category and drops every row where category_type is null --
-      closing the old silent-NULL hole (a category matching no case branch used
-      to reach the extract as an invisible NULL) but opening a new one of the
-      same shape: a category matching neither the case nor a deliberate
-      exclusion is now dropped from the OKRTS extract entirely, with nothing
-      failing and nothing visible on the dashboard. This is the same failure
-      class as the incident this branch fixes -- a taxonomy changed, a hardcoded
-      allowlist did not, and the dashboard went quiet with no error. Fires when
-      stg_deanslist__behavior holds a behavior_category (current academic year
-      onward) that is neither mapped in rpt_tableau__okrts_behavior's
-      category_type CASE nor on this test's own deliberate-exclusion list. A hit
-      means a new DeansList category is being dropped from the OKRTS extract --
-      either map it in the category_type CASE, or add it to the exclusion list
-      if it is intentionally out of scope.
+      Fires when stg_deanslist__behavior holds a behavior_category that is
+      neither mapped in rpt_tableau__okrts_behavior's category_type CASE nor on
+      the test's deliberate-exclusion list. Such a category is dropped from the
+      OKRTS extract silently, which is how the AY2026 taxonomy change went
+      unnoticed. A hit means either map it in the CASE, or add it to the
+      exclusion list if it is intentionally out of scope.
     config:
       severity: warn
       meta:

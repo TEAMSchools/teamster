@@ -11,13 +11,9 @@ with
             b.point_value,
             b.staff_full_name as entry_staff,
 
-            /* Miami and New Jersey category names are disjoint, so these
-               branches need no region guard. Dropping the guard is what closes
-               the old NULL hole: a category that passed the allowlist but
-               matched no branch used to survive with a null category_type,
-               invisible to every workbook filter but still fanning out the
-               spine columns. The `category_type is not null` filter below now
-               makes the allowlist and the CASE the same list. */
+            /* Miami and NJ category names are disjoint, so no region guard is
+               needed. The `category_type is not null` filter below is what
+               makes this CASE the only category list. */
             case
                 when b.behavior_category in ('Written Reminders', 'Big Reminders')
                 then 'Corrective'
@@ -74,13 +70,9 @@ with
             w.week_end_sunday,
             w.date_count as days_in_session,
 
-            /* Normalize the EXTRACTED value, not the raw one. An equality test
-               written before the parenthetical-stripping regex would miss a
-               'TEAMwork (Community)'-shaped name. `Values` logs TEAMwork while
-               `Values (5)` and `Values (10 Point Bonus)` log Teamwork, so
-               without this the same value splits into two members inside a
-               single year -- and the workbook's colour map and manual sort
-               only know 'Teamwork'. */
+            /* Normalize the extracted value, not the raw one -- an equality
+               test placed before the regex would miss 'TEAMwork (Community)'.
+               The workbook's colour map and sort only know 'Teamwork'. */
             case
                 when bt.behavior_extracted = 'TEAMwork'
                 then 'Teamwork'
