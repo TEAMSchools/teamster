@@ -7,7 +7,6 @@ with
         select
             rr.powerschool_student_number as student_number,
             rr.assessment_id,
-            rr.response_type,
             rr.response_type_id,
             rr.response_type_code,
             rr.response_type_description,
@@ -21,6 +20,13 @@ with
             rr._dbt_source_project,
 
             rr.date_taken as test_date,
+
+            -- int_assessments__scaffold is the "expected to take" grain and
+            -- response_rollup LEFT JOINs responses onto it, so a NULL
+            -- response_type is a deliberate assigned-but-not-taken record,
+            -- not a join defect. It gets its own token so the population is
+            -- addressable and response_type stays non-nullable.
+            coalesce(rr.response_type, 'not_taken') as response_type,
 
             to_json_string(rr.assessment_ids) as assessment_ids_json,
 
@@ -195,7 +201,7 @@ with
 
             overall_relative_placement_int >= 4 as is_mastery,
 
-            cast(null as string) as response_type,
+            'overall' as response_type,
             cast(null as string) as response_type_code,
             cast(null as string) as response_type_description,
         from {{ ref("int_iready__diagnostic_results") }}
@@ -453,7 +459,7 @@ with
             national_percentile,
             is_mastery,
 
-            cast(null as string) as response_type,
+            'overall' as response_type,
             cast(null as string) as response_type_code,
             cast(null as string) as response_type_description,
         from star_scores
@@ -639,7 +645,7 @@ select
     su.performance_band as proficiency_level,
     su.is_proficient as is_mastery,
 
-    cast(null as string) as response_type,
+    'overall' as response_type,
     cast(null as string) as response_type_code,
     cast(null as string) as response_type_description,
     cast(null as string) as response_type_root_description,

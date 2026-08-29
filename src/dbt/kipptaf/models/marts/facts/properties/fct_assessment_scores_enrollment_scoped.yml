@@ -157,6 +157,20 @@ models:
                 to: ref('dim_dates')
                 field: date_key
 
+      - name: response_type
+        data_type: string
+        description: >-
+          The response type associated with the assessment score: overall
+          (subject/course-level or composite score), group (a strand/domain
+          rollup within a subject), standard (a single standard-level Illuminate
+          response), or not_taken (an internal assessment the student was
+          expected to take but has no recorded response).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [not_taken, overall, group, standard]
+          - not_null
+
       - name: scale_score
         data_type: numeric
         description: >-
@@ -187,12 +201,6 @@ models:
         description: >-
           TRUE if the student met the mastery or proficiency threshold for this
           assessment.
-
-      - name: response_type
-        data_type: string
-        description: >-
-          The response type associated with the assessment score (e.g., overall,
-          strand, standard). Null for state assessments.
 
       - name: response_type_code
         data_type: string
