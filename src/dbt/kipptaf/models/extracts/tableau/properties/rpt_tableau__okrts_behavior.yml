@@ -41,6 +41,13 @@ models:
         data_type: string
       - name: behavior
         data_type: string
+      - name: behavior_category
+        data_type: string
+        description:
+          Raw DeansList behavior category. Lets consumers separate the three
+          Values families -- `Values`, `Values (5)` and `Values (10 Point
+          Bonus)` all map to category_type BEAT, but only `Values` is comparable
+          year over year.
       - name: entry_staff
         data_type: string
       - name: total_points
