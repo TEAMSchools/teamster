@@ -45,9 +45,7 @@ with
             end as category_type,
 
             case
-                when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category != 'Earned Incentives'
+                when b._dbt_source_relation like '%kippmiami%'
                 then regexp_extract(b.behavior_category, r'([\w\s]+) \(')
                 when b.behavior like '%(%)'
                 then regexp_extract(b.behavior, r'([\w\s]+) \(')

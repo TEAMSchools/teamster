@@ -312,6 +312,15 @@ wrong today. Hardening, not a defect.
 **`referral_tier` exists twice and the copies have drifted.** See #4747. The
 shared column in `int_deanslist__incidents` also inverts Miami's tiers.
 
+**The stopped-Miami-feed problem is not bounded to the 3 OKRTS extracts.**
+`int_topline__suspension_weekly` has the identical defect: it left-joins
+`int_deanslist__incidents__penalties` onto the enrollment-weeks spine with no
+code-location handling, so every Miami AY2026 student-week reads
+`is_suspended_y1_all_running = 0` structurally, diluting the network "Student
+and Family Experience → Suspensions" topline indicator. This pre-dates this
+branch and is tracked as
+[#5064](https://github.com/TEAMSchools/teamster/issues/5064).
+
 ## Validation
 
 ### AY2025 is unchanged, blocking

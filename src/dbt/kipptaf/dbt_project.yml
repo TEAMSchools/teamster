@@ -48,6 +48,14 @@ vars:
   # rather than no data. Year-scoped on purpose -- history before the cutover has
   # to stay readable. Miami's last behavior row is 2026-06-25; its replacement
   # behavior platform lands in Q2 and this entry comes out then. See #5062.
+  #
+  # The var is year-granular but the return is mid-year: simply deleting the
+  # kippmiami entry in Q2 restores Miami's whole AY2026, including the
+  # July-through-cutover weeks that have no behavior data -- rendering the
+  # same zero-activity artifact this var exists to remove, just over a
+  # shorter span. A mid-year return needs either a date-scoped predicate (not
+  # a year-scoped var) or an explicit, documented acceptance of that
+  # pre-cutover gap.
   deanslist_stopped_code_locations:
     kippmiami: 2026
 
