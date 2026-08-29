@@ -130,8 +130,10 @@ cubes:
 
       - name: response_type_description
         description: >-
-          Human-readable label for the response_type_code breakdown. Populated
-          on every group and standard row; null on overall and not_taken rows.
+          Human-readable label for the breakdown — the standard's description or
+          reporting-group label for Illuminate, a rendered domain name for
+          i-Ready, measure_name for DIBELS. Populated on every group and
+          standard row; null on overall and not_taken rows.
         sql: response_type_description
         type: string
         public: true
