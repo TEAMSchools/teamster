@@ -37,10 +37,13 @@ Net effect on production, relative to the `a9f529336` baseline:
 - `response_type` became non-nullable across four values (`standard`, `group`,
   `overall`, `not_taken`); every row that was previously `NULL` became `overall`
   or `not_taken`.
-- The vendor `assessment_score_key` (a `dbt_utils.generate_surrogate_key` hash)
-  gained an 8th hash input. **Every vendor row's key value changed**, including
-  STAR rows that gained no new data — a pure key-value change, not a new/removed
-  row.
+- The `assessment_score_key` (a `dbt_utils.generate_surrogate_key` hash) gained
+  an 8th hash input. **Every vendor row's key value changed**, including STAR
+  rows that gained no new data, and separately **every internal Illuminate
+  `not_taken` row's key also changed** — roughly 1,072,971 rows — because the
+  4th hash input flipped from `rr.response_type` (NULL) to
+  `coalesce(rr.response_type, 'not_taken')`. Both are a pure key-value change,
+  not a new/removed row.
 - Cube's proficiency measures now exclude `not_taken` rows. Illuminate
   `pct_proficient` moved from 45.80% (baseline) to 49.54%.
 - The Cube pre-aggregation was renamed from `proficiency_rollup` to
@@ -55,6 +58,13 @@ Net effect on production, relative to the `a9f529336` baseline:
   below for both.
 
 ## Rollback steps
+
+The `git revert` (step 1) and `git show <sha>^:...` (step 3) commands below name
+individual commit SHAs, which are reachable from `main` only if the PR was
+merged with a merge commit — per the root `CLAUDE.md`, PRs are squash merged, so
+if that's what happened here, every command below fails with `bad object`;
+revert the single squash commit instead, and read prior file versions from that
+squash commit's parent (`git show <squash-sha>^:<path>`).
 
 1. **Revert the implementation commits.** From `main` (post-merge), revert the
    ten implementation commits listed above, in reverse order, ending with

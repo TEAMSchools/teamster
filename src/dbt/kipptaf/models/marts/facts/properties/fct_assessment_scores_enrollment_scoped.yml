@@ -14,8 +14,8 @@ models:
         dagster:
           # 5x/day table instead of an eager view. Every reader of this model
           # recomputed its 27-base-table view chain: each of its 10 dbt tests
-          # per CI build, every Cube query missing the proficiency_rollup, and
-          # every pre-agg partition build. That was 85% of CI's BigQuery spend
+          # per CI build, every Cube query missing the proficiency_rollup_v2,
+          # and every pre-agg partition build. That was 85% of CI's BigQuery spend
           # (0.486 GiB per test run against a deep view chain vs 0.016 GiB
           # against a table).
           #

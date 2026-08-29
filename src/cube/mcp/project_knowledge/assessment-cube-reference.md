@@ -43,11 +43,17 @@ Apply to every assessment source unless a source section overrides them.
     **NULL on Illuminate `group` rows.** Do not assume `group` always carries a
     code.
 - **Querying the i-Ready/DIBELS breakdowns:** filter `response_type = 'group'`
-  and break out by `response_type_description` (the domain or subtest name);
-  combine with `assessment_type` to pick `iready` vs `dibels` specifically,
-  since `group` also covers Illuminate reporting groups. `assessment_type` is
-  now carried in the pre-aggregation, so these queries hit the rollup rather
-  than falling through to a live query.
+  and combine with `assessment_type` to pick `iready` vs `dibels` specifically,
+  since `group` also covers Illuminate reporting groups. For i-Ready, break out
+  by `response_type_description` (i-Ready domain names don't collide). **For
+  DIBELS, break out by `response_type_code` (`measure_standard`) instead —
+  `response_type_description` collides across DIBELS subtests:
+  `Decoding (NWF-WRC)` and `Letter Sounds (NWF-CLS)` both render as
+  `Nonsense Word Fluency`, and `Reading Fluency (ORF)` and
+  `Reading Accuracy (ORF-Accu)` both render as `Oral Reading Fluency`. Grouping
+  DIBELS by description silently merges those distinct subtests into one
+  figure.** `assessment_type` is now carried in the pre-aggregation, so these
+  queries hit the rollup rather than falling through to a live query.
 - **Proficiency measures exclude `not_taken`.** `count_scores`, the
   `_sum_proficient`-derived measures, and the formative/CRQ pairs
   (`pct_proficient_formative`, `pct_proficient_crq`) all exclude `not_taken`
@@ -391,9 +397,11 @@ Apply to every assessment source unless a source section overrides them.
 - **`response_type`:** `overall` is the summary row for every sitting; DIBELS
   now also populates `group` for subtest-level breakdowns (see Shared
   conventions — filter `response_type = 'group'`, break out by
-  `response_type_description`, and pair with `assessment_type = 'dibels'`). No
-  `standard` breakdown exists for DIBELS. Default to `overall` unless a subtest
-  breakdown is explicitly requested.
+  `response_type_code`, and pair with `assessment_type = 'dibels'`).
+  **`response_type_description` collides across DIBELS subtests — do not group
+  by it** (e.g. `Decoding (NWF-WRC)` and `Letter Sounds (NWF-CLS)` both render
+  as `Nonsense Word Fluency`). No `standard` breakdown exists for DIBELS.
+  Default to `overall` unless a subtest breakdown is explicitly requested.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated. `performance_band_label_number` is null.

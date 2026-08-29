@@ -116,7 +116,7 @@ group by 1 order by 1
 | state_nj_njsla_science   | 6313         | 450             | 7.13           |
 ```
 
-## Vendor key sample
+## Pre-change key sample (rows with NULL response_type)
 
 Captured 2026-08-28 ~23:16 UTC. `assessment_score_key` is a
 `dbt_utils.generate_surrogate_key` hash — no PII. Sample of the first 20 keys

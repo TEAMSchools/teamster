@@ -109,27 +109,39 @@ cubes:
 
       - name: response_type
         description: >-
-          Response-type breakdown (e.g., overall, strand, standard). Null for
-          state assessments.
+          Non-nullable across every source, including state. overall (the
+          summary row for every source), group (a named breakdown — Illuminate
+          reporting groups, i-Ready domains, DIBELS subtests), standard
+          (Illuminate standards only), or not_taken (an Illuminate assessment
+          the student was expected to take but has no recorded response).
         sql: response_type
         type: string
         public: true
 
       - name: response_type_code
-        description: Short code identifying the response type. Null for state.
+        description: >-
+          Breakdown identifier: custom_code on an Illuminate standard row,
+          domain_name on an i-Ready group row, measure_standard on a DIBELS
+          group row. Null on Illuminate group rows and on all overall/not_taken
+          rows.
         sql: response_type_code
         type: string
         public: true
 
       - name: response_type_description
-        description: Human-readable response-type description. Null for state.
+        description: >-
+          Human-readable label for the response_type_code breakdown. Populated
+          on every group and standard row; null on overall and not_taken rows.
         sql: response_type_description
         type: string
         public: true
 
       - name: response_type_root_description
         description: >-
-          Description of the root (top-level) response type. Null for state.
+          Illuminate-only: description of the root (top-level) standard.
+          Populated only on Illuminate standard rows that resolve a parent
+          standard; null for Illuminate group rows and for every vendor/state
+          row, which have no root-standard concept.
         sql: response_type_root_description
         type: string
         public: true
@@ -256,8 +268,12 @@ cubes:
           Scoping to DIBELS and one subject alone still pools a Composite score
           with an ORF words-per-minute rate, since both are DIBELS scale_score
           rows at different response types — response_type must also be held
-          constant. Average scale score, built from additive primitives so
-          pre-aggregations roll it up.
+          constant. Holding response_type constant at 'group' is still not
+          enough for DIBELS: all eight subtests share response_type = 'group',
+          so it still pools an ORF words-per-minute rate with an NWF accuracy
+          percentage. response_type_code (unique per DIBELS subtest) is the safe
+          single-breakdown boundary. Average scale score, built from additive
+          primitives so pre-aggregations roll it up.
         sql: "{_sum_scale_score} / NULLIF({_count_scale_score}, 0)"
         type: number
         public: true

@@ -445,8 +445,11 @@ above re-establishes it at the subtest grain. No DIBELS dedupe is added.
 - **No mart declares an FK to this fact.**
 
 The key **value** changes for every vendor row, including STAR rows that gain no
-data. This is expected, is one-way, and is covered by the rollback runbook
-rather than reversed by it.
+data, and separately for every internal Illuminate `not_taken` row (~1,072,971
+rows) — Task 5 changed the 4th hash input from `rr.response_type` (NULL) to
+`coalesce(rr.response_type, 'not_taken')`, so that population's key changes too
+even though it carries no new vendor data. This is expected, is one-way, and is
+covered by the rollback runbook rather than reversed by it.
 
 The model is `materialized: table`, so the rebuild is a full CTAS with no
 incremental-merge duplicate risk.
