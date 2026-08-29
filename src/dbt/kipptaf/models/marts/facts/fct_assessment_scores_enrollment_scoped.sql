@@ -194,11 +194,108 @@ with
             cast(percentile as numeric) as national_percentile,
 
             overall_relative_placement_int >= 4 as is_mastery,
+
+            cast(null as string) as response_type,
+            cast(null as string) as response_type_code,
+            cast(null as string) as response_type_description,
         from {{ ref("int_iready__diagnostic_results") }}
         where
             overall_scale_score is not null
             and _dbt_source_project is not null
             and completion_date is not null
+    ),
+
+    -- Domain-level rows. module_code stays the subject, for the same
+    -- FK-resolution reason as DIBELS above.
+    --
+    -- 'Not Assessed' is i-Ready's explicit not-administered marker and is
+    -- excluded. comprehension_overall is excluded as the rollup parent of
+    -- comprehension_literature and comprehension_informational_text -- Cube's
+    -- proficiency measures are additive, so retaining it would triple-count the
+    -- comprehension construct.
+    --
+    -- A domain with a placement but no scale score IS retained: the grade-level
+    -- placement is the primary domain signal.
+    --
+    -- No 'relative_placement is not null' predicate here: int_iready__domain_unpivot
+    -- enforces it upstream as its documented inclusion rule (#4709).
+    iready_domain_scores_raw as (
+        select
+            student_id as student_number,
+            academic_year_int as academic_year,
+            `subject` as module_code,
+            illuminate_subject,
+            test_round as administration_period,
+            completion_date as test_date,
+            `start_date`,
+            _dbt_source_project,
+
+            relative_placement as proficiency_level,
+
+            'iready' as score_source,
+            'group' as response_type,
+
+            domain_name as response_type_code,
+
+            initcap(replace(domain_name, '_', ' ')) as response_type_description,
+
+            cast(scale_score as numeric) as scale_score,
+            cast(null as numeric) as national_percentile,
+
+            -- Same threshold stg_iready__diagnostic_results applies at subject
+            -- level (overall_relative_placement_int >= 4). No per-domain ordinal
+            -- column exists upstream, so the two at-or-above labels are tested
+            -- directly. Guarded by an accepted_values test on relative_placement.
+            relative_placement
+            in ('Early On Grade Level', 'Mid or Above Grade Level') as is_mastery,
+        from {{ ref("int_iready__domain_unpivot") }}
+        where
+            completion_date is not null
+            and _dbt_source_project is not null
+            and relative_placement != 'Not Assessed'
+            and domain_name != 'comprehension_overall'
+    ),
+
+    iready_all_raw as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+        from iready_scores_raw
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+        from iready_domain_scores_raw
     ),
 
     -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
@@ -211,15 +308,22 @@ with
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
     -- deterministic. Remove this dedupe when staging is fixed.
+    -- response_type_code joins the partition because domain rows deliberately
+    -- share module_code with the subject-level anchor; without it all domains
+    -- plus the anchor collapse to one row. NULL groups cleanly for anchors.
+    -- Verified 2026-08-28: this partition still collapses 319,380 of 1,572,858
+    -- eligible domain rows, 95.8% of which are fiscal-year re-pulls differing
+    -- only in academic_year -- the intended #4387 behavior.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
-                relation="iready_scores_raw",
+                relation="iready_all_raw",
                 partition_by="""
                     _dbt_source_project,
                     student_number,
                     administration_period,
                     module_code,
+                    response_type_code,
                     test_date
                 """,
                 order_by="start_date desc, scale_score desc, academic_year desc",
@@ -328,10 +432,9 @@ with
             scale_score,
             national_percentile,
             is_mastery,
-
-            cast(null as string) as response_type,
-            cast(null as string) as response_type_code,
-            cast(null as string) as response_type_description,
+            response_type,
+            response_type_code,
+            response_type_description,
         from iready_scores
 
         union all
