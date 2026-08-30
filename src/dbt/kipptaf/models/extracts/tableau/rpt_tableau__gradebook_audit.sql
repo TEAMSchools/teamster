@@ -9,6 +9,7 @@ with
             s.school_level_alt as school_level,
             s.schoolid,
             s.school,
+            s.school_name,
 
             s.course_number,
             s.course_name,
@@ -109,6 +110,7 @@ with
             school_level,
             schoolid,
             school,
+            school_name,
 
             course_number,
             course_name,
@@ -160,6 +162,7 @@ with
             school_level,
             schoolid,
             school,
+            school_name,
 
             course_number,
             course_name,
@@ -212,6 +215,7 @@ with
             school_level,
             schoolid,
             school,
+            school_name,
 
             course_number,
             course_name,
@@ -268,6 +272,7 @@ with
             school_level,
             schoolid,
             school,
+            school_name,
 
             course_number,
             course_name,
@@ -380,6 +385,7 @@ select
     w.school_level,
     w.schoolid,
     w.school,
+    w.school_name,
 
     w.course_number,
     w.course_name,
