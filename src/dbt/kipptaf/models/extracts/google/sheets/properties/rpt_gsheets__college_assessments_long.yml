@@ -6,7 +6,10 @@ models:
       cohort yet, so there is nothing for Miami to report. Revisit when Miami
       reaches grade 11. Ratified on #4996. One row per student per sitting, with
       the Composite, EBRW and Math results for that sitting pivoted into columns
-      rather than split across three rows.
+      rather than split across three rows. Scoped to students currently enrolled
+      in a high school grade this academic year whose graduation year is later
+      than this one. A student who transferred out mid-year drops off, along
+      with the scores they earned while enrolled.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -48,7 +51,10 @@ models:
         description: Student's network email address.
       - name: enroll_status
         data_type: string
-        description: Enrollment status of the student, spelled out.
+        description: >-
+          Enrollment status of the student, spelled out. Always reads Currently
+          Enrolled, because the model filters to that status. Retained so a
+          reader of the sheet can see the scope without consulting the model.
       - name: ktc_cohort
         data_type: int64
         description: KIPP Through College cohort the student belongs to.
