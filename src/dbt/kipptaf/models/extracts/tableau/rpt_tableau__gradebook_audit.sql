@@ -144,6 +144,7 @@ with
             assignment_category_term,
             expectation,
             assignments_entered_count,
+            assignments_entered_count_no_flags,
 
             if(
                 assignments_entered_count_no_flags < expectation, true, false
@@ -249,6 +250,7 @@ with
             assignment_category_term,
             expectation,
             assignments_entered_count,
+            assignments_entered_count_no_flags,
             not_enough_assignments,
 
             cast(null as int64) as assignmentid,
@@ -306,6 +308,7 @@ with
             assignment_category_term,
             cast(null as int64) as expectation,
             cast(null as int64) as assignments_entered_count,
+            cast(null as int64) as assignments_entered_count_no_flags,
             cast(null as bool) as not_enough_assignments,
 
             assignmentid,
@@ -421,6 +424,7 @@ select
     w.assignment_category_term,
     w.expectation,
     w.assignments_entered_count,
+    w.assignments_entered_count_no_flags,
     w.not_enough_assignments,
 
     w.assignmentid,
