@@ -8,6 +8,48 @@ dagster-tmp
 .claude/scheduled_tasks.lock
 .superpowers/
 
+# Third-party agent skills installed via `npx skills add` (local-only).
+# `.agents/skills/<name>` holds the source; `.claude/skills/<name>` is a symlink
+# to it. Listed explicitly rather than ignoring `.claude/skills/*` wholesale so
+# new repo-owned skills still show up in `git status`.
+.agents/
+skills-lock.json
+.claude/skills/ask-matt
+.claude/skills/claude-handoff
+.claude/skills/code-review
+.claude/skills/codebase-design
+.claude/skills/diagnosing-bugs
+.claude/skills/domain-modeling
+.claude/skills/git-guardrails-claude-code
+.claude/skills/grill-me
+.claude/skills/grill-with-docs
+.claude/skills/grilling
+.claude/skills/handoff
+.claude/skills/implement
+.claude/skills/improve-codebase-architecture
+.claude/skills/loop-me
+.claude/skills/migrate-to-shoehorn
+.claude/skills/prototype
+.claude/skills/research
+.claude/skills/resolving-merge-conflicts
+.claude/skills/scaffold-exercises
+.claude/skills/setup-matt-pocock-skills
+.claude/skills/setup-pre-commit
+.claude/skills/setup-ts-deep-modules
+.claude/skills/tdd
+.claude/skills/teach
+.claude/skills/to-questionnaire
+.claude/skills/to-spec
+.claude/skills/to-tickets
+.claude/skills/triage
+.claude/skills/wait-what
+.claude/skills/wayfinder
+.claude/skills/wizard
+.claude/skills/writing-beats
+.claude/skills/writing-for-agents
+.claude/skills/writing-fragments
+.claude/skills/writing-shape
+
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,python,dbt
 
