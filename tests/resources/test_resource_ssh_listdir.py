@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+import pytest
 from dagster import build_resources
 from paramiko import SFTPAttributes
 
@@ -172,6 +173,58 @@ def test_dir_mtimes_traverses_unseen_directory():
     filenames = [attr.filename for attr, _ in files]
     assert filenames == ["data.csv"]
     assert dir_mtimes["newdir"] == 300
+
+
+def test_traversing_filename_is_rejected():
+    """A server-supplied name with a separator must not reach the join."""
+    sftp = _build_mock_sftp(
+        {
+            ".": [
+                _make_sftp_attr("good.csv", FILE_MODE, st_mtime=100, st_size=50),
+                _make_sftp_attr(
+                    "report.txt/../../../../app/evil.pth",
+                    FILE_MODE,
+                    st_mtime=300,
+                    st_size=50,
+                ),
+            ],
+        }
+    )
+
+    with (
+        build_resources(
+            {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+        ) as resources,
+        pytest.raises(ValueError, match="Illegal filename in SFTP listing"),
+    ):
+        resources.ssh.listdir_attr_r(
+            sftp_client=sftp,
+            remote_dir=".",
+            exclude_dirs=[],
+        )
+
+
+def test_parent_directory_entry_is_rejected():
+    """A `..` directory entry must not be walked upward."""
+    sftp = _build_mock_sftp(
+        {
+            ".": [
+                _make_sftp_attr("..", DIR_MODE, st_mtime=100, st_size=0),
+            ],
+        }
+    )
+
+    with (
+        build_resources(
+            {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
+        ) as resources,
+        pytest.raises(ValueError, match="Illegal filename in SFTP listing"),
+    ):
+        resources.ssh.listdir_attr_r(
+            sftp_client=sftp,
+            remote_dir=".",
+            exclude_dirs=[],
+        )
 
 
 def test_dir_mtimes_none_returns_list_only():
