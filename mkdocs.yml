@@ -41,6 +41,7 @@ nav:
       - Google Sheets & Forms: guides/google-sheets.md
       - ADP Location Renames: guides/adp-location-renames.md
       - dbt Development: guides/dbt-development.md
+      - NSC Clearinghouse Submission: guides/nsc-clearinghouse-submission.md
       - SFTP Integration: guides/sftp-integration.md
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
