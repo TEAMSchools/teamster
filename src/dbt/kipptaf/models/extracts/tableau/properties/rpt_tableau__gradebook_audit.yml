@@ -56,6 +56,9 @@ models:
       - name: school
         data_type: string
         description: School abbreviation.
+      - name: school_name
+        data_type: string
+        description: Full school name (e.g., 'KIPP Rise Academy').
       - name: course_number
         data_type: string
         description: PowerSchool course number.
