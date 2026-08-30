@@ -119,5 +119,5 @@ while the code server boots clean.
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for
-`alchemer`, `dayforce`, `fivetran`, and `adp/workforce_manager` is preserved
-under `src/teamster/libraries/` for future use.
+`adp/workforce_manager` is preserved under `src/teamster/libraries/` for future
+use.
