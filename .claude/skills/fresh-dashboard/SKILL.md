@@ -273,11 +273,26 @@ Four traps in this tab:
   table** — there is no grade-less region granularity. They are labelled and
   numeric and look loadable; they are not. Use them as cross-checks only.
 - **`KMT` / `KLE` / `KLM` have col `F` populated with col `E` blank** (90 / 196
-  / 56). Those values are the SY26-27 **seat** targets — the `Miami` tab's
-  per-grade seat rows sum to exactly those numbers — so prod correctly stores
-  them as `Seat Target` with `Budget Target` NULL. No Miami block carries a
-  Budget Target column at all, so these three cannot be derived; they stay NULL
-  until SRE fills them.
+  / 56). **Col `F` is `Budget Target` — as its header says — for these three
+  exactly as for every other school. Load it that way.** An earlier version of
+  this file claimed those values were really seat targets "because the `Miami`
+  tab's per-grade seat rows sum to exactly those numbers," and that error is
+  live in prod: it holds `Seat Target` 90/196/56 with `Budget Target` NULL for
+  the three, while reading col `F` as `Budget Target` for the other 19. The same
+  column cannot be two things.
+
+  The sum argument is a coincidence — a new school opens at capacity, so its
+  budget target equals its seat capacity. Col `F` is demonstrably a distinct
+  concept: it differs from col `E` for 10 of the 19 schools that carry both
+  (Sumner 406/376, Hatch 252/208, Life 515/490), and **`KCA` has `F` 612 above
+  `E` 504**, which no seat reading survives. The seat value for the three is
+  independently derivable from the `Miami` tab's col `H` per-grade sums, so
+  nothing is lost by reading `F` as budget.
+
+  Test before trusting any "this column is really that column" claim: compare
+  `E` against `F` across all schools. If they ever differ, they are different
+  measures.
+
 - **The App Target grid stops at grade 10** (rows 27-37 = K,1..10). HS grades 11
   and 12 have no grid row at all, so `Region/Grade Level` `App Target` is NULL
   for them even where a school carries one. Verified AY2026: Camden KHS has
@@ -613,10 +628,19 @@ discrepancies are then out of scope for whatever you find.
    the cover sheet's columns. Everything else is a funnel roll-up; don't hunt
    for it in SRE's workbook.
 1. **Cross-check the cover sheet against the per-region tab before reporting a
-   diff.** They disagree in real cases — a value can sit in the cover sheet's
-   `Budget Target` column that the region tab identifies as the seat target.
-   When the two tabs conflict, do NOT pick one: flag it as a question for SRE
-   (see _Handing SRE a question_ below).
+   diff.** They disagree in real cases. When the two conflict, do NOT pick one:
+   flag it as a question for SRE (see _Handing SRE a question_ below).
+
+1. **Never encode an interpretation from this file as a transformation in your
+   extractor.** Read every column as its header says, diff, and explain the
+   diffs afterwards. Remapping a column on the way in ("this file says `F` is
+   really seat here") applies the same edit to both sides of the comparison, so
+   the discrepancy becomes unrepresentable and the reconciliation reports clean.
+   This exact failure hid three missing Miami `Budget Target` values, and was
+   then reported as a confirmation — "the NULLs are exactly the documented
+   three" — because the documentation and the extractor were the same claim. A
+   NULL that matches a note in this file is still a finding until you have
+   checked the source cell.
 1. **Hand back a paste-ready block.** Plain delimited rows in a fenced code
    block, one row per line, column order matching the sheet — not a markdown
    table, which can't be pasted into Sheets.
