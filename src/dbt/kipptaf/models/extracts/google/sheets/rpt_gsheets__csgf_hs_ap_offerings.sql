@@ -1,9 +1,18 @@
 with
     ap_courses as (
         select
-            x.ap_course_name,
-
             cast(e.grade_level as string) as grade_level,
+
+            case
+                x.ap_course_name
+                when 'AP US History'
+                then 'AP United States History'
+                when 'AP US Government and Politics'
+                then 'AP United States Government and Politics'
+                when 'AP Pre-Calculus'
+                then 'AP Precalculus'
+                else x.ap_course_name
+            end as ap_course_name,
 
             if(
                 e.school_name = 'KIPP Cooper Norcross High',
@@ -65,6 +74,7 @@ select
     ap_psychology,
     ap_seminar,
     ap_spanish_language_and_culture,
+    ap_spanish_literature_and_culture,
     ap_statistics,
     ap_2d_art_and_design_portfolio,
     ap_3d_art_and_design_portfolio,
@@ -96,16 +106,17 @@ from
             'AP Macroeconomics' as ap_macroeconomics,
             'AP Microeconomics' as ap_microeconomics,
             'AP Physics 1' as ap_physics_1,
-            'AP Pre-Calculus' as ap_pre_calculus,
+            'AP Precalculus' as ap_pre_calculus,
             'AP Psychology' as ap_psychology,
             'AP Seminar' as ap_seminar,
             'AP Spanish Language and Culture' as ap_spanish_language_and_culture,
+            'AP Spanish Literature and Culture' as ap_spanish_literature_and_culture,
             'AP Statistics' as ap_statistics,
             'AP Studio Art: 2-D Design Portfolio' as ap_2d_art_and_design_portfolio,
             'AP Studio Art: 3-D Design Portfolio' as ap_3d_art_and_design_portfolio,
             'AP Studio Art: Drawing Portfolio' as ap_drawing,
-            'AP US Government and Politics' as ap_us_government_and_politics,
-            'AP US History' as ap_us_history,
+            'AP United States Government and Politics' as ap_us_government_and_politics,
+            'AP United States History' as ap_us_history,
             'AP World History: Modern' as ap_world_history_modern
         )
     )

@@ -5,11 +5,20 @@ select
     || '-'
     || cast(a.academic_year + 1 as string) as test_year,
 
-    a.ap_course_name as aptest_name,
-
     e2.grade_level as grade_level_when_taken,
 
     round(a.exam_score, 0) as score,
+
+    case
+        a.ap_course_name
+        when 'AP US History'
+        then 'AP United States History'
+        when 'AP US Government and Politics'
+        then 'AP United States Government and Politics'
+        when 'AP Pre-Calculus'
+        then 'AP Precalculus'
+        else a.ap_course_name
+    end as aptest_name,
 
 from {{ ref("int_extracts__student_enrollments") }} as e1
 inner join

@@ -3,11 +3,24 @@ models:
     description: >-
       High-school enrollment and Algebra I outcomes for Charter School Growth
       Fund reporting. Network-wide, Miami included, on the same reasoning as
-      `rpt_gsheets__csgf_hs_ap_offerings`: no region filter, no Miami rows yet
+      `rpt_gsheets__csgf_hs_ap_offerings` -- no region filter, no Miami rows yet
       only because the window is the prior academic year. Ratified on #4996.
+      Miami opened its first HS in AY2026 (KIPP Miami Technical High). The
+      course-tag CTEs in this model (transfer_course_tags, local_course_tags)
+      read PowerSchool-only sources with no Focus equivalent wired in, while the
+      enrollment and demographic fields come through
+      int_extracts__student_enrollments, which already includes Miami via Focus.
+      Once this model rolls to AY2026 data next cycle, Miami HS students will
+      get correct enrollment and demographic fields but NULL
+      has_participated_in_ap_courses / honors / dual_enrollment / cte_courses
+      values, since the course_tags CTE produces no rows for them at all. A
+      Focus course or grade source needs to be added to those two CTEs before
+      then.
     columns:
       - name: studentid
         data_type: int64
+        data_tests:
+          - unique
       - name: grade
         data_type: int64
       - name: unweighted_cumulative_gpa
@@ -30,8 +43,6 @@ models:
         data_type: string
       - name: gender
         data_type: string
-      - name: passed_algebra_i
-        data_type: string
       - name: school
         data_type: string
       - name: student_has_iep
@@ -40,3 +51,24 @@ models:
         data_type: string
       - name: student_is_frl
         data_type: string
+        description:
+          Includes lunch_status = 'FDC' (Free via Direct Certification --
+          automatic free-meal eligibility via SNAP/TANF/Medicaid, a federal
+          mechanism valid in every state's own economically-disadvantaged
+          definition, NJ included) alongside 'F' and 'R'. FDC's meaning is
+          documented at its true source, stg_powerschool__students.yml
+          ("FDC=Free-DC"). This matches CSGF's own "FRL or Direct Cert" framing
+          in their field definitions, and is also reused as-is for CSGF's
+          separate "Socioeconomically Disadvantaged (SED)" field -- no separate
+          SED column exists.
+      - name: exited_hs
+        data_type: string
+        description:
+          Whether the student graduated or completed high school -- per CSGF's
+          own clarification on this field ("this essentially is asking if the
+          student graduated or completed high school"), not the broader "did not
+          return the following year" reading the field's plain-language wording
+          might suggest. Sourced from
+          int_extracts__student_enrollments.exited_hs, shared with
+          rpt_gsheets__csgf_hs_postsec_pathways -- keep both in sync, they read
+          the same upstream column now rather than each computing it separately.

@@ -1,0 +1,128 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//KTAF//CSGF Data Collection 2026-2027//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:csgf-2026-window@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART;VALUE=DATE:20260831
+DTEND;VALUE=DATE:20261010
+SUMMARY:CSGF Data Collection Window
+DESCRIPTION:All-day\, every day placeholder for the CSGF Data Collection window (2026-2027 cycle).
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-prework-deadline@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20260904T210000Z
+DTEND:20260904T213000Z
+SUMMARY:CSGF Pre-Work Completed Deadline
+DESCRIPTION:By EOD today\, complete pre-work: review the item list and Salesforce Portal tasks tied to you\, and confirm your Portal account works.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF pre-work due EOD today
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-office-hours-0909@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20260909T170000Z
+DTEND:20260909T180000Z
+SUMMARY:CSGF Optional Office Hours
+DESCRIPTION:Optional\, self-serve office hours with CSGF. Last resort -- see the item-list doc for when attendance is actually warranted.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF office hours starting soon
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-office-hours-0911@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20260911T150000Z
+DTEND:20260911T160000Z
+SUMMARY:CSGF Optional Office Hours
+DESCRIPTION:Optional\, self-serve office hours with CSGF. Last resort -- see the item-list doc for when attendance is actually warranted.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF office hours starting soon
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-office-hours-0914@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20260914T200000Z
+DTEND:20260914T210000Z
+SUMMARY:CSGF Optional Office Hours
+DESCRIPTION:Optional\, self-serve office hours with CSGF. Last resort -- see the item-list doc for when attendance is actually warranted.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF office hours starting soon
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-office-hours-0917@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20260917T120000Z
+DTEND:20260917T130000Z
+SUMMARY:CSGF Optional Office Hours
+DESCRIPTION:Optional\, self-serve office hours with CSGF. Last resort -- see the item-list doc for when attendance is actually warranted.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF office hours starting soon
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-office-hours-0923@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20260923T150000Z
+DTEND:20260923T160000Z
+SUMMARY:CSGF Optional Office Hours
+DESCRIPTION:Optional\, self-serve office hours with CSGF. Last resort -- see the item-list doc for when attendance is actually warranted.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF office hours starting soon
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-internal-deadline@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART:20261002T210000Z
+DTEND:20261002T213000Z
+SUMMARY:CSGF Internal Deadline (non-negotiable)
+DESCRIPTION:All tabs/documents done\, and all Salesforce Portal tasks moved to Ready for Review. Confirm in the CSGF Slack channel.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF internal deadline today
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-panic-week@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART;VALUE=DATE:20261005
+DTEND;VALUE=DATE:20261010
+SUMMARY:CSGF Panic Week
+DESCRIPTION:Final week to resolve any outstanding submission issues before CSGF's official deadline.
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:csgf-2026-official-deadline@teamster.local
+DTSTAMP:20260826T120000Z
+DTSTART;VALUE=DATE:20261009
+DTEND;VALUE=DATE:20261010
+SUMMARY:CSGF Official Deadline -- Round 1
+DESCRIPTION:Goal: CSGF has accepted all our Round 1 data\, not just submitted.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:CSGF official deadline today
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+END:VCALENDAR

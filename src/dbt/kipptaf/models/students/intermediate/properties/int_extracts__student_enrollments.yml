@@ -927,6 +927,14 @@ models:
         description:
           The enrollment status of the student. Categorical mapping of
           enroll_status.
+      - name: exited_hs
+        data_type: string
+        description:
+          Whether the student graduated or completed high school, per exitcode =
+          'G1' (Gen Table 6 cat=exitcodes, labeled "Graduated from a KIPP NJ
+          school"). Shared by rpt_gsheets__csgf_hs_postsec_pathways and
+          rpt_gsheets__csgf_hs_enrollment -- promoted here from a duplicated
+          per-model calculation so both stay in sync.
       - name: race_ethnicity
         data_type: string
         description:
