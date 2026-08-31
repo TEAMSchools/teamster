@@ -11,6 +11,7 @@ with
             t.end_date,
             t.region,
             t.school_id,
+            t.grade_band,
             t.is_current,
 
             srh.job_title,
@@ -74,6 +75,7 @@ select
                 "start_date",
                 "region",
                 "school_id",
+                "grade_band",
             ]
         )
     }} as term_key,
