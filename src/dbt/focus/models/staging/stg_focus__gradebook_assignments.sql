@@ -2,7 +2,6 @@ select
     assignment_id,
     assignment_type_id,
     title,
-    points,
     description,
     benchmarks,
     questions,
@@ -19,7 +18,6 @@ select
     learnosity_activity_id,
     examspark_exam_id,
     apex_assessment_id,
-    last_updated_user,
     allow_student_upload,
     no_late_turnin,
     hide_from_excluded,
@@ -33,4 +31,7 @@ select
     score_release_timestamp,
     created_at,
     updated_at,
+
+    cast(last_updated_user as numeric) as last_updated_user,
+    cast(points as numeric) as points,
 from {{ source("focus", "gradebook_assignments") }}
