@@ -189,6 +189,10 @@ def grow_user_sync(
 
     schools = grow.get("schools")["data"]
 
+    # A coach's home school often differs from their reports', so resolve
+    # coaches from the full user set rather than from school_users.
+    users_by_grow_id = {u["user_id"]: u for u in users if u["user_id"] is not None}
+
     for school in schools:
         school_id = school["_id"]
 
@@ -204,27 +208,96 @@ def grow_user_sync(
             and u["inactive"] == 0
         ]
 
-        # observation groups
-        teachers_observation_group = [
-            g for g in school["observationGroups"] if g["name"] == "Teachers"
-        ][0]
+        # observation groups: one per coach, so a coach who is also a teacher
+        # sees only their own reports rather than every teacher at the school.
+        existing_groups = {g["name"]: g["_id"] for g in school["observationGroups"]}
 
-        observees = [
-            u["user_id"] for u in school_users if "observees" in u["group_type"]
-        ]
-        observers = {
+        school_observers = [
             u["user_id"] for u in school_users if "observers" in u["group_type"]
-        }
-        coaches = {u["coach_id"] for u in school_users if u["coach_id"] is not None}
-
-        payload["observationGroups"] = [
-            {
-                "_id": teachers_observation_group["_id"],
-                "name": "Teachers",
-                "observees": observees,
-                "observers": list(observers | coaches),
-            }
         ]
+
+        # Route every observee to their coach's group, or to the fallback.
+        by_coach: dict[str, list[str]] = {}
+        uncoached: list[str] = []
+
+        for u in school_users:
+            if "observees" not in u["group_type"]:
+                continue
+
+            coach_id = u["coach_id"]
+
+            # A coach absent from the extract cannot own a group, so their
+            # reports fall back rather than disappearing.
+            if coach_id is None or coach_id not in users_by_grow_id:
+                uncoached.append(u["user_id"])
+            else:
+                by_coach.setdefault(coach_id, []).append(u["user_id"])
+
+        def coach_group_name(coach: dict[str, Any]) -> str:
+            # The employee-number prefix is the match key, so a display-name
+            # change relabels the group without breaking its identity.
+            return f"Coach {coach['user_internal_id']} - {coach['user_name']}"
+
+        wanted: dict[str, dict[str, Any]] = {
+            # Teachers survives as the fallback for observees with no coach.
+            "Teachers": {"observees": uncoached, "observers": school_observers}
+        }
+
+        for coach_id, observee_ids in by_coach.items():
+            coach = users_by_grow_id[coach_id]
+
+            wanted[coach_group_name(coach)] = {
+                "observees": observee_ids,
+                "observers": [coach_id],
+            }
+
+        # Match by the "Coach <employee_number>" prefix so a renamed coach
+        # keeps their group's _id.
+        def match_existing(name: str) -> str | None:
+            if name in existing_groups:
+                return existing_groups[name]
+
+            prefix = " - ".join(name.split(" - ")[:1]) + " - "
+
+            return next(
+                (
+                    group_id
+                    for group_name, group_id in existing_groups.items()
+                    if group_name.startswith(prefix)
+                ),
+                None,
+            )
+
+        observation_groups = []
+        claimed: set[str] = set()
+
+        for name, members in wanted.items():
+            group: dict[str, Any] = {"name": name, **members}
+            group_id = match_existing(name)
+
+            if group_id is not None:
+                group["_id"] = group_id
+                claimed.add(group_id)
+
+            observation_groups.append(group)
+
+        # The school PUT REPLACES this array, so a group left out is deleted.
+        # Emit every surviving group emptied rather than dropping it, so no
+        # observation history is ever orphaned by a coach moving on.
+        for group_name, group_id in existing_groups.items():
+            if group_id in claimed:
+                continue
+
+            observation_groups.append(
+                {
+                    "_id": group_id,
+                    "name": group_name,
+                    "observees": [],
+                    "observers": [],
+                }
+            )
+
+        payload["observationGroups"] = observation_groups
 
         for key, role_name in admin_roles.items():
             payload[key] = [
