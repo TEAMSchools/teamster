@@ -34,11 +34,15 @@ models:
       (#4803). This is the accepted outcome of the Focus cutover, not missing
       data.
 
-      Paterson's attendance_value is unreliable — an upstream PowerSchool
-      conversion-items gap (#4193) — so every measure this fact derives from
-      presence (n_present_days_ytd, ada_tier, is_chronically_absent, and
-      truancy) understates Paterson's rates. membership_value is clean, so
-      n_membership_days_ytd and is_ca_eligible are unaffected.
+      Paterson's attendance_value depends on PowerSchool attendance-conversion
+      items that #4193 reports as incomplete, so every value this fact derives
+      from presence (n_present_days_ytd, ada_tier, is_chronically_absent, and
+      truancy) carries a known upstream uncertainty for Paterson. #4193
+      describes the effect as Paterson ADA reading artificially low, but the
+      AY2025 aggregates show no obvious distortion — Paterson ADA is 92.7 to
+      93.4 percent by school, in line with Newark at 92.5 — so treat the size
+      and direction as unestablished rather than measured. membership_value is
+      clean, so n_membership_days_ytd and is_ca_eligible are unaffected.
 
       Mid-year leavers are included by design — a student who withdraws mid-year
       still accumulates through their last membership day and counts in the year

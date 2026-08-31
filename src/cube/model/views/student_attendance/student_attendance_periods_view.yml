@@ -35,7 +35,8 @@ views:
       Miami attendance is present only from AY2026 forward, the accepted result
       of the Focus cutover — see fct_student_attendance_periods for why.
       Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
-      truancy) are understated by a known upstream PowerSchool gap (#4193);
+      truancy) carry a known upstream uncertainty from incomplete PowerSchool
+      attendance-conversion items (#4193), unquantified as of AY2025;
       count_students is unaffected — see fct_student_attendance_periods for
       detail.
 
