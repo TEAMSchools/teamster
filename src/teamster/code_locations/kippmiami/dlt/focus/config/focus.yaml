@@ -110,6 +110,9 @@ assets:
     cursor_column: updated_at
   - table_name: gradebook_grades
     cursor_column: updated_at
+    # points is an unbounded Postgres numeric holding more than 9 decimal
+    # places, which the default decimal128(38, 9) cannot represent.
+    widen_unbounded_numeric: true
   - table_name: gradebook_assignments
     cursor_column: updated_at
   - table_name: gradebook_assignment_types

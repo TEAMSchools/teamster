@@ -4,60 +4,117 @@ models:
       **Excludes Miami by design.** SAT and ACT results for students in testing
       grades. Miami's high school starts at grade 9 and has no college-testing
       cohort yet, so there is nothing for Miami to report. Revisit when Miami
-      reaches grade 11. Ratified on #4996.
+      reaches grade 11. Ratified on #4996. One row per student per sitting, with
+      the Composite, EBRW and Math results for that sitting pivoted into columns
+      rather than split across three rows. Scoped to students currently enrolled
+      in a high school grade this academic year whose graduation year is later
+      than this one. A student who transferred out mid-year drops off, along
+      with the scores they earned while enrolled.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - test_type
+              - administration_type
+              - test_date
     columns:
       - name: region
         data_type: string
+        description: Region the student's school belongs to.
       - name: schoolid
         data_type: int64
+        description: PowerSchool identifier for the student's school.
       - name: school
         data_type: string
+        description: Abbreviated name of the student's school.
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
       - name: salesforce_id
         data_type: string
+        description: Salesforce contact identifier for the student.
       - name: student_name
         data_type: string
+        description: Student's full name, last name first.
       - name: student_first_name
         data_type: string
+        description: Student's first name.
       - name: student_last_name
         data_type: string
+        description: Student's last name.
       - name: grade_level
         data_type: int64
+        description: Grade the student is enrolled in this academic year.
       - name: student_email
         data_type: string
+        description: Student's network email address.
       - name: enroll_status
         data_type: string
+        description: >-
+          Enrollment status of the student, spelled out. Always reads Currently
+          Enrolled, because the model filters to that status. Retained so a
+          reader of the sheet can see the scope without consulting the model.
       - name: ktc_cohort
         data_type: int64
+        description: KIPP Through College cohort the student belongs to.
       - name: graduation_year
         data_type: int64
+        description: Year the student is expected to graduate high school.
       - name: year_in_network
         data_type: int64
+        description: Count of years the student has attended a network school.
       - name: iep_status
         data_type: string
+        description: Whether the student has an IEP.
       - name: grad_iep_exempt_status_overall
         data_type: string
+        description: >-
+          Whether the student is exempt from graduation testing requirements
+          because of an IEP.
       - name: cumulative_y1_gpa
         data_type: float64
+        description: Cumulative year-one GPA earned to date.
       - name: cumulative_y1_gpa_projected
         data_type: float64
+        description: Projected cumulative year-one GPA for the full year.
       - name: college_match_gpa
         data_type: numeric
+        description: GPA used to match the student to colleges.
       - name: college_match_gpa_bands
         data_type: string
+        description: Band the college match GPA falls into.
       - name: ccr_course
         data_type: string
+        description: >-
+          College and Career course the student is enrolled in, or No Data when
+          they hold no such section this year.
       - name: ccr_teacher_name
         data_type: string
+        description: >-
+          Teacher of the College and Career course, or No Data when the student
+          holds no such section this year.
       - name: ccr_section
         data_type: string
-      - name: sat_total_superscore
+        description: >-
+          Section of the College and Career course, or No Data when the student
+          holds no such section this year.
+      - name: "`SAT Composite Superscore`"
         data_type: numeric
-      - name: sat_ebrw_highest
+        description: >-
+          Best SAT composite the student has assembled across all sittings.
+          Official SAT only, and repeated on every row for the student, so it
+          does not describe the sitting the row reports.
+      - name: "`SAT Highest EBRW Score`"
         data_type: numeric
-      - name: sat_math_highest
+        description: >-
+          Highest SAT EBRW section score across all sittings. Official SAT only,
+          and repeated on every row for the student.
+      - name: "`SAT Highest Math Score`"
         data_type: numeric
+        description: >-
+          Highest SAT Math section score across all sittings. Official SAT only,
+          and repeated on every row for the student.
       - name: test_type
         data_type: string
         description: >-
@@ -73,13 +130,61 @@ models:
           Official.
       - name: test_date
         data_type: date
-      - name: test_subject
-        data_type: string
-      - name: scale_score
+        description: Date the student sat the test.
+      - name: "`Composite Score`"
         data_type: numeric
-      - name: highest_score_by_test
+        description: Composite scale score for this sitting.
+      - name: total_highest_score_by_test
         data_type: string
-      - name: hs_grad_ready
+        description: >-
+          Whether this sitting is the student's highest composite for this test
+          type.
+      - name: "`Meeting High School Grad Benchmark - Composite`"
         data_type: string
-      - name: college_ready
+        description: >-
+          Whether the composite score meets the high school graduation
+          benchmark. NA means no benchmark is defined for this score type, which
+          is distinct from a No that missed one.
+      - name: "`Meeting College Ready Benchmark - Composite`"
         data_type: string
+        description: >-
+          Whether the composite score meets the college-ready benchmark. NA
+          means no benchmark is defined for this score type.
+      - name: "`EBRW Score`"
+        data_type: numeric
+        description: >-
+          EBRW scale score for this sitting. On the ACT this column carries the
+          Reading score, which shares the same aligned subject bucket.
+      - name: ebrw_reading_highest_score_by_test
+        data_type: string
+        description: >-
+          Whether this sitting is the student's highest EBRW or Reading score
+          for this test type.
+      - name: "`Meeting HS Grad Benchmark - EBRW`"
+        data_type: string
+        description: >-
+          Whether the EBRW score meets the high school graduation benchmark. NA
+          means no benchmark is defined for this score type.
+      - name: "`Meeting College Ready Benchmark - EBRW`"
+        data_type: string
+        description: >-
+          Whether the EBRW score meets the college-ready benchmark. NA means no
+          benchmark is defined for this score type.
+      - name: "`Math Score`"
+        data_type: numeric
+        description: Math scale score for this sitting.
+      - name: math_highest_score_by_test
+        data_type: string
+        description: >-
+          Whether this sitting is the student's highest Math score for this test
+          type.
+      - name: "`Meeting High School Grad Benchmark - Math`"
+        data_type: string
+        description: >-
+          Whether the Math score meets the high school graduation benchmark. NA
+          means no benchmark is defined for this score type.
+      - name: "`Meeting College Ready Benchmark - Math`"
+        data_type: string
+        description: >-
+          Whether the Math score meets the college-ready benchmark. NA means no
+          benchmark is defined for this score type.
