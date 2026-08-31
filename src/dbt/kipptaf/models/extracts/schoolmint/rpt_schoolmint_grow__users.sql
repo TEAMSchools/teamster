@@ -67,7 +67,6 @@ with
             sr.google_email as user_email,
             sr.reports_to_employee_number as manager_internal_id,
             sr.home_work_location_reporting_name as school_name,
-            sr.home_work_location_name as school_name_alt,
             sr.home_department_name as course_name,
             sr.tier,
             sr.home_work_location_dagster_code_location as region,
@@ -178,7 +177,7 @@ with
             */
             ifnull(rs.school_ids, []) as regional_admin_school_ids,
 
-            if('Regional Admin' in unnest(p.role_names), 1, 0) as readonly,
+            if('Regional Admin' in unnest(pra.role_names), 1, 0) as readonly,
 
             array(
                 select s._id from unnest(u.regional_admin_schools) as s order by s._id

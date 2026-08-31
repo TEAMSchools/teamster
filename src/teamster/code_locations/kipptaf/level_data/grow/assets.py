@@ -84,6 +84,9 @@ def _match_observation_group(
         if group_id not in claimed and group_name == name:
             return group_id
 
+    if not name.startswith("Coach "):
+        return None
+
     prefix = name.split(" - ")[0] + " - "
 
     return next(
@@ -93,6 +96,20 @@ def _match_observation_group(
             if group_id not in claimed and group_name.startswith(prefix)
         ),
         None,
+    )
+
+
+def _can_anchor_group(user: dict[str, Any]) -> bool:
+    """Whether this user can be the sole observer of a coaching group.
+
+    A coach who is inactive, readonly, or no longer carries an observer role
+    cannot actually observe, so their reports fall back to the school's
+    Teachers group rather than into a group nobody can act in.
+    """
+    return (
+        user["inactive"] == 0
+        and not user["readonly"]
+        and "observers" in user["group_type"]
     )
 
 
@@ -254,10 +271,13 @@ def grow_user_sync(
                 continue
 
             coach_id = u["coach_id"]
+            coach = users_by_grow_id.get(coach_id) if coach_id is not None else None
 
-            # A coach absent from the extract cannot own a group, so their
-            # reports fall back rather than disappearing.
-            if coach_id is None or coach_id not in users_by_grow_id:
+            # A coach absent from the extract, or present but unable to
+            # actually observe (revoked, inactive, or readonly), cannot own a
+            # group, so their reports fall back rather than landing in a
+            # group nobody can act in.
+            if coach_id is None or coach is None or not _can_anchor_group(coach):
                 uncoached.append(u["user_id"])
             else:
                 by_coach.setdefault(coach_id, []).append(u["user_id"])

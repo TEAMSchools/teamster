@@ -274,6 +274,25 @@ follows from `Coach`, but `observees` now requires `Teacher`, `School Admin`, or
 alone and stop being observable by their own manager. This is spec-compliant,
 not a regression, and was previously unenumerated.
 
+The table above omits several access changes this design also produces, measured
+against the current production extract and roster:
+
+- 18 active `School-based Non-Instructional Staff` hold `Teacher` today and lose
+  it, so they stop being observable.
+- About 18 more, spread across `School-based Non-Instructional Staff`, `DSOs`,
+  `KTAF or Regional Staff`, and `EDs, HOSs, MDOs`, hold `Coach` today and lose
+  it.
+- Of the 545 no-role rows the revoke path (sub-project 3) emits, most hold a
+  Grow role literally named `No Role` today, so the substantive revoke — a user
+  losing a role that actually granted them something — is roughly 335 accounts,
+  not 545.
+- 61 users hold a non-empty `regionalAdminSchools` today but are not
+  `Regional Admin` under the new rules, so their scope is emptied entirely; one
+  of them currently holds 23 schools.
+- About 7 genuine Regional Admins have their scope NARROWED rather than emptied:
+  24 schools down to 13, 20 down to 13, 20 down to 8, 20 down to 6, and 18 down
+  to 13.
+
 ## Testing
 
 1. dbt unit tests on the role expression, one case per tier, plus a null
@@ -390,9 +409,13 @@ confirmed the school PUT REPLACES the array rather than merging it.
 Each school keeps its `Teachers` group, matched by name so its existing `_id` is
 reused and nothing recorded against it is orphaned. Its membership changes:
 observees become only those teachers who have no `coach_id`, and observers
-become the school's admins. Today no observee anywhere lacks a `coach_id` — all
-738 have one — so `Teachers` is empty in practice. It exists as a fallback so
-that a teacher without a coach never silently vanishes from observation.
+become the school's admins. As measured on 2026-08-31, all 738 observees have a
+`coach_id`, so `Teachers` is empty in practice as of that date. This is a
+measurement, not a guarantee, and it moves as coaches are demoted: Fix 3 (the
+`_can_anchor_group` guard in `assets.py`) exists precisely because a coach who
+loses their observer role, goes inactive, or becomes readonly can no longer
+anchor a group, which pushes their reports back into `Teachers` and can drop the
+figure below 738. Re-measure before relying on it.
 
 Alongside it, one group per coach at that school. Each holds that coach as the
 sole observer and only their own reports as observees. Peers stop seeing each
@@ -433,36 +456,29 @@ reporting line rather than the home school. Deanna Applewhaite, based in
 `Room 11`, reaches `KIPP Miami - North Campus` and `KIPP Royalty Academy` that
 way.
 
-Four staff have a home work location whose reporting name is
-`KIPP Miami - Poinciana Campus`, while the Grow school is named
+Four staff had a home work location whose reporting name was
+`KIPP Miami - Poinciana Campus`, while the Grow school was named
 `Poinciana Campus`. The `roster` CTE joins `stg_schoolmint_grow__schools` on
 `home_work_location_reporting_name` alone, by exact string equality, so those
-four are dropped.
+four were dropped.
 
-Routing the join through `int_people__location_crosswalk` does NOT fix this: the
-crosswalk has no row for `KIPP Miami - Poinciana Campus` either. Nor does simply
-switching to `home_work_location_name`, which matches `Poinciana Campus`
-correctly but then fails on `KIPP Hatch Middle` and `KIPP Sumner Elementary`,
-whose plain names are `KIPP Hatch Academy` and `KIPP Sumner Academy`. That would
-trade 4 dropped staff for 81.
+This was fixed in data, not code: the Grow school was renamed to
+`KIPP Miami - Poinciana Campus`, and a matching alias row was added to the
+location crosswalk sheet. The either-name join once proposed here (accepting
+both `home_work_location_reporting_name` and `home_work_location_name` via an
+`in (...)` predicate) was never implemented — the existing exact-name join
+already resolves all four staff now that the names agree, and measured against
+the current roster, zero active non-Paterson staff fail it.
 
-The fix is to accept either name:
-
-```sql
-inner join
-    {{ ref("stg_schoolmint_grow__schools") }} as sch
-    on sch.name in (p.school_name, p.school_name_alt)
-```
-
-where `school_name` stays `home_work_location_reporting_name` and
-`school_name_alt` is the new `home_work_location_name`. Verified against every
-active non-Paterson location: each one matches exactly one Grow school under
-this predicate, so the join cannot fan out and no location is left unmatched.
+The durable protection against this class of drift recurring — a school renamed
+in the Grow UI without a matching roster/crosswalk update — is the new test
+`rpt_schoolmint_grow__users__locations_resolve_to_grow_school`
+(`src/dbt/kipptaf/tests/`), which fails loudly on any active, non-Paterson staff
+location that no longer resolves to a Grow school by exact name.
 
 The existing test `int_people__staff_roster__locations_resolve_to_crosswalk`
 does not catch this, because it checks `home_work_location_name` while this
-model joins on `home_work_location_reporting_name`. The two disagree on exactly
-three locations.
+model joins on `home_work_location_reporting_name`.
 
 `school_users` is filtered to one `school_id` per user, so a School Admin or
 School Assistant Admin covering two campuses is written to only one. The

@@ -20,6 +20,11 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: "'Sub Admin' not in unnest(role_names)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              'Regional Admin' not in unnest(role_names) or
+              array_length(regional_admin_school_ids) > 0
     columns:
       - name: user_internal_id
         data_type: int64
