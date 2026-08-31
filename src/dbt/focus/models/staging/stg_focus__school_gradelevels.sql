@@ -8,7 +8,6 @@ select
     district_id,
     short_name,
     title,
-    sort_order,
     min_syear,
     max_syear,
     rollover,
@@ -18,4 +17,6 @@ select
     pk,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "school_gradelevels") }}

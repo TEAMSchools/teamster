@@ -8,7 +8,6 @@ select
     title,
     short_name,
     default_category,
-    sort_order,
     weight_by_credits,
     cte,
     hide_merit,
@@ -22,4 +21,6 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "grad_subject_programs") }}
