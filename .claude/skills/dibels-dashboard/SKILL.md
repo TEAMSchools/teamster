@@ -450,12 +450,15 @@ to conflate, so keep them separate:
 1. **Seasonal rollover of Benchmark rows already in the sheet** -- adding
    MOY/EOY for a year that only has BOY. Pure mechanical duplication, covered
    below.
-2. **Entering actual PM round rows** -- the new SY26-27 per-region PM schedules
-   (round_number, cohort). `stg_google_sheets__dibels_expected_assessments` has
-   zero PM rows as of 2026-08-31 -- every row in it today is
-   `assessment_type = 'Benchmark'`. This needs new columns (`round_number`,
-   cohort) the sheet doesn't have yet -- see the issue's "Scaffolds and sheets"
-   checklist. Not covered by the script below.
+2. **Entering actual PM round rows for SY26-27** -- the new per-region PM
+   schedules. As of 2026-08-31, `stg_google_sheets__dibels_expected_assessments`
+   has zero `academic_year = 2026` PM rows, but it is NOT a new concept for this
+   sheet -- AY2024 and AY2025 both have a full working PM scaffold already (see
+   _Existing PM precedent_ below). SY26-27 entry is mechanically the same
+   process, blocked on: a cohort field the sheet doesn't have yet (see the
+   issue's "Scaffolds and sheets" checklist), and the round-numbering overflow
+   below for Miami. Not covered by the script in this section, which is
+   Benchmark-only.
 
 ### Sheet identity
 
@@ -465,11 +468,15 @@ Same workbook as the Bright Spots tabs above: spreadsheet
 `src_google_sheets__dibels_expected_assessments` (single underscore -- no
 double-underscore trap here, only one range exists for this table), tab
 "Expected Assessments", 16 declared columns (`sources-external.yml` around line
-98), but only 13 are ever populated in practice -- `Assessment_Include`,
-`PM_Goal_Include`, `PM_Goal_Criteria` are blank on every row seen so far. The
-named range is NOT row-bounded (no `startRowIndex`/`endRowIndex` in its
-definition), so appending past the current last row is safe -- no truncation
-risk like the foundation_goals range above.
+98). Only 13 of those are ever populated on **Benchmark** rows --
+`Assessment_Include`, `PM_Goal_Include`, `PM_Goal_Criteria` are blank on every
+Benchmark row seen so far. **PM rows do populate the last two**:
+`PM_Goal_Include` carries `true`/`false`/blank per measure, and
+`PM_Goal_Criteria` carries `AND` for grades 3+ in most regions (see below) --
+don't assume all 16 columns behave like the Benchmark rows do. The named range
+is NOT row-bounded (no `startRowIndex`/`endRowIndex` in its definition), so
+appending past the current last row is safe -- no truncation risk like the
+foundation_goals range above.
 
 ### Benchmark seasonal rollover -- the process, since it repeats every year
 
@@ -519,10 +526,35 @@ changes above, a seasonal rollover only adds rows to columns that already exist
 and query the rebuilt table to confirm row counts; no
 `stage_external_sources --ext_full_refresh` step needed.
 
-**A stray precedent, not yet chased down**: AY2025 has a handful of rows with
-`Test_Code` `LIT2`/`LIT3` but `Admin_Season` `BOY->MOY` and `Month_Round`
-`November`/`December` (21 rows each, Miami) -- these don't fit the BOY/MOY/EOY
-pattern above and look like an earlier, ad hoc attempt at PM-style rows riding
-on benchmark test codes. Flagged here rather than explained; don't treat them as
-a template for the real PM-round work (item 2 above) without asking T&L what
-they were for.
+### Existing PM precedent -- the template for item 2, verified against real rows
+
+`assessment_type = 'PM'` rows already exist for AY2024 (Camden, Newark only) and
+AY2025 (Camden, Newark, Paterson, Miami) -- this is not a new row shape, just a
+new year. Confirmed by pulling the actual rows, not just the label counts (an
+earlier pass here mischaracterized these as "a handful of ad hoc Miami rows" --
+wrong; they're the full K-8 scaffold for two entire prior years):
+
+- **`Admin_Season` on PM rows is the pm_period, not a season tag**: `BOY->MOY`
+  or `MOY->EOY`, matching `pm_period` on the aimline model. Never `BOY` / `MOY`
+  / `EOY` bare -- those are Benchmark-only.
+- **`round_number` is ONE continuous sequence per academic_year/region, spanning
+  both PM seasons** -- it does NOT reset to 1 at the `MOY->EOY` boundary.
+  Verified round ranges: AY2024 Camden/Newark 1-9 (4 rounds `BOY->MOY` + 5
+  `MOY->EOY`); AY2025 Camden/Newark/Paterson 1-8 (4+4); AY2025 Miami 1-6 (3+3).
+  This is exactly the mechanism the issue's "Round numbers now exceed 9" problem
+  breaks -- `round_number` still derives from `right(test_code, 1)`, so it
+  already reached `LIT9` in AY2024 without issue (single digit), but Miami's
+  SY26-27 schedule needs rounds 10 and 11, which parse as `0` and `1`. Fix that
+  (explicit `round_number` column, per the issue's checklist) before entering
+  SY26-27 rows -- don't extend the `LIT`-code-only pattern past 9.
+- **`Month_Round` per round already follows a real monthly progression**, not a
+  placeholder: AY2025 NJ regions ran September/October/November/December for
+  rounds 1-4, then February/March/March/April for rounds 5-8. AY2025 Miami ran
+  October/November/December (1-3) then February/March/April (4-6).
+- **`PM_Goal_Criteria` is `AND` for Camden/Newark/Paterson (grades 3+, matching
+  the issue's note that all K-8 rounds use AND this year) but is never populated
+  for Miami** -- confirm with T&L whether that's deliberate before copying the
+  NJ pattern for Miami's SY26-27 rows.
+- **No Paterson or Miami PM data exists for AY2024** -- both regions' PM
+  scaffold starts at AY2025. A rebuild that shows 0 AY2024 PM rows for either
+  region is correct, not a bug.
