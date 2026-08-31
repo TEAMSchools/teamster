@@ -9,24 +9,33 @@ models:
       the one the student is scheduled into. Scores whose assignment has no
       course-period link keep their points and carry a null course period rather
       than dropping. Internal-only — a rpt_ view must sit between this model and
-      any external consumer. A grade resolves to one course period only while a
-      student sits in exactly one of the assignment's sections. Three
-      student-and-assignment pairs currently match two sections each, from
-      mid-year section changes within the same course; none carries a grade
-      today, so no row is duplicated. Filtering the match by the assignment date
-      against the schedule window was tested and rejected: it drops a legitimate
-      grade for a student added to a section on 2026-08-18 and back-graded on
-      work assigned 2026-08-12, which is ordinary late-enrollment behaviour.
-      Revisit if a graded row ever lands in two sections.
+      any external consumer. An assignment posted to several course periods
+      produces one row per course period the student is scheduled into, so the
+      grain is (student_gradebook_grade_id, course_period_id). That fan is
+      correct, not a defect: Focus's schema stores a score against student and
+      assignment with no section reference (vendor ERD, 2026-02-23), and Focus
+      itself posts a report card grade in every section the student sits in,
+      computed from the same scores. PowerSchool stores what Focus derives — its
+      assignmentsectionid is already per section — so the fan is PowerSchool
+      parity. Filtering the match by the assignment date against the schedule
+      window was tested and rejected: it drops a legitimate grade for a student
+      added to a section on 2026-08-18 and back-graded on work assigned
+      2026-08-12, which is ordinary late-enrollment behavior.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_gradebook_grade_id
+              - course_period_id
+          config:
+            severity: error
     columns:
       - name: student_gradebook_grade_id
         description: >-
-          Primary key — Focus gradebook_grades id; one row per student per
-          assignment.
+          Focus gradebook_grades id. One row per student per assignment in the
+          source; this model repeats it once per resolved course period, so it
+          is unique only together with course_period_id.
         data_tests:
-          - unique:
-              config:
-                severity: error
           - not_null:
               config:
                 severity: error
@@ -72,6 +81,11 @@ models:
         description: Identifier of the user who last updated the score.
       - name: last_updated_date
         description: Source last-updated timestamp.
+      - name: assignment_course_period_id
+        description: >-
+          Focus gradebook_assignments_join_course_periods id — one row per
+          assignment per course period, the exact grain of PowerSchool's
+          assignmentsectionid. Null alongside a null course_period_id.
       - name: course_period_id
         description: >-
           Course period the score belongs to, resolved by intersecting the
@@ -81,6 +95,32 @@ models:
         description: >-
           Marking period the assignment belongs to for that course period. Null
           alongside a null course_period_id.
+      - name: academic_year
+        description: >-
+          School year of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
+      - name: marking_period_short_name
+        description: >-
+          Abbreviated label of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
+      - name: marking_period_type
+        description: >-
+          Type (e.g. year, semester, quarter, progress) of the score's marking
+          period, denormalized from marking_period_id to match
+          int_focus__report_card_grades. Null alongside a null
+          marking_period_id.
+      - name: marking_period_start_date
+        description: >-
+          First date of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
+      - name: marking_period_end_date
+        description: >-
+          Last date of the score's marking period, denormalized from
+          marking_period_id to match int_focus__report_card_grades. Null
+          alongside a null marking_period_id.
       - name: assigned_date
         description: Date the assignment was assigned to the student's section.
       - name: due_date
