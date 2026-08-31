@@ -126,21 +126,6 @@ data_tests:
           ref:
             name: int_surveys__manager_survey_details
 
-  - name: test_base_powerschool__course_enrollments_no_studyear_course_overlap
-    description: >-
-      Within a (student, year, course) — `cc_studyear` is PowerSchool's
-      composite student+year identifier — consecutive enrollment rows must not
-      have date ranges that overlap by more than one day. A single shared
-      boundary day (one row's `cc_dateleft` equal to the next row's
-      `cc_dateenrolled`) is a normal sequential transfer and is allowed;
-      multi-day overlap is a source-side defect that causes scaffold's
-      date-between join to fan out an admin to multiple schools.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: base_powerschool__course_enrollments
-
   - name: dim_work_assignment_primary__no_overlapping_primary_spans
     description: >-
       Within a `staff_key` partition, the primary-position spans (joined from
@@ -409,11 +394,11 @@ data_tests:
       than a count, because Miami's volume moves with enrollment and a floor
       would drift stale or fire on legitimate change, while zero is always
       wrong. It stays year-agnostic on purpose. #4968 made the Focus drop flags
-      non-null, so Miami AY2026 now passes `int_assessments__course_enrollments`
-      -- but `int_extracts__course_enrollments_by_term` also requires a non-null
-      `cc_dateleft`, which Focus leaves null on 96.8% of Miami AY2026 rows, so
-      coverage still differs sharply by model and a year-scoped assertion would
-      be measuring two different things at once.
+      non-null, and #5043 made the section-count filter null-safe and added
+      `scheduled_end_date`, so both models now carry Miami AY2026. The assertion
+      stays presence-only and year-agnostic anyway: the two models reach Miami
+      through different filters, so a year-scoped count would be measuring two
+      different things at once.
     config:
       severity: error
       meta:
@@ -690,6 +675,21 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__google_forms__question_department_crosswalk
+
+  - name: rpt_tableau__okrts_behavior__all_categories_mapped
+    description: >-
+      Fires when stg_deanslist__behavior holds a behavior_category that is
+      neither mapped in rpt_tableau__okrts_behavior's category_type CASE nor on
+      the test's deliberate-exclusion list. Such a category is dropped from the
+      OKRTS extract silently, which is how the AY2026 taxonomy change went
+      unnoticed. A hit means either map it in the CASE, or add it to the
+      exclusion list if it is intentionally out of scope.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_deanslist__behavior
 
   - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
     description: >-

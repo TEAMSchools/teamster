@@ -32,12 +32,24 @@ with
         select *,
         from {{ ref("int_powerschool__student_enrollment_union") }}
         where _dbt_source_project != 'kippmiami'
+    ),
+
+    unioned as (
+        select *,
+        from powerschool_conformed
+
+        full union all corresponding
+
+        select *,
+        from focus_conformed
     )
 
-select *,
-from powerschool_conformed
-
-full union all corresponding
-
-select *,
-from focus_conformed
+    -- TODO(#5045): remove once Ops corrects the backdated PowerSchool re-entry
+    -- dates that put two stints on one entrydate.
+    {{
+        dbt_utils.deduplicate(
+            relation="unioned",
+            partition_by="student_number, _dbt_source_project, academic_year, entrydate",
+            order_by="rn_year asc",
+        )
+    }}

@@ -61,6 +61,7 @@ with
             s._dbt_source_project,
             s.terms_academic_year as academic_year,
             s.school_abbreviation as school,
+            s.school_name,
             s.sections_dcid,
             s.sections_termid as termid,
             s.sections_id as sectionid,

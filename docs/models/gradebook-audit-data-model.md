@@ -351,6 +351,15 @@ downstream models: the `scores` CTE here and
 — never on school name, which PowerSchool has renamed once already. This ensures
 HS-vs-non-HS flag conditions apply consistently to those students.
 
+The same caution applies to the `school_name` column that
+`int_extracts__course_schedule_by_term` and `rpt_tableau__gradebook_audit`
+carry. It reads PowerSchool `schools.name`, so it is a display label only — a
+rename changes it silently. Join and filter on `schoolid` or `school` (the
+abbreviation) instead. `schools.name` also disagrees with the canonical
+`stg_google_sheets__people__locations.location_name` for 2 schools: Hatch
+(`KIPP Hatch Academy` vs `KIPP Hatch Middle`) and Sumner (`KIPP Sumner Academy`
+vs `KIPP Sumner Elementary`).
+
 Feeds `int_powerschool__gradebook_assignment_scores_rollup`.
 
 #### `int_powerschool__gradebook_assignment_scores_rollup`
