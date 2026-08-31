@@ -152,9 +152,10 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
 
     ``Numeric(76, 38)`` maps to BigQuery BIGNUMERIC, not NUMERIC, so a dbt
     staging model over an affected table should ``cast(col as numeric)`` to keep
-    contracts on NUMERIC. That retype is why the migration in #5080 reloaded
-    every table once: ``replace`` cannot change a column's type in place, so
-    200 already-loaded NUMERIC columns needed recreating.
+    contracts on NUMERIC. That retype requires a one-time reload of every
+    table: ``replace`` cannot change a column's type in place, so the 191
+    already-loaded columns that reflect as unbounded ``numeric`` need
+    recreating.
 
     ``Float`` subclasses ``Numeric`` and also reflects ``precision=None``, so it
     is returned untouched — otherwise every ``double precision`` column would
