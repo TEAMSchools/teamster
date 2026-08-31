@@ -257,6 +257,12 @@ select
     end as benchmark_goal_season,
 
     case
+        when s.period = 'BOY'
+        then null
+        else s.measure_semester_growth in ('Above Average', 'Well Above Average')
+    end as is_above_average_growth,
+
+    case
         when s.measure_standard_level_int >= 3
         then 'At/Above'
         when s.measure_standard_level_int <= 2
@@ -337,6 +343,8 @@ select
     'Text Study' as illuminate_subject,
 
     'NA' as benchmark_goal_season,
+
+    cast(null as bool) as is_above_average_growth,
 
     case
         when s.measure_standard_level_int >= 3

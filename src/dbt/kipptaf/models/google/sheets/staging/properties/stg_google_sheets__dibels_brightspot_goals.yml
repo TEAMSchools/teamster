@@ -1,0 +1,80 @@
+models:
+  - name: stg_google_sheets__dibels_brightspot_goals
+    description: >-
+      Bright Spot tier boundaries -- the percentage-point gap ranges that
+      classify a Bright Spots tracker row into Bright Spot / On Track / In Range
+      / Off Track. Values are goal_type-agnostic (gap is already sign-flipped
+      upstream so one boundary set covers At/Above and Well Below alike) and, as
+      of AY2025, population-agnostic too -- All, IEP and MLL currently carry
+      identical boundaries, kept as separate rows because T&L could diverge them
+      later. See the dibels-dashboard skill.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - Grade_Band
+              - Period
+              - Population
+              - Tier
+          config:
+            severity: error
+    columns:
+      - name: Period
+        data_type: string
+        description: MOY or EOY.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [MOY, EOY]
+              config:
+                severity: error
+      - name: Population
+        data_type: string
+        description: All, IEP or MLL.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [All, IEP, MLL]
+              config:
+                severity: error
+      - name: Tier
+        data_type: string
+        description: Bright Spot, On Track, In Range or Off Track.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Bright Spot, On Track, In Range, Off Track]
+              config:
+                severity: error
+      - name: Measured_Against
+        data_type: string
+        description: >-
+          Which period's goal the gap was computed against -- MOY or EOY. Always
+          EOY for the G6-8/MOY row, since middle school is measured against the
+          EOY goal at MOY (no MOY PM round for test prep).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [MOY, EOY]
+              config:
+                severity: error
+      - name: Academic_Year
+        data_type: int64
+        description: >-
+          Fall-start convention -- 2025 means school year 2025-26. Included even
+          though boundaries haven't changed historically, since T&L could revise
+          them for a future year.
+      - name: Grade_Band
+        data_type: string
+        description: GK-5 or G6-8.
+      - name: Gap_Min
+        data_type: float64
+        description: >-
+          Inclusive lower bound of the gap range for this tier, in percentage
+          points. Null means unbounded below.
+      - name: Gap_Max
+        data_type: float64
+        description: >-
+          Inclusive upper bound of the gap range for this tier, in percentage
+          points. Null means unbounded above.
