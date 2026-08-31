@@ -210,11 +210,15 @@ def grow_user_sync(
 
         # observation groups: one per coach, so a coach who is also a teacher
         # sees only their own reports rather than every teacher at the school.
-        existing_groups = {g["name"]: g["_id"] for g in school["observationGroups"]}
+        # Keyed by _id: two groups can share a name, and losing one here would
+        # drop it from the payload, which deletes it.
+        existing_by_id: dict[str, str] = {
+            g["_id"]: g["name"] for g in school["observationGroups"]
+        }
 
-        school_observers = [
-            u["user_id"] for u in school_users if "observers" in u["group_type"]
-        ]
+        school_observers = sorted(
+            {u["user_id"] for u in school_users if "observers" in u["group_type"]}
+        )
 
         # Route every observee to their coach's group, or to the fallback.
         by_coach: dict[str, list[str]] = {}
@@ -251,25 +255,30 @@ def grow_user_sync(
                 "observers": [coach_id],
             }
 
-        # Match by the "Coach <employee_number>" prefix so a renamed coach
-        # keeps their group's _id.
-        def match_existing(name: str) -> str | None:
-            if name in existing_groups:
-                return existing_groups[name]
+        observation_groups = []
+        claimed: set[str] = set()
 
-            prefix = " - ".join(name.split(" - ")[:1]) + " - "
+        # Match by the "Coach <employee_number>" prefix so a renamed coach
+        # keeps their group's _id. Skips already-claimed ids so two wanted
+        # groups can never resolve to the same existing group.
+        def match_existing(name: str) -> str | None:
+            for group_id, group_name in existing_by_id.items():
+                if group_id in claimed:
+                    continue
+
+                if group_name == name:
+                    return group_id
+
+            prefix = name.split(" - ")[0] + " - "
 
             return next(
                 (
                     group_id
-                    for group_name, group_id in existing_groups.items()
-                    if group_name.startswith(prefix)
+                    for group_id, group_name in existing_by_id.items()
+                    if group_id not in claimed and group_name.startswith(prefix)
                 ),
                 None,
             )
-
-        observation_groups = []
-        claimed: set[str] = set()
 
         for name, members in wanted.items():
             group: dict[str, Any] = {"name": name, **members}
@@ -284,7 +293,7 @@ def grow_user_sync(
         # The school PUT REPLACES this array, so a group left out is deleted.
         # Emit every surviving group emptied rather than dropping it, so no
         # observation history is ever orphaned by a coach moving on.
-        for group_name, group_id in existing_groups.items():
+        for group_id, group_name in existing_by_id.items():
             if group_id in claimed:
                 continue
 
