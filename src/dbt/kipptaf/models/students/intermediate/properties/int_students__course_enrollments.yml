@@ -39,7 +39,27 @@ models:
           # 15:00 for ddi's Friday 16:00, 17:00 for ddi's 18:00. This model
           # and int_powerschool__course_enrollments_union, which shares the
           # tick, cost about 9.4 GiB/day together against 81.1 today.
-          # Refs #5082
+          #
+          # Not a view, and the gap versus a view is enormous here. This model
+          # is read about 853 times a day, and its 3 window functions over a
+          # full union all corresponding block column pruning, so a view read
+          # recomputes the whole model no matter how few columns the reader
+          # selects -- the shape #5035 measured on
+          # int_assessments__all_college_assessments, where 1 column cost
+          # 1.388 GiB against a 1.390 GiB build. At 1.209 GiB a recompute that
+          # is roughly 980 GiB/day, against 53.6 eager today and 9.4 here.
+          # Same call as #4821, which moved
+          # fct_assessment_scores_enrollment_scoped the other way for the same
+          # reason.
+          #
+          # Accepted trade-off: dim_student_section_enrollments is a view over
+          # this model, and Cube reads it live -- cube-cloud@ ran 288 jobs in
+          # 14 days against it, with no refresh_key and no pre-aggregation. So
+          # the Cube class-roster, attendance, and assessment views go from
+          # roughly eager freshness to these 4 ticks, and a mid-morning
+          # schedule change is not visible until 15:00. Weighed and accepted
+          # rather than adding school-day ticks. Revisit if roster staleness
+          # draws a complaint. Refs #5082
           automation_condition:
             cron_schedule: 0 0,4,15,17 * * *
     data_tests:
