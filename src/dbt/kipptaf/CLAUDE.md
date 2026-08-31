@@ -240,6 +240,17 @@ columns at parse time, so they cannot be declared. See
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
 Facebook, Illuminate Fivetran, Instagram.
 
+**`partition_by` on a Cube-read mart is a no-op on its own.** Cube compiles a
+date filter routed through the `dates` join into a predicate on `dim_dates`, and
+BigQuery cannot prune a fact's partitions from a predicate on a joined table.
+The partition only pays off paired with a fact-side time dimension the view's
+description sends date filters to — `fct_student_days`
+(`PARTITION BY DATE_TRUNC(date_key, MONTH)`) with `student_days.attendance_date`
+is the worked example. Pick monthly over daily for a multi-year daily-grain
+fact: 7,058 distinct dates already, so daily passes BigQuery's 4,000-partition
+cap inside a decade. See `src/cube/CLAUDE.md` for the measurements and the
+Cube-side rule.
+
 ## Known Upstream Issues
 
 **Miami is the exception, deliberately.** Focus is Miami's sole enrollment

@@ -54,16 +54,17 @@ school_calendars) go in `cubes/conformed/`.
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
   rule:** student-domain cubes start with `student` (`student_days`,
-  `student_enrollments`, `students`); staff-domain cubes start with `staff`.
-  This is an organizational convention only — RLS is no longer keyed off the
-  cube-name prefix. Every view enforces access through its own `access_policy`
-  matching a `securityContext` group (see View access policies below); a
-  misnamed cube has no security consequence, but keep the convention so the
-  domain is legible from the name. Conformed dims (`dates`, `locations`,
-  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
-  carry no domain access tier. Student views are single, collapsed views named
-  `<domain>_view` (`student_days_view`, `student_assessment_scores_view`,
-  `student_enrollments_view`) — a view can't share a bare name with its
+  `student_periods`, `student_school_enrollments`, `students`); staff-domain
+  cubes start with `staff`. This is an organizational convention only — RLS is
+  no longer keyed off the cube-name prefix. Every view enforces access through
+  its own `access_policy` matching a `securityContext` group (see View access
+  policies below); a misnamed cube has no security consequence, but keep the
+  convention so the domain is legible from the name. Conformed dims (`dates`,
+  `locations`, `regions`, `terms`, `school_calendars`) are deliberately
+  unprefixed — they carry no domain access tier. Student views are single,
+  collapsed views named `<domain>_view` (`student_days_view`,
+  `student_periods_view`, `student_section_enrollments_view`,
+  `student_assessment_scores_view`) — a view can't share a bare name with its
   same-domain cube, hence the `_view` suffix. Staff views keep the
   `<domain>_<grain>` pattern (`staff_directory`, `staff_pii`) since that split
   is a genuine access tier, not a grain distinction (see View access policies
@@ -78,11 +79,11 @@ school_calendars) go in `cubes/conformed/`.
   join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → resolve to one
   canonical path. Reach deeper dims by traversing the FK chain (e.g.
-  `student_enrollments` and `student_days` both reach `locations` only via
-  `student_enrollment_stints.locations` — no direct second join). Alternative
-  resolutions: a compound join on the canonical path (see `student_days.yml` →
-  `school_calendars`), or a degenerate FK with no declared join. Comment the
-  choice.
+  `student_days` reaches `locations` only via
+  `student_school_enrollments.locations`, never directly — no second join).
+  Alternative resolutions: a compound join on the canonical path (see
+  `student_days.yml` → `school_calendars`), or a degenerate FK with no declared
+  join. Comment the choice.
 - **Second join to an already-role-played mart → fresh `sql_table` cube, not
   `extends`.** To add a SECOND, differently-filtered join to a mart another cube
   already reaches (e.g. a stint cube reaching "the current homeroom section" of
@@ -94,7 +95,32 @@ school_calendars) go in `cubes/conformed/`.
   query-timezone conversion (`convertTz`) into join predicates, so
   `{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)` matches zero rows
   under any non-UTC query timezone (#4298). Join on raw DATE keys instead
-  (`{dates.date_key} = {CUBE}.date_key`).
+  (`{dates.date_key} = {CUBE}.date_key`). A bare `DATE` column is NOT an
+  alternative to the cast: Cube always emits `TIMESTAMP` literals, so a
+  `type: time` dimension over an uncast DATE fails with
+  `No matching signature for operator >= for argument types: DATE, TIMESTAMP`.
+- **Qualify the column with `{CUBE}` in any expression-bodied dimension whose
+  column name also exists on a joined cube.** Cube auto-qualifies a scalar
+  `sql: <column>` but NOT an expression, so `sql: CAST(date_key AS TIMESTAMP)`
+  on `student_days` was ambiguous against `dim_dates.date_key` and **filtering
+  that published member failed outright** with
+  `Column name date_key is ambiguous`. Grouping by it compiled fine — the
+  asymmetry is why this survives review, so check filters, not just group-bys.
+  Same root cause as the #4546 `CONCAT` note on `dates.academic_year_label`.
+- **A date filter routed through the `dates` join cannot prune a partitioned
+  fact.** `dates_date_day` compiles to a predicate on `dim_dates`
+  (`dates.date_timestamp >= TIMESTAMP(?)`), and BigQuery cannot prune a fact's
+  partitions from a predicate on a joined table — so partitioning a mart is a
+  **no-op** unless the view also exposes a fact-side time dimension and its
+  description routes single-date and range filters there. `fct_student_days` is
+  `PARTITION BY DATE_TRUNC(date_key, MONTH)` and `student_days.attendance_date`
+  is that member: measured, single-date network headcount reads **63 MiB / 0.7
+  slot-seconds** via `attendance_date` against **1,257 MiB / 24–82
+  slot-seconds** via `dates_date_day`, identical rows. A `CAST` around the
+  partitioning column does NOT block pruning (verified: bare and CAST-wrapped
+  predicates both read 34,224 bytes against 38,659,756 unfiltered). Keep the
+  `dates_*` members for grouping and for academic-year / month / week-of
+  questions, where they are the only path.
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_sum_attendance_value` building blocks).
 - **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
@@ -117,7 +143,7 @@ school_calendars) go in `cubes/conformed/`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
   `regions_region_name` for
-  `student_days.student_enrollments.locations.regions`.
+  `student_days.student_school_enrollments.locations.regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -131,6 +157,23 @@ school_calendars) go in `cubes/conformed/`.
   validate the build stays bounded on a branch staging deployment FIRST —
   confirm the partition count via `JOBS_BY_PROJECT` for
   `cube-cloud@teamster-332318`.
+- **Measure Cube's own overhead before proposing a pre-aggregation.** It runs
+  0.9s–1.5s per query on the student views (planning, Cube Store transport,
+  connection) and exceeds BigQuery execution time on most of them, so a pre-agg
+  removes the smaller half. Worst measured query on `student_days_view` at 29.6M
+  rows: 3.62s wall, 2.17s of it BigQuery — a _perfect_ pre-agg buys ~2.1s of a
+  55-second budget. Also check additivity first: `count_distinct` is
+  non-additive as a **rollup** property, so a day-grain rollup serves day-grain
+  queries and cannot reaggregate to month or year — you would need one pre-agg
+  per grain, or `count_distinct_approx` (HLL, wrong for a reported headcount).
+  Partitioning the underlying mart is usually the cheaper win; see the
+  partition-pruning rule under Authoring conventions.
+- **Custom granularities were evaluated and rejected.** `offset: -6 months` on
+  `dates.date_day` does work on 1.7.14 and returns correct July-anchored
+  buckets, but it costs 58.7 slot-seconds against the `academic_year`
+  dimension's 31.1 for an identical answer (10,158 / 10,849 / 11,260), and the
+  July bucketing already lives in `dim_dates`. `origin` is silently ignored —
+  two different origin values both bucket on the calendar year, with no error.
 
 ## View access policies
 
@@ -142,13 +185,13 @@ axis, so exactly one policy per view is ever active — no AND/OR combination to
 reason about.
 
 - **Student views are single, collapsed views** — each student domain
-  (`student_days_view`, `student_assessment_scores_view`,
-  `student_enrollments_view`) exposes both row-level identifiers and
-  aggregate-breakdown dimensions on the same view; there is no separate
-  detail/summary pair. Three policies, one per non-`none`
-  `student_location_scope` — `student-region` (`row_level` on the region key),
-  `student-school` (`row_level` on the school abbreviation), `student-network`
-  (no `row_level` — every location). All three use
+  (`student_days_view`, `student_periods_view`,
+  `student_section_enrollments_view`, `student_assessment_scores_view`) exposes
+  both row-level identifiers and aggregate-breakdown dimensions on the same
+  view; there is no separate detail/summary pair. Three policies, one per
+  non-`none` `student_location_scope` — `student-region` (`row_level` on the
+  region key), `student-school` (`row_level` on the school abbreviation),
+  `student-network` (no `row_level` — every location). All three use
   `member_level: { includes: "*" }` — any viewer holding one of these groups
   sees every field on every student view, including PII. `none` scope → no group
   → default-deny (zero rows).
@@ -339,23 +382,41 @@ as of a period) are no longer computed by a query-time anchor injected in
 `cube.js` — that mechanism (`queryRewrite`, `SNAPSHOT_CUBES`,
 `SNAPSHOT_MEASURE_STEMS`, `SNAPSHOT_ANCHOR_OVERRIDES`) was retired. Each
 period-end value is now materialized in dbt at period grain instead:
-`fct_student_periods` (year/month/week rows, read via `student_periods_view`
-filtering its `period_type` dimension) for chronic absence / ADA tier / truancy,
-and the `is_current_record` / `is_month_end_record` / `is_week_end_record`
-dimensions on `student_enrollments` (the latter two exposing the underlying
-`is_enrollment_month_end_record` / `is_enrollment_week_end_record` columns; read
-via the named `count_students_year_end` / `_month_end` / `_week_end` measures)
-for enrollment headcount. Cube's job is just to filter to the right row — no
-query-time computation of the anchor.
+`fct_student_periods`, read via `student_periods_view` filtering its
+`period_type` dimension (`year` / `month` / `week`), for chronic absence / ADA
+tier / truancy. Cube's job is just to filter to the right row — no query-time
+computation of the anchor.
 
-Query-time window functions over the daily fact were measured and do not scale:
-a plain additive aggregate by academic year ran 14.3s; a multi-stage
-`grain.include` with no window ran 14.9s–30.6s; a multi-stage `rank` timed out
-past 150s. The retired anchor-flag path was itself not fast either — the legacy
-`_year_end` measure over 3 academic years ran 38.4s, and `_week_end` over one
-academic year ran 51.6s, inside the Cube MCP server's 55-second poll deadline —
-the same failure [#4333](https://github.com/TEAMSchools/teamster/issues/4333)
-fixed for the assessment cubes.
+**There are no anchor dimensions or `_year_end` / `_month_end` / `_week_end`
+measures left anywhere.** `is_current_record`, `is_month_end_record`,
+`is_week_end_record`, `is_enrollment_month_end_record`,
+`is_enrollment_week_end_record` and the `count_students_year_end` family were
+all deleted, along with the `student_enrollments` cube and
+`student_enrollments_view`. Point-in-time enrollment headcount is a **pinned
+date** on `student_days_view` instead — the fact carries a row for every
+enrolled calendar day, break days included, so any date resolves. Pin
+`attendance_date`, not `dates_date_day` (see the partition-pruning rule below).
+
+Query-time **window functions** over the daily fact were measured and do not
+scale: multi-stage `rank` timed out past 150s, and scoping to one month did not
+help, which is what proved the cost structural rather than volume. A plain
+additive aggregate by academic year ran 14.3s; the retired anchor-flag path was
+no better — `_year_end` over 3 academic years ran 38.4s and `_week_end` over one
+ran 51.6s, inside the Cube MCP server's 55-second poll deadline — the same
+failure [#4333](https://github.com/TEAMSchools/teamster/issues/4333) fixed for
+the assessment cubes.
+
+**Multi-stage WITHOUT a window is a different story and is viable.**
+`add_group_by` + `reduce_by` compiles to a two-level GROUP BY (no window
+functions in the SQL) and is the only way to express a second aggregation level
+— mean-of-school-rates, or a count of schools past a threshold — over a row the
+periods fact already precomputed. Measured on `student_periods_view`, AY2025
+year grain: identical bytes to the flat query, **22x the slot-seconds (1.9 →
+42.8) but only 1.75s**, because the base is small. Nothing on either view
+answers that question today. The catch is semantic, not performance: a
+mean-of-school-rates measure beside the pooled `pct_chronically_absent` puts two
+different network numbers on one view (26.09% vs 27.21% for AY2025), so it needs
+a `description` naming which question each answers.
 
 ## MCP access (cube)
 
@@ -502,6 +563,37 @@ a dev-schema redirect is in the working tree, staging with `git add -A`,
 redirect. Name files explicitly in every `git add` while any cube YAML is
 redirected.
 
+**To test a model VARIANT without touching the repo tree, point
+`CUBEJS_SCHEMA_PATH` at a copy** — `cp -r src/cube/model <scratch>/model-x`,
+`sed` the `sql_table` redirect there, then run `npx cubejs-server` with cwd
+`src/cube` (so the dotenv file still loads) and `CUBEJS_SCHEMA_PATH` set. No
+`zz_` redirect in the working tree means no accidental commit, and two variants
+can be compared by restarting against a different copy. Two traps:
+
+- **The path must be RELATIVE.** Cube's `FileRepository` does
+  `path.join(process.cwd(), schemaPath)`, and `path.join` does not reset on an
+  absolute second argument, so an absolute path silently resolves under the cwd.
+  Worse, `ensureDir` then CREATES the wrong directory and compiles an **empty
+  schema**, whose symptom is `Table or CTE with name '<view>' not found` — the
+  same string as an RLS denial. Count the `../` segments from `src/cube`.
+- Set `CUBEJS_REFRESH_WORKER=false` or the refresh worker starts building the
+  `student_assessment_scores` pre-agg off the ~14.2M-row fact.
+
+**Cube caches a query result by its text, so a repeat run measures the cache**
+(0.25s vs 2-4s). To time anything, append a unique never-matching predicate per
+run (`AND academic_year <> <counter>`), seeded from the clock so a second
+PROCESS does not replay the first one's values — that defeats BigQuery's 24-hour
+results cache too. Confirm with `cache_hit = false` in `JOBS_BY_PROJECT`. Schema
+compilation is per-process and lands on the first query (8s–22s): pay it with a
+throwaway warmup query before timing.
+
+**`src/cube/node_modules` can lag the lockfile.** Observed 1.7.14 installed
+while `package-lock.json` pinned 1.7.30, which silently invalidates any "on
+version X" claim from a local run. Check
+`node -e "console.log(require('./node_modules/@cubejs-backend/server/package.json').version)"`
+before attributing behaviour to a version; `npm ci` in `src/cube` closes the
+gap.
+
 **Never `bq cp` a dev-schema table into `kipptaf_marts` to unblock testing.**
 `kipptaf_marts` is the live prod dataset read by all dashboards, the Cube
 semantic layer, and dbt downstream models. Overwriting a mart table corrupts
@@ -607,14 +699,13 @@ exercise it; a plain dev server silently default-denies every gated view.
   it; redirecting it breaks its surrogate-key join to prod
   `dim_staff_work_assignments`). Uncommitted scaffold — revert +
   `grep -r zz_ src/cube` before committing.
-- **`count_students_year_end` (and `_month_end` / `_week_end`) are seasonal.**
-  They anchor to `is_current_record` / `is_month_end_record` /
-  `is_week_end_record` respectively (→ 0, or an absent group, off-season) — the
-  latter two are dimensions exposing the underlying
-  `is_enrollment_month_end_record` / `is_enrollment_week_end_record` columns.
-  The bare `count_students` measure on `student_enrollments` is no longer
-  anchored (Task 7) — validate location scoping with it, or with
-  `student_days`'s additive `count_students`, over a date range.
+- **Validate location scoping with `student_days.count_students` over a date
+  range.** It is unanchored and seasonal-safe — the fact carries a row for every
+  enrolled calendar day including breaks, so it returns real numbers year-round
+  and a 0 can only mean a scope denial. That is the query
+  `scripts/cube_rls_matrix.py` ships as its default. (The old seasonal
+  `count_students_year_end` / `_month_end` / `_week_end` measures, which read 0
+  off-season and made a benign matrix run ambiguous, no longer exist.)
 
 ## School weeks vs ISO weeks
 
@@ -627,19 +718,23 @@ diverge from ISO Monday). Both topline surfaces key on school weeks:
 cleanly via the join) rather than a raw fact column — Cube can throw "not found"
 on a `DATE` fact column cast to `TIMESTAMP` in a BigQuery view.
 
-**`_week_end` named measures (e.g. `count_students_week_end`) require grouping
-by `dates_school_week_start_date`, not Cube's native `granularity: "week"`
-(ISO).** The underlying `is_*_week_end_record` flag is keyed to the PowerSchool
-school week, so grouping by ISO `granularity: "week"` compiles and runs — it
-does not throw — but silently buckets by the wrong week boundary and returns a
-meaningless breakdown. There is no query-time guard catching this anymore; the
+**`student_periods.period_type = 'week'` is the PowerSchool school week, so
+group its rows by `period_start_date` — never by a native `granularity: "week"`
+(ISO) on a date dimension.** ISO bucketing compiles and runs, it does not throw,
+and silently returns a meaningless breakdown. There is no query-time guard; the
 caller has to group correctly.
+
+**The same trap exists at year grain on `dates.date_day`**: a native
+`granularity: "year"` buckets on the CALENDAR year and splits every academic
+year across two buckets. Measured on `student_days_view` — 12,847 / 13,163 /
+10,726 by year granularity against 10,158 / 10,849 / 11,260 by academic year.
+Group by `dates_academic_year_label` for anything school-year-shaped.
 
 ## `prefix: true` join member names
 
 A member inside a `prefix: true` includes block is exposed with the last
 `join_path` segment prepended: `school_week_start_date` under
-`join_path: student_enrollments.dates` (prefix: true) surfaces as
+`join_path: student_days.dates` (prefix: true) surfaces as
 `dates_school_week_start_date`. A same-named fact-level dimension alongside the
 join creates ambiguity Cube can't resolve at query time. Route via the join when
 `dim_dates` carries the same value — avoids the compile error and the redundant
