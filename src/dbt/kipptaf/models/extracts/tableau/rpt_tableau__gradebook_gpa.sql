@@ -114,9 +114,7 @@ with
             term
             on enr.schoolid = term.schoolid
             -- academic_year, not yearid: yearid is null on every Miami row of
-            -- int_extracts__student_enrollments, so this inner join dropped all
-            -- of them. Identity for NJ, where yearid = academic_year - 1990
-            -- holds on every row of both sides, so no NJ row moves.
+            -- int_extracts__student_enrollments, so this join dropped them all
             and enr.academic_year = term.academic_year
             and enr._dbt_source_project = term._dbt_source_project
         left join
