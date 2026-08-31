@@ -12,6 +12,16 @@ views:
       month, or week grain, use count_students_year_end,
       count_students_month_end, or count_students_week_end instead.
 
+      Every headcount measure here anchors on fct_student_attendance_daily, so
+      all four LOSE Miami before AY2026 and do not reconcile to topline Total
+      Enrollment for prior years. Topline reads the enrollment spine, which
+      retains Miami; this fact no longer does, because the Focus cutover dropped
+      Miami's frozen PowerSchool attendance archive (#4803). Measured at the
+      2025-10-06 week — topline 10,640 against 9,289 here, and the entire 1,351
+      gap is Miami, with the three NJ regions agreeing within 14. The gap closes
+      in the final weeks of a year once Miami's calendar has ended on both
+      sides, so a June spot check reconciles and hides it.
+
     cubes:
       - join_path: student_enrollments
         includes:

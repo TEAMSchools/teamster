@@ -253,12 +253,24 @@ decided against on 2026-08-14.
 **Point-in-time enrollment headcount uses entry/exit dates, not
 `enroll_status`.** `count_students` in the `student_enrollments` Cube derives
 from `fct_student_attendance_daily` anchored on per-school `is_current_record` /
-`is_enrollment_month_end_record` / `is_enrollment_week_end_record`. Topline
-Total Enrollment reconciles at Oct-1 2025 = 10,637 (Camden 2,161 / Miami 1,346 /
-Newark 6,608 / Paterson 522). Break weeks (no in-session rows) return 0 by
-design — gap-fill in the BI layer. Paterson `attendance_value` is unreliable
-(upstream PS conversion-items gap, #4193) but `membership_value` is clean —
-enrollment counts include Paterson correctly.
+`is_enrollment_month_end_record` / `is_enrollment_week_end_record`. Break weeks
+(no in-session rows) return 0 by design — gap-fill in the BI layer.
+
+**That anchoring means the Cube enrollment measures LOSE Miami before AY2026,
+and no longer reconcile to Topline Total Enrollment for prior years.** The Oct-1
+2025 = 10,637 reconciliation this section used to assert (Camden 2,161 / Miami
+1,346 / Newark 6,608 / Paterson 522) held before `main` dropped Miami's frozen
+PowerSchool attendance archive (#4803). Topline reads the enrollment spine
+`int_extracts__student_enrollments`, which retains Miami; the Cube measures read
+`fct_student_attendance_daily`, which no longer has it. Measured at the
+2025-10-06 week: Topline 10,640, Cube 9,289 — the entire 1,351 gap is Miami,
+with the three NJ regions agreeing within 14 (a Monday-anchor vs
+last-in-session-day difference). The gap closes only in the final weeks of a
+year, once Miami's calendar has ended on both sides — so a spot check in June
+reconciles and hides it. Do not validate these measures against Topline on a
+pre-AY2026 year. Paterson `attendance_value` is unreliable (upstream PS
+conversion-items gap, #4193) but `membership_value` is clean — enrollment counts
+include Paterson correctly.
 
 **School calendars diverge at year-end; never anchor a point-in-time count on a
 network-wide `max(date)`.** Mid-year months share a last in-session day across

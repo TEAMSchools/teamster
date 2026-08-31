@@ -85,12 +85,12 @@ cubes:
           as-of figure at year, month, or week grain without pinning a date, use
           count_students_year_end, count_students_month_end, or
           count_students_week_end instead — see the four-measure comparison
-          below. Matches the topline Total Enrollment methodology — enrollment
-          is by entry/exit dates, not status. A week or month with no in-session
-          days (e.g. winter or February break) has no rows in the underlying
-          fact at all, so it is absent from a grouped result rather than reading
-          as 0 — read trends on instructional periods, or fill the gap in the BI
-          layer.
+          below. Matches the AY2026-forward topline Total Enrollment methodology
+          — enrollment is by entry/exit dates, not status. A week or month with
+          no in-session days (e.g. winter or February break) has no rows in the
+          underlying fact at all, so it is absent from a grouped result rather
+          than reading as 0 — read trends on instructional periods, or fill the
+          gap in the BI layer.
 
           Four measures on this cube report a headcount, and their names alone
           don't distinguish them — picking by name returns a plausible-looking
@@ -110,11 +110,11 @@ cubes:
           day (today for the current year, the last day of school for completed
           years) — the year-end / current headcount. Filters to
           is_current_record, so the anchor is baked in and no dates_date_day
-          filter or grouping is required. Matches the topline Total Enrollment
-          methodology — enrollment is by entry/exit dates, not status. Note:
-          across multiple schools, each is counted as of its own latest
-          in-session day, so a network total can mix as-of dates within the
-          final weeks of a year.
+          filter or grouping is required. Matches the AY2026-forward topline
+          Total Enrollment methodology — enrollment is by entry/exit dates, not
+          status. Note: across multiple schools, each is counted as of its own
+          latest in-session day, so a network total can mix as-of dates within
+          the final weeks of a year.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -129,20 +129,20 @@ cubes:
           is_month_end_record dimension), so the anchor is baked in and no
           dates_date_day filter is required; group by dates_month_number /
           dates_month_name (or a monthly dates_date_day granularity) to trend
-          it. Matches the topline Total Enrollment methodology — enrollment is
-          by entry/exit dates, not status. Read trends on instructional periods,
-          or carry the prior value forward in the BI layer (the daily fact is
-          in-session-days only by design). A month can read 0 for two different
-          reasons that look identical in the output: a month with no in-session
-          days at all (e.g. a winter break spanning the whole month) has no
-          point-in-time snapshot to count; separately, a month that DOES have
-          in-session days but whose month-end anchor day falls outside your
-          query's own date range also reads 0, because this measure's anchor is
-          a filter on the aggregate itself — it zeroes the count rather than
-          dropping the month from the result the way an out-of-range month would
-          be dropped entirely. Don't read a trailing 0 as "enrollment fell to
-          zero" without first checking whether the anchor day was inside your
-          date range.
+          it. Matches the AY2026-forward topline Total Enrollment methodology —
+          enrollment is by entry/exit dates, not status. Read trends on
+          instructional periods, or carry the prior value forward in the BI
+          layer (the daily fact is in-session-days only by design). A month can
+          read 0 for two different reasons that look identical in the output: a
+          month with no in-session days at all (e.g. a winter break spanning the
+          whole month) has no point-in-time snapshot to count; separately, a
+          month that DOES have in-session days but whose month-end anchor day
+          falls outside your query's own date range also reads 0, because this
+          measure's anchor is a filter on the aggregate itself — it zeroes the
+          count rather than dropping the month from the result the way an
+          out-of-range month would be dropped entirely. Don't read a trailing 0
+          as "enrollment fell to zero" without first checking whether the anchor
+          day was inside your date range.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -157,20 +157,20 @@ cubes:
           is_week_end_record dimension), so the anchor is baked in and no
           dates_date_day filter is required; group by
           dates_school_week_start_date (PowerSchool school weeks, not Cube's ISO
-          granularity: "week") to trend it. Matches the topline Total Enrollment
-          methodology — enrollment is by entry/exit dates, not status. Read
-          trends on instructional periods, or carry the prior value forward in
-          the BI layer (the daily fact is in-session-days only by design). A
-          week can read 0 for two different reasons that look identical in the
-          output: a week with no in-session days at all (e.g. winter or February
-          break) has no point-in-time snapshot to count; separately, a week that
-          DOES have in-session days but whose week-end anchor day falls outside
-          your query's own date range also reads 0, because this measure's
-          anchor is a filter on the aggregate itself — it zeroes the count
-          rather than dropping the week from the result the way an out-of-range
-          week would be dropped entirely. Don't read a trailing 0 as "enrollment
-          fell to zero" without first checking whether the anchor day was inside
-          your date range.
+          granularity: "week") to trend it. Matches the AY2026-forward topline
+          Total Enrollment methodology — enrollment is by entry/exit dates, not
+          status. Read trends on instructional periods, or carry the prior value
+          forward in the BI layer (the daily fact is in-session-days only by
+          design). A week can read 0 for two different reasons that look
+          identical in the output: a week with no in-session days at all (e.g.
+          winter or February break) has no point-in-time snapshot to count;
+          separately, a week that DOES have in-session days but whose week-end
+          anchor day falls outside your query's own date range also reads 0,
+          because this measure's anchor is a filter on the aggregate itself — it
+          zeroes the count rather than dropping the week from the result the way
+          an out-of-range week would be dropped entirely. Don't read a trailing
+          0 as "enrollment fell to zero" without first checking whether the
+          anchor day was inside your date range.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
