@@ -5,73 +5,17 @@ with
 
             u.id as user_id,
 
-            case
-                sr.home_work_location_dagster_code_location
-                when 'kippnewark'
-                then '/Students/TEAM/'
-                when 'kippcamden'
-                then '/Students/KCNA/'
-                when 'kippmiami'
-                then '/Students/Miami/'
-                when 'kipppaterson'
-                then '/Students/KIPP Paterson/'
-            end || case
-                sr.home_work_location_powerschool_school_id
-                /* TEAM */
-                when 133570965
-                then 'TEAM Academy'
-                when 73252
-                then 'Rise'
-                when 73253
-                then 'NCA'
-                when 73254
-                then 'SPARK'
-                when 73255
-                then 'THRIVE'
-                when 73256
-                then 'Seek'
-                when 73257
-                then 'Life'
-                when 73258
-                then 'BOLD'
-                when 73259
-                then 'Upper Roseville'
-                when 732511
-                then 'Newark Lab'
-                when 732513
-                then 'KJA'
-                when 732514
-                then 'KPA'
-                /* KCNA */
-                when 179901
-                then 'LSP'
-                when 179902
-                then 'LSM'
-                when 179903
-                then 'KHM'
-                when 179904
-                then 'KCNHS'
-                when 179905
-                then 'KSE'
-                /* KMS */
-                when 30200803
-                then 'Courage Academy'
-                when 30200804
-                then 'Royalty Academy'
-                /* Paterson */
-                when 2
-                then 'Paterson Prep Middle'
-                when 1234
-                then 'Paterson Prep Elementary'
-            end as org_unit_path,
+            x.location_google_student_org_unit_path as org_unit_path,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_google_directory__users") }} as u
             on sr.google_email = u.primary_email
+        inner join
+            {{ ref("int_people__location_crosswalk") }} as x
+            on sr.home_work_location_name = x.location_name
         where
             sr.user_principal_name is not null
             and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_work_location_powerschool_school_id != 0
     ),
 
     with_ids as (
