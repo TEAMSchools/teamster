@@ -13,6 +13,8 @@ with
                 then '/Students/KCNA/'
                 when 'kippmiami'
                 then '/Students/Miami/'
+                when 'kipppaterson'
+                then '/Students/KIPP Paterson/'
             end || case
                 sr.home_work_location_powerschool_school_id
                 /* TEAM */
@@ -56,6 +58,11 @@ with
                 then 'Courage Academy'
                 when 30200804
                 then 'Royalty Academy'
+                /* Paterson */
+                when 2
+                then 'Paterson Prep Middle'
+                when 1234
+                then 'Paterson Prep Elementary'
             end as org_unit_path,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
