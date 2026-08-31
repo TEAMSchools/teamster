@@ -52,7 +52,18 @@ cubes:
         public: true
 
       - name: attendance_date
-        sql: CAST(date_key AS TIMESTAMP)
+        description: >-
+          This day's calendar date, read from the fact rather than through the
+          dates join. Prefer it over dates_date_day for any single-date or
+          date-range filter: it compiles to a predicate on fct_student_days' own
+          date_key, which is the table's partitioning column, whereas a
+          dates_date_day filter lands on dim_dates and leaves the whole fact to
+          be scanned. Both return the same rows.
+        # {CUBE} is required, not stylistic: a bare date_key is ambiguous
+        # against dim_dates.date_key on any view carrying the dates join, and
+        # filtering this dimension then failed outright with "Column name
+        # date_key is ambiguous". Grouping by it compiled; only filters broke.
+        sql: CAST({CUBE}.date_key AS TIMESTAMP)
         type: time
         public: true
 
@@ -173,14 +184,16 @@ cubes:
       - name: count_students
         description: >-
           Distinct students with a row in the queried slice. Enrollment is by
-          entry and exit dates, never by status. Leave dates_date_day open for
-          an ever-enrolled count over a range; pin it to a single date for a
-          point-in-time headcount as of that date. No anchor filter is needed or
-          available — the fact carries a row for every calendar day a student
-          was enrolled, break days included, so a weekend or holiday resolves
-          the same as a school day. For students served across a whole period,
-          use student_periods_view.count_students instead, which answers a
-          different question from enrolled on the period's last day.
+          entry and exit dates, never by status. Leave the date open for an
+          ever-enrolled count over a range; pin attendance_date to a single date
+          for a point-in-time headcount as of that date — attendance_date rather
+          than dates_date_day, because it prunes the fact's date partition and
+          dates_date_day does not. No anchor filter is needed or available — the
+          fact carries a row for every calendar day a student was enrolled,
+          break days included, so a weekend or holiday resolves the same as a
+          school day. For students served across a whole period, use
+          student_periods_view.count_students instead, which answers a different
+          question from enrolled on the period's last day.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true

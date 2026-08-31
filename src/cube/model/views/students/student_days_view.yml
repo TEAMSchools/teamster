@@ -8,11 +8,18 @@ views:
       access_policy for PII gating.
 
       count_students is a distinct-student count over whatever slice is queried.
-      Leave dates_date_day open for ever-enrolled over a range; pin it to one
-      date for a point-in-time headcount as of that date. There is no anchor
-      filter and none is needed — break days carry a row, so a weekend or a
-      holiday resolves exactly like a school day. Filter is_in_session_day =
-      true for anything that should count school days only.
+      Leave the date open for ever-enrolled over a range; pin it to one date for
+      a point-in-time headcount as of that date. There is no anchor filter and
+      none is needed — break days carry a row, so a weekend or a holiday
+      resolves exactly like a school day. Filter is_in_session_day = true for
+      anything that should count school days only.
+
+      Filter attendance_date, not dates_date_day, for a single date or a date
+      range. The two return identical rows, but attendance_date compiles to a
+      predicate on the fact's own partitioning column and prunes the scan, while
+      dates_date_day compiles to a predicate on dim_dates and leaves the whole
+      29.6M-row fact to be read. Use the dates_* members for grouping and for
+      academic-year, month, or week-of questions, where they are the only path.
 
       For ADA use the avg_daily_attendance measure rather than rebuilding the
       ratio from raw dimensions — it scopes both sides to full membership days

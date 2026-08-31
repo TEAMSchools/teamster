@@ -46,6 +46,33 @@ models:
       single GROUP BY axis.
     config:
       materialized: table
+      # Monthly, not daily: 7,058 distinct dates are already in the fact and it
+      # gains ~180 a year, so daily partitioning would pass BigQuery's 4,000
+      # limit inside a decade. Monthly is 246 partitions today.
+      #
+      # This only pays off for a filter on the fact's OWN date_key, which is
+      # what student_days.attendance_date compiles to. A filter on
+      # dates.date_day lands on dim_dates instead and cannot prune this table,
+      # so the view's description routes point-in-time questions to
+      # attendance_date. Measured on the dev build, single-date network
+      # headcount through student_days_view, identical results both ways:
+      #
+      #   dates_date_day    1,257 MiB   23.7-82.1 slot-seconds
+      #   attendance_date      63 MiB    0.66-0.95 slot-seconds
+      #
+      # A CAST around the partitioning column does NOT block pruning --
+      # verified against a partitioned table, bare and CAST-wrapped predicates
+      # both read 34,224 bytes against 38,659,756 unfiltered -- which is why
+      # attendance_date's CAST(date_key AS TIMESTAMP) is still prunable.
+      #
+      # The 63 MiB that survives is almost entirely dim_dates: reading its
+      # date_key, date_timestamp and academic_year costs 67 MiB on its own,
+      # because the spine runs to 9999 (#5094). Bounding it there takes this
+      # query the rest of the way down; nothing else here will.
+      partition_by:
+        field: date_key
+        data_type: date
+        granularity: month
       meta:
         dagster:
           # Cube is the only exposure on this mart, and it is the deepest view
