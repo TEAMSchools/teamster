@@ -53,7 +53,7 @@ school_calendars) go in `cubes/conformed/`.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
-  rule:** student-domain cubes start with `student` (`student_attendance`,
+  rule:** student-domain cubes start with `student` (`student_days`,
   `student_enrollments`, `students`); staff-domain cubes start with `staff`.
   This is an organizational convention only — RLS is no longer keyed off the
   cube-name prefix. Every view enforces access through its own `access_policy`
@@ -62,7 +62,7 @@ school_calendars) go in `cubes/conformed/`.
   domain is legible from the name. Conformed dims (`dates`, `locations`,
   `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
   carry no domain access tier. Student views are single, collapsed views named
-  `<domain>_view` (`student_attendance_view`, `student_assessment_scores_view`,
+  `<domain>_view` (`student_days_view`, `student_assessment_scores_view`,
   `student_enrollments_view`) — a view can't share a bare name with its
   same-domain cube, hence the `_view` suffix. Staff views keep the
   `<domain>_<grain>` pattern (`staff_directory`, `staff_pii`) since that split
@@ -78,11 +78,11 @@ school_calendars) go in `cubes/conformed/`.
   join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → resolve to one
   canonical path. Reach deeper dims by traversing the FK chain (e.g.
-  `student_enrollments` and `student_attendance` both reach `locations` only via
+  `student_enrollments` and `student_days` both reach `locations` only via
   `student_enrollment_stints.locations` — no direct second join). Alternative
-  resolutions: a compound join on the canonical path (see
-  `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
-  declared join. Comment the choice.
+  resolutions: a compound join on the canonical path (see `student_days.yml` →
+  `school_calendars`), or a degenerate FK with no declared join. Comment the
+  choice.
 - **Second join to an already-role-played mart → fresh `sql_table` cube, not
   `extends`.** To add a SECOND, differently-filtered join to a mart another cube
   already reaches (e.g. a stint cube reaching "the current homeroom section" of
@@ -117,7 +117,7 @@ school_calendars) go in `cubes/conformed/`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
   `regions_region_name` for
-  `student_attendance.student_enrollments.locations.regions`.
+  `student_days.student_enrollments.locations.regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -142,7 +142,7 @@ axis, so exactly one policy per view is ever active — no AND/OR combination to
 reason about.
 
 - **Student views are single, collapsed views** — each student domain
-  (`student_attendance_view`, `student_assessment_scores_view`,
+  (`student_days_view`, `student_assessment_scores_view`,
   `student_enrollments_view`) exposes both row-level identifiers and
   aggregate-breakdown dimensions on the same view; there is no separate
   detail/summary pair. Three policies, one per non-`none`
@@ -339,15 +339,14 @@ as of a period) are no longer computed by a query-time anchor injected in
 `cube.js` — that mechanism (`queryRewrite`, `SNAPSHOT_CUBES`,
 `SNAPSHOT_MEASURE_STEMS`, `SNAPSHOT_ANCHOR_OVERRIDES`) was retired. Each
 period-end value is now materialized in dbt at period grain instead:
-`fct_student_attendance_periods` (year/month/week rows, read via
-`student_attendance_periods_view` filtering its `period_type` dimension) for
-chronic absence / ADA tier / truancy, and the `is_current_record` /
-`is_month_end_record` / `is_week_end_record` dimensions on `student_enrollments`
-(the latter two exposing the underlying `is_enrollment_month_end_record` /
-`is_enrollment_week_end_record` columns; read via the named
-`count_students_year_end` / `_month_end` / `_week_end` measures) for enrollment
-headcount. Cube's job is just to filter to the right row — no query-time
-computation of the anchor.
+`fct_student_periods` (year/month/week rows, read via `student_periods_view`
+filtering its `period_type` dimension) for chronic absence / ADA tier / truancy,
+and the `is_current_record` / `is_month_end_record` / `is_week_end_record`
+dimensions on `student_enrollments` (the latter two exposing the underlying
+`is_enrollment_month_end_record` / `is_enrollment_week_end_record` columns; read
+via the named `count_students_year_end` / `_month_end` / `_week_end` measures)
+for enrollment headcount. Cube's job is just to filter to the right row — no
+query-time computation of the anchor.
 
 Query-time window functions over the daily fact were measured and do not scale:
 a plain additive aggregate by academic year ran 14.3s; a multi-stage
@@ -525,7 +524,7 @@ exercise it; a plain dev server silently default-denies every gated view.
   the prod BI/Superset surface. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`,
   default `true`) is the planner on both APIs and joining views is supported
   (multi-fact views); the old `JoinDefinitionStatic` note was a Playground
-  observation, not a SQL-API limit — verified `student_attendance_view` /
+  observation, not a SQL-API limit — verified `student_days_view` /
   `staff_directory` / `student_assessment_scores_view` query cleanly.
   **`checkAuth` DOES run in dev mode (verified on Cube 1.6.59 and 1.7.14)** —
   the prior "REST skips auth in dev mode / needs `NODE_ENV=production`" claim
@@ -615,7 +614,7 @@ exercise it; a plain dev server silently default-denies every gated view.
   `is_enrollment_month_end_record` / `is_enrollment_week_end_record` columns.
   The bare `count_students` measure on `student_enrollments` is no longer
   anchored (Task 7) — validate location scoping with it, or with
-  `student_attendance`'s additive `count_students`, over a date range.
+  `student_days`'s additive `count_students`, over a date range.
 
 ## School weeks vs ISO weeks
 

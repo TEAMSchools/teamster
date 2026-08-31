@@ -1,12 +1,12 @@
 views:
-  - name: student_attendance_periods_view
+  - name: student_periods_view
     description: >-
       Attendance rate as of the end of a period — chronic absence, ADA tier, and
       truancy. Use this view for "rate as of a period" questions (chronic
       absence rate this year, ADA tier mix this month, truancy trend by week).
       For day-level questions — was a student absent on a given date, a calendar
-      heatmap, day-of-week patterns — use student_attendance_view instead; that
-      view carries the row-level daily attendance record, this one carries
+      heatmap, day-of-week patterns — use student_days_view instead; that view
+      carries the row-level daily attendance record, this one carries
       pre-computed period snapshots.
 
       Set period_type to year, month, or week to select the grain and group by
@@ -18,32 +18,36 @@ views:
       student stops appearing rather than carrying forward, and a trend's
       denominator shifts between points.
 
-      Eligibility (count_students) is cumulative from the start of the academic
-      year, so early periods carry a much smaller denominator than later ones —
-      this is expected, not broken data. Example: by August 31 of AY2025, the
-      maximum membership days any student had reached was 8, so zero students
-      were CA-eligible that month — August has no chronic-absence rate at all,
-      not a small one. Cumulative through September 30, eligible reached 9,236
-      against 9,381 student-school pairs with any attendance day (17.8%);
+      Eligibility (count_students_min_10_days) is cumulative from the start of
+      the academic year, so early periods carry a much smaller denominator than
+      later ones — this is expected, not broken data. Example: by August 31 of
+      AY2025, the maximum membership days any student had reached was 8, so zero
+      students were CA-eligible that month — August has no chronic-absence rate
+      at all, not a small one. Cumulative through September 30, eligible reached
+      9,236 against 9,381 student-school pairs with any attendance day (17.8%);
       through October 31, eligible reached 9,328 (18.3%). All three
       reconciliation authorities define eligibility this way, and KIPP
       Foundation chronic-absence criteria item 1 already requires the
       eligible-student count to be shown beside the rate — always display
-      count_students alongside any rate measure on this view, and especially so
-      for the first weeks or first month of an academic year.
+      count_students_min_10_days alongside any rate measure on this view, and
+      especially so for the first weeks or first month of an academic year.
 
-      Miami attendance is present only from AY2026 forward, the accepted result
-      of the Focus cutover — see fct_student_attendance_periods for why.
-      Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
-      truancy) carry a known upstream uncertainty from incomplete PowerSchool
+      Miami is present in count_students for every year, but its attendance only
+      from AY2026 forward — the accepted result of the Focus cutover, and the
+      same gap every Tableau attendance surface has. Miami's pre-AY2026 rows
+      carry no membership days, so they never reach count_students_min_10_days
+      and cannot move a rate. See fct_student_periods for why. Paterson's
+      presence-derived measures (ada_tier, pct_chronically_absent, truancy)
+      carry a known upstream uncertainty from incomplete PowerSchool
       attendance-conversion items (#4193), unquantified as of AY2025;
-      count_students is unaffected — see fct_student_attendance_periods for
+      count_students_min_10_days is unaffected — see fct_student_periods for
       detail.
 
     cubes:
-      - join_path: student_attendance_periods
+      - join_path: student_periods
         includes:
           - count_students
+          - count_students_min_10_days
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2
@@ -57,7 +61,7 @@ views:
           - academic_year_label
           - ada_tier
 
-      - join_path: student_attendance_periods.locations
+      - join_path: student_periods.locations
         prefix: true
         includes:
           - location_name
@@ -65,7 +69,7 @@ views:
           - region_key
           - grade_band
 
-      - join_path: student_attendance_periods.locations.regions
+      - join_path: student_periods.locations.regions
         prefix: true
         includes:
           - region_name
@@ -93,7 +97,7 @@ views:
             - regions_state
 
     access_policy:
-      # Row-level location scoping, mirrored from student_attendance_view. A
+      # Row-level location scoping, mirrored from student_days_view. A
       # viewer holds exactly one student-<scope> group (buildGroups); none =>
       # no group => default-deny. row_level uses this view's flat location
       # member names (see the includes block above), not cube-qualified

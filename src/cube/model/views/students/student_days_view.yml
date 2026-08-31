@@ -1,32 +1,41 @@
 views:
-  - name: student_attendance_view
+  - name: student_days_view
     description: >-
-      Student attendance — row-level (one row per student × school day with
-      attendance recorded) and aggregate breakdowns in a single view. For ADA,
-      use the avg_daily_attendance measure rather than rebuilding the ratio from
-      the raw dimensions — it scopes both sides to full membership days with a
-      recorded attendance value, and a hand-rolled SUM(attendance_value) /
-      SUM(membership_value) counts days that were never recorded as absences.
-      Never average a per-row ratio either way. attendance_value (0.0–1.0) is
-      the fractional attendance contribution; membership_value (0.0–1.0) is the
-      school's claim on the student that day (split across schools if
-      dual-enrolled); present_weight equals attendance_value but tardies count
-      0.67. attendance_category is the coarse rollup (Present, Absent, Tardy,
-      In-School Suspension, Out-of-School Suspension); attendance_code is the
-      raw SIS code for specific drill-down. is_in_session and is_membership_day
-      come from school_calendars and are joined on (date_key,
-      student_school_enrollments.location_key). Contains direct student
-      identifiers — see access_policy for PII gating.
+      Student enrollment and attendance on one daily surface — one row per
+      student per calendar day they were enrolled. Enrollment decides which rows
+      exist and attendance is joined on top, so a day with no recorded
+      attendance is still a row. Contains direct student identifiers — see
+      access_policy for PII gating.
 
-      This view answers day-level questions: attendance on a specific date, a
-      calendar heatmap, day-of-week patterns, per-student daily drill-down. For
-      chronic absence, ADA tier, or truancy rates as of a period, use
-      student_attendance_periods_view — those measures are not on this view.
+      count_students is a distinct-student count over whatever slice is queried.
+      Leave dates_date_day open for ever-enrolled over a range; pin it to one
+      date for a point-in-time headcount as of that date. There is no anchor
+      filter and none is needed — break days carry a row, so a weekend or a
+      holiday resolves exactly like a school day. Filter is_in_session_day =
+      true for anything that should count school days only.
+
+      For ADA use the avg_daily_attendance measure rather than rebuilding the
+      ratio from raw dimensions — it scopes both sides to full membership days
+      with a recorded attendance value, and a hand-rolled SUM(attendance_value)
+      / SUM(membership_value) counts days that were never recorded. Never
+      average a per-row ratio either way. attendance_value (0.0 to 1.0) is the
+      fractional attendance contribution; membership_value (0.0 to 1.0) is the
+      school's claim on the student that day, split across schools if
+      dual-enrolled, and zero on every break day; present_weight equals
+      attendance_value but tardies count 0.67. attendance_category is the coarse
+      rollup (Present, Absent, Tardy, In-School Suspension, Out-of-School
+      Suspension) and is null when no attendance was recorded, which means
+      unknown rather than present; attendance_code is the raw SIS code.
+
+      This view answers day-level and point-in-time questions. For chronic
+      absence, ADA tier, or truancy rates as of a period, use
+      student_periods_view — those measures are not on this view.
 
     cubes:
-      - join_path: student_attendance
+      - join_path: student_days
         includes:
           - count_students
+          - is_in_session_day
           - avg_daily_attendance
           - pct_tardy
           - pct_ontime
@@ -45,7 +54,7 @@ views:
           - is_suspended
           - is_truant
 
-      - join_path: student_attendance.dates
+      - join_path: student_days.dates
         prefix: true
         includes:
           - academic_year
@@ -58,7 +67,7 @@ views:
           - day_of_week_name
           - is_weekday
 
-      - join_path: student_attendance.student_school_enrollments.locations
+      - join_path: student_days.student_school_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -68,13 +77,13 @@ views:
           - campus
           - city
 
-      - join_path: student_attendance.student_school_enrollments.locations.regions
+      - join_path: student_days.student_school_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: student_attendance.student_school_enrollments
+      - join_path: student_days.student_school_enrollments
         prefix: false
         includes:
           - student_enrollment_key
@@ -84,14 +93,14 @@ views:
           - exit_date
           - is_retained_year
 
-      - join_path: student_attendance.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
+      - join_path: student_days.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
         prefix: true
         includes:
           - full_name
           - first_name
           - last_name
 
-      - join_path: student_attendance.student_school_enrollments.student_enrollment_status
+      - join_path: student_days.student_school_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -103,7 +112,7 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: student_attendance.student_school_enrollments.students
+      - join_path: student_days.student_school_enrollments.students
         prefix: false
         includes:
           - student_key
@@ -116,7 +125,7 @@ views:
           - enrollment_status
           - is_gifted
 
-      - join_path: student_attendance.terms
+      - join_path: student_days.terms
         prefix: true
         includes:
           - semester
@@ -124,7 +133,7 @@ views:
           - term_code
           - term_type
 
-      - join_path: student_attendance.school_calendars
+      - join_path: student_days.school_calendars
         prefix: true
         includes:
           - is_in_session

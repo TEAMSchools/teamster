@@ -10,7 +10,7 @@ adp_wfn_policy = FreshnessPolicy.cron(
     timezone=str(LOCAL_TIMEZONE),
 )
 
-# fct_student_attendance_daily materializes on a 0 6,15 * * * cron. As a table,
+# fct_student_days materializes on a 0 6,15 * * * cron. As a table,
 # is_realized and every is_*_record point-in-time anchor freeze at build time
 # instead of self-correcting on read, so a failed build silently serves stale
 # anchors for up to ~15 hours. Deadlines sit one hour after each materialization
@@ -29,8 +29,8 @@ attendance_daily_policy = FreshnessPolicy.cron(
     timezone=str(LOCAL_TIMEZONE),
 )
 
-# fct_student_attendance_periods materializes on the same 0 6,15 * * * cron as
-# fct_student_attendance_daily (aligned by Finding 9 of the final review) and
+# fct_student_periods materializes on the same 0 6,15 * * * cron as
+# fct_student_days (aligned by Finding 9 of the final review) and
 # is also a table, so a failed build silently keeps serving its last-built
 # rows. Its own named constant, not a reuse of attendance_daily_policy: that
 # policy's comment is specifically about is_realized and the is_*_record
@@ -54,10 +54,6 @@ policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(
         ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]
     ): adp_wfn_policy,
-    AssetKey(
-        ["kipptaf", "marts", "fct_student_attendance_daily"]
-    ): attendance_daily_policy,
-    AssetKey(
-        ["kipptaf", "marts", "fct_student_attendance_periods"]
-    ): attendance_periods_policy,
+    AssetKey(["kipptaf", "marts", "fct_student_days"]): attendance_daily_policy,
+    AssetKey(["kipptaf", "marts", "fct_student_periods"]): attendance_periods_policy,
 }

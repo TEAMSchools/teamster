@@ -1,39 +1,49 @@
 models:
-  - name: fct_student_attendance_daily
+  - name: fct_student_days
     description: >-
-      Student daily attendance fact table. One row per student x calendar date
-      with attendance recorded. Contains attendance code, present/absent/tardy
-      indicators, and membership value. Location, school calendar, and academic
-      year are reached via dim_student_enrollments and dim_terms — not stored on
-      the fact. FK to dim_student_enrollments, dim_dates, and dim_terms.
+      One row per student per calendar day they were enrolled, network-wide.
+      Enrollment decides which rows exist and attendance is joined onto them, so
+      a day with no recorded attendance is still a row -- this is an enrollment
+      surface and an attendance surface at once, which is why it is named for
+      its grain rather than for either concept.
 
-      Miami carries no attendance before AY2026. The frozen Miami PowerSchool
-      archive (AY2020 through AY2025) was dropped in #4803: Focus re-dated
-      Miami's enrollment stints to the real first day of school where
-      PowerSchool used a July 1 administrative rollover, so 153,577 archive rows
-      carried a student_enrollment_key that no longer resolved to
-      dim_student_enrollments. Re-keying those rows from Focus enrollment dates
-      was measured and rejected in favor of the ops migration — Focus is the
-      system of record and does not carry pre-AY2026 attendance, so the gap is
-      deliberate rather than a modeling defect. fct_student_attendance_streaks
-      still carries Miami absence streaks for those years from an independent
-      leg, so the two facts disagree on Miami history by design.
+      Rows come from int_students__enrollment_days, whose day window is clamped
+      to each school's own academic year. Break days are present and carry
+      is_in_session_day = false with membership_value = 0 and no attendance, so
+      a point-in-time question lands on any calendar date, weekend and holiday
+      included, without a per-school anchor flag. Nothing on this fact is
+      anchored -- pin a date instead.
 
-      Four numeric attendance measures coexist — use the right one for the
-      question:
+      Miami is present for every year, unlike the model this replaced. The
+      enrollment spine retains it and so does the school calendar, so Miami
+      enrollment reconciles to Topline across history. Miami attendance before
+      AY2026 is still absent, because #4803 dropped the frozen PowerSchool
+      archive and Focus does not carry those years -- every Tableau attendance
+      surface has the same gap. Those rows carry null attendance rather than a
+      fabricated zero, and every rate on them already excludes null attendance
+      from both numerator and denominator (#4744), so the gap cannot move a
+      network rate. When Focus historical attendance is eventually modelled it
+      fills in here with no change to this model.
 
-      - `attendance_value` (0.0–1.0) — raw fractional attendance contribution
-        from the source SIS's attendance mode. Denominator of ADA numerator.
-      - `membership_value` (0.0–1.0) — fractional enrollment/membership claim
-        on the day (split across schools if dual-enrolled). Denominator of ADA.
-      - `present_weight` — like `attendance_value` but tardies weight 0.67.
-        Use when a tardy should count as partial presence, not full.
-      - `is_present_weighted` — not on this fact; see upstream if needed.
+      Location, school calendar, and academic year are reached via
+      dim_student_enrollments and dim_terms, not stored on the fact. FK to
+      dim_student_enrollments, dim_dates, and dim_terms.
 
-      Most dashboards: divide `SUM(attendance_value) / SUM(membership_value)`
-      for ADA, `SUM(is_absent) / SUM(is_membership_day)` for absence rate. Use
-      the `is_*` flags for categorical breakdowns (Present/Absent/Tardy/
-      OSS/ISS) or the `attendance_category` column for a single GROUP BY axis.
+      Three numeric measures coexist -- use the right one for the question:
+
+      - `attendance_value` (0.0 to 1.0) is the raw fractional attendance
+        contribution from the source SIS's attendance mode. Null when no
+        attendance was recorded, including on every break day.
+      - `membership_value` (0.0 to 1.0) is the fractional enrollment claim on
+        the day, split across schools if dual-enrolled. Zero on every break
+        day.
+      - `present_weight` is like `attendance_value` but tardies weight 0.67.
+        Use it when a tardy should count as partial presence, not full.
+
+      For ADA, divide the sum of `attendance_value` by the sum of
+      `membership_value` over days where `attendance_value` is not null. Use the
+      `is_*` flags for categorical breakdowns, or `attendance_category` for a
+      single GROUP BY axis.
     config:
       materialized: table
       meta:
@@ -53,7 +63,7 @@ models:
           automation_condition:
             cron_schedule: 0 6,15 * * *
     columns:
-      - name: student_attendance_daily_key
+      - name: student_day_key
         data_type: string
         description: >-
           Surrogate key derived from student_number, _dbt_source_project, and
@@ -217,93 +227,14 @@ models:
           ordering (suspension > absent > tardy > present). Values:
           Out-of-School Suspension, In-School Suspension, Absent, Tardy,
           Present. Use this column for GROUP BY in BI tools; use the raw
-          attendance_code for specific-code drill-down.
+          attendance_code for specific-code drill-down. Null when no attendance
+          row joined -- a break day, or a session day whose register was never
+          taken. Null means unknown, never Present.
 
-      - name: is_chronically_absent
+      - name: is_in_session_day
         data_type: boolean
         description: >-
-          TRUE if the student's cumulative ADA through this date is below 90%.
-          Running average of attendance_value on full membership days only
-          (membership_value = 1), partitioned by enrollment stint
-          (student_enrollment_key), ordered by date. Point-in-time — filter to a
-          single date to get YTD CA status as of that date. Filtering to a date
-          range overcounts by including students CA at any point in the range.
-          This model's boundary (strictly below 90%) differs from the network
-          chronic-absence definition (at or below 90%);
-          `fct_student_attendance_periods` is the authoritative source for
-          chronic absence and ADA tier. The divergence is tracked in #5060.
-
-      - name: ada_tier
-        data_type: string
-        description: >-
-          ADA tier based on cumulative attendance rate through this date. Tier 1
-          = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
-          (chronic). Tier 4 = below 80% (severe chronic). Partitioned by
-          enrollment stint (student_enrollment_key), ordered by date. This
-          model's tier boundaries differ from the network definition (Tier 2
-          strictly above 90%, Tier 3 from 80% through 90% inclusive);
-          `fct_student_attendance_periods` is the authoritative source for
-          chronic absence and ADA tier. The divergence is tracked in #5060.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [Tier 1, Tier 2, Tier 3, Tier 4]
-
-      - name: is_latest_record
-        data_type: boolean
-        description: >-
-          TRUE for the most recent attendance record within this student
-          enrollment. Use to query each student's latest CA status
-          (is_chronically_absent, ada_tier) without requiring a date filter —
-          equivalent to Tableau's MAX(calendardate) LOD approach. Future dates
-          are excluded at the mart level (calendardate <= current_date).
-
-      - name: is_month_end_record
-        data_type: boolean
-        description: >-
-          TRUE on the last full membership day (membership_value = 1) of each
-          calendar month per student enrollment. FALSE on all other rows,
-          including non-membership days. Use with a month-granularity date
-          dimension for month-over-month CA trends — gives one snapshot per
-          student per month at the last school day of that month.
-
-      - name: is_week_end_record
-        data_type: boolean
-        description: >-
-          TRUE on the last full membership day (membership_value = 1) of each
-          PowerSchool school week (week_start_monday) per student enrollment.
-          FALSE on all other rows, including non-membership days. Use with
-          school_week_start_date for week-over-week CA trends — gives one
-          snapshot per student per school week at the last school day of that
-          week. Correctly handles shortened weeks (e.g. Wednesday is last school
-          day before a holiday).
-
-      - name: is_current_record
-        data_type: boolean
-        description: >-
-          TRUE on the school's latest attendance day that has occurred, per
-          school and academic year (fact is capped at today, so no future rows).
-          Drives the default point-in-time enrollment headcount — students
-          enrolled but withdrawn before the current date will not have a TRUE
-          row, excluding them from active headcounts. Distinct from
-          is_latest_record, which is per student enrollment stint, not per
-          school.
-
-      - name: is_enrollment_month_end_record
-        data_type: boolean
-        description: >-
-          TRUE on the school's latest attendance day of each calendar month, per
-          school and academic year. For month-over-month point-in-time
-          enrollment trend counts — one headcount snapshot per school per month
-          at the last in-session day of that month. Independent of
-          is_month_end_record, which operates per student enrollment stint.
-
-      - name: is_enrollment_week_end_record
-        data_type: boolean
-        description: >-
-          TRUE on the school's latest attendance day of each PowerSchool school
-          week (week_start_monday), per school. For week-over-week point-in-time
-          enrollment trend counts — one headcount snapshot per school per week
-          at the last in-session day of that week. Group by
-          school_week_start_date for the weekly trend axis. Independent of
-          is_week_end_record, which operates per student enrollment stint.
+          Whether school was in session for this student's school on this day.
+          False on every carried break day. A false row carries enrollment but
+          no attendance and a membership_value of zero, so it can never reach a
+          rate denominator.

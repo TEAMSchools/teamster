@@ -1,7 +1,7 @@
 cubes:
-  - name: student_attendance
+  - name: student_days
     public: false
-    sql_table: kipptaf_marts.fct_student_attendance_daily
+    sql_table: kipptaf_marts.fct_student_days
 
     joins:
       # Join on the raw DATE key, not the date_day time dimension — Cube wraps
@@ -32,13 +32,24 @@ cubes:
         relationship: many_to_one
 
     dimensions:
-      - name: student_attendance_daily_key
+      - name: student_day_key
         description: >-
           Surrogate key derived from student_number, _dbt_source_relation, and
           calendardate. Primary key for this fact.
-        sql: student_attendance_daily_key
+        sql: student_day_key
         type: string
         primary_key: true
+
+      - name: is_in_session_day
+        description: >-
+          Whether school was in session for this student's school on this day.
+          False on a break day, which carries enrollment but no attendance and a
+          membership_value of zero. Filter to true for anything that should only
+          consider school days; leave it open for enrollment questions, which is
+          what makes a point-in-time count resolve on a weekend or holiday.
+        sql: is_in_session_day
+        type: boolean
+        public: true
 
       - name: attendance_date
         sql: CAST(date_key AS TIMESTAMP)
@@ -152,8 +163,8 @@ cubes:
           year it runs high several-fold, because one absence in the first days
           projects past 50 on a one-day denominator. Use this dimension for
           day-level drill-down (which days was a student flagged), and take the
-          period-end truancy count and rate from
-          student_attendance_periods_view's count_truants / pct_truant.
+          period-end truancy count and rate from student_periods_view's
+          count_truants / pct_truant.
         sql: is_truant
         type: boolean
         public: true
@@ -161,22 +172,18 @@ cubes:
     measures:
       - name: count_students
         description: >-
-          Count of distinct enrollment stints (student_enrollment_key) with a
-          membership day in the queried range — NOT a distinct-student
-          headcount. A student with two stints at the same school (e.g.
-          re-enrolled) counts twice. Additive over the range by design and
-          deliberately left unanchored to any point-in-time filter — unlike this
-          cube's chronic-absence / ADA-tier / truancy measures, which are
-          re-stamped daily flags that need a period-end anchor to avoid
-          overcounting, this measure does not. For a distinct-student headcount,
-          use student_enrollments_view's count_students (ever-enrolled in the
-          queried range by default) or its count_students_year_end / _month_end
-          / _week_end measures for a point-in-time as-of figure.
-        sql: student_enrollment_key
+          Distinct students with a row in the queried slice. Enrollment is by
+          entry and exit dates, never by status. Leave dates_date_day open for
+          an ever-enrolled count over a range; pin it to a single date for a
+          point-in-time headcount as of that date. No anchor filter is needed or
+          available — the fact carries a row for every calendar day a student
+          was enrolled, break days included, so a weekend or holiday resolves
+          the same as a school day. For students served across a whole period,
+          use student_periods_view.count_students instead, which answers a
+          different question from enrolled on the period's last day.
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
-        filters:
-          - sql: "{CUBE}.membership_value > 0"
 
       # Numerator and denominator must span the SAME set of days, or days
       # present in one and absent from the other silently become absences.

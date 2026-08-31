@@ -1,7 +1,7 @@
 cubes:
-  - name: student_attendance_periods
+  - name: student_periods
     public: false
-    sql_table: kipptaf_marts.fct_student_attendance_periods
+    sql_table: kipptaf_marts.fct_student_periods
 
     joins:
       # Join on the raw DATE key, not a time dimension — Cube wraps time
@@ -17,12 +17,12 @@ cubes:
         relationship: many_to_one
 
     dimensions:
-      - name: student_attendance_period_key
+      - name: student_period_key
         description: >-
           Surrogate key derived from student_number, _dbt_source_project,
           location_key, academic_year, period_type, and period_start_date_key.
           Primary key for this fact.
-        sql: student_attendance_period_key
+        sql: student_period_key
         type: string
         primary_key: true
         public: false
@@ -98,16 +98,30 @@ cubes:
     measures:
       - name: count_students
         description: >-
-          CA-eligible student-school records in the period
-          (n_membership_days_ytd >= 10 — the KIPP Foundation chronic-absence
-          eligibility floor). Counted per school, not as a network-wide distinct
-          headcount: a student who changed schools mid-period is counted once
-          per school. This is the shared denominator for every rate measure on
-          this cube — display it alongside a rate whenever population size
-          matters, especially early in an academic year when eligibility is
-          still accumulating and the denominator is a fraction of full
-          enrollment.
-        sql: student_attendance_period_key
+          Student-school records served at any point in the period, with no
+          eligibility floor applied. Counted per school, so a student who
+          changed schools mid-period is counted once per school. This is a
+          served-during-the-period count, which is a different question from
+          enrolled on the period's last day — for that, pin the date on
+          student_days_view. Do NOT use this as the denominator for any rate on
+          this cube; every rate here is scoped to count_students_min_10_days.
+        sql: student_period_key
+        type: count_distinct
+        public: true
+
+      - name: count_students_min_10_days
+        description: >-
+          Students with at least 10 cumulative membership days year-to-date at
+          that school — the KIPP Foundation chronic-absence eligibility floor,
+          and the shared denominator for every rate measure on this cube. A
+          membership day requires recorded attendance, so a school-year with
+          enrollment but no attendance data contributes nobody here and cannot
+          distort a rate. Counted per school, so a student who changed schools
+          mid-period is counted once per school. Display it beside any rate
+          whenever population size matters, especially early in an academic year
+          when eligibility is still accumulating and this runs far below
+          count_students.
+        sql: student_period_key
         type: count_distinct
         public: true
         filters:
@@ -118,7 +132,7 @@ cubes:
           CA-eligible student-school records with cumulative ADA at or below
           90.0% (ada_tier Tier 3 or Tier 4) as of period_end_date. Same
           per-school counting grain as count_students.
-        sql: student_attendance_period_key
+        sql: student_period_key
         type: count_distinct
         public: true
         filters:
@@ -127,27 +141,31 @@ cubes:
 
       - name: pct_chronically_absent
         description: >-
-          Chronic absence rate — count_chronically_absent / count_students.
-          Always display count_students alongside this rate: eligibility is
-          cumulative from the start of the academic year, so early periods carry
-          a much smaller denominator than later ones. Example: by August 31 of
-          AY2025, the maximum membership days any student had reached was 8, so
-          zero students were CA-eligible that month — August has no
-          chronic-absence rate at all, not a small one. Cumulative through
-          September 30, eligible reached 9,236 against 9,381 student-school
-          pairs with any attendance day (17.8%); through October 31, eligible
-          reached 9,328 (18.3%). This is expected, not broken data — all three
-          reconciliation authorities define eligibility this way, and KIPP
-          Foundation chronic-absence criteria item 1 already requires the
-          eligible-student count to be shown beside the rate for the same
+          Chronic absence rate — count_chronically_absent divided by
+          count_students_min_10_days. Excludes anyone with fewer than 10
+          membership days year-to-date, so it is not a share of everyone
+          enrolled. Always display count_students alongside this rate:
+          eligibility is cumulative from the start of the academic year, so
+          early periods carry a much smaller denominator than later ones.
+          Example: by August 31 of AY2025, the maximum membership days any
+          student had reached was 8, so zero students were CA-eligible that
+          month — August has no chronic-absence rate at all, not a small one.
+          Cumulative through September 30, eligible reached 9,236 against 9,381
+          student-school pairs with any attendance day (17.8%); through October
+          31, eligible reached 9,328 (18.3%). This is expected, not broken data
+          — all three reconciliation authorities define eligibility this way,
+          and KIPP Foundation chronic-absence criteria item 1 already requires
+          the eligible-student count to be shown beside the rate for the same
           reason.
-        sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
+        sql:
+          "1.0 * {count_chronically_absent} /
+          NULLIF({count_students_min_10_days}, 0)"
         type: number
         format: percent
         public: true
 
       - name: _count_tier_1_2
-        sql: student_attendance_period_key
+        sql: student_period_key
         type: count_distinct
         public: false
         filters:
@@ -160,13 +178,16 @@ cubes:
           90.0% (Tier 1 or Tier 2) as of period_end_date. Tier 2 is strictly
           above 90.0%; Tier 3 includes exactly 90.0%. Denominator is
           count_students.
-        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students}, 0)"
+
+          Denominator is count_students_min_10_days, so anyone with fewer than
+          10 membership days year-to-date is excluded from both sides.
+        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students_min_10_days}, 0)"
         type: number
         format: percent
         public: true
 
       - name: _count_tier_3
-        sql: student_attendance_period_key
+        sql: student_period_key
         type: count_distinct
         public: false
         filters:
@@ -179,7 +200,10 @@ cubes:
           through 90.0% inclusive (Tier 3) as of period_end_date. Tier 2 is
           strictly above 90.0%; Tier 3 includes exactly 90.0%. Denominator is
           count_students.
-        sql: "1.0 * {_count_tier_3} / NULLIF({count_students}, 0)"
+
+          Denominator is count_students_min_10_days, so anyone with fewer than
+          10 membership days year-to-date is excluded from both sides.
+        sql: "1.0 * {_count_tier_3} / NULLIF({count_students_min_10_days}, 0)"
         type: number
         format: percent
         public: true
@@ -193,7 +217,7 @@ cubes:
           membership days) is a KIPP Foundation chronic-absence criterion that
           this fact also applies to truancy — neither the Miami nor the NJ
           truancy rule itself requires a minimum membership-day count.
-        sql: student_attendance_period_key
+        sql: student_period_key
         type: count_distinct
         public: true
         filters:
@@ -207,7 +231,10 @@ cubes:
           applies the chronic-absence eligibility floor to truancy as well, this
           rate's denominator is CA-eligible students, not all students the
           regional truancy rule itself would consider.
-        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+
+          Denominator is count_students_min_10_days, so anyone with fewer than
+          10 membership days year-to-date is excluded from both sides.
+        sql: "1.0 * {count_truants} / NULLIF({count_students_min_10_days}, 0)"
         type: number
         format: percent
         public: true

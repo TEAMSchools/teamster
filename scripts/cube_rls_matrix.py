@@ -51,13 +51,13 @@ from pathlib import Path
 
 import psycopg
 
-# Region breakdown of student attendance. Chosen because student_attendance's
-# count_students is stint-keyed and additive, so it returns real numbers
-# year-round — student_enrollments.count_students anchors to is_current_record
-# and reads 0 off-season, which looks identical to a scope denial.
+# Region breakdown of student enrollment. count_students is a distinct-student
+# count over whatever slice is queried, with no anchor filter, and the fact
+# carries a row for every enrolled calendar day including breaks — so it returns
+# real numbers year-round and a 0 can only mean a scope denial.
 DEFAULT_QUERY = (
     "SELECT regions_region_name, MEASURE(count_students) "
-    "FROM student_attendance_view GROUP BY 1 ORDER BY 1"
+    "FROM student_days_view GROUP BY 1 ORDER BY 1"
 )
 
 

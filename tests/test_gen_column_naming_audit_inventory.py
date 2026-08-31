@@ -65,7 +65,7 @@ def test_domain_for_model_student() -> None:
     assert module._domain_for_model("dim_students") == "Student"
     assert module._domain_for_model("dim_student_enrollments") == "Student"
     assert module._domain_for_model("bridge_student_contacts") == "Student"
-    assert module._domain_for_model("fct_student_attendance_daily") == "Attendance"
+    assert module._domain_for_model("fct_student_days") == "Attendance"
 
 
 def test_domain_for_model_staff() -> None:

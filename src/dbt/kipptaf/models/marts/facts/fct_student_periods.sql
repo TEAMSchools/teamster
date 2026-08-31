@@ -1,24 +1,34 @@
 with
+    -- Enrollment decides which student-days exist and attendance is joined on
+    -- top, so a region with no recorded attendance still gets period rows and
+    -- still counts toward count_students. It cannot reach any rate: every
+    -- membership-day count below requires attendancevalue to be non-null.
     daily as (
         select
-            ada.student_number,
-            ada._dbt_source_project,
-            ada.academic_year,
-            ada.calendardate,
-            ada.week_start_monday,
-            ada.membershipvalue,
-            ada.attendancevalue,
-            ada.is_truant,
+            ed.student_number,
+            ed._dbt_source_project,
+            ed.academic_year,
+            ed.calendardate,
+            ed.week_start_monday,
 
             sch.location_key,
 
-            date(ada.academic_year, 7, 1) as year_start_date,
-        from {{ ref("int_students__attendance_daily") }} as ada
+            ada.attendancevalue,
+            ada.is_truant,
+
+            coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
+
+            date(ed.academic_year, 7, 1) as year_start_date,
+        from {{ ref("int_students__enrollment_days") }} as ed
         inner join
             {{ ref("int_students__schools") }} as sch
-            on ada.schoolid = sch.school_number
-            and ada._dbt_source_project = sch._dbt_source_project
-        where ada.calendardate <= current_date('{{ var("local_timezone") }}')
+            on ed.schoolid = sch.school_number
+            and ed._dbt_source_project = sch._dbt_source_project
+        left join
+            {{ ref("int_students__attendance_daily") }} as ada
+            on ed.student_number = ada.student_number
+            and ed._dbt_source_project = ada._dbt_source_project
+            and ed.calendardate = ada.calendardate
     ),
 
     spine as (
@@ -153,7 +163,7 @@ select
                 "period_start_date_key",
             ]
         )
-    }} as student_attendance_period_key,
+    }} as student_period_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
 
