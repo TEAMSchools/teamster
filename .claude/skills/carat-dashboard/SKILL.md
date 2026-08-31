@@ -172,6 +172,81 @@ grade 11. Use them as the template for any new grade-11 practice SAT. They have
 zero responses (created, never administered), so they are a format precedent
 only.
 
+## Procedure: Annual rollover
+
+The umbrella procedure at the start of a school year. It mostly delegates to the
+three procedures below; what it adds is the ORDER and the one failure mode that
+is silent. Background and the per-model var table are in the reference doc under
+_Annual rollover_.
+
+**Bumping the variable is the easy half and it is not the half that breaks.**
+`current_academic_year` in `src/dbt/kipptaf/dbt_project.yml` is updated each
+July and is network-wide, so it is rarely CARAT's to bump — assume it has
+already moved and that your job is the data side.
+
+### The silent failure
+
+The conversion-to-scaffold join is INNER on (`academic_year`, `scope`,
+`score_type`). **A year with no scaffold rows yields no practice output and
+raises no error.** This is the same defect class the practice rework removed
+from the old `act_scale_score_key` join, reintroduced annually by omission
+rather than by code. Nothing downstream complains.
+
+So the check that matters is not "did the models build" — they always do. It is
+"does the new year have rows".
+
+### Order of operations
+
+1. **Confirm Illuminate sessions exist for the new RAW year** (spring year —
+   2027 for SY26-27). Nothing below matters without them, and this is owned
+   outside the data team.
+
+   ```sql
+   select academic_year, count(*) as n_sessions
+   from `teamster-332318.kipptaf_illuminate.stg_illuminate__public__sessions`
+   group by 1
+   order by 1 desc
+   ```
+
+1. **Scaffold rows** — _Procedure: Add scaffold rows_. Do this BEFORE the
+   conversion rows: conversion bands with no scaffold row are dropped silently,
+   so scaffold-first means the gap query in that procedure reads correctly.
+1. **Conversion rows** — _Procedure: Add practice assessments for a new
+   administration_, which covers assessment derivation, the scale-score paste
+   and the audit.
+1. **Goals sheet rows** carrying the new `academic_year`.
+1. **Expected Assessments tab** — ONLY if the testing calendar moved, and then
+   regenerate the whole tab. _Procedure: Rebuild the Expected Assessments
+   seasons tab_ explains why a partial edit is silent.
+1. **Verify** with the two queries below.
+
+### Verify the rollover landed
+
+Practice output exists for the new year — the check the inner join defeats:
+
+```sql
+select academic_year, scope, test_type, count(*) as n_rows
+from `teamster-332318.kipptaf_assessments.int_assessments__college_assessment_practice`
+group by 1, 2, 3
+order by 1 desc, 2
+```
+
+Zero rows for the new year means a scaffold or conversion gap, not a model bug.
+Work back up _Procedure: Debug a practice score that isn't appearing_.
+
+Every reporting row carries ONE year — the defect the rollover work fixed, where
+production served attempts a year ahead of benchmarks:
+
+```sql
+select academic_year, expected_test_type, count(*) as n_rows
+from `teamster-332318.kipptaf_tableau.rpt_tableau__college_assessment_dashboard_current`
+group by 1, 2
+order by 1, 2
+```
+
+More than one `academic_year` means a branch is reading a different year from
+the rest.
+
 ## Procedure: Add practice assessments for a new administration
 
 ### Step 1 — get the assessments from the user
@@ -558,7 +633,7 @@ Official row, the `scope_round` on a Practice row (`SAT1`, `PSAT891`,
 `PSAT101`), and the season name on a growth row. Practice cannot bind on month:
 schools choose their own practice dates, so one administration straddles months
 — grade 9 runs 25 August to 23 September across four schools — and Foundation
-controls the Illuminate dates, so they cannot be normalised either.
+controls the Illuminate dates, so they cannot be normalized either.
 `scope_round` identifies the administration regardless of when a school ran it.
 
 Three consequences. `expected_months_included` reads `SAT1` rather than months
@@ -704,7 +779,7 @@ matching the tab's own polymorphic column.
 
 - **ACT is 12 of the 13**, about 4,240 students. `_roster_scores` has never
   covered the ACT and the sheet holds no ACT rows, so these are a standing scope
-  gap rather than anything a rebuild caused. Keep them labelled rather than
+  gap rather than anything a rebuild caused. Keep them labeled rather than
   filtered out, or a future decision to add the ACT will look like it already
   works.
 - **SAT Official July, 1 student** — the only real orphan, and immaterial.
@@ -1010,7 +1085,7 @@ guess. **Do not "correct" these to a topline value, and do not report them as a
 discrepancy against the strategy doc.** Ask KIPP Forward what the over-time goal
 should be.
 
-Three things this resolved, all previously listed here as unmodellable:
+Three things this resolved, all previously listed here as impossible to model:
 
 - **School year** is now `academic_year`, a real column.
 - **Thresholds left the goals sheet entirely.** They live on the scaffold as
@@ -1023,7 +1098,7 @@ Three things this resolved, all previously listed here as unmodellable:
 
 `int_google_sheets__kippfwd__goals_unpivot` joins goals to scaffold and is what
 consumers should read. Goal horizon (interim versus terminal for one cohort) is
-still unmodelled; every current row is AY2026.
+still unmodeled; every current row is AY2026.
 
 Declare `grade_level` and `cohort` as STRING in the source. The scaffold's
 `expected_grade_level` holds comma-separated lists, and INT64 would foreclose
@@ -1082,7 +1157,7 @@ BigLake connection that Sheets external tables use, so no new access has to be
 arranged — a different identity again from both the Drive MCP and ADC.
 
 Pin `sheet_range:` to the exact tab name. That is what makes a dbt source immune
-to a neighbouring `DO NOT USE THESE` tab. Note the shared-trigger cost: every
+to a neighboring `DO NOT USE THESE` tab. Note the shared-trigger cost: every
 Sheets source on one URI re-triggers together, so editing the goals tab also
 refreshes the conversion and scaffold tabs.
 
@@ -1295,6 +1370,68 @@ Work outward from the student, stopping at the first layer with zero rows.
   duplicated (the composite is built with `group by`, so ACT is 1:1 at 379 rows
   where production had 1,094). Both changes are documented in the reference
   doc's impact section.
+- **Pre-2017 SAT scores are on the 2400 scale while the thresholds are
+  1600-scale, so historical benchmark attainment is inflated.** The SAT was
+  redesigned in March 2016 (2400 to 1600); kippadb holds both eras under one
+  `sat_total_score` and every threshold here is 1600-scale. Grad years 2012-2017
+  contain totals above 1600 — max 1,840 in 2014, 2,000 in 2016 — which cannot
+  exist on the current test. 2018 onward is clean. Effect: grad 2014 reads
+  **68.4% College-Ready** against roughly 21% for current seniors. **No
+  conversion fixes it** — those years hold a MIX of both eras (averages near
+  1,250, ambiguous between scales), and a score value alone cannot say which era
+  it came from, so separating them needs test date against the redesign,
+  upstream of reporting. Predates the practice work, so it never appears as a
+  year-over-year change. Treat pre-2018 SAT benchmark attainment as unusable and
+  say so whenever it is quoted. ACT is unaffected, its 1-36 scale unchanged.
+  Bites hardest on `_over_time`, the one view built to show history.
+- **`benchmark_tier` is an EXCLUSIVE band; the `met_min_board_*` flags it
+  replaced were cumulative.** `HS Grad-Ready` counts only students between the
+  grad cut and the college cut, so a cumulative "at or above 890" figure needs
+  `College-Ready + HS Grad-Ready` summed. Grade 12 SAT: 80 + 99 = **179** (47%
+  of 380 test takers), where counting the band alone gives **99** (26%) — a
+  21-point understatement that looks plausible. The existing board worksheet is
+  safe (100% stacked bar, cumulative goal lines); the hazard is any new sheet.
+  Also note `benchmark_tier` is null when the student has no score, so it scopes
+  to test takers by construction.
+- **Board goals moved ~3 points, not sharply.** The published board view showed
+  CR 22% / NJ Grad Ready 42% last year and CR 22% / 45% this year, matching the
+  shared grade-12 goals. An earlier note in the reference doc claimed 0.25/0.28
+  and was wrong — it appears to have confused the NJ Grad Ready band value (25%)
+  with its cumulative target.
+- **`_current` has THREE subject columns and two hold identical values.**
+  `expected_subject_area` (goal side) and `subject_area` (score side) both read
+  `Combined` / `EBRW` / `Math`; only `expected_aligned_subject_area` uses
+  `Total`. **Always scope on `expected_aligned_subject_area = 'Total'`** —
+  `Total` exists only on the goal side, so it cannot resolve to the wrong
+  column, whereas `Combined` is ambiguous. Filtering the score-side copy
+  silently swaps the denominator from every enrolled student to only students
+  holding a score: SAT grade 11 drops 431 students to 21 (410 have a null
+  score-side `subject_area`) and `SAT 1+ Attempts` then reads a circular 100%.
+  Grade 12 barely moves, which is why the mistake survives review.
+- **A benchmark numerator larger than its denominator means subject areas are
+  blending.** Section and total rows share `expected_metric_name` and
+  `expected_metric_label`, so a consumer that does not scope subject area
+  averages Total + EBRW + Math over a 3x denominator. This shipped live on the
+  NJ sheet and reported two goal verdicts backwards — College-Ready as met at
+  24.6% when Total-only is 20.6% against a 22% goal, HS Grad-Ready as missed at
+  44.9% when Total-only is 46.0% against 45%. Attempts rows are immune (Total
+  only). See the reference doc's recorded defect.
+- **Section benchmarks have thresholds but no goals** —
+  `expected_metric_pct_goal` is null on all 2,102 section rows, every scope,
+  both test types. They are reference bars, so a section row appearing with a
+  goal means the goals sheet gained a row.
+- **Relaxing `expected_admin_season != 'Not Official'` is NOT needed, and would
+  now do harm.** The design spec listed it as a deliverable so practice
+  administrations could reach `_roster`. Practice reaches `_roster` anyway —
+  verified in production at 30 rows across 10 students — because the binding
+  that mattered turned out to be `expected_test_type` plus
+  `aligned_month_round`, not the season filter. The tab's `Not Official` rows
+  are a different thing entirely: 42 rows marking months where a test genuinely
+  happens at a grade but is deliberately not reported, carrying no order value.
+  Admitting them would surface administrations the dashboard is designed to
+  hide, and `int_tableau__college_assessment_roster_scores` avoids the hub's
+  `previous_score_change` precisely because that column chains them. Treat the
+  unchecked box on #4658 as stale, not as outstanding work.
 - **AY2023 grade 9-10 SAT is excluded on purpose — do not re-add it.** KIPP
   Forward ruled those administrations invalid (grades 9-10 should have sat PSAT,
   not a full SAT form). The exclusion lives in the scaffold sheet: all three
