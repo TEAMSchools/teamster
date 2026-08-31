@@ -309,10 +309,24 @@ def grow_user_sync(
         payload["observationGroups"] = observation_groups
 
         for key, role_name in admin_roles.items():
+            # Home-school membership, plus anyone whose reports sit at this
+            # school -- a leader covering two campuses belongs to both.
+            admins_here = {
+                u["user_id"] for u in school_users if role_name in u["role_names"]
+            }
+
+            for u in school_users:
+                manager = users_by_grow_id.get(u["coach_id"])
+
+                if manager is not None and role_name in manager["role_names"]:
+                    admins_here.add(manager["user_id"])
+
             payload[key] = [
-                {"_id": u["user_id"], "name": u["user_name"]}
-                for u in school_users
-                if role_name in u["role_names"]
+                {
+                    "_id": user_id,
+                    "name": users_by_grow_id[user_id]["user_name"],
+                }
+                for user_id in sorted(admins_here)
             ]
 
         try:
