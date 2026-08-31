@@ -41,6 +41,31 @@ models:
       rather than storing them by term).
     config:
       materialized: table
+      meta:
+        dagster:
+          # 1x/day instead of eager. Rebuilds 45.3 times a day at 1.458 GiB a
+          # build, 66.1 GiB/day. Eager buys freshness nothing reads: the only
+          # downstream mart is fct_grades_assignments, which appears in no cube
+          # file and no extract.
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here is a SIS-cutover tripwire: this model unions a
+          # PowerSchool branch and a Focus branch split by a year floor from
+          # int_students__sis_cutover, and a floor that drifts makes one Miami
+          # academic year emit from both. This model inherits the split from
+          # its parents rather than declaring it, so the test guards a join
+          # fan-out rather than the seam itself -- still a live guard on the
+          # boundary the SIS migration is actively moving. As a view it would
+          # fire only on code change, because the data-change condition
+          # re-materializes tables only. A daily tick keeps it firing.
+          #
+          # 0 4 matches the gradebook_and_gpa_dashboard batch these marts feed.
+          # All 4 leaves (category_grades, gradebook_assignments_scores, gpa,
+          # final_grades) share the tick, so ~any_deps_in_progress serializes
+          # the pass -- they are direct parent-child. The group costs about
+          # 8.7 GiB/day against 228.1 today. Refs #5082
+          automation_condition:
+            cron_schedule: 0 4 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

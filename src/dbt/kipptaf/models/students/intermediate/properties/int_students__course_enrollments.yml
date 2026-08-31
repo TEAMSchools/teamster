@@ -13,6 +13,35 @@ models:
       course-enrollment-grain source.
     config:
       materialized: table
+      meta:
+        dagster:
+          # 4x/day instead of eager. Rebuilds 44.3 times a day at 1.209 GiB a
+          # build, 53.6 GiB/day, on top of the churn it drives in its
+          # PowerSchool ancestors.
+          #
+          # Eager looks unavoidable from the DAG shape:
+          # base_powerschool__course_enrollments is a bare select * over this
+          # model, which puts it upstream of 184 models and 60 exposures,
+          # including the hourly ops_dashboard. Reachability is not dependency.
+          # There are only 2 routes to the intraday exposures. Route 1 runs
+          # through int_extracts__student_enrollments, which projects exactly 1
+          # spine-derived column -- is_sipps, an existence flag for course
+          # SEM01099G1 -- and rpt_tableau__ops_dashboard and
+          # rpt_tableau__attendance_dashboard both reference is_sipps zero
+          # times and carry no select * or dbt_utils.star, so neither depends
+          # on this model. Route 2 is rpt_tableau__assessment_dashboard refing
+          # the spine directly, and that one is a real dependency.
+          #
+          # So every genuine consumer is a batch exposure, not the hourly one:
+          # ddi_suite (0 1, 0 16 Fri, 0 18), literacy_dashboard (0 5), and
+          # apm_dashboard (0 6). The 4 ticks sit an hour ahead of each --
+          # 00:00 for ddi's 01:00, 04:00 for literacy's 05:00 and apm's 06:00,
+          # 15:00 for ddi's Friday 16:00, 17:00 for ddi's 18:00. This model
+          # and int_powerschool__course_enrollments_union, which shares the
+          # tick, cost about 9.4 GiB/day together against 81.1 today.
+          # Refs #5082
+          automation_condition:
+            cron_schedule: 0 0,4,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
