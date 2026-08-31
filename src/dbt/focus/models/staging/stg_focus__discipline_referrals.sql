@@ -14,7 +14,6 @@ select
     last_updated,
     suspension_begin,
     suspension_end,
-    suspension_length,
     attendance_code,
     attendance_day_id,
     attendance_period_id,
@@ -35,6 +34,8 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(suspension_length as numeric) as suspension_length,
 
     custom_10 as reason_for_referral,
     custom_51 as location,

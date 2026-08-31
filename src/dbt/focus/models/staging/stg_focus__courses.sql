@@ -21,10 +21,7 @@ select
     requests_subject,
     priority,
     description,
-    length,
     occurrences,
-    credit_hours,
-    course_hours,
     allow_repeat,
     homeroom,
     edfi_course_level_characteristic,
@@ -33,6 +30,10 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(course_hours as numeric) as course_hours,
+    cast(credit_hours as numeric) as credit_hours,
+    cast(length as numeric) as length,
 
     custom_4 as course_sequence,
     custom_2 as wdis_ocp_hours,

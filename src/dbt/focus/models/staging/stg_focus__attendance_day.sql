@@ -6,9 +6,6 @@ select
     marking_period_id,
     daily_code,
     daily_pres_code,
-    state_value,
-    minutes_present,
-    minutes_absent,
     time_in,
     time_out,
     comment,
@@ -22,4 +19,8 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(minutes_absent as numeric) as minutes_absent,
+    cast(minutes_present as numeric) as minutes_present,
+    cast(state_value as numeric) as state_value,
 from {{ source("focus", "attendance_day") }}
