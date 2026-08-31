@@ -153,7 +153,7 @@ def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
     ``Numeric(76, 38)`` maps to BigQuery BIGNUMERIC, not NUMERIC, so a dbt
     staging model over an affected table should ``cast(col as numeric)`` to keep
     contracts on NUMERIC. That retype requires a one-time reload of every
-    table: ``replace`` cannot change a column's type in place, so the 191
+    table: ``replace`` cannot change a column's type in place, so the
     already-loaded columns that reflect as unbounded ``numeric`` need
     recreating.
 
