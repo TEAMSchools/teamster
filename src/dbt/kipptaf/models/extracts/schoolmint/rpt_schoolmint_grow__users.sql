@@ -384,9 +384,15 @@ select
     surrogate_key_destination,
 from surrogate_keys
 where
-    /* create */
-    (inactive = 0 and user_id is null)
-    /* archive */
-    or (inactive = 1 and user_id is not null and archived_at is null)
-    /* update/reactivate */
-    or inactive = 0
+    /*
+        Only emit a row the sync can act on. A user with no roles and no Grow
+        account has nothing to create, update, or archive -- emitting them
+        would make the create branch open an empty account.
+    */
+    (array_length(role_ids) > 0 or user_id is not null)
+    and (
+        /* create, update, or reactivate */
+        inactive = 0
+        /* archive */
+        or (inactive = 1 and user_id is not null and archived_at is null)
+    )
