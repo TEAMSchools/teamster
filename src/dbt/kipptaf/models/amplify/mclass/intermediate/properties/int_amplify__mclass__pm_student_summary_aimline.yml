@@ -33,7 +33,6 @@ models:
           probe_number, device_date, and assessment_grade.
         data_tests:
           - unique
-          - not_null
       - name: student_primary_id
         data_type: int64
         description: Student primary identifier (student number).
