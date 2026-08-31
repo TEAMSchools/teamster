@@ -12,13 +12,11 @@ description: >-
 
 # DIBELS Dashboard
 
-Covers the whole DIBELS dashboard suite. **Currently documented below: the
-Bright Spots tracker / foundation goals retrofit (#4952)** -- benchmark-goal
-work, not PM/aimline. As the other tracks land, give each its own `##` section
-here rather than starting a separate skill:
+Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
+tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not
+PM/aimline -- and the PM/aimline migration (#3834). As the other tracks land,
+give each its own `##` section here rather than starting a separate skill:
 
-- **PM/aimline migration (#3834)** -- not yet documented here. Read the issue
-  directly until this section exists.
 - **Benchmark completion tracking (#4902)** -- not yet documented here.
 
 ## Bright Spots tracker / foundation goals (#4952)
@@ -443,3 +441,88 @@ for Newark and Camden grades K-5 -- none for grades 6-8, none for Paterson at
 all. A retrofit that shows `0` IEP rows for Paterson is correct. Cross-check row
 counts by `academic_year, population` against what the source tab actually
 contains before assuming a parsing bug.
+
+## PM/aimline migration (#3834)
+
+Full spec: issue #3834. Two distinct kinds of work live under this track -- easy
+to conflate, so keep them separate:
+
+1. **Seasonal rollover of Benchmark rows already in the sheet** -- adding
+   MOY/EOY for a year that only has BOY. Pure mechanical duplication, covered
+   below.
+2. **Entering actual PM round rows** -- the new SY26-27 per-region PM schedules
+   (round_number, cohort). `stg_google_sheets__dibels_expected_assessments` has
+   zero PM rows as of 2026-08-31 -- every row in it today is
+   `assessment_type = 'Benchmark'`. This needs new columns (`round_number`,
+   cohort) the sheet doesn't have yet -- see the issue's "Scaffolds and sheets"
+   checklist. Not covered by the script below.
+
+### Sheet identity
+
+Same workbook as the Bright Spots tabs above: spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`.
+`stg_google_sheets__dibels_expected_assessments` reads named range
+`src_google_sheets__dibels_expected_assessments` (single underscore -- no
+double-underscore trap here, only one range exists for this table), tab
+"Expected Assessments", 16 declared columns (`sources-external.yml` around line
+98), but only 13 are ever populated in practice -- `Assessment_Include`,
+`PM_Goal_Include`, `PM_Goal_Criteria` are blank on every row seen so far. The
+named range is NOT row-bounded (no `startRowIndex`/`endRowIndex` in its
+definition), so appending past the current last row is safe -- no truncation
+risk like the foundation_goals range above.
+
+### Benchmark seasonal rollover -- the process, since it repeats every year
+
+**Within one academic year, a benchmark season's rows differ from another
+season's ONLY in `Admin_Season`, `Test_Code`, and `Month_Round`.** Every other
+column (`Region`, `Grade`, `Measure_Standard`, ...) is identical, because the
+same measures get tested every round. Confirmed empirically: AY2026 had exactly
+192 BOY rows (48 x 4 regions) and zero MOY/EOY when this was checked
+(2026-08-31) -- T&L had entered BOY and stopped there.
+
+Generate the missing seasons by copying the existing season's rows and swapping
+those three fields -- `scripts/roll_forward_expected_assessments_season.py` does
+this against the LIVE sheet (Sheets API, read-only ADC) rather than BigQuery, so
+the output matches the sheet's own literal formatting byte-for-byte (e.g.
+`Grade` as the string `"0"`, not an int):
+
+```bash
+uv run --with google-api-python-client --with google-auth python3 \
+    .claude/skills/dibels-dashboard/scripts/roll_forward_expected_assessments_season.py \
+    --spreadsheet-id 15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs \
+    --tab "Expected Assessments" \
+    --academic-year 2026 \
+    --source-season BOY --source-test-code LIT1 \
+    --target MOY:LIT2:January \
+    --target EOY:LIT3:May \
+    --out out.tsv
+```
+
+**`Month_Round` is the real month for THIS year's window, not a copy-pasted
+historical label.** Checked against `stg_google_sheets__reporting__terms` (the
+actual per-region term dates) and against AY2024/AY2025 precedent already in the
+sheet: MOY has consistently been `"January"` in recent years even though the
+older AY2023 rows say `"February"` -- the district's testing calendar moved
+earlier since then. **EOY is `"May"` for every region, including Miami**, even
+though Miami's actual EOY window (from `reporting__terms`) starts April 26 --
+the sheet has never split this into an "April" label; don't introduce one
+without T&L asking for it.
+
+**`Test_Code` mapping**: `LIT1` = BOY, `LIT2` = MOY, `LIT3` = EOY. Confirmed
+against `reporting__terms`, which uses the same three codes with real date
+ranges per region/year.
+
+**No re-staging needed after pasting.** Unlike the foundation_goals column-set
+changes above, a seasonal rollover only adds rows to columns that already exist
+-- rebuild the staging model in dev
+(`dbt build --select stg_google_sheets__dibels_expected_assessments --target dev --defer --state <prod manifest>`)
+and query the rebuilt table to confirm row counts; no
+`stage_external_sources --ext_full_refresh` step needed.
+
+**A stray precedent, not yet chased down**: AY2025 has a handful of rows with
+`Test_Code` `LIT2`/`LIT3` but `Admin_Season` `BOY->MOY` and `Month_Round`
+`November`/`December` (21 rows each, Miami) -- these don't fit the BOY/MOY/EOY
+pattern above and look like an earlier, ad hoc attempt at PM-style rows riding
+on benchmark test codes. Flagged here rather than explained; don't treat them as
+a template for the real PM-round work (item 2 above) without asking T&L what
+they were for.
