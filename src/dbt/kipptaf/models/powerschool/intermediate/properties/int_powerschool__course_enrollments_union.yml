@@ -21,7 +21,7 @@ models:
           # Same tick as int_students__course_enrollments, which is its only
           # child. That model's genuine consumers are all batch exposures --
           # ddi_suite (0 1, 0 16 Fri, 0 18), literacy_dashboard (0 5),
-          # apm_dashboard (0 6) -- and the 4 ticks sit an hour ahead of each.
+          # apm_dashboard (0 6) -- and each tick precedes its consumer.
           # Sharing the tick means ~any_deps_in_progress serializes the pass:
           # this model builds first, its child follows in the same run. The
           # pair costs about 9.4 GiB/day against 81.1 today.

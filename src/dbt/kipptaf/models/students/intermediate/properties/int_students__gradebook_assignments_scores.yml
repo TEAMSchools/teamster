@@ -46,7 +46,9 @@ models:
           # 1x/day instead of eager. Rebuilds 45.3 times a day at 1.458 GiB a
           # build, 66.1 GiB/day. Eager buys freshness nothing reads: the only
           # downstream mart is fct_grades_assignments, which appears in no cube
-          # file and no extract.
+          # file and no extract. The cube_semantic_layer exposure does list it,
+          # but no file under src/cube/model/ reads it, so that entry
+          # overstates consumption.
           #
           # Not a view, even though the intermediate layer permits it. The
           # uniqueness test here is a SIS-cutover tripwire: this model unions a

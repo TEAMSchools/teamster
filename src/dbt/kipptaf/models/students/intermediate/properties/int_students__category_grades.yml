@@ -48,7 +48,9 @@ models:
           # daily BigQuery spend. Eager buys freshness nothing reads: the only
           # downstream mart is fct_grades_category, which appears in no cube
           # file and no extract, so those rebuilds produce a table nobody
-          # queries.
+          # queries. The cube_semantic_layer exposure does list it, but no file
+          # under src/cube/model/ reads it, so that entry overstates
+          # consumption.
           #
           # Not a view, even though the intermediate layer permits it. The
           # uniqueness test here is a SIS-cutover tripwire: this model unions a

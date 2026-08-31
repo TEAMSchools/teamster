@@ -37,7 +37,9 @@ models:
           # 44/day churn in stg_powerschool__pgfinalgrades and 51.3/day in
           # base_powerschool__final_grades, both kippnewark. Eager buys
           # freshness nothing reads: the only downstream mart is
-          # fct_grades_term, which appears in no cube file and no extract.
+          # fct_grades_term, which appears in no cube file and no extract. The
+          # cube_semantic_layer exposure does list it, but no file under
+          # src/cube/model/ reads it, so that entry overstates consumption.
           #
           # Not a view, even though the intermediate layer permits it. The
           # uniqueness test here is the SIS-cutover tripwire. The PowerSchool

@@ -57,7 +57,9 @@ models:
           # 69.7/day churn in snapshot_powerschool__gpa_term and 73.7/day in
           # snapshot_powerschool__gpa_cumulative. Eager buys freshness nothing
           # reads: the only downstream mart is fct_grades_gpa, which appears in
-          # no cube file and no extract.
+          # no cube file and no extract. The cube_semantic_layer exposure does
+          # list it, but no file under src/cube/model/ reads it, so that entry
+          # overstates consumption.
           #
           # Not a view, even though the intermediate layer permits it. The
           # uniqueness test here is the SIS-cutover tripwire. The PowerSchool

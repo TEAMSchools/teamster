@@ -34,7 +34,7 @@ models:
           #
           # So every genuine consumer is a batch exposure, not the hourly one:
           # ddi_suite (0 1, 0 16 Fri, 0 18), literacy_dashboard (0 5), and
-          # apm_dashboard (0 6). The 4 ticks sit an hour ahead of each --
+          # apm_dashboard (0 6). Each tick precedes its consumer --
           # 00:00 for ddi's 01:00, 04:00 for literacy's 05:00 and apm's 06:00,
           # 15:00 for ddi's Friday 16:00, 17:00 for ddi's 18:00. This model
           # and int_powerschool__course_enrollments_union, which shares the
