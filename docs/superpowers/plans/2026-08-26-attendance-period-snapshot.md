@@ -1700,9 +1700,19 @@ This task produces a decision, not code.
 ## Open items carried out of this plan
 
 - The New Jersey 45-day chronic absence figure (#5015).
-- Pre-aggregations. At under 750K rows they may not be needed. Measure the new
-  view against the Cube MCP's 55 second poll deadline before deciding; the
-  legacy path measured 51.6s, inside that band.
+- Pre-aggregations. RESOLVED, not needed — measured 2026-08-31. The fact holds
+  3.62M rows (week 2.77M, month 767K, year 84K across 16 academic years), and
+  every query filters `period_type`, so the worst grain is the only one that
+  matters. A week-grain query over three academic years, joined to `dim_dates`,
+  `dim_locations` and `dim_regions` with three `count_distinct` measures, ran
+  **1.27s** cold — 0.36 GiB, 9.1 slot-seconds, no cache hit. That is 43x inside
+  the Cube MCP's 55 second poll deadline, against the legacy path's 51.6s. The
+  earlier "under 750K rows" rationale was wrong twice over: the real total is
+  3.62M, and 767K is coincidentally the month grain rather than the model.
+  Adding a pre-aggregation would buy nothing and re-enter the #4460 blast radius
+  (an unbounded partitioned pre-agg enumerated ~8,000 empty yearly partitions on
+  prod redeploy, because `dim_dates` runs to 9999 — reverted in #4462, bounded
+  in #4463).
 - The KIPP Foundation tier-boundary question: their criteria call Tier 1 and
   Tier 2 on track at 90 percent and above, while defining chronic absence as at
   or below 90.0 percent. We resolve it by starting Tier 2 strictly above 90.0

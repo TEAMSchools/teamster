@@ -492,10 +492,15 @@ days on a multiple of 10, which is where an exact 9/10 ratio occurs.
 
 - The New Jersey 45-day figure
   ([#5015](https://github.com/TEAMSchools/teamster/issues/5015)).
-- Pre-aggregations. The real size is 3.6M rows, not the under-750K estimate an
-  earlier draft used for this section — whether they're needed stays a genuinely
-  open question that row count alone doesn't settle; measure first. The 55
-  second MCP deadline issue is real but separate.
+- Pre-aggregations. Measured 2026-08-31 and the answer is no. 3.62M rows, but
+  every query filters `period_type`, so the effective scan is 2.77M at week
+  grain, 767K at month, 84K at year. A cold week-grain query over three academic
+  years with the three dim joins and three `count_distinct` measures ran 1.27s,
+  0.36 GiB, 9.1 slot-seconds — 43x inside the 55 second MCP deadline the legacy
+  path nearly breached at 51.6s. Materializing the accumulation in dbt is what
+  bought this; there is no view re-expansion and no query-time window function
+  left to optimize. A pre-agg would add the #4460 unbounded-partition risk for
+  no gain.
 
 ## Open question for KIPP Foundation
 
