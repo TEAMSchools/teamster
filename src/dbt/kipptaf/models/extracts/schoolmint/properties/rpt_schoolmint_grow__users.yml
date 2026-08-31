@@ -22,7 +22,7 @@ models:
             expression: "'Sub Admin' not in unnest(role_names)"
       - dbt_utils.expression_is_true:
           arguments:
-            expression: >
+            expression: |
               'Regional Admin' not in unnest(role_names) or
               array_length(regional_admin_school_ids) > 0
     columns:
@@ -35,9 +35,15 @@ models:
       - name: user_name
         data_type: string
         description: Display name (`given_name || ' ' || family_name_1`).
+        config:
+          meta:
+            contains_pii: true
       - name: user_email
         data_type: string
         description: ADP Google Workspace email. Sent as Grow `email`.
+        config:
+          meta:
+            contains_pii: true
       - name: inactive
         data_type: int64
         description: >
@@ -86,9 +92,15 @@ models:
       - name: user_email_ws
         data_type: string
         description: Current `email` on the Grow user (destination side).
+        config:
+          meta:
+            contains_pii: true
       - name: user_name_ws
         data_type: string
         description: Current `name` on the Grow user (destination side).
+        config:
+          meta:
+            contains_pii: true
       - name: school_id_ws
         data_type: string
         description: Current `defaultInformation.school` on the Grow user.

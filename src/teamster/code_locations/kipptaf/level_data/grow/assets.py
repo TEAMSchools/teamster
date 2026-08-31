@@ -258,9 +258,21 @@ def grow_user_sync(
             g["_id"]: g["name"] for g in school["observationGroups"]
         }
 
-        school_observers = sorted(
-            {u["user_id"] for u in school_users if "observers" in u["group_type"]}
-        )
+        # Home-school membership, plus any manager of a report at this school
+        # who is themselves observer-capable -- mirrors the admin lists' reach
+        # so a leader covering a satellite campus can observe its coachless
+        # teachers there too.
+        school_observers_set = {
+            u["user_id"] for u in school_users if "observers" in u["group_type"]
+        }
+
+        for u in school_users:
+            manager = users_by_grow_id.get(u["coach_id"])
+
+            if manager is not None and _can_anchor_group(manager):
+                school_observers_set.add(manager["user_id"])
+
+        school_observers = sorted(school_observers_set)
 
         # Route every observee to their coach's group, or to the fallback.
         by_coach: dict[str, list[str]] = {}
@@ -344,7 +356,11 @@ def grow_user_sync(
             for u in school_users:
                 manager = users_by_grow_id.get(u["coach_id"])
 
-                if manager is not None and role_name in manager["role_names"]:
+                if (
+                    manager is not None
+                    and manager["inactive"] == 0
+                    and role_name in manager["role_names"]
+                ):
                     admins_here.add(manager["user_id"])
 
             payload[key] = [

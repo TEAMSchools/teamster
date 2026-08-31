@@ -152,7 +152,7 @@ with
             array_agg(gs.school_id order by gs.school_id) as school_ids,
         from people as p
         inner join
-            grow_schools as gs on (p.tier = 'Chief Level' or gs.region = p.region)
+            grow_schools as gs on (p.tier = 'Chief Level' or p.region = gs.region)
         where 'Regional Admin' in unnest(p.role_names)
         group by p.user_internal_id
     ),
