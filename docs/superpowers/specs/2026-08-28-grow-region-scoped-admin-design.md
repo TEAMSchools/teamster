@@ -432,9 +432,14 @@ group.
 
 Name is the only stable key available, so it must be deterministic and survive a
 person being renamed. Coach group names take the form
-`Coach {employee_number} - {display name}`, and matching is done on the
-`Coach {employee_number}` prefix alone. A display-name change therefore rewrites
-the label without breaking the match.
+`{display name} ({employee_number})`. Matching is not parsed back out of the
+string — the sync passes an explicit `match_key` alongside each wanted name, and
+for a coach group that key is the parenthesised employee number,
+`({employee_number})`. The opening paren is load-bearing: without it, employee
+`1675` would match a group belonging to employee `101675`, since `"...101675)"`
+ends with `"1675)"`. A group with no `match_key`, such as `Teachers`, gets no
+fallback match, so a hand-made group can never be claimed by accident. A
+display-name change therefore rewrites the label without breaking the match.
 
 ### School coverage fixes
 

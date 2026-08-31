@@ -72,28 +72,31 @@ observations = build_grow_asset(
 
 
 def _match_observation_group(
-    name: str, existing_by_id: dict[str, str], claimed: set[str]
+    name: str,
+    match_key: str | None,
+    existing_by_id: dict[str, str],
+    claimed: set[str],
 ) -> str | None:
-    """Find an unclaimed existing group id for this name.
+    """Find an unclaimed existing group id for this wanted group.
 
-    Prefers an exact name match, then falls back to the
-    ``Coach {employee_number} - `` prefix so a renamed coach keeps their
-    group's id.
+    Prefers an exact name match. Falls back to ``match_key``, a stable
+    substring that survives a display-name change -- for a coach group that is
+    the parenthesised employee number. A group with no ``match_key``, such as
+    Teachers, gets no fallback, so a hand-made group can never be claimed by
+    accident.
     """
     for group_id, group_name in existing_by_id.items():
         if group_id not in claimed and group_name == name:
             return group_id
 
-    if not name.startswith("Coach "):
+    if match_key is None:
         return None
-
-    prefix = name.split(" - ")[0] + " - "
 
     return next(
         (
             group_id
             for group_id, group_name in existing_by_id.items()
-            if group_id not in claimed and group_name.startswith(prefix)
+            if group_id not in claimed and group_name.endswith(match_key)
         ),
         None,
     )
@@ -295,32 +298,39 @@ def grow_user_sync(
                 by_coach.setdefault(coach_id, []).append(u["user_id"])
 
         def coach_group_name(coach: dict[str, Any]) -> str:
-            # The employee-number prefix is the match key, so a display-name
-            # change relabels the group without breaking its identity.
-            return f"Coach {coach['user_internal_id']} - {coach['user_name']}"
+            return f"{coach['user_name']} ({coach['user_internal_id']})"
 
         wanted: dict[str, dict[str, Any]] = {
             # Teachers survives as the fallback for observees with no coach.
             "Teachers": {"observees": uncoached, "observers": school_observers}
         }
+        # Parenthesised employee number, so a display-name change relabels
+        # the group without breaking its identity. None (e.g. Teachers) gets
+        # no fallback match. Kept separate from `wanted` so it never leaks
+        # into the payload sent to the Grow API.
+        match_keys: dict[str, str | None] = {"Teachers": None}
 
         for coach_id, observee_ids in by_coach.items():
             coach = users_by_grow_id[coach_id]
+            name = coach_group_name(coach)
 
-            wanted[coach_group_name(coach)] = {
+            wanted[name] = {
                 "observees": observee_ids,
                 "observers": [coach_id],
             }
+            match_keys[name] = f"({coach['user_internal_id']})"
 
         observation_groups = []
         claimed: set[str] = set()
 
-        # Match by the "Coach <employee_number>" prefix so a renamed coach
-        # keeps their group's _id. Skips already-claimed ids so two wanted
-        # groups can never resolve to the same existing group.
+        # Match on the explicit match key so a renamed coach keeps their
+        # group's _id. Skips already-claimed ids so two wanted groups can
+        # never resolve to the same existing group.
         for name, members in wanted.items():
             group: dict[str, Any] = {"name": name, **members}
-            group_id = _match_observation_group(name, existing_by_id, claimed)
+            group_id = _match_observation_group(
+                name, match_keys[name], existing_by_id, claimed
+            )
 
             if group_id is not None:
                 group["_id"] = group_id

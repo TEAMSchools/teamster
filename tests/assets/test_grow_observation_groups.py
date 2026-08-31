@@ -13,47 +13,69 @@ from teamster.code_locations.kipptaf.level_data.grow.assets import (
 
 
 def test_match_observation_group_exact_name_match() -> None:
-    existing_by_id = {"g1": "Teachers", "g2": "Coach 123 - Jane Doe"}
+    existing_by_id = {"g1": "Teachers", "g2": "Jane Doe (123)"}
 
-    assert _match_observation_group("Teachers", existing_by_id, claimed=set()) == "g1"
+    assert (
+        _match_observation_group("Teachers", None, existing_by_id, claimed=set())
+        == "g1"
+    )
 
 
-def test_match_observation_group_falls_back_to_coach_prefix() -> None:
-    """A renamed coach keeps their group's id via the employee-number prefix."""
-    existing_by_id = {"g1": "Coach 123 - Jane Doe"}
+def test_match_observation_group_falls_back_to_match_key() -> None:
+    """A renamed coach keeps their group's id via the parenthesised employee number."""
+    existing_by_id = {"g1": "Jane Doe (123)"}
 
-    # Display name changed from "Jane Doe" to "Jane Smith", but the wanted
-    # name still carries the same "Coach 123 - " prefix.
+    # Display name changed from "Jane Doe" to "Jane Smith", but the match key
+    # still carries the same "(123)" employee number.
     result = _match_observation_group(
-        "Coach 123 - Jane Smith", existing_by_id, claimed=set()
+        "Jane Smith (123)", "(123)", existing_by_id, claimed=set()
     )
 
     assert result == "g1"
 
 
-def test_match_observation_group_no_fallback_for_non_coach_name() -> None:
-    """ "Teachers" must not fall back into a same-prefixed "Teachers - ..." group."""
+def test_match_observation_group_no_fallback_for_none_match_key() -> None:
+    """ "Teachers" must not fall back into a same-suffixed "Teachers - Grade 5" group."""
     existing_by_id = {"g1": "Teachers - Grade 5"}
 
-    assert _match_observation_group("Teachers", existing_by_id, claimed=set()) is None
+    assert (
+        _match_observation_group("Teachers", None, existing_by_id, claimed=set())
+        is None
+    )
 
 
 def test_match_observation_group_skips_claimed_ids() -> None:
-    existing_by_id = {"g1": "Coach 123 - Jane Doe"}
+    existing_by_id = {"g1": "Jane Doe (123)"}
 
     result = _match_observation_group(
-        "Coach 123 - Jane Smith", existing_by_id, claimed={"g1"}
+        "Jane Smith (123)", "(123)", existing_by_id, claimed={"g1"}
     )
 
     assert result is None
 
 
 def test_match_observation_group_returns_none_when_nothing_matches() -> None:
-    existing_by_id = {"g1": "Coach 123 - Jane Doe"}
+    existing_by_id = {"g1": "Jane Doe (123)"}
 
     assert (
-        _match_observation_group("Coach 456 - John Roe", existing_by_id, set()) is None
+        _match_observation_group("John Roe (456)", "(456)", existing_by_id, set())
+        is None
     )
+
+
+def test_match_observation_group_short_employee_number_does_not_match_longer() -> None:
+    """Employee 1675 must not match a group belonging to employee 101675.
+
+    Without the opening paren in the match key, "...101675)" would end with
+    "1675)" and falsely match.
+    """
+    existing_by_id = {"g1": "Denn Farquharson (101675)"}
+
+    result = _match_observation_group(
+        "New Coach (1675)", "(1675)", existing_by_id, claimed=set()
+    )
+
+    assert result is None
 
 
 def _user(**overrides: Any) -> dict[str, Any]:
