@@ -377,34 +377,26 @@ exported surface is `driverFactory`, `contextToGroups`, `checkAuth`,
 
 ## Semi-additive / period-end snapshot measures
 
-Period-end values (chronic absence, ADA tier, truancy rate, enrollment headcount
-as of a period) are no longer computed by a query-time anchor injected in
-`cube.js` — that mechanism (`queryRewrite`, `SNAPSHOT_CUBES`,
-`SNAPSHOT_MEASURE_STEMS`, `SNAPSHOT_ANCHOR_OVERRIDES`) was retired. Each
-period-end value is now materialized in dbt at period grain instead:
-`fct_student_periods`, read via `student_periods_view` filtering its
-`period_type` dimension (`year` / `month` / `week`), for chronic absence / ADA
-tier / truancy. Cube's job is just to filter to the right row — no query-time
-computation of the anchor.
+Period-end values (chronic absence, ADA tier, truancy rate) are materialized in
+dbt at period grain, never computed at query time. `cube.js` has no
+`queryRewrite` hook and there is no anchor injection to reason about. Each value
+is a row in `fct_student_periods`, read via `student_periods_view` filtering its
+`period_type` dimension (`year` / `month` / `week`). Cube filters to the right
+row and computes nothing.
 
-**There are no anchor dimensions or `_year_end` / `_month_end` / `_week_end`
-measures left anywhere.** `is_current_record`, `is_month_end_record`,
-`is_week_end_record`, `is_enrollment_month_end_record`,
-`is_enrollment_week_end_record` and the `count_students_year_end` family were
-all deleted, along with the `student_enrollments` cube and
-`student_enrollments_view`. Point-in-time enrollment headcount is a **pinned
-date** on `student_days_view` instead — the fact carries a row for every
-enrolled calendar day, break days included, so any date resolves. Pin
-`attendance_date`, not `dates_date_day` (see the partition-pruning rule below).
+**Point-in-time enrollment headcount is a pinned date on `student_days_view`.**
+The fact carries a row for every enrolled calendar day, break days included, so
+any date resolves — no anchor flag, and none available. Pin `attendance_date`,
+not `dates_date_day` (see the partition-pruning rule above).
 
 Query-time **window functions** over the daily fact were measured and do not
 scale: multi-stage `rank` timed out past 150s, and scoping to one month did not
 help, which is what proved the cost structural rather than volume. A plain
-additive aggregate by academic year ran 14.3s; the retired anchor-flag path was
-no better — `_year_end` over 3 academic years ran 38.4s and `_week_end` over one
-ran 51.6s, inside the Cube MCP server's 55-second poll deadline — the same
-failure [#4333](https://github.com/TEAMSchools/teamster/issues/4333) fixed for
-the assessment cubes.
+additive aggregate by academic year ran 14.3s. Any query-time period-end
+computation on this fact lands within a factor of the Cube MCP server's
+55-second poll deadline — the same failure
+[#4333](https://github.com/TEAMSchools/teamster/issues/4333) fixed for the
+assessment cubes. Precompute in dbt instead.
 
 **Multi-stage WITHOUT a window is a different story and is viable.**
 `add_group_by` + `reduce_by` compiles to a two-level GROUP BY (no window
@@ -703,9 +695,7 @@ exercise it; a plain dev server silently default-denies every gated view.
   range.** It is unanchored and seasonal-safe — the fact carries a row for every
   enrolled calendar day including breaks, so it returns real numbers year-round
   and a 0 can only mean a scope denial. That is the query
-  `scripts/cube_rls_matrix.py` ships as its default. (The old seasonal
-  `count_students_year_end` / `_month_end` / `_week_end` measures, which read 0
-  off-season and made a benign matrix run ambiguous, no longer exist.)
+  `scripts/cube_rls_matrix.py` ships as its default.
 
 ## School weeks vs ISO weeks
 
