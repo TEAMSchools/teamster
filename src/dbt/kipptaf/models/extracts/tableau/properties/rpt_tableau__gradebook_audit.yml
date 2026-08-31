@@ -56,6 +56,9 @@ models:
       - name: school
         data_type: string
         description: School abbreviation.
+      - name: school_name
+        data_type: string
+        description: Full school name (e.g., 'KIPP Rise Academy').
       - name: course_number
         data_type: string
         description: PowerSchool course number.
@@ -161,6 +164,16 @@ models:
         description: >
           Actual count of assignments entered for this category, regardless of
           flag status. Populated on row_type = 'category_summary' rows only.
+      - name: assignments_entered_count_no_flags
+        data_type: int64
+        description: >
+          Count of assignments entered for this category that pass every
+          assignment validity check, i.e. the assignments that actually count
+          toward the category expectation. This is the number
+          not_enough_assignments compares against expectation, so it is always
+          less than or equal to assignments_entered_count. Exposed so the
+          dashboard can display a count that agrees with the flag beside it.
+          Populated on row_type = 'category_summary' rows only.
       - name: not_enough_assignments
         data_type: boolean
         description: >

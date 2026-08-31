@@ -59,6 +59,40 @@ with
         where rn_year = 1
     ),
 
+    -- Focus's stand-in for PowerSchool's "Out of District" special-program
+    -- row (#5041). custom_863, the IDEA educational environment, is the only
+    -- Focus field recording a placement at another institution, and its age
+    -- 6-21 options are exactly PowerSchool's out-of-district set. Florida's
+    -- age 3-5 options are excluded: Miami enrolls no pre-K, so classifying
+    -- them would assert a rule nothing has reviewed --
+    -- test_focus__idea_educational_environment_classified warns if one lands.
+    -- Derived in its own CTE because BigQuery has no lateral column aliases,
+    -- so the four columns below cannot share an alias computed beside them.
+    focus_students as (
+        select
+            _dbt_source_project,
+            ethnicity,
+            gender,
+            gifted_and_talented,
+            homeless_code,
+            homeless_primary_nighttime_residence_code,
+            idea_educational_environment,
+            idea_educational_environment_label,
+            is_homeless,
+            lep_status,
+            lunchstatus,
+            spedlep,
+            state_studentnumber,
+            student_number,
+
+            if(
+                idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),
+                true,
+                false
+            ) as is_out_of_district,
+        from {{ ref("int_focus__students") }}
+    ),
+
     focus_conformed as (
         select
             enr._dbt_source_relation,
@@ -80,9 +114,7 @@ with
             enr.is_enrolled_mar15,
             enr.dob,
             enr.state,
-            enr.school_level,
             enr.school_abbreviation,
-            enr.reporting_schoolid,
 
             stu.spedlep,
             stu.lep_status,
@@ -108,7 +140,6 @@ with
             enr.student_last_name as last_name,
             enr.student_name as lastfirst,
             enr.school as school_name,
-            enr.school as reporting_school_name,
             enr.network_student_number as student_number,
 
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
@@ -131,14 +162,34 @@ with
                 else false
             end as is_enrolled_recent,
 
-            -- #4996. False rather than null: reporting_schoolid and
-            -- school_level above already carry non-OD values for every Miami
-            -- row, and PowerSchool reads this flag off that same specprog row.
-            -- is_self_contained has no such twin, so it stays null (#4968).
-            false as is_out_of_district,
+            -- #4996, #5041. PowerSchool drives these four columns off one
+            -- "Out of District" specprog row, so Focus branches all four on
+            -- the same custom_863 match. reporting_schoolid takes the Focus
+            -- option id, the analogue of PowerSchool's specprog programid --
+            -- a hospital or a center school has no Florida school number. The
+            -- if() form is null-safe on both counts: a roster row with no
+            -- matching student, and a student with no custom_863 value, both
+            -- fall to the in-district branch. Every Miami row is Z or null
+            -- today, so all four still resolve to the in-district values.
+            -- is_self_contained has no such source and stays null (#4968).
+            if(stu.is_out_of_district, true, false) as is_out_of_district,
+
+            if(
+                stu.is_out_of_district,
+                stu.idea_educational_environment,
+                enr.reporting_schoolid
+            ) as reporting_schoolid,
+
+            if(
+                stu.is_out_of_district,
+                stu.idea_educational_environment_label,
+                enr.school
+            ) as reporting_school_name,
+
+            if(stu.is_out_of_district, 'OD', enr.school_level) as school_level,
         from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
-            {{ ref("int_focus__students") }} as stu
+            focus_students as stu
             on enr.network_student_number = stu.student_number
             and enr._dbt_source_project = stu._dbt_source_project
         left join
@@ -220,7 +271,6 @@ with
     ),
 
     powerschool_conformed as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 

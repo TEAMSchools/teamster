@@ -4,21 +4,15 @@ models:
       Category-level grade fact table. One row per student x section enrollment
       x term x category type (storecode + storecode_type). Contains percent
       grade by category, citizenship grade, and running year-to-date average.
-      Categories are the grade reporting breakdowns within a term (e.g., quarter
-      grades vs exam grades). FK to dim_student_section_enrollments and
-      dim_terms.
-
-
-      PowerSchool only. Miami is absent from AY2026 forward, and repointing this
-      model's join keys would not change that, because the source itself has no
-      Focus branch. int_powerschool__category_grades unions the district
-      PowerSchool packages, and Miami left that package when it moved to Focus,
-      so its archive stops at AY2025 -- 255,668 rows for AY2025 and zero for
-      AY2026, measured against prod. Focus report-card and gradebook grades
-      exist in the focus package but have no kipptaf wrapper. Wiring that branch
-      is tracked in #5010, and was ruled out of #4995 on measurement. cc_yearid
-      and cc_abs_sectionid, this model's other two join keys, are likewise null
-      on all 19,350 Miami AY2026 rows.
+      Categories are the gradebook categories within a term -- storecode_type is
+      Q for the quarter-overall grade and H, W, F, S for Homework, Work Habits,
+      Formative and Summative. Sourced from int_students__category_grades, which
+      unions the PowerSchool districts with a Focus branch computed from Miami's
+      gradebook scores, since Focus posts no category grade of its own. The
+      Focus branch emits H, W, F and S only; Miami's quarter-overall grade
+      reaches the marts through fct_grades_term. citizenship_grade and
+      percent_grade_ytd_running are null on every Miami row -- Focus has
+      neither. FK to dim_student_section_enrollments and dim_terms.
     columns:
       - name: grades_category_key
         data_type: string
@@ -72,7 +66,9 @@ models:
         quote: true
         data_type: string
         description: >-
-          Type code distinguishing quarter grades (Q) from exam grades (E).
+          Gradebook category type code: Q for the quarter-overall grade, or H,
+          W, F, S for Homework, Work Habits, Formative, and Summative
+          categories.
 
       - name: order
         quote: true
