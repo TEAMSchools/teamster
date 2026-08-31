@@ -7,7 +7,6 @@ select
     short_name,
     subject_code,
     subject,
-    sort_order,
     score_types,
     transcript,
     min_scale_score,
@@ -17,4 +16,6 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "test_history_parts") }}

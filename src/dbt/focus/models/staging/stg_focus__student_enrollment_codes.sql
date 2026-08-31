@@ -9,9 +9,10 @@ select
     profile_ids,
     gradelevels,
     grad_type,
-    sort_order,
     uuid,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "student_enrollment_codes") }}
 where deleted is null
