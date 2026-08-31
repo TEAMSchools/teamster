@@ -103,9 +103,6 @@ with
             and e.enroll_status = 0
             and e.grade_level >= 5
             and e.region != 'Miami'
-            -- Paterson is MS-only; gate so future HS grades do not silently
-            -- enter the credits-based rules below untested
-            and (e.region != 'Paterson' or e.school_level = 'MS')
     )
 
 select

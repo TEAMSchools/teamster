@@ -50,4 +50,3 @@ where
     and e.enroll_status = 0
     and not e.is_out_of_district
     and e.region != 'Miami'
-    and (e.region != 'Paterson' or e.school_level = 'MS')
