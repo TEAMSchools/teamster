@@ -12,14 +12,33 @@ models:
 
       Eligibility (is_ca_eligible) is cumulative from the start of the academic
       year, so early periods carry a much smaller eligible count than later ones
-      — this is expected, not broken data. Example: 2025-08 measured 1,317
-      eligible against 10,513 total enrollments network-wide (12.5%), while the
-      chronic-absence rate itself barely moved (19.49% to 18.53%). All three
+      — this is expected, not broken data. Example: by August 31 of AY2025, the
+      maximum membership days any student had reached was 8, so zero students
+      were CA-eligible that month — August has no chronic-absence rate at all,
+      not a small one — while 9,174 student-school pairs already had at least
+      one attendance day. Cumulative through September 30, eligible reached
+      9,236 against 9,381 student-school pairs with any attendance day (17.8%);
+      through October 31, eligible reached 9,328 (18.3%). All three
       reconciliation authorities define eligibility this way, and KIPP
       Foundation chronic-absence criteria item 1 already requires the
       eligible-student count to be shown beside the rate — display it alongside
       any rate derived from this fact, especially for the first weeks or first
       month of an academic year.
+
+      AY2025 and earlier cover Camden, Newark, and Paterson only — Miami is
+      present starting AY2026. Miami migrated from PowerSchool to Focus, and
+      Focus re-dated 959 of Miami's AY2025 enrollment stints, leaving 153,577
+      fact rows pointed at enrollment records dim_student_enrollments no longer
+      holds; re-keying from Focus dates was measured and rejected, so the frozen
+      PowerSchool attendance archive was dropped rather than kept misaligned
+      (#4803). This is the accepted outcome of the Focus cutover, not missing
+      data.
+
+      Paterson's attendance_value is unreliable — an upstream PowerSchool
+      conversion-items gap (#4193) — so every measure this fact derives from
+      presence (n_present_days_ytd, ada_tier, is_chronically_absent, and
+      truancy) understates Paterson's rates. membership_value is clean, so
+      n_membership_days_ytd and is_ca_eligible are unaffected.
 
       Mid-year leavers are included by design — a student who withdraws mid-year
       still accumulates through their last membership day and counts in the year
@@ -173,7 +192,10 @@ models:
           int_students__attendance_daily on that same date. Regional truancy
           criteria (Miami: 15 or more absences in a 90-day window; the NJ
           regions: a projected 50 or more for the year) are computed upstream
-          and carried through unchanged here.
+          and carried through unchanged here. Cube's truancy measures built on
+          this column additionally filter to is_ca_eligible — the
+          chronic-absence membership-day floor — which neither regional truancy
+          rule requires on its own.
 
       - name: is_ca_eligible
         data_type: boolean

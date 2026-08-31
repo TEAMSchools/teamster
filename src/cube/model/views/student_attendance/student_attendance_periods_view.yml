@@ -20,14 +20,24 @@ views:
 
       Eligibility (count_students) is cumulative from the start of the academic
       year, so early periods carry a much smaller denominator than later ones —
-      this is expected, not broken data. Example: 2025-08 measured 1,317
-      eligible against 10,513 total enrollments network-wide (12.5%), while
-      pct_chronically_absent itself barely moved (19.49% to 18.53%). All three
+      this is expected, not broken data. Example: by August 31 of AY2025, the
+      maximum membership days any student had reached was 8, so zero students
+      were CA-eligible that month — August has no chronic-absence rate at all,
+      not a small one. Cumulative through September 30, eligible reached 9,236
+      against 9,381 student-school pairs with any attendance day (17.8%);
+      through October 31, eligible reached 9,328 (18.3%). All three
       reconciliation authorities define eligibility this way, and KIPP
       Foundation chronic-absence criteria item 1 already requires the
       eligible-student count to be shown beside the rate — always display
       count_students alongside any rate measure on this view, and especially so
       for the first weeks or first month of an academic year.
+
+      Miami attendance is present only from AY2026 forward, the accepted result
+      of the Focus cutover — see fct_student_attendance_periods for why.
+      Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
+      truancy) are understated by a known upstream PowerSchool gap (#4193);
+      count_students is unaffected — see fct_student_attendance_periods for
+      detail.
 
     cubes:
       - join_path: student_attendance_periods
