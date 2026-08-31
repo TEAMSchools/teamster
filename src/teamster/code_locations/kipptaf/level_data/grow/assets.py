@@ -71,6 +71,31 @@ observations = build_grow_asset(
 )
 
 
+def _match_observation_group(
+    name: str, existing_by_id: dict[str, str], claimed: set[str]
+) -> str | None:
+    """Find an unclaimed existing group id for this name.
+
+    Prefers an exact name match, then falls back to the
+    ``Coach {employee_number} - `` prefix so a renamed coach keeps their
+    group's id.
+    """
+    for group_id, group_name in existing_by_id.items():
+        if group_id not in claimed and group_name == name:
+            return group_id
+
+    prefix = name.split(" - ")[0] + " - "
+
+    return next(
+        (
+            group_id
+            for group_id, group_name in existing_by_id.items()
+            if group_id not in claimed and group_name.startswith(prefix)
+        ),
+        None,
+    )
+
+
 @asset(
     key=[*key_prefix, "user_sync"],
     deps=[AssetKey(["kipptaf", "extracts", "rpt_schoolmint_grow__users"])],
@@ -261,28 +286,9 @@ def grow_user_sync(
         # Match by the "Coach <employee_number>" prefix so a renamed coach
         # keeps their group's _id. Skips already-claimed ids so two wanted
         # groups can never resolve to the same existing group.
-        def match_existing(name: str) -> str | None:
-            for group_id, group_name in existing_by_id.items():
-                if group_id in claimed:
-                    continue
-
-                if group_name == name:
-                    return group_id
-
-            prefix = name.split(" - ")[0] + " - "
-
-            return next(
-                (
-                    group_id
-                    for group_id, group_name in existing_by_id.items()
-                    if group_id not in claimed and group_name.startswith(prefix)
-                ),
-                None,
-            )
-
         for name, members in wanted.items():
             group: dict[str, Any] = {"name": name, **members}
-            group_id = match_existing(name)
+            group_id = _match_observation_group(name, existing_by_id, claimed)
 
             if group_id is not None:
                 group["_id"] = group_id
