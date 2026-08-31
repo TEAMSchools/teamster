@@ -16,9 +16,6 @@ select
     created_at,
     updated_at,
 
-    cast(custom_l1482 as numeric) as powerschool_id,
-    cast(custom_l1483 as numeric) as disis_id,
-
     custom_53 as local_student_id,
     custom_100000101 as race_asian,
     custom_200000000 as sex,
@@ -73,5 +70,8 @@ select
     custom_660 as basis_of_entry,
     custom_661 as first_basis_of_exit,
     custom_200000001 as single_ethnicity,
+
+    cast(custom_l1482 as numeric) as powerschool_id,
+    cast(custom_l1483 as numeric) as disis_id,
 from {{ source("focus", "students") }}
 where deleted is null

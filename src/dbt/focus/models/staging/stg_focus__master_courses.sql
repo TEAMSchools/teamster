@@ -51,12 +51,6 @@ select
     custom_field_3 as core_for_class_size,
     custom_field_4 as core_for_highly_qualified,
     custom_field_11,
-
-    cast(allow_repeat as numeric) as allow_repeat,
-    cast(course_hours as numeric) as course_hours,
-    cast(credit_hours as numeric) as credit_hours,
-    cast(credits as numeric) as credits,
-    cast(total_credit as numeric) as total_credit,
     custom_field_5 as fefp,
     custom_field_2 as aice,
     custom_field_13 as dual_enrollment_indicator,
@@ -64,4 +58,10 @@ select
     custom_field_14 as eoc_exam_required,
     custom_field_10 as vocational_program_number,
     custom_field_1 as exclude_from_fte,
+
+    cast(allow_repeat as numeric) as allow_repeat,
+    cast(course_hours as numeric) as course_hours,
+    cast(credit_hours as numeric) as credit_hours,
+    cast(credits as numeric) as credits,
+    cast(total_credit as numeric) as total_credit,
 from {{ source("focus", "master_courses") }}

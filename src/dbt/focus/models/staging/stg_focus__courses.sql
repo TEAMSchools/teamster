@@ -31,12 +31,12 @@ select
     created_at,
     updated_at,
 
-    cast(course_hours as numeric) as course_hours,
-    cast(credit_hours as numeric) as credit_hours,
-    cast(length as numeric) as length,
-
     custom_4 as course_sequence,
     custom_2 as wdis_ocp_hours,
     custom_3 as ocp,
     custom_10 as cape,
+
+    cast(course_hours as numeric) as course_hours,
+    cast(credit_hours as numeric) as credit_hours,
+    cast(length as numeric) as length,
 from {{ source("focus", "courses") }}

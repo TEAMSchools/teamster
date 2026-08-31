@@ -35,8 +35,6 @@ select
     created_at,
     updated_at,
 
-    cast(suspension_length as numeric) as suspension_length,
-
     custom_10 as reason_for_referral,
     custom_51 as location,
     custom_52 as discipline_code,
@@ -52,4 +50,6 @@ select
     custom_83 as referral_number,
     custom_200000020 as school_related_arrests,
     custom_200000021 as zero_tolerance_expulsion,
+
+    cast(suspension_length as numeric) as suspension_length,
 from {{ source("focus", "discipline_referrals") }}

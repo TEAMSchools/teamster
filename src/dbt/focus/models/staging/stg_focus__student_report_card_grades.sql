@@ -17,17 +17,17 @@ select
     created_at,
     updated_at,
 
-    cast(credits as numeric) as credits,
-    cast(credits_earned as numeric) as credits_earned,
-    cast(gpa_points as numeric) as gpa_points,
-    cast(percent_grade as numeric) as percent_grade,
-    cast(weighted_gpa_points as numeric) as weighted_gpa_points,
-
     custom_1 as course_flag_1,
     custom_2 as course_flag_2,
     custom_5 as district_number,
     custom_6 as school_number,
     custom_7 as grade_level,
+
+    cast(credits as numeric) as credits,
+    cast(credits_earned as numeric) as credits_earned,
+    cast(gpa_points as numeric) as gpa_points,
+    cast(percent_grade as numeric) as percent_grade,
+    cast(weighted_gpa_points as numeric) as weighted_gpa_points,
 
     -- Focus stores this FK as a string here (`int64` everywhere else) and
     -- prefixes live postings with a grade-type token: DT is the running
