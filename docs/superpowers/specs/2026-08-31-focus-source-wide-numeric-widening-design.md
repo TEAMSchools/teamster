@@ -31,9 +31,23 @@ widening retypes the column to BigQuery BIGNUMERIC, and the `replace` write
 disposition cannot retype a column in place, so an already-loaded table must be
 dropped and reloaded.
 
+That last claim is now measured, not quoted. Merging #5075 moved the failure
+from extract to load and left the sync down for another 34 minutes:
+
+```text
+400 Provided Schema does not match Table
+teamster-332318:dagster_kippmiami_dlt_focus.gradebook_grades.
+Field points has changed type from NUMERIC to BIGNUMERIC
+```
+
+One manual run over `gradebook_grades` alone, with run config
+`refresh: drop_resources`, cleared it in 18 seconds and loaded 6,855 rows. The
+reload in this design is therefore mandatory, and its mechanics are proven on a
+real table.
+
 ## Measurement
 
-### 191 columns across 45 tables can still fail
+### 189 columns across 44 tables can still fail
 
 dlt stores its full reflected schema in
 `dagster_kippmiami_dlt_focus._dlt_version.schema`. Reading the newest row,
@@ -63,21 +77,25 @@ So a widened column carries 38 decimal places in the raw table and 9 everywhere
 a dashboard or a person can see it. Widening buys crash-avoidance. It buys no
 extra precision downstream.
 
-### 96 of the 191 columns need a cast
+### 94 of the 191 columns need a cast
 
 A column needs `cast(<col> as numeric)` only if a staging model projects it.
 
 |                                                 | count |
 | ----------------------------------------------- | ----- |
 | unbounded columns                               | 191   |
-| projected by a staging model, so needing a cast | 96    |
-| staging models to edit                          | 41    |
+| projected by a staging model, so needing a cast | 94    |
+| staging models to edit                          | 40    |
 | casts on aliased projections                    | 5     |
 
-The 95 unprojected columns still become BIGNUMERIC in BigQuery, harmlessly. They
-are mostly `custom_*` fields on `students`, `users`, and `schools`, plus the
-`length_*` family on `school_periods` and the `min_score*` and `max_score*`
-families on `test_history_score_types`.
+The remaining 95 columns are projected by no staging model. They still become
+BIGNUMERIC in BigQuery, harmlessly. They are mostly `custom_*` fields on
+`students`, `users`, and `schools`, plus the `length_*` family on
+`school_periods` and the `min_score*` and `max_score*` families on
+`test_history_score_types`.
+
+The 3 numbers reconcile as 94 to cast, plus 2 already cast on
+`gradebook_grades`, plus 95 unprojected, totalling 191.
 
 The 5 aliased projections look like
 `custom_200000002 as experience_length_years` in `stg_focus__users.sql` and
@@ -133,7 +151,7 @@ it does. Only its docstring is wrong, because it says "for tables that opt into
 numeric widening". The `Float` guard gains a comment recording that it now
 covers all 79 tables.
 
-### The 96 casts
+### The 94 casts
 
 Each cast follows the shape already used by
 `stg_focus__student_gpa_calculated.sql`: plain column references first, a blank
@@ -147,7 +165,7 @@ line, then the casts, then `from`. Each cast carries an explicit alias.
 from {{ source("focus", "gradebook_grades") }}
 ```
 
-Generate the edits with a script rather than by hand across 41 files. The script
+Generate the edits with a script rather than by hand across 40 files. The script
 must assert that each anchor matches exactly once and abort otherwise.
 
 No `.yml` properties file changes. Every affected column already declares
@@ -203,8 +221,10 @@ reload is small enough to repeat if it goes wrong.
 
 A missed cast breaks a contract, which fails CI. It does not corrupt data.
 
-The [#5075](https://github.com/TEAMSchools/teamster/pull/5075) fix adds 2 of the
-96 casts, on `gradebook_grades`. If it merges first, this work carries 94.
+The [#5075](https://github.com/TEAMSchools/teamster/pull/5075) fix merged
+2026-08-31 at 15:11 UTC and already carries 2 of the casts, on
+`gradebook_grades`. Its manual reload already retyped that table, so 44 tables
+remain rather than 45. The 94 above excludes both its casts.
 
 ## Out of scope
 
