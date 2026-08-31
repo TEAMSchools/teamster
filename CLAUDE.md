@@ -608,6 +608,16 @@ exploration that led nowhere (keep only the conclusion).
   action Claude will make differently because of the line. If you can't name
   one, cut it, even when the line is concise and non-obvious.
 
+- **When a change deletes something, delete the text about it — do NOT add text
+  saying it was deleted.** A tombstone ("`X` was retired", "there is no longer a
+  `Y`") reads like it passes the necessity test and does not: the decision it
+  guards against can't arise once nothing surfaces the name. Add the negative
+  only when a live pointer survives — a doc, an agent-facing file, or a logged
+  behavior that still reaches for it — and then point at the replacement, not at
+  the corpse. Retirement history belongs in the commit message and the diff.
+  Repeat offense: this file's own predecessors carried tombstones for
+  `queryRewrite` / `SNAPSHOT_CUBES` and for three deleted anchor measures.
+
 - **Where a new line goes**: if it is specific to one MCP server's behavior, put
   it in `.claude/context/<server>.md` (auto-injected on first use of that
   server). If it is specific to one directory, put it in that directory's

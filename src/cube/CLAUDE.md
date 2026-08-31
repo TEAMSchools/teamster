@@ -126,6 +126,14 @@ school_calendars) go in `cubes/conformed/`.
 - **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
   `description:`, not `meta.usage` / `meta.synonyms` / etc. — those land in
   `/v1/meta` but Cube Cloud and the chat agent don't read them.
+- **A `description:` states what the member means and where to go instead —
+  never what a member used to be.** These strings reach the chat agent and
+  analysts through `/v1/meta`, so a reference to a deleted member sends a caller
+  at nothing; deleting a member means deleting every description that names it,
+  not annotating them as retired. Twice now a deletion has shipped with
+  `meta`-visible descriptions still pointing at removed members
+  (`count_students_year_end`, the anchor dimensions) — after a member removal,
+  `grep -rn '<member>' model/` and clear every hit, including the ones in prose.
 - **Measure grain: query-time vs pre-agg.** At query time Cube recomputes every
   measure fresh at the requested grain — including `count_distinct` (a valid
   distinct count at any grain). A description's "non-additive" note is a
