@@ -22,7 +22,6 @@ from teamster.code_locations.kippnewark import (
     overgrad,
     pearson,
     powerschool,
-    renlearn,
     titan,
 )
 from teamster.code_locations.kippnewark.resources import (
@@ -39,7 +38,6 @@ from teamster.core.resources import (
     SSH_COUCHDROP,
     SSH_EDPLAN,
     SSH_IREADY,
-    SSH_RENLEARN,
     SSH_RESOURCE_AMPLIFY,
     SSH_TITAN,
     get_dbt_cli_resource,
@@ -65,7 +63,6 @@ defs = Definitions(
                 overgrad,
                 pearson,
                 powerschool,
-                renlearn,
                 titan,
             ]
         ),
@@ -84,7 +81,6 @@ defs = Definitions(
         *edplan.sensors,
         *iready.sensors,
         *powerschool.sensors,
-        *renlearn.sensors,
         *titan.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
@@ -110,7 +106,6 @@ defs = Definitions(
         "ssh_iready": SSH_IREADY,
         "ssh_parentsquare": SSH_RESOURCE_PARENTSQUARE,
         "ssh_powerschool": get_powerschool_ssh_resource(),
-        "ssh_renlearn": SSH_RENLEARN,
         "ssh_titan": SSH_TITAN,
     },
 )
