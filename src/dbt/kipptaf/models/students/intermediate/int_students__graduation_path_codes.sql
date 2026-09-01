@@ -14,7 +14,7 @@ with
             e.discipline,
             e.powerschool_credittype,
             e.met_fafsa_requirement as has_fafsa,
-            /* this is not their final code, but it is used to calculate their final
+            /* this is not their final code, but it is used to calculate their final 
             code */
             e.ps_grad_path_code,
 
@@ -27,7 +27,7 @@ with
 
             if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
 
-            /* this is the date we start holding 11th graders accountable to
+            /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
@@ -251,7 +251,7 @@ with
     ),
 
     unpivot_calcs as (
-        /* determining if any of the scores for the score_type (if it exists) met the
+        /* determining if any of the scores for the score_type (if it exists) met the 
         pathway option */
         select
             _dbt_source_relation,
@@ -261,7 +261,7 @@ with
             attempted_njgpa_ela,
             attempted_njgpa_math,
 
-            /* taking the njgpa at least once is a requirement to consider other
+            /* taking the njgpa at least once is a requirement to consider other 
             pathways */
             case
                 when discipline = 'ELA' and attempted_njgpa_ela
@@ -312,7 +312,7 @@ with
             and u.discipline = s.discipline
     ),
 
-    /* calculating if the student met the discipline overall, regardless of how
+    /* calculating if the student met the discipline overall, regardless of how 
         they  did it, assuming they took the njgpa */
     met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
