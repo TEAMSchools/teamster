@@ -27,19 +27,12 @@ with
             cast(test_performance_level as numeric) as test_performance_level,
             cast(test_scale_score as numeric) as test_scale_score,
 
-            /* Cambium sends this entirely null where Pearson set it to 1.
-               Carried through explicitly rather than omitted so the vendor
-               difference is visible in the contract instead of appearing
-               downstream as a union_relations null-fill artifact. The single
-               consumer coalesces it -- see the design spec, decision D2. */
             cast(test_score_complete as numeric) as test_score_complete,
 
             cast(left(assessment_year, 4) as int) as academic_year,
 
-            /* MMDDYYYYHHMM. safe_cast to timestamp returns NULL on this format;
-               parse_datetime with an explicit format is required. This is the
-               ONLY test-date source for Mathematics rows -- the unit-level
-               timestamps below are populated for ELA only. */
+            /* MMDDYYYYHHMM. safe_cast to timestamp returns NULL on this
+               format, so an explicit parse_datetime format is required. */
             safe.parse_datetime(
                 '%m%d%Y%H%M', assessmentsessionactualstartdatetime
             ) as session_start_datetime,
@@ -89,17 +82,8 @@ with
 select
     * except (earliest_test_start_timestamp, session_start_datetime),
 
-    /* Unit start wins where it exists, which preserves ELA behavior exactly;
-       the session fallback fills Mathematics, whose unit timestamps are ALL
-       null (verified: 0 of 282 Newark and 0 of 124 Camden MATGP rows carry any
-       unit start). Without the coalesce, test_date is null on 406 of 813 rows,
-       int_assessments__resolved_section_enrollments filters them out, and the
-       enrollment-scoped fact inner-joins that model -- so every Cambium math
-       score would silently never reach the fact, with all tests still green.
-       The two sources agree on the calendar date for all 407 rows where both
-       exist, so the coalesce order has no observable effect on today's data;
-       unit-start-first is kept because it matches the Pearson model and is
-       the more precise source. */
+    /* Unit start wins where present, preserving ELA behavior; the session
+       fallback fills Mathematics, whose unit timestamps are all null. */
     coalesce(
         date(earliest_test_start_timestamp), date(session_start_datetime)
     ) as test_date,

@@ -115,13 +115,8 @@ with
     ),
 
     -- grain projection, not dup-masking
-    -- Cambium TIDE took over NJGPA reporting with the Spring 2026
-    -- administration. Required, not cosmetic: the administration key hashes
-    -- academic_year and administration_period, and academic year 2025 with
-    -- period Spring exists only in Cambium (Pearson's 2025 holds only Fall).
-    -- Without this CTE the FK on
-    -- fct_assessment_scores_enrollment_scoped.assessment_administration_key
-    -- orphans every Cambium score.
+    -- required: AY2025 Spring exists only in Cambium, so without this CTE every
+    -- Cambium score orphans on the assessment_administration_key FK
     state_nj_njgpa_cambium_administrations as (
         select distinct
             subject_area,

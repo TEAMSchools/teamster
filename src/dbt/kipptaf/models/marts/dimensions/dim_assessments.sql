@@ -122,11 +122,8 @@ with
     ),
 
     -- grain projection, not dup-masking
-    -- Not strictly required: assessment_key hashes (assessment_type,
-    -- module_code, source_assessment_id, test_type), which excludes grade
-    -- level and academic year, so these rows dedup into the Pearson NJGPA
-    -- rows and hash identically. Included so the dimension does not depend on
-    -- Pearson history remaining in place forever.
+    -- not strictly required -- these rows hash identically to the Pearson NJGPA
+    -- rows -- but kept so this dimension does not depend on Pearson history
     state_nj_njgpa_cambium as (
         select distinct
             subject_area,

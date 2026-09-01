@@ -14,7 +14,7 @@ with
             e.discipline,
             e.powerschool_credittype,
             e.met_fafsa_requirement as has_fafsa,
-            /* this is not their final code, but it is used to calculate their final 
+            /* this is not their final code, but it is used to calculate their final
             code */
             e.ps_grad_path_code,
 
@@ -27,7 +27,7 @@ with
 
             if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
 
-            /* this is the date we start holding 11th graders accountable to 
+            /* this is the date we start holding 11th graders accountable to
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
@@ -84,13 +84,9 @@ with
             on s.student_number = n.localstudentidentifier
             and s.discipline = n.discipline
         where
-            -- Cambium reports test_score_complete as null where Pearson set it
-            -- to 1 on every row surviving the summative + attemptedness filter
-            -- (verified 4,130 of 4,130), so this predicate is already a no-op
-            -- for Pearson and would silently exclude ALL Cambium NJGPA scores
-            -- without treating null as complete. Kept rather than deleted so a
-            -- future vendor that genuinely reports incompleteness is still
-            -- filtered.
+            -- Cambium reports this null where Pearson always set it to 1, so
+            -- the predicate is a no-op for Pearson; null must count as complete
+            -- or every Cambium score is silently excluded.
             (n.testscorecomplete is null or n.testscorecomplete = 1)
             and n.assessment_name = 'NJGPA'
             and n.testcode in ('ELAGP', 'MATGP')
@@ -255,7 +251,7 @@ with
     ),
 
     unpivot_calcs as (
-        /* determining if any of the scores for the score_type (if it exists) met the 
+        /* determining if any of the scores for the score_type (if it exists) met the
         pathway option */
         select
             _dbt_source_relation,
@@ -265,7 +261,7 @@ with
             attempted_njgpa_ela,
             attempted_njgpa_math,
 
-            /* taking the njgpa at least once is a requirement to consider other 
+            /* taking the njgpa at least once is a requirement to consider other
             pathways */
             case
                 when discipline = 'ELA' and attempted_njgpa_ela
@@ -316,7 +312,7 @@ with
             and u.discipline = s.discipline
     ),
 
-    /* calculating if the student met the discipline overall, regardless of how 
+    /* calculating if the student met the discipline overall, regardless of how
         they  did it, assuming they took the njgpa */
     met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
