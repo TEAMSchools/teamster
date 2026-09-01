@@ -95,12 +95,10 @@ def test_iready_remote_file_regex_uses_current_regex_for_the_rename_year_and_onw
 
     `2026` is FY2027, the first year with the new filenames, but it will not
     always be the newest partition — next July it is archived while still
-    carrying the new names. If era selection were ever re-coupled to
-    "Current_Year" / "is this the last partition" instead of `is_legacy_year`,
-    this call (which only ever sees the academic year, never partition
-    recency) would keep returning the correct answer and this test would still
-    catch a regression made anywhere else, because the function's only input
-    is the academic year itself.
+    carrying the new names. This only exercises `iready_remote_file_regex`
+    itself; it cannot catch a caller that re-derives the era from partition
+    recency instead of calling `is_legacy_year`, since the function's only
+    input is the academic year, never partition recency.
     """
     result = iready_remote_file_regex(
         remote_file_regex=CURRENT_REGEX,

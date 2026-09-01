@@ -88,6 +88,7 @@ def build_sftp_file_asset(
         metadata={
             "remote_dir_regex": remote_dir_regex,
             "remote_file_regex": remote_file_regex,
+            "legacy_remote_file_regex": legacy_remote_file_regex or "",
         },
         required_resource_keys={ssh_resource_key},
         io_manager_key="io_manager_gcs_avro",
