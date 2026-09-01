@@ -256,6 +256,7 @@ class Incident(BaseModel):
     IsReferral: bool | None = None
     Location: str | None = None
     LocationID: str | None = None
+    NonDisciplinary: bool | None = None
     ReportedDetails: str | None = None
     ReportingIncidentID: str | None = None
     ReturnPeriod: str | None = None
