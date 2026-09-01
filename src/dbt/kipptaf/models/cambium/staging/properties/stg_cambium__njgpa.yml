@@ -87,6 +87,7 @@ models:
           - accepted_values:
               arguments:
                 values: [11]
+                quote: false
               config:
                 severity: error
       - name: testscorecomplete
