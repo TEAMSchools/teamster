@@ -104,17 +104,3 @@ cubes:
         sql: is_retained_year
         type: boolean
         public: true
-
-    measures:
-      - name: count_enrollments
-        description: >-
-          Count of enrollment records (stints), NOT a student headcount —
-          count_distinct on student_enrollment_key. Alumni-inclusive and spans
-          all academic years (a multi-stint student counts once per stint; a
-          graduate retains a placeholder stint per year). For a distinct student
-          headcount use student_days_view.count_students — leave the date open
-          for ever-enrolled over a range, or pin attendance_date to one date for
-          a point-in-time as-of figure.
-        sql: student_enrollment_key
-        type: count_distinct
-        public: true

@@ -4,14 +4,11 @@ cubes:
     sql_table: kipptaf_marts.fct_student_periods
 
     joins:
-      # Join on the raw DATE key, not a time dimension — Cube wraps time
-      # dimensions in the query-timezone conversion (convertTz) inside join
-      # predicates, which breaks the equality against the unconverted
-      # fact-side date under any non-UTC timezone (#4298).
-      - name: dates
-        sql: "{dates.date_key} = {CUBE}.period_end_date_key"
-        relationship: many_to_one
-
+      # No dates join. dim_dates describes a single day, and a period row spans
+      # many -- a join on period_end_date_key would only ever describe the last
+      # one, which is misleading at year grain and redundant at month and week.
+      # period_start_date and period_end_date are native time dimensions
+      # instead, so Cube applies its own granularities with no calendar join.
       - name: terms
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
