@@ -34,6 +34,12 @@ models:
           exists so a novel fall token Cambium has never sent fails the build
           loudly instead of flowing through unnormalized and quietly forking a
           second Fall series downstream.
+
+          The value list mirrors ADMINISTRATIONS in each region's
+          cambium/assets.py exactly. Those are the only tokens the filename
+          regex matches, so they are the only values that can reach this column;
+          a token in one list and not the other fails the build on a file the
+          pipeline handled correctly.
         data_tests:
           # accepted_values passes NULLs, so not_null is required alongside it
           - not_null:
@@ -41,7 +47,7 @@ models:
                 severity: error
           - accepted_values:
               arguments:
-                values: [Spring, Fall, FallBlock]
+                values: [Spring, Fall, FALL, FallBlock]
               config:
                 severity: error
       - name: administration_period
