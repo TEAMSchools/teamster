@@ -180,6 +180,65 @@ cubes:
         type: boolean
         public: true
 
+      - name: n_membership_days_ytd
+        description: >-
+          Membership days accumulated from the start of the academic year at
+          this school, through and including this date. Counts only days with a
+          recorded attendance value, so a day whose register was never taken
+          raises neither this nor n_present_days_ytd. Unchanged across break
+          days, because a break day contributes zero -- so this resolves on a
+          weekend or a holiday with the value from the last school day.
+        sql: n_membership_days_ytd
+        type: number
+        public: true
+
+      - name: n_present_days_ytd
+        description: >-
+          Attendance accumulated from the start of the academic year at this
+          school, through and including this date, over the same days
+          n_membership_days_ytd counts. Divide by n_membership_days_ytd for one
+          student's cumulative ADA as of this date. That is a per-student figure
+          -- for a population ADA over a date range use avg_daily_attendance,
+          which sums both sides over the slice and is not the same number.
+        sql: n_present_days_ytd
+        type: number
+        public: true
+
+      - name: is_ca_eligible
+        description: >-
+          Whether the student has reached 10 cumulative membership days at this
+          school, the KIPP Foundation chronic-absence eligibility floor. Early
+          in an academic year most rows are false. Every rate below is scoped to
+          this, and count_students_min_10_days must be shown beside any of them.
+        sql: is_ca_eligible
+        type: boolean
+        public: true
+
+      - name: ada_tier
+        description: >-
+          Cumulative ADA band as of this date. Tier 1 at 95% and above, Tier 2
+          strictly above 90.0%, Tier 3 from 80% through 90.0% inclusive, Tier 4
+          below 80%. Null when the student has no membership days yet.
+
+          Exactly 90.0% is Tier 3, and therefore chronically absent. Evaluated
+          on accumulated counts cross-multiplied against each other, never on an
+          averaged float. Computed once in fct_student_days;
+          student_periods_view reads the same column at period end rather than
+          recomputing it, so the two views cannot disagree.
+        sql: ada_tier
+        type: string
+        public: true
+
+      - name: is_chronically_absent
+        description: >-
+          Whether ada_tier is Tier 3 or Tier 4 as of this date. Derived from
+          ada_tier, never recomputed, so the flag and the tier cannot drift
+          apart. Read it with is_ca_eligible -- a student below the
+          10-membership-day floor still carries a tier.
+        sql: is_chronically_absent
+        type: boolean
+        public: true
+
     measures:
       - name: count_students
         description: >-
@@ -301,3 +360,83 @@ cubes:
         public: true
         filters:
           - sql: "{CUBE}.membership_value > 0"
+
+      # Pin attendance_date for every measure below. Each one counts students
+      # whose cumulative position crossed a line, and the fact re-stamps that
+      # position on every day -- so over an open date range these count students
+      # who crossed on ANY day in the range, which runs high and is almost never
+      # the question. Pinned to one date they are a true point-in-time rate, and
+      # they answer it on a weekend or a holiday too, because the cumulative
+      # columns carry across break days.
+      #
+      # student_periods_view answers the same questions at year, month and week
+      # end without a pinned date, off the same columns. Use that for a trend.
+
+      - name: count_students_min_10_days
+        description: >-
+          Students who have reached 10 cumulative membership days at that school
+          as of the pinned date -- the chronic-absence eligibility floor, and
+          the denominator for pct_chronically_absent. Pin attendance_date.
+          Display it beside any rate on this view, especially early in an
+          academic year when eligibility is still accumulating and it runs far
+          below count_students.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_ca_eligible"
+
+      - name: count_chronically_absent
+        description: >-
+          Eligible students at Tier 3 or Tier 4 as of the pinned date. Pin
+          attendance_date. Counted per school, so a student who changed schools
+          is counted once per school against that school's own cumulative
+          position.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_ca_eligible"
+          - sql: "{CUBE}.is_chronically_absent"
+
+      - name: pct_chronically_absent
+        description: >-
+          Share of eligible students at Tier 3 or Tier 4 as of the pinned date.
+          Denominator is count_students_min_10_days, so a student below the
+          10-membership-day floor is excluded from both sides. Pin
+          attendance_date, and show count_students_min_10_days beside this.
+        sql: >-
+          1.0 * {count_chronically_absent} /
+          NULLIF({count_students_min_10_days}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: count_truants
+        description: >-
+          Students meeting regional truancy criteria as of the pinned date.
+          Miami: 15+ absences in a 90-day rolling window. NJ regions: projected
+          absences reach 50+ for the year. Pin attendance_date.
+
+          No eligibility floor. Neither regional rule requires a minimum
+          membership-day count, so any such floor belongs inside the fact's
+          is_truant rather than in this measure or its denominator. Miami's rule
+          is self-limiting -- 15 absences implies at least 15 membership days --
+          while the NJ projection can fire in a student's first days, so early
+          in an academic year this runs high.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_truant"
+
+      - name: pct_truant
+        description: >-
+          Share of students meeting regional truancy criteria as of the pinned
+          date. Denominator is count_students -- every student enrolled on that
+          date, with no eligibility floor on either side, because truancy has no
+          eligibility concept in either regional rule. Pin attendance_date.
+        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
+        public: true
