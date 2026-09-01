@@ -130,8 +130,10 @@ select
         )
     }} as student_period_key,
 
-    {{ dbt_utils.generate_surrogate_key(["pp.student_number"]) }} as student_key,
-
+    -- student_key is not projected. It was neither a hash input nor read by
+    -- anything, and dim_student_enrollments carries its own FK to dim_students,
+    -- so declaring it here gave this fact two routes to the same dim. Reach the
+    -- student by traversing student_enrollment_key, as fct_student_days does.
     -- Read from the period-end row, so every enrollment attribute reached
     -- through it -- grade level, IEP and ELL status, homeroom teacher -- is the
     -- one that applied as of period end, matching every other value here. The

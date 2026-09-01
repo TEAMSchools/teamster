@@ -182,11 +182,6 @@ views:
             - is_truant
         - name: Chronic Absence and Truancy
           members:
-            - count_students_min_10_days
-            - count_chronically_absent
-            - pct_chronically_absent
-            - count_truants
-            - pct_truant
             - ada_tier
             - is_chronically_absent
             - is_ca_eligible

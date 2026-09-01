@@ -366,17 +366,18 @@ erDiagram
 
 ```mermaid
 erDiagram
-  fct_student_periods }o--|| dim_students : "student_key"
+  fct_student_periods }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
 ```
 
 ### Foreign keys
 
-| FK column               | References      |
-| ----------------------- | --------------- |
-| `location_key`          | `dim_locations` |
-| `period_end_date_key`   | `dim_dates`     |
-| `period_start_date_key` | `dim_dates`     |
-| `student_key`           | `dim_students`  |
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `period_end_date_key`    | `dim_dates`               |
+| `period_start_date_key`  | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
 
 ## fct_support_tickets
 
