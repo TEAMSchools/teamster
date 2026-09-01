@@ -987,6 +987,25 @@ the year it is attempted. Plan for this dependency when scheduling the rollover.
 sheets, the PM data model will produce no rows for the new year — no error, just
 missing data.
 
+### Step 2b — Add `PLIT` rows for K-2 only (if the aimline model holds)
+
+Under the aimline design, K-2 and grades 3-8 need different PM rollover
+treatment in `stg_google_sheets__reporting__terms`:
+
+- **K-2 keeps the in-house PM goal calculation**, which requires `PLIT` rows
+  (the school-day counting that feeds the collective-average growth-rate math —
+  see _Assessment calendar_ above). Roll these over every year for K-2 alongside
+  the `LIT` rows from Step 2.
+- **Grades 3-8 use Amplify's aimline-provided goal-setting calculation**
+  directly and do **not** need `PLIT` rows at all — only `LIT` rows for round
+  dates.
+
+!!! note "Open: how to calculate PLIT date ranges is not yet documented here"
+`PLIT` window dates are currently derived by hand each year (see the
+day-counting purpose above), and that calculation method itself hasn't been
+written down in this doc or the `dibels-dashboard` skill. Get this taught and
+documented before the next rollover needs new `PLIT` rows.
+
 ### Mid-year round cancellations
 
 If a PM round is cancelled after the academic year has started, set

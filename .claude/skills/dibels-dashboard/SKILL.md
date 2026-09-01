@@ -460,6 +460,25 @@ to conflate, so keep them separate:
    below for Miami. Not covered by the script in this section, which is
    Benchmark-only.
 
+### Canonical annual rollover process
+
+- **Benchmark**: every region gets `BOY` / `MOY` / `EOY` rows in
+  `stg_google_sheets__dibels_expected_assessments`, dated to match that region's
+  `LIT1` / `LIT2` / `LIT3` term windows already in
+  `stg_google_sheets__reporting__terms`.
+- **PM**: PM rounds are matched by region and grade level from the PM round
+  document the Academics/T&L team delivers for the year (e.g. the SY27 "DIBELS
+  PM Rounds - All Regions" doc) -- not invented or copied from a prior year's
+  dates.
+- **K-2 vs 3-8, if the aimline model holds**: K-2 keeps the in-house PM goal
+  calculation, which requires `PLIT` rows (see _`reporting__terms` grade bands_
+  below). Grades 3-8 use Amplify's aimline-provided goal-setting calculation
+  directly and never need `PLIT` rows.
+
+**Open, ask to be taught**: how `PLIT` date ranges are actually calculated is
+not documented here or in the ref doc yet -- get walked through the real
+calculation before attempting a rollover that needs new `PLIT` rows for K-2.
+
 ### Sheet identity
 
 Same workbook as the Bright Spots tabs above: spreadsheet
