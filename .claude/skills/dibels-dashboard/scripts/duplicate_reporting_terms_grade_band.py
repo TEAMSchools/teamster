@@ -1,27 +1,35 @@
-"""Duplicate an existing `reporting__terms` grade-band's rows under new
+"""Duplicate an existing `reporting__terms` grade-band's `LIT` rows under new
 `Grade Band` values, for years where every band tested on the same calendar.
 
-SY25-26 (academic_year=2025) has PLIT rows carrying `Grade Band = "0,1,2"`
-(K-2's pre-round accounting). Grades 3-8 need their own `Grade Band`-tagged
-rows to build/validate the new 3-8 model, split into bands (typically `3,4`
-and `5,6,7,8`) -- but SY25-26 had no grade-band-specific PM calendar, every
-grade tested on the same dates. So the correct SY25-26 rows are exact
-duplicates of the `0,1,2` rows, region by region, with only `Grade Band` (and
-`Code`, see below) changed.
+**`PLIT` is K-2-only in the target SY26-27 model — never duplicate it for
+another band.** `PLIT` feeds the in-house, collective-average PM goal
+calculation (school-day counting for the daily-growth-rate math), which only
+K-2 keeps; grades 3-8 move to Amplify aimline, which supplies per-student
+goals directly and has no use for `PLIT`. This script only ever reads and
+writes `LIT`-coded rows (see the `PLIT%` exclusion below) — if a future band
+genuinely needs `PLIT`, that is a K-2-band-only case, not something this
+script should do generically.
+
+SY25-26 (academic_year=2025) has `LIT` rows carrying `Grade Band = "0,1,2"`
+alongside K-2's `PLIT` rows. Grades 3-8 need their own `Grade Band`-tagged
+`LIT` rows to build/validate the new 3-8 model, split into bands (typically
+`3,4` and `5,6,7,8`) -- but SY25-26 had no grade-band-specific PM calendar,
+every grade tested on the same dates. So the correct SY25-26 rows are exact
+duplicates of `0,1,2`'s `LIT` rows, region by region, with only `Grade Band`
+changed.
 
 **Grade bands are region-specific.** Verified against SY25-26 enrollment:
 Paterson had no grade 4 and no grade 8, so its bands are `3` and `5,6,7`, not
 the `3,4` / `5,6,7,8` the other three regions use. Pass per-region overrides,
 don't apply one region's band definition to all.
 
-**Each band needs its own `code` prefix, not just a `Grade Band` tag.**
-`dim_terms.term_key` hashes `(type, code, name, start_date, region,
-school_id)` -- `grade_band` is NOT in that key. Duplicating a row with the
-same `code` and only a different `grade_band` collides on `term_key` (a real
-failure, caught via `unique_dim_terms_term_key`). `LIT` vs `PLIT` already
-avoids this for K-2 by being different codes; give every new band its own
-prefix the same way (e.g. `MLIT`/`MPLIT` for one band, `HLIT`/`HPLIT` for
-another) rather than reusing `LIT`/`PLIT` untouched.
+**No `code` prefix is needed.** `dim_terms.term_key` now hashes `grade_band`
+too (fixed on #3834 after this exact scenario broke
+`unique_dim_terms_term_key` -- duplicating a row with the same `code` and
+only a different `grade_band` used to collide on `term_key`). A `--band`
+GRADE_BAND:CODE_PREFIX form is still accepted for the rare case a band needs
+a genuinely different code, but leave the prefix empty (`"3,4:"`) unless
+there's a real reason not to.
 
 Usage:
     uv run --with google-api-python-client --with google-auth python3 \
@@ -30,18 +38,15 @@ Usage:
         --tab "Reporting Terms" \
         --academic-year 2025 \
         --source-grade-band "0,1,2" \
-        --band "3,4:M" \
-        --band "5,6,7,8:H" \
+        --band "3,4:" \
+        --band "5,6,7,8:" \
         --region-override "Paterson:3" \
         --region-override "Paterson:5,6,7" \
         --out out.tsv
 
-`--band "3,4:M"` is GRADE_BAND:CODE_PREFIX -- the prefix is prepended to the
-source row's existing `code` (`LIT1` -> `MLIT1`, `PLIT1` -> `MPLIT1`).
 `--region-override "Paterson:3"` REPLACES Paterson's copy of the first band
-with `3` (matched by position, not value; keeps that band's code prefix) --
-pass one override per band, in the same order as `--band`, only for regions
-that diverge.
+with `3` (matched by position, not value) -- pass one override per band, in
+the same order as `--band`, only for regions that diverge.
 """
 
 import argparse
@@ -100,6 +105,7 @@ def main() -> None:
         if len(r) > GRADE_BAND_COL
         and r[GRADE_BAND_COL] == args.source_grade_band
         and r[academic_year_col] == args.academic_year
+        and not r[CODE_COL].startswith("PLIT")
     ]
 
     if not source_rows:

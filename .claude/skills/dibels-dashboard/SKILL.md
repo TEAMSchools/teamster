@@ -558,3 +558,23 @@ wrong; they're the full K-8 scaffold for two entire prior years):
 - **No Paterson or Miami PM data exists for AY2024** -- both regions' PM
   scaffold starts at AY2025. A rebuild that shows 0 AY2024 PM rows for either
   region is correct, not a bug.
+
+### `reporting__terms` grade bands -- `PLIT` is K-2-only, never copy it to 3-8
+
+`reporting__terms` PM rows can carry a `Grade Band` value (e.g. `0,1,2`) on top
+of the `LIT`/`PLIT` scheme above, letting K-2, grades 3-4, and grades 5-8 each
+get their own rows under the same round codes. **`PLIT` itself stays K-2-only in
+the SY26-27 target model.** It exists to feed the in-house, collective-average
+PM goal calculation (school-day counting for the daily-growth-rate math) -- K-2
+keeps that whole pipeline, but grades 3-8 move to Amplify aimline, which
+supplies per-student goals directly and has no use for `PLIT`. When generating
+grade-band rows for 3-4 or 5-8, duplicate only the `LIT` rows -- never `PLIT`.
+`scripts/duplicate_reporting_terms_grade_band.py` enforces this (excludes
+`PLIT%` codes from what it duplicates); don't build a generator that skips that
+filter.
+
+`dim_terms.term_key` was widened to include `grade_band` (#3834) specifically
+because this scenario broke `unique_dim_terms_term_key` -- two rows sharing a
+`code` but differing only in `Grade Band` used to collide on the same key. No
+`code` prefix is needed for a new band anymore; the hash already disambiguates
+on `grade_band`.

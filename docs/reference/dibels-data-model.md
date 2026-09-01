@@ -532,14 +532,19 @@ when computing per-round growth targets — it provides everything needed for th
 `pm_round_days / pm_days` proportioning math without any additional manual data
 entry.
 
-**AY 2026–2027 outlook**: school-day counting (`pm_round_days`, `pm_days`) and
-`benchmark_goal` are confirmed deprecated with the aimline migration — the
-`PLIT` rows in `stg_google_sheets__reporting__terms` that feed them go away too.
-The round scaffold (which measures are expected per round/region/grade) stays
-useful and `int_google_sheets__dibels_pm_expectations` may take on a PM
-completion tracking role: determining whether students completed their required
-probes for each round. Final scope depends on T&L's PM tracking requirements for
-AY 2026–2027 — see open questions in the Upcoming changes section.
+**AY 2026–2027 outlook — K-2 vs 3-8 diverge here.** School-day counting
+(`pm_round_days`, `pm_days`), `benchmark_goal`, and the `PLIT` rows that feed
+them are confirmed deprecated **for grades 3-8 only** — aimline supplies
+per-student goals directly, so none of that math is needed there. **K-2 keeps
+all of it**: the in-house, collective-average goal pipeline is unchanged for
+K-2, so its `PLIT` rows stay in `stg_google_sheets__reporting__terms`
+indefinitely. `PLIT` is not going away network-wide; it becomes K-2-scoped.
+Never duplicate a `PLIT` row onto a 3-8 grade band. The round scaffold (which
+measures are expected per round/region/grade) stays useful for all grades and
+`int_google_sheets__dibels_pm_expectations` may take on a PM completion tracking
+role: determining whether students completed their required probes for each
+round. Final scope depends on T&L's PM tracking requirements for AY 2026–2027 —
+see open questions in the Upcoming changes section.
 
 ### PM goal pipeline: `rpt_gsheets__dibels_pm_goal_setting` → `stg_google_sheets__dibels_pm_goals`
 
@@ -1067,12 +1072,12 @@ probe attempt within a PM period).
 
 ### Models being deprecated
 
-| Model                                     | Reason                                                              |
-| ----------------------------------------- | ------------------------------------------------------------------- |
-| `stg_google_sheets__dibels_pm_goals`      | Goals and status now come from aimline                              |
-| `int_amplify__mclass__pm_student_summary` | Replaced by aimline source                                          |
-| `rpt_gsheets__dibels_pm_goal_setting`     | Collective-average goal calculation replaced by per-student aimline |
-| `PLIT` rows in `reporting__terms`         | Pre-round school day counting no longer needed without goal calc    |
+| Model                                                    | Reason                                                                                                   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `stg_google_sheets__dibels_pm_goals`                     | Goals and status now come from aimline                                                                   |
+| `int_amplify__mclass__pm_student_summary`                | Replaced by aimline source                                                                               |
+| `rpt_gsheets__dibels_pm_goal_setting`                    | Collective-average goal calculation replaced by per-student aimline                                      |
+| `PLIT` rows in `reporting__terms` (3-8 grade bands only) | Pre-round school day counting no longer needed without goal calc -- K-2's `PLIT` rows are NOT deprecated |
 
 ### `pm_goal_criteria` — AND/OR round logic
 
