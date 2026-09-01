@@ -108,20 +108,17 @@ select
     end as region_state,
 
     case
-        /* see everything, edit everything*/
         when sr.home_department_name in ('Data')
         then 7
         when
             sr.home_department_name = 'Talent Acquisition'
             and contains_substr(sr.job_title, 'Director')
         then 7
-        /* see your state/region, edit everything, (intentionally blank below)*/
         when
             sr.job_title = 'Director'
             and sr.home_department_name in ('Operations')
             and sr.home_work_location_name like '%Room%'
         then 6
-        /* see everything, edit teammate and seat status fields (recruiters)*/
         when
             sr.home_department_name = 'Talent Acquisition'
             and (
@@ -129,7 +126,6 @@ select
                 or contains_substr(sr.job_title, 'Manager')
             )
         then 5
-        /* see school, edit teammate fields (name, gutcheck, nonrenewal)*/
         when
             sr.job_title in (
                 'School Leader',
@@ -140,7 +136,6 @@ select
                 'Associate Director of School Operations'
             )
         then 4
-        /* see everything, edit nothing */
         when contains_substr(sr.job_title, 'Chief')
         then 3
         when
@@ -151,7 +146,6 @@ select
             sr.home_department_name
             in ('Leadership Development', 'Human Resources', 'Finance and Purchasing')
         then 3
-        /* see your state/region, edit nothing */
         when
             contains_substr(sr.job_title, 'Managing Director')
             and sr.home_department_name in ('Operations', 'School Support')
@@ -163,7 +157,6 @@ select
         then 2
         when contains_substr(sr.job_title, 'Head of Schools')
         then 2
-        /* see nothing */
         else 1
     end as permission_level,
 from {{ ref("int_people__staff_roster") }} as sr
@@ -175,7 +168,6 @@ left join pm_tier as pm on sr.employee_number = pm.employee_number
 
 union all
 
-/* generic roster names used for positions without active teammates */
 select
     999999 as employee_number,
     'Active' as assignment_status,

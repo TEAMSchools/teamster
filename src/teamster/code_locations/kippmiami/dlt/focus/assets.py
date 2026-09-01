@@ -14,12 +14,15 @@ sql_database_credentials = resolve_configuration(
     ConnectionStringCredentials(), sections=("FOCUS_DB",)
 )
 
+config_assets = yaml.safe_load(config_file.read_text())["assets"]
+
 tables = [
     # a["cursor_column"], not .get(): a new table added without a declared
     # cursor must fail loudly at module load, not silently become count-only.
     ProbeTable(name=a["table_name"], cursor_column=a["cursor_column"])
-    for a in yaml.safe_load(config_file.read_text())["assets"]
+    for a in config_assets
 ]
+
 """Module-level so sensors.py can import it instead of re-parsing the YAML.
 
 Keeps the credential resolution and config parse to one copy per code-location

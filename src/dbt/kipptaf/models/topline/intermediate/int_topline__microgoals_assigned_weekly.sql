@@ -30,7 +30,7 @@ with
 
     calendar as (
         select schoolid, academic_year, week_start_monday, week_end_sunday,
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
         where academic_year >= {{ var("current_academic_year") - 1 }}
     )
 

@@ -1,18 +1,10 @@
 with
-    -- Focus records enroll_status per stint while the network treats it as the
-    -- student's current standing copied onto every row, so the most recent
-    -- stint wins. rn_all is computed in int_focus__student_enrollment.
     current_stint as (
         select student_number, enroll_status,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_all = 1
     ),
 
-    -- Miami student identity from Focus, conformed to the PowerSchool column
-    -- names and value domains so it merges into the network student spine below
-    -- by column name (full union all corresponding). The conform itself lives
-    -- in int_focus__students; this model only picks the columns and attaches
-    -- the student-level enroll_status.
     focus_conformed as (
         select
             s._dbt_source_relation,
@@ -29,12 +21,6 @@ with
             s.ethnicity,
             s.state_studentnumber,
 
-            -- Conformed upstream in int_focus__students, which maps nine Focus
-            -- meal codes onto the archive's F/R/P domain. Null for every
-            -- Miami student today because Focus's meal field currently
-            -- carries only a school-level CEP direct-certification code, not
-            -- an individual determination -- but the mapping produces F, R or
-            -- P the moment Focus records one.
             s.lunchstatus,
 
             e.enroll_status,
@@ -46,9 +32,6 @@ with
         left join current_stint as e on s.student_id = e.student_number
     ),
 
-    -- Focus is Miami's system of record for student identity, so the frozen
-    -- archive contributes no rows. The 493 departed students the Focus seed
-    -- never received are dropped with it.
     powerschool_filtered as (
         select p.*,
         from {{ ref("stg_powerschool__students") }} as p

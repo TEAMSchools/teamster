@@ -15,6 +15,7 @@ sources:
       - name: src_google_appsheet__leadership_development__active_users
         identifier: src_leadership_development_active_users
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
@@ -25,6 +26,7 @@ sources:
       - name: src_google_appsheet__leadership_development__output
         identifier: src_leadership_development_output
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
@@ -102,3 +104,57 @@ sources:
                 - google
                 - appsheet
                 - src_kfwd_career_conversations__output
+  - name: google_appsheet_archive
+    schema: kipptaf_google_appsheet
+    description: >
+      Frozen Leadership Development relations, retained read-only after the
+      workflow moved to Lattice on 2026-07-30. The dbt models that built these
+      are disabled, so nothing refreshes them. Registration only -- no dbt node
+      selects from this source; it exists so the archive of record stays
+      documented and queryable. Separate source name from google_appsheet on
+      purpose: the schema differs, and the bigquery_table_modified_sensor asset
+      selection is built from source_name == google_appsheet.
+    # Refs #4627
+    tables:
+      - name: stg_google_appsheet__leadership_development__output_archive
+        identifier: stg_google_appsheet__leadership_development__output
+        description: >
+          Last state of every leader performance-management assignment: self and
+          manager ratings and notes per metric, per round.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - appsheet
+                - archive
+                - stg_google_appsheet__leadership_development__output_archive
+      - name: stg_google_appsheet__leadership_development__active_users_archive
+        identifier: stg_google_appsheet__leadership_development__active_users
+        description: >
+          Last state of the per-leader app participation overrides.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - appsheet
+                - archive
+                - stg_google_appsheet__leadership_development__active_users_archive
+      - name: snapshot_leadership_development__output_archive
+        identifier: snapshot_leadership_development__output
+        description: >
+          Archive of record. SCD2 history of every rating and note change across
+          the life of the app. Open rows keep dbt_valid_to 9999-12-31 as of the
+          freeze.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - appsheet
+                - archive
+                - snapshot_leadership_development__output_archive

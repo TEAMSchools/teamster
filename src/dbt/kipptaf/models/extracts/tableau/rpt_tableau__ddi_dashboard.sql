@@ -24,7 +24,7 @@ with
             {{ ref("int_people__location_crosswalk") }} as cw
             on il.school = cw.location_name
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as pw
+            {{ ref("int_students__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
             and cw.location_powerschool_school_id = pw.schoolid
             and il.completion_date between pw.week_start_monday and pw.week_end_sunday
@@ -521,7 +521,7 @@ left join
     and r.home_work_location_dagster_code_location
     = regexp_extract(t._dbt_source_relation, r'(kipp\w+)_')
 inner join
-    {{ ref("int_powerschool__calendar_week") }} as w
+    {{ ref("int_students__calendar_week") }} as w
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join

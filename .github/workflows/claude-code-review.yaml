@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@9d7150bc8a3dae8149739a88019d192b579ad90c # v1.0.193
+        uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1.0.206
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -48,27 +48,26 @@ jobs:
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
             https://github.com/obra/superpowers.git
+            https://github.com/DietrichGebert/ponytail.git
           plugins: |
             superpowers@superpowers-dev
             context7@claude-plugins-official
             dagster-expert@dagster
-            dignified-python@dagster
             dbt@dbt-agent-marketplace
+            ponytail@ponytail
           track_progress: true
           prompt: >-
             /superpowers:requesting-code-review ${{ github.repository
             }}/pull/${{ github.event.pull_request.number }}.
 
-            Apply dignified-python for Python standards, dagster-expert for
-            Dagster assets and pipelines, and
+            Apply dagster-expert for Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
-            Also evaluate the changed code through the /simplify lens: reuse
-            (prefer existing macros, models, and helpers over reinventing),
-            simplification, efficiency, and altitude and dead-code cleanup. This
-            job has read-only repo access, so report these as review findings
-            only; do not apply or commit fixes.
+            Also run /ponytail:ponytail-review over the changed code, preferring
+            existing macros, models, and helpers over reinventing them. This job
+            has read-only repo access, so report these as review findings only;
+            do not apply or commit fixes.
 
             For SQL and dbt changes, read src/dbt/CLAUDE.md (and the nearest
             per-project CLAUDE.md) and verify the code follows its SQL
@@ -79,6 +78,12 @@ jobs:
             tables or CTEs, cast early and once, correct ON vs WHERE placement,
             and no pass-through import CTEs. Cite the specific convention for
             each violation.
+
+            Also check model altitude: derive a model in the source-system
+            package at the same layer the source system derives it, not at
+            kipptaf, so surrogate-key hashes are not recomputed at network
+            altitude. Flag a model built at kipptaf that recomputes a hash its
+            source package already derives.
 
             Environment: you run in GitHub Actions with NO warehouse or data
             access. No BigQuery connection, and none of the cube, dbt, dagster,

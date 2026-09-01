@@ -4,7 +4,7 @@ with
             _dbt_source_relation,
             _dbt_source_project,
             schoolid,
-            yearid,
+            academic_year,
 
             term as `quarter`,
 
@@ -24,7 +24,7 @@ with
             _dbt_source_relation,
             _dbt_source_project,
             schoolid,
-            yearid,
+            academic_year,
 
             'Y1' as `quarter`,
 
@@ -113,7 +113,9 @@ with
         inner join
             term
             on enr.schoolid = term.schoolid
-            and enr.yearid = term.yearid
+            -- academic_year, not yearid: yearid is null on every Miami row of
+            -- int_extracts__student_enrollments, so this join dropped them all
+            and enr.academic_year = term.academic_year
             and enr._dbt_source_project = term._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gtq

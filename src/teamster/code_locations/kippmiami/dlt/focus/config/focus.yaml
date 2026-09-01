@@ -79,6 +79,8 @@ assets:
   # Grades
   - table_name: student_report_card_grades
     cursor_column: updated_at
+  - table_name: student_gpa_calculated
+    cursor_column: updated_at
   - table_name: report_card_grades
     cursor_column: updated_at
   - table_name: report_card_grade_scales
@@ -110,6 +112,10 @@ assets:
   - table_name: gradebook_assignment_types
     cursor_column: updated_at
   - table_name: gradebook_templates
+    cursor_column: updated_at
+  - table_name: gradebook_assignments_join_course_periods
+    cursor_column: updated_at
+  - table_name: gradebook_assignment_types_join_course_periods
     cursor_column: updated_at
   # Discipline
   - table_name: discipline_referrals

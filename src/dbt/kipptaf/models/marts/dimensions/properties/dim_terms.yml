@@ -51,7 +51,12 @@ models:
         quote: true
         data_type: string
         description: >-
-          Category of period (e.g., academic, PM, survey, assessment, fiscal).
+          Category of period. KIPP-managed and sourced from
+          stg_google_sheets__reporting__terms, not derived from PowerSchool.
+          Values include RT for reporting term at quarter grain, ATT for
+          attendance at semester or year grain, plus LIT, AR, REP, and SURVEY.
+          Quarter attendance rows live under RT with term_name Q1 through Q4 —
+          not under ATT, and not keyed by term_code RT1 through RT4.
 
       - name: term_code
         data_type: string

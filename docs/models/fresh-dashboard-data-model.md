@@ -20,7 +20,7 @@ are wired into the `fresh_dashboard` exposure.
   stg_powerschool__schools ─────────────┐
   stg_powerschool__students ────────────┤
   int_focus__schools ───────────────────┤
-  int_focus__student_enrollments ───────┼─▶ int_tableau__fresh_enrollment_scaffold
+  int_focus__student_enrollment_roster ─┼─▶ int_tableau__fresh_enrollment_scaffold
   stg_google_sheets__people__locations ─┤
   int_finalsite__status_report_unpivot ─┘   (net-new schools/grades only)
 
@@ -37,7 +37,7 @@ are wired into the `fresh_dashboard` exposure.
   stg_google_sheets__finalsite__status_crosswalk                              │
     └─▶ int_google_sheets__finalsite__status_crosswalk_unpivot ───────────────┤
   int_extracts__student_enrollments (PowerSchool; zero Miami rows) ───────────┼─▶ int_tableau__finalsite_student_scaffold
-  int_focus__student_enrollments (Miami; Focus-sourced) ──────────────────────┤
+  int_focus__student_enrollment_roster (Miami; Focus-sourced) ────────────────┤
   int_finalsite__contact_id_attributes (Focus <-> Finalsite id bridge) ───────┘
 
 4. THE CONSUMERS (the fresh_dashboard exposure)
@@ -64,12 +64,14 @@ Finalsite pipeline, joined in downstream.
 (`src/dbt/finalsite/models/sftp/staging/`); the kipptaf-level model of the same
 name is a thin `union_relations` wrapper over the four district sources plus
 `region` / `_dbt_source_project` / the `exclude_ids` filter.
-`int_focus__student_enrollments` (plural) is likewise a thin kipptaf wrapper —
-adding the Finalsite-ID crosswalk, the locations crosswalk, `region`,
-`district`, `region_school_level` — over the `focus` package's
-`int_focus__student_enrollment` (singular), which carries the full enrollment
-derivation. The three `stg_focus__*` passthroughs this used to depend on
-(`school_gradelevels`, `student_enrollment_codes`,
+`int_focus__student_enrollment_roster` (plural) is likewise a thin kipptaf
+wrapper — adding the Finalsite-ID crosswalk, the locations crosswalk, `region`,
+`district`, `region_school_level` — over a `focus` package model. The full
+enrollment derivation lives in `int_focus__student_enrollment_roster`; the
+package's `int_focus__student_enrollment` (singular) is raw staging columns plus
+decoded labels, matching the pattern its siblings follow. The wrapper is
+repointed at the roster in #5001. The three `stg_focus__*` passthroughs this
+used to depend on (`school_gradelevels`, `student_enrollment_codes`,
 `custom_field_select_options`) no longer exist — their source entries were
 removed along with them.
 
@@ -102,7 +104,7 @@ it used to supply is computed here instead.
 1. **`current_grade_levels`** — which grades each school actually serves,
    derived from current enrollment rather than a static grade span.
    `stg_powerschool__students` at `enroll_status = 0` for non-Miami;
-   `int_focus__student_enrollments` at `enroll_status = 0`,
+   `int_focus__student_enrollment_roster` at `enroll_status = 0`,
    `academic_year = current_academic_year` and `rn_year = 1` for Miami. Focus
    carries multiple years, so the year filter is what scopes it to now;
    PowerSchool's table has no year column and is current-state-only.
@@ -220,8 +222,9 @@ cleaning up.
 Miami's SIS moved to Focus (`src/dbt/powerschool/CLAUDE.md`, #4441) and no
 longer consumes the PowerSchool package. Miami is excluded from the PowerSchool
 branch of both `school_directory` and `current_grade_levels`, and supplied
-entirely from `int_focus__schools` / `int_focus__student_enrollments` instead.
-This replaces the previous carve-out, where Miami was 100% sheet-sourced.
+entirely from `int_focus__schools` / `int_focus__student_enrollment_roster`
+instead. This replaces the previous carve-out, where Miami was 100%
+sheet-sourced.
 
 One label change came with it: the retired sheet called schoolid `30200805`
 `MTH`, while the locations sheet and `int_people__location_crosswalk` both call
@@ -576,8 +579,8 @@ numbers and the dashboard:
   carries zero Miami rows. That is no longer true.
   `int_tableau__finalsite_student_scaffold`'s `enrollment_lookup` CTE is a
   `union all` of two branches: `int_extracts__student_enrollments` for
-  PowerSchool regions and `int_focus__student_enrollments` for Miami, the latter
-  bridged to Finalsite through `int_finalsite__contact_id_attributes` on
+  PowerSchool regions and `int_focus__student_enrollment_roster` for Miami, the
+  latter bridged to Finalsite through `int_finalsite__contact_id_attributes` on
   `focus_student_id` (Focus's `student_number` is not a Finalsite id, so that
   bridge is what makes the join possible). Note that `is_enrolled_fdos` is no
   longer among them — it is now computed in this model from `custom_fdos_date`
@@ -617,10 +620,10 @@ numbers and the dashboard:
 that answer different questions — one is what the SIS actually says, the other
 is what Finalsite implies the SIS _should_ say:
 
-| column                             | where it comes from                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `enroll_status`                    | the **SIS** — PowerSchool via `int_extracts__student_enrollments`, or Focus via `int_focus__student_enrollments` for Miami |
-| `finalsite_expected_enroll_status` | **Finalsite**, derived from `latest_status` — it reads nothing from the SIS                                                |
+| column                             | where it comes from                                                                                                              |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `enroll_status`                    | the **SIS** — PowerSchool via `int_extracts__student_enrollments`, or Focus via `int_focus__student_enrollment_roster` for Miami |
+| `finalsite_expected_enroll_status` | **Finalsite**, derived from `latest_status` — it reads nothing from the SIS                                                      |
 
 `rpt_tableau__fresh_dashboard_qc` exposes the first of these as
 `sis_enroll_status`, so the two sides of every comparison name their source
@@ -733,7 +736,7 @@ enrolled on day one" stays distinguishable from "we have no SIS record to
 judge". Do not wrap it to match the siblings.
 
 **This does not touch `int_extracts__student_enrollments` or
-`int_focus__student_enrollments`.** Both still compute their own
+`int_focus__student_enrollment_roster`.** Both still compute their own
 `is_enrolled_fdos`, still consumed by everything else that reads them; this
 model simply stopped passing theirs through, and reads `entrydate` / `startdate`
 instead. Their `is_enrolled_oct01` / `oct15` / `mar15` flags are still passed
@@ -980,9 +983,9 @@ Expect `enrollment_lookup`'s SIS-vs-Finalsite quality-check columns
 (`enroll_status`, `sis_entry_date`, `is_enrolled_*`) in
 `int_tableau__finalsite_student_scaffold` to be null network-wide for a while.
 That CTE scopes **both** of its branches — `int_extracts__student_enrollments`
-and `int_focus__student_enrollments` — to the Finalsite recruitment year, and
-neither SIS has enrollment rows for a year it hasn't rolled into yet, so Miami
-is affected exactly as much as the PowerSchool regions. This is expected,
+and `int_focus__student_enrollment_roster` — to the Finalsite recruitment year,
+and neither SIS has enrollment rows for a year it hasn't rolled into yet, so
+Miami is affected exactly as much as the PowerSchool regions. This is expected,
 resolves on its own once each SIS catches up, and needs no action. Same
 mechanism as the "All regions' point-in-time enrollment flags go NULL" bullet
 under _Known data model caveats_ above.
@@ -1051,8 +1054,8 @@ Four questions in earlier versions of this doc are now answered by the
 SIS-derived scaffold:
 
 - **Whether the Miami/Focus carve-out can be removed** -- done. Miami is sourced
-  from `int_focus__schools` and `int_focus__student_enrollments`; no part of the
-  scaffold reads the sheet for Miami.
+  from `int_focus__schools` and `int_focus__student_enrollment_roster`; no part
+  of the scaffold reads the sheet for Miami.
 - **The Miami scaffold sheet missing Liberty (30200802) and Sunrise (30200801)**
   -- moot. The sheet is retired, and both schools are closed (`max_syear = 2025`
   in Focus), so they are excluded deliberately rather than missing accidentally.
@@ -1066,5 +1069,5 @@ SIS-derived scaffold:
   `int_focus__*` models above, and the point-in-time enrollment flags
   (`enroll_status`, `is_enrolled_*`) are covered by
   `int_tableau__finalsite_student_scaffold` reading
-  `int_focus__student_enrollments` alongside
+  `int_focus__student_enrollment_roster` alongside
   `int_extracts__student_enrollments`.

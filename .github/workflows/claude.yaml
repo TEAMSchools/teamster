@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@9d7150bc8a3dae8149739a88019d192b579ad90c # v1.0.193
+        uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1.0.206
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
@@ -48,7 +48,6 @@ jobs:
             superpowers@superpowers-dev
             context7@claude-plugins-official
             dagster-expert@dagster
-            dignified-python@dagster
             dbt@dbt-agent-marketplace
 
           # Optional: Add claude_args to customize behavior and configuration

@@ -7,6 +7,12 @@ models:
       respondent_type discriminator determines which respondent FK is populated
       (exactly one per row). LEFT JOIN to fct_survey_submissions on (respondent
       key, survey_administration_key) for expected-taken/missed analysis.
+      Eligibility rules by respondent type — staff rows come from primary,
+      active staff during the response window for the School Community
+      Diagnostic Staff, Manager, and Support surveys; student rows come from
+      enrolled students (grades 3 to 12) for the School Community Diagnostic
+      Student Survey; family rows produce one expectation per contact person for
+      the family survey administrations.
     columns:
       - name: survey_expectation_key
         data_type: string

@@ -5,6 +5,11 @@ title: "fix: "
 labels: bug
 ---
 
+<!-- Write this whole bug report in plain language. Read
+.github/PLAIN_LANGUAGE.md and follow it: every sentence does a job, one idea per
+sentence, active voice, common words. Only the "For Claude" fold-out at the
+bottom is exempt. -->
+
 ## What's happening
 
 <!-- What you expected, and what actually happened -->

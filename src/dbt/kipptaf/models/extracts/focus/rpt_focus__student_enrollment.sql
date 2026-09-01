@@ -9,12 +9,12 @@ with
             l.is_transfer_out,
             l.finalsite_enrollment_id,
 
-            -- Finalsite emits pre-first-day enrolled_dates (contract/registration
-            -- dates); Focus matches enrollment on the first attendance calendar
-            -- date, so floor the start date up to the school year's first day
-            -- (derived per school year from the Focus attendance calendar). Rows
-            -- already on/after the first day, and years with no calendar, are
-            -- left unchanged.
+            -- Finalsite emits pre-first-day `enrolled_date` values, which are
+            -- contract or registration dates. Focus matches enrollment on the
+            -- first attendance calendar date, so floor the start date up to the
+            -- school year's first day, derived per school year from the Focus
+            -- attendance calendar. Rows already on or after the first day, and
+            -- years with no calendar, stay unchanged.
             greatest(
                 l.enrollment_start_date,
                 coalesce(fd.first_day_of_school, l.enrollment_start_date)
@@ -23,11 +23,11 @@ with
         left join
             {{ ref("int_focus__school_year_first_day") }} as fd
             on l.school_year_start = fd.syear
-        -- enrolled-only desired state, all in-scope school years. Pre-enrollment
-        -- statuses carry no enrolled_date and are deferred until Finalsite mints
-        -- enrollment_start_date; a freshly enrolled student with no school
-        -- assignment yet is likewise deferred (Focus needs a school id). The
-        -- kippmiami wrapper scopes this to the current academic year and
+        -- Enrolled-only desired state, across all in-scope school years.
+        -- Pre-enrollment statuses carry no `enrolled_date`, so they wait until
+        -- Finalsite mints `enrollment_start_date`. A freshly enrolled student
+        -- with no school assignment waits too, because Focus needs a school id.
+        -- The kippmiami wrapper scopes this to the current academic year and
         -- reconciles it against live Focus.
         where l.enrollment_start_date is not null and l.assigned_school is not null
     )

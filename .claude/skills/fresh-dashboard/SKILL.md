@@ -28,9 +28,9 @@ description: >-
   back to `academic_year` for Tableau, so the external column name is unchanged.
 - **Miami is Focus-sourced, not sheet-sourced.** `int_focus__schools` (joined
   through `stg_google_sheets__people__locations` for the abbreviation and the
-  PowerSchool-space `schoolid`) and `int_focus__student_enrollments` supply it.
-  Don't "fix" Miami by onboarding it into `stg_powerschool__schools` — those
-  rows are a frozen pre-migration snapshot and are excluded on purpose.
+  PowerSchool-space `schoolid`) and `int_focus__student_enrollment_roster`
+  supply it. Don't "fix" Miami by onboarding it into `stg_powerschool__schools`
+  — those rows are a frozen pre-migration snapshot and are excluded on purpose.
 - **The scaffold is fully SIS-derived; the scaffold sheet is retired**
   (`enabled: false`). Nothing is hand-entered. See the retired-generator note
   below before offering to add sheet rows.
@@ -140,66 +140,45 @@ list is on the `cover sheet` tab; per-school grade detail is on per-region tabs
 (`KCNA`, `Newark`, …). SRE re-shares a new workbook each cycle, so confirm the
 id before trusting it.
 
-**How to read it:** use the Drive connector —
-`mcp__claude_ai_Google_Drive__get_file_metadata` returns a content snippet
-spanning several tabs, and `read_file_content` returns the body. The connector
-runs as the signed-in user, so **access is not the problem — structure is.**
+**How to read it: the Sheets API as ADC — the workbook IS shared with
+`codespaces@teamster-332318.iam.gserviceaccount.com`** (verified Aug 31 2026;
+the standing grant this file used to recommend has landed). This is the only
+path that yields tab names and real cell addresses, so it is the path to use:
 
-**Tab-level reads are an MCP limitation, NOT a permission gap.** Do not
-re-litigate this; all three connector paths were tested (Aug 2026) and none
-yields tab names or cell addresses:
+```bash
+uv run --with google-api-python-client python <<'PY'
+import google.auth
+from googleapiclient.discovery import build
+creds, _ = google.auth.default(
+    scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
+svc = build("sheets", "v4", credentials=creds)
+# tab names: svc.spreadsheets().get(spreadsheetId=ID, fields="sheets.properties")
+r = svc.spreadsheets().values().batchGet(
+    spreadsheetId=ID, ranges=["'Newark'!A1:R66"],
+    valueRenderOption="UNFORMATTED_VALUE").execute()
+PY
+```
 
-- `read_file_content` has no tab/range parameter — it returns a "natural
-  language representation" by design and its own tool doc says not to depend on
-  the format. Every tab arrives concatenated into one blob.
-- `download_file_content` with `exportMimeType: text/csv` returns **the FIRST
-  TAB ONLY** (Google's CSV export is first-sheet-only). It IS worth calling for
-  the `cover sheet` — CSV preserves exact column positions, so it beats
-  `read_file_content` for school-level rows — but it cannot reach tabs 2..N.
-- `download_file_content` with `xlsx` or `zip` would carry every tab, but
-  returns base64, and decoding it needs a base64-to-shell pipe, which
-  `check-sensitive.sh` blocks as an encoding bypass. Closed path.
+`UNFORMATTED_VALUE` is required — it returns the unrounded formula output the
+rounding rules below depend on. Do NOT re-test the 403; if one appears, SRE
+changed the sharing, so say so rather than falling back to a lossy path.
 
-Consequence: cover-sheet (`School`) rows are reliably readable; **grade-level
-rows are not.** The per-region tabs have merged cells and shifting column
-layouts, so the flat blob cannot be parsed into a diff worth staking numbers on.
-Two ways out:
+**Do not use the Drive connector to read VALUES.** It runs as the signed-in
+user, so access is not the issue — structure is. `read_file_content` has no
+tab/range parameter and concatenates every tab into one unattributable blob;
+`download_file_content` as CSV returns the FIRST TAB ONLY; as xlsx/zip it
+returns base64, and decoding needs a base64-to-shell pipe that
+`check-sensitive.sh` blocks. Use the connector for exactly one thing —
+`get_file_metadata` for `modifiedTime`, `title` and `owner`, the provenance
+facts the cell values don't carry. Not screenshots either: a region tab holds
+100+ numbers and transcription is error-prone.
 
-1. **Get the workbook shared with
-   `codespaces@teamster-332318.iam.gserviceaccount.com` as Viewer — the standing
-   recommendation** (owner is mventresca@; as of Aug 2026 NOT shared, so the
-   Sheets API returns `403 The caller does not have permission`). This does not
-   fix the connector; it grants a DIFFERENT API — Sheets v4 `spreadsheets.get`
-   for tab names and `values.get` with `range="'Tab Name'!A1:Z"` — which does
-   have tab addressing. The signed-in user's Drive grant cannot substitute: the
-   connector holds that OAuth token internally and never exposes it, so the
-   Sheets API can only run as ADC.
-
-   **Why this is worth a standing grant on someone else's file:** goals change
-   often and, as this file says below, **SRE does not always flag the changes.**
-   A reconciliation that requires a human to fetch tabs only runs when someone
-   thinks to run it, so drift is discovered from a wrong dashboard number rather
-   than when it happens. The service account is what makes a SCHEDULED drift
-   check possible; the interactive connector cannot carry that job, since it is
-   not reliably present in headless/cron runs.
-
-1. **CSV per tab — the stopgap while sharing is pending, not the steady state.**
-   Sheets `File > Download > CSV` exports the ACTIVE tab only, and the filename
-   carries the tab name. Have the user drop the files in `.claude/scratch/` and
-   Read them; three downloads covers Newark / KCNA / Miami. Two failure modes to
-   guard against, both silent:
-   - **A CSV carries no timestamp.** Once it is a file on disk there is no way
-     to tell whether it predates SRE's latest edit, so you can diff against a
-     snapshot of unknown age and report it as current — the same stale-input
-     trap as the frozen goals table. Re-check the workbook's Drive
-     `modifiedTime` at read time and say which files you used.
-   - **A partial set reads as "no changes."** Two of three tabs exported looks
-     identical to a region with no edits. Confirm the tab list before concluding
-     a region is clean, and name any tab you did not receive.
-
-Not screenshots — a region tab holds 100+ numbers and transcription is
-error-prone. Not per-tab `#gid=` URLs either; the connector takes a file id and
-returns all tabs regardless, so a URL adds nothing.
+**Why the grant matters beyond convenience:** goals change often and **SRE does
+not always flag the changes.** A reconciliation that needs a human to fetch tabs
+only runs when someone thinks to run it, so drift gets discovered from a wrong
+dashboard number instead of when it happens. ADC is what makes a scheduled drift
+check possible; the interactive connector cannot carry that job because it is
+not reliably present in headless runs.
 
 **Two things will trip up a naive comparison:**
 
@@ -285,17 +264,55 @@ FDOS Target, `E` Seat Target, `F` Budget Target, `G` Re-Enroll Projection, `H`
 New Student Target, `I` App Target. 22 schools (Newark 12, Camden 5, Miami 5);
 Paterson is on `KPAT`, not here.
 
-Two traps in this tab:
+Note row 1 is BLANK — the header is row **2**, data rows 3-24. A range starting
+at `A1` shifts every row index by one.
+
+Four traps in this tab:
 
 - **The two "totals" blocks (`K2:N5` and row 38) have no home in the staging
   table** — there is no grade-less region granularity. They are labelled and
   numeric and look loadable; they are not. Use them as cross-checks only.
 - **`KMT` / `KLE` / `KLM` have col `F` populated with col `E` blank** (90 / 196
-  / 56). Those values are the SY26-27 **seat** targets — the `Miami` tab's
-  per-grade seat rows sum to exactly those numbers — so prod correctly stores
-  them as `Seat Target` with `Budget Target` NULL. No Miami block carries a
-  Budget Target column at all, so these three cannot be derived; they stay NULL
-  until SRE fills them.
+  / 56). **Col `F` is `Budget Target` — as its header says — for these three
+  exactly as for every other school. Load it that way.** An earlier version of
+  this file claimed those values were really seat targets "because the `Miami`
+  tab's per-grade seat rows sum to exactly those numbers," and that error is
+  live in prod: it holds `Seat Target` 90/196/56 with `Budget Target` NULL for
+  the three, while reading col `F` as `Budget Target` for the other 19. The same
+  column cannot be two things.
+
+  The sum argument is a coincidence — a new school opens at capacity, so its
+  budget target equals its seat capacity. Col `F` is demonstrably a distinct
+  concept: it differs from col `E` for 10 of the 19 schools that carry both
+  (Sumner 406/376, Hatch 252/208, Life 515/490), and **`KCA` has `F` 612 above
+  `E` 504**, which no seat reading survives. The seat value for the three is
+  independently derivable from the `Miami` tab's col `H` per-grade sums, so
+  nothing is lost by reading `F` as budget.
+
+  Test before trusting any "this column is really that column" claim: compare
+  `E` against `F` across all schools. If they ever differ, they are different
+  measures.
+
+- **The App Target grid stops at grade 10** (rows 27-37 = K,1..10). HS grades 11
+  and 12 have no grid row at all, so `Region/Grade Level` `App Target` is NULL
+  for them even where a school carries one. Verified AY2026: Camden KHS has
+  `School/Grade Level` App Target 19 at grade 11 and 0 at grade 12, while the
+  Camden region rows for both grades are NULL — so the region figure understates
+  Camden by 19 applications. Newark's grades 11-12 are NULL on both sides
+  (NCA/NLH carry no App Target there), so the gap is Camden-only and is a
+  question for SRE, not a derivation bug.
+- **The grid's Miami grades 9 and 10 hold a literal `0`** while prod holds NULL.
+  Correct — MTH is a matriculation school with no application funnel (below),
+  and no Miami school recruits at grade 10. Do not "fix" NULL to 0.
+
+**The grid is meant to equal the per-grade sums, so use that as a check.**
+Verified AY2026: the grid matched `SUM` of the region tab's own per-grade col
+`R`/`S` rows on **32 of 34** comparable cells. The two that did not are Camden
+grade 5 (grid 69 vs Sumner r14 32 + LSM r17 21 + Hatch r22 48 = **101**) and
+grade 6 (grid 71 vs 47 + 42 + 29 = **118**). Prod follows the grid. Given the
+other 32 cells agree exactly, those two grid cells look stale rather than
+authoritative — but both are main-table sources, so this goes to SRE as a
+question rather than being resolved here.
 
 #### `KCNA` — fully mapped
 
@@ -326,7 +343,13 @@ region summary), and **the entire table from row 33 down** (the `City` /
   Middle) that appear nowhere else in the workbook, so a school-name map will
   silently match `KHS` from its `Campus` column and read the wrong columns.
 - Its column `K` disagrees with the cover sheet's Camden App Target at grade 5
-  (99 vs 69). The cover sheet wins; prod's 69 is correct.
+  (99 vs 69). It is still not a source — but **do not read the old conclusion
+  here ("the cover sheet wins; prod's 69 is correct") as settled.** That was
+  reached by comparing the grid only against this noise block. The MAIN table's
+  own per-grade rows sum to **101** at grade 5 and **118** at grade 6, against a
+  grid of 69 and 71 — so two legitimate sources disagree, and 99 was merely the
+  noise block landing near the main table's 101. Open question for SRE; see the
+  `cover sheet` section.
 
 The `School` totals overlap the cover sheet on all five goals, so they are a
 free cross-check rather than a competing source. Note Sumner's rows split `ES`
@@ -530,8 +553,14 @@ discrepancies are then out of scope for whatever you find.
 
 ### The reconciliation loop
 
-1. **Ask for the workbook URL.** SRE issues a new one each cycle; don't reuse
-   the id recorded above without confirming.
+1. **Ask for the workbook URL — actually ask, in a message, before reading
+   anything.** SRE issues a new one each cycle. **A recorded id that still opens
+   and still carries a plausible current-cycle title is NOT confirmation** — a
+   superseded copy keeps both. This step has been skipped on the reasoning that
+   the recorded id "resolved to `26-27 …`, which matches
+   `finalsite_recruitment_year`, so it must be current"; that inference is
+   invalid and the user ended up supplying the URL unprompted. Ask first, then
+   read.
 1. **Confirm goal names are unchanged.** The goals sheet joins on `goal_name`,
    so a rename silently stops matching rather than erroring. Compare SRE's goal
    labels against `distinct goal_name` in `stg_google_sheets__finalsite__goals`
@@ -545,16 +574,73 @@ discrepancies are then out of scope for whatever you find.
    goals DO change independently of the school totals. A reconciliation that
    stops at the cover sheet is incomplete; say so explicitly rather than
    implying the sheet is clean.
+
+   **`Region/Grade Level` is the granularity that gets short-changed.** Reading
+   only its one sourced goal (`App Target`, from the cover-sheet grid) and
+   calling the granularity done skips `New Student Target` and
+   `Re-Enroll Projection`, which are derived and therefore cannot drift against
+   the workbook — only against prod's own school rows. Check all three.
+
+1. **Also reconcile prod against ITSELF at region grain.** A sheet-vs-prod diff
+   cannot see a region row that was never recomputed after its school rows
+   changed, because both sides read the same stale value. Compare each
+   `Region/Grade Level` row against the `SUM` of prod's own `School/Grade Level`
+   rows for that `(region, grade_level, goal_name)`:
+
+   ```sql
+   with sg as (
+     select region, grade_level, goal_name, sum(goal_value) as sum_rounded
+     from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__finalsite__goals`
+     where enrollment_academic_year = 2026
+       and goal_granularity = 'School/Grade Level'
+     group by 1, 2, 3
+   ),
+   rg as (
+     select region, grade_level, goal_name, goal_value as region_value
+     from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__finalsite__goals`
+     where enrollment_academic_year = 2026
+       and goal_granularity = 'Region/Grade Level'
+   )
+   select * from rg full join sg using (region, grade_level, goal_name)
+   where region_value is distinct from sum_rounded
+   ```
+
+   Triage the output — most of it is expected, and treating all of it as drift
+   manufactures a false alarm:
+   - **`abs(delta) = 1` is the documented `round(SUM)` vs `SUM(round)`
+     artifact**, not drift. AY2026 threw six such rows (Camden g5, Newark g1,
+     Newark g3 — each as a `New Student Target` / `Re-Enroll Projection` pair).
+     Ignore them.
+   - **Region `0` against NULL school rows** is benign — HS upper grades recruit
+     nobody (AY2026: Newark g11/g12, Camden g12 `New Student Target`).
+   - **`abs(delta) > 1` is real** and needs attribution to a cell before you
+     report it.
+
+1. **When every discrepancy is a contradiction INSIDE SRE's workbook, there is
+   no paste-ready block — say that outright.** Prod can be simultaneously
+   correct-as-loaded and wrong, and the fix is SRE's answer, not a value push.
+   Do not invent a paste block by picking the side you find more convincing, and
+   do not report "clean" either; report the contradictions as questions and say
+   the block follows their answer.
 1. **Only six `goal_name`s are SRE-entered numeric targets** — `Seat Target`,
    `FDOS Target`, `New Student Target`, `Budget Target`, `Re-Enroll Projection`
    (all `goal_type` `Enrollment`) and `App Target` (`Applications`). Those are
    the cover sheet's columns. Everything else is a funnel roll-up; don't hunt
    for it in SRE's workbook.
 1. **Cross-check the cover sheet against the per-region tab before reporting a
-   diff.** They disagree in real cases — a value can sit in the cover sheet's
-   `Budget Target` column that the region tab identifies as the seat target.
-   When the two tabs conflict, do NOT pick one: flag it as a question for SRE
-   (see _Handing SRE a question_ below).
+   diff.** They disagree in real cases. When the two conflict, do NOT pick one:
+   flag it as a question for SRE (see _Handing SRE a question_ below).
+
+1. **Never encode an interpretation from this file as a transformation in your
+   extractor.** Read every column as its header says, diff, and explain the
+   diffs afterwards. Remapping a column on the way in ("this file says `F` is
+   really seat here") applies the same edit to both sides of the comparison, so
+   the discrepancy becomes unrepresentable and the reconciliation reports clean.
+   This exact failure hid three missing Miami `Budget Target` values, and was
+   then reported as a confirmation — "the NULLs are exactly the documented
+   three" — because the documentation and the extractor were the same claim. A
+   NULL that matches a note in this file is still a finding until you have
+   checked the source cell.
 1. **Hand back a paste-ready block.** Plain delimited rows in a fenced code
    block, one row per line, column order matching the sheet — not a markdown
    table, which can't be pasted into Sheets.
@@ -638,6 +724,27 @@ the dbt read of it is gone. Its BigQuery relations linger after the disable —
 dbt never drops a relation — so they need a manual drop once this ships.
 
 ### Goals-sheet gap-row generator
+
+**First check whether the generator is needed at all** — one query answers it,
+and AY2026 returned zero rows, so the projection work below was unnecessary:
+
+```sql
+select s.region, s.school, s.grade_level
+from `teamster-332318.kipptaf_tableau.int_tableau__fresh_enrollment_scaffold` s
+left join `teamster-332318.kipptaf_google_sheets.stg_google_sheets__finalsite__goals` g
+  on s.schoolid = g.schoolid
+  and s.grade_level = g.grade_level
+  and g.enrollment_academic_year = 2026
+  and g.goal_name = 'Seat Target'
+where s.enrollment_academic_year = 2026
+  and s.schoolid != 0
+  and g.schoolid is null
+order by 1, 2, 3
+```
+
+Exclude `schoolid = 0` (the region rollup rows) or every one of them reads as a
+gap. Rows returned = school × grade combos the dashboard will show enrollment
+for with no goal to compare against.
 
 Three patterns — see the reference doc's "Goal definitions" section for which
 `goal_type`/`goal_name` combos are `School` vs. `School/Grade Level` vs.
@@ -763,7 +870,8 @@ AY2024 and around August 26-28 in AY2025.
 
 Edit the `CASE` and nothing else — see the reference doc's _First day of school
 is hardcoded per region_ for why this date lives in this one model and does not
-touch `int_extracts__student_enrollments` or `int_focus__student_enrollments`.
+touch `int_extracts__student_enrollments` or
+`int_focus__student_enrollment_roster`.
 
 There is **no scaffold-sheet pre-flight check** any more — the sheet is retired,
 so the old `-9` row check is gone. Once the year is agreed, the crosswalk key is
@@ -861,9 +969,9 @@ hardcoded, year from `var("finalsite_recruitment_year")`, exposed as
 `false` for nearly every Miami student at a later-starting school, and
 PowerSchool's is per-school. **Do not "fix" this by repointing at the upstream
 flag, and do not change `int_extracts__student_enrollments` or
-`int_focus__student_enrollments`** — they keep their own versions for their
-other consumers. When the enrollment team changes a first day, edit the `CASE`
-in `custom_fdos_dates` and nothing else.
+`int_focus__student_enrollment_roster`** — they keep their own versions for
+their other consumers. When the enrollment team changes a first day, edit the
+`CASE` in `custom_fdos_dates` and nothing else.
 
 **The dates came from SRE, so they are a rollover checklist item** — Step 0f of
 _Update the Finalsite recruitment year_ above. The var carries the year forward

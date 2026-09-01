@@ -248,14 +248,16 @@ PowerSchool's `U_EXPECTATIONS` via the plugin — the write side of the same tab
 `rpt_gsheets__gradebook_audit_template` in
 `src/dbt/kipptaf/models/exposures/google-sheets.yml`.
 
-One row per
-`region × school_level × quarter × week_number_quarter × assignment_category_code`
-(uniqueness-tested). It shares the QTD unpivot's `term_weeks` CTE and category
-decode, but differs in two ways: it keeps **every** school week rather than
-collapsing to the most recently completed one per quarter, and it takes
-`school_week_end_date` (aliased `week_end_friday`) instead of `week_end_sunday`.
+One row per `region × school_level × quarter × week_number_quarter`
+(uniqueness-tested), carrying the four category counts as **columns** — `W`,
+`H`, `F`, `S` — rather than one row each. It shares the QTD unpivot's
+`term_weeks` CTE but differs in three ways: it keeps **every** school week
+rather than collapsing to the most recently completed one per quarter; it takes
+`school_week_end_date` (aliased `week_end_friday`) instead of `week_end_sunday`;
+and it stays wide, because the sheet is an upload grid a person fills in, not an
+analytical long table.
 
-Two gotchas worth knowing before editing it:
+Three gotchas worth knowing before editing it:
 
 - **`week_end_friday` is not always a Friday.** It is the last _in-session_ day
   of the school week, so it lands on Thursday or earlier when a holiday or PD
@@ -267,6 +269,17 @@ Two gotchas worth knowing before editing it:
   2026-03-20). `term_weeks` therefore aggregates with
   `max(school_week_end_date)` and an explicit `GROUP BY`; a `SELECT DISTINCT`
   fans the join out to one row per distinct end date and breaks the grain.
+- **A blank category cell is meaningful — don't filter it away.** The model
+  applies no null guard to the four counts. Under the pre-wide long shape an
+  unset category produced no row at all (BigQuery `UNPIVOT` excludes nulls), so
+  the gap was invisible in the sheet; wide, it surfaces as an empty cell for
+  whoever is setting counts to fill in. Adding an all-null guard would hide
+  exactly what the template exists to show, and re-uploading a blank row writes
+  back the blank state it came from. Measured 2026-08-18, all 205 rows in
+  `stg_powerschool__u_expectations` carry a count in all four columns, so no
+  guard would filter anything today anyway. That 205 is the raw source count,
+  not this model's output — the template emits 202 rows, because `term_weeks`
+  keeps only weeks that have already started.
 
 Coverage follows the inner join to `stg_powerschool__u_expectations` — Newark
 and Camden at MS and HS, Paterson at MS, no ES and no Miami — so it needs no
@@ -337,6 +350,15 @@ downstream models: the `scores` CTE here and
 `int_extracts__student_enrollments` matches on `school_abbreviation = 'Sumner'`
 — never on school name, which PowerSchool has renamed once already. This ensures
 HS-vs-non-HS flag conditions apply consistently to those students.
+
+The same caution applies to the `school_name` column that
+`int_extracts__course_schedule_by_term` and `rpt_tableau__gradebook_audit`
+carry. It reads PowerSchool `schools.name`, so it is a display label only — a
+rename changes it silently. Join and filter on `schoolid` or `school` (the
+abbreviation) instead. `schools.name` also disagrees with the canonical
+`stg_google_sheets__people__locations.location_name` for 2 schools: Hatch
+(`KIPP Hatch Academy` vs `KIPP Hatch Middle`) and Sumner (`KIPP Sumner Academy`
+vs `KIPP Sumner Elementary`).
 
 Feeds `int_powerschool__gradebook_assignment_scores_rollup`.
 

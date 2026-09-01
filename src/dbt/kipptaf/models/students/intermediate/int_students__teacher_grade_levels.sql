@@ -1,9 +1,4 @@
 with
-    -- The section's Lead Teacher is already on the schedule row; co-teachers
-    -- are a separate assignment keyed by course_period_id + syear. Union both
-    -- so every staff member who taught a section is credited with that
-    -- section's scheduled students, mirroring the PowerSchool model's Lead
-    -- Teacher + Co-teacher roledef union in section_teacher.
     teacher_students as (
         select
             s.teacher_id as staff_id,
@@ -30,13 +25,13 @@ with
             and ct.syear = s.academic_year
     ),
 
-    -- Focus staff ids are not network teacher/employee numbers. Staff Number
-    -- Identifier, Local (a populated custom field on the Focus user) carries
-    -- the network employee_number as a string -- verified against prod: every
+    -- Focus staff ids are not network teacher or employee numbers. Staff Number
+    -- Identifier, Local — a populated custom field on the Focus user — carries
+    -- the network `employee_number` as a string. Verified against prod: every
     -- non-null AY2026 lead-teacher id (77 of 77) and co-teacher id (21 of 21)
-    -- resolves to a kippmiami roster employee_number through this field. ein
-    -- (Focus's own EIN field) resolves fewer of the same ids and never
-    -- disagrees where both are populated, so this field is preferred.
+    -- resolves to a kippmiami roster `employee_number` through this field. The
+    -- `ein` field resolves fewer of the same ids and never disagrees where both
+    -- are populated, so this field wins.
     identified as (
         select
             ts.student_id,
@@ -56,7 +51,7 @@ with
     -- PowerSchool model derives it from base_powerschool__student_enrollments.
     grade_level_lookup as (
         select student_number, academic_year, grade_level,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_year = 1
     ),
 
@@ -107,11 +102,6 @@ with
         from grade_level_counts_window
     ),
 
-    -- Miami teacher grade-level distribution from Focus, conformed to the
-    -- PowerSchool teacher_grade_levels vocabulary so it merges into the network
-    -- spine below by column name (full union all corresponding). yearid and
-    -- _dbt_source_relation have no Focus source and are omitted; the union
-    -- null-fills them.
     focus_conformed as (
         select
             teachernumber,
@@ -130,8 +120,6 @@ with
         from percentages
     ),
 
-    -- Focus is Miami's system of record for scheduling, so the frozen archive
-    -- contributes no Miami rows.
     powerschool_conformed as (
         select *,
         from {{ ref("int_powerschool__teacher_grade_levels") }}

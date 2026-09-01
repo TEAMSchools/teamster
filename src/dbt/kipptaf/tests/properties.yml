@@ -126,21 +126,6 @@ data_tests:
           ref:
             name: int_surveys__manager_survey_details
 
-  - name: test_base_powerschool__course_enrollments_no_studyear_course_overlap
-    description: >-
-      Within a (student, year, course) — `cc_studyear` is PowerSchool's
-      composite student+year identifier — consecutive enrollment rows must not
-      have date ranges that overlap by more than one day. A single shared
-      boundary day (one row's `cc_dateleft` equal to the next row's
-      `cc_dateenrolled`) is a normal sequential transfer and is allowed;
-      multi-day overlap is a source-side defect that causes scaffold's
-      date-between join to fan out an admin to multiple schools.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: base_powerschool__course_enrollments
-
   - name: dim_work_assignment_primary__no_overlapping_primary_spans
     description: >-
       Within a `staff_key` partition, the primary-position spans (joined from
@@ -337,14 +322,109 @@ data_tests:
       Warns when a non-dropped course-enrollment (cc) record overlaps more than
       one school enrollment stint. dim_student_section_enrollments resolves
       these to a single stint (covering-first, else earliest), so a nonzero
-      count is a known, monitored condition (baseline ~147, almost all genuine
-      mid-year drop/re-enroll) rather than a failure. Growth signals new
-      boundary-spanning sections to review.
+      count is a known, monitored condition rather than a failure. Almost all
+      are genuine mid-year drop/re-enroll. Miami contributes 16, and that number
+      is stable across every environment measured. The New Jersey component
+      drifts with the live school year -- it read 135 in one build and 128 in CI
+      hours later -- so treat the total as roughly 150 rather than a fixed
+      number, and watch the Miami component and the trend instead. Miami became
+      visible only with this change, which added the Focus branch upstream and
+      made the test's join, date predicate and drop filter null-safe; earlier
+      baselines predate all three and are not comparable.
     config:
       meta:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: test_miami_section_enrollment_orphan_rate
+    description: >-
+      Warns if Miami's current-year null-student_enrollment_key rate in
+      dim_student_section_enrollments rises materially above where it shipped.
+      Focus leaves a course period's end_date null while the schedule is open
+      (coalesced to an open-ended sentinel for the stint join), so a residual of
+      unmatched rows is expected, not a defect. Re-measured 2026-08-27, the
+      largest cause is degenerate stint windows whose exitdate lands on or
+      before their entrydate (1,332 of 1,886 same-school orphans, tracked on
+      #5024), not the null end_date. Shipped at 10.5% (2,025 of 19,295 AY2026
+      rows); NJ's own completed-year norm runs higher (18.16% AY2024, 19.75%
+      AY2025) once a year is no longer mid-accumulation, so 15% is a real
+      ceiling on the still-growing current year, not an arbitrary number.
+      Tracked in #4970 -- do not drive this to zero by widening the overlap
+      predicate, which would attach rows to the wrong stint.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: dim_student_section_enrollments
+
+  - name: test_miami_section_enrollment_dropped_rate
+    description: >-
+      Warns if Miami's current-year `is_dropped_section` rate leaves the band
+      the inference was validated against, or if the flag goes null again. Focus
+      has no drop convention, so the Miami value is inferred (#4968): the
+      schedule row's end_date falls before its marking period ends, and the
+      student still holds an open schedule row that year. The second half
+      excludes a withdrawal sweep. Both halves are assumptions about Focus
+      behavior, and this test is what notices when either stops holding -- a
+      bulk close of schedule rows, or a change that breaks the sweep exclusion,
+      would show up as a rate spike. Shipped at 2.97% (576 of 19,363 AY2026
+      rows) against a like-for-like NJ band of 0.23% to 8.55% at the same point
+      in the year. The 20% ceiling sits above every NJ completed-year rate
+      (17.35% Camden AY2025 is the highest measured), so it does not fire when
+      Miami's own year finishes accumulating. The null check is the other
+      direction: a regression in the Focus branch would restore the nulls this
+      replaced, and a null flag silently removes Miami from every report using
+      the bare `not is_dropped_section` idiom (#4996).
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_enrollments
+
+  - name: test_focus_course_enrollment_joins_resolve_miami
+    description: >-
+      Fails when either repointed course-enrollment model holds zero Miami rows.
+      Both models once joined students on PowerSchool's internal `cc_studentid`
+      / `studentid`, which Focus leaves null on every row, so both returned no
+      Miami data in any academic year while every test stayed green -- the
+      breakage produced no error, only absent rows. This asserts presence rather
+      than a count, because Miami's volume moves with enrollment and a floor
+      would drift stale or fire on legitimate change, while zero is always
+      wrong. It stays year-agnostic on purpose. #4968 made the Focus drop flags
+      non-null, and #5043 made the section-count filter null-safe and added
+      `scheduled_end_date`, so both models now carry Miami AY2026. The assertion
+      stays presence-only and year-agnostic anyway: the two models reach Miami
+      through different filters, so a year-scoped count would be measuring two
+      different things at once.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_extracts__course_enrollments_by_term
+
+  - name: test_focus_course_sections_teacher_resolves
+    description: >-
+      Warns on Focus course periods whose lead teacher does not resolve through
+      the staff roster (by `ein`, falling back to email), scoped to the Focus
+      population by year so the frozen Miami PowerSchool archive (which predates
+      the roster and will never resolve) doesn't inflate the count. Measured
+      floor is 80 AY2026 course periods: 67 with no teacher assigned in Focus at
+      all, plus 13 whose assigned user resolves through neither `ein` nor email.
+      Both are source data gaps in Focus / the roster, not a modeling defect.
+      (`int_focus__course_periods` also holds 21 stale AY2025 rows that the
+      year-scope filter correctly excludes here -- a raw, unscoped count over
+      all course periods would show 101 unresolved instead, double-counting that
+      stale year.)
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__course_sections
 
   - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
     description: >-
@@ -456,6 +536,23 @@ data_tests:
           ref:
             name: int_people__staff_roster
 
+  - name: rpt_clever__sections__enr_teacher_id_is_the_dso
+    description: >-
+      The auto-generated ENR sections must list the school's DSO as their
+      primary teacher, never the School Leader. Both titles match the same
+      filter in rpt_clever__sections, so the pick is stable only because
+      sortorder ranks them -- without that rank the two swap on BigQuery's scan
+      order, which is how ~90 sections silently changed hands and tripped
+      Clever's churn alert in August 2026. Errors rather than warns: Clever
+      derives each section's display name from its primary teacher, so a
+      regression here rewrites every ENR section name in the feed.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__sections
+
   - name: rpt_clever__school_id_resolves_to_schools_feed
     description: >-
       Cross-feed referential integrity for the six Clever SFTP extracts -- every
@@ -532,27 +629,6 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
-  - name: int_powerschool__ada_term_pivot__weighted_year_matches_source
-    description: >-
-      int_powerschool__ada_term computes ada_weighted_year correctly as a rate,
-      and the pivot then re-derives it from its own quarter columns instead of
-      passing that value through. That re-derivation once coalesced the
-      UNWEIGHTED ada_year_q* columns, which produced a number that was still a
-      valid rate between 0 and 1 and therefore invisible to a range test.
-      Because ada_weighted_year is a year-grain window value it is constant
-      across a student's terms, so the pivot's coalesce must reproduce the
-      source value exactly. This test fails on any student-year where the two
-      disagree, which is what a repeat of the wrong-column coalesce looks like.
-      The comparison is exact rather than tolerance-based because the source
-      model aggregates in exact decimal, so equal inputs cannot round to
-      different values between two evaluations.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: int_powerschool__ada_term_pivot
-
   - name: test_focus_unprefix_rule_holds
     description: >-
       Focus records the pre-migration student number on returning students, so
@@ -567,3 +643,65 @@ data_tests:
         dagster:
           ref:
             name: int_students__students
+
+  - name: int_students__calendar_day__zero_enrollment_in_session_days
+    description: >-
+      Focus in-session days at a school that enrolled nobody that year. Five
+      Focus schools carry unfiltered 212-day calendars including holidays and
+      breaks; two of them are closed but still map to live network location
+      keys, so their days reach dim_school_calendars. The fix belongs in Focus
+      configuration, so this warns rather than errors -- it makes the rows
+      visible without hiding them.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__calendar_day
+
+  - name: stg_google_sheets__google_forms__question_department_crosswalk__unique_lowered_abbreviation
+    description: >-
+      int_surveys__survey_responses lowers abbreviation on both sides of the
+      department join, because sheet entry is not case-constrained. A plain
+      unique test on the raw column therefore does not protect the join: two
+      rows entered as A1 and a1 both pass it and then collide once lowered,
+      fanning out every response for that question and breaking the
+      response-grain uniqueness test downstream. This test asserts uniqueness on
+      the lowered value, which is the grain the join actually uses, and so
+      subsumes the raw unique test rather than sitting alongside it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__google_forms__question_department_crosswalk
+
+  - name: rpt_tableau__okrts_behavior__all_categories_mapped
+    description: >-
+      Fires when stg_deanslist__behavior holds a behavior_category that is
+      neither mapped in rpt_tableau__okrts_behavior's category_type CASE nor on
+      the test's deliberate-exclusion list. Such a category is dropped from the
+      OKRTS extract silently, which is how the AY2026 taxonomy change went
+      unnoticed. A hit means either map it in the CASE, or add it to the
+      exclusion list if it is intentionally out of scope.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_deanslist__behavior
+
+  - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
+    description: >-
+      The crosswalk is maintained by hand and separately from the form items
+      sheet, so a question added to a new survey form arrives with no crosswalk
+      row and its responses join to a null department. That routes them to the
+      Survey Dashboard's most restricted audience, which fails safe rather than
+      leaking, so this warns rather than errors -- it surfaces the abbreviations
+      Ops still needs to map without blocking a build.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__google_forms__question_department_crosswalk

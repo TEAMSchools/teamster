@@ -37,12 +37,8 @@ select
     course_weight,
     mp,
     course_history_term,
-    total_seats,
-    filled_seats,
-    sped_seats,
     ell_seats,
     credits,
-    availability,
     gender_restriction,
     house_restriction,
     does_attendance,
@@ -75,4 +71,9 @@ select
     custom_3 as class_minutes_weekly,
     custom_31 as dual_enrollment_indicator,
     custom_27 as team_teacher_training,
+
+    cast(availability as numeric) as availability,
+    cast(filled_seats as numeric) as filled_seats,
+    cast(sped_seats as numeric) as sped_seats,
+    cast(total_seats as numeric) as total_seats,
 from {{ source("focus", "course_periods") }}

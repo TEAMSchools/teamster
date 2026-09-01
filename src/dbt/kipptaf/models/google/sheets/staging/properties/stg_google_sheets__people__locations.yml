@@ -103,8 +103,11 @@ models:
           Single-line street address for the location.
       - name: city
         data_type: string
-        description: |
-          City where the location is situated.
+        description: >-
+          City where the location is situated. Holds the short canonical region
+          names — Newark, Camden, Miami, Paterson — so region lookups by short
+          name use this column rather than location_region, which holds
+          long-form legal-entity names.
       - name: postal_code
         data_type: string
         description: |

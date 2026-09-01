@@ -1,14 +1,15 @@
 models:
   - name: rpt_gsheets__gradebook_audit_template
     description: >
-      Every school week's assignment expectations, one row per category, for
-      building the CSV that C3 uploads into PowerSchool's U_EXPECTATIONS via the
-      KIPP NJ Gradebook Audit plugin. Unlike
-      int_powerschool__u_expectations_qtd_unpivot, which collapses to the most
-      recently completed week per quarter for the audit's quarter-to-date
-      counts, this keeps every week so the upload covers the full year. Coverage
-      follows the inner join to stg_powerschool__u_expectations — Newark and
-      Camden at MS and HS, Paterson at MS, no ES and no Miami.
+      Every school week's assignment expectations, one row per week with the
+      four category counts as columns (W, H, F, S), for building the CSV that C3
+      uploads into PowerSchool's U_EXPECTATIONS via the KIPP NJ Gradebook Audit
+      plugin. Unlike int_powerschool__u_expectations_qtd_unpivot, which
+      collapses to the most recently completed week per quarter for the audit's
+      quarter-to-date counts, this keeps every week so the upload covers the
+      full year. Coverage follows the inner join to
+      stg_powerschool__u_expectations — Newark and Camden at MS and HS, Paterson
+      at MS, no ES and no Miami.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,7 +18,6 @@ models:
               - school_level
               - quarter
               - week_number_quarter
-              - assignment_category_code
     columns:
       - name: region
         data_type: string
@@ -47,25 +47,33 @@ models:
       - name: notes
         data_type: string
         description: Free-text note carried through from the U_EXPECTATIONS row.
-      - name: assignment_category_code
-        data_type: string
-        description: Single-letter category code (W, H, F, or S).
-      - name: expectation
+      - name: W
         data_type: int64
+        quote: true
         description:
-          Count of expected assignments for this category in this week.
+          Count of expected Work Habits assignments for this week. Blank when
+          the U_EXPECTATIONS row leaves the category unset.
+      - name: H
+        data_type: int64
+        quote: true
+        description:
+          Count of expected Homework assignments for this week. Blank when the
+          U_EXPECTATIONS row leaves the category unset.
+      - name: F
+        data_type: int64
+        quote: true
+        description:
+          Count of expected Formative Mastery assignments for this week. Blank
+          when the U_EXPECTATIONS row leaves the category unset.
+      - name: S
+        data_type: int64
+        quote: true
+        description:
+          Count of expected Summative Mastery assignments for this week. Blank
+          when the U_EXPECTATIONS row leaves the category unset.
       - name: academic_year
         data_type: int64
         description: >
           Academic year (starting year). Stamped as a literal — U_EXPECTATIONS
           reflects whatever is currently live in PowerSchool and carries no year
           of its own.
-      - name: assignment_category_term
-        data_type: string
-        description:
-          Category code concatenated with quarter number (e.g. W1, H2, F3, S4).
-      - name: assignment_category_name
-        data_type: string
-        description:
-          Human-readable category name (Work Habits, Homework, Formative
-          Mastery, Summative Mastery).
