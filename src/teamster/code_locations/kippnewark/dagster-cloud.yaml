@@ -112,25 +112,10 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippnewark
                     key: username
-              - name: RENLEARN_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-renlearn-sftp-kippnj
-                    key: password
-              - name: RENLEARN_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-renlearn-sftp-kippnj
-                    key: username
               - name: IREADY_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-iready-sftp
-                    key: host
-              - name: RENLEARN_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-renlearn-sftp-kippnj
                     key: host
               - name: COUCHDROP_SFTP_HOST
                 valueFrom:
@@ -295,25 +280,10 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippnewark
                     key: username
-              - name: RENLEARN_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-renlearn-sftp-kippnj
-                    key: password
-              - name: RENLEARN_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-renlearn-sftp-kippnj
-                    key: username
               - name: IREADY_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-iready-sftp
-                    key: host
-              - name: RENLEARN_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-renlearn-sftp-kippnj
                     key: host
               - name: COUCHDROP_SFTP_HOST
                 valueFrom:

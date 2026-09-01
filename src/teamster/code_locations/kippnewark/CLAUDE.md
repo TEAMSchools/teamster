@@ -23,7 +23,6 @@ GCS bucket: `teamster-kippnewark`
 | `iready`                | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                   |
 | `overgrad`              | API assets    | schedule                                                              |
 | `pearson`               | SFTP assets   | `AutomationConditionSensor`                                           |
-| `renlearn`              | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                 |
 | `titan`                 | SFTP assets   | sensor (`build_titan_sftp_sensor`)                                    |
 | `extracts`              | BigQuery→SFTP | schedule                                                              |
 | `couchdrop`             | sensor only   | sensor (Google Drive watcher)                                         |
