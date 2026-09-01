@@ -122,7 +122,7 @@ def build_iready_sftp_sensor(
                 if match is not None:
                     file_matches.append((f, path, match))
 
-            for f, path, match in file_matches:
+            for f, _, match in file_matches:
                 group_dict = match.groupdict()
 
                 # The regex alternation carries the vendor's current token
