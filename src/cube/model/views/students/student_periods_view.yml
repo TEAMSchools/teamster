@@ -1,13 +1,21 @@
 views:
   - name: student_periods_view
     description: >-
-      Attendance rate as of the end of a period — chronic absence, ADA tier, and
-      truancy. Use this view for "rate as of a period" questions (chronic
-      absence rate this year, ADA tier mix this month, truancy trend by week).
-      For day-level questions — was a student absent on a given date, a calendar
-      heatmap, day-of-week patterns — use student_days_view instead; that view
-      carries the row-level daily attendance record, this one carries
-      pre-computed period snapshots.
+      Student counts and rates as of the end of a period — chronic absence, ADA
+      tier mix and truancy. Use this view for "how many students crossed a line"
+      questions (chronic absence rate this year, ADA tier mix this month,
+      truancy trend by week).
+
+      Every measure here is student-weighted: it counts students against a
+      threshold they reached cumulatively by period end. There is no
+      attendance-rate measure on this view and no ADA — those are day-weighted
+      and live on student_days_view, which is also where day-level questions
+      belong (was a student absent on a given date, a calendar heatmap,
+      day-of-week patterns). This view carries pre-computed period snapshots;
+      that one carries the row-level daily record. A question that wants both a
+      rate-of-students and an attendance rate is two queries, one per view: do
+      not substitute pct_chronically_absent or pct_tier_1_2 for ADA, and do not
+      rebuild chronic absence from daily rows.
 
       Set period_type to year, month, or week to select the grain and group by
       period_start_date. No anchor filter is needed or accepted — the row

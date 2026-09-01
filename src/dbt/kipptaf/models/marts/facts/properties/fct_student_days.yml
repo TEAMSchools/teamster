@@ -35,8 +35,11 @@ models:
         contribution from the source SIS's attendance mode. Null when no
         attendance was recorded, including on every break day.
       - `membership_value` (0.0 to 1.0) is the fractional enrollment claim on
-        the day, split across schools if dual-enrolled. Zero on every break
-        day.
+        the day -- a half-day membership counts 0.5. Zero on every break day.
+        One row per student per day: no student has ever held two overlapping
+        enrollment stints in one source project (0 overlapping pairs across
+        112,825 stints), which is why `student_day_key` can hash student,
+        project and date alone.
       - `present_weight` is like `attendance_value` but tardies weight 0.67.
         Use it when a tardy should count as partial presence, not full.
 

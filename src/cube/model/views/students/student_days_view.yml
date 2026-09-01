@@ -34,9 +34,17 @@ views:
       Suspension) and is null when no attendance was recorded, which means
       unknown rather than present; attendance_code is the raw SIS code.
 
-      This view answers day-level and point-in-time questions. For chronic
-      absence, ADA tier, or truancy rates as of a period, use
-      student_periods_view — those measures are not on this view.
+      This view answers day-level and point-in-time questions. Every measure on
+      it is day-weighted — a ratio of summed day counts, additive over any date
+      range you slice it by. That weighting is the dividing line with
+      student_periods_view, whose measures are student-weighted: they count
+      students who crossed a threshold cumulatively by period end, and cannot be
+      rebuilt from these daily rows. So chronic absence, ADA tier mix and
+      truancy rates live on that view and not this one, and every
+      attendance-rate measure, ADA included, lives on this one and not that one.
+      A question that wants both — chronic absence and ADA by region this month
+      — is two queries, one per view. Do not substitute a tier percentage for an
+      attendance rate.
 
     cubes:
       - join_path: student_days

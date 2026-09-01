@@ -392,6 +392,20 @@ is a row in `fct_student_periods`, read via `student_periods_view` filtering its
 `period_type` dimension (`year` / `month` / `week`). Cube filters to the right
 row and computes nothing.
 
+**The two student attendance views split on weighting, not on time grain.**
+`student_days_view` measures are day-weighted — ratios of summed day counts,
+additive over any date range. `student_periods_view` measures are
+student-weighted — counts of students past a cumulative threshold at period end,
+non-additive across periods because `n_membership_days_ytd` accumulates from the
+start of the academic year. Routing consequence: ADA and every attendance-rate
+measure exist only on `student_days_view`; chronic absence, tier mix and truancy
+exist only on `student_periods_view`; a question wanting both is two queries. A
+day-weighted cumulative ADA on the periods cube would equal the daily view's ADA
+at year grain and be wrong summed across month or week rows — 1.65M membership
+days at year grain against 9.43M summing the eleven AY2025 month rows — which is
+why it is not there. A student-weighted one diverges from the daily view's ADA
+by 0.66 points (0.9141 against 0.9207, AY2025), so it must not reuse the name.
+
 **Point-in-time enrollment headcount is a pinned date on `student_days_view`.**
 The fact carries a row for every enrolled calendar day, break days included, so
 any date resolves — no anchor flag, and none available. Pin `attendance_date`,

@@ -103,8 +103,12 @@ cubes:
           changed schools mid-period is counted once per school. This is a
           served-during-the-period count, which is a different question from
           enrolled on the period's last day — for that, pin the date on
-          student_days_view. Do NOT use this as the denominator for any rate on
-          this cube; every rate here is scoped to count_students_min_10_days.
+          student_days_view.
+
+          Denominator use: this is the correct denominator for pct_truant, whose
+          rule has no eligibility floor. Do NOT use it for any chronic-absence
+          or ADA-tier rate — those are all scoped to count_students_min_10_days,
+          and swapping in this larger population silently deflates them.
         sql: student_period_key
         type: count_distinct
         public: true
@@ -176,8 +180,7 @@ cubes:
         description: >-
           Percentage of CA-eligible students with cumulative ADA strictly above
           90.0% (Tier 1 or Tier 2) as of period_end_date. Tier 2 is strictly
-          above 90.0%; Tier 3 includes exactly 90.0%. Denominator is
-          count_students.
+          above 90.0%; Tier 3 includes exactly 90.0%.
 
           Denominator is count_students_min_10_days, so anyone with fewer than
           10 membership days year-to-date is excluded from both sides.
@@ -198,8 +201,7 @@ cubes:
         description: >-
           Percentage of CA-eligible students with cumulative ADA from 80%
           through 90.0% inclusive (Tier 3) as of period_end_date. Tier 2 is
-          strictly above 90.0%; Tier 3 includes exactly 90.0%. Denominator is
-          count_students.
+          strictly above 90.0%; Tier 3 includes exactly 90.0%.
 
           Denominator is count_students_min_10_days, so anyone with fewer than
           10 membership days year-to-date is excluded from both sides.
@@ -210,31 +212,40 @@ cubes:
 
       - name: count_truants
         description: >-
-          CA-eligible student-school records meeting regional truancy criteria
-          as of period_end_date. Miami: 15+ absences in a 90-day rolling window.
-          NJ regions: projected absences reach 50+ for the year. Same per-school
-          counting grain as count_students. The CA-eligibility floor (10+
-          membership days) is a KIPP Foundation chronic-absence criterion that
-          this fact also applies to truancy — neither the Miami nor the NJ
-          truancy rule itself requires a minimum membership-day count.
+          Student-school records meeting regional truancy criteria as of
+          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
+          regions: projected absences reach 50+ for the year. Same per-school
+          counting grain as count_students.
+
+          No eligibility floor is applied here. Neither the Miami nor the NJ
+          truancy rule requires a minimum membership-day count, so any such
+          floor belongs inside is_truant on the fact, not in this measure or its
+          denominator. Miami's rule is already self-limiting — 15 absences
+          implies at least 15 membership days. NJ's is not: its projection can
+          fire in a student's first days, so early-period counts run high. At
+          year grain the effect is nil (AY2025 NJ: 233 truant either way); at
+          month grain it is concentrated in the first weeks (2025-08: 550 rows
+          here that an eligibility floor would have reported as zero). Show
+          count_students beside this measure for any early period.
         sql: student_period_key
         type: count_distinct
         public: true
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
           - sql: "{CUBE}.is_truant"
 
       - name: pct_truant
         description: >-
-          Percentage of CA-eligible students meeting truancy criteria as of
-          period_end_date. Denominator is count_students — because count_truants
-          applies the chronic-absence eligibility floor to truancy as well, this
-          rate's denominator is CA-eligible students, not all students the
-          regional truancy rule itself would consider.
+          Percentage of students meeting regional truancy criteria as of
+          period_end_date. Denominator is count_students — every student served
+          in the period, with no eligibility floor on either side, because
+          truancy has no eligibility concept in either the Miami or the NJ rule.
 
-          Denominator is count_students_min_10_days, so anyone with fewer than
-          10 membership days year-to-date is excluded from both sides.
-        sql: "1.0 * {count_truants} / NULLIF({count_students_min_10_days}, 0)"
+          This is the one rate on this cube not scoped to
+          count_students_min_10_days. Any minimum-membership-day condition
+          belongs inside is_truant on the fact, which keeps this denominator
+          correct through any future change to that definition. See
+          count_truants for how the numerator behaves early in an academic year.
+        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
         type: number
         format: percent
         public: true
