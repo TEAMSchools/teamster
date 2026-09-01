@@ -15,8 +15,6 @@ packages:
     name: pearson
   - local: ../powerschool
     name: powerschool
-  - local: ../renlearn
-    name: renlearn
   - local: ../titan
     name: titan
   - name: dbt_external_tables
@@ -25,4 +23,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: 5570079e221ff852de47fdebe3ac63b255f4e667
+sha1_hash: 06fecf6c17f4322a165e612c1167694629a87d70

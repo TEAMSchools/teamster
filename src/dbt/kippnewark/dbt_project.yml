@@ -26,7 +26,6 @@ vars:
   current_academic_year: 2026
   current_fiscal_year: 2027
   iready_schema: kippnj_iready
-  renlearn_schema: kippnj_renlearn
   cloud_storage_uri_base: gs://teamster-kippnewark/dagster/kippnewark
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
@@ -84,17 +83,6 @@ models:
           +enabled: false
         int_powerschool__person_contacts:
           +enabled: false
-  renlearn:
-    +materialized: table
-    staging:
-      stg_renlearn__accelerated_reader:
-        +enabled: false
-      stg_renlearn__fast_star:
-        +enabled: false
-      stg_renlearn__star_dashboard_standards:
-        +enabled: false
-      stg_renlearn__star_skill_area:
-        +enabled: false
   titan:
     +materialized: table
     staging:
@@ -114,16 +102,6 @@ sources:
     finalsite:
       contacts:
         +enabled: true
-  renlearn:
-    renlearn:
-      src_renlearn__accelerated_reader:
-        +enabled: false
-      src_renlearn__fast_star:
-        +enabled: false
-      src_renlearn__star_dashboard_standards:
-        +enabled: false
-      src_renlearn__star_skill_area:
-        +enabled: false
   titan:
     titan:
       src_titan__income_form_data:
