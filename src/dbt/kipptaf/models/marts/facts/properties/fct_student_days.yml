@@ -377,3 +377,342 @@ models:
           floor still carries a tier and this flag, and every published rate
           filters on eligibility. This column alone is not a chronic-absence
           rate numerator.
+
+unit_tests:
+  - name: test_days_tier_ladder_boundaries_on_one_membership_day
+    description:
+      The tier ladder is a ratio, so one membership day pins every boundary
+      exactly and no multi-day fixture is needed. Five students, one day each.
+      0.95 is Tier 1. 0.901 is strictly above 90.0 percent and must be Tier 2.
+      0.9 is exactly 90.0 percent and must be Tier 3, never Tier 2, and must be
+      chronically absent. 0.8 is exactly 80 percent and must be Tier 3. 0.799 is
+      below 80 percent and must be Tier 4. None of the five is CA-eligible on a
+      single membership day, which proves the tier is assigned independently of
+      the eligibility floor.
+    model: fct_student_days
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            date '2025-09-01' as calendardate,
+            date '2025-09-01' as week_start_monday,
+            100 as schoolid,
+            cast(null as string) as term,
+            true as is_in_session_day,
+            1.0 as membershipvalue
+          union all
+          select 2, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+          union all
+          select 3, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+          union all
+          select 4, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+          union all
+          select 5, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            date '2025-09-01' as calendardate,
+            'A' as att_code,
+            0.95 as attendancevalue,
+            0.95 as is_present_weighted,
+            false as is_truant,
+            0.0 as is_absent,
+            0.0 as is_tardy,
+            1.0 as is_ontime,
+            0.0 as is_oss,
+            0.0 as is_iss,
+            0.0 as is_suspended,
+            1.0 as membershipvalue
+          union all
+          select 2, 'kippnewark', date '2025-09-01', 'A', 0.901, 0.901, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          union all
+          select 3, 'kippnewark', date '2025-09-01', 'A', 0.9, 0.9, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          union all
+          select 4, 'kippnewark', date '2025-09-01', 'A', 0.8, 0.8, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          union all
+          select 5, 'kippnewark', date '2025-09-01', 'A', 0.799, 0.799, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+
+      - input: ref('dim_terms')
+        format: sql
+        rows: |
+          select
+            999 as school_id,
+            'NOMATCH' as term_name,
+            1900 as academic_year,
+            'RT' as `type`,
+            'term-none' as term_key
+    expect:
+      format: sql
+      rows: |
+        select
+          student_day_key,
+          student_enrollment_key,
+          date_key,
+          location_key,
+          academic_year,
+          week_start_monday,
+          is_in_session_day,
+          term_key,
+          attendance_code,
+          attendance_value,
+          present_weight,
+          is_truant,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_ca_eligible,
+          ada_tier,
+          membership_value,
+          is_chronically_absent,
+          is_absent,
+          is_tardy,
+          is_ontime,
+          is_oss,
+          is_iss,
+          is_suspended,
+          attendance_category,
+        from unnest([
+          struct<
+            student_day_key string, student_enrollment_key string,
+            date_key date, location_key string, academic_year int64,
+            week_start_monday date, is_in_session_day bool, term_key string,
+            attendance_code string, attendance_value float64,
+            present_weight float64, is_truant bool,
+            n_membership_days_ytd float64, n_present_days_ytd float64,
+            is_ca_eligible bool, ada_tier string, membership_value float64,
+            is_chronically_absent bool, is_absent int64, is_tardy int64,
+            is_ontime int64, is_oss int64, is_iss int64, is_suspended int64,
+            attendance_category string
+          >
+          (
+          'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.95, 0.95, false,
+          1.0, 0.95, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.901, 0.901, false,
+          1.0, 0.901, false, 'Tier 2', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '7afe022f600a6ca5344d8c145da2a9a2', 'd19e8f58fae7d84a143ad77654b70fd6',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.9, 0.9, false,
+          1.0, 0.9, false, 'Tier 3', 1.0,
+          true, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'e0003d963cf966b7fd5598cd9617d126', 'b67399aa30b11a32d67d205700423eb6',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.8, 0.8, false,
+          1.0, 0.8, false, 'Tier 3', 1.0,
+          true, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'a6a93c5cfe4ecf2c99dabdb483691a9f', '6bc1cec9217a9de43e98d3fffa4e7d57',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.799, 0.799, false,
+          1.0, 0.799, false, 'Tier 4', 1.0,
+          true, 0, 0, 1, 0, 0, 0, 'Present'
+          )
+        ])
+
+  - name: test_days_eligibility_floor_at_ten_membership_days
+    description:
+      Ten consecutive membership days, all present. is_ca_eligible must be false
+      on days one through nine and true on day ten -- the floor is at ten
+      cumulative membership days, not nine, and it accumulates from the start of
+      the academic year rather than resetting. ada_tier is Tier 1 throughout, so
+      the only column moving is the eligibility flag.
+    model: fct_student_days
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            100 as schoolid,
+            cast(null as string) as term,
+            true as is_in_session_day,
+            1.0 as membershipvalue
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            d as calendardate,
+            'A' as att_code,
+            1.0 as attendancevalue,
+            1.0 as is_present_weighted,
+            false as is_truant,
+            0.0 as is_absent,
+            0.0 as is_tardy,
+            1.0 as is_ontime,
+            0.0 as is_oss,
+            0.0 as is_iss,
+            0.0 as is_suspended,
+            1.0 as membershipvalue
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+
+      - input: ref('dim_terms')
+        format: sql
+        rows: |
+          select
+            999 as school_id,
+            'NOMATCH' as term_name,
+            1900 as academic_year,
+            'RT' as `type`,
+            'term-none' as term_key
+    expect:
+      format: sql
+      rows: |
+        select
+          student_day_key,
+          student_enrollment_key,
+          date_key,
+          location_key,
+          academic_year,
+          week_start_monday,
+          is_in_session_day,
+          term_key,
+          attendance_code,
+          attendance_value,
+          present_weight,
+          is_truant,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_ca_eligible,
+          ada_tier,
+          membership_value,
+          is_chronically_absent,
+          is_absent,
+          is_tardy,
+          is_ontime,
+          is_oss,
+          is_iss,
+          is_suspended,
+          attendance_category,
+        from unnest([
+          struct<
+            student_day_key string, student_enrollment_key string,
+            date_key date, location_key string, academic_year int64,
+            week_start_monday date, is_in_session_day bool, term_key string,
+            attendance_code string, attendance_value float64,
+            present_weight float64, is_truant bool,
+            n_membership_days_ytd float64, n_present_days_ytd float64,
+            is_ca_eligible bool, ada_tier string, membership_value float64,
+            is_chronically_absent bool, is_absent int64, is_tardy int64,
+            is_ontime int64, is_oss int64, is_iss int64, is_suspended int64,
+            attendance_category string
+          >
+          (
+          'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          1.0, 1.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-02', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          2.0, 2.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-03', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          3.0, 3.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-04', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          4.0, 4.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-05', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          5.0, 5.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-06', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          6.0, 6.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-07', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          7.0, 7.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-08', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          8.0, 8.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-09', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          9.0, 9.0, false, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-10', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          10.0, 10.0, true, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          )
+        ])
