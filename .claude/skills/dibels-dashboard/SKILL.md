@@ -610,28 +610,23 @@ spreadsheet (`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`):
 
 - **`src_google_sheets__dibels_expected_assessments`** (single underscore) ->
   tab "Expected Assessments V1" (sheetId `1270280562`, 16 columns, PascalCase
-  headers). What `sources-external.yml` actually points `sheet_range` at today
-  -- this is what `stg_google_sheets__dibels_expected_assessments` reads right
-  now. Treat it as the live source until `sheet_range` is moved.
+  headers). The old range -- nothing points `sheet_range` at it anymore, kept
+  only as a stale historical tab.
 - **`src_google_sheets__dibels__expected_assessments`** (double underscore) ->
   tab "Expected Assessments" (sheetId `1536888014`, 18 columns, snake_case
-  headers, `endColumnIndex: 18` -- not row-bounded). The SY26-27 replacement,
-  built and validated in this session. Has two columns V1 does not:
-  `assessment_type` and `measure_standard_level` (see below), inserted after
-  `subject_area`. This named range already exists and points at the new tab --
-  confirmed via `spreadsheets().get()`'s `namedRanges`.
+  headers, `endColumnIndex: 18` -- not row-bounded). **This is the live source
+  as of #3834** -- `sources-external.yml`'s `sheet_range` was moved here,
+  `stg_google_sheets__dibels_expected_assessments`'s contract widened to 18
+  columns, and the `if(admin_season in (...)) as assessment_type,` derivation
+  dropped in favor of the sheet-authored column. Verified in dev: staged the
+  external source (`ext_full_refresh`), built the staging model, 3,588 rows,
+  correct `assessment_type` / `measure_standard_level` / `round_number` values.
 
-**Cutting over means moving `sheet_range` on the existing source, per the _Named
-ranges: the recurring trap_ convention above** -- from the single- to the
-double-underscore range, keeping the same source `name:` and Dagster asset key
-(don't create a new source block). Widen the source's `columns:` declaration
-from 16 to 18 at the same time, and update
-`stg_google_sheets__dibels_expected_assessments.sql`'s contract/properties.yml
-to add `assessment_type` and `measure_standard_level`, dropping the now-
-redundant `if(admin_season in (...)) as assessment_type,` derivation (see
-below). Do this together, not as three separate changes -- a `sheet_range` move
-with a stale `columns:` list re-triggers the "New sheet column vs `select *`
-contract" failure mode from `src/dbt/CLAUDE.md`.
+The cutover (`sheet_range` move + `columns:` widen + contract update + drop the
+derivation) landed as one change, per the _Named ranges: the recurring trap_
+convention above -- don't split a future analogous cutover into separate
+commits; a `sheet_range` move with a stale `columns:` list re-triggers the "New
+sheet column vs `select *` contract" failure mode from `src/dbt/CLAUDE.md`.
 
 ### `measure_standard_level` cohort split (`Below` / `Well Below`)
 
@@ -721,3 +716,110 @@ caught by diffing the proposed correction against `reporting__terms` before
 trusting it, not by inspecting the matching logic in isolation. Any future
 script that builds a similar `reporting__terms` lookup by code needs the same
 `Name` check.
+
+### `PLIT` boundary rule -- verified, K-2 only, one open edge case
+
+How to pick a new `PLITn` row's `Start Date`/`End Date` was an open item for a
+long time (see the ref doc). Reverse-engineered and verified against real
+Camden/Newark/Paterson AY2025 `reporting__terms` data, using
+`int_students__calendar_day` (network-wide, SIS-neutral -- NOT
+`stg_powerschool__calendar_day`, which is PowerSchool-only and would silently
+exclude Miami since it's on Focus):
+
+- `PLITn.start` = the first **in-session** day strictly after round `n-1`'s
+  `End Date`
+- `PLITn.end` = the last **in-session** day strictly before round `n`'s
+  `Start Date`
+- `PLIT1.start` = the season's own Benchmark start date directly, NOT
+  calendar-derived (it's the very first day of the season, so there's no
+  "previous round" to compute from)
+
+Matched 7 real boundaries exactly across all three NJ regions before trusting it
+(`scripts/generate_sy2627_k2_lit_plit_rows.py` implements it, and caught its own
+bug on the first run -- `PLIT1.start` needs the direct-copy exception above, not
+the day-after-previous-round math every other `PLITn` uses).
+
+**PD days are NOT excluded from this calculation, and shouldn't be added in.**
+Checked directly: `stg_powerschool__calendar_day` has a real `type = 'PD'` code
+and uses it correctly for SOME PD days (e.g. 2025-11-03, 2025-12-08 both code
+`insession = 0`, `type = 'PD'`) but NOT others that landed exactly on a `PLIT`
+boundary (2025-10-24, 2025-12-23, 2026-03-27 all code `insession = 1`,
+`type = 'IN'`, identical to a normal day, despite being real PD days per the
+human-maintained school calendar). This looked at first like a reason to build
+PD-day exclusion into the boundary calculation -- but checking the actual frozen
+`stg_google_sheets__dibels_pm_goals` values ruled that out: Camden round 2's
+frozen `PM_Round_Days` (18) exactly matches a naive PD-day-inclusive count, so
+the real historical process doesn't reliably exclude PD days either. Building
+that in now would be MORE correct than precedent, not consistent with it -- a
+deliberate choice to make explicitly if it's ever wanted, not something to sneak
+into a boundary-generating script.
+
+**One open edge case, not resolved**: crossing from `BOY->MOY` into `MOY->EOY`,
+real AY2025 data shows the new season's first `PLIT` starting ONE DAY BEFORE the
+old season's last round officially ends (Camden/Newark/Paterson `PLIT5` starts
+2025-12-22; `LIT4` ends 2025-12-23) -- confirmed both days are real in-session
+days, not a PD-day artifact, and confirmed via Google Sheets edit history that
+the dates were never changed after entry (so it's not a stale-snapshot
+explanation either). Genuinely unexplained. `PLIT` rows generated for the
+SY26-27 season boundary use the same clean rule as every other transition (day
+after the previous round ends) rather than replicating this unexplained 1-day
+overlap -- flag those specific rows if the real reason for last year's overlap
+ever surfaces.
+
+### `pm_goal_include` scaffolding -- K-2 only, same pattern as `PLIT`
+
+Confirmed with the user against real AY2025 data before building SY26-27 rows: a
+measure that's tested in SOME rounds of a season but not all still needs a row
+for EVERY round of that season, for K-2 only -- the in-house collective-average
+goal calculation needs trajectory continuity across the whole season, even for
+rounds where that specific measure wasn't administered. `assessment_include`
+stays `null` on those rows (they're not excluded from the scaffold);
+`pm_goal_include` is `false` on the rounds where the measure wasn't tested that
+round, `null` (active) where it was.
+
+Verified example: Camden/Newark/Paterson grade 0 (K), `PSF`, `BOY->MOY`, AY2025
+-- rounds 1-3 have `assessment_include = null`, `pm_goal_include = null`; round
+4 (PSF not tested that round) still has a row, `assessment_include = null`,
+`pm_goal_include = false`.
+
+**Grades 3-8 do NOT get this treatment.** Aimline supplies a goal per measure
+per round as actually tested -- there's no collective-average trajectory to keep
+continuous, so `pm_goal_include` is simply `null` on every 3-8 row, and no row
+exists for a grade/measure/round combination the T&L doc doesn't list. Same
+K-2-only split as `PLIT`, for the same underlying reason (the in-house goal-calc
+pipeline vs. aimline).
+
+`pm_goal_criteria = 'AND'` for every row, every grade, this year -- T&L
+confirmed all K-8 rounds require meeting every tested standard, not a mix of
+AND/OR rounds. Don't build round-by-round OR logic for SY26-27 on the assumption
+it might vary; it doesn't this year.
+
+`scripts/generate_sy2627_expected_assessments_rows.py` implements both the K-2
+scaffolding and the 3-8 filtered generation, plus the `measure_standard_level`
+cohort split (`Both` -> `Below` + `Well Below` rows, `Well Below only` per the
+doc -> just the one) -- verified against the concrete PSF example above, a 3-8
+cohort-filtered spot check, and zero exact-duplicate rows, before handing off.
+Generated 878 rows for Newark/Paterson/Camden; verified byte-for-byte against
+the live sheet after pasting (one cosmetic mismatch caught and cleared: Sheets
+normalizes `false` to `FALSE` on paste -- not a data problem).
+
+### Paterson's grade bands changed between AY2025 and AY2026 -- don't reuse last year's override
+
+The ref doc documents Paterson's AY2025 grade bands as `3` / `5,6,7` (no grade
+4, no grade 8) rather than the `3,4` / `5,6,7,8` Newark and Camden use. **That
+enrollment has changed**: AY2026 Paterson has 120 grade-4 students and 60
+grade-8 students (zero of either in AY2025) -- confirmed via
+`int_extracts__student_enrollments`, and consistent with the SY26-27 T&L doc,
+which gives Newark and Paterson one shared grid with no per-region grade-band
+split. Generating AY2026 rows with the old Paterson-specific band override
+(`duplicate_reporting_terms_grade_band.py`'s `--region-override` flag) produces
+the WRONG bands -- check current enrollment before reusing any region's
+prior-year band definition, every year, not just for Paterson.
+
+### SY26-27 NJ rollover status
+
+`reporting__terms` (K-2 `LIT`+`PLIT`, 3-4/5-8 `LIT`-only) and
+`Expected Assessments` (full PM scaffold, all grade bands, cohort-split) are
+both built and verified for Newark, Paterson, and Camden. **Miami is not done**
+-- its `PLIT` structure is different (windows spanning entire breaks) and its
+boundary rule and PD days are unverified; see the ref doc's open items.

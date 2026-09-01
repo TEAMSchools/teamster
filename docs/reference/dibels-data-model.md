@@ -274,6 +274,19 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR/NULL — any must be 1) window functions partitioned by
 student / round.
 
+!!! note "`pm_goal_include` scaffolding is K-2-only; SY26-27 is all `AND`" The
+rounds-1-4-but-goal-only-2-and-4 example above is the K-2 in-house
+collective-average pipeline specifically — confirmed against real AY2025 data
+(Camden/Newark/Paterson grade K, `PSF`, `BOY→MOY`: rounds 1-3
+`pm_goal_include = null`, round 4 not tested but still scaffolded,
+`pm_goal_include = false`). **Grades 3-8 never get this treatment** — aimline
+supplies a goal per measure per round as actually tested, so there is no
+trajectory to keep continuous; `pm_goal_include` is simply `null` on every 3-8
+row, and no row exists for an untested grade/measure/round at all. Same K-2-only
+split as `PLIT`, same underlying reason. Separately, `pm_goal_criteria = 'AND'`
+for every row this year, every grade — T&L confirmed all K-8 rounds require
+every tested standard, not a mix of AND/OR.
+
 !!! note "AY 2026–2027: two new sheet-authored columns" The source sheet gained
 two columns ahead of the SY26-27 rollover, both inserted next to `subject_area`:
 
@@ -697,9 +710,19 @@ proportionally to school days:
 `round_goal = (pm_round_days / pm_days) × required_growth`. `pm_round_days` for
 round N counts the school days in both the `LITN` window (during the round) and
 the `PLITN` window (before the round), giving a longer "elapsed time"
-denominator that produces a more accurate daily growth rate. Generating `PLIT`
-start/end dates requires consulting each region's academic calendar manually —
-one of the more labor-intensive parts of the annual rollover.
+denominator that produces a more accurate daily growth rate.
+
+**How to generate `PLIT` start/end dates (derived and verified, SY26-27)**:
+`PLITn.start` = the first in-session day strictly after round `n-1`'s end date
+(or the season's own Benchmark start date, for `PLIT1` specifically — there's no
+previous round to compute from); `PLITn.end` = the last in-session day strictly
+before round `n`'s start date. Verified against 7 real AY2025 boundaries across
+Camden, Newark, and Paterson before trusting it — see the `dibels-dashboard`
+skill for the full derivation, the PD-day investigation that initially looked
+relevant but turned out not to be (the real historical process doesn't reliably
+exclude PD days either), and one open edge case: the season boundary (`BOY→MOY`
+into `MOY→EOY`) shows an unexplained 1-day overlap in real data that isn't
+replicated in new rows.
 
 **`PLIT` is not deprecated in AY 2026–2027 — it is K-2's mechanism, expanded.**
 K-2 keeps the in-house, collective-average PM goal pipeline (aimline only covers
@@ -711,11 +734,16 @@ treatment split into two bands (`3,4` and `5,6,7,8` in the common case) rather
 than a new code prefix, since their round dates don't need K-2's separate
 pre-round accounting — see _Annual rollover procedure_ below.
 
-**Grade bands are region-specific — never assume a uniform K-8 split.** Verified
-against SY25-26 enrollment: Paterson has no grade 4 and no grade 8, so its bands
-are `0,1,2` / `3` / `5,6,7`, not the `0,1,2` / `3,4` / `5,6,7,8` the other three
-regions use. Confirm actual grade-level enrollment per region before generating
-rows for a new year; don't copy one region's band definition onto another.
+**Grade bands are region-specific — never assume a uniform K-8 split, and never
+assume last year's split still holds.** SY25-26: Paterson had no grade 4 and no
+grade 8, so its bands were `0,1,2` / `3` / `5,6,7`, not the `0,1,2` / `3,4` /
+`5,6,7,8` the other three regions used. **That changed for SY26-27** — Paterson
+enrolled 120 grade-4 and 60 grade-8 students, so it now uses the same `3,4` /
+`5,6,7,8` bands as Newark and Camden, matching the T&L doc (which gives Newark
+and Paterson one shared grid with no per-region split). Confirm actual
+grade-level enrollment per region, every year, before generating rows — don't
+copy one region's band definition onto another, or one year's band definition
+onto the next.
 
 These dates must be manually entered by the data team after receiving the
 testing calendar from Teaching & Learning. Like
@@ -1026,16 +1054,16 @@ treatment in `stg_google_sheets__reporting__terms`:
 - **K-2 keeps the in-house PM goal calculation**, which requires `PLIT` rows
   (the school-day counting that feeds the collective-average growth-rate math —
   see _Assessment calendar_ above). Roll these over every year for K-2 alongside
-  the `LIT` rows from Step 2.
+  the `LIT` rows from Step 2, using the boundary rule documented there.
 - **Grades 3-8 use Amplify's aimline-provided goal-setting calculation**
   directly and do **not** need `PLIT` rows at all — only `LIT` rows for round
   dates.
 
-!!! note "Open: how to calculate PLIT date ranges is not yet documented here"
-`PLIT` window dates are currently derived by hand each year (see the
-day-counting purpose above), and that calculation method itself hasn't been
-written down in this doc or the `dibels-dashboard` skill. Get this taught and
-documented before the next rollover needs new `PLIT` rows.
+`PLIT` date-range generation is now documented, derived, and scripted — see
+_Assessment calendar_ above and the `dibels-dashboard` skill's "`PLIT` boundary
+rule" section for the rule, its verification, and the one open edge case (the
+`BOY→MOY`-into-`MOY→EOY` season boundary shows an unexplained 1-day overlap in
+real AY2025 data that new rows don't replicate).
 
 ### Mid-year round cancellations
 
@@ -1213,11 +1241,23 @@ flag derived from PowerSchool. This is **not in scope** for the initial AY
 
 ### Open questions (as of May 2026)
 
-- **PM measure routing by cohort** — `measure_standard_level` exists on the
-  sheet and is backfilled, but `int_google_sheets__dibels_pm_expectations` / the
-  PM intermediate model do not yet route a student to their cohort's measures
-  using it; needed once a year actually differentiates measures by cohort
-  (SY25-26 doesn't)
+- **PM measure routing by cohort — now live, not just theoretical.**
+  `measure_standard_level` exists on the sheet and is backfilled, and SY26-27's
+  real Expected Assessments rows (NJ regions, built and verified) genuinely
+  differentiate measures by cohort round to round — but
+  `int_google_sheets__dibels_pm_expectations` / the PM intermediate model still
+  don't route a student to their cohort's specific measures using this field.
+  This is now a real gap blocking correct SY26-27 reporting, not a future-year
+  hypothetical
+- **Miami's SY26-27 rows not built** — NJ (Newark, Paterson, Camden) is done in
+  both `reporting__terms` and Expected Assessments; Miami's `PLIT` boundary
+  rule, PD days, and cohort mechanics are all unverified against real data (see
+  the `dibels-dashboard` skill)
+- **`PLIT` season-boundary overlap, still unexplained** — real AY2025 data shows
+  the `MOY→EOY` season's first `PLIT` row starting one day before the prior
+  season's last round officially ends, across all three NJ regions; ruled out a
+  PD-day cause and a since-changed-date cause (checked Sheets edit history —
+  none exists), but never got a real explanation
 - **PM completion signal redesign** — the
   `expected_row_count = actual_row_count` check in
   `int_students__dibels_participation_roster` needs a new approach for
