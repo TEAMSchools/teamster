@@ -1,6 +1,7 @@
 import time
-from collections import defaultdict, deque
+from collections import defaultdict
 from collections.abc import Callable, Iterator
+from itertools import zip_longest
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster._utils.backoff import backoff, exponential_delay_generator
@@ -70,9 +71,10 @@ def _batch_by_distinct_org_unit(
     unit are ever in flight together.
 
     A batch therefore holds at most ``size`` items AND at most one per distinct
-    org unit, so a payload targeting few org units yields more, smaller batches.
-    An item without an ``orgUnitId`` (a customer-scoped assignment) is keyed on
-    its position instead, so those still pack to ``size``.
+    org unit, so a payload targeting few org units yields more, smaller batches:
+    the batch count equals the largest single org unit's row count. An item
+    without an ``orgUnitId`` (a customer-scoped assignment) is keyed on its
+    position instead, so those still pack to ``size``.
 
     Args:
         role_assignments: Role assignment resource dicts.
@@ -82,24 +84,16 @@ def _batch_by_distinct_org_unit(
         Batches of role assignment dicts, preserving input order within each
         org unit.
     """
-    by_org_unit = defaultdict[str | int, deque[dict]](deque)
+    by_org_unit = defaultdict[str | int, list[dict]](list)
 
     for i, role_assignment in enumerate(role_assignments):
         by_org_unit[role_assignment.get("orgUnitId") or i].append(role_assignment)
 
-    while by_org_unit:
-        batch = []
-
-        for org_unit_id in list(by_org_unit):
-            batch.append(by_org_unit[org_unit_id].popleft())
-
-            if not by_org_unit[org_unit_id]:
-                del by_org_unit[org_unit_id]
-
-            if len(batch) == size:
-                break
-
-        yield batch
+    # One "round" takes at most one item per org unit, so a round already
+    # satisfies the distinctness rule; chunk() only caps it at ``size`` for the
+    # case where the org units outnumber a single batch.
+    for round_ in zip_longest(*by_org_unit.values()):
+        yield from chunk(obj=[item for item in round_ if item is not None], size=size)
 
 
 class GoogleDirectoryResource(ConfigurableResource):

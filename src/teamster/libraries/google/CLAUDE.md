@@ -38,11 +38,21 @@ failed emails to skip group membership for uncreated users (via
 includes the password hash) out of logs and asset-check metadata.
 
 **409 conflict handling**: 409 is deliberately excluded from
-`_TRANSIENT_HTTP_CODES` because its meaning is method-specific: for
-`batch_insert_role_assignments` it means "entity already exists" (not
-retryable), but for `batch_update_users` it means "conflicting request, please
-try again" (retryable). User update 409s are retried individually via
-`_retry_update_user()` after a 1-second cooldown.
+`_TRANSIENT_HTTP_CODES`, so no batch method retries one. Read the `reason` code
+before assuming what a 409 means — `duplicate` ("entity already exists") is
+permanent, `conflict` ("conflicting requests, please try again") is Google
+serializing two writes against one resource and is transient. User update 409s
+are retried individually via `_retry_update_user()` after a 1-second cooldown.
+
+**Role assignment batches are serialized per org unit**: the Directory API
+serializes writes against a single org unit, so two `roleAssignments.insert`
+sub-requests scoped to the same org unit inside one batch race and one returns
+409 `conflict` — which nothing retries, so it fails the `zero_api_errors` check.
+`_batch_by_distinct_org_unit` deals at most one item per org unit into each
+batch, and batches run sequentially, so two writes to one org unit are never in
+flight together. The batch count therefore equals the largest single org unit's
+row count, NOT `len(rows) / size` — a payload of 135 rows across 6 org units
+(largest 56) yields 56 batches, not 14.
 
 **Batch callback signature**: Google's batch executor calls
 `callback(id, response, exception)` with exactly one of `response`/`exception`
