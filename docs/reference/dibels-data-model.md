@@ -274,6 +274,33 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR/NULL — any must be 1) window functions partitioned by
 student / round.
 
+!!! note "AY 2026–2027: two new sheet-authored columns" The source sheet gained
+two columns ahead of the SY26-27 rollover, both inserted next to `subject_area`:
+
+    - **`assessment_type`** (`Benchmark` / `PM`) — previously derived in the
+      staging model from `admin_season`; now authored directly on the sheet so
+      the classification doesn't depend on a rule only the SQL knows.
+    - **`measure_standard_level`** (`Below` / `Well Below`) — the cohort a PM
+      row applies to. Blank on every Benchmark row (Benchmark tests all
+      students regardless of cohort). For SY25-26, used to validate the new
+      model against real historical data: every existing PM row was split into
+      a `Below` and a `Well Below` copy, since T&L's PM rounds document shows
+      both cohorts tested on identical measures that year with no
+      differentiation. See the `dibels-dashboard` skill for the generator
+      scripts and the disambiguation gotchas hit while building them
+      (a Benchmark-vs-PM-round code collision in years before grade-band
+      tagging existed, and a network-wide `month_round` label that had quietly
+      drifted from each region's real calendar).
+
+    Both columns currently live on a new tab
+    ("Expected Assessments", named range
+    `src_google_sheets__dibels__expected_assessments`, double underscore) that
+    is not yet the dbt source — `sources-external.yml`'s `sheet_range` still
+    points at the original single-underscore range ("Expected Assessments V1",
+    16 columns, no `assessment_type`/`measure_standard_level`). Until that
+    `sheet_range` moves and the staging contract is widened, the model still
+    reads the old 16-column shape.
+
 ### Source of truth: `int_amplify__all_assessments`
 
 The single model any team member should use to pull DIBELS scores. It surfaces
@@ -376,7 +403,11 @@ MOY→EOY:
 
 !!! note "AY 2026–2027: PM measures will change" With cohort-differentiated
 testing (Well Below vs. Below may test different measures) and the aimline
-migration, the PM measure set is expected to change. See
+migration, the PM measure set is expected to change. The schema now has a field
+for this (`measure_standard_level`, see the note above) — for SY25-26 both
+cohorts test identical measures, so this table's grade-by-grade breakdown still
+applies to both `Below` and `Well Below` rows unchanged; a future year where
+cohorts genuinely diverge would need this table split by cohort too. See
 [#3834](https://github.com/TEAMSchools/teamster/issues/3834).
 
 #### Assessment strategy history
@@ -1047,14 +1078,14 @@ improvements in issue
 already-frozen goal rows for a cancelled round would need to be suppressed via a
 separate override table or a targeted BQ write — not yet designed.
 
-!!! note "AY 2026–2027 design work required: cohort-differentiated measures" The
-introduction of cohort-differentiated measures (Well Below vs. Below testing
-different things) is a new concept not currently represented in the schema.
-`stg_google_sheets__dibels_expected_assessments` does not have a field to
-capture which benchmark band a row applies to, and the PM intermediate model
-does not yet route students to measures based on their prior composite band.
-This will require schema and model design before the first PM round of AY
-2026–2027.
+!!! note "Cohort-differentiated measures: schema gap closed, routing still open"
+The schema gap is closed — `measure_standard_level` (`Below` / `Well Below`) now
+exists on the Expected Assessments sheet (see the note earlier in this doc), and
+SY25-26 rows are backfilled with it. What's still open: the PM intermediate
+model does not yet route a student to their cohort's specific measures using
+this field — that model-side work is required before the first PM round of AY
+2026–2027 that actually differentiates measures by cohort (SY25-26 itself
+doesn't, so this hasn't blocked anything yet).
 
 ## Upcoming changes: AY 2026–2027 PM migration
 
@@ -1182,9 +1213,11 @@ flag derived from PowerSchool. This is **not in scope** for the initial AY
 
 ### Open questions (as of May 2026)
 
-- **Expected PM measures** — not yet defined in
-  `stg_google_sheets__dibels_expected_assessments`; to be confirmed with T&L
-  later in the summer
+- **PM measure routing by cohort** — `measure_standard_level` exists on the
+  sheet and is backfilled, but `int_google_sheets__dibels_pm_expectations` / the
+  PM intermediate model do not yet route a student to their cohort's measures
+  using it; needed once a year actually differentiates measures by cohort
+  (SY25-26 doesn't)
 - **PM completion signal redesign** — the
   `expected_row_count = actual_row_count` check in
   `int_students__dibels_participation_roster` needs a new approach for

@@ -560,12 +560,17 @@ wrong; they're the full K-8 scaffold for two entire prior years):
   both PM seasons** -- it does NOT reset to 1 at the `MOY->EOY` boundary.
   Verified round ranges: AY2024 Camden/Newark 1-9 (4 rounds `BOY->MOY` + 5
   `MOY->EOY`); AY2025 Camden/Newark/Paterson 1-8 (4+4); AY2025 Miami 1-6 (3+3).
-  This is exactly the mechanism the issue's "Round numbers now exceed 9" problem
-  breaks -- `round_number` still derives from `right(test_code, 1)`, so it
-  already reached `LIT9` in AY2024 without issue (single digit), but Miami's
-  SY26-27 schedule needs rounds 10 and 11, which parse as `0` and `1`. Fix that
-  (explicit `round_number` column, per the issue's checklist) before entering
-  SY26-27 rows -- don't extend the `LIT`-code-only pattern past 9.
+  **Fixed for double-digit rounds** (#3834): `round_number` used to derive from
+  `right(test_code, 1)`, which reached `LIT9` in AY2024 without issue
+  (single-digit), but would have silently mis-parsed `LIT10`/`LIT11` as `0`/`1`
+  -- exactly what Miami's 11-round SY26-27 schedule needs. Now
+  `safe_cast(regexp_extract(test_code, r'LIT(\d+)') as int)` in
+  `stg_google_sheets__dibels_expected_assessments.sql` -- extracts every digit
+  after `LIT` (or `PLIT`; the pattern matches the `LIT` substring wherever it
+  falls), not just the last one. Verified against every `test_code` value
+  actually in the sheet (LIT1-LIT9 today, all single-digit) plus literal
+  `LIT10`/`LIT11`/`PLIT1`/`PLIT8` test values via BigQuery -- unchanged for
+  every existing row, correct for the double-digit case once it appears.
 - **`Month_Round` per round already follows a real monthly progression**, not a
   placeholder: AY2025 NJ regions ran September/October/November/December for
   rounds 1-4, then February/March/March/April for rounds 5-8. AY2025 Miami ran
@@ -597,3 +602,122 @@ because this scenario broke `unique_dim_terms_term_key` -- two rows sharing a
 `code` but differing only in `Grade Band` used to collide on the same key. No
 `code` prefix is needed for a new band anymore; the hash already disambiguates
 on `grade_band`.
+
+### Two "Expected Assessments" tabs and named ranges exist in parallel
+
+Same single-vs-double-underscore trap as foundation_goals above, on this same
+spreadsheet (`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`):
+
+- **`src_google_sheets__dibels_expected_assessments`** (single underscore) ->
+  tab "Expected Assessments V1" (sheetId `1270280562`, 16 columns, PascalCase
+  headers). What `sources-external.yml` actually points `sheet_range` at today
+  -- this is what `stg_google_sheets__dibels_expected_assessments` reads right
+  now. Treat it as the live source until `sheet_range` is moved.
+- **`src_google_sheets__dibels__expected_assessments`** (double underscore) ->
+  tab "Expected Assessments" (sheetId `1536888014`, 18 columns, snake_case
+  headers, `endColumnIndex: 18` -- not row-bounded). The SY26-27 replacement,
+  built and validated in this session. Has two columns V1 does not:
+  `assessment_type` and `measure_standard_level` (see below), inserted after
+  `subject_area`. This named range already exists and points at the new tab --
+  confirmed via `spreadsheets().get()`'s `namedRanges`.
+
+**Cutting over means moving `sheet_range` on the existing source, per the _Named
+ranges: the recurring trap_ convention above** -- from the single- to the
+double-underscore range, keeping the same source `name:` and Dagster asset key
+(don't create a new source block). Widen the source's `columns:` declaration
+from 16 to 18 at the same time, and update
+`stg_google_sheets__dibels_expected_assessments.sql`'s contract/properties.yml
+to add `assessment_type` and `measure_standard_level`, dropping the now-
+redundant `if(admin_season in (...)) as assessment_type,` derivation (see
+below). Do this together, not as three separate changes -- a `sheet_range` move
+with a stale `columns:` list re-triggers the "New sheet column vs `select *`
+contract" failure mode from `src/dbt/CLAUDE.md`.
+
+### `measure_standard_level` cohort split (`Below` / `Well Below`)
+
+SY26-27 needs one Expected Assessments PM row per
+`(region, grade, round, measure)` **per cohort**, not one row shared across
+cohorts -- Well Below and Below students can be assigned different measures
+starting this year (see _Upcoming changes_ in the ref doc). For SY25-26
+(`academic_year = 2025`), which is used to validate the new model against real
+historical data, T&L's PM rounds doc shows every round testing Below and Well
+Below on the **identical** measures with no differentiation -- so the correct
+SY25-26 fix is purely mechanical: treat every existing PM row as the `Below`
+copy, and duplicate it into a second row identical in every column except
+`measure_standard_level`, set to `Well Below`. Benchmark rows are untouched --
+Benchmark tests all students regardless of cohort.
+
+`scripts/duplicate_expected_assessments_measure_standard_level.py` does this,
+walking the whole "Expected Assessments" tab in original row order (not just the
+matched rows) so every other row -- other academic years, and every Benchmark
+row including 2025's and 2026's -- passes through unchanged in its original
+position. Verified against prod (V1) after running it: the resulting `Below` and
+`Well Below` rows are an exact 1:1 match to V1's 2025 PM rows, and every
+non-2025-PM row matches V1 byte-for-byte, confirmed by multiset diff (zero
+extra, zero missing on all three checks), not just a row count.
+
+**This never invents a measure set -- it can only ever duplicate what a region's
+own rows already say.** The script has no code path that copies one region's
+measures onto another, so Miami's PM rows keep whatever measures Miami actually
+tests, distinct from NJ's (verified: Miami's grade 0/3/5 measure sets differ
+from Newark's at every grade checked). Do not "simplify" a future rewrite of
+this script by templating one region's measure list across all regions -- that
+would silently overwrite real regional differences.
+
+**This does NOT generalize past 2025 to a future year where cohorts genuinely
+test different measures.** If a future PM rounds doc ever specifies different
+measures per cohort within the same round, this mechanical duplication is the
+wrong tool -- that needs real per-cohort row entry, not a copy-with-one-field-
+changed script.
+
+### `assessment_type` -- now sheet-authored, not derived
+
+`stg_google_sheets__dibels_expected_assessments.sql` used to derive
+`assessment_type` from `admin_season`:
+`if(admin_season in ('BOY', 'MOY', 'EOY'), 'Benchmark', 'PM')`. Replaced with a
+sheet-authored column (added to the "Expected Assessments" tab, next to
+`subject_area`) so the Benchmark/PM classification is explicit on the sheet
+instead of inferred downstream by a rule only the SQL knows. Once `sheet_range`
+moves to the double-underscore range (see above), drop that `if(...)` line from
+the staging model and let `select *,` pass the raw column through instead.
+
+**Backfilled for every existing row, not just new ones** -- `assessment_type` is
+used across every academic year on this tab, not only SY26-27, so
+`scripts/backfill_expected_assessments_derived_columns.py` fills it for all
+~3,588 rows (all years) using the exact same rule the SQL used to apply, so no
+row's classification changes silently. Same script also carries the
+`month_round` fix below -- run once, get both.
+
+### Benchmark `month_round` must match `reporting__terms`, not be copied forward
+
+`month_round` on Benchmark rows (`BOY`/`MOY`/`EOY`) had drifted from the
+region's actual calendar for years, undetected: it was written as one nominal
+label per season (`August`/`January`/`May`) applied network-wide, including to
+Miami, whose BOY and EOY windows land in different calendar months than the NJ
+regions. Confirmed against `reporting__terms`' actual `Start Date`s, both years
+checked: Miami's BOY starts in September (not August); Miami's EOY starts in
+April (not May); two 2023 NJ `MOY` rows were also wrong (`February`, should be
+`January`). Nobody had checked `month_round` against `reporting__terms` directly
+before this.
+
+**The rule going forward**: `month_round` = the calendar month of the matching
+`LIT1`/`LIT2`/`LIT3` (`BOY`/`MOY`/`EOY`) row's `Start Date` in
+`reporting__terms`, **per region**, not copied from last year's label and not
+shared across regions.
+`scripts/fix_expected_assessments_benchmark_month_round.py` derives this lookup
+and corrects every Benchmark row that disagrees, for every academic year present
+-- folded into `backfill_expected_assessments_derived_columns.py` above, so a
+rollover only needs to run that one script.
+
+**Gotcha that cost a wasted first pass**: before grade-band tagging existed
+(pre-2025), a PM round can share the exact same `LIT1`/`LIT2`/`LIT3` code as the
+real Benchmark row for that year, with no `Grade Band` value to distinguish them
+either (e.g. AY2024 Camden `LIT1` has one row named `BOY`, dated 2024-08-21, and
+another named `BOY->MOY`, dated 2024-09-30 -- same code, both grade-band-blank).
+Matching by code alone let a PM round's date silently overwrite the real
+Benchmark date when building the lookup. Only the `Name` column (exactly
+`BOY`/`MOY`/`EOY`, never `BOY->MOY` etc for a PM round) disambiguates them --
+caught by diffing the proposed correction against `reporting__terms` before
+trusting it, not by inspecting the matching logic in isolation. Any future
+script that builds a similar `reporting__terms` lookup by code needs the same
+`Name` check.
