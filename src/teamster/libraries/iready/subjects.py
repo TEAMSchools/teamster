@@ -38,6 +38,28 @@ def remote_subject_token(subject: str, academic_year: str) -> str:
     return REMOTE_SUBJECT_TOKENS.get(subject, subject)
 
 
+def iready_remote_file_regex(
+    remote_file_regex: str,
+    legacy_remote_file_regex: str | None,
+    academic_year: str,
+) -> str:
+    """Pick the un-composed filename regex for this partition's era.
+
+    The era is a FIXED fiscal year (`is_legacy_year`), never "is this the
+    newest partition" — next July, FY27 rolls into a `2026/` archive that
+    still carries the NEW names, so a caller must not key this off
+    `Current_Year` / "latest partition" instead of the academic year itself.
+    """
+    if is_legacy_year(academic_year):
+        return (
+            legacy_remote_file_regex
+            if legacy_remote_file_regex is not None
+            else remote_file_regex
+        )
+
+    return remote_file_regex
+
+
 def partition_subject(remote_token: str, academic_year: str) -> str:
     """Filename token -> the partition subject it belongs to.
 

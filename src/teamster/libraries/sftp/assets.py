@@ -17,7 +17,10 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.core.utils.functions import file_to_records, regex_pattern_replace
-from teamster.libraries.iready.subjects import is_legacy_year, remote_subject_token
+from teamster.libraries.iready.subjects import (
+    iready_remote_file_regex,
+    remote_subject_token,
+)
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -129,18 +132,11 @@ def build_sftp_file_asset(
                 ),
             )
 
-            # The filename era is a FIXED fiscal year, not "is this the newest
-            # partition". Next July, FY27 rolls into a 2026/ archive that
-            # carries the NEW names, so keying off the Current_Year branch
-            # above would wrongly translate it back to `ela`.
-            if is_legacy_year(academic_year_key):
-                remote_file_regex_era = (
-                    legacy_remote_file_regex
-                    if legacy_remote_file_regex is not None
-                    else remote_file_regex
-                )
-            else:
-                remote_file_regex_era = remote_file_regex
+            remote_file_regex_era = iready_remote_file_regex(
+                remote_file_regex=remote_file_regex,
+                legacy_remote_file_regex=legacy_remote_file_regex,
+                academic_year=academic_year_key,
+            )
 
             remote_file_regex_composed = compose_regex(
                 regexp=remote_file_regex_era,
