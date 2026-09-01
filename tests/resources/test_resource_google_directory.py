@@ -8,6 +8,7 @@ from googleapiclient.errors import HttpError
 
 from teamster.libraries.google.directory.resources import (
     GoogleDirectoryResource,
+    _batch_by_distinct_org_unit,
     _retryable_execute,
     _TransientHttpError,
     members_for_created_users,
@@ -439,6 +440,76 @@ def test_batch_insert_role_assignments_retries_transient_subrequest_and_succeeds
         )
     assert exceptions == []
     assert mock_api.new_batch_http_request.call_count == 2
+
+
+# ── _batch_by_distinct_org_unit ───────────────────────────────────────────────
+
+
+def test_batch_by_distinct_org_unit_never_repeats_an_org_unit_in_a_batch():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "orgUnitId": org_unit_id}
+        for org_unit_id, count in [("ou_a", 56), ("ou_b", 33), ("ou_c", 3)]
+        for i in range(count)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    for batch in batches:
+        org_unit_ids = [ra["orgUnitId"] for ra in batch]
+        assert len(org_unit_ids) == len(set(org_unit_ids))
+        assert len(batch) <= 10
+
+    flat = [ra for batch in batches for ra in batch]
+    assert len(flat) == len(role_assignments)
+
+    for org_unit_id in ("ou_a", "ou_b", "ou_c"):
+        assert [ra for ra in flat if ra["orgUnitId"] == org_unit_id] == [
+            ra for ra in role_assignments if ra["orgUnitId"] == org_unit_id
+        ]
+
+
+def test_batch_by_distinct_org_unit_yields_every_item_exactly_once():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "orgUnitId": "ou_a"} for i in range(5)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    assert batches == [[ra] for ra in role_assignments]
+
+
+def test_batch_by_distinct_org_unit_packs_customer_scoped_items_to_size():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "scopeType": "CUSTOMER"} for i in range(25)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    assert [len(batch) for batch in batches] == [10, 10, 5]
+
+
+def test_batch_insert_role_assignments_splits_same_org_unit_across_batches():
+    resource, mock_api = _make_resource()
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[({"roleAssignmentId": f"ra{i}"}, None)] for i in range(3)]
+    )
+
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_role_assignments(
+            [
+                {"assignedTo": f"uid{i}", "roleId": "rid", "orgUnitId": "ou_a"}
+                for i in range(3)
+            ]
+        )
+
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 3
 
 
 # ── list_roles / list_role_assignments default params ─────────────────────────
