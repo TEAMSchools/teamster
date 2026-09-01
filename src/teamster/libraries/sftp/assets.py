@@ -17,6 +17,10 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.core.utils.functions import file_to_records, regex_pattern_replace
+from teamster.libraries.iready.subjects import (
+    iready_remote_file_regex,
+    remote_subject_token,
+)
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -59,6 +63,7 @@ def build_sftp_file_asset(
     remote_file_regex: str,
     ssh_resource_key: str,
     avro_schema,
+    legacy_remote_file_regex: str | None = None,
     partitions_def=None,
     automation_condition=None,
     group_name: str | None = None,
@@ -83,6 +88,7 @@ def build_sftp_file_asset(
         metadata={
             "remote_dir_regex": remote_dir_regex,
             "remote_file_regex": remote_file_regex,
+            "legacy_remote_file_regex": legacy_remote_file_regex or "",
         },
         required_resource_keys={ssh_resource_key},
         io_manager_key="io_manager_gcs_avro",
@@ -116,27 +122,42 @@ def build_sftp_file_asset(
             ).get_last_partition_key()
 
             if academic_year_key == academic_year_last_partition_key:
-                remote_dir_regex_composed = compose_regex(
-                    regexp=remote_dir_regex,
-                    partition_key=MultiPartitionKey(
-                        {"academic_year": "Current_Year", "subject": subject_key}
-                    ),
-                )
+                academic_year_dir = "Current_Year"
             else:
-                remote_dir_regex_composed = compose_regex(
-                    regexp=remote_dir_regex,
-                    partition_key=MultiPartitionKey(
-                        {"academic_year": academic_year_key, "subject": subject_key}
-                    ),
-                )
+                academic_year_dir = academic_year_key
+
+            remote_dir_regex_composed = compose_regex(
+                regexp=remote_dir_regex,
+                partition_key=MultiPartitionKey(
+                    {"academic_year": academic_year_dir, "subject": subject_key}
+                ),
+            )
+
+            remote_file_regex_era = iready_remote_file_regex(
+                remote_file_regex=remote_file_regex,
+                legacy_remote_file_regex=legacy_remote_file_regex,
+                academic_year=academic_year_key,
+            )
+
+            remote_file_regex_composed = compose_regex(
+                regexp=remote_file_regex_era,
+                partition_key=MultiPartitionKey(
+                    {
+                        "academic_year": academic_year_key,
+                        "subject": remote_subject_token(
+                            subject=subject_key, academic_year=academic_year_key
+                        ),
+                    }
+                ),
+            )
         else:
             remote_dir_regex_composed = compose_regex(
                 regexp=remote_dir_regex, partition_key=partition_key
             )
 
-        remote_file_regex_composed = compose_regex(
-            regexp=remote_file_regex, partition_key=partition_key
-        )
+            remote_file_regex_composed = compose_regex(
+                regexp=remote_file_regex, partition_key=partition_key
+            )
 
         with (
             ssh.get_connection() as connection,
