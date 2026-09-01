@@ -67,7 +67,7 @@ def _build_ssh_for_sensor(tmp_path, filename: str, members: dict[str, str]):
 
 def test_sensor_requests_partition_from_school_year(tmp_path):
     """The run request lands in the fiscal year the archive itself names."""
-    from dagster import build_sensor_context
+    from dagster import SensorResult, build_sensor_context
 
     from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
     from teamster.code_locations.kippmiami.renlearn import assets
@@ -90,6 +90,8 @@ def test_sensor_requests_partition_from_school_year(tmp_path):
     result = sftp_sensor(
         build_sensor_context(resources={"ssh_renlearn": ssh})  # type: ignore[arg-type]
     )
+
+    assert isinstance(result, SensorResult)
 
     partition_keys = {
         run_request.partition_key for run_request in result.run_requests or []
