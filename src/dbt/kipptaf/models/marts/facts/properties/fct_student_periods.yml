@@ -121,11 +121,13 @@ models:
           value on the row.
 
           This is what lets a rate on this fact be cut by the same student and
-          enrollment attributes as the daily fact. Location does NOT travel this
-          path: location_key below is resolved from the fact's own non-null
-          column, because dim_student_enrollments nulls a share of rows and a
-          location-scoped access policy routed through it would let those rows
-          escape the filter.
+          enrollment attributes as the daily fact, and it is also the single
+          canonical path to dim_locations, matching how the daily cube reaches
+          it. Measured against this fact's rows the two possible location routes
+          agree on 4,363,667 of 4,363,672 and disagree on none; the five
+          exceptions are one enrollment stint absent from
+          dim_student_enrollments, which resolves a null location and is
+          therefore hidden from a location-scoped viewer rather than exposed.
         config:
           meta:
             foreign_key:
@@ -154,9 +156,13 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          FK to dim_locations. Resolved from int_students__schools joined on
-          schoolid = school_number and _dbt_source_project — never through
-          dim_student_enrollments.
+          The school this row is scoped to, resolved from int_students__schools
+          on schoolid and _dbt_source_project. It partitions the cumulative
+          windows on fct_student_days so every count is per school, and it keys
+          this fact's grain — a computation input rather than a dimensional
+          lookup. The Cube layer reaches location attributes by traversing
+          student_school_enrollments instead, so that there is one path to
+          dim_locations rather than two.
         config:
           meta:
             foreign_key:

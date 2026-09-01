@@ -12,25 +12,23 @@ cubes:
         sql: "{dates.date_key} = {CUBE}.period_end_date_key"
         relationship: many_to_one
 
-      - name: locations
-        sql: "{locations.location_key} = {CUBE}.location_key"
-        relationship: many_to_one
-
       - name: terms
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
-      # Reached for the enrollment chain's own attributes only: grade level, ELL
-      # and IEP status, meal eligibility, the homeroom teacher, and the student
-      # demographics behind it. Every cut available on student_days_view is
-      # available here through this join, which is the point of it.
+      # The canonical path to everything dimensional about a student: grade
+      # level, ELL and IEP status, meal eligibility, the homeroom teacher, the
+      # demographics behind it, and locations. Every cut available on
+      # student_days_view is available here through this join, which is the
+      # point of it, and it is the same chain that cube reaching locations
+      # only via student_school_enrollments.
       #
-      # Location deliberately does NOT travel this path. locations above joins
-      # the fact's own non-null location_key, because dim_student_enrollments
-      # nulls a share of rows and a location-scoped access policy routed through
-      # it would let those rows escape the filter. The view declares every
-      # locations member on the direct path, so the two routes never resolve
-      # ambiguously.
+      # The fact's own location_key is deliberately NOT joined here. It exists
+      # to partition the cumulative windows so every count is per school, and
+      # to key the grain -- a computation input, not a published dimension. A
+      # second locations join on it would give this cube two routes to the same
+      # dim, which is the diamond the marts layer forbids. Degenerate FK, no
+      # declared join.
       - name: student_school_enrollments
         sql: >
           {student_school_enrollments.student_enrollment_key} =
