@@ -101,7 +101,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_expected_assessments
+            sheet_range: src_google_sheets__dibels__expected_assessments
             skip_leading_rows: 1
         config:
           meta:
@@ -113,37 +113,41 @@ sources:
                 - dibels
                 - expected_assessments
         columns:
-          - name: Academic_Year
+          - name: academic_year
             data_type: int64
-          - name: Region
+          - name: region
             data_type: string
-          - name: Grade
+          - name: grade
             data_type: int64
-          - name: Test_Type
+          - name: test_type
             data_type: string
-          - name: Discipline
+          - name: discipline
             data_type: string
-          - name: Subject_Area
+          - name: subject_area
             data_type: string
-          - name: Measure_Standard
+          - name: assessment_type
             data_type: string
-          - name: Test_Code
+          - name: measure_standard_level
             data_type: string
-          - name: Admin_Season
+          - name: measure_standard
             data_type: string
-          - name: Month_Round
+          - name: test_code
             data_type: string
-          - name: Illuminate_Subject
+          - name: admin_season
             data_type: string
-          - name: iReady_Subject
+          - name: month_round
             data_type: string
-          - name: PS_Credit_Type
+          - name: illuminate_subject
             data_type: string
-          - name: Assessment_Include
+          - name: iready_subject
+            data_type: string
+          - name: ps_credit_type
+            data_type: string
+          - name: assessment_include
             data_type: boolean
-          - name: PM_Goal_Include
+          - name: pm_goal_include
             data_type: boolean
-          - name: PM_Goal_Criteria
+          - name: pm_goal_criteria
             data_type: string
       - name: src_google_sheets__dibels__foundation_goals
         external:
