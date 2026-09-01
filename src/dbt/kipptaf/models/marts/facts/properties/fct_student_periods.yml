@@ -1,14 +1,29 @@
 models:
   - name: fct_student_periods
     description: >-
-      Student attendance period-snapshot fact. One row per student x location x
-      period type x period start date, accumulating membership and presence over
-      the period to date. Sourced from int_students__attendance_daily joined to
-      int_students__schools for location_key — never joined through
-      dim_student_enrollments, which drops 8.5% of rows. A period with no
-      membership day produces no row; period_end_date_key is the last membership
-      day observed, which can fall short of the period's calendar end for an
-      in-progress period. Populated for year, month, and week period types.
+      Student attendance period-snapshot fact. One row per student x school x
+      period type x period start date, carrying that student's cumulative
+      position at that school as of the period's end.
+
+      It derives nothing. Every value is read from fct_student_days at
+      period_end_date_key, which is where the tier ladder, the eligibility floor
+      and the year-to-date accumulation are expressed — so this fact and that
+      one cannot disagree. All this model decides is which day ends each period.
+      Identity comes from int_students__enrollment_days, because no fact in this
+      layer publishes a natural student identifier.
+
+      School is not projected. It groups the periods and is a hash input to
+      student_period_key, but it is reachable from student_enrollment_key
+      through dim_student_enrollments, so declaring it would put two paths to
+      dim_locations in the generated reference. The Cube layer traverses the
+      enrollment chain for location, matching how the daily cube reaches it.
+
+      A period with no membership day produces no row, so a withdrawn student
+      stops appearing rather than carrying forward. period_end_date_key is the
+      student's own last membership day inside the bucket, not the period's
+      calendar end — a weekend, a holiday and a mid-period withdrawal all move
+      it, so two students in the same month can carry different end dates.
+      Populated for year, month, and week period types.
 
       Eligibility (is_ca_eligible) is cumulative from the start of the academic
       year, so early periods carry a much smaller eligible count than later ones
@@ -152,27 +167,6 @@ models:
             foreign_key:
               to: ref('dim_terms')
               to_columns: [term_key]
-
-      - name: location_key
-        data_type: string
-        description: >-
-          The school this row is scoped to, resolved from int_students__schools
-          on schoolid and _dbt_source_project. It partitions the cumulative
-          windows on fct_student_days so every count is per school, and it keys
-          this fact's grain — a computation input rather than a dimensional
-          lookup. The Cube layer reaches location attributes by traversing
-          student_school_enrollments instead, so that there is one path to
-          dim_locations rather than two.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_locations')
-              to_columns: [location_key]
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
 
       - name: period_start_date_key
         data_type: date
@@ -360,7 +354,6 @@ unit_tests:
           student_key,
           student_enrollment_key,
           term_key,
-          location_key,
           academic_year,
           period_type,
           period_start_date_key,
@@ -375,18 +368,17 @@ unit_tests:
           struct<
             student_period_key string, student_key string,
             student_enrollment_key string, term_key string,
-            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('eb89d84900014832a74d4cbea609f9fc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-b', 2025, 'year', date '2025-07-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('433a57fcce7a35d720d8581d54da5269', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-b', 2025, 'month', date '2025-09-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('c056370b02a9b117ef343dd8cc74d729', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-b', 2025, 'week', date '2025-09-08', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('eb89d84900014832a74d4cbea609f9fc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('433a57fcce7a35d720d8581d54da5269', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('c056370b02a9b117ef343dd8cc74d729', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-08', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false)
         ])
 
   - name: test_periods_mid_year_leaver_keeps_own_period_end
@@ -465,7 +457,6 @@ unit_tests:
           student_key,
           student_enrollment_key,
           term_key,
-          location_key,
           academic_year,
           period_type,
           period_start_date_key,
@@ -480,18 +471,17 @@ unit_tests:
           struct<
             student_period_key string, student_key string,
             student_enrollment_key string, term_key string,
-            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('a28bd0cb8d767fda67687b3e03ac54b4', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
-          ('469b5b8b6ef42be202979e0bbf7699bd', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
-          ('f9e83d295f5293f1eb52d94a028ed666', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
+          ('a28bd0cb8d767fda67687b3e03ac54b4', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
+          ('469b5b8b6ef42be202979e0bbf7699bd', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
+          ('f9e83d295f5293f1eb52d94a028ed666', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false)
         ])
 
   - name: test_periods_gap_in_enrollment_does_not_carry_values_forward
@@ -588,7 +578,6 @@ unit_tests:
           student_key,
           student_enrollment_key,
           term_key,
-          location_key,
           academic_year,
           period_type,
           period_start_date_key,
@@ -603,17 +592,16 @@ unit_tests:
           struct<
             student_period_key string, student_key string,
             student_enrollment_key string, term_key string,
-            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
-          ('cfccc372dfe154c3304b630ca97f82b1', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
-          ('dbe905eac0b9ecc8f53526cae0624d7a', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
+          ('cfccc372dfe154c3304b630ca97f82b1', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
+          ('dbe905eac0b9ecc8f53526cae0624d7a', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false)
         ])
 
   - name: test_periods_reads_the_value_from_period_end_not_another_day
@@ -692,7 +680,6 @@ unit_tests:
           student_key,
           student_enrollment_key,
           term_key,
-          location_key,
           academic_year,
           period_type,
           period_start_date_key,
@@ -707,13 +694,12 @@ unit_tests:
           struct<
             student_period_key string, student_key string,
             student_enrollment_key string, term_key string,
-            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true)
         ])

@@ -280,15 +280,18 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          FK to dim_locations, the school this row's enrollment stint belongs
-          to. Every cumulative column below accumulates per location_key,
-          because a rate reported at any other grain is a different number and a
-          student who transfers mid-year starts a fresh count at the new school.
-        config:
-          meta:
-            foreign_key:
-              to: ref('dim_locations')
-              to_columns: [location_key]
+          The school this row's enrollment stint belongs to, resolved from
+          int_students__schools on schoolid and _dbt_source_project. Every
+          cumulative column below accumulates per location_key, because a rate
+          reported at any other grain is a different number and a student who
+          transfers mid-year starts a fresh count at the new school.
+          fct_student_periods reads it to group its periods.
+
+          Degenerate: deliberately carries no declared foreign key. Location is
+          already reachable from student_enrollment_key through
+          dim_student_enrollments, and a second edge here would put two paths to
+          dim_locations in the generated marts reference. The Cube layer reaches
+          location by traversing the enrollment chain for the same reason.
 
       - name: academic_year
         data_type: int64

@@ -145,7 +145,12 @@ select
     -- is the only answer consistent with every other value here.
     b.term_key,
 
-    pp.location_key,
+    -- location_key is not projected. It groups per_period above and is a hash
+    -- input to student_period_key, but it is derivable from
+    -- student_enrollment_key through dim_student_enrollments, and declaring it
+    -- here would give the generated marts reference a second edge to
+    -- dim_locations alongside that one. The Cube layer reaches location by
+    -- traversing the enrollment chain for the same reason.
     pp.academic_year,
     pp.period_type,
     pp.period_start_date_key,
