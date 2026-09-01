@@ -252,6 +252,7 @@ class Incident(BaseModel):
     IncidentID: str | None = None
     Infraction: str | None = None
     InfractionTypeID: str | None = None
+    is_deleted: bool | None = None
     IsActive: bool | None = None
     IsReferral: bool | None = None
     Location: str | None = None
