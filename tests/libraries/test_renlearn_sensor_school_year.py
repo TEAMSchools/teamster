@@ -1,5 +1,8 @@
+import json
 import zipfile
 from unittest.mock import MagicMock
+
+from dagster_shared import check
 
 from teamster.libraries.renlearn.sensors import _school_year_start_date
 
@@ -102,3 +105,58 @@ def test_sensor_requests_partition_from_school_year(tmp_path):
         check_key is not None and check_key.startswith("2025-07-01")
         for check_key in partition_keys
     )
+
+
+def _run_sensor(tmp_path, members: dict[str, str], fallback: str = "2026-07-01"):
+    from dagster import SensorResult, build_sensor_context
+
+    from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+    from teamster.code_locations.kippmiami.renlearn import assets
+    from teamster.libraries.renlearn.sensors import build_renlearn_sftp_sensor
+
+    ssh = _build_ssh_for_sensor(tmp_path, filename="KIPP Miami.zip", members=members)
+
+    sftp_sensor = build_renlearn_sftp_sensor(
+        code_location=CODE_LOCATION,
+        asset_selection=assets,
+        partition_key_start_date=fallback,
+        timezone=LOCAL_TIMEZONE,
+    )
+
+    result = sftp_sensor(
+        build_sensor_context(resources={"ssh_renlearn": ssh})  # type: ignore[arg-type]
+    )
+
+    assert isinstance(result, SensorResult)
+    return result
+
+
+def test_sensor_falls_back_when_the_archive_names_no_school_year(tmp_path):
+    """No SchoolYear column means the configured key is the only key we have."""
+    result = _run_sensor(
+        tmp_path,
+        members={"SM.csv": '"StudentIdentifier"\n"5678"\n'},
+        fallback="2024-07-01",
+    )
+
+    partition_keys = {
+        run_request.partition_key for run_request in result.run_requests or []
+    }
+
+    assert partition_keys
+    assert all(
+        check_key is not None and check_key.startswith("2024-07-01")
+        for check_key in partition_keys
+    )
+
+
+def test_sensor_skips_a_school_year_outside_the_partitions_definition(tmp_path):
+    """A year with no partition is skipped, and the cursor still advances."""
+    result = _run_sensor(
+        tmp_path, members={"SM.csv": STAR_HEADER + '"1234","2019-2020","5678"\n'}
+    )
+
+    assert not result.run_requests
+
+    # the cursor advances anyway, so the drop is not re-downloaded every tick
+    assert json.loads(check.not_none(value=result.cursor))
