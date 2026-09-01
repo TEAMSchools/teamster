@@ -56,15 +56,6 @@
   system: tableau
   status: verified
 
-- id: content_team
-  name: Content Team (MIA)
-  url: https://tableau.kipp.org/t/KIPPNJ/views/ContentTeamDashboard/Home?:embed=y
-  description:
-    Information from CTM Rubric and O3s for Instructional Leads in Miami.
-  audiences: [leaders]
-  system: tableau
-  status: needs-review
-
 - id: data_quality_dashboard
   name: Data Quality Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/DataQualityDashboard/Home?:embed=y
