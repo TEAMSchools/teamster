@@ -312,15 +312,15 @@ with
     )
 
 select
-    * except (_dagster_partition_subject),
-
     -- The partition subject stays `ela` in Dagster because the GCS object path
     -- is derived from it. The warehouse reports the vendor's current name. This
     -- must stay in the final select: the HS growth-measure CASE expressions in
     -- `hs_goals` compare against the raw `ela` token.
-    if(
-        _dagster_partition_subject = 'ela', 'reading', _dagster_partition_subject
-    ) as _dagster_partition_subject,
+    * replace (
+        if(
+            _dagster_partition_subject = 'ela', 'reading', _dagster_partition_subject
+        ) as _dagster_partition_subject
+    ),
 
     overall_scale_score + typical_growth as overall_scale_score_plus_typical_growth,
     overall_scale_score + stretch_growth as overall_scale_score_plus_stretch_growth,
