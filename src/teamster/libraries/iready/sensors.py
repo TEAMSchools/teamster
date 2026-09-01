@@ -19,6 +19,7 @@ from dagster import (
 )
 from dagster_shared import check
 
+from teamster.libraries.iready.subjects import partition_subject
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -92,15 +93,29 @@ def build_iready_sftp_sensor(
 
                 group_dict = match.groupdict()
 
+                # The regex alternation carries the vendor's current token
+                # (`reading`); the partition space does not. Translate back
+                # before building the key, or the RunRequest names a partition
+                # that does not exist.
+                subject_key = partition_subject(
+                    remote_token=group_dict["subject"],
+                    academic_year=group_dict["academic_year"],
+                )
+
                 if group_dict["academic_year"] == "Current_Year":
                     partition_key = MultiPartitionKey(
                         {
                             "academic_year": str(current_fiscal_year - 1),
-                            "subject": group_dict["subject"],
+                            "subject": subject_key,
                         }
                     )
                 else:
-                    partition_key = MultiPartitionKey(group_dict)
+                    partition_key = MultiPartitionKey(
+                        {
+                            "academic_year": group_dict["academic_year"],
+                            "subject": subject_key,
+                        }
+                    )
 
                 context.log.info(f"{f.filename}: {partition_key}")
                 run_request_kwargs.append(
