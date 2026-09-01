@@ -84,7 +84,10 @@ with
             on s.student_number = n.localstudentidentifier
             and s.discipline = n.discipline
         where
-            n.testscorecomplete = 1
+            -- Cambium reports this null where Pearson always set it to 1, so
+            -- the predicate is a no-op for Pearson; null must count as complete
+            -- or every Cambium score is silently excluded.
+            (n.testscorecomplete is null or n.testscorecomplete = 1)
             and n.assessment_name = 'NJGPA'
             and n.testcode in ('ELAGP', 'MATGP')
 

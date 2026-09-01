@@ -1,5 +1,7 @@
 import time
-from collections.abc import Callable
+from collections import defaultdict
+from collections.abc import Callable, Iterator
+from itertools import zip_longest
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster._utils.backoff import backoff, exponential_delay_generator
@@ -54,6 +56,44 @@ def _retryable_execute(request) -> Callable[[], dict]:
             raise
 
     return execute
+
+
+def _batch_by_distinct_org_unit(
+    role_assignments: list[dict], size: int
+) -> Iterator[list[dict]]:
+    """Yield batches in which no two role assignments share an ``orgUnitId``.
+
+    The Directory API serializes writes against a single org unit, so two
+    inserts scoped to the same org unit inside one ``BatchHttpRequest`` race each
+    other and one comes back ``409 Conflicting requests. Please try again``.
+    Dealing at most one item per org unit into each batch removes that
+    contention: batches execute sequentially, so no two writes to the same org
+    unit are ever in flight together.
+
+    A batch therefore holds at most ``size`` items AND at most one per distinct
+    org unit, so a payload targeting few org units yields more, smaller batches:
+    the batch count equals the largest single org unit's row count. An item
+    without an ``orgUnitId`` (a customer-scoped assignment) is keyed on its
+    position instead, so those still pack to ``size``.
+
+    Args:
+        role_assignments: Role assignment resource dicts.
+        size: Maximum items per batch.
+
+    Yields:
+        Batches of role assignment dicts, preserving input order within each
+        org unit.
+    """
+    by_org_unit = defaultdict[str | int, list[dict]](list)
+
+    for i, role_assignment in enumerate(role_assignments):
+        by_org_unit[role_assignment.get("orgUnitId") or i].append(role_assignment)
+
+    # One "round" takes at most one item per org unit, so a round already
+    # satisfies the distinctness rule; chunk() only caps it at ``size`` for the
+    # case where the org units outnumber a single batch.
+    for round_ in zip_longest(*by_org_unit.values()):
+        yield from chunk(obj=[item for item in round_ if item is not None], size=size)
 
 
 class GoogleDirectoryResource(ConfigurableResource):
@@ -660,7 +700,12 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_role_assignments(
         self, role_assignments: list[dict], customer: str | None = None
     ) -> list[str]:
-        """Create multiple role assignments in batches of 10.
+        """Create multiple role assignments in batches of at most 10.
+
+        Batches are built so that no two assignments in one batch target the
+        same org unit — see :func:`_batch_by_distinct_org_unit`, which exists
+        because concurrent writes to one org unit return ``409 Conflicting
+        requests``, a status the batch retry layer does not treat as transient.
 
         Each batch — and each individual sub-request within it — is retried on
         transient errors (5xx, 429) with exponential backoff to handle quota
@@ -675,7 +720,9 @@ class GoogleDirectoryResource(ConfigurableResource):
         """
         exceptions = []
 
-        batches = list(chunk(obj=role_assignments, size=10))
+        batches = list(
+            _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+        )
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
