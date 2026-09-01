@@ -378,7 +378,7 @@ def main() -> None:
 
     for region, rounds in REGION_ROUNDS.items():
         # -- grades 3-8: only rounds actually listed, pm_goal_include always blank --
-        for round_number, season, start, end, grades in rounds:
+        for round_number, season, start, _end, grades in rounds:
             for grade, (measure_codes, cohort) in grades.items():
                 if grade in K2_GRADES:
                     continue
@@ -395,13 +395,13 @@ def main() -> None:
         for season, season_rounds in seasons.items():
             for grade in K2_GRADES:
                 tested_measures: set[str] = set()
-                for round_number, start, end, grades in season_rounds:
+                for _round_number, _start, _end, grades in season_rounds:
                     if grade in grades:
                         tested_measures.update(grades[grade][0])
 
                 for measure_code in sorted(tested_measures):
                     for ms in MEASURE_MAP[measure_code]:
-                        for round_number, start, end, grades in season_rounds:
+                        for round_number, start, _end, grades in season_rounds:
                             grade_entry = grades.get(grade)
                             if grade_entry and measure_code in grade_entry[0]:
                                 pm_goal_include = ""
