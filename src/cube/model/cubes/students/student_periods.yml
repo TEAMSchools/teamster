@@ -16,6 +16,27 @@ cubes:
         sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
+      - name: terms
+        sql: "{terms.term_key} = {CUBE}.term_key"
+        relationship: many_to_one
+
+      # Reached for the enrollment chain's own attributes only: grade level, ELL
+      # and IEP status, meal eligibility, the homeroom teacher, and the student
+      # demographics behind it. Every cut available on student_days_view is
+      # available here through this join, which is the point of it.
+      #
+      # Location deliberately does NOT travel this path. locations above joins
+      # the fact's own non-null location_key, because dim_student_enrollments
+      # nulls a share of rows and a location-scoped access policy routed through
+      # it would let those rows escape the filter. The view declares every
+      # locations member on the direct path, so the two routes never resolve
+      # ambiguously.
+      - name: student_school_enrollments
+        sql: >
+          {student_school_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
     dimensions:
       - name: student_period_key
         description: >-
@@ -93,6 +114,59 @@ cubes:
           year-to-date.
         sql: ada_tier
         type: string
+        public: true
+
+      - name: is_chronically_absent
+        description: >-
+          Whether ada_tier is Tier 3 or Tier 4 as of period_end_date. Derived
+          from ada_tier on the fact, never recomputed, so the flag and the tier
+          cannot drift apart. Read it with is_ca_eligible -- a student below the
+          10-membership-day floor still carries a tier, and every rate here
+          filters on eligibility.
+        sql: is_chronically_absent
+        type: boolean
+        public: true
+
+      - name: is_ca_eligible
+        description: >-
+          Whether the student had reached 10 cumulative membership days at that
+          school as of period_end_date, the KIPP Foundation chronic-absence
+          eligibility floor. Early in an academic year most rows are false. This
+          is the population count_students_min_10_days counts.
+        sql: is_ca_eligible
+        type: boolean
+        public: true
+
+      - name: is_truant
+        description: >-
+          Whether the student met regional truancy criteria as of
+          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
+          regions: projected absences reach 50+ for the year. No eligibility
+          floor -- neither regional rule has one.
+        sql: is_truant
+        type: boolean
+        public: true
+
+      - name: n_membership_days_ytd
+        description: >-
+          Membership days accumulated from the start of the academic year at
+          that school, through period_end_date. Counts only days with a recorded
+          attendance value. Use it to show how much of a year a rate is built
+          on, or to filter to students with enough history to judge.
+        sql: n_membership_days_ytd
+        type: number
+        public: true
+
+      - name: n_present_days_ytd
+        description: >-
+          Attendance accumulated from the start of the academic year at that
+          school, through period_end_date, over the same days
+          n_membership_days_ytd counts. Divide by n_membership_days_ytd for one
+          student's cumulative ADA as of period end. That is a per-student
+          figure -- for a population ADA use avg_daily_attendance on
+          student_days_view, which is day-weighted and not the same number.
+        sql: n_present_days_ytd
+        type: number
         public: true
 
     measures:

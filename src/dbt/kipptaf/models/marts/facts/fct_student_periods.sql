@@ -38,6 +38,8 @@ with
             i._dbt_source_project,
 
             d.date_key,
+            d.student_enrollment_key,
+            d.term_key,
             d.location_key,
             d.academic_year,
             d.week_start_monday,
@@ -85,7 +87,7 @@ with
     -- on period_start_date_key, so a null bucket was already being dropped by
     -- NULL-equality semantics -- correct behaviour arrived at silently, which is
     -- worse than the same behaviour with a reason attached.
-    bucketed as (select * from spine where period_start_date_key is not null),
+    bucketed as (select *, from spine where period_start_date_key is not null),
 
     -- period_end_date_key is the student's own last membership day inside the
     -- bucket, not the calendar period end. A weekend, a holiday and a mid-period
@@ -129,6 +131,19 @@ select
     }} as student_period_key,
 
     {{ dbt_utils.generate_surrogate_key(["pp.student_number"]) }} as student_key,
+
+    -- Read from the period-end row, so every enrollment attribute reached
+    -- through it -- grade level, IEP and ELL status, homeroom teacher -- is the
+    -- one that applied as of period end, matching every other value here. The
+    -- daily fact already resolved which stint owns each day, so there is no
+    -- second choice to make about students with more than one stint at a school.
+    b.student_enrollment_key,
+
+    -- Same period-end reading as student_enrollment_key above: the term in
+    -- effect on period_end_date_key. A month can span terms, so a period row
+    -- has no single term of its own -- this is the term as of period end, which
+    -- is the only answer consistent with every other value here.
+    b.term_key,
 
     pp.location_key,
     pp.academic_year,

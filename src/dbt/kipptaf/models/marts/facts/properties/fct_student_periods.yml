@@ -110,6 +110,47 @@ models:
                 to: ref('dim_students')
                 field: student_key
 
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments, the enrollment stint that was active on
+          period_end_date_key. Read from that day's row on fct_student_days
+          rather than resolved here, so every attribute reached through it --
+          grade level, IEP and ELL status, meal eligibility, homeroom teacher --
+          is the one that applied as of period end, consistent with every other
+          value on the row.
+
+          This is what lets a rate on this fact be cut by the same student and
+          enrollment attributes as the daily fact. Location does NOT travel this
+          path: location_key below is resolved from the fact's own non-null
+          column, because dim_student_enrollments nulls a share of rows and a
+          location-scoped access policy routed through it would let those rows
+          escape the filter.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms, the reporting term in effect on period_end_date_key.
+          Read from that day's row on fct_student_days. A month or a week can
+          span two terms, so a period row has no single term of its own; this is
+          the term as of period end, consistent with every other value here.
+          Null where no reporting term covers that date.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
+
       - name: location_key
         data_type: string
         description: >-
@@ -269,6 +310,8 @@ unit_tests:
         rows: |
           select
             student_day_key,
+            student_enrollment_key,
+            term_key,
             date_key,
             location_key,
             academic_year,
@@ -282,24 +325,25 @@ unit_tests:
             is_chronically_absent,
           from unnest([
             struct<
-              student_day_key string, date_key date, location_key string,
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
               is_truant bool, is_ca_eligible bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('df2b9117d1507e688a505364902c1fd8', date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('6e08aa68d489252ea7fd0d9d141a58ef', date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, false, 'Tier 1', false),
-            ('834cc7ffb573a083317863903737cb08', date '2025-09-08', 'loc-b', 2025, date '2025-09-08', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('59b890f26e9ad5329f31a7d9ed312d1a', date '2025-09-09', 'loc-b', 2025, date '2025-09-08', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('674757e4469ff12965e8cd5ff67ab3e6', date '2025-09-10', 'loc-b', 2025, date '2025-09-08', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('3386cdede6c629ba33437e1dcee4162d', date '2025-09-11', 'loc-b', 2025, date '2025-09-08', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('62e8379d943d5835b8647524c3fb5f14', date '2025-09-12', 'loc-b', 2025, date '2025-09-08', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('5b84b5eb16ae0ec39759761da3a19b5c', date '2025-09-13', 'loc-b', 2025, date '2025-09-08', 1.0, 6.0, 6.0, false, false, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, false, 'Tier 1', false),
+            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-b', 2025, date '2025-09-08', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
+            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-b', 2025, date '2025-09-08', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
+            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-b', 2025, date '2025-09-08', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
+            ('3386cdede6c629ba33437e1dcee4162d', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-11', 'loc-b', 2025, date '2025-09-08', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
+            ('62e8379d943d5835b8647524c3fb5f14', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-12', 'loc-b', 2025, date '2025-09-08', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
+            ('5b84b5eb16ae0ec39759761da3a19b5c', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-13', 'loc-b', 2025, date '2025-09-08', 1.0, 6.0, 6.0, false, false, 'Tier 1', false)
           ])
 
     expect:
@@ -308,6 +352,8 @@ unit_tests:
         select
           student_period_key,
           student_key,
+          student_enrollment_key,
+          term_key,
           location_key,
           academic_year,
           period_type,
@@ -321,18 +367,20 @@ unit_tests:
           is_chronically_absent,
         from unnest([
           struct<
-            student_period_key string, student_key string, location_key string,
+            student_period_key string, student_key string,
+            student_enrollment_key string, term_key string,
+            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('eb89d84900014832a74d4cbea609f9fc', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-b', 2025, 'year', date '2025-07-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('433a57fcce7a35d720d8581d54da5269', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-b', 2025, 'month', date '2025-09-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('c056370b02a9b117ef343dd8cc74d729', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-b', 2025, 'week', date '2025-09-08', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('eb89d84900014832a74d4cbea609f9fc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-b', 2025, 'year', date '2025-07-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('433a57fcce7a35d720d8581d54da5269', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-b', 2025, 'month', date '2025-09-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
+          ('c056370b02a9b117ef343dd8cc74d729', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-b', 2025, 'week', date '2025-09-08', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false)
         ])
 
   - name: test_periods_mid_year_leaver_keeps_own_period_end
@@ -371,6 +419,8 @@ unit_tests:
         rows: |
           select
             student_day_key,
+            student_enrollment_key,
+            term_key,
             date_key,
             location_key,
             academic_year,
@@ -384,20 +434,21 @@ unit_tests:
             is_chronically_absent,
           from unnest([
             struct<
-              student_day_key string, date_key date, location_key string,
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
               is_truant bool, is_ca_eligible bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('df2b9117d1507e688a505364902c1fd8', date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('88069d903ef3d092c4eeb74fdb9bd014', date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('59505aa7f7c1d16b45240af568a2ef1f', date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('eb5fe9064ec8e7917ce6794adbd953a5', date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
+            ('88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
+            ('59505aa7f7c1d16b45240af568a2ef1f', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
+            ('eb5fe9064ec8e7917ce6794adbd953a5', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false)
           ])
 
     expect:
@@ -406,6 +457,8 @@ unit_tests:
         select
           student_period_key,
           student_key,
+          student_enrollment_key,
+          term_key,
           location_key,
           academic_year,
           period_type,
@@ -419,18 +472,20 @@ unit_tests:
           is_chronically_absent,
         from unnest([
           struct<
-            student_period_key string, student_key string, location_key string,
+            student_period_key string, student_key string,
+            student_enrollment_key string, term_key string,
+            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('a28bd0cb8d767fda67687b3e03ac54b4', 'c81e728d9d4c2f636f067f89cc14862c', 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
-          ('469b5b8b6ef42be202979e0bbf7699bd', 'c81e728d9d4c2f636f067f89cc14862c', 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
-          ('f9e83d295f5293f1eb52d94a028ed666', 'c81e728d9d4c2f636f067f89cc14862c', 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
+          ('a28bd0cb8d767fda67687b3e03ac54b4', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
+          ('469b5b8b6ef42be202979e0bbf7699bd', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
+          ('f9e83d295f5293f1eb52d94a028ed666', 'c81e728d9d4c2f636f067f89cc14862c', 'bb5dba58abf65aa286355188dbabbabe', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false)
         ])
 
   - name: test_periods_gap_in_enrollment_does_not_carry_values_forward
@@ -480,6 +535,8 @@ unit_tests:
         rows: |
           select
             student_day_key,
+            student_enrollment_key,
+            term_key,
             date_key,
             location_key,
             academic_year,
@@ -493,27 +550,28 @@ unit_tests:
             is_chronically_absent,
           from unnest([
             struct<
-              student_day_key string, date_key date, location_key string,
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
               is_truant bool, is_ca_eligible bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('df2b9117d1507e688a505364902c1fd8', date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('6e08aa68d489252ea7fd0d9d141a58ef', date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, false, 'Tier 1', false),
-            ('3e0dab96a6aa3a11932d4cf6e71c5804', date '2025-09-07', 'loc-a', 2025, date '2025-09-01', 1.0, 7.0, 7.0, false, false, 'Tier 1', false),
-            ('834cc7ffb573a083317863903737cb08', date '2025-09-08', 'loc-a', 2025, date '2025-09-01', 1.0, 8.0, 8.0, false, false, 'Tier 1', false),
-            ('59b890f26e9ad5329f31a7d9ed312d1a', date '2025-09-09', 'loc-a', 2025, date '2025-09-01', 1.0, 9.0, 9.0, false, false, 'Tier 1', false),
-            ('674757e4469ff12965e8cd5ff67ab3e6', date '2025-09-10', 'loc-a', 2025, date '2025-09-01', 1.0, 10.0, 10.0, false, true, 'Tier 1', false),
-            ('f209c53b2f6d91166be3587b5c1b024b', date '2025-11-01', 'loc-a', 2025, date '2025-11-03', 1.0, 11.0, 11.0, false, true, 'Tier 1', false),
-            ('9adbbafbe3f0e9ad748929c2e7958bf7', date '2025-11-02', 'loc-a', 2025, date '2025-11-03', 1.0, 12.0, 12.0, false, true, 'Tier 1', false),
-            ('de3ac95fe7dd8c3a8ee0367fadc2ecff', date '2025-11-03', 'loc-a', 2025, date '2025-11-03', 1.0, 13.0, 13.0, false, true, 'Tier 1', false),
-            ('a8bf94ff7dd137241bad95b7363f5fb4', date '2025-11-04', 'loc-a', 2025, date '2025-11-03', 1.0, 14.0, 14.0, false, true, 'Tier 1', false),
-            ('602cc4663724e20218f02020b24251ec', date '2025-11-05', 'loc-a', 2025, date '2025-11-03', 1.0, 15.0, 15.0, false, true, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, false, 'Tier 1', false),
+            ('3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-07', 'loc-a', 2025, date '2025-09-01', 1.0, 7.0, 7.0, false, false, 'Tier 1', false),
+            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-a', 2025, date '2025-09-01', 1.0, 8.0, 8.0, false, false, 'Tier 1', false),
+            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-a', 2025, date '2025-09-01', 1.0, 9.0, 9.0, false, false, 'Tier 1', false),
+            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-a', 2025, date '2025-09-01', 1.0, 10.0, 10.0, false, true, 'Tier 1', false),
+            ('f209c53b2f6d91166be3587b5c1b024b', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-01', 'loc-a', 2025, date '2025-11-03', 1.0, 11.0, 11.0, false, true, 'Tier 1', false),
+            ('9adbbafbe3f0e9ad748929c2e7958bf7', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-02', 'loc-a', 2025, date '2025-11-03', 1.0, 12.0, 12.0, false, true, 'Tier 1', false),
+            ('de3ac95fe7dd8c3a8ee0367fadc2ecff', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-03', 'loc-a', 2025, date '2025-11-03', 1.0, 13.0, 13.0, false, true, 'Tier 1', false),
+            ('a8bf94ff7dd137241bad95b7363f5fb4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-04', 'loc-a', 2025, date '2025-11-03', 1.0, 14.0, 14.0, false, true, 'Tier 1', false),
+            ('602cc4663724e20218f02020b24251ec', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-05', 'loc-a', 2025, date '2025-11-03', 1.0, 15.0, 15.0, false, true, 'Tier 1', false)
           ])
 
     expect:
@@ -522,6 +580,8 @@ unit_tests:
         select
           student_period_key,
           student_key,
+          student_enrollment_key,
+          term_key,
           location_key,
           academic_year,
           period_type,
@@ -535,17 +595,19 @@ unit_tests:
           is_chronically_absent,
         from unnest([
           struct<
-            student_period_key string, student_key string, location_key string,
+            student_period_key string, student_key string,
+            student_enrollment_key string, term_key string,
+            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
-          ('cfccc372dfe154c3304b630ca97f82b1', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
-          ('dbe905eac0b9ecc8f53526cae0624d7a', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
+          ('cfccc372dfe154c3304b630ca97f82b1', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
+          ('dbe905eac0b9ecc8f53526cae0624d7a', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false)
         ])
 
   - name: test_periods_reads_the_value_from_period_end_not_another_day
@@ -586,6 +648,8 @@ unit_tests:
         rows: |
           select
             student_day_key,
+            student_enrollment_key,
+            term_key,
             date_key,
             location_key,
             academic_year,
@@ -599,18 +663,19 @@ unit_tests:
             is_chronically_absent,
           from unnest([
             struct<
-              student_day_key string, date_key date, location_key string,
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
               is_truant bool, is_ca_eligible bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, true, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, true, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, true, 'Tier 2', false),
-            ('df2b9117d1507e688a505364902c1fd8', date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, true, true, 'Tier 3', true),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, true, true, 'Tier 4', true),
-            ('6e08aa68d489252ea7fd0d9d141a58ef', date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 0.0, 5.0, 5.0, true, true, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, true, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, true, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, true, 'Tier 2', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, true, true, 'Tier 3', true),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, true, true, 'Tier 4', true),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 0.0, 5.0, 5.0, true, true, 'Tier 1', false)
           ])
 
     expect:
@@ -619,6 +684,8 @@ unit_tests:
         select
           student_period_key,
           student_key,
+          student_enrollment_key,
+          term_key,
           location_key,
           academic_year,
           period_type,
@@ -632,13 +699,15 @@ unit_tests:
           is_chronically_absent,
         from unnest([
           struct<
-            student_period_key string, student_key string, location_key string,
+            student_period_key string, student_key string,
+            student_enrollment_key string, term_key string,
+            location_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
-          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
-          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true)
+          ('4c63e1617a32c43b1a19311bc66f3c12', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
+          ('27c6f1c36f4368eb481fcf495685c2a0', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
+          ('da4753748381ee38275c6a5649f378dc', 'c4ca4238a0b923820dcc509a6f75849b', '53b6a73797c6a5dadb03eb37053e45f4', null, 'loc-a', 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true)
         ])
