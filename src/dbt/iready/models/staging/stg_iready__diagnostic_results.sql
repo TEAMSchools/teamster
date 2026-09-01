@@ -8,6 +8,9 @@ with
                 algebra_and_algebraic_thinking_scale_score,
                 annual_stretch_growth_measure,
                 annual_typical_growth_measure,
+                assessment_gain,
+                baseline_assessment_y_n,
+                baseline_diagnostic_y_n,
                 completion_date,
                 comprehension_informational_text_scale_score,
                 comprehension_literature_scale_score,
@@ -18,6 +21,7 @@ with
                 high_frequency_words_scale_score,
                 measurement_and_data_scale_score,
                 mid_on_grade_level_scale_score,
+                most_recent_assessment_ytd_y_n,
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
                 number_and_operations_scale_score,
@@ -46,7 +50,9 @@ with
                 percent_progress_to_annual_typical_growth_percent as numeric
             ) as percent_progress_to_annual_typical_growth_percent,
 
-            cast(cast(diagnostic_gain as numeric) as int) as diagnostic_gain,
+            cast(
+                cast(coalesce(diagnostic_gain, assessment_gain) as numeric) as int
+            ) as diagnostic_gain,
             cast(
                 cast(annual_stretch_growth_measure as numeric) as int
             ) as annual_stretch_growth_measure,
@@ -100,8 +106,14 @@ with
             ) as vocabulary_scale_score,
 
             coalesce(
-                most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
+                most_recent_diagnostic_y_n,
+                most_recent_diagnostic_ytd_y_n,
+                most_recent_assessment_ytd_y_n
             ) as most_recent_diagnostic_ytd_y_n,
+
+            coalesce(
+                baseline_diagnostic_y_n, baseline_assessment_y_n
+            ) as baseline_diagnostic_y_n,
 
             safe_cast(student_id as int) as student_id,
 
@@ -300,7 +312,15 @@ with
     )
 
 select
-    *,
+    * except (_dagster_partition_subject),
+
+    -- The partition subject stays `ela` in Dagster because the GCS object path
+    -- is derived from it. The warehouse reports the vendor's current name. This
+    -- must stay in the final select: the HS growth-measure CASE expressions in
+    -- `hs_goals` compare against the raw `ela` token.
+    if(
+        _dagster_partition_subject = 'ela', 'reading', _dagster_partition_subject
+    ) as _dagster_partition_subject,
 
     overall_scale_score + typical_growth as overall_scale_score_plus_typical_growth,
     overall_scale_score + stretch_growth as overall_scale_score_plus_stretch_growth,
