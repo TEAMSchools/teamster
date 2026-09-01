@@ -268,6 +268,18 @@ Two manual, optional follow-ups:
   files. This is cleanup only — nothing in the design depends on it, which is
   deliberate, because the vendor's July rollover lag recurs annually.
 
+## Risks
+
+- **A future vendor bulk-rename of archive folders would break the era gate.**
+  `is_legacy_year` keys on the partition's academic year, not on which token the
+  file on disk carries. If Curriculum Associates ever renamed `2020/`–`2025/`
+  files to the `reading` token — the way they already did for
+  `Current_Year`/FY2027 — `partition_subject("reading", "2025")` would still
+  return `reading`, naming a partition that does not exist. This fails loudly,
+  which is correct, but the design depends on archive folders staying on the old
+  names forever; it has no self-healing path if the vendor renames them
+  retroactively.
+
 ## Verification
 
 1. `uv run dbt build --select stg_iready__diagnostic_results+`.
@@ -276,8 +288,6 @@ Two manual, optional follow-ups:
    file and the FY27 run fetches a `_reading_` one.
 1. Confirm the FY27 `diagnostic_results` partition row count moves off 3,933 and
    carries a current completion date.
-1. `tests/sensors/sftp/test_sensors_sftp_iready.py` has hardcoded cursors that
-   need updating.
 
 ## Out of scope
 
