@@ -213,6 +213,14 @@ models:
           absences in 90-day rolling window. NJ regions: projected absences
           reach 50+ for the year.
 
+          Carried forward across days with no recorded attendance, so a break
+          day answers with the value from the last day that recorded any. This
+          is a status rather than an event, so the carry matches how
+          n_membership_days_ytd and ada_tier behave on the same row; without it
+          a pinned Saturday would return a chronic-absence tier beside a null
+          truancy flag. Consequence: on a session day whose register was never
+          taken this reports the prior value rather than null.
+
       - name: is_absent
         data_type: int64
         description: >-
@@ -268,3 +276,104 @@ models:
           False on every carried break day. A false row carries enrollment but
           no attendance and a membership_value of zero, so it can never reach a
           rate denominator.
+
+      - name: location_key
+        data_type: string
+        description: >-
+          FK to dim_locations, the school this row's enrollment stint belongs
+          to. Every cumulative column below accumulates per location_key,
+          because a rate reported at any other grain is a different number and a
+          student who transfers mid-year starts a fresh count at the new school.
+        config:
+          meta:
+            foreign_key:
+              - dim_locations.location_key
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year of this row's enrollment stint, expressed as the
+          calendar year in which the year ends. Sourced from the enrollment
+          spine rather than from dim_dates, whose academic_year is a pure July 1
+          calendar cutover and can disagree at a June 30 / July 1 boundary.
+          Partitions every cumulative column below.
+
+      - name: week_start_monday
+        data_type: date
+        description: >-
+          Monday of the school week containing this date, from
+          int_students__calendar_week and therefore school-specific. Carried on
+          this fact because a school week's Monday has no formula -- unlike the
+          academic year (July 1) or the month (date_trunc) -- so week-grain
+          bucketing downstream cannot be derived from date_key alone.
+
+      - name: n_membership_days_ytd
+        data_type: float64
+        description: >-
+          Membership days accumulated from the start of the academic year at
+          this school, through and including this date. Counts only days with
+          membership_value = 1 AND a recorded attendance_value, so a day with an
+          untaken register raises neither this nor n_present_days_ytd.
+
+          Unchanged across break days: a break day contributes zero, so the
+          running total carries. That is what lets a chronic-absence question
+          resolve on any calendar date without an anchor flag.
+
+          float64 rather than an integer type because it accumulates
+          membership_value, which is fractional. The arithmetic is exact for the
+          values in play -- membership_value is 1 or 0.5, so products are dyadic
+          and well inside 2^53 -- so the tier boundaries below are
+          deterministic.
+
+      - name: n_present_days_ytd
+        data_type: float64
+        description: >-
+          Attendance value accumulated from the start of the academic year at
+          this school, through and including this date, over the same days
+          n_membership_days_ytd counts. Divide by n_membership_days_ytd for
+          cumulative ADA as of this date; that is a different number from the
+          day-weighted ADA over a date range, which sums both sides over the
+          slice instead.
+
+      - name: is_ca_eligible
+        data_type: boolean
+        description: >-
+          Whether n_membership_days_ytd has reached 10, the KIPP Foundation
+          chronic-absence eligibility floor. All three reconciliation
+          authorities define eligibility cumulatively from the start of the
+          academic year rather than per period, which is why this reads the ytd
+          column and not a per-day one. Early in an academic year most rows are
+          false, and any rate built on this fact must show the eligible count
+          beside it.
+
+      - name: ada_tier
+        data_type: string
+        description: >-
+          Cumulative ADA band as of this date, on accumulated integer counts
+          cross-multiplied against each other -- never on an averaged float,
+          which would put boundary students on the wrong side of the line. Tier
+          1 at 95% and above, Tier 2 strictly above 90.0%, Tier 3 from 80%
+          through 90.0% inclusive, Tier 4 below 80%. Null when
+          n_membership_days_ytd is zero.
+
+          Exactly 90.0% is Tier 3, and therefore chronically absent. KIPP
+          Foundation criteria contradict themselves here -- item 1 calls Tier 2
+          on track at 90% and above, item 8 defines chronic absence as at or
+          below 90.0% -- and this follows item 8 and the state criteria. See the
+          model description.
+
+          This is the only place in the project where the tier ladder is
+          expressed. fct_student_periods reads this column at period end rather
+          than recomputing it, so the two facts cannot disagree.
+
+      - name: is_chronically_absent
+        data_type: boolean
+        description: >-
+          Whether ada_tier is Tier 3 or Tier 4 as of this date. Derived solely
+          from ada_tier, never recomputed from a ratio, so the flag and the tier
+          cannot drift apart. Null when ada_tier is null.
+
+          Read this with is_ca_eligible: a student below the 10-membership-day
+          floor still carries a tier and this flag, and every published rate
+          filters on eligibility. This column alone is not a chronic-absence
+          rate numerator.
