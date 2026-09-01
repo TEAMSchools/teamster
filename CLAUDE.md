@@ -371,6 +371,15 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   one-off scripts needing a package not in `pyproject.toml` — don't
   `uv add --dev` for throwaway tooling.
 
+- **Credentialed one-offs run under pytest, never `uv run python`.** The autouse
+  session fixture in `tests/conftest.py` bootstraps 1Password secrets into the
+  process, so live SFTP / API pulls, asset `materialize()`, and
+  `dagster definitions validate` all work — wrap the one-off as a throwaway
+  `tests/**/test_zz_*.py`, run `uv run pytest <path> -s`, and delete it after. A
+  plain `uv run python script.py` gets NO secrets and fails on unset variables;
+  do not conclude a credential is unavailable from that failure, and do not
+  reach for `op` (hook-blocked). Details in [tests/CLAUDE.md](tests/CLAUDE.md).
+
 - **IDE selection arrives only via `<ide_selection>` tags**, not
   `<ide_opened_file>` (which only names the open path). When the user references
   "this" without an `<ide_selection>`, ask for the snippet — don't guess.

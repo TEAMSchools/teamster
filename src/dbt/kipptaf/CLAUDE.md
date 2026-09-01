@@ -85,9 +85,9 @@ tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
 over years / repository ids / sftp-vs-api method / current+archive (illuminate,
 zendesk, `stg_schoolmint_grow__generic_tags`, amplify mClass) are NOT region, so
 the region regex `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` yields
-null — keep them out of `_dbt_source_project` joins. Shared NJ schemas
-(`kippnj_iready`, `kippnj_renlearn` for STAR) prefix `kippnj` ≠ home region;
-resolve region from `int_people__location_crosswalk`, not the regex.
+null — keep them out of `_dbt_source_project` joins. The shared NJ schema
+`kippnj_iready` prefixes `kippnj` ≠ home region; resolve region from
+`int_people__location_crosswalk`, not the regex.
 
 ### `_dbt_source_project` is pass-through, derived only at the union view
 

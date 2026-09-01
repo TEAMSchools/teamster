@@ -5,9 +5,9 @@ MACHINE_SETTINGS="/home/vscode/.vscode-remote/data/Machine/settings.json"
 mkdir -p "$(dirname "${MACHINE_SETTINGS}")"
 [[ -f ${MACHINE_SETTINGS} ]] || echo '{}' >"${MACHINE_SETTINGS}"
 jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python", "[python]": {"editor.defaultFormatter": "trunk.io"}}' \
-  "${MACHINE_SETTINGS}" \
-  >/tmp/machine-settings.json &&
-  mv /tmp/machine-settings.json "${MACHINE_SETTINGS}"
+	"${MACHINE_SETTINGS}" \
+	>/tmp/machine-settings.json &&
+	mv /tmp/machine-settings.json "${MACHINE_SETTINGS}"
 
 # configure git
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
@@ -19,9 +19,9 @@ chmod +x .git/hooks/post-merge
 
 # install extra apt packages
 sudo apt-get update -y &&
-  sudo apt-get -y install --no-install-recommends sshpass &&
-  sudo apt-get -y clean &&
-  sudo rm -rf /var/lib/apt/lists/*
+	sudo apt-get -y install --no-install-recommends sshpass &&
+	sudo apt-get -y clean &&
+	sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
@@ -35,8 +35,8 @@ chmod 755 .claude/hooks/ .claude/hooks/*.sh
 
 # install uv -- ignoring feature bc it doesn't allow self update
 curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh &&
-  sh /tmp/uv-install.sh &&
-  rm /tmp/uv-install.sh
+	sh /tmp/uv-install.sh &&
+	rm /tmp/uv-install.sh
 
 # add uv to PATH for this shell session
 # trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
@@ -51,6 +51,7 @@ uv sync --frozen --all-groups
 # bootstrap dbt packages
 export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 uv run dbt deps --project-dir=src/dbt/amplify &
+uv run dbt deps --project-dir=src/dbt/cambium &
 uv run dbt deps --project-dir=src/dbt/deanslist &
 uv run dbt deps --project-dir=src/dbt/edplan &
 uv run dbt deps --project-dir=src/dbt/finalsite &
@@ -69,10 +70,10 @@ wait
 
 # generate prod manifests for dbt --defer
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
-  uv run dbt parse --target prod \
-    --project-dir "src/dbt/${project}" \
-    --profiles-dir .dbt \
-    --target-path target/prod &
+	uv run dbt parse --target prod \
+		--project-dir "src/dbt/${project}" \
+		--profiles-dir .dbt \
+		--target-path target/prod &
 done
 wait
 
