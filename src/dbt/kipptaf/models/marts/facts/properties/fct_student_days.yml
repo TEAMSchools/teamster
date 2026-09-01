@@ -287,7 +287,8 @@ models:
         config:
           meta:
             foreign_key:
-              - dim_locations.location_key
+              to: ref('dim_locations')
+              to_columns: [location_key]
 
       - name: academic_year
         data_type: int64
