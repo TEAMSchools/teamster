@@ -468,13 +468,28 @@ to conflate, so keep them separate:
   `stg_google_sheets__reporting__terms`.
 - **PM**: PM rounds are matched by region and grade level from the PM round
   document the Academics/T&L team delivers for the year -- not invented or
-  copied from a prior year's dates. **That document is NJ-only.** The real file
-  is `1BWVR_ptVJ2MFp9D-r_9r4wtc84mlMihVSr8HmgJ9lz4`, titled "SY26 - KIPP NJ -
-  DIBELS PM Rounds + Goals"; searched all export formats and it contains zero
-  Miami content, and a Drive search for a Miami equivalent returns nothing.
-  Miami's PM round dates have to come from Miami's own academics team, and until
-  they do Miami PM rows cannot be generated at all -- the `LIT` round dates are
-  the input the calendar derives `PLIT` boundaries _between_.
+  copied from a prior year's dates. The `LIT` round dates are the input the
+  calendar derives `PLIT` boundaries _between_, so with no round document there
+  is nothing to derive and no rows can be generated for that region.
+
+**The Academics team labels academic years by the SPRING.** "SY26" means
+SY25-26, which is `academic_year = 2025` in `reporting__terms`; the SY26-27
+rollover needs the doc labeled **SY27**. This burned a full cycle here: a Drive
+search turned up `1BWVR_ptVJ2MFp9D-r_9r4wtc84mlMihVSr8HmgJ9lz4` ("SY26 - KIPP NJ
+
+- DIBELS PM Rounds + Goals"), which was read as the current doc and, finding no
+  Miami in it, wrongly taken as proof no Miami rounds existed anywhere. It is
+  last year's document -- confirmed by data, not by title: its `8/20 - 9/12`
+  BOY, `10/27 - 10/31` PM #2 and `1/6 - 1/23` MOY match Newark AY2025 exactly,
+  while AY2026 runs `8/19 - 9/11`, `10/19 - 10/23`, `1/5 - 1/22`. **Date-check
+  any round doc against `reporting__terms` before trusting its title**, and
+  expect a title one year ahead of the `academic_year` it describes.
+
+Second lesson from the same mistake: a Drive search run through **ADC (the
+service account) sees only what has been shared with that identity**, not the
+user's Drive. An empty result is not evidence a document does not exist -- ask
+for it to be shared, the way the region calendar sheets were.
+
 - **K-2 vs 3-8, if the aimline model holds**: K-2 keeps the in-house PM goal
   calculation, which requires `PLIT` rows (see _`reporting__terms` grade bands_
   below). Grades 3-8 use Amplify's aimline-provided goal-setting calculation
