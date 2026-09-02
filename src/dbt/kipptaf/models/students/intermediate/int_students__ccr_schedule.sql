@@ -1,10 +1,4 @@
 with
-    /* Every course enrollment that can stand in for a student's College and
-       Career Readiness (CCR) schedule, tagged with which tier it belongs to.
-       courses_credittype cannot identify a CCR course -- SEM022151G4 is STUDY in
-       Camden and CAREER in Newark -- and courses_sched_coursesubjectareacode is
-       null on every row, so the course name carries the match. discipline is a
-       second net for a CCR course whose name stops following the pattern. */
     schedule_candidates as (
         select
             students_student_number as student_number,
@@ -16,9 +10,6 @@ with
             courses_course_name,
             teacher_lastfirst,
 
-            /* sections_external_expression reads HR(A) or HR(R) on every
-               homeroom section and carries no period, so homeroom reports its
-               section number (9M311) instead. */
             if(
                 courses_credittype = 'HR',
                 sections_section_number,
@@ -39,19 +30,6 @@ with
         where not is_dropped_section
     ),
 
-    /* An active CCR course first, then KIPP Newark Lab's Advisory course, then
-       homeroom. Homeroom is the universal backstop -- from SY26-27 the regions
-       schedule CCR for grades 11 and 12 only, so a grade 9 or 10 student would
-       otherwise have no schedule to report at all.
-
-       Partition on student_number, which is canonical across districts. Do NOT
-       reach for cc_studyear here: it is district-scoped and collides across
-       Camden and Newark in this union.
-
-       cc_sectionid ends the order because 12 SY26-27 students sit in two
-       non-dropped homerooms with identical termid, dateenrolled and dateleft.
-       Nothing distinguishes those rows, so the pick is arbitrary -- but it has
-       to be STABLE, or the teacher and section flap between refreshes. */
     ranked as (
         select
             student_number,

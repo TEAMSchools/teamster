@@ -10,6 +10,11 @@ models:
       in a high school grade this academic year whose graduation year is later
       than this one. A student who transferred out mid-year drops off, along
       with the scores they earned while enrolled.
+
+
+      The CCR course, teacher and section are grouped rather than aggregated, as
+      are the three lifetime SAT highs. Independent `max()` calls over them
+      could pair one row's course with another row's teacher.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

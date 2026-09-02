@@ -131,12 +131,6 @@ with
             college_match_gpa,
             college_match_gpa_bands,
 
-            /* Grouped, not aggregated. int_students__ccr_schedule is one row
-               per student per year, so the CCR triple can no longer fan out --
-               but grouping still keeps it intact rather than letting independent
-               max() calls pair a course with another row's teacher. Same
-               reasoning for the three lifetime SAT highs, which tie-break
-               independently on rn_highest. */
             ccr_course,
             ccr_teacher_name,
             ccr_section,
