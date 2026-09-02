@@ -812,11 +812,17 @@ sources_ above; the two closed schools carry a wider untrimmed calendar that
 would corrupt the boundary math). Nine of the eleven checkable boundaries match
 exactly. Two do not, and neither is a rule difference:
 
-- **`PLIT3.end` is wrong in the sheet.** It reads `2025-11-12`; the rule yields
-  `2025-12-12`. Exactly one month apart, with `LIT3` starting `2025-12-15` -- a
-  month-field transposition at entry, and it leaves a month-long hole between
-  `PLIT3` ending and `LIT3` starting that no other round in either region has.
-  Treat as a data-entry error to fix, not as evidence Miami differs.
+- **`PLIT3.end` diverges and is NOT resolved.** It reads `2025-11-12`; the rule
+  yields `2025-12-12`, leaving 22 in-session days in no window (5 days as
+  entered vs 27 by the rule). This was initially called a month-field
+  transposition -- that call was wrong to make. Miami administers state testing
+  three times a year and FAST PM2 lands early-to-mid December, almost exactly
+  the `2025-11-13` to `2025-12-14` hole, so a deliberate PM pause across a
+  testing window fits at least as well as a typo. Miami's `LIT` rounds are only
+  3 days each, so a 5-day `PLIT` is not anomalously short for them either. And
+  `reporting__terms` carries **no state-testing term type for Miami at all**
+  (only `LIT`, `RT`, `AR`, `SRE`), so no testing row there is not evidence none
+  existed. Do not "fix" this cell on the rule's authority.
 - **`PLIT6.end`** reads `2026-04-02`; the rule yields `2026-04-03`, which is
   Good Friday. Same class of holiday-marking discrepancy already documented for
   NJ above -- Focus codes the day in session, the human calendar doesn't.
@@ -892,18 +898,31 @@ prior-year band definition, every year, not just for Paterson.
 both built and verified for Newark, Paterson, and Camden.
 
 **Miami: the boundary rule is now verified** (see _`PLIT` boundary rule_ above
--- it is the same rule, with one sheet typo and one holiday discrepancy found),
-so that is no longer the blocker. What Miami still needs:
+-- same rule, with two unresolved divergences), so that is no longer the
+blocker.
+
+**Operating policy for Miami, decided deliberately: derive from the calendar and
+ship it.** Do not hold the rollover waiting on T&L to explain a divergence.
+Apply the clean rule, generate the rows, and accept that a window cut around
+state testing may need correcting later -- a correctable row beats a missing
+one, and Miami's PM windows are not reconstructable from any other source we
+hold. Flag derived rows as derived so a later correction is cheap; do not
+re-litigate the `PLIT3` question above before generating.
+
+What Miami still needs before rows can be generated at all:
 
 1. **The 11 SY26-27 round start/end dates**, from the T&L PM round document for
    the year. Per _Canonical annual rollover process_ above these are
    transcribed, never derived or rolled forward, so no amount of calendar work
    substitutes. AY2025 Miami ran 6 rounds (3+3); SY26-27 is 11, so the shape
    changes too.
-2. **`PLIT1.start` confirmed by T&L** -- the NJ "copy the Benchmark start"
-   shortcut does not transfer (see above).
-3. **`PM_Goal_Criteria` for Miami** -- never populated for Miami in AY2025;
-   confirm with T&L before copying NJ's blanket `AND`.
+2. **`PLIT1.start`** -- the NJ "copy the Benchmark start" shortcut does not
+   transfer (see above). Per the policy, derive it: use the first in-session day
+   of the academic year, which is what AY2025 approximates (`2025-08-12` against
+   a first in-session day of `2025-08-11`). Don't block on confirmation.
+3. **`PM_Goal_Criteria` for Miami** -- never populated for Miami in AY2025.
+   Leave it blank to match Miami's own precedent rather than copying NJ's
+   blanket `AND`; blank is the reversible choice.
 4. **Cohort mechanics from Miami's 3-8 leads** (#3834), for the
    `measure_standard_level` split.
 
