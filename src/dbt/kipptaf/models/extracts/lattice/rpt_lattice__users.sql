@@ -31,13 +31,13 @@ with
                 or (
                     home_business_unit_name
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
-                    and job_title in (
-                        'Director School Operations',
-                        'Director Campus Operations',
-                        'Managing Director of School Operations',
-                        'Managing Director of Operations',
-                        'Fellow School Operations Director'
-                    )
+                    -- director-level operations roles, matched on the title
+                    -- keyword rather than an exact list so new ADP title
+                    -- variants (e.g. a bare 'Director') don't silently drop
+                    -- out. Associate Directors are intentionally excluded.
+                    and home_department_name = 'Operations'
+                    and contains_substr(job_title, 'Director')
+                    and not contains_substr(job_title, 'Associate')
                 )
                 or (
                     home_business_unit_name
