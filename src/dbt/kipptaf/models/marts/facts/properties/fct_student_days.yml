@@ -22,8 +22,20 @@ models:
       surface has the same gap. Those rows carry null attendance rather than a
       fabricated zero, and every rate on them already excludes null attendance
       from both numerator and denominator (#4744), so the gap cannot move a
-      network rate. When Focus historical attendance is eventually modelled it
-      fills in here with no change to this model.
+      network rate. #5114 is open to restore the archive, so treat the Miami gap
+      as temporary; when it lands, or when Focus historical attendance is
+      modelled, it fills in here with no change to this model.
+
+      Paterson's attendance_value depends on PowerSchool attendance-conversion
+      items that #4193 reports as incomplete, so every value derived from
+      presence -- n_present_days_ytd, ada_tier, is_chronically_absent, is_truant
+      -- carries a known upstream uncertainty there. The AY2025 aggregates show
+      no obvious distortion (Paterson ADA 92.7 to 93.4 percent by school against
+      Newark's 92.5), so treat the size and direction as unestablished rather
+      than measured. Unlike Miami's, this gap is likely permanent for pre-AY2026
+      -- the conversion items were never captured, so there is nothing to
+      restore from. membership_value is clean, so enrollment counts and
+      n_membership_days_ytd are unaffected.
 
       Location, school calendar, and academic year are reached via
       dim_student_enrollments and dim_terms, not stored on the fact. FK to

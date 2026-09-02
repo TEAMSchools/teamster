@@ -4,9 +4,10 @@
 `cristinabaldor/refactor/claude-cube-tesseract-multi-stage` · open,
 `mergeable_state: blocked` (awaiting CODEOWNERS approval)
 
-**Figures as of:** the dbt Cloud CI build of commit `4d0dc38e4`, 2026-09-01
-21:09 — `fct_student_days` 29,590,677 rows, `fct_student_periods` 4,374,240
-rows. Topline figures come from production.
+**Figures as of:** a full local build of both facts, 2026-09-02 — 29.6M and 4.4M
+rows, with attendance through 2026-09-02. Topline figures come from production.
+Every figure below was re-measured after the review; none is carried over from
+the pre-review draft.
 
 **Read first:** nothing on a production dashboard moves when this merges.
 Tableau and Topline both read `int_students__attendance_daily` directly. Neither
@@ -31,10 +32,10 @@ What that buys, in the order it matters to the dashboard:
   teacher, term, campus, city. That is the equity analysis the dashboard exists
   for, and it did not work at period grain before.
 - **A population count beside every rate, from the same query.** Enrollment and
-  attendance sit on one cube now, so `count_students` and
-  `count_students_min_10_days` come back alongside the rate they scope.
-  Eligibility accumulates through the year, so a rate without its denominator is
-  unreadable in September.
+  attendance sit on one cube now, so `count_students` (everyone enrolled) and
+  `count_students_rated` (everyone whose attendance resolves) come back
+  alongside the rate they scope. Early in a year the rate is volatile, so a
+  figure without its denominator is unreadable — see 2.1.
 - **Any pinned date resolves.** Break days carry a row, so a weekend or holiday
   answers the same as a school day. Chronic absence and truancy are available
   for one specific date, not only at period end.
@@ -43,141 +44,142 @@ What that buys, in the order it matters to the dashboard:
 
 ---
 
-## 2. Where we differ from production today (25 min — the main event)
+## 2. What the review decided, and what it costs (25 min — the main event)
 
-Ranked by how much the number moves.
+Three of the four decisions are shipped. What is left is the cost of each,
+measured, plus the one question still open.
 
-### Must decide
+### The three big decisions
 
-#### 2.1 · Chronic absence — the 10-day eligibility floor
+#### 2.1 · Chronic absence — the floor is gone
 
-Read off the built branch facts. AY2025 excludes Miami on both sides, so the
-comparison is the three regions production will actually serve.
+Walters' call. No minimum-membership-day floor anywhere, so every student with a
+resolvable ADA counts. The 1–9 day band the floor used to discard is 15,609
+students carrying 4,544 chronic-absence cases at AY2026 month grain, all now on
+both sides of the rate.
 
-| AY2025, complete year                                    | Population | Chronically absent |       Rate |
-| -------------------------------------------------------- | ---------: | -----------------: | ---------: |
-| Topline as published — each student's latest scored week |      9,724 |              2,669 |     27.45% |
-| Topline's rule at student x school x year                |      9,761 |              2,677 |     27.43% |
-| Built fact, floor removed                                |      9,740 |              2,676 |     27.47% |
-| **Built fact as shipped, 10-day floor**                  |  **9,672** |          **2,632** | **27.21%** |
+**At year end this now agrees with Topline.**
 
-**At full year the two rules agree to one student.** 2,677 against 2,676 on the
-numerator, at the same grain. Every other difference — rounding, partial days,
-comparing day counts instead of a decimal — moves nothing. The entire gap is the
-floor: 0.26 points, and 68 students out of the denominator.
+| AY2025, complete year, three regions | Denominator | Chronically absent |       Rate |
+| ------------------------------------ | ----------: | -----------------: | ---------: |
+| Topline as published                 |       9,724 |              2,669 |     27.45% |
+| **Built fact**                       |       9,740 |              2,678 | **27.49%** |
 
-The floor is not a full-year story, though. It is an opening-weeks story:
+0.04 points apart. The floored version read 27.21%; removing the floor closed
+the gap rather than opening one, which is worth saying out loud because it was
+not the expected direction.
 
-| AY2026, cumulative to 2026-09-01        | Population | Chronically absent |       Rate |
-| --------------------------------------- | ---------: | -----------------: | ---------: |
-| Topline as published                    |     11,339 |              3,317 |     29.25% |
-| Built fact, floor removed               |     11,241 |              3,427 |     30.49% |
-| **Built fact as shipped, 10-day floor** |  **5,062** |          **1,556** | **30.74%** |
+**The cost is volatility, and it is large right now.** AY2026 chronic absence,
+by the date it is read:
 
-Three weeks in, the floor **halves the population** — 11,241 down to 5,062 —
-while moving the rate by a quarter of a point. It is a statement about who you
-are willing to judge, not about where the rate lands.
+| As of          | Avg membership days |  Rated | Chronically absent |       Rate |
+| -------------- | ------------------: | -----: | -----------------: | ---------: |
+| 2026-08-24     |                 3.3 | 10,935 |              2,187 |     20.00% |
+| 2026-08-28     |                 7.2 | 10,896 |              2,634 |     24.17% |
+| 2026-08-31     |                 8.1 | 10,919 |              2,916 |     26.71% |
+| 2026-09-01     |                 9.1 | 10,934 |              3,098 |     28.33% |
+| **2026-09-02** |                10.1 | 10,937 |              2,657 | **24.29%** |
 
-That population gap is closing by the day. The most membership days any student
-has reached is 15. New Jersey's first student day was 2026-08-19, which puts NJ
-students at exactly 10 days on 2026-09-01 — they crossed the floor that morning.
-Miami, which opened 2026-08-12, crossed a week earlier.
+**The rate moved 4.0 points in one day**, 28.33% to 24.29%. At ten membership
+days a single present-or-absent day pushes a student across the 90% line, so
+this is arithmetic, not a data problem. It settles as the denominator grows — by
+AY2025 year end the same rule agrees with Topline to 0.04 points.
 
-**Decision:** floor or no floor. If floor, the first three weeks of a year have
-no chronic-absence rate for most of the network, and
-`count_students_min_10_days` has to be on screen next to the rate.
+**What that means for a dashboard.** A chronic-absence figure published in the
+first three weeks of a year will be revised by several points, day to day, and
+nothing in the data model can prevent that. `count_students_rated` is on both
+views so the population is always visible beside the rate. If a stakeholder
+needs a stable number in September, the honest answer is a stated start date,
+not a floor.
 
-#### 2.2 · Truancy — any day in the period, or the period's last day
+#### 2.2 · Truancy — still open, and the numbers are stronger than expected
 
-| AY2025, week grain, three regions                             | Student-weeks | Truant |       Rate |
-| ------------------------------------------------------------- | ------------: | -----: | ---------: |
-| Topline — truant on **any** day of the week                   |       370,863 | 11,848 |     3.195% |
-| **Built fact** — status on the week's **last membership day** |       370,159 |  9,392 | **2.537%** |
+Walters leans Topline's any-day reading but asked for the tradeoffs first. This
+is the one decision not yet made.
 
-A fifth lower. The flag turns on _and_ off — Miami counts absences in a rolling
-90-day window, NJ projects the year's absences from the running rate — so a
-student can be truant on Monday and not by Friday. Topline counts them; the
-built fact does not.
+| AY2025, week grain, three regions                         | Student-weeks | Truant |   Rate |
+| --------------------------------------------------------- | ------------: | -----: | -----: |
+| Topline — truant on **any** day of the week               |       370,863 | 11,848 | 3.195% |
+| Built fact — status on the week's **last** membership day |       369,980 |  9,391 | 2.538% |
 
-No eligibility floor applies to truancy on either side. Neither the Miami nor
-the NJ rule requires one.
+A fifth lower over a settled year. But the current year shows the real size of
+the choice:
 
-**Decision:** which is the reportable status. Independent of 2.1.
+| AY2026 week    | Topline any-day | Built fact period-end |
+| -------------- | --------------: | --------------------: |
+| 2026-08-17     |          57.69% |                24.19% |
+| 2026-08-24     |          53.36% |                49.39% |
+| **2026-08-31** |      **50.85%** |            **21.24%** |
 
-#### 2.3 · Total Enrollment — the anchor day
+**Two and a half times apart in the current week.** The NJ rule projects a
+student's absences to a full-year total, and the projection settles as days
+accrue — so the status on Monday and the status on Friday are different answers,
+and any-day takes the worst of the week while period-end takes the settled one.
 
-Measured against the built branch facts, network, `student_number`-deduped on
-all three sides.
+Neither is wrong. Any-day answers "was this student ever truant this week",
+period-end answers "is this student truant now". The second is the one that
+stops the 50% headline; the first is what Topline has always published.
 
-| Week of        | Topline (Monday) | Daily view, pinned Monday | Period view, served in week |
-| -------------- | ---------------: | ------------------------: | --------------------------: |
-| 2025-10-06     |           10,640 |                    10,636 |                      10,638 |
-| 2026-05-04     |           10,401 |                    10,399 |                      10,393 |
-| **2026-08-10** |            **0** |                         0 |                   **1,514** |
-| **2026-08-17** |       **11,269** |                 **1,512** |                   **6,391** |
-| 2026-08-24     |           11,114 |                    11,114 |                      11,060 |
-| 2026-08-31     |           11,044 |                    11,042 |                      10,964 |
+**Still needed:** how other networks and the states themselves report this.
+Walters asked for that comparison and I have not done it.
 
-**Settled weeks: pinning the Monday on the daily view reproduces Topline.** The
-two disagree on 0 to 4 students out of ~10,500 — under 0.04%, and never by more
-than 4 in one direction and 1 in the other. If we want Topline's Total
-Enrollment on this layer, that is the measure, and it needs no decision.
+#### 2.3 · Total Enrollment — anchored on the first membership day
 
-**"Served in the period" is a genuinely different question** and should not be
-substituted for it. It runs 2 to 80 students below Topline in settled weeks and
-disagrees in both directions, because it requires a membership day in the week.
+Walters' call, shipped. `fct_student_periods` carries
+`period_start_membership_date_key`, the student's own earliest membership day in
+the period, exposed on the view as `period_start_membership_date`.
 
-**The per-school double count is small.** An in-district mid-week transfer
-counts once per school: 0 to 5 students a week (2026-08-24: 11,065 rows against
-11,060 students). Real, but not the thing to spend the meeting on.
+| Week of        | Topline (Monday) |  Anchored | First membership days |
+| -------------- | ---------------: | --------: | --------------------- |
+| **2026-08-10** |            **0** | **1,514** | 08-12 to 08-14        |
+| **2026-08-17** |       **11,256** | **6,359** | 08-17 to 08-21        |
+| 2026-08-24     |           11,099 |    11,037 | 08-24 to 08-28        |
+| 2026-08-31     |           11,020 |    10,977 | 08-31 to 09-02        |
 
-**The whole gap is the first two weeks of an academic year, and it is a Topline
-defect rather than a methodology choice.** Topline's Monday anchor fails twice,
-in opposite directions:
+Topline's Monday anchor fails in both directions at the start of a year. It
+reports **0** for the week Miami opened — 1,514 students were in school
+Wednesday to Friday — and **11,256** for the week of 17 August, counting the
+whole New Jersey roster two days before New Jersey's first student day of
+Wednesday 19 August. Settled weeks converge to within 0.4%.
 
-- **Week of 2026-08-10: Topline reports 0.** Miami was in session 12–14 August —
-  1,514 students. Topline's `is_enrolled_week` tests the _Monday_, and Miami
-  entry dates fall after Monday the 10th. Its own `is_enrolled_week_end` column,
-  which tests the Sunday, returns 1,511 for that week and is not the one the
-  metric uses.
-- **Week of 2026-08-17: Topline reports 11,269.** NJ's first student day is
-  **Wednesday 2026-08-19**. Topline counts 9,757 NJ students as enrolled two
-  days before their school year begins, because entry dates roll over to 1 July
-  while the school calendar week starting the 17th already exists.
-
-**Decision:** none needed for the measure — pinning the Monday matches. The
-question for the room is whether Topline's Monday anchor should keep reporting
-zero for a week Miami was in school, and a full roster for a week New Jersey was
-not.
+**Open on the Topline side:** whether Topline's own Total Enrollment gets the
+same anchor. That is Topline's number, not this layer's, and it is wrong today
+independently of this PR.
 
 ### Shared problems — not a methodology choice, but they will get asked about
 
-#### 2.4 · Truancy reads about 50% right now, on both methods
+#### 2.4 · Truancy reads about 50% on Topline right now
 
-| AY2026 week    | Topline student-weeks | Topline truant | Topline rate | Built fact student-weeks | Built fact truant | Built fact rate |
-| -------------- | --------------------: | -------------: | -----------: | -----------------------: | ----------------: | --------------: |
-| 2026-08-10     |                 1,606 |              0 |        0.00% |                    1,514 |                 0 |           0.00% |
-| 2026-08-17     |                11,327 |          6,530 |       57.65% |                    6,393 |             1,566 |          24.50% |
-| 2026-08-24     |                11,169 |          5,953 |       53.30% |                   11,065 |             5,482 |          49.54% |
-| **2026-08-31** |                11,066 |          5,592 |   **50.53%** |                   10,965 |             5,544 |      **50.56%** |
+| AY2026 week    | Topline student-weeks | Topline rate | Built fact student-weeks | Built fact rate |
+| -------------- | --------------------: | -----------: | -----------------------: | --------------: |
+| 2026-08-10     |                 1,606 |        0.00% |                    1,514 |           0.00% |
+| 2026-08-17     |                11,312 |       57.69% |                    6,361 |          24.19% |
+| 2026-08-24     |                11,152 |       53.36% |                   11,040 |          49.39% |
+| **2026-08-31** |                11,061 |   **50.85%** |                   10,978 |      **21.24%** |
 
 The NJ rule projects a student's absences to a full-year total, so two absences
-in seven days projects past the 50-absence threshold. Half the network trips it,
-and the rate falls week by week as the projection settles.
+in seven days projects past the 50-absence threshold. Half the network trips it
+on Topline, and it falls week by week as the projection settles.
 
-**By the third week the two methods agree to three hundredths of a point.**
-Nothing in this PR hides the problem and nothing in it causes the problem. It is
-the same flag on both sides, and **it needs its own fix, which is not in this
-PR.**
+**The two methods do not agree, and the gap is widest in the current week** —
+50.85% against 21.24%. Period-end reads the settled projection; any-day reads
+the worst day of the week. That is the same choice as 2.2, which is why 2.2
+matters more than the AY2025 figure alone suggests.
 
-The week of 2026-08-17 differs only because Topline counts students whose
-schools were not yet in session — see 2.3.
+**Neither method causes the projection problem and neither fixes it.** It is one
+upstream flag. Whichever reading we pick, a 50% truancy headline is available to
+anyone querying Topline today, and that needs its own fix.
 
-**2.5 · Miami AY2020–AY2025 attendance is excluded.** Decided, not open — `main`
-commit 2ed91424a, closing #4803, after Focus re-dated 959 enrollment stints so
-the fact rows pointed at enrollment records `dim_student_enrollments` no longer
-holds. Every attendance surface reads that model, so the gap is network-wide,
-not a Cube artifact. AY2026 forward includes Miami through Focus.
+**2.5 · Miami AY2020–AY2025 attendance is excluded, and being restored.** `main`
+commit 2ed91424a dropped the frozen archive (closing #4803) after Focus re-dated
+959 enrollment stints so the fact rows pointed at enrollment records
+`dim_student_enrollments` no longer holds. Every attendance surface reads that
+model, so the gap is network-wide rather than a Cube artifact.
+
+**#5114 is now open to restore it** — the archive still serves two sibling
+facts. Treat this as temporary: pre-AY2026 rates gain a fourth region when it
+lands, so every pre-AY2026 figure in this document is a three-region rate that
+will move.
 
 **Consequence for labelling:** for AY2025 and earlier, a rate is a three-region
 figure and a headcount is a four-region figure. Same year, different footprint.
@@ -190,8 +192,13 @@ attendance-conversion items are incomplete, which touches `attendance_value` and
 therefore ADA, tier, chronic absence and truancy. `membership_value` is clean,
 so enrollment is unaffected. I could not reproduce the claimed suppression: only
 275 of 92,809 AY2025 membership days carry a null attendance value (0.3%), and
-Paterson reads 92.68% / 93.37% ADA against Newark's 92.52%. **Someone on the
-PowerSchool side can settle this faster than I can from aggregates.**
+Paterson reads 92.68% / 93.37% ADA against Newark's 92.52%.
+
+**Walters' read is that this is a permanent exclusion for pre-AY2026** — the
+conversion items were never captured at the time, so unlike Miami's there is
+nothing to restore from. That is now recorded in the fact and view descriptions.
+It means Paterson's pre-AY2026 presence-derived values carry an uncertainty that
+will not be resolved, rather than one pending a backfill.
 
 ### Agrees with production — say it, then move on
 
@@ -217,6 +224,19 @@ PowerSchool side can settle this faster than I can from aggregates.**
   closes that gap. The predicate never fired for AY2025 but will fire in AY2026,
   so an AY2026 comparison against a production Cube figure will differ by an
   amount nobody has measured.
+- **Chronic absence and truancy no longer reset when a student changes
+  schools.** Cristina's call. They accumulate per student per year while the
+  rates still aggregate by school, so a transferring student carries their
+  position into the new school's rows for the periods they are there. Affects 11
+  to 46 student-years a year, 0.1% to 0.4%, and closes #5103 rather than
+  documenting it.
+- **A day we could not measure supports neither verdict.** `is_truant` used to
+  survive a null attendance value, a break day and a pre-AY2021
+  `membership_value = 0` row, so 246,583 daily rows published a truancy verdict
+  with no ADA tier beside them. Both flags are now gated on the cumulative
+  count, so they resolve over identical rows and one denominator serves every
+  rate. Cost: 105,679 daily rows and 4,367 period rows stop reading truant,
+  1.72% of the period numerator.
 
 ### New capability — nobody has agreed to it yet
 
@@ -224,10 +244,6 @@ PowerSchool side can settle this faster than I can from aggregates.**
   indicator by week and never across weeks, so no month or year truancy figure
   exists today. This produces both. Nothing to reconcile, but also nothing
   anyone has signed off.
-- **Truancy grain bug, #5103.** The `is_truant` carry-forward runs per school
-  while the flag it carries is computed per student per year, so an in-district
-  transfer can read false at the new school. 19 to 62 student-years a year,
-  0.16% to 0.58%, and only within the truant subset.
 - **186 Miami AY2026 enrollment stints produce no rows, #5024.** Their
   `exitdate` is on or before their `entrydate`, so the spine's clamp yields no
   day. Upstream, not introduced here. A Miami AY2026 headcount from these facts
@@ -237,23 +253,19 @@ PowerSchool side can settle this faster than I can from aggregates.**
 
 ## 3. Chase-down list (10 min)
 
-| #   | Item                                                                                                                                      | Owner            | Blocks                                                          |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------------- |
-| 1   | Confirm KIPP Foundation reads chronic absence as item 8 (at or below 90.0%), not item 1                                                   | ?                | Any figure going to KIPP                                        |
-| 2   | Status check on #4193 — is Paterson attendance still distorted?                                                                           | PowerSchool side | Whether the caveat comes off both the fact and the view         |
-| 3   | Decide whether Topline's Monday anchor gets fixed — it reports 0 for the week Miami opened and a full NJ roster two days before NJ opened | ?                | Topline's own opening-week figures, independent of this PR      |
-| 4   | Decide whether the NJ truancy projection gets its own fix, and where                                                                      | ?                | 2.4 — it will be asked about either way                         |
-| 5   | Flag the stale PR-schema attendance view so the next person validating does not read a four-region AY2025                                 | me               | Any validation run against `dbt_cloud_pr_70403104388001_5057_*` |
+| #   | Item                                                                                                                                                                       | Owner            | Blocks                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ------------------------------------------------- |
+| 1   | Compare truancy any-day vs period-end against how other networks and the states report it — the one decision still open, and the current-week gap is 50.85% against 21.24% | me               | Deciding 2.2                                      |
+| 2   | Confirm KIPP Foundation reads chronic absence as item 8 (at or below 90.0%), not item 1                                                                                    | ?                | Any figure going to KIPP                          |
+| 3   | Confirm #4193 is permanent for pre-AY2026, as Walters reads it                                                                                                             | PowerSchool side | Whether the caveat is final or pending a backfill |
+| 4   | Decide whether Topline's Monday anchor gets the same first-membership-day fix                                                                                              | ?                | Topline's own opening-week figures                |
+| 5   | Decide whether the NJ truancy projection gets its own fix, and where                                                                                                       | ?                | 2.4 — asked about either way                      |
+| 6   | Decide what a dashboard publishes in the first three weeks of a year, given the rate moves ~4 points a day                                                                 | ?                | Any September figure                              |
 
-**One thing to know if you validate any of this yourself.** The PR-schema copy
-of `int_students__attendance_daily` was created 2026-08-28 and predates `main`'s
-removal of the frozen Miami PowerSchool archive, so it still returns 229,463
-Miami AY2025 rows that production does not have. Anything read off
-`dbt_cloud_pr_70403104388001_5057_marts` for AY2025 is therefore a
-**four-region** figure unless Miami is filtered out — network chronic absence
-reads 26.03% there against the 27.21% production will serve. AY2026 is
-unaffected: the PR-schema and prod views return the identical 2,042,693 rows.
-Every AY2025 figure in this document has Miami excluded on both sides.
+Closed since the review: the Total Enrollment gap is measured and anchored
+(2.3), every chronic-absence and truancy figure is re-measured off built facts,
+the Miami rundown is tracked at #5114, and #5103 is closed by the per-student
+accumulation.
 
 ---
 
@@ -293,22 +305,27 @@ live wrong number.
   (`if(ada_running <= 0.90, 1, 0)`; `Total Enrollment` = `is_enrolled_week` from
   `int_extracts__student_enrollments_weeks`, i.e. Monday between entry and
   exit).
-- New rules read from `fct_student_days.sql` (tier ladder, `is_ca_eligible`,
-  `is_truant` carry-forward) and `fct_student_periods.sql`
-  (`period_end_date_key` = the student's own last membership day in the bucket).
-- Chronic-absence and truancy figures are read off the built branch
-  `fct_student_periods`; the Topline side comes from prod
-  `int_topline__ada_running_weekly` and `int_topline__truancy_weekly`, plus one
-  reconstruction of Topline's rule at student x school x year from prod
-  `int_students__attendance_daily` so the grains line up.
+- New rules read from `fct_student_days.sql` (tier ladder, and both `ada_tier`
+  and `is_truant` gated on `n_membership_days_ytd > 0`) and
+  `fct_student_periods.sql` (`period_start_membership_date_key` and
+  `period_end_date_key` = the student's own first and last membership day in the
+  bucket).
+- Every figure in section 2 is read off a local build of both facts on
+  2026-09-02 — `fct_student_days` 29.6M rows, `fct_student_periods` 4.4M rows,
+  attendance through 2026-09-02. The Topline side comes from prod
+  `int_topline__ada_running_weekly`, `int_topline__truancy_weekly` and
+  `int_extracts__student_enrollments_weeks`.
+- AY2025 figures exclude Miami on both sides, so they compare the three regions
+  production serves today. #5114 will change that.
+- Rates divide by `count_students_rated` (rows where the flag resolves), never
+  by `count_students`. The two differ by the enrolled-but-unmeasured population
+  — 19 rows at AY2025 year grain, up to 9.79% at AY2024 month grain, and far
+  more for pre-AY2026 Miami in production.
 - `int_topline__truancy_weekly` carries rows for weeks that have not happened
   yet, because `int_students__attendance_daily` holds the full scheduled
   calendar. `int_topline__dashboard_aggregations` filters them with
   `term <= current_date`, so the dashboard is fine — but do not read that
   intermediate model directly.
-- Total Enrollment figures in 2.3 are read off the built branch facts in
-  `dbt_cloud_pr_70403104388001_5057_marts` (`fct_student_days` 29,590,829 rows,
-  `fct_student_periods` 4,374,313 rows, both built 2026-09-01 20:23) against
-  prod `int_extracts__student_enrollments_weeks`. First in-session dates come
-  from `int_students__calendar_day`; first student _membership_ day is
-  2026-08-12 for Miami and 2026-08-19 for all three NJ regions.
+- First in-session dates come from `int_students__calendar_day`; the first
+  student _membership_ day is 2026-08-12 for Miami and 2026-08-19 for all three
+  NJ regions.

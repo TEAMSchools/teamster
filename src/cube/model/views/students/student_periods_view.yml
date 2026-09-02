@@ -40,10 +40,15 @@ views:
       carry no recorded attendance, so they are excluded from both sides of
       every rate and cannot move one — but they DO appear in count_students, so
       a pre-AY2026 population count is four regions while the rate beside it is
-      three. Label it accordingly. Paterson's presence-derived measures
-      (ada_tier, pct_chronically_absent, truancy) carry a known upstream
-      uncertainty from incomplete PowerSchool attendance-conversion items
-      (#4193), unquantified as of AY2025; count_students is unaffected.
+      three. Label it accordingly. #5114 is open to restore the archive, so
+      expect pre-AY2026 rates to gain a fourth region.
+
+      Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
+      truancy) carry a known upstream uncertainty from incomplete PowerSchool
+      attendance-conversion items (#4193), unquantified as of AY2025;
+      count_students is unaffected. Unlike Miami's, Paterson's pre-AY2026 gap is
+      likely permanent -- the conversion items were never captured, so there is
+      nothing to restore.
 
     cubes:
       - join_path: student_periods
