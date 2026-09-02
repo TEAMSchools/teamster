@@ -467,9 +467,14 @@ to conflate, so keep them separate:
   `LIT1` / `LIT2` / `LIT3` term windows already in
   `stg_google_sheets__reporting__terms`.
 - **PM**: PM rounds are matched by region and grade level from the PM round
-  document the Academics/T&L team delivers for the year (e.g. the SY27 "DIBELS
-  PM Rounds - All Regions" doc) -- not invented or copied from a prior year's
-  dates.
+  document the Academics/T&L team delivers for the year -- not invented or
+  copied from a prior year's dates. **That document is NJ-only.** The real file
+  is `1BWVR_ptVJ2MFp9D-r_9r4wtc84mlMihVSr8HmgJ9lz4`, titled "SY26 - KIPP NJ -
+  DIBELS PM Rounds + Goals"; searched all export formats and it contains zero
+  Miami content, and a Drive search for a Miami equivalent returns nothing.
+  Miami's PM round dates have to come from Miami's own academics team, and until
+  they do Miami PM rows cannot be generated at all -- the `LIT` round dates are
+  the input the calendar derives `PLIT` boundaries _between_.
 - **K-2 vs 3-8, if the aimline model holds**: K-2 keeps the in-house PM goal
   calculation, which requires `PLIT` rows (see _`reporting__terms` grade bands_
   below). Grades 3-8 use Amplify's aimline-provided goal-setting calculation
