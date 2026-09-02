@@ -2,7 +2,7 @@ with
     school_year_start as (
         select distinct
             _dbt_source_project, academic_year, schoolid, first_day_school_year,
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
     ),
 
     esms_attend as (
@@ -516,13 +516,15 @@ left join
     on e.salesforce_contact_id = ovg.external_student_id
     and e._dbt_source_project = ovg._dbt_source_project
 left join
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
+    -- internal id and is null for every Focus-sourced (Miami) row.
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
-    on e.studentid = ada.studentid
+    on e.student_number = ada.student_number
     and e.academic_year = ada.academic_year
     and e._dbt_source_project = ada._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as adapy
-    on e.studentid = adapy.studentid
+    on e.student_number = adapy.student_number
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join

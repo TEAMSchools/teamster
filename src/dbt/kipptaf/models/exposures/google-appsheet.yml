@@ -25,6 +25,11 @@ exposures:
         dagster:
           kinds:
             - google
+  # Archive only. Leadership Development moved to Lattice on 2026-07-30 and the
+  # upstream dbt models are disabled. The AppSheet app is the writer into
+  # BigQuery, so it also has to be turned off in the AppSheet console --
+  # disabling dbt models only stops the reads. The frozen relations are
+  # registered under the google_appsheet_archive source. Refs #4627
   - name: leadership_development_app
     label: Leadership Development
     type: application
@@ -35,6 +40,7 @@ exposures:
       - ref("rpt_appsheet__leadership_development_roster")
       - ref("stg_google_sheets__performance_management__leadership_development_metrics")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:

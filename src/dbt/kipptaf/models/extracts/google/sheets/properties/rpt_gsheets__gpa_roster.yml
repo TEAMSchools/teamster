@@ -70,3 +70,8 @@ models:
           Weighted projected cumulative Y1 GPA, incorporating current
           in-progress grades not yet stored.
         data_type: float64
+      - name: salesforce_contact_id
+        description:
+          Salesforce contact ID for the student, used to join this roster to
+          KIPP Forward records in Salesforce.
+        data_type: string

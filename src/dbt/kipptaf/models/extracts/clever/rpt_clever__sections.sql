@@ -4,12 +4,15 @@ with
             sr.powerschool_teacher_number,
             sr.home_work_location_dagster_code_location,
             sr.home_work_location_powerschool_school_id as school_id,
+
+            -- The DSO is the intended ENR "teacher"; School Leader is the backup.
+            -- Every school matches both, so without an explicit rank the pivot's
+            -- row_number tie-break is arbitrary and the two swap between runs.
+            if(sr.job_title = 'School Leader', 2, 1) as sortorder,
         from {{ ref("int_people__staff_roster") }} as sr
         where
             sr.assignment_status != 'Terminated'
-            -- Miami rosters into Clever directly from Focus; excluded from all
-            -- six feeds
-            and sr.home_work_location_dagster_code_location != 'kippmiami'
+            and {{ exclude_frozen("sr.home_work_location_dagster_code_location") }}
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
@@ -33,7 +36,7 @@ with
         from {{ ref("stg_powerschool__schools") }}
         where
             state_excludefromreporting = 0
-            and _dbt_source_relation not like '%kippmiami%'
+            and {{ exclude_frozen("_dbt_source_project") }}
     ),
 
     teachers_long as (
@@ -104,13 +107,10 @@ with
             and st._dbt_source_project = t._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
-            -- Miami rosters into Clever directly from Focus; excluded from all
-            -- six feeds
-            and sec._dbt_source_relation not like '%kippmiami%'
+            and {{ exclude_frozen("sec._dbt_source_project") }}
 
         union all
 
-        /* auto-generate ENR course with DSO "teacher" */
         select
             dsos.school_id as sections_schoolid,
 
@@ -127,7 +127,7 @@ with
                 right('{{ var("current_fiscal_year") }}', 2)
             ) as terms_abbreviation,
 
-            1 as sortorder,
+            dsos.sortorder,
 
             dsos.powerschool_teacher_number as teachernumber,
 
@@ -171,7 +171,9 @@ with
 
             concat(
                 'teacher_',
-                row_number() over (partition by section_id order by sortorder asc),
+                row_number() over (
+                    partition by section_id order by sortorder asc, teachernumber asc
+                ),
                 '_id'
             ) as input_column,
         from teachers_long

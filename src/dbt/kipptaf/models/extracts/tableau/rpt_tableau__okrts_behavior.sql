@@ -1,5 +1,5 @@
 with
-    behaviors as (
+    behaviors_typed as (
         select
             b._dbt_source_relation,
             b._dbt_source_project,
@@ -11,77 +11,86 @@ with
             b.point_value,
             b.staff_full_name as entry_staff,
 
+            /* Miami and NJ category names are disjoint, so no region guard is
+               needed. The `category_type is not null` filter below is what
+               makes this CASE the only category list. */
+            case
+                when b.behavior_category in ('Written Reminders', 'Big Reminders')
+                then 'Corrective'
+                when
+                    b.behavior_category in (
+                        'Accountability (Empowerment)',
+                        'Accountability (Purpose, Courage)',
+                        'Be Kind (Love)',
+                        'Be Kind (Revolutionary Love)',
+                        'Effort (Perseverance)',
+                        'Effort (Pride)',
+                        'Teamwork (Community)'
+                    )
+                then 'BEAT'
+                when
+                    b.behavior_category
+                    in ('Corrective Behaviors', 'Tier 1 - Corrective Behaviors')
+                then 'Corrective'
+                when b.behavior_category = 'Tier 1 - Habits of Excellence Corrections'
+                then 'Habits of Excellence'
+                when
+                    b.behavior_category
+                    in ('Values', 'Values (5)', 'Values (10 Point Bonus)')
+                then 'BEAT'
+            end as category_type,
+
+            case
+                when b._dbt_source_relation like '%kippmiami%'
+                then regexp_extract(b.behavior_category, r'([\w\s]+) \(')
+                when b.behavior like '%(%)'
+                then regexp_extract(b.behavior, r'([\w\s]+) \(')
+                else b.behavior
+            end as behavior_extracted,
+        from {{ ref("stg_deanslist__behavior") }} as b
+        where b.behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
+    ),
+
+    behaviors as (
+        select
+            bt._dbt_source_relation,
+            bt._dbt_source_project,
+            bt.dl_said,
+            bt.school_name,
+            bt.student_school_id,
+            bt.behavior_date,
+            bt.behavior_category,
+            bt.point_value,
+            bt.entry_staff,
+            bt.category_type,
+
             w.academic_year,
             w.quarter as term,
             w.week_start_monday,
             w.week_end_sunday,
             w.date_count as days_in_session,
 
+            /* `Values` logs TEAMwork while `Values (5)` and `Values (10 Point
+               Bonus)` log Teamwork, so without this the same value splits into
+               two members inside one year. The workbook's colour map and manual
+               sort only know 'Teamwork'. Normalizing the EXTRACTED value rather
+               than the raw one also catches any future parenthesized form,
+               which an equality test placed ahead of the regex would miss. */
             case
-                when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category != 'Earned Incentives'
-                then regexp_extract(b.behavior_category, r'([\w\s]+) \(')
-                when b.behavior like '%(%)'
-                then regexp_extract(b.behavior, r'([\w\s]+) \(')
-                else b.behavior
+                when bt.behavior_extracted = 'TEAMwork'
+                then 'Teamwork'
+                else bt.behavior_extracted
             end as behavior,
-
-            case
-                -- when b.behavior_category = 'Earned Incentives'
-                -- then 'Incentives'
-                /* Miami */
-                when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category in ('Written Reminders', 'Big Reminders')
-                then 'Corrective'
-                when
-                    b._dbt_source_relation like '%kippmiami%'
-                    and b.behavior_category in (
-                        'Be Kind (Love)',
-                        'Be Kind (Revolutionary Love)',
-                        'Effort (Perseverance)',
-                        'Effort (Pride)',
-                        'Accountability (Purpose, Courage)',
-                        'Accountability (Empowerment)',
-                        'Teamwork (Community)'
-                    )
-                then 'BEAT'
-                /* all other regions */
-                when
-                    b._dbt_source_relation not like '%kippmiami%'
-                    and b.behavior_category = 'Corrective Behaviors'
-                then 'Corrective'
-                when
-                    b._dbt_source_relation not like '%kippmiami%'
-                    and b.behavior_category = 'Values'
-                then 'BEAT'
-            end as category_type,
-        from {{ ref("stg_deanslist__behavior") }} as b
+        from behaviors_typed as bt
         inner join
             {{ ref("int_people__location_crosswalk") }} as lc
-            on b.school_name = lc.location_name
+            on bt.school_name = lc.location_name
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as w
-            on b.behavior_date between w.week_start_monday and w.week_end_sunday
-            and w._dbt_source_project = b._dbt_source_project
+            {{ ref("int_students__calendar_week") }} as w
+            on bt.behavior_date between w.week_start_monday and w.week_end_sunday
+            and w._dbt_source_project = bt._dbt_source_project
             and lc.location_powerschool_school_id = w.schoolid
-        where
-            b.behavior_category in (
-                'Accountability (Empowerment)',
-                'Accountability (Purpose, Courage)',
-                'Be Kind (Love)',
-                'Be Kind (Revolutionary Love)',
-                'Big Reminders',
-                'Corrective Behaviors',
-                -- 'Earned Incentives',
-                'Effort (Perseverance)',
-                'Effort (Pride)',
-                'Teamwork (Community)',
-                'Values',
-                'Written Reminders'
-            )
-            and b.behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
+        where bt.category_type is not null
     ),
 
     behavior_aggregation as (
@@ -146,6 +155,7 @@ select
     co.week_end_sunday,
     co.date_count as days_in_session,
 
+    b.behavior_category,
     b.category_type,
     b.behavior,
     b.entry_staff,

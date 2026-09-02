@@ -5,6 +5,9 @@ models:
       Tableau reporting. One row per student per AP course subject, including
       students enrolled in AP courses who did not take the exam and students who
       took an exam with no matching AP course enrollment.
+
+      Network-wide, Miami included. Miami held 94 AY2026 rows in prod as of
+      2026-08-27. Ratified on #4996.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           description: >-

@@ -1,0 +1,57 @@
+models:
+  - name: stg_google_sheets__google_forms__question_department_crosswalk
+    description: >-
+      Maps a survey question abbreviation to the department that question rates,
+      hand-entered by Ops. One row per abbreviation -- the department a question
+      rates is a property of the question, not of the form it appeared on, so
+      this is keyed on abbreviation alone and joins to survey responses without
+      a grain projection.
+    columns:
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Question shortname, lowercase. Joins to
+          int_surveys__survey_responses.question_shortname, which is lowered on
+          both sides because sheet entry is not case-constrained. Uniqueness is
+          asserted on the lowered value by the unique_lowered_abbreviation
+          singular test, not by a column-level unique test here. No not_null
+          test: the named range is row-unbounded, so BigQuery can surface
+          fully-blank phantom rows below the data, which is what makes the
+          sibling form items extension sheet stage roughly 525 null
+          abbreviations. Every consumer filters instead.
+      - name: rated_department_code
+        data_type: string
+        description: >-
+          Stable snake_case code for the department a survey question rates.
+          Blank or null on questions that rate no department, which the Survey
+          Dashboard routes to its most restricted audience. Several
+          abbreviations may share one code -- that is how departments that have
+          merged are expressed. Purchasing questions carry finance, student
+          recruitment questions carry marketing_comms_enrollment, facilities
+          questions carry real_estate_facilities, and the retired advocacy
+          questions carry development.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - compliance
+                  - data
+                  - development
+                  - finance
+                  - human_resources_operations
+                  - leadership_development
+                  - marketing_comms_enrollment
+                  - operations
+                  - real_estate_facilities
+                  - special_education
+                  - talent_acquisition
+                  - teacher_development
+                  - teaching_learning
+                  - technology
+              config:
+                severity: error
+      - name: rated_department_name
+        data_type: string
+        description: >-
+          Display label for rated_department_code, hand-entered by Ops.
+          Presentation only; authorization matches on the code.

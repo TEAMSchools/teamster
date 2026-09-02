@@ -263,6 +263,7 @@ exposures:
       - ref("rpt_tableau__okrts_behavior")
       - ref("rpt_tableau__okrts_referrals")
       - ref("rpt_tableau__suspension_over_time")
+      - ref("rpt_tableau__home_instruction")
     config:
       meta:
         dagster:
@@ -311,7 +312,9 @@ exposures:
           asset:
             metadata:
               id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-              cron_schedule: 0 15 * * *
+              cron_schedule:
+                - 0 6 * * *
+                - 0 15 * * *
   - name: literacy_dashboard
     label: Literacy Dashboard
     type: dashboard
@@ -419,8 +422,6 @@ exposures:
               id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
               cron_schedule:
                 - 0 1 * * *
-                - 40 14 * * 3
-                - 00 11 * * 3
                 - 0 16 * * 5
                 - 0 18 * * *
   - name: apm_dashboard
@@ -536,6 +537,11 @@ exposures:
             metadata:
               id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
               cron_schedule: 0 6 * * *
+  # Archive only. Leadership Development moved to Lattice on 2026-07-30 and the
+  # upstream dbt models are disabled. This workbook never had a Dagster
+  # cron_schedule, so Dagster never refreshed it -- any remaining extract
+  # refresh is a Tableau-side schedule and has to be removed in Tableau.
+  # Refs #4627
   - name: leadership_development
     label: Leadership Development
     type: dashboard
@@ -544,6 +550,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__leadership_development")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:

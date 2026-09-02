@@ -15,7 +15,7 @@ from dlt.extract.items import DataItemWithMeta
 from dlt.extract.resource import DltResource
 from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.helpers import table_rows
-from sqlalchemy import BigInteger
+from sqlalchemy import BigInteger, Float, Numeric
 from sqlalchemy.sql.sqltypes import _AbstractInterval
 from sqlalchemy.types import TypeEngine
 
@@ -133,6 +133,53 @@ def interval_to_microseconds_adapter(col_type: TypeEngine) -> TypeEngine | None:
     return col_type
 
 
+def widen_unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine:
+    """Give unbounded Postgres ``numeric`` an explicit precision and scale.
+
+    Unbounded ``numeric`` reflects as ``precision=None``, which dlt renders as
+    ``decimal128(38, 9)``. pyarrow then refuses to rescale any value needing
+    more than 9 decimal places, and the extract dies with
+    ``Rescaling Decimal value would cause data loss`` —
+    ``student_gpa_calculated.weighted_gpa`` is the first Focus column to hit it.
+    It also overflowed ``decimal128(38, 18)``, so it carries more than 18
+    decimal places: Focus stores an unrounded division result.
+
+    ``(76, 38)`` is the destination ceiling, not a tuning choice. dlt maps
+    precision above 38 to ``decimal256``, and BigQuery declares exactly
+    ``wei_precision=(76, 38)`` — BIGNUMERIC. Nothing wider exists to fall back
+    to. Postgres ``numeric`` scale is unbounded in principle, so a future column
+    could still overflow this; rounding in the query would be the only fix left.
+
+    ``Numeric(76, 38)`` maps to BigQuery BIGNUMERIC, not NUMERIC, so a dbt
+    staging model over an affected table should ``cast(col as numeric)`` to keep
+    contracts on NUMERIC. That retype requires a one-time reload of every
+    table: ``replace`` cannot change a column's type in place, so the
+    already-loaded columns that reflect as unbounded ``numeric`` need
+    recreating.
+
+    ``Float`` subclasses ``Numeric`` and also reflects ``precision=None``, so it
+    is returned untouched — otherwise every ``double precision`` column would
+    land as BIGNUMERIC. The guard now covers all 79 tables in the source.
+    (Illuminate's ``unbounded_numeric_adapter`` omits that guard; it has no
+    float columns reaching this path today.)
+    """
+    if isinstance(col_type, Float):
+        return col_type
+
+    if isinstance(col_type, Numeric) and col_type.precision is None:
+        # ponytail: destination maximum, chosen because Focus is unreachable
+        # from CI so the real scale cannot be measured. Narrow it once a loaded
+        # value can be inspected in BigQuery.
+        return Numeric(precision=76, scale=38)
+
+    return col_type
+
+
+def _widening_type_adapter(col_type: TypeEngine) -> TypeEngine | None:
+    """Both Focus type adapters, applied to every table in the source."""
+    return interval_to_microseconds_adapter(widen_unbounded_numeric_adapter(col_type))
+
+
 def _focus_table_items(
     sql_database_credentials: ConnectionStringCredentials,
     table_name: str,
@@ -165,7 +212,7 @@ def _focus_table_items(
             table_adapter_callback=remove_nullability_adapter,
             reflection_level="full_with_precision",
             backend_kwargs={},
-            type_adapter_callback=interval_to_microseconds_adapter,
+            type_adapter_callback=_widening_type_adapter,
             included_columns=None,
             excluded_columns=None,
             query_adapter_callback=None,
@@ -271,7 +318,8 @@ def build_focus_dlt_assets(
         # The full source only defines the asset specs; the op runs a narrowed
         # one.
         dlt_source=build_focus_source(
-            sql_database_credentials=sql_database_credentials, tables=tables
+            sql_database_credentials=sql_database_credentials,
+            tables=tables,
         ),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__dlt__{FOCUS_SOURCE_NAME}",

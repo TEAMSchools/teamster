@@ -77,6 +77,21 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: host
+              - name: EDPLAN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: password
+              - name: EDPLAN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: username
               - name: TITAN_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -184,6 +199,21 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
+                    key: username
+              - name: EDPLAN_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: host
+              - name: EDPLAN_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
+                    key: password
+              - name: EDPLAN_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-edplan-sftp-kipppaterson
                     key: username
               - name: TITAN_SFTP_HOST
                 valueFrom:

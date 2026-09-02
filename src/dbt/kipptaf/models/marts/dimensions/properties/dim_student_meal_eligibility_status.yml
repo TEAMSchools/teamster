@@ -5,9 +5,12 @@ models:
       per district enrollment context. The NJ regions (Newark, Camden, Paterson)
       draw from Titan with native effective dates; Miami carries a single
       current-state span using the most recent PowerSchool `lunchstatus` value.
-      All spans are clipped to the student's PowerSchool enrollment range in the
-      source district — phantom Titan records for districts where the student
-      was never enrolled drop out at the enrollment inner-join.
+      Enrollment context is per-stint — a multi-stint student gets multiple dim
+      rows per eligibility record, each clipped to its specific entry/exit
+      window (aggregating to a min/max range would wrongly span gaps between
+      stints). All spans are clipped to the student's PowerSchool enrollment
+      range in the source district — phantom Titan records for districts where
+      the student was never enrolled drop out at the enrollment inner-join.
     config:
       meta:
         dagster:

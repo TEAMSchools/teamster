@@ -5,7 +5,10 @@ models:
       student per district enrollment context. Newark + Camden + Paterson draw
       from PowerSchool `s_nj_stu_x` LEP date columns; Miami carries a single
       current-state span derived from PowerSchool enrollments +
-      `studentcorefields.lep_status`. All spans are clipped to the student's
+      `studentcorefields.lep_status`. Enrollment context is per-stint — a
+      multi-stint student gets multiple dim rows per LEP record, each clipped to
+      its specific entry/exit window (aggregating to a min/max range would
+      wrongly span gaps between stints). All spans are clipped to the student's
       PowerSchool enrollment range in the source district. Source is
       current-state — historical entry/exit/re-entry transitions that have been
       overwritten in PowerSchool are not recoverable.

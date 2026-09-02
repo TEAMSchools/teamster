@@ -1,5 +1,4 @@
 with
-    -- students who already have a contact (person) in Focus; import once
     focus_contact as (
         select distinct cast(student_id as string) as student_id,
         from {{ ref("stg_focus__students_join_people") }}

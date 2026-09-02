@@ -3,9 +3,8 @@ with
         select
             _dbt_source_relation,
             _dbt_source_project,
-            studentid,
-            yearid,
             student_number,
+            academic_year,
             entrydate,
             exitdate,
         from {{ ref("int_students__student_enrollment_union") }}
@@ -76,14 +75,18 @@ select
     fg.lastgradeupdate as last_grade_update_date,
 
     cast(fg.exclude_from_gpa as bool) as is_excluded_from_gpa,
-from {{ ref("base_powerschool__final_grades") }} as fg
--- retained as a row-population filter (term grade must fall within a covering
--- school enrollment); enrollment linkage now flows via
--- student_section_enrollment_key -> dim_student_section_enrollments
+from {{ ref("int_students__final_grades") }} as fg
+-- Retained as a row-population filter: a term grade must fall within a covering
+-- school enrollment. Enrollment linkage now flows through
+-- `student_section_enrollment_key` to `dim_student_section_enrollments`, joined
+-- on `student_number` rather than `studentid`. The Focus branch has no
+-- PowerSchool `studentid`, and `student_number` is the only student key both
+-- branches carry. Measured against prod before the swap: row-identical to the
+-- `studentid` join for all 3 NJ regions.
 inner join
     student_enrollments as enr
-    on fg.studentid = enr.studentid
-    and fg.yearid = enr.yearid
+    on fg.student_number = enr.student_number
+    and fg.academic_year = enr.academic_year
     and fg.termbin_start_date >= enr.entrydate
     and fg.termbin_start_date < enr.exitdate
     and fg._dbt_source_project = enr._dbt_source_project

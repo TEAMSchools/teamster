@@ -128,3 +128,18 @@ Claude cannot authenticate direct GraphQL calls — the token comes from `op rea
 (hook-blocked). Hand queries to the user to run in the Dagster+ UI GraphQL
 playground; the MCP's fixed field selections omit some fields (e.g.
 `materializationFailureType` on `FailedToMaterializeEvent`).
+
+## Run logs
+
+For run-internal timelines (steps, engine events, failures), use
+`mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
+unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
+`get_run_logs` event `timestamp` is a millisecond string.
+
+## MCP launcher
+
+Do not revert `.mcp.json` to `op run`. The 1Password service-account token is
+scrubbed post-boot, so `op run` silently breaks after the first Codespace
+restart. Keep `scripts/dagster-mcp-launch.sh` as the launcher. Package
+internals:
+[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).

@@ -13,7 +13,7 @@ models:
           arguments:
             combination_of_columns:
               - _dbt_source_project
-              - studentid
+              - student_number
               - academic_year
               - term
           config:
@@ -22,10 +22,21 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from `_dbt_source_project`.
+      - name: student_number
+        data_type: int64
+        description:
+          Network student number. The model's grain key -- studentid is
+          PowerSchool-internal and null for every Focus-sourced (Miami) row, so
+          it cannot key a network-wide model.
+        config:
+          meta:
+            contains_pii: true
       - name: studentid
         data_type: int64
         description:
-          The internal number and ID of the associated Students record.
+          The internal number and ID of the associated Students record. Null for
+          every Focus-sourced (Miami) row -- carried through as `max(studentid)`
+          per student_number so NJ consumers that still join on it keep working.
         config:
           meta:
             source_system: PowerSchool

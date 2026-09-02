@@ -16,7 +16,7 @@ with
 
             max(school_week_end_date) as school_week_end_date,
 
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
         where
             -- summer toggle: see skill
             academic_year = {{ var("current_academic_year") - 1 }}

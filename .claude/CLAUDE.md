@@ -132,10 +132,11 @@ output instead.
 ## Context injection (`tool-gotchas.sh`)
 
 A third hook adds context instead of blocking. `tool-gotchas.sh` (PreToolUse,
-matcher `mcp__.*`) injects `.claude/context/<server>.md` the first time each MCP
-server is used in a session, keyed on the server segment of the tool name
-(`mcp__<server>__<tool>`). Add or change guidance for a server by editing that
-file — no hook or settings change needed.
+matcher `Agent|Workflow|mcp__.*`) injects `.claude/context/<key>.md` the first
+time a key is used in a session. The key is the server segment of an MCP tool
+name (`mcp__<server>__<tool>`), or `agent` for the `Agent` and `Workflow` tools.
+Add or change guidance for a server by editing that file — no hook or settings
+change needed. A new non-MCP tool needs a new `case` arm in the script.
 
 - It fails **open** (unparseable payload → exit 0, call proceeds) because it
   only adds context. The two guard hooks fail closed — do not copy this pattern
@@ -172,97 +173,19 @@ to the user or the Actions UI. (Pushing a commit that edits a
 `deploy-prod-<loc>.yaml` also triggers that location's deploy, since the file is
 in its own push-paths.)
 
-## Modifying protected files
+## Protected files
 
-- Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and
-  `.claude/settings.json` / `.claude/settings.local.json`: draft changes,
-  present to user for manual application using complete code blocks — show only
-  the final replacement block, never an old+new pair (which reads like a diff
-  and invites copy errors) — with a file + line number link, ordered
-  top-to-bottom, commentary separate from the edits
-- Those files must also be staged and committed manually
-- Other `.claude/` files (e.g. `CLAUDE.md` files) may be edited directly
-- When staging changes that include protected paths, use `git add -u` — naming
-  them explicitly in `git add <file>` triggers the hook and gets blocked
-- **Git commit messages**: Try `git commit -m` first. If the hook blocks the
-  message (false positive on keywords), fall back to writing the message to
-  `.claude/scratch/commit-msg.txt` using the Write tool, then
-  `git commit -F .claude/scratch/commit-msg.txt`. The Write tool's `content`
-  field is exempt from path/keyword scanning. The Bash tool `description` field
-  is also scanned — keep it generic (e.g. "Commit changes"). Delete any stale
-  file first (`rm -f .claude/scratch/commit-msg.txt`) — if it exists from a
-  prior session, Write fails ("File has not been read yet") but a batched
-  `git commit -F` still runs and consumes the old content, producing a commit
-  with the wrong message.
+Hook scripts, `settings.json`, and `.devcontainer/scripts/` are Edit-denied:
+draft the change and hand it to the user. Full procedure, `permissions.deny`
+semantics, and the settings-integrity checks load from
+`.claude/rules/claude-settings.md` on the first read of one of those files.
+
+If the hook blocks a `git commit -m` message,
+`rm -f .claude/scratch/commit-msg.txt`, Write the message there, then
+`git commit -F .claude/scratch/commit-msg.txt`. Keep the Bash `description`
+generic; it is scanned too.
 
 ## Scratch directory
 
 `.claude/scratch/` is gitignored and writable by all tools. Use it for temp
 files (commit messages, draft content) that would otherwise be blocked by hooks.
-
-## permissions.deny vs hooks
-
-`Bash(<pattern>)` deny rules match from the **start** of the command only. Hooks
-scan the full command string. For `op`, both are needed — do not remove one in
-favor of the other.
-
-## permissions.deny path prefixes
-
-Rules for project-root paths use `/` (e.g. `Edit(/.claude/hooks/**/*.sh)`).
-Rules for home-dir paths must use `~` (e.g.
-`Edit(~/.claude/shell-snapshots/**)`). Using `/` for a home-dir path silently
-fails — the rule never matches.
-
-Glob depth: `Edit(/.claude/skills/**)` may not match deeply nested paths. When
-an approval prompt appears despite an apparently-covering rule, accept it — the
-dialog auto-adds a narrower per-subdirectory rule that works.
-
-## Settings file integrity
-
-Hooks and `permissions.deny` rules are defined in `.claude/settings.json`
-(JSONC). If the parser rejects the file, **all settings are silently ignored** —
-no hooks fire, no deny rules apply. Claude Code does not log a warning.
-
-- Keep `settings.json` as clean JSONC — avoid large commented-out blocks
-- Validate after edits: the file must parse as valid JSONC
-- Symptoms of a broken file: hooks stop firing, deny rules stop blocking, no
-  error messages
-- Recovery: validate by running `bash tests/hooks/run_all.sh` (denials should
-  pass); if hooks still don't fire, restore `.claude/settings.json` from git.
-  Hooks resume on the next tool call after fix.
-
-## Regression tests
-
-```bash
-bash tests/hooks/run_all.sh
-```
-
-Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
-fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
-in `helpers.sh` guards against the exit-code and stderr regressions described
-above.
-
-**Ad-hoc rule probing:** a Bash command that names `.claude/hooks/*.sh` is
-blocked (Rule 2), and trigger tokens placed in the command self-block. To test a
-rule, `Write` a harness into `.claude/scratch/` (Write `content` is exempt from
-scanning) that pipes fixtures into the hook by absolute path, then run
-`bash .claude/scratch/<name>.sh` (the command string carries no triggers).
-
-The same trick `cp`s or `diff`s the protected hooks (Bash can't name
-`.claude/hooks/*.sh`): put the hook paths inside the scratch script (snapshot a
-hook into scratch for patching, or `diff` scratch-vs-committed before hand-off)
-and run it by its scratch path.
-
-## Editing the hooks — recurring gotchas
-
-- **The CI `claude-review` bot recurringly reports a phantom unstaged
-  "working-tree revert"** of an edited hook (e.g. ` M check-sensitive.sh`, with
-  the new patterns "missing"). It's a CI-checkout artifact, not the PR — the
-  committed blob is correct. Confirm `git status` is clean and dismiss; do NOT
-  `git checkout` to "fix" a clean tree.
-- **trunk's shellcheck enables `SC2312` (masked-return) on pipelines**:
-  `echo`/`printf` are exempt, but `tr` / `base64` / `gunzip` / `jq` inside a
-  `$(...)` are flagged. Prefer bash parameter expansion (`${v,,}`, `${v//x/y}`,
-  `${v//$'\n'/ }`) over a `tr` subshell, or put a
-  `# trunk-ignore(shellcheck/SC2312)` on the line immediately before the
-  substitution. (Raw `shellcheck` won't show it; trunk's config does.)

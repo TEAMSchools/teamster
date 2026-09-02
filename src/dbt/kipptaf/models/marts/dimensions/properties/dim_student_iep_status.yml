@@ -3,13 +3,17 @@ models:
     description: >-
       SCD2 dimension capturing IEP (special-education) status spans per student
       per district enrollment context. One row per `(student, district,
-      contiguous value span)`; active rows end at `'9999-12-31'`. Newark +
-      Camden draw from EdPlan with native effective dates; Paterson + Miami
-      carry a single current-state span derived from PowerSchool enrollments +
-      `studentcorefields.spedlep`. All spans are clipped to the student's
-      PowerSchool enrollment range in the source district — phantom NJSmart
-      records for districts where the student was never enrolled drop out at the
-      enrollment inner-join.
+      contiguous value span)`; active rows end at `'9999-12-31'`. The NJ regions
+      (Newark, Camden, Paterson) draw from EdPlan with native effective dates;
+      Miami carries a single current-state span derived from PowerSchool
+      enrollments + `studentcorefields.spedlep`. Enrollment context is per-stint
+      — a student with multiple stints in the same district gets a separate span
+      set per stint, each clipped to that stint's entry/exit window (aggregating
+      to a min/max range across stints would wrongly span gaps between them,
+      e.g. a Newark → Camden → Newark student's Newark range covering the Camden
+      period). All spans are clipped to the student's PowerSchool enrollment
+      range in the source district — phantom NJSmart records for districts where
+      the student was never enrolled drop out at the enrollment inner-join.
     config:
       meta:
         dagster:
@@ -139,17 +143,17 @@ models:
       - name: special_education_code
         data_type: string
         description: >-
-          NJ state special-education code (e.g. `AU`, `ED`). Populated only for
-          Newark + Camden via EdPlan; null for Paterson + Miami.
+          NJ state special-education code (e.g. `AU`, `ED`). Populated for the
+          NJ regions via EdPlan; null for Miami.
 
       - name: special_education_name
         data_type: string
         description: >-
-          Descriptive name paired with `special_education_code`. Populated only
-          for Newark + Camden via EdPlan; null for Paterson + Miami.
+          Descriptive name paired with `special_education_code`. Populated for
+          the NJ regions via EdPlan; null for Miami.
 
       - name: special_education_placement
         data_type: string
         description: >-
-          NJ state special-education placement category. Populated only for
-          Newark + Camden via EdPlan; null for Paterson + Miami.
+          NJ state special-education placement category. Populated for the NJ
+          regions via EdPlan; null for Miami.

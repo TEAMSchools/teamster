@@ -1,8 +1,20 @@
 models:
   - name: stg_renlearn__star
+    description: >-
+      Consolidated STAR model and the single place STAR data is read or edited.
+      Folds in the derived columns that previously lived in the retired rollup —
+      academic_year, star subject and discipline, administration window mapped
+      from Fall, Winter, and Spring to BOY, MOY, and EOY, benchmark integer
+      flags, and the per-subject row numbers.
     config:
       materialized: table
     columns:
+      - name: assessment_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: _dbt_source_relation
         data_type: string
       - name: _dagster_partition_fiscal_year
@@ -14,8 +26,6 @@ models:
       - name: american_indian_or_alaska_native
         data_type: string
       - name: asian
-        data_type: string
-      - name: assessment_id
         data_type: string
       - name: assessment_number
         data_type: int64
@@ -146,7 +156,7 @@ models:
       - name: school_benchmark_proficient
         data_type: string
       - name: school_identifier
-        data_type: int64
+        data_type: string
       - name: school_name
         data_type: string
       - name: school_renaissance_id

@@ -19,7 +19,6 @@ select
     start_date,
     end_date,
     include_in_class_rank,
-    distance_from_school,
     next_grade,
     imported,
     first_time_indicator,
@@ -32,9 +31,12 @@ select
     custom_3 as prior_country,
     custom_4 as educational_choice,
     custom_6 as student_offender_transfer,
+    custom_9 as second_school,
     custom_18 as resident_status_state_county,
     custom_5 as disaster_affected_student,
     uuid,
     created_at,
     updated_at,
+
+    cast(distance_from_school as numeric) as distance_from_school,
 from {{ source("focus", "student_enrollment") }}

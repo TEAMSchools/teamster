@@ -1,12 +1,13 @@
 with
     recent_leave as (
-        -- Joins PMS terms only, and AY2026 has no PMS PM1 term row (AY2024 and
-        -- AY2025 did), so this yields PM2/PM3 rows only. The pm_round_eligible
-        -- leave guard is therefore inert for PM1 until Ops re-adds that row.
-        -- grain projection: every selected column is functionally determined by
-        -- (employee_number, academic_year, code) -- recent_leave is a constant,
-        -- so multiple matching roster-history rows collapse to one
-        -- byte-identical tuple. Not a mask for upstream duplicates.
+        -- grain projection, not dup-masking: every selected column is
+        -- determined by (`employee_number`, `academic_year`, `code`), and
+        -- `recent_leave` is a constant, so multiple matching roster-history rows
+        -- collapse to 1 byte-identical tuple.
+        -- Joins PMS terms only, and AY2026 has no PMS PM1 term row where AY2024
+        -- and AY2025 had one, so this yields PM2 and PM3 rows only. The
+        -- `pm_round_eligible` leave guard stays inert for PM1 until Ops re-adds
+        -- that row.
         select distinct
             srh.employee_number, t.academic_year, t.code, true as recent_leave,
         from {{ ref("int_people__staff_roster_history") }} as srh
@@ -18,7 +19,6 @@ with
         where srh.assignment_status = 'Leave' or srh.assignment_status_lag = 'Leave'
     )
 
-/* tracking for current year */
 select
     srh.employee_number,
     srh.home_work_location_grade_band as grade_band,
@@ -107,11 +107,6 @@ select
 
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
-    /*
-        round eligibility for PM
-            1: all teachers, regardless of start date
-            2 & 3: Active six weeks prior to lockbox date
-    */
     case
         when r.recent_leave
         then false
@@ -141,12 +136,10 @@ inner join
     )
     and t.academic_year = {{ var("current_academic_year") }}
     and t.type in ('PMS', 'PMC', 'TR')
-/* Adding memberships for teachers*/
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on srh.employee_number = os.employee_number
     and t.academic_year = os.academic_year
-/* Adding memberships for observers*/
 left join
     {{ ref("int_performance_management__observation_details") }} as od
     on srh.employee_number = od.employee_number
@@ -169,12 +162,10 @@ left join
     on srh.employee_number = r.employee_number
     and t.academic_year = r.academic_year
     and t.code = r.code
-/* Adding memberships for teachers*/
 left join
     {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as em
     on t.academic_year = em.academic_year
     and sr.worker_id = em.associate_id
-/* Adding memberships for observers*/
 left join
     {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
     on t.academic_year = emo.academic_year
@@ -196,7 +187,6 @@ where
 
 union all
 
-/* actual responses from past years*/
 select
     srh.employee_number,
     srh.home_work_location_grade_band as grade_band,

@@ -4,6 +4,31 @@ models:
       One row per student per academic year per course per quarter based on
       course enrollment overlap with term dates. Students who re-enrolled in the
       same course within a quarter are deduped to the most recent stint.
+
+      Covers all regions and all academic years. The student join keys on
+      `student_number` rather than PowerSchool's internal `cc_studentid`, which
+      Focus leaves null — before that change this model held no Miami rows in
+      any year.
+
+      Miami is included by decision (ratified on #4996) and, since #5043, in
+      practice. Two null comparisons had kept it out, both fixed there.
+
+      `sections_no_of_students` is null on every Focus row, because Focus
+      records no section student count, so the `!= 0` filter dropped all 19,398
+      AY2026 enrollments. The predicate is now null-safe and still excludes the
+      PowerSchool quirk it targets — a section holding enrollment rows while
+      recording its count as zero, 202 New Jersey rows in AY2026.
+
+      `cc_dateleft` was null while a Focus enrollment was open, true of 95.8% of
+      Miami rows, so the quarter join dropped all but 230 of the survivors. That
+      one is not fixed here. It is fixed at the Focus leg of
+      `int_students__course_enrollments`, which now conforms the column to
+      PowerSchool's convention — the day after the section's term ends — so this
+      model compares it directly, unchanged.
+
+      Neither change moves New Jersey: `sections_no_of_students` is non-null on
+      every NJ row, so the new predicate is identical to the old one there, and
+      the conforming change touches only the Focus leg.
     config:
       schema: extracts
       materialized: table
@@ -22,12 +47,18 @@ models:
           automation_condition:
             cron_schedule: 0 2 * * *
     data_tests:
+      # grain keyed on student_number, not studentid: studentid is null on
+      # every Focus row, so Miami's rows would all collide on a null key.
+      # student_number is non-null on both SIS branches and matches the
+      # model's own dedup partition. It is also the stricter assertion --
+      # distinct student_number equals the row count exactly, where distinct
+      # studentid does not.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_project
               - academic_year
-              - studentid
+              - student_number
               - course_number
               - quarter
           config:
@@ -38,7 +69,9 @@ models:
       - name: studentid
         data_type: int64
         description:
-          The internal number and ID of the associated Students record.
+          The internal number and ID of the associated Students record. Null for
+          Miami from AY2026 forward -- Focus has no equivalent internal id. Use
+          student_number to identify a student across both SIS branches.
         config:
           meta:
             source_system: PowerSchool
@@ -1181,7 +1214,12 @@ models:
             source_column: cc_dateenrolled
       - name: dateleft
         data_type: date
-        description: Raw cc_dateleft for the enrolled course section stint.
+        description: >
+          Raw `cc_dateleft` for the enrolled course section stint. Non-null in
+          both SIS branches, and for an open enrollment it is the day after the
+          section's term ends rather than a departure date, so it cannot be read
+          as a still-enrolled signal. See the column description on
+          `int_students__course_enrollments`.
         config:
           meta:
             source_system: PowerSchool
@@ -1240,7 +1278,8 @@ models:
       - name: rn
         data_type: int64
         description: >
-          Row number within (project, academic_year, studentid, course_number,
-          quarter), ordered by school exitdate desc then CC dateleft desc.
-          Always 1 in this model's output — filtered by a WHERE clause after
-          computing the window, not QUALIFY. Retained for downstream reference.
+          Row number within (project, academic_year, student_number,
+          course_number, quarter), ordered by school exitdate desc then CC
+          dateleft desc. Always 1 in this model's output — filtered by a WHERE
+          clause after computing the window, not QUALIFY. Retained for
+          downstream reference.

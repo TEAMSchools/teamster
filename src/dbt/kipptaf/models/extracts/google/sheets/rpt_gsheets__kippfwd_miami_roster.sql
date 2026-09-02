@@ -26,14 +26,14 @@ with
             )
     ),
 
-    /* TODO(#4794): int_focus__student_enrollments.enroll_status derives from
+    /* TODO(#4794): int_focus__student_enrollment_roster.enroll_status derives from
        drop-code presence, and Focus stamps W01/W02 rollover codes on nearly
        every span at year end -- it reads 361 of 365 AY2025 students as
        transferred out. Derive locally until that is fixed upstream, then
        delete this CTE and read the upstream column. */
     open_enrollment as (
         select distinct student_number,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where academic_year = {{ var("current_academic_year") }} and exitcode is null
     ),
 
@@ -70,7 +70,12 @@ with
     ps_last_academic_year as (
         select max(academic_year) as academic_year,
         from {{ ref("int_powerschool__ada_term_pivot") }}
-        where _dbt_source_project = 'kippmiami'
+        -- studentid is not null scopes this to the frozen PowerSchool
+        -- archive only -- the table now also carries live Focus-sourced
+        -- kippmiami rows (null studentid), which would otherwise pull this
+        -- max forward to the current year and break the "last year
+        -- PowerSchool covers" semantics this CTE is named for.
+        where _dbt_source_project = 'kippmiami' and studentid is not null
     ),
 
     /* Miami's PowerSchool archive is frozen at AY2025 and keys on studentid,
@@ -196,7 +201,7 @@ select
     ) as focus_enrollment_status,
 
     pgc.cumulative_y1_gpa_unweighted as previous_year_gpa,
-from {{ ref("int_focus__student_enrollments") }} as e
+from {{ ref("int_focus__student_enrollment_roster") }} as e
 left join students as s on e.student_number = s.student_id
 left join open_enrollment as oe on e.student_number = oe.student_number
 left join contact_1 as c1 on e.student_number = c1.student_id
@@ -209,8 +214,11 @@ left join
     and e.academic_year - 1 = fp_prev.academic_year
 left join ps_xwalk as px on s.powerschool_id = px.ps_student_number
 left join
+    -- Keyed on student_number, not studentid: studentid is null for every
+    -- Focus-sourced kippmiami row in ada_term_pivot, which previously left
+    -- this join permanently unmatched for Miami once Focus took over.
     {{ ref("int_powerschool__ada_term_pivot") }} as pada
-    on px.ps_studentid = pada.studentid
+    on px.ps_student_number = pada.student_number
     and e.academic_year - 1 = pada.academic_year
     and pada._dbt_source_project = 'kippmiami'
 left join

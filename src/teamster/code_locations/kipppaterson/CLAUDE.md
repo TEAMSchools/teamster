@@ -17,6 +17,7 @@ GCS bucket: `teamster-kipppaterson`
 | `powerschool` (sis/dlt) | dlt assets (Oracle→BigQuery) | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
 | `amplify` (mclass sftp) | SFTP assets                  | sensor (`build_amplify_mclass_sftp_sensor`)                           |
 | `deanslist`             | API assets                   | schedule (nightly)                                                    |
+| `edplan`                | SFTP assets                  | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
 | `pearson`               | SFTP assets                  | `AutomationConditionSensor`                                           |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
@@ -48,7 +49,7 @@ Consequences:
   `powerschool` package `staging/dlt` variant is enabled here
 - The former Couchdrop-SFTP PowerSchool feed is retired; `couchdrop_sftp_sensor`
   now watches Finalsite `status_report` only
-- No `edplan`, `iready`, `overgrad`, or `renlearn`
+- No `iready`, `overgrad`, or `renlearn`
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
   racing it
@@ -71,6 +72,6 @@ nightly cron schedule (unconditional full-refresh + re-baseline, matching
 kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
 autocomm `extracts` job add nightly schedules; Finalsite `status_report`
 (`couchdrop_sftp_sensor`), Amplify (`build_amplify_mclass_sftp_sensor`), Titan
-(`build_titan_sftp_sensor`), and PowerSchool intraday are sensor-driven.
-`AutomationConditionSensor` handles any assets with an automation condition
-defined (e.g. `pearson`).
+(`build_titan_sftp_sensor`), EdPlan (`build_edplan_sftp_sensor`), and
+PowerSchool intraday are sensor-driven. `AutomationConditionSensor` handles any
+assets with an automation condition defined (e.g. `pearson`).

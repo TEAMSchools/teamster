@@ -8,20 +8,22 @@ with
         from {{ ref("stg_focus__schedule") }}
     ),
 
-    -- An assignment is assigned to many sections, so the link alone fans a
-    -- grade out. Intersecting with the student's own sections picks exactly
-    -- one. Inner joins here are deliberate: this CTE holds only grades whose
-    -- course period resolved, and it is LEFT joined back on below so the rest
-    -- survive.
     grade_course_periods as (
         select
             gg.id as student_gradebook_grade_id,
 
+            ajcp.id as assignment_course_period_id,
             ajcp.course_period_id,
             ajcp.marking_period_id,
             ajcp.assigned_date,
             ajcp.due_date,
             ajcp.publish_date,
+
+            mp.syear as academic_year,
+            mp.short_name as marking_period_short_name,
+            mp.type as marking_period_type,
+            mp.start_date as marking_period_start_date,
+            mp.end_date as marking_period_end_date,
         from {{ ref("stg_focus__gradebook_grades") }} as gg
         inner join
             {{ ref("stg_focus__gradebook_assignments_join_course_periods") }} as ajcp
@@ -30,6 +32,14 @@ with
             student_course_periods as scp
             on gg.student_id = scp.student_id
             and ajcp.course_period_id = scp.course_period_id
+        -- marking_period_id on ajcp always resolves (verified against prod:
+        -- 5,180 rows in this CTE, 0 with a null marking_period_id, 0 unmatched
+        -- against stg_focus__marking_periods), and marking_period_id is unique
+        -- with zero nulls across all 1,327 marking period rows, so this join
+        -- cannot fan the grain or drop a row.
+        inner join
+            {{ ref("stg_focus__marking_periods") }} as mp
+            on ajcp.marking_period_id = mp.marking_period_id
     )
 
 select
@@ -49,8 +59,14 @@ select
     gg.last_updated_user,
     gg.last_updated_date,
 
+    gcp.assignment_course_period_id,
     gcp.course_period_id,
     gcp.marking_period_id,
+    gcp.academic_year,
+    gcp.marking_period_short_name,
+    gcp.marking_period_type,
+    gcp.marking_period_start_date,
+    gcp.marking_period_end_date,
     gcp.assigned_date,
     gcp.due_date,
     gcp.publish_date,

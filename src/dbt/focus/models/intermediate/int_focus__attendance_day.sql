@@ -39,9 +39,6 @@ from {{ ref("stg_focus__attendance_day") }} as ad
 left join
     {{ ref("stg_focus__marking_periods") }} as mkp
     on ad.marking_period_id = mkp.marking_period_id
--- daily_code holds a short_name, NOT an id — unlike attendance_period, whose
--- codes are ids. short_name is unique only within a school and year, so both
--- scope the join.
 left join
     {{ ref("stg_focus__attendance_codes") }} as ac
     on ad.syear = ac.syear

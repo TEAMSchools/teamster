@@ -1,10 +1,7 @@
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     term_weeks as (
-        /*
-        grain projection: every selected column is functionally determined
-        by the partition key; not a mask for upstream duplicates
-        */
+        -- grain projection, not dup-masking
         select distinct
             _dbt_source_project,
             region,
@@ -14,7 +11,7 @@ with
             week_start_monday,
             week_end_sunday,
 
-        from {{ ref("int_powerschool__calendar_week") }}
+        from {{ ref("int_students__calendar_week") }}
         where
             -- summer toggle: see skill
             academic_year = {{ var("current_academic_year") - 1 }}

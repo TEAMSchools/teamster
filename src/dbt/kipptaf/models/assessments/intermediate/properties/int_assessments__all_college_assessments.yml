@@ -22,7 +22,44 @@ models:
 
 
       See docs/models/carat-dashboard-data-model.md.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 2x/day table instead of an eager view. This model costs 1.390 GiB to
+          # rebuild and its window functions block column pruning -- selecting 1
+          # column also costs 1.388 GiB -- so all 9 downstream views pay the
+          # whole recompute, each costing 1.39 to 1.46 GiB against 0.004 to
+          # 0.073 GiB of work of their own. The table is ~6 MB at 43,081 rows.
+          #
+          # Eager would cost more than it saves. Upstream tables update 6 to 8
+          # times a day: response_rollup 5.4, the 2 kippfwd sheets 0.1 each, and
+          # int_kippadb__standardized_test_unpivot 2.5. So eager bills 8.3 to
+          # 11.1 GiB/day to save 6.6.
+          #
+          # Both ticks come from int_assessments__response_rollup's own set, so
+          # the 2 are requested in one Dagster run and dbt's own DAG ordering
+          # builds response_rollup first. NOT ~any_deps_in_progress: that guard
+          # reads direct deps only, and response_rollup is 2 hops up through
+          # int_assessments__college_assessment_practice. 00:00 precedes this
+          # lineage's heaviest reader, a scheduled job at 02:00 ET feeding the 2
+          # college_assessments sheets; 13:00 serves afternoon ad-hoc use. All 5
+          # of response_rollup's ticks would cost 6.95 GiB/day and nothing reads
+          # this more than twice a day.
+          #
+          # Trade-off: scores read up to ~13h old. Every consumer is a nightly
+          # job, the daily CARAT Tableau extract (0 6 * * *), or ad-hoc, and
+          # each lands after a tick. Same call as #4821 on
+          # fct_assessment_scores_enrollment_scoped. Refs #5035
+          automation_condition:
+            cron_schedule: 0 0,13 * * *
     data_tests:
+      # scale_score, not rn_highest. rn_highest is a row_number over
+      # (student, scope, score_type) in all 3 upstream hubs, so a key holding it
+      # is unique by construction and the test cannot fail. scale_score keys on
+      # the data instead, and still tolerates the one legitimate pair the CARAT
+      # doc records: a 2015-10-19 sat_total_score sitting entered twice with
+      # genuinely different scores.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -30,7 +67,7 @@ models:
               - test_type
               - score_type
               - test_date
-              - rn_highest
+              - scale_score
     columns:
       - name: student_number
         data_type: int64
