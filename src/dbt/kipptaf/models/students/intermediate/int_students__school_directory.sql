@@ -5,7 +5,7 @@ select distinct
     schoolid,
     grade_level,
 
-    _dbt_source_project as code_location,
+    _dbt_source_project,
 
     'powerschool' as school_source,
 
@@ -22,7 +22,7 @@ select distinct
     ps_schoolid as schoolid,
     grade_level,
 
-    _dbt_source_project as code_location,
+    _dbt_source_project,
 
     'focus' as school_source,
 

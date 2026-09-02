@@ -35,11 +35,11 @@ models:
           calendar year -- 2026 is SY26-27.
         data_tests:
           - not_null
-      - name: code_location
+      - name: _dbt_source_project
         description: >
           Dagster code location owning the row -- kippnewark, kippcamden,
-          kippmiami or kipppaterson. The join key for _dbt_source_project on
-          union models.
+          kippmiami or kipppaterson. Passed through from the enrollment model on
+          each branch, so it joins union models directly.
         data_tests:
           - not_null
       - name: school_source
