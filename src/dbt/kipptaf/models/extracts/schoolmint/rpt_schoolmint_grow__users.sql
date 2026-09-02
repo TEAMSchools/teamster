@@ -1,7 +1,24 @@
 with
+    /*
+        New Teacher Network Coordinators come from the ADP membership feed, not
+        from a job function -- an NTNC is a classroom teacher or assistant
+        school leader who also coordinates new teachers at their own campus.
+
+        Read is_current here rather than int_people__staff_roster.memberships:
+        that string is bucketed by fiscal year, and the prior cohort's
+        expiration date of 2026-07-01 lands on day one of the next academic
+        year, so the roster string carries last year's coordinators alongside
+        this year's -- 46 people instead of 29.
+    */
+    new_teacher_network_coordinators as (
+        select distinct associate_id,
+        from {{ ref("stg_adp_workforce_now__employee_memberships") }}
+        where membership_description = 'New Teacher Network Coordinator' and is_current
+    ),
+
     staff as (
         select
-            *,
+            sr.*,
 
             /*
                 job_function is the only tier input. A null job_function is an
@@ -35,12 +52,19 @@ with
                 'Special Projects',
                 'Executive'
             ) as passes_department_gate,
-        from {{ ref("int_people__staff_roster") }}
-        where home_work_location_dagster_code_location != 'kipppaterson'
+
+            ntnc.associate_id is not null as is_new_teacher_network_coordinator,
+        from {{ ref("int_people__staff_roster") }} as sr
+        left join
+            new_teacher_network_coordinators as ntnc on sr.worker_id = ntnc.associate_id
+        where sr.home_work_location_dagster_code_location != 'kipppaterson'
     ),
 
     grow_schools as (
-        select sch.school_id, lc.location_dagster_code_location as region,
+        select
+            sch.school_id,
+            sch.name as school_name,
+            lc.location_dagster_code_location as region,
         from {{ ref("stg_schoolmint_grow__schools") }} as sch
         left join
             {{ ref("int_people__location_crosswalk") }} as lc
@@ -118,6 +142,11 @@ with
                                 'Coach',
                                 null
                             ),
+                            if(
+                                sr.is_new_teacher_network_coordinator,
+                                'Regional Observer',
+                                null
+                            ),
                             if(sr.is_teacher, 'Teacher', null)
                         ]
                     ) as rn
@@ -147,14 +176,34 @@ with
     ),
 
     regional_scope as (
-        select
-            p.user_internal_id,
-            array_agg(gs.school_id order by gs.school_id) as school_ids,
-        from people as p
-        inner join
-            grow_schools as gs on (p.tier = 'Chief Level' or p.region = gs.region)
-        where 'Regional Admin' in unnest(p.role_names)
-        group by p.user_internal_id
+        select user_internal_id, array_agg(school_id order by school_id) as school_ids,
+        from
+            (
+                /*
+                    Regional Admin: Chief Level sees every active school, the
+                    other Director tiers see their own region.
+                */
+                select p.user_internal_id, gs.school_id,
+                from people as p
+                inner join
+                    grow_schools as gs
+                    on (p.tier = 'Chief Level' or p.region = gs.region)
+                where 'Regional Admin' in unnest(p.role_names)
+
+                union distinct
+
+                /*
+                    Regional Observer: an NTNC coordinates the new teachers at
+                    their own campus, so the scope is that one school, not the
+                    region. A coordinator who is also a Regional Admin keeps
+                    both, which is what the union resolves.
+                */
+                select p.user_internal_id, gs.school_id,
+                from people as p
+                inner join grow_schools as gs on p.school_name = gs.school_name
+                where 'Regional Observer' in unnest(p.role_names)
+            )
+        group by user_internal_id
     ),
 
     roster as (
@@ -171,12 +220,19 @@ with
 
             /*
                 Chief Level sees every active school; the other Regional
-                Admin tiers see their own region. Everyone else gets an
-                empty array. [Training School] has no crosswalk region, so
-                it appears only in the all-schools case.
+                Admin tiers see their own region; a Regional Observer sees
+                only their own school. Everyone else gets an empty array.
+                [Training School] has no crosswalk region, so it appears
+                only in the all-schools case.
             */
             ifnull(rs.school_ids, []) as regional_admin_school_ids,
 
+            /*
+                Regional Observer is deliberately absent: readonly blocks
+                configuration changes, and grow_user_sync also refuses to let
+                a readonly user anchor an observation group, so marking a
+                coordinator readonly would stop them observing.
+            */
             if('Regional Admin' in unnest(pra.role_names), 1, 0) as readonly,
 
             array(
@@ -209,7 +265,9 @@ with
             /*
                 Observee and observer are independent. An admin who coaches is
                 both; Regional Admin is an observer only, because a regional
-                leader is not observed inside a school's Teachers group.
+                leader is not observed inside a school's Teachers group. A
+                Regional Observer is usually a teacher too, so an NTNC comes
+                out as both.
             */
             case
                 when
@@ -225,6 +283,7 @@ with
                         where
                             rn in (
                                 'Regional Admin',
+                                'Regional Observer',
                                 'School Admin',
                                 'School Assistant Admin',
                                 'Coach'
@@ -238,6 +297,7 @@ with
                         where
                             rn in (
                                 'Regional Admin',
+                                'Regional Observer',
                                 'School Admin',
                                 'School Assistant Admin',
                                 'Coach'
