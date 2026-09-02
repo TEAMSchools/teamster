@@ -26,7 +26,8 @@ models:
         description: >
           Dagster code location owning the row -- kippnewark, kippcamden,
           kippmiami or kipppaterson. Passed through from the enrollment model on
-          each branch, so it joins union models directly.
+          the two SIS branches; derived from region on the Finalsite branch,
+          which has no SIS record to carry it.
         data_tests:
           - not_null
       - name: region
