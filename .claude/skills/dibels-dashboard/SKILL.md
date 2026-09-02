@@ -475,9 +475,8 @@ to conflate, so keep them separate:
   below). Grades 3-8 use Amplify's aimline-provided goal-setting calculation
   directly and never need `PLIT` rows.
 
-**Open, ask to be taught**: how `PLIT` date ranges are actually calculated is
-not documented here or in the ref doc yet -- get walked through the real
-calculation before attempting a rollover that needs new `PLIT` rows for K-2.
+The `PLIT` date calculation is no longer an open question -- see _`PLIT`
+boundary rule_ below, verified against real NJ **and** Miami data.
 
 ### Sheet identity
 
@@ -805,6 +804,37 @@ after the previous round ends) rather than replicating this unexplained 1-day
 overlap -- flag those specific rows if the real reason for last year's overlap
 ever surfaces.
 
+**Miami follows the same rule -- verified, and it makes NJ's overlap look like
+the anomaly.** Checked all six AY2025 Miami K-2 `PLIT` rows (grade band `0,1,2`,
+rounds 1-6) against Miami's real Focus calendar, restricted to the five ACTIVE
+schools (`int_focus__schools.max_syear is null` -- see _Calendar and school
+sources_ above; the two closed schools carry a wider untrimmed calendar that
+would corrupt the boundary math). Nine of the eleven checkable boundaries match
+exactly. Two do not, and neither is a rule difference:
+
+- **`PLIT3.end` is wrong in the sheet.** It reads `2025-11-12`; the rule yields
+  `2025-12-12`. Exactly one month apart, with `LIT3` starting `2025-12-15` -- a
+  month-field transposition at entry, and it leaves a month-long hole between
+  `PLIT3` ending and `LIT3` starting that no other round in either region has.
+  Treat as a data-entry error to fix, not as evidence Miami differs.
+- **`PLIT6.end`** reads `2026-04-02`; the rule yields `2026-04-03`, which is
+  Good Friday. Same class of holiday-marking discrepancy already documented for
+  NJ above -- Focus codes the day in session, the human calendar doesn't.
+
+Critically, **Miami's season boundary is clean**: `PLIT4` starts `2025-12-18`,
+the day after `LIT3` ends `2025-12-17`, exactly as the rule predicts, with no
+1-day overlap. So the NJ `PLIT5` overlap above is a three-region NJ quirk, not
+network behavior -- which strengthens the decision to generate SY26-27 season
+boundaries with the clean rule.
+
+**`PLIT1.start` for Miami is neither the first in-session day nor the Benchmark
+start.** AY2025 `PLIT1` starts `2025-08-12` while active Miami's first
+in-session day is `2025-08-11` and its `BOY` Benchmark window is `2025-09-08` to
+`2025-09-26`. For NJ the two coincide (the region's `BOY` Benchmark opens on
+roughly the first day of school), so the "copy the Benchmark start" shortcut
+used for NJ does NOT transfer -- Miami's Benchmark sits a month into the year.
+Get `PLIT1.start` confirmed by T&L for Miami rather than deriving it.
+
 ### `pm_goal_include` scaffolding -- K-2 only, same pattern as `PLIT`
 
 Confirmed with the user against real AY2025 data before building SY26-27 rows: a
@@ -859,6 +889,53 @@ prior-year band definition, every year, not just for Paterson.
 
 `reporting__terms` (K-2 `LIT`+`PLIT`, 3-4/5-8 `LIT`-only) and
 `Expected Assessments` (full PM scaffold, all grade bands, cohort-split) are
-both built and verified for Newark, Paterson, and Camden. **Miami is not done**
--- its `PLIT` structure is different (windows spanning entire breaks) and its
-boundary rule and PD days are unverified; see the ref doc's open items.
+both built and verified for Newark, Paterson, and Camden.
+
+**Miami: the boundary rule is now verified** (see _`PLIT` boundary rule_ above
+-- it is the same rule, with one sheet typo and one holiday discrepancy found),
+so that is no longer the blocker. What Miami still needs:
+
+1. **The 11 SY26-27 round start/end dates**, from the T&L PM round document for
+   the year. Per _Canonical annual rollover process_ above these are
+   transcribed, never derived or rolled forward, so no amount of calendar work
+   substitutes. AY2025 Miami ran 6 rounds (3+3); SY26-27 is 11, so the shape
+   changes too.
+2. **`PLIT1.start` confirmed by T&L** -- the NJ "copy the Benchmark start"
+   shortcut does not transfer (see above).
+3. **`PM_Goal_Criteria` for Miami** -- never populated for Miami in AY2025;
+   confirm with T&L before copying NJ's blanket `AND`.
+4. **Cohort mechanics from Miami's 3-8 leads** (#3834), for the
+   `measure_standard_level` split.
+
+### TODO -- shared active/current schools model needs more eyes
+
+Deferred deliberately; do not build it as a side effect of DIBELS work.
+
+Three consumers each resolve "which schools count" independently, and they want
+different things: **FRESH** wants schools it is _recruiting for_
+(`finalsite_recruitment_year`, including Finalsite-only schools with no SIS rows
+yet, entered by SRE through the intake in the fresh-dashboard skill's Step 0c);
+**DIBELS** wants all years for Benchmark and the current year for PM (for now);
+**CSGF** wants past and current. A shared `is_active` boolean would be wrong for
+three of those four cases -- what is actually common is region resolution plus a
+school-by-academic-year presence relationship each consumer filters itself.
+
+Findings to carry in, so the next person doesn't re-derive them:
+
+- `int_students__schools` (Charlie, #4731 / PR #4775) is the SIS-agnostic school
+  spine and already has five mart consumers, but it is deliberately INCLUSIVE
+  (an anti-join shape chosen so the `999999` graduated-students sentinel
+  survives) and its Focus branch carries neither `schoolcity` nor
+  `state_excludefromreporting`. Build on it; don't build beside it.
+- `max_syear is null` (Focus) is the only active-school predicate in the repo,
+  and it exists in exactly one place: `int_tableau__fresh_enrollment_scaffold`.
+- **`min_syear` is NULL for all seven Miami schools** -- `max_syear` is a CLOSE
+  marker only, so Focus metadata cannot tell you when a school opened. Per-year
+  presence has to come from data (`int_students__calendar_day` carries schoolid
+  x academic_year for both SISes).
+- Region without `schoolcity`: `{{ extract_region(...) }}` on
+  `_dbt_source_project`, which yields values matching `reporting__terms.region`
+  exactly.
+- FRESH's `finalsite_new` overlay must NOT move into a shared model -- it
+  depends on a human intake step and deliberately includes schools with zero SIS
+  presence.
