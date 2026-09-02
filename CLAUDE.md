@@ -340,9 +340,6 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   server, dbt CLI flag, or `gh` subcommand behaves, open the source or run
   `--help` — do not extrapolate from general knowledge.
 
-- **gcloud / Cloud Build**: before any `gcloud` write, invoke the
-  `gcloud-project-ops` skill (quota-project 429s, Cloud Build prereqs).
-
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
   "The docs", "the ref doc", or "the reference" means the **published** page in
   the `mkdocs.yml` nav (e.g. `docs/models/<dashboard>-data-model.md`) — NOT the
