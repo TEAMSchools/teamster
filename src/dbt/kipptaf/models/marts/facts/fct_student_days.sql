@@ -26,9 +26,8 @@ with
 
             coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
         from {{ ref("int_students__enrollment_days") }} as ed
-        -- location_key lands here rather than being joined downstream because
-        -- every cumulative count below is per school, and a rate reported at any
-        -- other grain is a different number.
+        -- location_key is projected for fct_student_periods to key its grain on,
+        -- NOT to partition the cumulative windows below.
         inner join
             {{ ref("int_students__schools") }} as sch
             on ed.schoolid = sch.school_number
@@ -51,17 +50,17 @@ with
             and t.`type` = 'RT'
     ),
 
-    -- Cumulative from the start of the academic year, per school. Break days
-    -- contribute zero, so the running total is unchanged across a weekend or a
-    -- holiday -- that is the carry-forward, and it needs no gap-filling because
-    -- adding zero leaves the value alone. Every row therefore carries a
-    -- year-to-date position, which is what lets a chronic-absence question
-    -- resolve on any calendar date without an anchor flag.
+    -- Partitioned per STUDENT, deliberately without location_key: chronic
+    -- absence and truancy must not reset when a child changes schools mid-year.
+    -- Per-student carry also retires #5103.
     --
-    -- is_truant carries the same way, for the same reason: it is a status, not
-    -- an event, so the answer on a Saturday is the answer from the last day that
-    -- recorded attendance. Without the carry it would be null on every break
-    -- day while ada_tier beside it resolved, which reads as a defect.
+    -- Break days contribute zero, so the running total is unchanged across a
+    -- weekend or a holiday -- adding zero leaves the value alone, so no
+    -- gap-filling is needed.
+    --
+    -- is_truant is carried rather than summed because it is a status, not an
+    -- event: without the carry it would be null on every break day while
+    -- ada_tier beside it resolved.
     running as (
         select
             *,
@@ -73,8 +72,7 @@ with
                     0
                 )
             ) over (
-                partition by
-                    student_number, _dbt_source_project, location_key, academic_year
+                partition by student_number, _dbt_source_project, academic_year
                 order by calendardate asc
                 rows between unbounded preceding and current row
             ) as n_membership_days_ytd,
@@ -86,15 +84,13 @@ with
                     0
                 )
             ) over (
-                partition by
-                    student_number, _dbt_source_project, location_key, academic_year
+                partition by student_number, _dbt_source_project, academic_year
                 order by calendardate asc
                 rows between unbounded preceding and current row
             ) as n_present_days_ytd,
 
             last_value(is_truant ignore nulls) over (
-                partition by
-                    student_number, _dbt_source_project, location_key, academic_year
+                partition by student_number, _dbt_source_project, academic_year
                 order by calendardate asc
                 rows between unbounded preceding and current row
             ) as is_truant_carried,
