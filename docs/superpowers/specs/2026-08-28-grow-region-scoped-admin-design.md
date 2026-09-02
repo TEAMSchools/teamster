@@ -317,6 +317,31 @@ later, and both users still hold `readonly: true` and a populated
 Sub-project 2 can therefore write `regionalAdminSchools` and `readonly`
 additively without disturbing anything the payload omits.
 
+`regionalAdminSchools` **is written as an array of bare id strings**, and the
+surrogate keys converge. Probed 2026-09-02 against the Grow test account
+(`internalId` 999999, which `stg_schoolmint_grow__users` excludes): a PUT
+carrying `["<courage>", "<team>"]` is accepted, and the paginated
+`GET /external/users` that `grow_users` ingests returns
+`[{"_id": ..., "name": "KIPP Courage Academy"}, {"_id": ..., "name": "KIPP TEAM Academy"}]`,
+matching the declared `ARRAY<STRUCT<name STRING, _id STRING>>` and so reading
+back correctly through `regional_admin_school_ids_ws`.
+
+Two traps found while probing, both worth knowing before anyone re-checks this:
+
+- **`GET /external/users/{id}` returns the bare strings unhydrated**, so a
+  single-record readback shows `regional_admin_school_ids_ws` as empty and looks
+  like a permanent non-convergence bug. Only the list endpoint reflects what the
+  ingest sees. Probe that one.
+- **The published docs disagree with live behaviour on the response.** Their
+  request-side note is correct and states that array fields "only need ... an
+  array of string IDs", but the response examples render both
+  `regionalAdminSchools` and `roles` as bare strings, which neither endpoint
+  actually does. Treat the docs as authoritative on the request shape only.
+
+Sending structs instead is not an option: a PUT carrying `[{"_id": "..."}]` is
+rejected with HTTP 500,
+`input must be a 24 character hex string, 12 byte Uint8Array, or an integer`.
+
 ## Sub-project 2: region scope delivery
 
 Two new columns on the extract.
