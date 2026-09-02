@@ -64,6 +64,18 @@ cubes:
         type: time
         public: true
 
+      - name: period_start_membership_date
+        description: >-
+          First membership day observed within the period — not the period's
+          calendar start date. Pin count_students to this for a period headcount
+          the way Topline's Total Enrollment is meant to read, rather than to
+          the calendar start, which reports nobody for a week whose Monday was
+          not in session and a full roster for a week that had not begun. Equals
+          the calendar start whenever that day was in session.
+        sql: CAST({CUBE}.period_start_membership_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
       - name: period_end_date
         description: >-
           Last membership day observed within the period as of this snapshot —

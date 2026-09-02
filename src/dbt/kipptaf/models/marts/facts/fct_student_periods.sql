@@ -88,12 +88,20 @@ with
     -- worse than the same behaviour with a reason attached.
     bucketed as (select *, from spine where period_start_date_key is not null),
 
-    -- period_end_date_key is the student's own last membership day inside the
-    -- bucket, not the calendar period end. A weekend, a holiday and a mid-period
-    -- withdrawal all move it, so two students in the same month can have
-    -- different end dates. A bucket with no membership day produces no row,
-    -- which is why a withdrawn student stops appearing rather than carrying
-    -- forward.
+    -- Both anchors are the student's OWN membership days inside the bucket, not
+    -- the calendar period bounds. A weekend, a holiday, a staggered school start
+    -- and a mid-period withdrawal all move them, so two students in the same
+    -- month can carry different anchors. A bucket with no membership day
+    -- produces no row, which is why a withdrawn student stops appearing rather
+    -- than carrying forward.
+    --
+    -- period_start_membership_date_key exists because the calendar period start
+    -- is the wrong date to report a headcount as of. Topline anchors its
+    -- enrollment count on the week's Monday, which reports zero for the week
+    -- Miami opened (its first student day was a Wednesday) and the full New
+    -- Jersey roster two days before New Jersey opened. The first membership day
+    -- is Monday whenever Monday was in session, and the real first day when it
+    -- was not.
     per_period as (
         select
             location_key,
@@ -103,6 +111,9 @@ with
             period_type,
             period_start_date_key,
 
+            min(
+                if(membership_value = 1, date_key, null)
+            ) as period_start_membership_date_key,
             max(if(membership_value = 1, date_key, null)) as period_end_date_key,
         from bucketed
         group by
@@ -155,6 +166,7 @@ select
     pp.academic_year,
     pp.period_type,
     pp.period_start_date_key,
+    pp.period_start_membership_date_key,
     pp.period_end_date_key,
 
     -- Read as of period end, not recomputed. n_membership_days_ytd accumulates

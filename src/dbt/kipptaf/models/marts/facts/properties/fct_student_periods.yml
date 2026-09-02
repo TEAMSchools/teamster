@@ -182,6 +182,28 @@ models:
                 to: ref('dim_dates')
                 field: date_key
 
+      - name: period_start_membership_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. First membership day (membershipvalue = 1) observed
+          within the period, not the period's calendar start date. This is the
+          date to report a period headcount as of. The calendar start is the
+          wrong one where a school year opens mid-week or a region opens on a
+          different day than its siblings -- anchoring on the week's Monday
+          reports nobody for the week Miami opened, whose first student day was
+          a Wednesday, and the full New Jersey roster two days before New Jersey
+          opened. Equals the calendar start whenever that day was in session.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
       - name: period_end_date_key
         data_type: date
         description: >-
@@ -349,6 +371,7 @@ unit_tests:
           academic_year,
           period_type,
           period_start_date_key,
+          period_start_membership_date_key,
           period_end_date_key,
           n_membership_days_ytd,
           n_present_days_ytd,
@@ -360,16 +383,17 @@ unit_tests:
             student_period_key string, student_enrollment_key string,
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
-          ('eb89d84900014832a74d4cbea609f9fc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
-          ('433a57fcce7a35d720d8581d54da5269', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
-          ('c056370b02a9b117ef343dd8cc74d729', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('eb89d84900014832a74d4cbea609f9fc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
+          ('433a57fcce7a35d720d8581d54da5269', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
+          ('c056370b02a9b117ef343dd8cc74d729', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-08', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false)
         ])
 
   - name: test_periods_mid_year_leaver_keeps_own_period_end
@@ -449,6 +473,7 @@ unit_tests:
           academic_year,
           period_type,
           period_start_date_key,
+          period_start_membership_date_key,
           period_end_date_key,
           n_membership_days_ytd,
           n_present_days_ytd,
@@ -460,16 +485,17 @@ unit_tests:
             student_period_key string, student_enrollment_key string,
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
-          ('a28bd0cb8d767fda67687b3e03ac54b4', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
-          ('469b5b8b6ef42be202979e0bbf7699bd', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
-          ('f9e83d295f5293f1eb52d94a028ed666', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('a28bd0cb8d767fda67687b3e03ac54b4', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
+          ('469b5b8b6ef42be202979e0bbf7699bd', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
+          ('f9e83d295f5293f1eb52d94a028ed666', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false)
         ])
 
   - name: test_periods_gap_in_enrollment_does_not_carry_values_forward
@@ -567,6 +593,7 @@ unit_tests:
           academic_year,
           period_type,
           period_start_date_key,
+          period_start_membership_date_key,
           period_end_date_key,
           n_membership_days_ytd,
           n_present_days_ytd,
@@ -578,15 +605,16 @@ unit_tests:
             student_period_key string, student_enrollment_key string,
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
-          ('cfccc372dfe154c3304b630ca97f82b1', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
-          ('dbe905eac0b9ecc8f53526cae0624d7a', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
+          ('cfccc372dfe154c3304b630ca97f82b1', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-11-01', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
+          ('dbe905eac0b9ecc8f53526cae0624d7a', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-11-03', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false)
         ])
 
   - name: test_periods_reads_the_value_from_period_end_not_another_day
@@ -666,6 +694,7 @@ unit_tests:
           academic_year,
           period_type,
           period_start_date_key,
+          period_start_membership_date_key,
           period_end_date_key,
           n_membership_days_ytd,
           n_present_days_ytd,
@@ -677,11 +706,12 @@ unit_tests:
             student_period_key string, student_enrollment_key string,
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
             n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true)
         ])

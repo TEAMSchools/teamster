@@ -58,6 +58,7 @@ views:
           - pct_truant
           - period_type
           - period_start_date
+          - period_start_membership_date
           - period_end_date
           - academic_year
           - academic_year_label
