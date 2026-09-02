@@ -106,12 +106,12 @@ META_STUB: dict[str, Any] = {
             "type": "view",
             "measures": [
                 {
-                    "name": "student_periods_view.count_students_min_10_days",
-                    "title": "Count Students Min 10 Days",
+                    "name": "student_periods_view.count_students",
+                    "title": "Count Students",
                     "type": "number",
                     "description": (
-                        "Students with at least 10 membership days year-to-date. "
-                        "Denominator for every rate on this view."
+                        "Student-school records served at any point in the period. "
+                        "Show it beside every rate on this view."
                     ),
                 },
                 {

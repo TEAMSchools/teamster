@@ -339,17 +339,6 @@ models:
           day-weighted ADA over a date range, which sums both sides over the
           slice instead.
 
-      - name: is_ca_eligible
-        data_type: boolean
-        description: >-
-          Whether n_membership_days_ytd has reached 10, the KIPP Foundation
-          chronic-absence eligibility floor. All three reconciliation
-          authorities define eligibility cumulatively from the start of the
-          academic year rather than per period, which is why this reads the ytd
-          column and not a per-day one. Early in an academic year most rows are
-          false, and any rate built on this fact must show the eligible count
-          beside it.
-
       - name: ada_tier
         data_type: string
         description: >-
@@ -377,10 +366,11 @@ models:
           from ada_tier, never recomputed from a ratio, so the flag and the tier
           cannot drift apart. Null when ada_tier is null.
 
-          Read this with is_ca_eligible: a student below the 10-membership-day
-          floor still carries a tier and this flag, and every published rate
-          filters on eligibility. This column alone is not a chronic-absence
-          rate numerator.
+          Accumulates per student from the start of the academic year and does
+          not reset when the student changes schools, so a student who arrives
+          mid-year carries the position they built at the previous school. No
+          minimum-membership-day floor is applied anywhere, so a student judged
+          on very few days still carries a tier and this flag.
 
 unit_tests:
   - name: test_days_tier_ladder_boundaries_on_one_membership_day
@@ -390,9 +380,7 @@ unit_tests:
       0.95 is Tier 1. 0.901 is strictly above 90.0 percent and must be Tier 2.
       0.9 is exactly 90.0 percent and must be Tier 3, never Tier 2, and must be
       chronically absent. 0.8 is exactly 80 percent and must be Tier 3. 0.799 is
-      below 80 percent and must be Tier 4. None of the five is CA-eligible on a
-      single membership day, which proves the tier is assigned independently of
-      the eligibility floor.
+      below 80 percent and must be Tier 4.
     model: fct_student_days
     given:
       - input: ref('int_students__enrollment_days')
@@ -480,7 +468,6 @@ unit_tests:
           is_truant,
           n_membership_days_ytd,
           n_present_days_ytd,
-          is_ca_eligible,
           ada_tier,
           membership_value,
           is_chronically_absent,
@@ -499,7 +486,7 @@ unit_tests:
             attendance_code string, attendance_value float64,
             present_weight float64, is_truant bool,
             n_membership_days_ytd float64, n_present_days_ytd float64,
-            is_ca_eligible bool, ada_tier string, membership_value float64,
+            ada_tier string, membership_value float64,
             is_chronically_absent bool, is_absent int64, is_tardy int64,
             is_ontime int64, is_oss int64, is_iss int64, is_suspended int64,
             attendance_category string
@@ -508,46 +495,49 @@ unit_tests:
           'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 0.95, 0.95, false,
-          1.0, 0.95, false, 'Tier 1', 1.0,
+          1.0, 0.95, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 0.901, 0.901, false,
-          1.0, 0.901, false, 'Tier 2', 1.0,
+          1.0, 0.901, 'Tier 2', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '7afe022f600a6ca5344d8c145da2a9a2', 'd19e8f58fae7d84a143ad77654b70fd6',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 0.9, 0.9, false,
-          1.0, 0.9, false, 'Tier 3', 1.0,
+          1.0, 0.9, 'Tier 3', 1.0,
           true, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'e0003d963cf966b7fd5598cd9617d126', 'b67399aa30b11a32d67d205700423eb6',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 0.8, 0.8, false,
-          1.0, 0.8, false, 'Tier 3', 1.0,
+          1.0, 0.8, 'Tier 3', 1.0,
           true, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'a6a93c5cfe4ecf2c99dabdb483691a9f', '6bc1cec9217a9de43e98d3fffa4e7d57',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 0.799, 0.799, false,
-          1.0, 0.799, false, 'Tier 4', 1.0,
+          1.0, 0.799, 'Tier 4', 1.0,
           true, 0, 0, 1, 0, 0, 0, 'Present'
           )
         ])
 
-  - name: test_days_eligibility_floor_at_ten_membership_days
+  - name: test_days_cumulative_does_not_reset_across_a_school_change
     description:
-      Ten consecutive membership days, all present. is_ca_eligible must be false
-      on days one through nine and true on day ten -- the floor is at ten
-      cumulative membership days, not nine, and it accumulates from the start of
-      the academic year rather than resetting. ada_tier is Tier 1 throughout, so
-      the only column moving is the eligibility flag.
+      Ten consecutive membership days, all present, with the student moving from
+      school 100 to school 200 on day six. n_membership_days_ytd and
+      n_present_days_ytd must keep climbing to ten rather than restarting at one
+      on day six -- the cumulative windows partition by student and academic
+      year, never by location, because chronic absence and truancy are
+      properties of a child's year and not of a school's roster. location_key
+      flips with the move, so the row still reports which school the day
+      belonged to.
     model: fct_student_days
     given:
       - input: ref('int_students__enrollment_days')
@@ -565,7 +555,14 @@ unit_tests:
             true as is_in_session_day,
             1.0 as membershipvalue
           from unnest(generate_date_array(
-            date '2025-09-01', date '2025-09-10'
+            date '2025-09-01', date '2025-09-05'
+          )) as d
+          union all
+          select
+            1, 'kippnewark', 2025, date '2025-09-01', d, date '2025-09-01',
+            200, cast(null as string), true, 1.0
+          from unnest(generate_date_array(
+            date '2025-09-06', date '2025-09-10'
           )) as d
 
       - input: ref('int_students__attendance_daily')
@@ -597,6 +594,8 @@ unit_tests:
             100 as school_number,
             'kippnewark' as _dbt_source_project,
             'loc-abc' as location_key
+          union all
+          select 200, 'kippnewark', 'loc-xyz'
 
       - input: ref('dim_terms')
         format: sql
@@ -625,7 +624,6 @@ unit_tests:
           is_truant,
           n_membership_days_ytd,
           n_present_days_ytd,
-          is_ca_eligible,
           ada_tier,
           membership_value,
           is_chronically_absent,
@@ -644,7 +642,7 @@ unit_tests:
             attendance_code string, attendance_value float64,
             present_weight float64, is_truant bool,
             n_membership_days_ytd float64, n_present_days_ytd float64,
-            is_ca_eligible bool, ada_tier string, membership_value float64,
+            ada_tier string, membership_value float64,
             is_chronically_absent bool, is_absent int64, is_tardy int64,
             is_ontime int64, is_oss int64, is_iss int64, is_suspended int64,
             attendance_category string
@@ -653,70 +651,70 @@ unit_tests:
           'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          1.0, 1.0, false, 'Tier 1', 1.0,
+          1.0, 1.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-02', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          2.0, 2.0, false, 'Tier 1', 1.0,
+          2.0, 2.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-03', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          3.0, 3.0, false, 'Tier 1', 1.0,
+          3.0, 3.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-04', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          4.0, 4.0, false, 'Tier 1', 1.0,
+          4.0, 4.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           'ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4',
           date '2025-09-05', 'loc-abc', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          5.0, 5.0, false, 'Tier 1', 1.0,
+          5.0, 5.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4',
-          date '2025-09-06', 'loc-abc', 2025, date '2025-09-01', true, null,
+          date '2025-09-06', 'loc-xyz', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          6.0, 6.0, false, 'Tier 1', 1.0,
+          6.0, 6.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4',
-          date '2025-09-07', 'loc-abc', 2025, date '2025-09-01', true, null,
+          date '2025-09-07', 'loc-xyz', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          7.0, 7.0, false, 'Tier 1', 1.0,
+          7.0, 7.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4',
-          date '2025-09-08', 'loc-abc', 2025, date '2025-09-01', true, null,
+          date '2025-09-08', 'loc-xyz', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          8.0, 8.0, false, 'Tier 1', 1.0,
+          8.0, 8.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4',
-          date '2025-09-09', 'loc-abc', 2025, date '2025-09-01', true, null,
+          date '2025-09-09', 'loc-xyz', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          9.0, 9.0, false, 'Tier 1', 1.0,
+          9.0, 9.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           ),
           (
           '674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4',
-          date '2025-09-10', 'loc-abc', 2025, date '2025-09-01', true, null,
+          date '2025-09-10', 'loc-xyz', 2025, date '2025-09-01', true, null,
           'A', 1.0, 1.0, false,
-          10.0, 10.0, true, 'Tier 1', 1.0,
+          10.0, 10.0, 'Tier 1', 1.0,
           false, 0, 0, 1, 0, 0, 0, 'Present'
           )
         ])

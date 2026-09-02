@@ -115,20 +115,10 @@ cubes:
         description: >-
           Whether ada_tier is Tier 3 or Tier 4 as of period_end_date. Derived
           from ada_tier on the fact, never recomputed, so the flag and the tier
-          cannot drift apart. Read it with is_ca_eligible -- a student below the
-          10-membership-day floor still carries a tier, and every rate here
-          filters on eligibility.
+          cannot drift apart. It accumulates per student across a school change
+          rather than resetting, so a transferring student carries their
+          year-to-date position into the new school's rows.
         sql: is_chronically_absent
-        type: boolean
-        public: true
-
-      - name: is_ca_eligible
-        description: >-
-          Whether the student had reached 10 cumulative membership days at that
-          school as of period_end_date, the KIPP Foundation chronic-absence
-          eligibility floor. Early in an academic year most rows are false. This
-          is the population count_students_min_10_days counts.
-        sql: is_ca_eligible
         type: boolean
         public: true
 
@@ -174,65 +164,53 @@ cubes:
           enrolled on the period's last day — for that, pin the date on
           student_days_view.
 
-          Denominator use: this is the correct denominator for pct_truant, whose
-          rule has no eligibility floor. Do NOT use it for any chronic-absence
-          or ADA-tier rate — those are all scoped to count_students_min_10_days,
-          and swapping in this larger population silently deflates them.
+          This is the denominator for every rate on this cube — chronic absence,
+          both ADA-tier shares, and truancy. No rate here applies a
+          minimum-membership-day floor, so show this count beside any of them
+          for an early period, where the rate is computed over students judged
+          on very few days.
         sql: student_period_key
         type: count_distinct
         public: true
 
-      - name: count_students_min_10_days
-        description: >-
-          Students with at least 10 cumulative membership days year-to-date at
-          that school — the KIPP Foundation chronic-absence eligibility floor,
-          and the shared denominator for every rate measure on this cube. A
-          membership day requires recorded attendance, so a school-year with
-          enrollment but no attendance data contributes nobody here and cannot
-          distort a rate. Counted per school, so a student who changed schools
-          mid-period is counted once per school. Display it beside any rate
-          whenever population size matters, especially early in an academic year
-          when eligibility is still accumulating and this runs far below
-          count_students.
+      # Denominator for every rate below. count_students is the population, but
+      # it includes rows enrolled with no recorded attendance -- Miami before
+      # AY2026, and 19 to 424 rows a year elsewhere -- whose ada_tier and
+      # is_truant are null, so they can never reach a numerator. Dividing by
+      # count_students would deflate every rate by that population (#4744).
+      - name: _count_students_with_attendance
         sql: student_period_key
         type: count_distinct
-        public: true
+        public: false
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
+          - sql: "{CUBE}.n_membership_days_ytd > 0"
 
       - name: count_chronically_absent
         description: >-
-          CA-eligible student-school records with cumulative ADA at or below
-          90.0% (ada_tier Tier 3 or Tier 4) as of period_end_date. Same
-          per-school counting grain as count_students.
+          Student-school records with cumulative ADA at or below 90.0% (ada_tier
+          Tier 3 or Tier 4) as of period_end_date. Same per-school counting
+          grain as count_students, and no minimum-membership-day floor.
         sql: student_period_key
         type: count_distinct
         public: true
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
           - sql: "{CUBE}.is_chronically_absent"
 
       - name: pct_chronically_absent
         description: >-
-          Chronic absence rate — count_chronically_absent divided by
-          count_students_min_10_days. Excludes anyone with fewer than 10
-          membership days year-to-date, so it is not a share of everyone
-          enrolled. Always display count_students alongside this rate:
-          eligibility is cumulative from the start of the academic year, so
-          early periods carry a much smaller denominator than later ones.
-          Example: by August 31 of AY2025, the maximum membership days any
-          student had reached was 8, so zero students were CA-eligible that
-          month — August has no chronic-absence rate at all, not a small one.
-          Cumulative through September 30, eligible reached 9,236 against 9,381
-          student-school pairs with any attendance day (17.8%); through October
-          31, eligible reached 9,328 (18.3%). This is expected, not broken data
-          — all three reconciliation authorities define eligibility this way,
-          and KIPP Foundation chronic-absence criteria item 1 already requires
-          the eligible-student count to be shown beside the rate for the same
-          reason.
+          Chronic absence rate. Denominator is every student with at least one
+          recorded attendance day in the slice. No minimum-membership-day floor
+          applies. Rows enrolled with no recorded attendance are excluded from
+          both sides, so the gap cannot deflate the rate (#4744).
+
+          So an early period reports a rate over students judged on very few
+          days: a student who misses one of their first four days sits at 75%
+          ADA and counts as chronically absent. Always display count_students
+          alongside this rate, and treat the first weeks of an academic year as
+          volatile rather than wrong.
         sql:
           "1.0 * {count_chronically_absent} /
-          NULLIF({count_students_min_10_days}, 0)"
+          NULLIF({_count_students_with_attendance}, 0)"
         type: number
         format: percent
         public: true
@@ -242,18 +220,21 @@ cubes:
         type: count_distinct
         public: false
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
           - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
 
       - name: pct_tier_1_2
         description: >-
-          Percentage of CA-eligible students with cumulative ADA strictly above
-          90.0% (Tier 1 or Tier 2) as of period_end_date. Tier 2 is strictly
-          above 90.0%; Tier 3 includes exactly 90.0%.
+          Percentage of students with cumulative ADA strictly above 90.0% (Tier
+          1 or Tier 2) as of period_end_date. Tier 2 is strictly above 90.0%;
+          Tier 3 includes exactly 90.0%.
 
-          Denominator is count_students_min_10_days, so anyone with fewer than
-          10 membership days year-to-date is excluded from both sides.
-        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students_min_10_days}, 0)"
+          Denominator is every student with at least one recorded attendance day
+          in the slice. No minimum-membership-day floor applies. Rows enrolled
+          with no recorded attendance are excluded from both sides, so the gap
+          cannot deflate the rate (#4744).
+        sql:
+          "1.0 * {_count_tier_1_2} / NULLIF({_count_students_with_attendance},
+          0)"
         type: number
         format: percent
         public: true
@@ -263,18 +244,20 @@ cubes:
         type: count_distinct
         public: false
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
           - sql: "{CUBE}.ada_tier = 'Tier 3'"
 
       - name: pct_tier_3
         description: >-
-          Percentage of CA-eligible students with cumulative ADA from 80%
-          through 90.0% inclusive (Tier 3) as of period_end_date. Tier 2 is
-          strictly above 90.0%; Tier 3 includes exactly 90.0%.
+          Percentage of students with cumulative ADA from 80% through 90.0%
+          inclusive (Tier 3) as of period_end_date. Tier 2 is strictly above
+          90.0%; Tier 3 includes exactly 90.0%.
 
-          Denominator is count_students_min_10_days, so anyone with fewer than
-          10 membership days year-to-date is excluded from both sides.
-        sql: "1.0 * {_count_tier_3} / NULLIF({count_students_min_10_days}, 0)"
+          Denominator is every student with at least one recorded attendance day
+          in the slice. No minimum-membership-day floor applies. Rows enrolled
+          with no recorded attendance are excluded from both sides, so the gap
+          cannot deflate the rate (#4744).
+        sql:
+          "1.0 * {_count_tier_3} / NULLIF({_count_students_with_attendance}, 0)"
         type: number
         format: percent
         public: true
@@ -305,16 +288,18 @@ cubes:
       - name: pct_truant
         description: >-
           Percentage of students meeting regional truancy criteria as of
-          period_end_date. Denominator is count_students — every student served
-          in the period, with no eligibility floor on either side, because
-          truancy has no eligibility concept in either the Miami or the NJ rule.
+          period_end_date. Denominator is every student with at least one
+          recorded attendance day in the slice. No minimum-membership-day floor
+          applies. Rows enrolled with no recorded attendance are excluded from
+          both sides, so the gap cannot deflate the rate (#4744). Truancy has no
+          eligibility concept in either the Miami or the NJ rule.
 
-          This is the one rate on this cube not scoped to
-          count_students_min_10_days. Any minimum-membership-day condition
-          belongs inside is_truant on the fact, which keeps this denominator
-          correct through any future change to that definition. See
-          count_truants for how the numerator behaves early in an academic year.
-        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+          Any minimum-membership-day condition would belong inside is_truant on
+          the fact, which keeps this denominator correct through a later change
+          to that definition. See count_truants for how the numerator behaves
+          early in an academic year.
+        sql:
+          "1.0 * {count_truants} / NULLIF({_count_students_with_attendance}, 0)"
         type: number
         format: percent
         public: true

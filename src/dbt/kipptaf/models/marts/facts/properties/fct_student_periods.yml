@@ -25,20 +25,13 @@ models:
       it, so two students in the same month can carry different end dates.
       Populated for year, month, and week period types.
 
-      Eligibility (is_ca_eligible) is cumulative from the start of the academic
-      year, so early periods carry a much smaller eligible count than later ones
-      — this is expected, not broken data. Example: by August 31 of AY2025, the
-      maximum membership days any student had reached was 8, so zero students
-      were CA-eligible that month — August has no chronic-absence rate at all,
-      not a small one — while 9,174 student-school pairs already had at least
-      one attendance day. Cumulative through September 30, eligible reached
-      9,236 against 9,381 student-school pairs with any attendance day (17.8%);
-      through October 31, eligible reached 9,328 (18.3%). All three
-      reconciliation authorities define eligibility this way, and KIPP
-      Foundation chronic-absence criteria item 1 already requires the
-      eligible-student count to be shown beside the rate — display it alongside
-      any rate derived from this fact, especially for the first weeks or first
-      month of an academic year.
+      No minimum-membership-day floor is applied. Every rate built on this fact
+      divides by the students holding at least one recorded attendance day in
+      the period, so an early period reports a rate over students judged on very
+      few days each — a student who misses one of their first four days sits at
+      75% ADA and counts as chronically absent. Treat the first weeks of an
+      academic year as volatile rather than wrong, and display the population
+      count beside any rate derived from this fact.
 
       AY2025 and earlier cover Camden, Newark, and Paterson only — Miami is
       present starting AY2026. Miami migrated from PowerSchool to Focus, and
@@ -57,7 +50,7 @@ models:
       AY2025 aggregates show no obvious distortion — Paterson ADA is 92.7 to
       93.4 percent by school, in line with Newark at 92.5 — so treat the size
       and direction as unestablished rather than measured. membership_value is
-      clean, so n_membership_days_ytd and is_ca_eligible are unaffected.
+      clean, so n_membership_days_ytd is unaffected.
 
       Mid-year leavers are included by design — a student who withdraws mid-year
       still accumulates through their last membership day and counts in the year
@@ -227,17 +220,8 @@ models:
           int_students__attendance_daily on that same date. Regional truancy
           criteria (Miami: 15 or more absences in a 90-day window; the NJ
           regions: a projected 50 or more for the year) are computed upstream
-          and carried through unchanged here. Cube's truancy measures built on
-          this column additionally filter to is_ca_eligible — the
-          chronic-absence membership-day floor — which neither regional truancy
-          rule requires on its own.
-
-      - name: is_ca_eligible
-        data_type: boolean
-        description: >-
-          TRUE when n_membership_days_ytd is 10 or more — the KIPP Foundation
-          chronic-absence eligibility floor, evaluated cumulatively at the
-          individual school (location_key), not within a single period.
+          and carried through unchanged here. No membership-day floor is applied
+          to it, which matches both regional rules — neither requires one.
 
       - name: ada_tier
         data_type: string
@@ -259,14 +243,17 @@ models:
           percent the way two separately-evaluated expressions did.
 
 unit_tests:
-  - name: test_periods_threshold_is_per_school_not_combined
+  - name: test_periods_cumulative_carries_across_schools_rows_stay_per_school
     description:
       One student at two schools in the same academic year, six membership days
-      at each. Every period row must stay scoped to its own school -- six
-      membership days per school, never twelve combined, and not CA-eligible at
-      either. The eligibility floor is per school, so a student who splits a
-      year across two schools can be below the floor at both while their
-      combined day count clears it.
+      at each. Two things must hold at once. The cumulative count does not reset
+      at the second school -- its rows read seven through twelve, not one
+      through six -- because chronic absence and truancy accumulate per student
+      across a school change. And the period rows stay per school, each school
+      getting its own year, month and week row keyed on its own location, so a
+      school-level rate still counts only the students it served. The September
+      month bucket therefore yields two rows, one per school, rather than one
+      combined row.
     model: fct_student_periods
     given:
       - input: ref('int_students__enrollment_days')
@@ -310,7 +297,6 @@ unit_tests:
             n_membership_days_ytd,
             n_present_days_ytd,
             is_truant,
-            is_ca_eligible,
             ada_tier,
             is_chronically_absent,
           from unnest([
@@ -319,21 +305,21 @@ unit_tests:
               term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
-              is_truant bool, is_ca_eligible bool, ada_tier string,
+              is_truant bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, false, 'Tier 1', false),
-            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-b', 2025, date '2025-09-08', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-b', 2025, date '2025-09-08', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-b', 2025, date '2025-09-08', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('3386cdede6c629ba33437e1dcee4162d', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-11', 'loc-b', 2025, date '2025-09-08', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('62e8379d943d5835b8647524c3fb5f14', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-12', 'loc-b', 2025, date '2025-09-08', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('5b84b5eb16ae0ec39759761da3a19b5c', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-13', 'loc-b', 2025, date '2025-09-08', 1.0, 6.0, 6.0, false, false, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, 'Tier 1', false),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, 'Tier 1', false),
+            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-b', 2025, date '2025-09-08', 1.0, 7.0, 7.0, false, 'Tier 1', false),
+            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-b', 2025, date '2025-09-08', 1.0, 8.0, 8.0, false, 'Tier 1', false),
+            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-b', 2025, date '2025-09-08', 1.0, 9.0, 9.0, false, 'Tier 1', false),
+            ('3386cdede6c629ba33437e1dcee4162d', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-11', 'loc-b', 2025, date '2025-09-08', 1.0, 10.0, 10.0, false, 'Tier 1', false),
+            ('62e8379d943d5835b8647524c3fb5f14', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-12', 'loc-b', 2025, date '2025-09-08', 1.0, 11.0, 11.0, false, 'Tier 1', false),
+            ('5b84b5eb16ae0ec39759761da3a19b5c', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-13', 'loc-b', 2025, date '2025-09-08', 1.0, 12.0, 12.0, false, 'Tier 1', false)
           ])
 
     expect:
@@ -350,7 +336,6 @@ unit_tests:
           n_membership_days_ytd,
           n_present_days_ytd,
           is_truant,
-          is_ca_eligible,
           ada_tier,
           is_chronically_absent,
         from unnest([
@@ -359,15 +344,15 @@ unit_tests:
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
-            n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
+            n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('eb89d84900014832a74d4cbea609f9fc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('433a57fcce7a35d720d8581d54da5269', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false),
-          ('c056370b02a9b117ef343dd8cc74d729', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-08', date '2025-09-13', 6.0, 6.0, false, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('eb89d84900014832a74d4cbea609f9fc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
+          ('433a57fcce7a35d720d8581d54da5269', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
+          ('c056370b02a9b117ef343dd8cc74d729', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false)
         ])
 
   - name: test_periods_mid_year_leaver_keeps_own_period_end
@@ -416,7 +401,6 @@ unit_tests:
             n_membership_days_ytd,
             n_present_days_ytd,
             is_truant,
-            is_ca_eligible,
             ada_tier,
             is_chronically_absent,
           from unnest([
@@ -425,17 +409,17 @@ unit_tests:
               term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
-              is_truant bool, is_ca_eligible bool, ada_tier string,
+              is_truant bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('59505aa7f7c1d16b45240af568a2ef1f', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('eb5fe9064ec8e7917ce6794adbd953a5', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, 'Tier 1', false),
+            ('88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('59505aa7f7c1d16b45240af568a2ef1f', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('eb5fe9064ec8e7917ce6794adbd953a5', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false)
           ])
 
     expect:
@@ -452,7 +436,6 @@ unit_tests:
           n_membership_days_ytd,
           n_present_days_ytd,
           is_truant,
-          is_ca_eligible,
           ada_tier,
           is_chronically_absent,
         from unnest([
@@ -461,15 +444,15 @@ unit_tests:
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
-            n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
+            n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, false, 'Tier 1', false),
-          ('a28bd0cb8d767fda67687b3e03ac54b4', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
-          ('469b5b8b6ef42be202979e0bbf7699bd', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false),
-          ('f9e83d295f5293f1eb52d94a028ed666', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, false, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('a28bd0cb8d767fda67687b3e03ac54b4', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'year', date '2025-07-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
+          ('469b5b8b6ef42be202979e0bbf7699bd', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'month', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
+          ('f9e83d295f5293f1eb52d94a028ed666', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'week', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false)
         ])
 
   - name: test_periods_gap_in_enrollment_does_not_carry_values_forward
@@ -529,7 +512,6 @@ unit_tests:
             n_membership_days_ytd,
             n_present_days_ytd,
             is_truant,
-            is_ca_eligible,
             ada_tier,
             is_chronically_absent,
           from unnest([
@@ -538,24 +520,24 @@ unit_tests:
               term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
-              is_truant bool, is_ca_eligible bool, ada_tier string,
+              is_truant bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, false, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, false, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, false, 'Tier 1', false),
-            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, false, 'Tier 1', false),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, false, 'Tier 1', false),
-            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, false, 'Tier 1', false),
-            ('3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-07', 'loc-a', 2025, date '2025-09-01', 1.0, 7.0, 7.0, false, false, 'Tier 1', false),
-            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-a', 2025, date '2025-09-01', 1.0, 8.0, 8.0, false, false, 'Tier 1', false),
-            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-a', 2025, date '2025-09-01', 1.0, 9.0, 9.0, false, false, 'Tier 1', false),
-            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-a', 2025, date '2025-09-01', 1.0, 10.0, 10.0, false, true, 'Tier 1', false),
-            ('f209c53b2f6d91166be3587b5c1b024b', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-01', 'loc-a', 2025, date '2025-11-03', 1.0, 11.0, 11.0, false, true, 'Tier 1', false),
-            ('9adbbafbe3f0e9ad748929c2e7958bf7', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-02', 'loc-a', 2025, date '2025-11-03', 1.0, 12.0, 12.0, false, true, 'Tier 1', false),
-            ('de3ac95fe7dd8c3a8ee0367fadc2ecff', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-03', 'loc-a', 2025, date '2025-11-03', 1.0, 13.0, 13.0, false, true, 'Tier 1', false),
-            ('a8bf94ff7dd137241bad95b7363f5fb4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-04', 'loc-a', 2025, date '2025-11-03', 1.0, 14.0, 14.0, false, true, 'Tier 1', false),
-            ('602cc4663724e20218f02020b24251ec', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-05', 'loc-a', 2025, date '2025-11-03', 1.0, 15.0, 15.0, false, true, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, 'Tier 1', false),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, 'Tier 1', false),
+            ('3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-07', 'loc-a', 2025, date '2025-09-01', 1.0, 7.0, 7.0, false, 'Tier 1', false),
+            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-a', 2025, date '2025-09-01', 1.0, 8.0, 8.0, false, 'Tier 1', false),
+            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-a', 2025, date '2025-09-01', 1.0, 9.0, 9.0, false, 'Tier 1', false),
+            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-a', 2025, date '2025-09-01', 1.0, 10.0, 10.0, false, 'Tier 1', false),
+            ('f209c53b2f6d91166be3587b5c1b024b', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-01', 'loc-a', 2025, date '2025-11-03', 1.0, 11.0, 11.0, false, 'Tier 1', false),
+            ('9adbbafbe3f0e9ad748929c2e7958bf7', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-02', 'loc-a', 2025, date '2025-11-03', 1.0, 12.0, 12.0, false, 'Tier 1', false),
+            ('de3ac95fe7dd8c3a8ee0367fadc2ecff', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-03', 'loc-a', 2025, date '2025-11-03', 1.0, 13.0, 13.0, false, 'Tier 1', false),
+            ('a8bf94ff7dd137241bad95b7363f5fb4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-04', 'loc-a', 2025, date '2025-11-03', 1.0, 14.0, 14.0, false, 'Tier 1', false),
+            ('602cc4663724e20218f02020b24251ec', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-05', 'loc-a', 2025, date '2025-11-03', 1.0, 15.0, 15.0, false, 'Tier 1', false)
           ])
 
     expect:
@@ -572,7 +554,6 @@ unit_tests:
           n_membership_days_ytd,
           n_present_days_ytd,
           is_truant,
-          is_ca_eligible,
           ada_tier,
           is_chronically_absent,
         from unnest([
@@ -581,14 +562,14 @@ unit_tests:
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
-            n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
+            n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
-          ('cfccc372dfe154c3304b630ca97f82b1', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, true, 'Tier 1', false),
-          ('dbe905eac0b9ecc8f53526cae0624d7a', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, true, 'Tier 1', false)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
+          ('cfccc372dfe154c3304b630ca97f82b1', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
+          ('dbe905eac0b9ecc8f53526cae0624d7a', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-11-03', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false)
         ])
 
   - name: test_periods_reads_the_value_from_period_end_not_another_day
@@ -639,7 +620,6 @@ unit_tests:
             n_membership_days_ytd,
             n_present_days_ytd,
             is_truant,
-            is_ca_eligible,
             ada_tier,
             is_chronically_absent,
           from unnest([
@@ -648,15 +628,15 @@ unit_tests:
               term_key string, date_key date, location_key string,
               academic_year int64, week_start_monday date, membership_value float64,
               n_membership_days_ytd float64, n_present_days_ytd float64,
-              is_truant bool, is_ca_eligible bool, ada_tier string,
+              is_truant bool, ada_tier string,
               is_chronically_absent bool
             >
-            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, true, 'Tier 1', false),
-            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, true, 'Tier 1', false),
-            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, true, 'Tier 2', false),
-            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, true, true, 'Tier 3', true),
-            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, true, true, 'Tier 4', true),
-            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 0.0, 5.0, 5.0, true, true, 'Tier 1', false)
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 2', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, true, 'Tier 3', true),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, true, 'Tier 4', true),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 0.0, 5.0, 5.0, true, 'Tier 1', false)
           ])
 
     expect:
@@ -673,7 +653,6 @@ unit_tests:
           n_membership_days_ytd,
           n_present_days_ytd,
           is_truant,
-          is_ca_eligible,
           ada_tier,
           is_chronically_absent,
         from unnest([
@@ -682,10 +661,10 @@ unit_tests:
             term_key string,
             academic_year int64, period_type string, period_start_date_key date,
             period_end_date_key date, n_membership_days_ytd float64,
-            n_present_days_ytd float64, is_truant bool, is_ca_eligible bool,
+            n_present_days_ytd float64, is_truant bool,
             ada_tier string, is_chronically_absent bool
           >
-          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
-          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true),
-          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, true, 'Tier 4', true)
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true)
         ])

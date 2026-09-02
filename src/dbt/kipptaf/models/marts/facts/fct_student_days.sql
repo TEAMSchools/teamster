@@ -105,8 +105,6 @@ with
         select
             *,
 
-            n_membership_days_ytd >= 10 as is_ca_eligible,
-
             -- n_membership_days_ytd = 0 guard is load-bearing: without it,
             -- 0 >= 0 makes a zero-membership enrollment Tier 3.
             case
@@ -162,7 +160,6 @@ select
 
     n_membership_days_ytd,
     n_present_days_ytd,
-    is_ca_eligible,
     ada_tier,
 
     membershipvalue as membership_value,

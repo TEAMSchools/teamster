@@ -63,7 +63,7 @@ DEFAULT_OUT = Path(__file__).resolve().parent / "out" / "results_cc.jsonl"
 _LOAD_RESULT = {
     "data": [
         {
-            "student_periods_view.count_students_min_10_days": "1248",
+            "student_periods_view.count_students": "1248",
             "student_periods_view.count_chronically_absent": "187",
             "student_periods_view.pct_chronically_absent": "0.15",
         }

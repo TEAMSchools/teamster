@@ -204,16 +204,6 @@ cubes:
         type: number
         public: true
 
-      - name: is_ca_eligible
-        description: >-
-          Whether the student has reached 10 cumulative membership days at this
-          school, the KIPP Foundation chronic-absence eligibility floor. Early
-          in an academic year most rows are false. Every rate below is scoped to
-          this, and count_students_min_10_days must be shown beside any of them.
-        sql: is_ca_eligible
-        type: boolean
-        public: true
-
       - name: ada_tier
         description: >-
           Cumulative ADA band as of this date. Tier 1 at 95% and above, Tier 2
@@ -233,8 +223,8 @@ cubes:
         description: >-
           Whether ada_tier is Tier 3 or Tier 4 as of this date. Derived from
           ada_tier, never recomputed, so the flag and the tier cannot drift
-          apart. Read it with is_ca_eligible -- a student below the
-          10-membership-day floor still carries a tier.
+          apart. A student with only a handful of membership days still carries
+          a tier -- show count_students beside any rate built on this.
         sql: is_chronically_absent
         type: boolean
         public: true
@@ -372,42 +362,43 @@ cubes:
       # student_periods_view answers the same questions at year, month and week
       # end without a pinned date, off the same columns. Use that for a trend.
 
-      - name: count_students_min_10_days
-        description: >-
-          Students who have reached 10 cumulative membership days at that school
-          as of the pinned date -- the chronic-absence eligibility floor, and
-          the denominator for pct_chronically_absent. Pin attendance_date.
-          Display it beside any rate on this view, especially early in an
-          academic year when eligibility is still accumulating and it runs far
-          below count_students.
+      # Denominator for every rate below. count_students is the population, but
+      # it includes rows enrolled with no recorded attendance -- Miami before
+      # AY2026, and 19 to 424 rows a year elsewhere -- whose ada_tier and
+      # is_truant are null, so they can never reach a numerator. Dividing by
+      # count_students would deflate every rate by that population (#4744).
+      - name: _count_students_with_attendance
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
-        public: true
+        public: false
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
+          - sql: "{CUBE}.n_membership_days_ytd > 0"
 
       - name: count_chronically_absent
         description: >-
-          Eligible students at Tier 3 or Tier 4 as of the pinned date. Pin
-          attendance_date. Counted per school, so a student who changed schools
-          is counted once per school against that school's own cumulative
-          position.
+          Students at Tier 3 or Tier 4 as of the pinned date. Pin
+          attendance_date. No minimum-membership-day floor is applied, so early
+          in an academic year this counts students judged on very few days --
+          show count_students beside it. Counted per school; the cumulative
+          position it reads accumulates per student across a school change.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
         filters:
-          - sql: "{CUBE}.is_ca_eligible"
           - sql: "{CUBE}.is_chronically_absent"
 
       - name: pct_chronically_absent
         description: >-
-          Share of eligible students at Tier 3 or Tier 4 as of the pinned date.
-          Denominator is count_students_min_10_days, so a student below the
-          10-membership-day floor is excluded from both sides. Pin
-          attendance_date, and show count_students_min_10_days beside this.
-        sql: >-
-          1.0 * {count_chronically_absent} /
-          NULLIF({count_students_min_10_days}, 0)
+          Share of students at Tier 3 or Tier 4 as of the pinned date.
+          Denominator is every student with at least one recorded attendance day
+          in the slice. No minimum-membership-day floor applies. Rows enrolled
+          with no recorded attendance are excluded from both sides, so the gap
+          cannot deflate the rate (#4744). Pin attendance_date, and show
+          count_students beside this: a rate over students with only a few
+          membership days each is volatile, not wrong.
+        sql:
+          "1.0 * {count_chronically_absent} /
+          NULLIF({_count_students_with_attendance}, 0)"
         type: number
         format: percent
         public: true
@@ -418,9 +409,7 @@ cubes:
           Miami: 15+ absences in a 90-day rolling window. NJ regions: projected
           absences reach 50+ for the year. Pin attendance_date.
 
-          No eligibility floor. Neither regional rule requires a minimum
-          membership-day count, so any such floor belongs inside the fact's
-          is_truant rather than in this measure or its denominator. Miami's rule
+          Neither regional rule requires a minimum membership-day count. Miami's
           is self-limiting -- 15 absences implies at least 15 membership days --
           while the NJ projection can fire in a student's first days, so early
           in an academic year this runs high.
@@ -433,10 +422,13 @@ cubes:
       - name: pct_truant
         description: >-
           Share of students meeting regional truancy criteria as of the pinned
-          date. Denominator is count_students -- every student enrolled on that
-          date, with no eligibility floor on either side, because truancy has no
+          date. Denominator is every student with at least one recorded
+          attendance day in the slice. No minimum-membership-day floor applies.
+          Rows enrolled with no recorded attendance are excluded from both
+          sides, so the gap cannot deflate the rate (#4744). Truancy has no
           eligibility concept in either regional rule. Pin attendance_date.
-        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+        sql:
+          "1.0 * {count_truants} / NULLIF({_count_students_with_attendance}, 0)"
         type: number
         format: percent
         public: true

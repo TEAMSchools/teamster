@@ -47,7 +47,6 @@ with
             d.n_membership_days_ytd,
             d.n_present_days_ytd,
             d.is_truant,
-            d.is_ca_eligible,
             d.ada_tier,
             d.is_chronically_absent,
 
@@ -164,7 +163,6 @@ select
     b.n_membership_days_ytd,
     b.n_present_days_ytd,
     b.is_truant,
-    b.is_ca_eligible,
     b.ada_tier,
     b.is_chronically_absent,
 from per_period as pp

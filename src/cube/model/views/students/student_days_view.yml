@@ -70,10 +70,8 @@ views:
           - is_truant
           - n_membership_days_ytd
           - n_present_days_ytd
-          - is_ca_eligible
           - ada_tier
           - is_chronically_absent
-          - count_students_min_10_days
           - count_chronically_absent
           - pct_chronically_absent
           - count_truants
@@ -184,7 +182,6 @@ views:
           members:
             - ada_tier
             - is_chronically_absent
-            - is_ca_eligible
             - n_membership_days_ytd
             - n_present_days_ytd
         - name: Date

@@ -26,36 +26,29 @@ views:
       student stops appearing rather than carrying forward, and a trend's
       denominator shifts between points.
 
-      Eligibility (count_students_min_10_days) is cumulative from the start of
-      the academic year, so early periods carry a much smaller denominator than
-      later ones — this is expected, not broken data. Example: by August 31 of
-      AY2025, the maximum membership days any student had reached was 8, so zero
-      students were CA-eligible that month — August has no chronic-absence rate
-      at all, not a small one. Cumulative through September 30, eligible reached
-      9,236 against 9,381 student-school pairs with any attendance day (17.8%);
-      through October 31, eligible reached 9,328 (18.3%). All three
-      reconciliation authorities define eligibility this way, and KIPP
-      Foundation chronic-absence criteria item 1 already requires the
-      eligible-student count to be shown beside the rate — always display
-      count_students_min_10_days alongside any rate measure on this view, and
-      especially so for the first weeks or first month of an academic year.
+      No minimum-membership-day floor is applied to any rate on this view. Every
+      rate divides by the students who have at least one recorded attendance day
+      in the period, so an early period reports a rate over students judged on
+      very few days each — a student who misses one of their first four days
+      sits at 75% ADA and counts as chronically absent. That makes the first
+      weeks of an academic year volatile rather than wrong. Always display
+      count_students alongside any rate measure on this view.
 
       Miami is present in count_students for every year, but its attendance only
       from AY2026 forward — the accepted result of the Focus cutover, and the
       same gap every Tableau attendance surface has. Miami's pre-AY2026 rows
-      carry no membership days, so they never reach count_students_min_10_days
-      and cannot move a rate. See fct_student_periods for why. Paterson's
-      presence-derived measures (ada_tier, pct_chronically_absent, truancy)
-      carry a known upstream uncertainty from incomplete PowerSchool
-      attendance-conversion items (#4193), unquantified as of AY2025;
-      count_students_min_10_days is unaffected — see fct_student_periods for
-      detail.
+      carry no recorded attendance, so they are excluded from both sides of
+      every rate and cannot move one — but they DO appear in count_students, so
+      a pre-AY2026 population count is four regions while the rate beside it is
+      three. Label it accordingly. Paterson's presence-derived measures
+      (ada_tier, pct_chronically_absent, truancy) carry a known upstream
+      uncertainty from incomplete PowerSchool attendance-conversion items
+      (#4193), unquantified as of AY2025; count_students is unaffected.
 
     cubes:
       - join_path: student_periods
         includes:
           - count_students
-          - count_students_min_10_days
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2
@@ -68,7 +61,6 @@ views:
           - academic_year
           - academic_year_label
           - ada_tier
-          - is_ca_eligible
           - is_chronically_absent
           - is_truant
           - n_membership_days_ytd
@@ -146,7 +138,6 @@ views:
           members:
             - period_type
             - ada_tier
-            - is_ca_eligible
             - is_chronically_absent
             - is_truant
             - n_membership_days_ytd
