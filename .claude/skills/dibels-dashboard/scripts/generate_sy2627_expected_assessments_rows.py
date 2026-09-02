@@ -310,13 +310,111 @@ CAMDEN_ROUNDS = [
     ),
 ]
 
+# Miami, T&L SY27 doc, Miami tab. Three shapes rather than 11 literals, because
+# the doc really is this regular -- only round 1 and the season change differ:
+#
+#   round 1        grade 1 gets NWF alone (the doc splits "G1" from "G2-3")
+#   rounds 2-5     grades 1-3 get NWF + ORF
+#   rounds 6-11    NWF drops from grades 1-3, and Maze is added to 4-8
+#
+# Cohorts alternate strictly by round: odd rounds test Below + Well Below, even
+# rounds Well Below only. Unlike NJ, this applies to K-2 as well as 3-8, which
+# is why the K-2 scaffold branch reads the round's cohort (see k2_cohort).
+MIAMI_ROUND_1 = {
+    0: ["PSF", "NWF"],
+    1: ["NWF"],
+    2: ["NWF", "ORF"],
+    3: ["NWF", "ORF"],
+    4: ["ORF"],
+    5: ["ORF"],
+    6: ["ORF"],
+    7: ["ORF"],
+    8: ["ORF"],
+}
+MIAMI_EARLY = {
+    0: ["PSF", "NWF"],
+    1: ["NWF", "ORF"],
+    2: ["NWF", "ORF"],
+    3: ["NWF", "ORF"],
+    4: ["ORF"],
+    5: ["ORF"],
+    6: ["ORF"],
+    7: ["ORF"],
+    8: ["ORF"],
+}
+MIAMI_LATE = {
+    0: ["PSF", "NWF"],
+    1: ["ORF"],
+    2: ["ORF"],
+    3: ["ORF"],
+    4: ["ORF", "MAZE"],
+    5: ["ORF", "MAZE"],
+    6: ["ORF", "MAZE"],
+    7: ["ORF", "MAZE"],
+    8: ["ORF", "MAZE"],
+}
+
+# (round_number, start, end, measures-by-grade). The MOY Benchmark window
+# (1/5 - 1/22) falls between rounds 5 and 6, so 1-5 are BOY->MOY and 6-11 are
+# MOY->EOY.
+MIAMI_SCHEDULE = [
+    (1, "2026-10-05", "2026-10-09", MIAMI_ROUND_1),
+    (2, "2026-10-26", "2026-10-30", MIAMI_EARLY),
+    (3, "2026-11-09", "2026-11-13", MIAMI_EARLY),
+    (4, "2026-11-30", "2026-12-04", MIAMI_EARLY),
+    (5, "2026-12-14", "2026-12-18", MIAMI_EARLY),
+    (6, "2027-02-01", "2027-02-05", MIAMI_LATE),
+    (7, "2027-02-15", "2027-02-19", MIAMI_LATE),
+    (8, "2027-03-01", "2027-03-05", MIAMI_LATE),
+    (9, "2027-03-15", "2027-03-19", MIAMI_LATE),
+    (10, "2027-04-05", "2027-04-09", MIAMI_LATE),
+    (11, "2027-04-19", "2027-04-23", MIAMI_LATE),
+]
+
+MIAMI_SEASON_SPLIT = 5
+
+MIAMI_ROUNDS = [
+    (
+        round_number,
+        "BOY->MOY" if round_number <= MIAMI_SEASON_SPLIT else "MOY->EOY",
+        start,
+        end,
+        {
+            grade: (measures, BOTH if round_number % 2 == 1 else WBB)
+            for grade, measures in by_grade.items()
+        },
+    )
+    for round_number, start, end, by_grade in MIAMI_SCHEDULE
+]
+
 REGION_ROUNDS = {
     "Newark": NEWARK_PATERSON_ROUNDS,
     "Paterson": NEWARK_PATERSON_ROUNDS,
     "Camden": CAMDEN_ROUNDS,
+    "Miami": MIAMI_ROUNDS,
 }
 
 K2_GRADES = {0, 1, 2}
+
+
+def k2_cohort(grades: dict, grade: int) -> str:
+    """Cohort for a K-2 scaffold row.
+
+    NJ K-2 is `Both` in every round, but Miami alternates by round (odd rounds
+    test Below + Well Below, even rounds Well Below only), so this cannot be
+    hardcoded. When the grade is absent from the round entirely -- a
+    scaffold-fill row that exists only for goal-trajectory continuity -- borrow
+    the cohort from another K-2 grade in the same round rather than a
+    round-level cohort: NJ rounds are NOT uniform across bands (round 1 is
+    `Both` for K-2 and `Well Below` for 3-8).
+    """
+    entry = grades.get(grade)
+    if entry:
+        return entry[1]
+    for sibling in sorted(K2_GRADES):
+        if sibling in grades:
+            return grades[sibling][1]
+    return BOTH
 
 
 def month_of(date_str: str) -> str:
@@ -372,11 +470,26 @@ def emit(rows: list[list[str]], base: list[str], cohort: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
+    parser.add_argument(
+        "--regions",
+        default=",".join(REGION_ROUNDS),
+        help=(
+            "Comma-separated regions to emit. Defaults to all. Use this to emit"
+            " one region's rows without regenerating another's already-pasted"
+            " output."
+        ),
+    )
     args = parser.parse_args()
+
+    selected = [r.strip() for r in args.regions.split(",") if r.strip()]
+    unknown = [r for r in selected if r not in REGION_ROUNDS]
+    if unknown:
+        raise SystemExit(f"unknown region(s): {', '.join(unknown)}")
 
     out_rows: list[list[str]] = []
 
-    for region, rounds in REGION_ROUNDS.items():
+    for region in selected:
+        rounds = REGION_ROUNDS[region]
         # -- grades 3-8: only rounds actually listed, pm_goal_include always blank --
         for round_number, season, start, _end, grades in rounds:
             for grade, (measure_codes, cohort) in grades.items():
@@ -416,7 +529,7 @@ def main() -> None:
                                 pm_goal_include,
                                 ms,
                             )
-                            emit(out_rows, base, BOTH)
+                            emit(out_rows, base, k2_cohort(grades, grade))
 
     with open(args.out, "w") as f:
         for row in out_rows:

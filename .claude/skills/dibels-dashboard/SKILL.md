@@ -929,22 +929,42 @@ one, and Miami's PM windows are not reconstructable from any other source we
 hold. Flag derived rows as derived so a later correction is cheap; do not
 re-litigate the `PLIT3` question above before generating.
 
-What Miami still needs before rows can be generated at all:
+**Miami SY26-27 is generated.** 44 `reporting__terms` rows
+(`generate_sy2627_miami_lit_plit_rows.py`) and 416 `Expected Assessments` rows
+(`generate_sy2627_expected_assessments_rows.py --regions Miami`). What the
+generators encode, all from the T&L SY27 doc's Miami tab:
 
-1. **The 11 SY26-27 round start/end dates**, from the T&L PM round document for
-   the year. Per _Canonical annual rollover process_ above these are
-   transcribed, never derived or rolled forward, so no amount of calendar work
-   substitutes. AY2025 Miami ran 6 rounds (3+3); SY26-27 is 11, so the shape
-   changes too.
-2. **`PLIT1.start`** -- the NJ "copy the Benchmark start" shortcut does not
-   transfer (see above). Per the policy, derive it: use the first in-session day
-   of the academic year, which is what AY2025 approximates (`2025-08-12` against
-   a first in-session day of `2025-08-11`). Don't block on confirmation.
-3. **`PM_Goal_Criteria` for Miami** -- never populated for Miami in AY2025.
-   Leave it blank to match Miami's own precedent rather than copying NJ's
-   blanket `AND`; blank is the reversible choice.
-4. **Cohort mechanics from Miami's 3-8 leads** (#3834), for the
-   `measure_standard_level` split.
+- **11 rounds, season split 5 + 6.** The MOY Benchmark window (`1/5 - 1/22`)
+  falls between rounds 5 and 6. AY2025 Miami ran 6 rounds (3+3), so the shape
+  changed -- do not pattern-match off last year.
+- **Grade bands stay on AY2025's scheme** (`0,1,2` with `LIT`+`PLIT`, `3,4` and
+  `5,6,7,8` `LIT`-only), NOT the doc's own K / 1-3 / 4-5 / 6-8 groupings, whose
+  `1-3` band would straddle the K-2 / 3-8 boundary and strip `PLIT` from grades
+  1-2. Every Miami round shares identical dates across bands, so the band split
+  only matters for `PLIT`. The doc's groupings still drive measures.
+- **Cohorts alternate by round** -- odd rounds test `Below` + `Well Below`, even
+  rounds `Well Below` only. **This applies to K-2 as well as 3-8**, which NJ's
+  generator did not anticipate: its K-2 branch hardcoded `Both`, correct for NJ
+  and wrong for Miami. Now reads the round's own cohort via `k2_cohort()`; NJ
+  output re-verified byte-identical (878 rows) after the change.
+- **Measure progression**: round 1 gives grade 1 `NWF` alone (the doc splits
+  "G1" from "G2-3"); rounds 2-5 give grades 1-3 `NWF` + `ORF`; from round 6
+  `NWF` drops from grades 1-3 and `Maze` is added to grades 4-8. That round-1
+  split is the ONLY scaffold-fill in Miami's whole set -- grade 1 / `ORF` /
+  `LIT1` gets `pm_goal_include = false` (4 rows).
+- **`PM_Goal_Criteria` is `AND` for Miami too.** An earlier draft of this
+  section said to leave it blank because Miami's AY2025 rows are blank -- that
+  was wrong. The instruction is explicit and network-wide: T&L requires students
+  to meet ALL tested standards per round this year. Miami's blank AY2025 values
+  are a gap, not a precedent to preserve.
+- **`PLIT1.start` is derived**, not copied from the Benchmark start -- Miami's
+  `BOY` window opens a month into the year (`2026-09-08`), so NJ's shortcut
+  would put `PLIT1` a month late. Uses the first in-session day of AY2026
+  (`2026-08-12`), which is what AY2025 approximates.
+
+Still open for Miami: **cohort mechanics from Miami's 3-8 leads** (#3834). The
+doc's alternation is encoded as written, but nobody has confirmed the intent
+behind alternating rather than testing both cohorts every round.
 
 ### TODO -- shared active/current schools model needs more eyes
 
