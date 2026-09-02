@@ -130,6 +130,10 @@ assets:
     cursor_column: updated_at
   - table_name: referral_code_offenses
     cursor_column: updated_at
+  # cursor_column null: a static lookup with no confirmed updated_at column.
+  # Count-only probe; in-place relabels are caught by the nightly full refresh.
+  - table_name: referral_teacher_codes
+    cursor_column: null
   # Users
   - table_name: users
     cursor_column: updated_at

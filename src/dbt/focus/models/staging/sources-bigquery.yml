@@ -568,6 +568,15 @@ sources:
                 - dlt
                 - focus
                 - referral_code_offenses
+      - name: referral_teacher_codes
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - referral_teacher_codes
       # Users
       - name: users
         config:
