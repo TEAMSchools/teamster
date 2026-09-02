@@ -4,6 +4,7 @@ select distinct
     academic_year,
     region,
     schoolid,
+    schoolid as ps_schoolid,
     grade_level,
 
     'powerschool' as school_source,
@@ -19,7 +20,8 @@ select distinct
     _dbt_source_project,
     academic_year,
     region,
-    ps_schoolid as schoolid,
+    schoolid,
+    ps_schoolid,
     grade_level,
 
     'focus' as school_source,
@@ -27,5 +29,6 @@ select distinct
 from {{ ref("int_focus__student_enrollment_roster") }}
 -- A fixed boundary, not the current year -- do not swap for current_academic_year.
 -- Focus reaches back to AY2018, but Miami's PowerSchool archive owns through
--- AY2025. ps_schoolid is null for Focus's non-instructional schools (Applicants).
+-- AY2025. Null ps_schoolid drops Focus's non-instructional Applicants school and
+-- would break ps_schoolid's job as the cross-SIS join key.
 where academic_year >= 2026 and ps_schoolid is not null
