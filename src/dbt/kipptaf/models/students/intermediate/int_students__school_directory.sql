@@ -1,11 +1,10 @@
 -- grain projection, not dup-masking: academic_year/region/schoolid/grade_level
 select distinct
+    _dbt_source_project,
     academic_year,
     region,
     schoolid,
     grade_level,
-
-    _dbt_source_project,
 
     'powerschool' as school_source,
 
@@ -17,12 +16,11 @@ union all
 
 -- grain projection, not dup-masking: academic_year/region/schoolid/grade_level
 select distinct
+    _dbt_source_project,
     academic_year,
     region,
     ps_schoolid as schoolid,
     grade_level,
-
-    _dbt_source_project,
 
     'focus' as school_source,
 

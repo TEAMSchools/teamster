@@ -22,6 +22,13 @@ models:
               - schoolid
               - grade_level
     columns:
+      - name: _dbt_source_project
+        description: >
+          Dagster code location owning the row -- kippnewark, kippcamden,
+          kippmiami or kipppaterson. Passed through from the enrollment model on
+          each branch, so it joins union models directly.
+        data_tests:
+          - not_null
       - name: region
         description: >
           Region name -- Camden, Miami, Newark or Paterson. Matches the region
@@ -33,13 +40,6 @@ models:
         description: >
           Academic year the school offered this grade level, as the starting
           calendar year -- 2026 is SY26-27.
-        data_tests:
-          - not_null
-      - name: _dbt_source_project
-        description: >
-          Dagster code location owning the row -- kippnewark, kippcamden,
-          kippmiami or kipppaterson. Passed through from the enrollment model on
-          each branch, so it joins union models directly.
         data_tests:
           - not_null
       - name: school_source
