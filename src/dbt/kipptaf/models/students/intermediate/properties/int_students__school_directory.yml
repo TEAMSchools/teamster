@@ -52,8 +52,10 @@ models:
           - not_null
       - name: schoolid
         description: >
-          Network school number, unique across regions. Excludes 999999, the
-          graduated-students placeholder, which is not a physical school.
+          Network school number, unique across regions. The Focus branch
+          projects ps_schoolid, not Focus's internal school id, so both branches
+          share one namespace. Excludes 999999, the graduated-students
+          placeholder.
       - name: grade_level
         description: >
           Grade level offered at the school that year, with kindergarten as 0.
