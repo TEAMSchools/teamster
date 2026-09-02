@@ -45,6 +45,45 @@ filtered. A goal proportion is a target and is _supposed_ to hold still, so it
 is safe to carry. The actual rate is computed in Tableau from the student rows
 already on the view.
 
+## Why this ships as a wrapper, not a change to the extract
+
+The obvious design adds the goal columns to `rpt_tableau__gpa_cumulative_year`.
+Three facts, discovered after that design was drafted, rule it out for now.
+
+**The extract is a view.** `INFORMATION_SCHEMA` reports `table_type = VIEW`. It
+deploys as `create or replace view`, so new logic is live the instant Dagster
+materializes it. There is no prior copy to fall back on, and a data problem is
+not catchable at build time the way it is for a table.
+
+**Its uniqueness test only warns.** The project sets
+`data_tests: +severity: warn` and the `dbt_utils.unique_combination_of_columns`
+test on `(student_number, academic_year)` carries no override. A fan-out logs a
+warning and the run continues.
+
+**The published workbook asserts that uniqueness to Tableau.** The
+`rpt_tableau__student_course_grades+` data source relates course grades to this
+model on `student_number`, `academic_year` and `schoolid`, with the
+`rpt_tableau__gpa_cumulative_year` endpoint declared `unique-key='true'`.
+Tableau has been told that side cannot duplicate, so it skips the defensive
+aggregation it would otherwise apply.
+
+Together those mean a bad join key would swap a view in place, warn rather than
+fail, and silently multiply student counts on the published Academic Health Home
+and Academic Health Schools dashboards. Reverting the view is fast, but a
+Tableau extract refresh inside the bad window bakes the inflated rows into the
+published extract, where they survive the revert until the next successful
+refresh.
+
+The dashboard this design serves is new and unpublished. The models it would
+modify are neither. So the goal columns land on a new wrapper that nothing
+published reads, and the extract is left alone until the change can be made
+behind proper controls.
+
+`rpt_` models referencing other `rpt_` models are an established pattern in this
+project — ten exist today, three of them inside `extracts/tableau/`
+(`rpt_tableau__survey_completion` reads `rpt_tableau__survey_links`, which reads
+`rpt_tableau__survey_responses`).
+
 ## Measured
 
 Figures read 2026-09-01.
@@ -78,7 +117,7 @@ in `int_gpa__goal_student_metrics` because that model has no region filter, and
 land in `n_students_in_grain` with a null GPA. `metric_rate` divides by
 `n_students_measured` and is unaffected.
 
-Two consequences for this design. The `region in ('Newark', 'Camden')` filter on
+Two consequences. The `region in ('Newark', 'Camden')` filter on
 `rpt_tableau__gpa_cumulative_year` is redundant with its own source data;
 removing it would add zero rows. And the population question that looked like
 the hard part is not one — both sides bottom out in the same powerschool GPA
@@ -88,10 +127,9 @@ computation, which is why measured counts match exactly at every grade: 509,
 Miami's GPA pipeline is offline until at least Q2. This design adds no region
 filter anywhere, so Miami appears on its own when that lands.
 
-## New model
+## New model 1 — `int_gpa__student_goal_definitions`
 
-`int_gpa__student_goal_definitions`, in
-`src/dbt/kipptaf/models/gpa/intermediate/`.
+In `src/dbt/kipptaf/models/gpa/intermediate/`.
 
 Grain: `student_number` by `academic_year` by `metric`.
 
@@ -135,9 +173,11 @@ names the problem.
 ### Tests
 
 - `dbt_utils.unique_combination_of_columns` on `academic_year`,
-  `student_number`, `metric`, at `severity: error`.
-- `not_null` on `academic_year`, `student_number` and `metric`. All three are
-  join keys.
+  `student_number`, `metric`, at `severity: error`. This test is what makes the
+  wrapper's join provably one-to-at-most-one, so the override is required, not
+  stylistic.
+- `not_null` on `academic_year`, `student_number` and `metric`, at
+  `severity: error`. All three are join keys.
 - A new singular test: no school-rung or region-rung goal exists without a
   matching org-rung goal at the same `academic_year`, `metric` and grade band.
 
@@ -148,58 +188,107 @@ error. That is the one failure mode the design cannot detect on its own.
 `goal_proportion_org` gets no `not_null` test. The inner join makes it
 non-nullable by construction, and the repo forbids a test that cannot fail.
 
-## Extract change
+## New model 2 — `rpt_tableau__gpa_goal_progress`
 
-`rpt_tableau__gpa_cumulative_year` gains one left join to
-`int_gpa__student_goal_definitions` on `student_number` and `academic_year`,
-filtered to `metric = 'cumulative_gpa_unweighted'`, projecting four columns:
+In `src/dbt/kipptaf/models/extracts/tableau/`. Grain: `student_number` by
+`academic_year`, matching `rpt_tableau__gpa_cumulative_year` exactly.
 
-- `gpa_goal_threshold`
-- `gpa_goal_proportion_org`
-- `gpa_goal_proportion_region`
-- `gpa_goal_proportion_school`
+```sql
+select
+    <every column of rpt_tableau__gpa_cumulative_year, by name>,
 
-Row count is unchanged. The join is one-to-at-most-one on a key that is unique
-on both sides, and every existing column keeps its definition.
+    gd.threshold as gpa_goal_threshold,
+    gd.goal_proportion_org as gpa_goal_proportion_org,
+    gd.goal_proportion_region as gpa_goal_proportion_region,
+    gd.goal_proportion_school as gpa_goal_proportion_school,
+from {{ ref("rpt_tableau__gpa_cumulative_year") }} as cy
+left join
+    {{ ref("int_gpa__student_goal_definitions") }} as gd
+    on cy.student_number = gd.student_number
+    and cy.academic_year = gd.academic_year
+    and gd.metric = 'cumulative_gpa_unweighted'
+```
 
-The `region in ('Newark', 'Camden')` filter stays. Removing it is a separate
-decision with its own blast radius, and it adds no rows today.
+**Every passthrough column keeps its name exactly.** Tableau's Replace Data
+Source only preserves calculated fields when field captions match, so any rename
+here becomes hand-rebuilt calculations at merge time.
+
+The four goal columns take the names they will carry on
+`rpt_tableau__gpa_cumulative_year` after the merge, for the same reason.
+
+Contract enforced, per the `extracts/` directory config. Uniqueness test on
+`(student_number, academic_year)` at `severity: error`.
 
 ## Downstream impact
 
-The dashboard drops all seven bridging calculations. Grade becomes a real
-filter. The three-school `CASE` is deleted. The null-region user-filter trap
-disappears, because the goals data source is no longer on the dashboard. The
-actual rate is computed from student rows, so it responds to every filter.
+Nothing published changes. `rpt_tableau__gpa_cumulative_year`,
+`rpt_tableau__gpa_goals` and `rpt_tableau__student_course_grades` are untouched,
+so Academic Health Home and Academic Health Schools cannot be affected by this
+work.
 
-`rpt_tableau__gpa_goals` is unchanged and keeps serving Academic Health Home
-through the `GPA Goals - Y1` data source. Nothing is deleted.
+The Cumulative GPA Monitor reads `rpt_tableau__gpa_goal_progress` alone. It
+drops all seven bridging calculations. Grade becomes a real filter. The
+three-school `CASE` is deleted. The null-region user-filter trap disappears,
+because the goals data source is no longer on the dashboard. The actual rate is
+computed from student rows, so it responds to every filter.
 
-`rpt_tableau__student_course_grades` can later join the same model filtered to
-`metric = 'y1_gpa_weighted'` and get its own goal columns. That is why the grain
-carries `metric` as a row rather than widening the column list per metric.
+`rpt_tableau__student_course_grades` can later join
+`int_gpa__student_goal_definitions` filtered to `metric = 'y1_gpa_weighted'`.
+That is why the intermediate carries `metric` as a row rather than widening the
+column list per metric.
 
 ## Verification
 
-- `dbt build --select int_gpa__student_goal_definitions+` passes, including the
-  uniqueness test and the new singular test.
-- `rpt_tableau__gpa_cumulative_year` row count is identical before and after,
-  for every academic year, not only 2026.
-- For 2026, `goal_proportion_org` on the extract reproduces the published goals:
-  0.69 at grade 9, 0.64 at grade 10, 0.60 at grade 11, 0.56 at grade 12.
-- Grades K through 8 have null goal columns on the extract, and no student-year
-  row is lost to the join.
-- The share of students at or above `gpa_goal_threshold`, computed from extract
-  rows per grade, matches `metric_rate` in `rpt_tableau__gpa_goals` to within
-  the rounding that model applies.
+- `dbt build --select int_gpa__student_goal_definitions+` passes, including both
+  uniqueness tests and the new singular test.
+- `int_gpa__student_goal_definitions` filtered to
+  `metric = 'cumulative_gpa_unweighted'` has at most one row per
+  `(student_number, academic_year)`. Assert this directly rather than inferring
+  it from a row count.
+- `rpt_tableau__gpa_goal_progress` and `rpt_tableau__gpa_cumulative_year` have
+  identical row counts for every academic year, not only 2026.
+- Every passthrough column name on `rpt_tableau__gpa_goal_progress` matches
+  `rpt_tableau__gpa_cumulative_year` exactly. Compare column lists from
+  `INFORMATION_SCHEMA.COLUMNS`, do not eyeball.
+- For 2026, `gpa_goal_proportion_org` reproduces the published goals: 0.69 at
+  grade 9, 0.64 at grade 10, 0.60 at grade 11, 0.56 at grade 12.
+- Grades K through 8 have null goal columns, and no student-year row is lost.
+- The share of students at or above `gpa_goal_threshold`, computed per grade,
+  matches `metric_rate` in `rpt_tableau__gpa_goals` to within the rounding that
+  model applies.
+
+## The merge, later
+
+Folding the wrapper into `rpt_tableau__gpa_cumulative_year` is a separate change
+and is expected to happen. It requires, in order:
+
+1. A standalone PR raising the extract's uniqueness test to `severity: error`.
+   No other change in it. Merging it green proves the model is unique today and
+   arms the alarm before anything risky lands.
+2. Moving the left join into the extract and adding the four columns to its
+   contract yml.
+3. Pausing the `rpt_tableau__student_course_grades+` extract refresh for the
+   deploy window, verifying row counts in BigQuery, then resuming. This is the
+   only control that stops a bad view being baked into the published extract.
+4. Tableau **Replace Data Source** on the Cumulative GPA Monitor.
+5. Disabling `rpt_tableau__gpa_goal_progress` with `config: enabled: false`,
+   including its tests. Retire, never delete.
+
+Until then the wrapper carries a maintenance tax: a column added to
+`rpt_tableau__gpa_cumulative_year` must be added to the wrapper's explicit
+select list too, since the repo forbids `select *` in a final `rpt_` select.
 
 ## Out of scope
 
+- Modifying `rpt_tableau__gpa_cumulative_year` in any way. Deferred to the merge
+  above, deliberately.
 - `n_students_in_grain` counting students the pipeline cannot measure. Real, but
   narrower, and nothing on the dashboard reads it.
-- Adding `school` to `rpt_tableau__gpa_goals`. This design removes the
-  dashboard's need for it rather than fixing that model.
-- The `region in ('Newark', 'Camden')` filter on the extract.
+- Adding `school` to `rpt_tableau__gpa_goals`. The Cumulative GPA Monitor stops
+  needing it, but `GPA Goals - Y1` on Academic Health Home still reads that
+  table and still carries the same hard-coded `CASE`. Worth doing separately.
+- `gpa_gap_to_3_0` on the student row. A one-line addition, unrelated to goal
+  definitions; ship it with the `school` change.
 - Renaming `cumulative_y1_gpa_unweighted_as_of_today`, which reads as "including
   today's work" but means "from Y1 grades already posted".
 - Any Tableau workbook change. The dashboard ships against the two-source design
