@@ -1,22 +1,4 @@
 with
-    /* One row: the academic year Miami's SIS became Focus.
-
-       Recorded attendance, not row presence. int_focus__attendance_daily
-       scaffolds a present-by-default row for every enrolled student-day back to
-       AY2020, so row presence spans AY2020 onward while Focus holds real
-       attendance for the cutover year onward only. Presence would put the
-       boundary years too early and hand Focus years the PowerSchool archive
-       still covers.
-
-       A floor, not a set: `min` cannot punch a hole mid-history the way
-       `in (select ...)` can. A Focus year that recorded no exceptions would
-       otherwise fall back to an archive holding nothing for it. */
-    cutover as (
-        select min(academic_year) as focus_start_academic_year,
-        from {{ ref("int_focus__attendance_daily") }}
-        where is_attendance_recorded
-    ),
-
     /* grain projection: student-grain enrollment rows collapsed to one row per
        academic_year/region/schoolid/grade_level -- code_location and
        school_source are functionally determined by that key, so byte-identical
@@ -39,6 +21,10 @@ with
         where schoolid != 999999 and grade_level is not null
     ),
 
+    /* grain projection: the region-years the PowerSchool branch owns, which is
+       what makes it authoritative for them below. */
+    powerschool_years as (select distinct region, academic_year, from powerschool),
+
     /* grain projection: same key as the powerschool branch above. */
     focus as (
         select distinct
@@ -51,13 +37,24 @@ with
             'focus' as school_source,
 
         from {{ ref("int_focus__student_enrollment_roster") }} as enr
-        cross join cutover as cut
-        -- Focus carries Miami back to AY2018, which the PowerSchool archive
-        -- already covers, so without this gate every pre-cutover Miami year would
-        -- land twice. ps_schoolid, not schoolid: the latter is Focus's internal id
-        -- and would not share a namespace with the powerschool branch.
+        -- Anti-join, not a cutover year: Focus carries Miami back to AY2018,
+        -- which the PowerSchool archive already covers, so every pre-cutover
+        -- Miami year would otherwise land twice and break the grain. Stating it
+        -- as precedence -- PowerSchool owns any region-year it has rows for,
+        -- Focus fills forward from where the archive stops -- needs no derived
+        -- boundary year and stays correct if the archive is ever extended or
+        -- Focus backfilled. Verified equivalent to gating on the
+        -- attendance-derived cutover year: same 17 rows, zero difference either
+        -- direction.
+        --
+        -- ps_schoolid, not schoolid: the latter is Focus's internal id and would
+        -- not share a namespace with the powerschool branch.
+        left join
+            powerschool_years as psy
+            on enr.region = psy.region
+            and enr.academic_year = psy.academic_year
         where
-            enr.academic_year >= cut.focus_start_academic_year
+            psy.region is null
             and enr.ps_schoolid is not null
             and enr.grade_level is not null
     ),

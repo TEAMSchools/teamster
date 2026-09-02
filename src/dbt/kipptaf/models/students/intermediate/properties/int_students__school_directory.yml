@@ -8,14 +8,20 @@ models:
       enrolled in them -- no open or close date to maintain, and a school that
       never enrolled anyone never appears.
 
-      Three branches, distinguished by school_source. PowerSchool covers the
-      three NJ regions for every year, and covers Miami through SY25-26 only
-      because the frozen Miami archive stops there of its own accord. Focus
-      covers Miami from SY26-27 forward, gated on
-      int_students__sis_cutover.focus_start_academic_year so the pre-cutover
-      Miami years Focus also carries do not land twice. Finalsite supplies
-      schools and grades SRE is recruiting for that no SIS carries yet, which is
-      what lets this model answer upcoming as well as previous and current.
+      Three branches, distinguished by school_source, ordered by precedence
+      rather than by any hardcoded or derived boundary year. PowerSchool owns
+      every region-year it has enrollment rows for -- all years for the three NJ
+      regions, and Miami through SY25-26, where the frozen Miami archive stops
+      of its own accord. Focus fills forward from wherever the archive stops,
+      which is Miami SY26-27 onward; it is anti-joined against PowerSchool's
+      region-years because Focus also carries Miami back to AY2018 and those
+      years would otherwise land twice. Finalsite then supplies schools and
+      grades SRE is recruiting for that neither SIS carries yet, which is what
+      lets this model answer upcoming as well as previous and current.
+
+      Expressing the SIS handoff as precedence means there is no boundary year
+      to maintain and no dependency on a cutover model: the answer stays correct
+      if the archive is ever extended or Focus backfilled.
 
       Reads enrollment models directly rather than
       int_extracts__student_enrollments -- that model is a wide denormalized
