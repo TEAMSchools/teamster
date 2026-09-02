@@ -104,6 +104,8 @@ flowchart TD
         int_enroll["int_extracts__\nstudent_enrollments"]
         int_enroll_subj["int_extracts__\nstudent_enrollments_subjects"]
         int_dibels_roster["int_students__\ndibels_participation_roster"]
+        int_cal["int_students__\ncalendar_day"]
+        int_focus_cal["int_focus__calendar_day"]
     end
 
     %% ── Intermediate — Other assessments (feed enrollment_subjects) ──────────
@@ -155,7 +157,9 @@ flowchart TD
     stg_exp      --> int_gs_pm_exp
     stg_terms    --> int_gs_pm_exp
     stg_schools  --> int_gs_pm_exp
-    stg_cal      --> int_gs_pm_exp
+    stg_cal      --> int_cal
+    int_focus_cal --> int_cal
+    int_cal      --> int_gs_pm_exp
     stg_long     --> int_gs_pm_exp
 
     %% ── Edges: Student enrollment chain ──────────────────────────────────────
@@ -202,7 +206,7 @@ flowchart TD
     class src_amp,src_gs_exp,src_gs_bm,src_gs_pm,src_gs_long,src_gs_terms,src_gs_xwalk,src_ps_districts,src_ps_spenroll,src_ps_terms,src_ps_schools,src_ps_cal,src_ps_nj_crs,src_ps_nj_stu source
     class stg_exp,stg_bm,stg_pm,stg_long,stg_terms,stg_ps_terms,stg_schools,stg_cal,stg_nj_crs staging
     class base_ce base
-    class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_enroll,int_enroll_subj,int_dibels_roster,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
+    class int_bm_sum,int_bm_unpivot,int_pm_sum,int_all,int_pm_crit,int_gs_exp,int_gs_pm_exp,int_spenroll,int_nj_stu,int_enroll,int_enroll_subj,int_dibels_roster,int_cal,int_focus_cal,int_fast,int_pearson,int_fldoe,int_iready,int_deanslist intmodel
     class RPT report
 ```
 
@@ -565,8 +569,9 @@ assessments config and the reporting terms calendar.
   `expected_measure_standard`, etc.)
 - Term window dates (`start_date`, `end_date`, `code`) from
   `stg_google_sheets__reporting__terms`
-- School day counts (`pm_round_days`, `pm_days`) computed from the PowerSchool
-  calendar — counting in-session days within each `LIT`/`PLIT` window by region
+- School day counts (`pm_round_days`, `pm_days`) computed from
+  `int_students__calendar_day` — counting in-session days within each
+  `LIT`/`PLIT` window by region
 - `benchmark_goal` (`grade_level_standard`) from
   `stg_google_sheets__dibels_goals_long`, joined on measure × grade × matching
   PM season
@@ -575,6 +580,28 @@ This enriched scaffold is what `rpt_gsheets__dibels_pm_goal_setting` joins to
 when computing per-round growth targets — it provides everything needed for the
 `pm_round_days / pm_days` proportioning math without any additional manual data
 entry.
+
+**Calendar source — Miami is Focus-only from AY 2026.** Day counting reads
+`int_students__calendar_day` (PowerSchool for the NJ regions, Focus for Miami's
+Focus-covered years), not `stg_powerschool__calendar_day`. The frozen
+PowerSchool archive still serves a rolled-forward Miami calendar through
+2027-06-29 with 48 phantom in-session days against Focus's real AY 2026 calendar
+— 23 in July 2026, 7 on Aug 3–11 before Focus's real Aug 12 start, and 18 on Jun
+4–29 after its real Jun 3 end. Because the Aug 3–11 block coincides with
+`PLIT1`'s start anchor, the PowerSchool path yields Miami boundaries that are
+wrong without looking wrong. The switch was verified as a no-op on current data
+— the two sources are day-for-day identical for all three NJ regions in both SY
+25-26 and SY 26-27, and `pm_round_days` changed for no region or year.
+
+The **schools** side of the same model is still PowerSchool-only
+(`stg_powerschool__schools.schoolcity`, filtered
+`state_excludefromreporting = 0`), which admits just 2 reportable Miami schools.
+`int_students__schools` is the analogous SIS-neutral model and carries 7 Miami
+schools, but its Focus branch leaves both `schoolcity` and
+`state_excludefromreporting` NULL, so swapping the ref alone would drop Miami
+rather than fix it — region has to come from `dim_regions` (matching
+`dagster_code_location` to `_dbt_source_project`) and the reportability gate
+from `location_key is not null`. Outstanding.
 
 **AY 2026–2027 outlook — K-2 vs 3-8 diverge here.** School-day counting
 (`pm_round_days`, `pm_days`), `benchmark_goal`, and the `PLIT` rows that feed

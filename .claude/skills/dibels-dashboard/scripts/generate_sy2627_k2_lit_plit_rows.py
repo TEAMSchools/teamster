@@ -100,9 +100,16 @@ def d(s: str) -> datetime.date:
 
 
 def fetch_in_session_dates(client: bigquery.Client, region: str) -> set[datetime.date]:
+    # int_students__calendar_day, NOT stg_powerschool__calendar_day: Miami is
+    # Focus-only from AY2026, and the frozen PowerSchool archive still serves a
+    # rolled-forward Miami calendar with phantom in-session days (23 in Jul 2026,
+    # 7 on Aug 3-11 before Focus's real Aug 12 start, 18 on Jun 4-29 after its
+    # real Jun 3 end). Those would move PLIT boundaries. Verified day-for-day
+    # identical to the PowerSchool path for all three NJ regions in both SY25-26
+    # and SY26-27, so NJ output is unchanged.
     query = """
         select distinct c.date_value
-        from `teamster-332318.kipptaf_powerschool.stg_powerschool__calendar_day` c
+        from `teamster-332318.kipptaf_students.int_students__calendar_day` c
         inner join `teamster-332318.kipptaf_powerschool.stg_powerschool__schools` s
             on c.schoolid = s.school_number and c._dbt_source_project = s._dbt_source_project
         where s.schoolcity = @region and c.insession = 1

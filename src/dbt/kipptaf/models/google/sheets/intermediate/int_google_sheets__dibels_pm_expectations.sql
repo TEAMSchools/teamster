@@ -11,8 +11,13 @@ with
             count(distinct c.date_value) as pm_round_days,
 
         from {{ ref("stg_powerschool__schools") }} as s
+        -- Not stg_powerschool__calendar_day: Miami is Focus-only from AY2026, and
+        -- the frozen PowerSchool archive still serves a rolled-forward Miami
+        -- calendar (phantom in-session days in Jul 2026, Aug 3-11, Jun 4-29) that
+        -- would shift PM round boundaries. int_students__calendar_day substitutes
+        -- Focus for Focus-covered years and is day-for-day identical for NJ.
         inner join
-            {{ ref("stg_powerschool__calendar_day") }} as c
+            {{ ref("int_students__calendar_day") }} as c
             on s.school_number = c.schoolid
             and c.insession = 1
             and s._dbt_source_project = c._dbt_source_project
@@ -83,4 +88,4 @@ left join
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
 {# TODO: update to current_school_year var #}
-where e.academic_year >= 2024
+where e.academic_year >= 2025
