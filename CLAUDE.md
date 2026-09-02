@@ -2,16 +2,6 @@
 
 ## Layout
 
-| Path            | What it is                                                                                                                                                                        |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/dbt/`      | 15 dbt projects: 5 district (`kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`) plus `kipptaf`, and source-system staging packages the districts consume via `packages.yml` |
-| `src/teamster/` | Dagster. `code_locations/` (5) compose the reusable integrations in `libraries/`                                                                                                  |
-| `src/cube/`     | Cube semantic layer over the warehouse marts; row-level access policies live here                                                                                                 |
-| `.k8s/`         | Helm config for the self-hosted Dagster+ agent                                                                                                                                    |
-| `docs/`         | MkDocs site. `docs/superpowers/` holds specs and plans and is excluded from the nav                                                                                               |
-| `scripts/`      | Standalone `uv run` utilities                                                                                                                                                     |
-| `tests/`        | pytest suites, including the hook regression tests                                                                                                                                |
-
 **Read the relevant subdirectory CLAUDE.md before any work there** (reading,
 explaining, reviewing, or modifying). Project-wide conventions live in this
 file; domain specifics live in the nearest subdirectory CLAUDE.md.
@@ -215,38 +205,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 ### Merging and resuming
 
-- **`git merge-tree` reads the committed tip, not the index** — a staged-but-
-  uncommitted conflict resolution still reports CONFLICT. Commit first, then
-  verify with `git merge-tree --write-tree --name-only origin/main <branch>`.
-
-- **A version-only dependency conflict resolves by taking main's blobs whole**:
-  `git checkout origin/main -- <manifest> <lockfile>`, then run the installer
-  and confirm it leaves the lockfile unchanged (proof main's pair is coherent).
-  Both files end byte-identical to main, so the conflict cannot recur. Do NOT
-  hand-merge a lockfile.
-
-- **Git resuming**: Before resuming work on an existing branch, merge `main`:
-  `git fetch origin main && git merge origin/main`.
-
-- **A CI failure in a file your branch never touched usually means `main`
-  moved** — run `git log <merge-base>..origin/main` before diagnosing. A clean
-  prod baseline does NOT rule this out — CI builds `--full-refresh` against
-  deferred upstreams, so prod passing and CI failing is the expected shape.
-  Check git before the warehouse; it is one command and decisive.
-
-- **A mid-session Codespace restart can delete `.worktrees/` and desync local
-  git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
-  HEAD that reads as the pre-session commit yet holds merged content). Trust
-  GitHub over local git for ground truth: `gh api .../branches/main` and
-  `gh api .../pulls/<n>` (`merged` / `merge_commit_sha`), then re-fetch and
-  recreate any lost worktree off `origin/main`.
-
-- **Reverting experimental code to a docs-only PR**:
-  `git checkout origin/main -- <file>` restores main's CURRENT blob, which can
-  differ from the branch's merge-base and leak main's advancement into the
-  three-dot PR diff. Restore to the merge-base instead —
-  `git checkout $(git merge-base origin/main HEAD) -- <file>` — then verify with
-  `git diff --stat origin/main...HEAD`.
+- Before resuming an existing branch, merging `origin/main`, resolving a
+  conflict, or diagnosing a CI failure in a file your branch never touched,
+  invoke the `resuming-a-branch` skill (merge-tree verification, lockfile
+  conflicts, Codespace-restart ref desync, docs-only reverts).
 
 ### Consent, safety, and verification
 
@@ -294,73 +256,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **PR project linkage**: PRs auto-appear on project boards via issue refs
   (`Refs #N`, `Closes #N`) in the body. Do NOT `gh project item-add` a PR.
 
-- **`not_planned` closure with a "Tracked in Asana: <url>" comment = handoff to
-  Ops, not rejection.** The `TODO(#NNNN)` pointer is still live. Reopen the GH
-  issue and apply the `ops-tracked` label; it stays open until the linked Asana
-  task completes.
-
-- **Check dbt Cloud CI state before pushing fixes**: pushing cancels an
-  in-progress dbt run and restarts it. Before pushing a CI-fix commit, confirm
-  dbt Cloud is in terminal state; if it's still running, wait or ask the user.
-  Bundle multiple CI-fix commits into one push.
-
-- **After dbt Cloud CI passes on a PR**: fetch warnings with
-  `mcp__dbt__get_job_run_error(run_id=<ci_run>, warning_only=true)` before
-  declaring done. Local relationships warnings absent from CI are stale-dev
-  `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
-  `gh search issues` for a tracker before filing.
-
-- **The `claude-review` bot asserts repo conventions that may not be enforced.**
-  Verify each convention claim against existing models before applying — its
-  findings are advisory, and `git grep` settles it faster than complying.
-  **Always invoke `superpowers:receiving-code-review` BEFORE processing
-  `claude-review` findings** — verify each claim (including its file:line
-  citations) against the code before relaying or replying, not after. Fixing a
-  finding in code is not a reply — post a per-finding verdict as a PR comment
-  (declines included, with reasons). A silent fix reads to a human reviewer as
-  an unaddressed review.
-
-- **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
-  authoritative** — verify its convention claims (dismissals as much as flags)
-  against the guide text + `git grep` before relaying.
-
-- **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
-  (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
-  CodeQL / `claude` are _check runs_ (`get_check_runs` /
-  `commits/<sha>/check-runs`). Check both before calling a PR green. Trunk's
-  check-runs are RE-CREATED on each push, so a `gh pr checks` poll gating on
-  "nothing pending" can sample the gap between them and report done prematurely
-  — re-check after a delay. A PR with all checks green but
-  `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
-  awaiting a required review approval (CODEOWNERS `src/dbt/` =
-  analytics-engineers), not a CI failure.
-
-- **`claude-review` fires only on PR `opened` / `ready_for_review`**, never on
-  `synchronize` — it does NOT re-run when you push fixes, so don't wait or
-  monitor for a re-review after a fix push. To get it onto code pushed after its
-  pass, toggle draft state via GraphQL `convertPullRequestToDraft` then
-  `markPullRequestReadyForReview`; REST
-  `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
-  `draft: false`, no error).
-
-- **Read `claude-review` findings by enumerating ALL issue comments**, newest
-  and longest first. It posts as **`github-actions[bot]`**, not a `claude`-named
-  user, so filtering by a "claude" login returns nothing. It may leave TWO
-  comments (a "Reviewing…" stub plus a findings comment) or instead EDIT the
-  stub in place minutes AFTER the check-run reports `success`, and a re-fired
-  run creates a NEW comment even with `use_sticky_comment: true`. So gate a
-  findings-poll on the body no longer matching "in progress" — never on a cached
-  comment id, a length threshold, or the check-run conclusion.
-
-- **A merged PR's CI status is not evidence the change was validated** — a PR
-  merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
-  not a build failure (mechanics in `.claude/context/dbt.md`).
-
-- **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
-  location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
-  terminal conclusion before calling the deploy green. A shared-library change
-  (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
-  whose config you edited.
+- **Always invoke `superpowers:receiving-code-review` BEFORE processing
+  `claude-review` findings**, and post a per-finding verdict as a PR comment — a
+  silent fix reads as an unaddressed review. For everything else about PR review
+  and CI (claude-review mechanics, dbt Cloud CI state and warnings,
+  commit-status vs check-run surfaces, deploy check-runs, `not_planned`
+  handoffs), invoke the `pr-ci-review` skill.
 
 ### Tooling discipline
 
@@ -418,82 +319,17 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 ### Linting and markdown
 
-- **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
-  — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
-  blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
-  shared). **Pre-commit hook runs `fmt` only**; sqlfluff/yamllint and other
-  check-only linters fire at `pre-push` and in CI. If a session reports "trunk
-  clean" on a SQL/YAML change based on commit hooks alone, run
-  `.trunk/tools/trunk check --force <files>` to verify before claiming the
-  change is lint-clean. A clean pre-PUSH `trunk-check-pre-push` is not
-  sufficient either — it is git-diff-scoped (no `--force`) and can MISS a
-  sqlfluff violation (e.g. ST06) on already-committed lines that CI's full check
-  flags, so a push succeeds and CI still fails on lint; `trunk check --force`
-  the changed SQL before pushing. Run from inside the worktree —
-  `trunk check --force <abs-worktree-paths>` from the main repo silently returns
-  "no applicable linters". The `trunk` binary lives only in the main repo
-  (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
-  path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
-  relative paths run from the main repo check the main-repo copies, not your
-  worktree edits. A `--force` check over
-  `git diff --name-only origin/main...HEAD` hard-errors with
-  `'<path>' does not exist` when the PR deletes files — filter to existing paths
-  first.
+- **Do not run `trunk fmt` or `trunk check` as a routine** — the pre-commit hook
+  formats and the pre-push hook checks. But a clean commit hook is NOT
+  lint-clean: before pushing SQL/YAML/markdown, run
+  `/workspaces/teamster/.trunk/tools/trunk check --force <files>` with cwd
+  inside the checkout you edited.
 
-- **A merge commit skips the pre-commit trunk hook** ("Merge detected. Skipping
-  trunk"), so lint introduced while resolving conflicts goes straight to a red
-  CI check. `trunk check --force` the conflicted files before committing a
-  merge.
+- **Suppress** with `trunk-ignore(linter/rule): reason` on the line immediately
+  before the flagged line — never linter-native disable syntax.
 
-- **`.trunk/tools/` is gitignored and lazily populated** — the `trunk` symlink
-  there does not exist until trunk has run once, so on a cold Codespace the
-  documented path above fails with "No such file or directory". Fall back to
-  `~/.cache/trunk/launcher/trunk`, which is always present; the first run
-  creates the `.trunk/tools/trunk` symlink.
-
-- **A `--force` check over ~10 files takes >2 minutes — background it.** Its
-  progress spinner emits no result lines, so grepping interim output returns
-  nothing and reads as a false "clean". Only interpret the output after the run
-  exits.
-
-- **Two concurrent trunk runs produce spurious `✖ N failures`.** A `FAILURES`
-  block names a TOOL plus a `.trunk/out/*.yaml` and no rule — that is the linter
-  crashing (e.g. `grype`), not a finding. Distinct from `✖ N unformatted files`
-  (the pre-commit `fmt` hook fixes those) and from real lint issues, which name
-  `file:line` + rule. Re-run single-instance before chasing one.
-
-- **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
-  `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
-  before the flagged line — not linter-native disable syntax. Wrapping the
-  reason onto extra comment lines silently breaks the suppression (trunk only
-  honors the directive on the adjacent line), and CI also flags it with
-  `trunk/ignore-does-nothing`. Binary:
-  `/workspaces/teamster/.trunk/tools/trunk`.
-
-- **Markdown**: Always specify a language on fenced code blocks (MD040). Use
-  `text` only when no real language applies.
-
-- **Markdown headings**: increment by one level (markdownlint MD001). `#` title
-  goes directly to `##` — never jump to `###`.
-
-- **Backtick identifiers in markdown prose**: trunk-fmt reads unbackticked
-  `snake_case` / `glob_*` tokens as emphasis and mangles them (`attendance_day`
-  → `attendance*day`). Wrap model/table/column names in backticks in docs,
-  specs, and plans.
-
-- **Nested triple-backticks in markdown**: when a fenced block contains a
-  heredoc with its own ``` examples, promote the outer fence to 4-backticks so
-  trunk-fmt doesn't mangle the structure.
-
-- **Markdown ordered lists broken by code fences (MD029)**: a numbered list
-  whose items are separated by fenced code blocks fails markdownlint MD029 —
-  `trunk fmt` renumbers items sequentially (1, 2, 3), but each fence restarts
-  the list so an item numbered >1 is invalid. Use `1.` for every item. Fires at
-  CI only.
-
-- **Widening a markdown table cell trips markdownlint MD060** (table column
-  style) until `trunk fmt` re-pads the table. Commit and let the fmt hook fix it
-  — don't hand-align.
+- Binary locations, worktree invocation, markdownlint rules that fire only at
+  CI, and concurrent-run artifacts: invoke the `trunk-lint` skill.
 
 ### Environment and external tools
 
@@ -504,18 +340,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   server, dbt CLI flag, or `gh` subcommand behaves, open the source or run
   `--help` — do not extrapolate from general knowledge.
 
-- **gcloud quota project**: Fresh `gcloud` writes (`projects create`,
-  service-enable, etc.) hit 429 on Google's shared default project
-  (`32555940559`) when no quota project is set. Pass
-  `--billing-project=teamster-332318` per-command, or
-  `gcloud config set billing/quota_project teamster-332318` once.
-  `gcloud auth application-default set-quota-project` fails when ADC is a
-  service-account credential — use the gcloud config form instead.
-
-- **Cloud Build prereqs**: `gcloud builds submit` requires
-  `cloudbuild.googleapis.com` enabled, and the Cloud Build SA
-  (`<PROJECT_NUMBER>@cloudbuild.gserviceaccount.com`) needs
-  `roles/artifactregistry.writer` on the target project to push the built image.
+- **gcloud / Cloud Build**: before any `gcloud` write, invoke the
+  `gcloud-project-ops` skill (quota-project 429s, Cloud Build prereqs).
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
   "The docs", "the ref doc", or "the reference" means the **published** page in
@@ -652,20 +478,6 @@ with `cube`** — `meta` to discover views, then `load`. Cube enforces row-level
 access policies and PII defaults; raw-warehouse paths bypass them. See
 [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query shape.
 
-**`cube` MCP path**: The `cube` MCP is served from Cloud Run (`teamster-mcp`
-project) and reached as a `claude.ai` Custom Connector (and by data-team
-Codespaces via `npx mcp-remote`) — there is no `cube` entry in the repo
-`.mcp.json`. OAuth identity is verified by WorkOS AuthKit federating to Google
-Workspace; no `CUBE_USER_EMAIL` env var is needed. First use opens a browser tab
-for the OAuth flow; subsequent sessions use the refresh token silently.
-
-Stdio dev mode (`scripts/cube-rest-mcp-launch.sh`) is retained for iterating on
-`src/cube/mcp/server.py` itself. Dev-mode email resolution: `CUBE_USER_EMAIL`
-environment variable → `~/.config/teamster/cube-user-email` cache file →
-`ctx.elicit()` prompt. The VS Code extension swallows elicit prompts; in dev
-mode, set `CUBE_USER_EMAIL` before launching or write the cache file with the
-`# userEmail` system-context value.
-
 If `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
 it — its dbt-Semantic-Layer path doesn't apply (no dbt SL here) and its
 ad-hoc-SQL fallback bypasses Cube's policies. Use the `cube` MCP instead. Fall
@@ -678,72 +490,23 @@ Use BigQuery MCP for warehouse-level inspection (raw source rows, schema diffs,
 Use dbt MCP's `show` only when `ref()` / `source()` resolution is needed — it
 adds compilation overhead.
 
-For run-internal timelines (steps, engine events, failures), use
-`mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
-unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
-`get_run_logs` event `timestamp` is a millisecond string.
-
 GitHub MCP (`mcp__github__*`) is the primary tool for every GitHub operation.
 The `gh`-via-Bash list below is an **exhaustive allowlist** — any `gh`
 subcommand not on it is forbidden via Bash. Before any GitHub operation, first
 identify the `mcp__github__*` tool that handles it; only if none exists, check
 the allowlist.
 
-- `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
-  not link branches to issues.
-- `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
-  — ProjectV2 field mutations (Status / Tier / Driver / etc.) aren't exposed by
-  `mcp__github__*`. To unset a field value (any type), replace the value flag
-  with `--clear`. No output on success — verify via `gh api graphql` querying
-  the item's `fieldValues`. `gh project item-list` JSON also omits ProjectV2
-  custom fields whose names contain spaces (e.g. `PR batch`); single-word custom
-  fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
-  GraphQL query to read the omitted ones.
-- `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
-  adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
-  with `gh project item-edit` to set fields after add.
-- `gh api graphql` ProjectV2 `items(first: N)` is capped at 100. Paginate with
-  `pageInfo.endCursor` for boards with >100 items.
-- `gh pr checks <n> --json name,bucket,state` — combined commit statuses + check
-  runs for CI poll loops (Monitor); no single `mcp__github__*` tool covers both
-  surfaces.
-- `gh run *` — Actions run inspection/control; no MCP coverage.
-- `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
-- `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
-  equivalents and are not on this list.
-- Editing an existing comment — `mcp__github__add_issue_comment` only creates.
-  Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
-  For large bodies (tables, multi-paragraph), write the body to a file and pass
-  `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
-  big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
-  comment creation via `gh api`.
-- Editing a PR **body** — round-tripping a fetched body through
-  `mcp__github__update_pull_request` double-encodes existing entities (it
-  re-applies the `&`→`&amp;` encoding). Edit cleanly via
-  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (raw, no
-  re-encoding).
-- Replying to a PR inline review comment in-thread —
-  `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
-  replies. Use
-  `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
-- `gh api repos/<owner>/<repo>/contents/<path>?ref=<sha> -H 'Accept: application/vnd.github.raw'`
-  — read a third-party file at a pinned SHA (for the verify-behavior-from-source
-  rule above). The `--jq .content | base64 -d` form is hook-blocked as an
-  encoding bypass.
-- `gh api -X POST repos/<owner>/<repo>/labels -f name=... -f color=... -f description=...`
-  — no `mcp__github__*` label-create tool.
-- `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=<name>'` —
-  additive label add. `mcp__github__issue_write` with `labels` REPLACES the full
-  set; passing one label drops the rest.
-- GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
-  Loop per-term via `gh api -X GET search/issues -f q='...'` for larger searches
-  — without `-X GET`, `-f` turns the request into a POST and 404s.
-  `search/issues` also requires `is:issue` or `is:pull-request` in `q` — 422
-  "Query must include..." otherwise.
-- `gh api` reporting `unexpected end of JSON input` means an empty response
-  body, not a bad request — re-run with `-i` to see the HTTP status. A 500 on
-  `POST /pulls` is usually a GitHub incident; check
-  `githubstatus.com/api/v2/incidents/unresolved.json` before bisecting.
+- `gh issue develop` — linked branch creation.
+- `gh project item-edit` / `gh project item-add` and `gh api graphql` for
+  ProjectV2 fields (no MCP coverage).
+- `gh pr checks <n> --json name,bucket,state` — CI poll loops.
+- `gh run *`, `gh workflow *`, `gh repo edit` — no MCP coverage.
+- `gh api` only for: PATCH an existing comment or PR body (`-F body=@<file>`),
+  POST a reply in a PR review thread, read a file at a pinned SHA with the raw
+  Accept header, create/add labels, `-X GET search/issues`.
+
+Per-command mechanics and failure modes for every item above are in
+`.claude/context/github.md` (auto-injected on first GitHub MCP use).
 
 **Per-MCP gotchas load automatically.** The `tool-gotchas` PreToolUse hook
 injects `.claude/context/<server>.md` the first time each MCP server is used in
