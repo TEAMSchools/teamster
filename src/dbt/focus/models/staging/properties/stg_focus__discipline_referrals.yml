@@ -10,7 +10,7 @@ models:
       The `custom_*` fields are aliased to their `custom_fields.title` under
       `source_class = 'SISDisciplineReferral'`. `select`-type values stay raw
       option ids here — decoding to labels belongs in an intermediate `__pivot`
-      model (tracked in #4865), not in staging.
+      model (tracked in #5118), not in staging.
     columns:
       - name: referral_id
         description: Primary key — Focus discipline referral id.
