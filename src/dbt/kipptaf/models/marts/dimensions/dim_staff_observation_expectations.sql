@@ -26,7 +26,8 @@ with
                     t.`name`,
                     t.start_date,
                     t.region,
-                    t.school_id
+                    t.school_id,
+                    t.grade_band
                 order by srh.effective_date_start desc
             ) as rn,
         from {{ ref("int_people__staff_roster_history") }} as srh

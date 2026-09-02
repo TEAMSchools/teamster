@@ -484,15 +484,15 @@ calculation before attempting a rollover that needs new `PLIT` rows for K-2.
 Same workbook as the Bright Spots tabs above: spreadsheet
 `15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`.
 `stg_google_sheets__dibels_expected_assessments` reads named range
-`src_google_sheets__dibels_expected_assessments` (single underscore -- no
-double-underscore trap here, only one range exists for this table), tab
-"Expected Assessments", 16 declared columns (`sources-external.yml` around line
-98). Only 13 of those are ever populated on **Benchmark** rows --
-`Assessment_Include`, `PM_Goal_Include`, `PM_Goal_Criteria` are blank on every
-Benchmark row seen so far. **PM rows do populate the last two**:
-`PM_Goal_Include` carries `true`/`false`/blank per measure, and
-`PM_Goal_Criteria` carries `AND` for grades 3+ in most regions (see below) --
-don't assume all 16 columns behave like the Benchmark rows do. The named range
+`src_google_sheets__dibels__expected_assessments` (double underscore -- see _Two
+"Expected Assessments" tabs and named ranges exist in parallel_ below for the
+single-vs-double-underscore trap this table DOES have, post-cutover), tab
+"Expected Assessments", 18 declared columns (`sources-external.yml` around line
+98). Only `assessment_include`, `pm_goal_include`, `pm_goal_criteria` (the last
+three) are ever blank on **Benchmark** rows. **PM rows do populate the last
+two**: `pm_goal_include` carries `true`/`false`/blank per measure, and
+`pm_goal_criteria` carries `AND` for every row as of SY26-27 (see below) --
+don't assume all 18 columns behave like the Benchmark rows do. The named range
 is NOT row-bounded (no `startRowIndex`/`endRowIndex` in its definition), so
 appending past the current last row is safe -- no truncation risk like the
 foundation_goals range above.

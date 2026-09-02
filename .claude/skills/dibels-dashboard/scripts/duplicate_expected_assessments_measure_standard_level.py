@@ -1,4 +1,10 @@
-"""Regenerate the full "Expected Assessments" tab data, splitting SY2025-26 PM
+"""SUPERSEDED -- this does NOT generalize past the one-time SY2025-26 backfill
+it already ran (see its own note below), and its column indices target the
+intermediate 17-column schema (`measure_standard_level` added, `assessment_type`
+not yet), not the current 18-column layout. Kept for the docstring's
+explanation of that one-time fix, not for re-running.
+
+Regenerate the full "Expected Assessments" tab data, splitting SY2025-26 PM
 rows across the new `measure_standard_level` cohort dimension (Below / Well
 Below).
 

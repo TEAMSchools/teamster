@@ -36,7 +36,7 @@ models:
         data_type: string
         description: >-
           FK to dim_terms. Surrogate key derived from term composite fields
-          (type, code, name, start_date, region, school_id).
+          (type, code, name, start_date, region, school_id, grade_band).
         config:
           meta:
             foreign_key:

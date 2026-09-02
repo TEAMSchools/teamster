@@ -1,4 +1,11 @@
-"""Correct `month_round` on Benchmark rows in the "Expected Assessments" tab
+"""SUPERSEDED -- see `backfill_expected_assessments_derived_columns.py`, which
+folds this fix in alongside `assessment_type` backfill. Kept for its docstring
+(the boundary-rule writeup) and because it was already run once; don't run it
+standalone against the current sheet -- its column indices target the
+intermediate 17-column schema (`measure_standard_level` added,
+`assessment_type` not yet), not the current 18-column layout.
+
+Correct `month_round` on Benchmark rows in the "Expected Assessments" tab
 so it matches each region's actual calendar in `reporting__terms`, instead of
 a single fixed label copied network-wide.
 

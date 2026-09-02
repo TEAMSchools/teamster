@@ -35,10 +35,14 @@ import argparse
 import google.auth
 from googleapiclient.discovery import build
 
-ADMIN_SEASON_COL = 8  # 0-indexed: Admin_Season
-TEST_CODE_COL = 7  # Test_Code
-MONTH_ROUND_COL = 9  # Month_Round
-ACADEMIC_YEAR_COL = 0  # Academic_Year
+# 0-indexed against the post-cutover 18-column "Expected Assessments" schema
+# (academic_year, region, grade, test_type, discipline, subject_area,
+# assessment_type, measure_standard_level, measure_standard, test_code,
+# admin_season, month_round, ...) -- see backfill_expected_assessments_derived_columns.py.
+ACADEMIC_YEAR_COL = 0
+TEST_CODE_COL = 9
+ADMIN_SEASON_COL = 10
+MONTH_ROUND_COL = 11
 
 
 def parse_target(spec: str) -> tuple[str, str, str]:
@@ -71,7 +75,7 @@ def main() -> None:
     res = (
         svc.spreadsheets()
         .values()
-        .get(spreadsheetId=args.spreadsheet_id, range=f"'{args.tab}'!A1:P10000")
+        .get(spreadsheetId=args.spreadsheet_id, range=f"'{args.tab}'!A1:R10000")
         .execute()
     )
     rows = res.get("values", [])[1:]  # drop header
