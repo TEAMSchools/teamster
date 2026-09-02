@@ -23,84 +23,6 @@ with
             and rn_highest = 1
             and aligned_subject_area in ('Total', 'EBRW', 'Math')
         group by student_number
-    ),
-
-    /* Every course enrollment that can stand in for a student's College and
-       Career Readiness (CCR) schedule, tagged with which tier it belongs to.
-       courses_credittype cannot identify a CCR course -- SEM022151G4 is STUDY in
-       Camden and CAREER in Newark -- and courses_sched_coursesubjectareacode is
-       null on every row, so the course name carries the match. discipline is a
-       second net for a CCR course whose name stops following the pattern. */
-    schedule_candidates as (
-        select
-            students_student_number,
-            cc_academic_year,
-            cc_termid,
-            cc_dateenrolled,
-            cc_dateleft,
-            cc_sectionid,
-            courses_course_name,
-            teacher_lastfirst,
-
-            /* sections_external_expression reads HR(A) or HR(R) on every
-               homeroom section and carries no period, so homeroom reports its
-               section number (9M311) instead. */
-            if(
-                courses_credittype = 'HR',
-                sections_section_number,
-                sections_external_expression
-            ) as schedule_section,
-
-            case
-                when
-                    courses_course_name like 'College and Career%' or discipline = 'CCR'
-                then 'CCR'
-                when cc_course_number = 'SEM22106G1'
-                then 'Advisory'
-                when courses_credittype = 'HR'
-                then 'Homeroom'
-            end as schedule_source,
-
-        from {{ ref("base_powerschool__course_enrollments") }}
-        where not is_dropped_section
-    ),
-
-    /* One scheduling row per student: an active CCR course first, then KIPP
-       Newark Lab's Advisory course, then homeroom. Homeroom is the universal
-       backstop -- from SY26-27 the regions schedule CCR for grades 11 and 12
-       only, so a grade 9 or 10 student would otherwise read No Data.
-
-       Partition on students_student_number, which is canonical across districts.
-       Do NOT reach for cc_studyear here: it is district-scoped and collides
-       across Camden and Newark in this union.
-
-       cc_sectionid ends the order because 12 SY26-27 students sit in two
-       non-dropped homerooms with identical termid, dateenrolled and dateleft.
-       Nothing distinguishes those rows, so the pick is arbitrary -- but it has
-       to be STABLE, or the teacher and section flap between refreshes. */
-    student_schedule as (
-        select
-            students_student_number,
-            cc_academic_year,
-            courses_course_name,
-            teacher_lastfirst,
-            schedule_section,
-            schedule_source,
-
-            row_number() over (
-                partition by students_student_number, cc_academic_year
-                order by
-                    case
-                        schedule_source when 'CCR' then 1 when 'Advisory' then 2 else 3
-                    end,
-                    cc_termid desc,
-                    cc_dateenrolled desc,
-                    cc_dateleft desc,
-                    cc_sectionid
-            ) as rn_schedule,
-
-        from schedule_candidates
-        where schedule_source is not null
     )
 
 select
@@ -152,10 +74,10 @@ select
     coalesce(p.sat_count_lifetime, 0) as sat_count_lifetime,
     coalesce(p.act_count_lifetime, 0) as act_count_lifetime,
 
-    coalesce(sch.courses_course_name, 'No Data') as ccr_course,
-    coalesce(sch.teacher_lastfirst, 'No Data') as ccr_teacher_name,
-    coalesce(sch.schedule_section, 'No Data') as ccr_section,
-    coalesce(sch.schedule_source, 'No Data') as ccr_course_source,
+    coalesce(sch.ccr_course, 'No Data') as ccr_course,
+    coalesce(sch.ccr_teacher_name, 'No Data') as ccr_teacher_name,
+    coalesce(sch.ccr_section, 'No Data') as ccr_section,
+    coalesce(sch.ccr_course_source, 'No Data') as ccr_course_source,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
@@ -169,10 +91,9 @@ left join
     and ea.expected_score_category = a.score_category
 left join sat_highlights as sh on e.student_number = sh.student_number
 left join
-    student_schedule as sch
-    on e.student_number = sch.students_student_number
-    and e.academic_year = sch.cc_academic_year
-    and sch.rn_schedule = 1
+    {{ ref("int_students__ccr_schedule") }} as sch
+    on e.student_number = sch.student_number
+    and e.academic_year = sch.academic_year
 left join
     {{ ref("int_students__college_assessment_participation_roster") }} as p
     on e.student_number = p.student_number

@@ -80,9 +80,9 @@ with
                and reading only the former would drop every practice row. */
             coalesce(sc.aligned_subject, sc.aligned_subject_area) as pivot_subject,
 
-            coalesce(c.courses_course_name, 'No Data') as ccr_course,
-            coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
-            coalesce(c.sections_external_expression, 'No Data') as ccr_section,
+            coalesce(c.ccr_course, 'No Data') as ccr_course,
+            coalesce(c.ccr_teacher_name, 'No Data') as ccr_teacher_name,
+            coalesce(c.ccr_section, 'No Data') as ccr_section,
 
             if(sc.scale_score >= g.min_score, 'Yes', 'No') as met_minimum,
             if(sc.rn_highest = 1, 'Yes', 'No') as highest_score_by_test,
@@ -97,17 +97,9 @@ with
             and sc.score_type = g.expected_score_type
         left join sat_highlights as sh on e.student_number = sh.student_number
         left join
-            {{ ref("base_powerschool__course_enrollments") }} as c
-            on e.student_number = c.students_student_number
-            and e.academic_year = c.cc_academic_year
-            and c.rn_course_number_year = 1
-            and not c.is_dropped_section
-            and c.courses_course_name in (
-                'College and Career IV',
-                'College and Career I',
-                'College and Career III',
-                'College and Career II'
-            )
+            {{ ref("int_students__ccr_schedule") }} as c
+            on e.student_number = c.student_number
+            and e.academic_year = c.academic_year
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.graduation_year >= {{ var("current_academic_year") + 1 }}
@@ -139,13 +131,11 @@ with
             college_match_gpa,
             college_match_gpa_bands,
 
-            /* Grouped, not aggregated. The CCR course/teacher/section triple
-               comes from one joined row, so independent max() calls could pair a
-               course with another row's teacher if a student ever held two
-               College and Career sections in a year. Grouping keeps the triple
-               intact and surfaces such a student as a duplicate row for the
-               uniqueness test to flag, rather than silently blending two rows.
-               Same reasoning for the three lifetime SAT highs, which tie-break
+            /* Grouped, not aggregated. int_students__ccr_schedule is one row
+               per student per year, so the CCR triple can no longer fan out --
+               but grouping still keeps it intact rather than letting independent
+               max() calls pair a course with another row's teacher. Same
+               reasoning for the three lifetime SAT highs, which tie-break
                independently on rn_highest. */
             ccr_course,
             ccr_teacher_name,
