@@ -1,32 +1,18 @@
 models:
   - name: int_students__school_directory
     description: >
-      Which schools and grade levels the network operated, is operating, or is
-      recruiting for, one row per academic year, region, school and grade level.
-      Derived from enrollment rather than from school metadata tables, so a
-      school and grade appear in exactly the years students were actually
-      enrolled in them -- no open or close date to maintain, and a school that
-      never enrolled anyone never appears.
+      Which schools offered which grade levels in which academic years, derived
+      from enrollment rather than school metadata -- so a school opening,
+      closing, merging or adding a grade shows up as rows appearing and
+      disappearing, with no open or close date to maintain.
 
-      Three branches, distinguished by school_source, ordered by precedence
-      rather than by any hardcoded or derived boundary year. PowerSchool owns
-      every region-year it has enrollment rows for -- all years for the three NJ
-      regions, and Miami through SY25-26, where the frozen Miami archive stops
-      of its own accord. Focus fills forward from wherever the archive stops,
-      which is Miami SY26-27 onward; it is anti-joined against PowerSchool's
-      region-years because Focus also carries Miami back to AY2018 and those
-      years would otherwise land twice. Finalsite then supplies schools and
-      grades SRE is recruiting for that neither SIS carries yet, which is what
-      lets this model answer upcoming as well as previous and current.
+      PowerSchool branch only so far. Miami self-terminates at SY25-26 here
+      because its PowerSchool archive is frozen; Focus and Finalsite branches
+      are still to come, which is what school_source is for.
 
-      Expressing the SIS handoff as precedence means there is no boundary year
-      to maintain and no dependency on a cutover model: the answer stays correct
-      if the archive is ever extended or Focus backfilled.
-
-      Reads enrollment models directly rather than
-      int_extracts__student_enrollments -- that model is a wide denormalized
-      extract and carrying it as a dependency for six columns would be a large
-      cost for no gain.
+      A grade counts as offered if any enrollment row exists for it, active or
+      not -- filtering to currently-enrolled students would blank out every
+      historic year.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -45,43 +31,29 @@ models:
           - not_null
       - name: academic_year
         description: >
-          Academic year the school operated this grade level, expressed as the
-          starting calendar year -- 2026 is SY26-27. For the Finalsite branch
-          this is the recruitment year, which is a year the SIS does not yet
-          cover.
+          Academic year the school offered this grade level, as the starting
+          calendar year -- 2026 is SY26-27.
         data_tests:
           - not_null
       - name: code_location
         description: >
           Dagster code location owning the row -- kippnewark, kippcamden,
-          kippmiami or kipppaterson. Passed through from the enrollment model on
-          the PowerSchool and Focus branches; on the Finalsite branch it is
-          derived from region, since a school that has not opened has no SIS
-          record to carry it.
+          kippmiami or kipppaterson. The join key for _dbt_source_project on
+          union models.
         data_tests:
           - not_null
       - name: school_source
         description: >
-          Which branch produced the row, and therefore which system is
-          authoritative for it. Also the flag that separates upcoming rows
-          (finalsite) from previous and current ones.
+          Which system is authoritative for the row. Only powerschool today; the
+          Focus and Finalsite branches will add values. Downstream consumers
+          rank on this -- int_tableau__fresh_enrollment_scaffold prefers a SIS
+          row over a Finalsite one when a school has both.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - powerschool
-                  - focus
-                  - finalsite
       - name: schoolid
         description: >
-          Network school number. The Focus branch projects ps_schoolid rather
-          than Focus's own internal school id, so every branch shares one
-          namespace and rows join to PowerSchool-keyed models directly. Excludes
-          999999, the graduated-students placeholder, which is not a physical
-          school.
+          Network school number, unique across regions. Excludes 999999, the
+          graduated-students placeholder, which is not a physical school.
       - name: grade_level
         description: >
           Grade level offered at the school that year, with kindergarten as 0.
-          Present only where students were enrolled, so a grade a school adds or
-          drops shows up as the row appearing or disappearing in that year.
