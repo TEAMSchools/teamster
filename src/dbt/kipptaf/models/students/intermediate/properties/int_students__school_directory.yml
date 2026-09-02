@@ -1,0 +1,81 @@
+models:
+  - name: int_students__school_directory
+    description: >
+      Which schools and grade levels the network operated, is operating, or is
+      recruiting for, one row per academic year, region, school and grade level.
+      Derived from enrollment rather than from school metadata tables, so a
+      school and grade appear in exactly the years students were actually
+      enrolled in them -- no open or close date to maintain, and a school that
+      never enrolled anyone never appears.
+
+      Three branches, distinguished by school_source. PowerSchool covers the
+      three NJ regions for every year, and covers Miami through SY25-26 only
+      because the frozen Miami archive stops there of its own accord. Focus
+      covers Miami from SY26-27 forward, gated on
+      int_students__sis_cutover.focus_start_academic_year so the pre-cutover
+      Miami years Focus also carries do not land twice. Finalsite supplies
+      schools and grades SRE is recruiting for that no SIS carries yet, which is
+      what lets this model answer upcoming as well as previous and current.
+
+      Reads enrollment models directly rather than
+      int_extracts__student_enrollments -- that model is a wide denormalized
+      extract and carrying it as a dependency for six columns would be a large
+      cost for no gain.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - schoolid
+              - grade_level
+    columns:
+      - name: region
+        description: >
+          Region name -- Camden, Miami, Newark or Paterson. Matches the region
+          values on stg_google_sheets__reporting__terms, so it joins to the
+          assessment calendar without translation.
+        data_tests:
+          - not_null
+      - name: academic_year
+        description: >
+          Academic year the school operated this grade level, expressed as the
+          starting calendar year -- 2026 is SY26-27. For the Finalsite branch
+          this is the recruitment year, which is a year the SIS does not yet
+          cover.
+        data_tests:
+          - not_null
+      - name: code_location
+        description: >
+          Dagster code location owning the row -- kippnewark, kippcamden,
+          kippmiami or kipppaterson. Passed through from the enrollment model on
+          the PowerSchool and Focus branches; on the Finalsite branch it is
+          derived from region, since a school that has not opened has no SIS
+          record to carry it.
+        data_tests:
+          - not_null
+      - name: school_source
+        description: >
+          Which branch produced the row, and therefore which system is
+          authoritative for it. Also the flag that separates upcoming rows
+          (finalsite) from previous and current ones.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - powerschool
+                  - focus
+                  - finalsite
+      - name: schoolid
+        description: >
+          Network school number. The Focus branch projects ps_schoolid rather
+          than Focus's own internal school id, so every branch shares one
+          namespace and rows join to PowerSchool-keyed models directly. Excludes
+          999999, the graduated-students placeholder, which is not a physical
+          school.
+      - name: grade_level
+        description: >
+          Grade level offered at the school that year, with kindergarten as 0.
+          Present only where students were enrolled, so a grade a school adds or
+          drops shows up as the row appearing or disappearing in that year.
