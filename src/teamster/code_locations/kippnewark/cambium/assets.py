@@ -9,8 +9,8 @@ remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/cambium"
 key_prefix = [CODE_LOCATION, "cambium"]
 
 # Feeds BOTH the filename regex alternation and the partition values, so the two
-# cannot drift. Spring is verified from the files in hand; the rest are the fall
-# tokens Pearson actually used (FallBlock in 2024, FALL in 2025).
+# cannot drift. Spring is the only administration Cambium sends; the fall tokens
+# were Pearson-era cruft and never appeared in a Cambium file.
 #
 # This is not belt-and-braces. A token that matches the regex but is NOT a
 # declared partition raises inside Dagster's resolve_run_requests, which
@@ -19,7 +19,7 @@ key_prefix = [CODE_LOCATION, "cambium"]
 # six of this region's Couchdrop assets stall until a redeploy. Sharing the list
 # makes an unknown token simply not match, which skips the file and leaves the
 # rest of the sensor working.
-ADMINISTRATIONS = ["Spring", "Fall", "FALL", "FallBlock"]
+ADMINISTRATIONS = ["Spring"]
 
 # Closed list for the same reason ADMINISTRATIONS is one, and shared with the
 # filename regex the same way. An unbounded \d{4} captures any year, including
@@ -31,8 +31,10 @@ ADMINISTRATIONS = ["Spring", "Fall", "FALL", "FallBlock"]
 # Not named fiscal_year: this is the 4-digit year as it appears in the filename,
 # while academic year comes from the file's own assessment_year field. The range
 # covers the value whether Cambium means calendar year or school-year-end year.
+# Range end is exclusive: results for an academic year land in the NEXT fiscal
+# year, so fiscal_year itself has no results yet.
 ADMINISTRATION_YEARS = [
-    str(year) for year in range(2026, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+    str(year) for year in range(2026, CURRENT_FISCAL_YEAR.fiscal_year)
 ]
 
 # The district code is hardcoded rather than matched with `\d+`: each region has
@@ -44,8 +46,7 @@ njgpa = build_sftp_file_asset(
     remote_dir_regex=rf"{remote_dir_regex_prefix}/njgpa",
     remote_file_regex=(
         rf"(?P<administration_year>{'|'.join(ADMINISTRATION_YEARS)})"
-        # longest-first so FallBlock is not shadowed by Fall
-        rf"_(?P<administration>{'|'.join(sorted(ADMINISTRATIONS, key=len, reverse=True))})"
+        rf"_(?P<administration>{'|'.join(ADMINISTRATIONS)})"
         r"_7325_District_Summative_Record_File_GPA\.csv"
     ),
     avro_schema=NJGPA_SCHEMA,
