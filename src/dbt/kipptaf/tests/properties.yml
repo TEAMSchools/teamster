@@ -706,6 +706,29 @@ data_tests:
           ref:
             name: stg_google_sheets__google_forms__question_department_crosswalk
 
+  - name: stg_cambium__njgpa__not_empty
+    description: >-
+      stg_cambium__njgpa must never build empty. If Cambium drops or renames a
+      column the model depends on -- Summative Flag, say -- that column reads
+      entirely NULL, the district staging filter (where summative_flag = 'Y' and
+      test_attemptedness_flag = 'Y') returns zero rows, and unique / not_null
+      pass vacuously over an empty relation. The Avro schema check cannot catch
+      it either: it compares record fields against schema fields and warns only
+      on extras, so a removed column produces no signal and fastavro writes
+      null. Without this test NJGPA disappears from every downstream model with
+      every other test still green. Declared here in kipptaf rather than in the
+      cambium package because both district projects set an unscoped
+      `data_tests: +severity: warn`, which overrides installed-package test
+      config -- an `error` declared in the package silently resolves to `warn`,
+      leaving this guard non-blocking. kipptaf's root-project tests do hold
+      `error`.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_cambium__njgpa
+
   - name: rpt_schoolmint_grow__users__locations_resolve_to_grow_school
     description: >-
       Every active, non-Paterson staff member's

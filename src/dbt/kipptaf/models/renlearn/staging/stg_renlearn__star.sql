@@ -3,7 +3,6 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnj_renlearn", "stg_renlearn__star"),
                     source("kippmiami_renlearn", "stg_renlearn__star"),
                 ]
             )

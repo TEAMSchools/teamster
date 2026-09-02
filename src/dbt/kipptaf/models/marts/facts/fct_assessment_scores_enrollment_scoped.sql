@@ -253,8 +253,11 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- TODO(#4388): stg_renlearn__star holds fiscal-year re-pull duplicates
-    -- (same assessment_id in two partitions) and same-day retests.
+    -- This dedupe is permanent, not a workaround for #4388. STAR records each
+    -- sitting under its own assessment_id, and students genuinely retest the
+    -- same subject on the same day -- 144 rows as of 2026-09-01 -- so the fact
+    -- grain (which carries no attempt dimension) is coarser than staging on
+    -- purpose. scale_score desc keeps the best sitting.
     -- partition_by deliberately omits academic_year: a physical test pulled
     -- under two fiscal-year partitions has the same test_date but a differing
     -- pull-derived academic_year, so keying on academic_year would keep both
@@ -262,7 +265,7 @@ with
     -- test date (#4546). A date belongs to exactly one academic year, so
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic. Remove this dedupe when staging is fixed.
+    -- deterministic.
     star_scores as (
         {{
             dbt_utils.deduplicate(

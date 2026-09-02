@@ -24,7 +24,6 @@ PowerSchool data source: **dlt** (Oracle over SSH tunnel → BigQuery;
 Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
 District-specific notes:
 
-- `iready` uses `iready_schema: kippnj_iready`; `renlearn` uses
-  `renlearn_schema: kippnj_renlearn`
+- `iready` uses `iready_schema: kippnj_iready`
 - `amplify` — products selectively enabled per `dbt_project.yml`
 - Several models from each package are disabled (see `dbt_project.yml`)
