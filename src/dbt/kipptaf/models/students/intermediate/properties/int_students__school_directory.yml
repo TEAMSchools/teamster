@@ -19,7 +19,7 @@ models:
             combination_of_columns:
               - academic_year
               - region
-              - schoolid
+              - ps_schoolid
               - grade_level
     columns:
       - name: _dbt_source_project

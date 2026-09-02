@@ -1,4 +1,4 @@
--- grain projection, not dup-masking: academic_year/region/schoolid/grade_level
+-- grain projection, not dup-masking: academic_year/region/ps_schoolid/grade_level
 select distinct
     _dbt_source_project,
     academic_year,
@@ -14,7 +14,7 @@ from {{ ref("int_powerschool__student_enrollment_union") }}
 where schoolid != 999999 and grade_level is not null
 
 union all
-
+-- grain projection, not dup-masking: academic_year/region/ps_schoolid/grade_level
 -- grain projection, not dup-masking: academic_year/region/schoolid/grade_level
 select distinct
     _dbt_source_project,
