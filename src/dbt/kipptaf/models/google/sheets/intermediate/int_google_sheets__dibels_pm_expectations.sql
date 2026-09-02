@@ -6,7 +6,7 @@ with
             t.academic_year,
             t.name as term_name,
 
-            safe_cast(right(t.code, 1) as int) as round_number,
+            safe_cast(regexp_extract(t.code, r'LIT(\d+)') as int) as round_number,
 
             count(distinct c.date_value) as pm_round_days,
 
