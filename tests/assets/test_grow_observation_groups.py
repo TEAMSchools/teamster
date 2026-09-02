@@ -78,6 +78,24 @@ def test_match_observation_group_short_employee_number_does_not_match_longer() -
     assert result is None
 
 
+def test_match_observation_group_claims_any_group_with_the_key_suffix() -> None:
+    """The fallback is a bare suffix match, with no coach-group shape gate.
+
+    Pins the residual risk rather than asserting it away: a hand-made group
+    whose name ends in a live employee number IS claimed, and the school PUT
+    replaces its membership. Accepted because no real group name can collide
+    -- see the docstring on ``_match_observation_group`` for the measurement.
+    If a shape gate is ever added, this test is the one that must change.
+    """
+    existing_by_id = {"g1": "New Hires (123456)"}
+
+    result = _match_observation_group(
+        "Jane Doe (123456)", "(123456)", existing_by_id, claimed=set()
+    )
+
+    assert result == "g1"
+
+
 def _user(**overrides: Any) -> dict[str, Any]:
     user: dict[str, Any] = {
         "inactive": 0,

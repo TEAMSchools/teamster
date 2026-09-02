@@ -81,9 +81,19 @@ def _match_observation_group(
 
     Prefers an exact name match. Falls back to ``match_key``, a stable
     substring that survives a display-name change -- for a coach group that is
-    the parenthesised employee number. A group with no ``match_key``, such as
-    Teachers, gets no fallback, so a hand-made group can never be claimed by
-    accident.
+    the parenthesised employee number.
+
+    The fallback is a suffix match and nothing more: any existing group whose
+    name ends in ``(<employee number>)`` is claimed, and the school PUT then
+    replaces its membership. A group with no ``match_key``, such as Teachers,
+    gets no fallback at all and so can never be claimed this way.
+
+    That leaves a hand-made group named ``... (<a live employee number>)``
+    theoretically claimable. Measured 2026-09-02: zero of the 585 existing
+    groups end in parenthesised digits, and every active employee number is
+    six digits in 100001-402082 -- so no group name carrying a year or a small
+    cohort number can collide. Revisit if employee numbering ever narrows to
+    four digits.
     """
     for group_id, group_name in existing_by_id.items():
         if group_id not in claimed and group_name == name:
