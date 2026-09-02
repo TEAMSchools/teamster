@@ -72,6 +72,7 @@ views:
           - n_present_days_ytd
           - ada_tier
           - is_chronically_absent
+          - count_students_rated
           - count_chronically_absent
           - pct_chronically_absent
           - count_truants

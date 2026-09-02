@@ -92,6 +92,23 @@ models:
           # (America/New_York).
           automation_condition:
             cron_schedule: 0 6,15 * * *
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: (ada_tier is null) = (is_truant is null)
+          config:
+            severity: error
+          name: fct_student_days_truancy_resolves_with_the_ada_tier
+          description: >-
+            A truancy status must resolve over exactly the rows an ADA tier
+            does. Both are gated on the cumulative membership count, so a day we
+            could not measure attendance for supports neither verdict and every
+            rate can share one denominator. Before that gate, is_truant survived
+            a null attendance value, a break day and a pre-AY2021
+            membership_value = 0 row, publishing a truancy verdict on rows
+            carrying no tier at all -- which put part of the truancy numerator
+            outside any denominator scoped to the tier.
+
     columns:
       - name: student_day_key
         data_type: string
@@ -281,11 +298,13 @@ models:
         data_type: string
         description: >-
           The school this row's enrollment stint belongs to, resolved from
-          int_students__schools on schoolid and _dbt_source_project. Every
-          cumulative column below accumulates per location_key, because a rate
-          reported at any other grain is a different number and a student who
-          transfers mid-year starts a fresh count at the new school.
-          fct_student_periods reads it to group its periods.
+          int_students__schools on schoolid and _dbt_source_project. The
+          cumulative columns below do NOT accumulate per location_key -- they
+          accumulate per student per academic year, so a student who transfers
+          mid-year carries their position to the new school rather than starting
+          a fresh count. This column records which school owned the day, and
+          fct_student_periods reads it to group its periods, so a school-level
+          rate still counts only the students that school served.
 
           Degenerate: deliberately carries no declared foreign key. Location is
           already reachable from student_enrollment_key through

@@ -49,6 +49,7 @@ views:
       - join_path: student_periods
         includes:
           - count_students
+          - count_students_rated
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2

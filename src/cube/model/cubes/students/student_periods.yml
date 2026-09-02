@@ -173,17 +173,30 @@ cubes:
         type: count_distinct
         public: true
 
-      # Denominator for every rate below. count_students is the population, but
-      # it includes rows enrolled with no recorded attendance -- Miami before
-      # AY2026, and 19 to 424 rows a year elsewhere -- whose ada_tier and
-      # is_truant are null, so they can never reach a numerator. Dividing by
-      # count_students would deflate every rate by that population (#4744).
-      - name: _count_students_with_attendance
+      # Denominators for the chronic-absence, tier and truancy rates. Each is the rows where its own
+      # numerator's flag is COMPUTABLE -- not the rows with attendance days,
+      # which is a different population. A row can carry is_truant while
+      # contributing zero membership days (membership recorded, attendance value
+      # null), so a membership-day denominator excluded 7.45% of the truancy
+      # numerator on the daily fact. Scoping each denominator to its own flag
+      # makes numerator-within-denominator true by construction rather than
+      # something to monitor. Both are public so either can be compared against
+      # count_students to size the excluded population.
+      - name: count_students_rated
+        description: >-
+          Students whose attendance actually resolves as of the queried slice,
+          and the single denominator for every rate here -- chronic absence, the
+          ADA tier shares, and truancy. A student enrolled on a day we could not
+          measure attendance for carries no ada_tier and no truancy status, so
+          they sit outside both sides of every rate rather than in a denominator
+          the numerator cannot reach. Compare it against count_students to size
+          that population; the two diverge most before AY2026, when Miami
+          carries enrollment but no attendance.
         sql: student_period_key
         type: count_distinct
-        public: false
+        public: true
         filters:
-          - sql: "{CUBE}.n_membership_days_ytd > 0"
+          - sql: "{CUBE}.ada_tier IS NOT NULL"
 
       - name: count_chronically_absent
         description: >-
@@ -198,10 +211,11 @@ cubes:
 
       - name: pct_chronically_absent
         description: >-
-          Chronic absence rate. Denominator is every student with at least one
-          recorded attendance day in the slice. No minimum-membership-day floor
-          applies. Rows enrolled with no recorded attendance are excluded from
-          both sides, so the gap cannot deflate the rate (#4744).
+          Chronic absence rate. Denominator is count_students_rated, the
+          students whose cumulative ADA resolves. No minimum-membership-day
+          floor applies. A row with no recorded attendance carries a null tier
+          and is excluded from both sides, so the gap cannot deflate the rate
+          (#4744). Show that count beside this rather than count_students.
 
           So an early period reports a rate over students judged on very few
           days: a student who misses one of their first four days sits at 75%
@@ -209,8 +223,7 @@ cubes:
           alongside this rate, and treat the first weeks of an academic year as
           volatile rather than wrong.
         sql:
-          "1.0 * {count_chronically_absent} /
-          NULLIF({_count_students_with_attendance}, 0)"
+          "1.0 * {count_chronically_absent} / NULLIF({count_students_rated}, 0)"
         type: number
         format: percent
         public: true
@@ -228,13 +241,12 @@ cubes:
           1 or Tier 2) as of period_end_date. Tier 2 is strictly above 90.0%;
           Tier 3 includes exactly 90.0%.
 
-          Denominator is every student with at least one recorded attendance day
-          in the slice. No minimum-membership-day floor applies. Rows enrolled
-          with no recorded attendance are excluded from both sides, so the gap
-          cannot deflate the rate (#4744).
-        sql:
-          "1.0 * {_count_tier_1_2} / NULLIF({_count_students_with_attendance},
-          0)"
+          Denominator is count_students_rated, the students whose cumulative ADA
+          resolves. No minimum-membership-day floor applies. A row with no
+          recorded attendance carries a null tier and is excluded from both
+          sides, so the gap cannot deflate the rate (#4744). Show that count
+          beside this rather than count_students.
+        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students_rated}, 0)"
         type: number
         format: percent
         public: true
@@ -252,12 +264,12 @@ cubes:
           inclusive (Tier 3) as of period_end_date. Tier 2 is strictly above
           90.0%; Tier 3 includes exactly 90.0%.
 
-          Denominator is every student with at least one recorded attendance day
-          in the slice. No minimum-membership-day floor applies. Rows enrolled
-          with no recorded attendance are excluded from both sides, so the gap
-          cannot deflate the rate (#4744).
-        sql:
-          "1.0 * {_count_tier_3} / NULLIF({_count_students_with_attendance}, 0)"
+          Denominator is count_students_rated, the students whose cumulative ADA
+          resolves. No minimum-membership-day floor applies. A row with no
+          recorded attendance carries a null tier and is excluded from both
+          sides, so the gap cannot deflate the rate (#4744). Show that count
+          beside this rather than count_students.
+        sql: "1.0 * {_count_tier_3} / NULLIF({count_students_rated}, 0)"
         type: number
         format: percent
         public: true
@@ -288,18 +300,18 @@ cubes:
       - name: pct_truant
         description: >-
           Percentage of students meeting regional truancy criteria as of
-          period_end_date. Denominator is every student with at least one
-          recorded attendance day in the slice. No minimum-membership-day floor
-          applies. Rows enrolled with no recorded attendance are excluded from
-          both sides, so the gap cannot deflate the rate (#4744). Truancy has no
-          eligibility concept in either the Miami or the NJ rule.
+          period_end_date. Denominator is count_students_rated, the same
+          denominator every other rate here uses -- a truancy status resolves
+          over exactly the rows an ADA tier does, because both are gated on the
+          cumulative membership count. No minimum-membership-day floor applies
+          (#4744). Show that count beside this rather than count_students.
+          Truancy has no eligibility concept in either the Miami or the NJ rule.
 
           Any minimum-membership-day condition would belong inside is_truant on
           the fact, which keeps this denominator correct through a later change
           to that definition. See count_truants for how the numerator behaves
           early in an academic year.
-        sql:
-          "1.0 * {count_truants} / NULLIF({_count_students_with_attendance}, 0)"
+        sql: "1.0 * {count_truants} / NULLIF({count_students_rated}, 0)"
         type: number
         format: percent
         public: true

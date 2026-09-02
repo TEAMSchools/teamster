@@ -156,7 +156,14 @@ select
     attendancevalue as attendance_value,
     is_present_weighted as present_weight,
 
-    is_truant_carried as is_truant,
+    -- Gated on the cumulative count, not just carried. is_truant arrives from
+    -- the attendance row and survives a null attendance_value, a break day and
+    -- a pre-AY2021 membership_value = 0 row -- so without this gate it
+    -- published a truancy verdict on 246,583 rows that carry no ada_tier at
+    -- all, 105,679 of them reading truant. A day we could not measure
+    -- attendance for cannot support either verdict (#4744), so the two now
+    -- resolve over exactly the same rows and one denominator serves both.
+    if(n_membership_days_ytd > 0, is_truant_carried, null) as is_truant,
 
     n_membership_days_ytd,
     n_present_days_ytd,
