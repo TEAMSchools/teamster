@@ -50,7 +50,7 @@ with
             dbt_utils.deduplicate(
                 relation=ref("stg_focus__students_join_people"),
                 partition_by="student_id, sort_order",
-                order_by="updated_at desc",
+                order_by="updated_at desc, id desc",
             )
         }}
     )
