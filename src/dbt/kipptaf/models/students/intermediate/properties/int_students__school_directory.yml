@@ -4,15 +4,32 @@ models:
       Which schools offered which grade levels in which academic years, derived
       from enrollment rather than school metadata -- so a school opening,
       closing, merging or adding a grade shows up as rows appearing and
-      disappearing, with no open or close date to maintain.
+      disappearing, with no open or close date to maintain and no school that
+      never enrolled anyone.
 
-      PowerSchool branch only so far. Miami self-terminates at SY25-26 here
-      because its PowerSchool archive is frozen; Focus and Finalsite branches
-      are still to come, which is what school_source is for.
+      Three branches, ordered by precedence rather than by a boundary year.
+      PowerSchool owns every region-year it holds enrollment rows for, which is
+      all years for the three NJ regions and Miami through SY25-26, where its
+      frozen archive stops. Focus covers Miami from SY26-27 onward. Finalsite
+      adds next year's incoming schools and grade levels, which no student
+      information system carries yet.
 
       A grade counts as offered if any enrollment row exists for it, active or
-      not -- filtering to currently-enrolled students would blank out every
+      not. Filtering to currently-enrolled students would blank out every
       historic year.
+
+      Metadata would answer this differently and wrongly. int_focus__schools
+      reports max_syear 2025 for KIPP Sunrise and KIPP Liberty, but the last
+      students enrolled at both in 2022.
+
+      School attributes come from stg_google_sheets__people__locations, not
+      int_people__location_crosswalk. The crosswalk carries one row per alias
+      name -- 254 rows across 29 schools -- so joining it on a school id fans
+      out. The locations sheet reaches one row per school once the
+      no-school-assigned bucket, Pathways sites, and the single
+      null-abbreviation row are filtered out. The crosswalk is still the right
+      lookup inside the Finalsite branch, which resolves an assigned school by
+      name on location_name, its unique key.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -25,38 +42,83 @@ models:
       - name: _dbt_source_project
         description: >
           Dagster code location owning the row -- kippnewark, kippcamden,
-          kippmiami or kipppaterson. Passed through from the enrollment model on
-          the two SIS branches; derived from region on the Finalsite branch,
-          which has no SIS record to carry it.
+          kippmiami or kipppaterson. Passed through from the upstream model on
+          every branch, including Finalsite, whose union view derives it.
         data_tests:
           - not_null
       - name: region
         description: >
           Region name -- Camden, Miami, Newark or Paterson. Matches the region
-          values on stg_google_sheets__reporting__terms, so it joins to the
+          values on stg_google_sheets__reporting__terms, so it joins the
           assessment calendar without translation.
         data_tests:
           - not_null
       - name: academic_year
         description: >
           Academic year the school offered this grade level, as the starting
-          calendar year -- 2026 is SY26-27.
+          calendar year -- 2026 is SY26-27. The two student information system
+          branches take it from the enrollment record. The Finalsite branch
+          takes active_school_year_int, scoped to one year ahead of
+          current_academic_year.
         data_tests:
           - not_null
       - name: school_source
         description: >
-          Which system is authoritative for the row. Only powerschool today; the
-          Focus and Finalsite branches will add values. Downstream consumers
-          rank on this -- int_tableau__fresh_enrollment_scaffold prefers a SIS
-          row over a Finalsite one when a school has both.
+          Which system is authoritative for the row, and what separates incoming
+          rows from historic and current ones. Downstream consumers rank on it
+          -- int_tableau__fresh_enrollment_scaffold prefers a student
+          information system row over a Finalsite one when a school has both.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - powerschool
+                  - focus
+                  - finalsite
       - name: schoolid
+        data_tests:
+          - not_null
         description: >
-          Network school number, unique across regions. The Focus branch
-          projects ps_schoolid, not Focus's internal school id, so both branches
-          share one namespace. Excludes 999999, the graduated-students
-          placeholder.
+          School id native to whichever system produced the row -- the network
+          school number on PowerSchool rows, Focus's own internal school id on
+          Focus rows. Finalsite rows resolve to a network school number, so
+          schoolid and ps_schoolid match there. Join on ps_schoolid when you
+          need one key across all three branches. Excludes 999999, the
+          graduated-students placeholder, which is not a physical school.
+      - name: ps_schoolid
+        description: >
+          PowerSchool network school number, populated on every row including
+          Focus and Finalsite ones, and unique across regions. This is the
+          cross-system join key. It is what lets Miami's SY26-27 Focus rows line
+          up with PowerSchool-keyed models even though Miami no longer runs on
+          PowerSchool -- KIPP Courage carries schoolid 30200803 in AY2025 and
+          schoolid 15 in AY2026, with ps_schoolid 30200803 in both.
+      - name: focus_school_id
+        description: >
+          Focus's own school code, such as 2332B, from the locations sheet.
+          Populated for any school the sheet maps to Focus regardless of which
+          branch produced the row. This is the key
+          int_tableau__fresh_enrollment_scaffold joins int_focus__schools on, so
+          a consumer can reach Focus-keyed models without its own crosswalk.
       - name: grade_level
         description: >
           Grade level offered at the school that year, with kindergarten as 0.
+          Present only where students enrolled, so a grade a school adds or
+          drops shows up as the row appearing or disappearing in that year.
+      - name: school_name
+        description: Full school name from the locations sheet.
+      - name: school_short_name
+        description:
+          School abbreviation from the locations sheet, such as Sumner.
+      - name: school_level
+        description: >
+          Grade band the locations sheet assigns the school -- ES, MS or HS. It
+          is a property of the school, so it does not vary by grade level or
+          year.
+      - name: school_level_alt
+        description: >
+          school_level with the Sumner override applied, matching the same field
+          on int_extracts__student_enrollments. From AY2025, Sumner grade 5 and
+          above reports MS while the sheet still calls the school ES. Every
+          other row equals school_level.

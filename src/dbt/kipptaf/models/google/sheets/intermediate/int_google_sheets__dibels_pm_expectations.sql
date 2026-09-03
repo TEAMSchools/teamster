@@ -1,43 +1,13 @@
 with
-    -- One row. Shared with int_students__calendar_day so the school side and the
-    -- calendar side of the join below cut over on the same year.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
+    -- grain projection, not dup-masking: the directory is school x grade x year
+    -- and PM days are counted per school-year, so grade level drops out
+    school_years as (
+        select distinct _dbt_source_project, academic_year, region, ps_schoolid,
 
-    school_directory as (
-        select
-            school_number,
-            _dbt_source_project,
-
-            'powerschool' as school_source,
-
-            {{ extract_region("stg_powerschool__schools") }} as region,
-
-            _dbt_source_project = 'kippmiami' as is_focus_sis_region,
-
-        from {{ ref("stg_powerschool__schools") }}
-        where state_excludefromreporting = 0
-
-        union all
-
-        select
-            loc.powerschool_school_id as school_number,
-
-            f._dbt_source_project,
-
-            'focus' as school_source,
-
-            {{ extract_region("f") }} as region,
-
-            true as is_focus_sis_region,
-
-        from {{ ref("int_focus__schools") }} as f
-        inner join
-            {{ ref("stg_google_sheets__people__locations") }} as loc
-            on f.school_number = loc.focus_school_id
-            and not loc.is_pathways
-        where f.max_syear is null
+        from {{ ref("int_students__school_directory") }}
+        -- Finalsite rows are next year's recruiting, not a year students
+        -- attended, so there is no calendar to count days in.
+        where school_source != 'finalsite'
     ),
 
     pm_rounds as (
@@ -51,7 +21,7 @@ with
 
             count(distinct c.date_value) as pm_round_days,
 
-        from school_directory as s
+        from school_years as s
         -- Not stg_powerschool__calendar_day: Miami is Focus-only from AY2026, and
         -- the frozen PowerSchool archive still serves a rolled-forward Miami
         -- calendar (phantom in-session days in Jul 2026, Aug 3-11, Jun 4-29) that
@@ -59,28 +29,20 @@ with
         -- Focus for Focus-covered years and is day-for-day identical for NJ.
         inner join
             {{ ref("int_students__calendar_day") }} as c
-            on s.school_number = c.schoolid
+            on s.ps_schoolid = c.schoolid
             and c.insession = 1
             and s._dbt_source_project = c._dbt_source_project
+        -- s.academic_year = t.academic_year is the Miami SIS boundary, and it
+        -- needs no cutover year: the directory already assigns Miami's SY25-26
+        -- and prior to PowerSchool and SY26-27 onward to Focus, so a school only
+        -- contributes days to years it actually enrolled students in.
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as t
             on s.region = t.region
+            and s.academic_year = t.academic_year
             and c.date_value between t.start_date and t.end_date
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
-        cross join cutover as cut
-        -- Miami's SIS boundary is a YEAR boundary, not a source swap: rows for
-        -- SY25-26 and prior come from the frozen PowerSchool archive, rows from
-        -- SY26-27 onward come from Focus. Dropping Miami from the PowerSchool
-        -- branch outright would erase its AY2024/AY2025 PM history.
-        where
-            case
-                when s.school_source = 'focus'
-                then t.academic_year >= cut.focus_start_academic_year
-                when s.is_focus_sis_region
-                then t.academic_year < cut.focus_start_academic_year
-                else true
-            end
         group by s.region, t.academic_year, t.name, round_number
     ),
 
