@@ -18,7 +18,10 @@ models:
       flags fired anywhere) and is_healthy_gradebook_excl_comments (same, but
       has_grade_below_70_no_comment doesn't count toward this one — it's an
       end-of-quarter item, still visible as data). A Tableau parameter picks
-      which health column to read.
+      which health column to read. flag_reasons carries a plain-language list of
+      the assignment validity checks that tripped for the category, so a teacher
+      reading assignments_entered_count against expectation can see why the
+      category is off track.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -180,6 +183,21 @@ models:
           True when the count of non-flagged assignments entered for this
           category is below expectation. Populated on row_type =
           'category_summary' rows only.
+      - name: flag_reasons
+        description: >
+          Plain-language list of the assignment validity checks that tripped for
+          this category, joined by '; ' in a fixed order: 'Under 90% graded',
+          'Invalid scores entered', 'Not out of 10 points', 'Half the class
+          exempt'. The four labels correspond 1:1 to the four terms of
+          assignment_has_flags in
+          int_powerschool__gradebook_assignment_scores_rollup
+          (percent_graded_min_not_met, flags_sum > 0, assign_max_score_not_10,
+          overly_exempt_assignment). Built as a display vector so Tableau needs
+          no calculated field. NULL when no check tripped, and NULL on row_type
+          = 'assignment_detail' rows. Populates whenever a check tripped, even
+          when not_enough_assignments is false — a category can hold flawed
+          assignments and still clear its expectation.
+        data_type: string
       - name: assignmentid
         data_type: int64
         description: >

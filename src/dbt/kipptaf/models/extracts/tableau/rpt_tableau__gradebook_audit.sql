@@ -75,6 +75,44 @@ with
                     ge.assignment_category_code
             ) as assignments_entered_count_no_flags,
 
+            countif(
+                r.duedate <= ge.week_end_sunday and r.percent_graded_min_not_met
+            ) over (
+                partition by
+                    s._dbt_source_project,
+                    s.sectionid,
+                    s.`quarter`,
+                    ge.assignment_category_code
+            ) as n_percent_graded_min_not_met,
+
+            countif(r.duedate <= ge.week_end_sunday and r.flags_sum > 0) over (
+                partition by
+                    s._dbt_source_project,
+                    s.sectionid,
+                    s.`quarter`,
+                    ge.assignment_category_code
+            ) as n_invalid_scores,
+
+            countif(
+                r.duedate <= ge.week_end_sunday and r.assign_max_score_not_10
+            ) over (
+                partition by
+                    s._dbt_source_project,
+                    s.sectionid,
+                    s.`quarter`,
+                    ge.assignment_category_code
+            ) as n_max_score_not_10,
+
+            countif(
+                r.duedate <= ge.week_end_sunday and r.overly_exempt_assignment
+            ) over (
+                partition by
+                    s._dbt_source_project,
+                    s.sectionid,
+                    s.`quarter`,
+                    ge.assignment_category_code
+            ) as n_overly_exempt,
+
         from {{ ref("int_extracts__course_schedule_by_term") }} as s
         inner join
             {{ ref("int_powerschool__u_expectations_qtd_unpivot") }} as ge
@@ -149,6 +187,19 @@ with
             if(
                 assignments_entered_count_no_flags < expectation, true, false
             ) as not_enough_assignments,
+
+            nullif(
+                array_to_string(
+                    [
+                        if(n_percent_graded_min_not_met > 0, 'Under 90% graded', null),
+                        if(n_invalid_scores > 0, 'Invalid scores entered', null),
+                        if(n_max_score_not_10 > 0, 'Not out of 10 points', null),
+                        if(n_overly_exempt > 0, 'Half the class exempt', null)
+                    ],
+                    '; '
+                ),
+                ''
+            ) as flag_reasons,
 
         from category_join
     ),
@@ -252,6 +303,7 @@ with
             assignments_entered_count,
             assignments_entered_count_no_flags,
             not_enough_assignments,
+            flag_reasons,
 
             cast(null as int64) as assignmentid,
             cast(null as string) as assignment_name,
@@ -310,6 +362,7 @@ with
             cast(null as int64) as assignments_entered_count,
             cast(null as int64) as assignments_entered_count_no_flags,
             cast(null as bool) as not_enough_assignments,
+            cast(null as string) as flag_reasons,
 
             assignmentid,
             assignment_name,
@@ -426,6 +479,7 @@ select
     w.assignments_entered_count,
     w.assignments_entered_count_no_flags,
     w.not_enough_assignments,
+    w.flag_reasons,
 
     w.assignmentid,
     w.assignment_name,
