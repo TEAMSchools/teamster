@@ -230,19 +230,29 @@ models:
         data_type: numeric
         description: >-
           Cumulative unweighted GPA the student must reach to count toward their
-          grade's goal. NULL for grades with no goal.
+          grade's goal. Comes from the network-rung goal, so it is NULL only for
+          a grade with no goal at all, which today means every grade below 9.
       - name: gpa_goal_proportion_org
         data_type: numeric
         description: >-
           Target share of students network-wide expected to reach the threshold,
-          as a proportion. NULL for grades with no goal.
+          as a proportion. NULL only for a grade with no goal at all. Every
+          grade that has a goal has a network-rung target, so this is the column
+          to test when you want to know whether a student has a goal.
       - name: gpa_goal_proportion_region
         data_type: numeric
         description: >-
-          Target share for the student's region, as a proportion. NULL for
-          grades with no goal.
+          Target share for the student's region, as a proportion. NULL when no
+          region-rung goal is defined for that region and grade. This does NOT
+          mean the student has no goal — the network target in
+          gpa_goal_proportion_org still applies. Miami has no region-rung goals
+          today, so every Miami row is NULL here while carrying a network goal.
+          Do not filter on this column to find students with goals; use
+          gpa_goal_proportion_org.
       - name: gpa_goal_proportion_school
         data_type: numeric
         description: >-
-          Target share for the student's school, as a proportion. NULL for
-          grades with no goal.
+          Target share for the student's school, as a proportion. NULL when no
+          school-rung goal is defined for that school and grade, on the same
+          basis as gpa_goal_proportion_region — a NULL here does not mean the
+          student has no goal.
