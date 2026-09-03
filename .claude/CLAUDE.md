@@ -113,10 +113,10 @@ evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
 
 **Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
-text containing a bare `env` (or other sensitive-path token) trips "Cannot
-access sensitive path". Reword (`environment variable`; avoid cred-suffix tokens
-like `_KIPPMIAMI`). Also fires on `mcp__github__*` PR / issue bodies — prose
-like "staging env" / "dev env" is denied; write "environment".
+text containing a bare `env` (or other sensitive-path token) trips Rule 1 or 3c.
+Reword (`environment variable`; avoid cred-suffix tokens like `_KIPPMIAMI`).
+Also fires on `mcp__github__*` PR / issue bodies — prose like "staging env" /
+"dev env" is denied; write "environment".
 
 **Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
 command expanding a non-allowlisted uppercase var — including one you define in
@@ -126,8 +126,11 @@ that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
 DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
 matches the keyword as a substring — including inside a string literal
-(`where type = 'Drop'`), which is denied with the misleading "Cannot access
-sensitive path" message. Reword to avoid the literal (`like 'Dr%'`).
+(`where type = 'Drop'`). Reword to avoid the literal (`like 'Dr%'`).
+
+**Deny messages name the rule.** Every `check-sensitive.sh` denial reads
+`❌ check-sensitive.sh Rule N: <what matched>. <what to do instead>.` Follow the
+instruction in the message before consulting this file; the two agree.
 
 **Output scanning** (PostToolUse) — redacts tool results containing secret
 material (keys, tokens, connection strings, high-entropy strings): every string
@@ -137,9 +140,8 @@ and MCP tools. Does NOT fire for Edit.
 
 **MCP spill files are Bash-unreadable:** a large MCP result that overflows the
 context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
-(`jq`/`cat`) on that path is denied ("Cannot access sensitive path"). Use a
-subagent (as the spill message suggests) or reconstruct the data from prior tool
-output instead.
+(`jq`/`cat`) on that path is denied by the hook. Use a subagent (as the spill
+message suggests) or reconstruct the data from prior tool output instead.
 
 ## Context injection (`tool-gotchas.sh`)
 
