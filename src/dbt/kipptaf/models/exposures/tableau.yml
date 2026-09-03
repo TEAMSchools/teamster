@@ -352,6 +352,24 @@ exposures:
                 - 0 12 * * *
                 - 30 14 * * *
                 - 15 16 * * *
+  - name: academic_gradebook_health_suite
+    label: Academic & Gradebook Health Suite
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__student_course_grades")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: b3c14d67-3130-46ac-82a0-0637a5cc2da5
+              cron_schedule: 0 4 * * *
   - name: gradebook_and_gpa_dashboard
     label: Gradebook and GPA Dashboard
     type: dashboard

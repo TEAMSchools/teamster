@@ -17,6 +17,10 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.core.utils.functions import file_to_records, regex_pattern_replace
+from teamster.libraries.iready.subjects import (
+    iready_remote_file_regex,
+    remote_subject_token,
+)
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -59,6 +63,7 @@ def build_sftp_file_asset(
     remote_file_regex: str,
     ssh_resource_key: str,
     avro_schema,
+    legacy_remote_file_regex: str | None = None,
     partitions_def=None,
     automation_condition=None,
     group_name: str | None = None,
@@ -83,6 +88,7 @@ def build_sftp_file_asset(
         metadata={
             "remote_dir_regex": remote_dir_regex,
             "remote_file_regex": remote_file_regex,
+            "legacy_remote_file_regex": legacy_remote_file_regex or "",
         },
         required_resource_keys={ssh_resource_key},
         io_manager_key="io_manager_gcs_avro",
@@ -116,27 +122,42 @@ def build_sftp_file_asset(
             ).get_last_partition_key()
 
             if academic_year_key == academic_year_last_partition_key:
-                remote_dir_regex_composed = compose_regex(
-                    regexp=remote_dir_regex,
-                    partition_key=MultiPartitionKey(
-                        {"academic_year": "Current_Year", "subject": subject_key}
-                    ),
-                )
+                academic_year_dir = "Current_Year"
             else:
-                remote_dir_regex_composed = compose_regex(
-                    regexp=remote_dir_regex,
-                    partition_key=MultiPartitionKey(
-                        {"academic_year": academic_year_key, "subject": subject_key}
-                    ),
-                )
+                academic_year_dir = academic_year_key
+
+            remote_dir_regex_composed = compose_regex(
+                regexp=remote_dir_regex,
+                partition_key=MultiPartitionKey(
+                    {"academic_year": academic_year_dir, "subject": subject_key}
+                ),
+            )
+
+            remote_file_regex_era = iready_remote_file_regex(
+                remote_file_regex=remote_file_regex,
+                legacy_remote_file_regex=legacy_remote_file_regex,
+                academic_year=academic_year_key,
+            )
+
+            remote_file_regex_composed = compose_regex(
+                regexp=remote_file_regex_era,
+                partition_key=MultiPartitionKey(
+                    {
+                        "academic_year": academic_year_key,
+                        "subject": remote_subject_token(
+                            subject=subject_key, academic_year=academic_year_key
+                        ),
+                    }
+                ),
+            )
         else:
             remote_dir_regex_composed = compose_regex(
                 regexp=remote_dir_regex, partition_key=partition_key
             )
 
-        remote_file_regex_composed = compose_regex(
-            regexp=remote_file_regex, partition_key=partition_key
-        )
+            remote_file_regex_composed = compose_regex(
+                regexp=remote_file_regex, partition_key=partition_key
+            )
 
         with (
             ssh.get_connection() as connection,
@@ -188,7 +209,7 @@ def build_sftp_file_asset(
 
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
-            records, n_rows = ([{}], 0)
+            records, n_rows = ([], 0)
         elif remote_file_regex[-4:] == ".pdf":
             records, n_rows = extract_pdf_to_dict(
                 stream=local_filepath,
@@ -291,22 +312,16 @@ def build_sftp_archive_asset(
             is not None
         ]
 
-        # exit if no matches
+        # fail if no matches: writing an empty file here would wipe whatever the
+        # partition already holds, and these drops are transient
         if not file_matches:
-            context.log.warning(
-                msg=(
-                    "Found no files matching: "
-                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
-                )
-            )
-            records = [{}]
-
-            yield Output(value=(records, avro_schema), metadata={"records": 0})
-            yield check_avro_schema_valid(
-                asset_key=context.asset_key, records=records, schema=avro_schema
+            msg = (
+                "Found no files matching: "
+                f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
             )
 
-            return None
+            context.log.error(msg=msg)
+            raise FileNotFoundError(msg)
 
         if len(file_matches) > 1:
             context.log.warning(
@@ -324,17 +339,13 @@ def build_sftp_archive_asset(
             local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
         )
 
-        # exit if file is empty
+        # fail if the archive is empty: it cannot be a readable zip, so treat it
+        # the same as a missing file rather than wiping the partition
         if os.path.getsize(local_filepath) == 0:
-            context.log.warning(msg=f"File is empty: {local_filepath}")
-            records = [{}]
+            msg = f"Archive is empty: {local_filepath}"
 
-            yield Output(value=(records, avro_schema), metadata={"records": 0})
-            yield check_avro_schema_valid(
-                asset_key=context.asset_key, records=records, schema=avro_schema
-            )
-
-            return None
+            context.log.error(msg=msg)
+            raise FileNotFoundError(msg)
 
         archive_file_regex_composed = compose_regex(
             regexp=archive_file_regex, partition_key=partition_key
@@ -350,7 +361,7 @@ def build_sftp_archive_asset(
 
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
-            records, n_rows = ([{}], 0)
+            records, n_rows = ([], 0)
         else:
             records = file_to_records(
                 file_path=local_filepath,

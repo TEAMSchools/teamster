@@ -1,10 +1,24 @@
 sources:
   - name: kippnj_renlearn
+    description: >-
+      Frozen archive of Newark Renaissance Learning data. Nothing writes to this
+      schema any more: Newark retired STAR (#5101) and Accelerated Reader
+      ingestion lapsed in August 2025. The Accelerated Reader table is kept
+      declared so two school years of history stay in lineage and remain
+      readable via source(). Renaissance still drops NJ Accelerated Reader on
+      the SFTP, so reviving ingestion is a live option.
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
       endif -%}kippnewark_renlearn"
     tables:
       - name: stg_renlearn__accelerated_reader
+        description: >-
+          Accelerated Reader quiz records for Newark, covering SY2023-24 and
+          SY2024-25. Last modified 2025-08-01 and static since. Filter to
+          _dagster_partition_fiscal_year <= 2025 before reading: the FY2026
+          partition is a duplicate of FY2025 from the fiscal-year mislabeling in
+          #4388, so an unfiltered read double-counts SY2024-25. Holds identified
+          student and staff fields -- see the retention note on #5101.
         config:
           meta:
             dagster:
@@ -13,12 +27,3 @@ sources:
                 - kippnewark
                 - renlearn
                 - stg_renlearn__accelerated_reader
-      - name: stg_renlearn__star
-        config:
-          meta:
-            dagster:
-              group: renlearn
-              asset_key:
-                - kippnewark
-                - renlearn
-                - stg_renlearn__star

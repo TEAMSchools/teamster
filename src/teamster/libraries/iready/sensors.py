@@ -19,6 +19,7 @@ from dagster import (
 )
 from dagster_shared import check
 
+from teamster.libraries.iready.subjects import is_legacy_year, partition_subject
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -79,28 +80,74 @@ def build_iready_sftp_sensor(
                 )
             )
 
-            file_matches = [
-                (f, path)
-                for f, path in files
-                if pattern.match(string=path)
-                and check.not_none(value=f.st_mtime) > last_run
-                and check.not_none(value=f.st_size) > 0
-            ]
+            # Archive folders still hold pre-rename filenames. The current-era
+            # pattern above can no longer match them for an asset whose
+            # filename prefix changed outright (diagnostic_results), so also
+            # try the legacy pattern -- but only accept a legacy match for a
+            # legacy academic year. Without that gate, a stale pre-rename file
+            # left behind in Current_Year (this happened on 2026-07-18) would
+            # match the legacy pattern too and fire a spurious run.
+            legacy_remote_file_regex = metadata_by_key["legacy_remote_file_regex"]
 
-            for f, path in file_matches:
-                match = check.not_none(value=pattern.match(string=path))
+            legacy_pattern = (
+                re.compile(
+                    pattern=(
+                        rf"{metadata_by_key['remote_dir_regex']}/"
+                        rf"{legacy_remote_file_regex}"
+                    )
+                )
+                if legacy_remote_file_regex
+                else None
+            )
 
+            file_matches = []
+
+            for f, path in files:
+                if (
+                    check.not_none(value=f.st_mtime) <= last_run
+                    or check.not_none(value=f.st_size) <= 0
+                ):
+                    continue
+
+                match = pattern.match(string=path)
+
+                if match is None and legacy_pattern is not None:
+                    legacy_match = legacy_pattern.match(string=path)
+
+                    if legacy_match is not None and is_legacy_year(
+                        academic_year=legacy_match.groupdict()["academic_year"]
+                    ):
+                        match = legacy_match
+
+                if match is not None:
+                    file_matches.append((f, path, match))
+
+            for f, _, match in file_matches:
                 group_dict = match.groupdict()
+
+                # The regex alternation carries the vendor's current token
+                # (`reading`); the partition space does not. Translate back
+                # before building the key, or the RunRequest names a partition
+                # that does not exist.
+                subject_key = partition_subject(
+                    remote_token=group_dict["subject"],
+                    academic_year=group_dict["academic_year"],
+                )
 
                 if group_dict["academic_year"] == "Current_Year":
                     partition_key = MultiPartitionKey(
                         {
                             "academic_year": str(current_fiscal_year - 1),
-                            "subject": group_dict["subject"],
+                            "subject": subject_key,
                         }
                     )
                 else:
-                    partition_key = MultiPartitionKey(group_dict)
+                    partition_key = MultiPartitionKey(
+                        {
+                            "academic_year": group_dict["academic_year"],
+                            "subject": subject_key,
+                        }
+                    )
 
                 context.log.info(f"{f.filename}: {partition_key}")
                 run_request_kwargs.append(

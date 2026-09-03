@@ -103,8 +103,8 @@ OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_li
 
 ZENDESK_RESOURCE = ZendeskResource(
     subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
-    email=EnvVar("ZENDESK_EMAIL"),
-    token=EnvVar("ZENDESK_TOKEN"),
+    client_id=EnvVar("ZENDESK_CLIENT_ID"),
+    client_secret=EnvVar("ZENDESK_CLIENT_SECRET"),
 )
 
 SSH_COUCHDROP = SSHResource(
