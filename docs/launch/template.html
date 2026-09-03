@@ -7,6 +7,13 @@
          option: this site is served from an org-root domain the repo does not
          control, and teamschools.github.io/robots.txt already 404s. -->
     <meta name="robots" content="noindex, nofollow" />
+    <!-- The page is generated raw rather than through the Material theme, so
+         it inherits no favicon. Inline SVG keeps it self-contained; the file
+         has to open standalone as the PR gate's preview artifact. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E"
+    />
     <title>Data tools — KIPP NJ | Miami</title>
     <style>
       /* Tokens lifted from the KIPP NJ | Miami design system.
@@ -194,7 +201,10 @@
         width: 300px;
       }
       #dom {
-        width: 210px;
+        /* auto, so the control fits the longest group name rather than
+           truncating it. The 900px breakpoint below still forces 100%. */
+        width: auto;
+        min-width: 210px;
         cursor: pointer;
       }
       .eyebrow {
@@ -600,10 +610,7 @@
       </div>
 
       <div class="lens" id="lens" hidden>
-        <span
-          >Views are lenses, not folders — a tool can sit in several, and
-          nothing here is access-controlled.</span
-        >
+        <span id="lenstext"></span>
         <button class="linkbtn" id="showall"></button>
       </div>
 
@@ -781,8 +788,16 @@
               render();
             };
 
+          // The banner appears for any engaged filter -- role, domain or
+          // format -- since all three hide tools. The lens sentence only
+          // describes role views, so it is swapped out for the other two.
           const isRole = state.view !== "all";
-          document.getElementById("lens").hidden = !isRole;
+          const filtered =
+            isRole || state.dom !== "all" || state.sys.length > 0;
+          document.getElementById("lens").hidden = !filtered;
+          document.getElementById("lenstext").textContent = isRole
+            ? "Views are lenses, not folders — a tool can sit in several, and nothing here is access-controlled."
+            : "Filtered — some tools are hidden from this list.";
           document.getElementById("showall").textContent =
             `See all ${tools.length} tools →`;
           document.getElementById("clearsys").hidden = state.sys.length === 0;
@@ -816,7 +831,12 @@
           render();
         };
         document.getElementById("showall").onclick = () => {
+          // Clears every filter, not just the role view -- otherwise the
+          // banner stays up after clicking the thing that promises all tools.
           state.view = "all";
+          state.dom = "all";
+          state.sys = [];
+          document.getElementById("dom").value = "all";
           render();
         };
         document.getElementById("q").oninput = (e) => {
