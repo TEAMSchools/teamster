@@ -1,0 +1,77 @@
+models:
+  - name: int_gpa__student_goal_definitions
+    description: >-
+      Resolves each student to the GPA goal that applies to them, at the
+      network, region, and school rung, for every metric with a goal. One row
+      per student, academic year, and metric. Carries the goal definition — the
+      threshold a student must clear and the target share of students expected
+      to clear it — never a computed rate, so a consumer can compute its own
+      actual rate against whatever population is on screen. Scoped by the inner
+      join to the network-rung goal, so a student in a grade with no goal
+      produces no row at all rather than a row of nulls. A null
+      goal_proportion_region means that metric has no region-rung goal, which is
+      true of y1_gpa_weighted.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - metric
+          config:
+            severity: error
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: KIPP academic year (July start) the goal applies to.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_number
+        data_type: int64
+        description:
+          PowerSchool student number of the student the goal applies to.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: metric
+        data_type: string
+        description: >-
+          Which GPA measure the goal is written against —
+          `cumulative_gpa_unweighted` or `y1_gpa_weighted`.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: threshold
+        data_type: numeric
+        description: >-
+          GPA a student must reach to count toward the goal. Read from the
+          network-rung row; identical across rungs.
+      - name: direction
+        data_type: string
+        description: >-
+          Comparison operator the threshold is applied with, as text. Read from
+          the network-rung row.
+      - name: higher_is_better
+        data_type: boolean
+        description: >-
+          True when clearing the threshold means scoring above it. Read from the
+          network-rung row.
+      - name: goal_proportion_org
+        data_type: numeric
+        description: >-
+          Target share of students network-wide expected to clear the threshold,
+          as a proportion.
+      - name: goal_proportion_region
+        data_type: numeric
+        description: >-
+          Target share for the student's region. NULL when the metric has no
+          region-rung goal.
+      - name: goal_proportion_school
+        data_type: numeric
+        description: >-
+          Target share for the student's school. NULL when the metric has no
+          school-rung goal.

@@ -705,3 +705,17 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__google_forms__question_department_crosswalk
+
+  - name: int_gpa__student_goal_definitions__org_rung_covers_all_rungs
+    description: >-
+      Asserts every region- and school-rung GPA goal has a network-rung goal at
+      the same academic year, metric, and grade band.
+      int_gpa__student_goal_definitions inner joins the network rung to scope
+      its population, so a school goal without a network parent would drop those
+      students with no error.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__gpa_goals
