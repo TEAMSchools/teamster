@@ -1,8 +1,14 @@
 with
+    source_grade_normalized as (
+        select *, if(student_grade = 'K', '0', student_grade) as student_grade_numeric,
+        from {{ source("iready", "src_iready__diagnostic_results") }}
+    ),
+
     diagnostic_results as (
         select
             * except (
                 `grouping`,
+                student_grade_numeric,
                 `start_date`,
                 `subject`,
                 algebra_and_algebraic_thinking_scale_score,
@@ -42,6 +48,7 @@ with
 
             cast(cast(overall_scale_score as numeric) as int) as overall_scale_score,
             cast(cast(duration_min as numeric) as int) as duration_min,
+            cast(cast(student_grade_numeric as numeric) as int) as student_grade_int,
 
             cast(
                 percent_progress_to_annual_stretch_growth_percent as numeric
@@ -119,7 +126,7 @@ with
 
             parse_date('%m/%d/%Y', `start_date`) as `start_date`,
             parse_date('%m/%d/%Y', completion_date) as completion_date,
-        from {{ source("iready", "src_iready__diagnostic_results") }}
+        from source_grade_normalized
     ),
 
     hs_goals as (
@@ -157,10 +164,6 @@ with
             if(
                 percent_progress_to_annual_stretch_growth_percent >= 100, true, false
             ) as is_met_stretch,
-
-            if(
-                student_grade = 'K', 0, cast(cast(student_grade as numeric) as int)
-            ) as student_grade_int,
 
             case
                 _dagster_partition_subject when 'ela' then 'ELA' when 'math' then 'Math'

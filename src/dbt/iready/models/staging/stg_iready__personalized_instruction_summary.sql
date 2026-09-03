@@ -1,3 +1,46 @@
+with
+    typed as (
+        select
+            *,
+            cast(
+                cast(i_ready_comprehension_lessons_completed as numeric) as int
+            ) as comprehension_lessons_completed_i_ready,
+            cast(
+                cast(i_ready_pro_comprehension_lessons_completed as numeric) as int
+            ) as comprehension_lessons_completed_i_ready_pro,
+            cast(
+                cast(i_ready_comprehension_lessons_passed as numeric) as int
+            ) as comprehension_lessons_passed_i_ready,
+            cast(
+                cast(i_ready_pro_comprehension_lessons_passed as numeric) as int
+            ) as comprehension_lessons_passed_i_ready_pro,
+            cast(
+                cast(i_ready_comprehension_percent_lessons_passed as numeric) as int
+            ) as comprehension_percent_lessons_passed_i_ready,
+            cast(
+                cast(i_ready_pro_comprehension_percent_lessons_passed as numeric) as int
+            ) as comprehension_percent_lessons_passed_i_ready_pro,
+            cast(
+                cast(i_ready_vocabulary_lessons_completed as numeric) as int
+            ) as vocabulary_lessons_completed_i_ready,
+            cast(
+                cast(i_ready_pro_vocabulary_lessons_completed as numeric) as int
+            ) as vocabulary_lessons_completed_i_ready_pro,
+            cast(
+                cast(i_ready_vocabulary_lessons_passed as numeric) as int
+            ) as vocabulary_lessons_passed_i_ready,
+            cast(
+                cast(i_ready_pro_vocabulary_lessons_passed as numeric) as int
+            ) as vocabulary_lessons_passed_i_ready_pro,
+            cast(
+                cast(i_ready_vocabulary_percent_lessons_passed as numeric) as int
+            ) as vocabulary_percent_lessons_passed_i_ready,
+            cast(
+                cast(i_ready_pro_vocabulary_percent_lessons_passed as numeric) as int
+            ) as vocabulary_percent_lessons_passed_i_ready_pro,
+        from {{ source("iready", "src_iready__personalized_instruction_summary") }}
+    )
+
 select
     _dagster_partition_subject,
     academic_year,
@@ -291,36 +334,33 @@ select
     ) as single_syllable_skills_successful,
 
     coalesce(
-        cast(cast(i_ready_comprehension_lessons_completed as numeric) as int),
-        cast(cast(i_ready_pro_comprehension_lessons_completed as numeric) as int)
+        comprehension_lessons_completed_i_ready,
+        comprehension_lessons_completed_i_ready_pro
     ) as comprehension_lessons_completed,
 
     coalesce(
-        cast(cast(i_ready_comprehension_lessons_passed as numeric) as int),
-        cast(cast(i_ready_pro_comprehension_lessons_passed as numeric) as int)
+        comprehension_lessons_passed_i_ready, comprehension_lessons_passed_i_ready_pro
     ) as comprehension_lessons_passed,
 
     coalesce(
-        cast(cast(i_ready_comprehension_percent_lessons_passed as numeric) as int),
-        cast(cast(i_ready_pro_comprehension_percent_lessons_passed as numeric) as int)
+        comprehension_percent_lessons_passed_i_ready,
+        comprehension_percent_lessons_passed_i_ready_pro
     ) as comprehension_percent_lessons_passed,
     coalesce(
-        cast(cast(i_ready_vocabulary_lessons_completed as numeric) as int),
-        cast(cast(i_ready_pro_vocabulary_lessons_completed as numeric) as int)
+        vocabulary_lessons_completed_i_ready, vocabulary_lessons_completed_i_ready_pro
     ) as vocabulary_lessons_completed,
 
     coalesce(
-        cast(cast(i_ready_vocabulary_lessons_passed as numeric) as int),
-        cast(cast(i_ready_pro_vocabulary_lessons_passed as numeric) as int)
+        vocabulary_lessons_passed_i_ready, vocabulary_lessons_passed_i_ready_pro
     ) as vocabulary_lessons_passed,
 
     coalesce(
-        cast(cast(i_ready_vocabulary_percent_lessons_passed as numeric) as int),
-        cast(cast(i_ready_pro_vocabulary_percent_lessons_passed as numeric) as int)
+        vocabulary_percent_lessons_passed_i_ready,
+        vocabulary_percent_lessons_passed_i_ready_pro
     ) as vocabulary_percent_lessons_passed,
 
     safe_cast(student_id as int) as student_id,
 
     parse_date('%m/%d/%Y', date_range_start) as date_range_start,
     parse_date('%m/%d/%Y', date_range_end) as date_range_end,
-from {{ source("iready", "src_iready__personalized_instruction_summary") }}
+from typed
