@@ -40,6 +40,19 @@ with
         select distinct student_id, address_id,
         from {{ ref("stg_focus__students_join_address") }}
         where residence = 'Y'
+    ),
+
+    -- TODO: a re-import can duplicate a student's whole contact set under new
+    -- person_ids, leaving 2 links per sort_order. The Focus-side merge of the
+    -- duplicate person records is the real fix.
+    students_join_people as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("stg_focus__students_join_people"),
+                partition_by="student_id, sort_order",
+                order_by="updated_at desc",
+            )
+        }}
     )
 
 select
@@ -73,7 +86,7 @@ select
     a.home_address,
 
     if(l.address_id is null, null, sa.address_id is not null) as is_household_member,
-from {{ ref("stg_focus__students_join_people") }} as l
+from students_join_people as l
 -- intentional scoping filter to students that exist in Focus; also supplies
 -- local_student_id
 inner join {{ ref("stg_focus__students") }} as s on l.student_id = s.student_id
