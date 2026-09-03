@@ -34,14 +34,13 @@ views:
       weeks of an academic year volatile rather than wrong. Always display
       count_students alongside any rate measure on this view.
 
-      Miami is present in count_students for every year, but its attendance only
-      from AY2026 forward — the accepted result of the Focus cutover, and the
-      same gap every Tableau attendance surface has. Miami's pre-AY2026 rows
-      carry no recorded attendance, so they are excluded from both sides of
-      every rate and cannot move one — but they DO appear in count_students, so
-      a pre-AY2026 population count is four regions while the rate beside it is
-      three. Label it accordingly. #5114 is open to restore the archive, so
-      expect pre-AY2026 rates to gain a fourth region.
+      Miami's attendance runs from AY2026 forward only — the accepted result of
+      the Focus cutover, and the same gap every Tableau attendance surface has.
+      Its pre-AY2026 rows carry no recorded attendance, so Miami is absent from
+      count_students and from every rate for those years rather than sitting in
+      a denominator it cannot reach. Read any pre-AY2026 figure here as three
+      regions, both for the population and for the rate. #5114 is open to
+      restore the archive, after which those years gain a fourth region.
 
       Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
       truancy) carry a known upstream uncertainty from incomplete PowerSchool
@@ -50,14 +49,12 @@ views:
       likely permanent -- the conversion items were never captured, so there is
       nothing to restore.
 
-      Every rate on this view divides by count_students, with no
-      minimum-membership-day floor. For pre-AY2026 figures that reads low: a
-      student the enrollment spine holds but with no recorded attendance sits in
-      the denominator and can never reach the numerator. Measured at year grain
-      that is 3.7 points for AY2025, 5.4 for AY2024 and 6.3 for AY2023, and
-      essentially all of it is Miami's missing attendance. #5114 restores that
-      archive and closes the gap. AY2026 forward is already unaffected -- the
-      two populations are identical there.
+      Every rate on this view divides by count_students, which counts students
+      with recorded attendance. No minimum-day floor applies -- one measured day
+      is enough -- but a student whose attendance was never recorded is outside
+      both the numerator and the denominator. Population and denominator are the
+      same number, so they cannot drift apart and an unmeasured student cannot
+      pull a rate down.
 
     cubes:
       - join_path: student_periods

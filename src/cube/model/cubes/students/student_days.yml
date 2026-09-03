@@ -232,20 +232,31 @@ cubes:
     measures:
       - name: count_students
         description: >-
-          Distinct students with a row in the queried slice. Enrollment is by
-          entry and exit dates, never by status. Leave the date open for an
-          ever-enrolled count over a range; pin attendance_date to a single date
-          for a point-in-time headcount as of that date — attendance_date rather
-          than dates_date_day, because it prunes the fact's date partition and
-          dates_date_day does not. No anchor filter is needed or available — the
-          fact carries a row for every calendar day a student was enrolled,
-          break days included, so a weekend or holiday resolves the same as a
-          school day. For students served across a whole period, use
-          student_periods_view.count_students instead, which answers a different
-          question from enrolled on the period's last day.
+          Distinct students with recorded attendance in the queried slice, and
+          the denominator for every rate here. Enrollment decides which rows
+          exist, by entry and exit dates rather than status, but a student whose
+          attendance was never recorded is excluded — a day nobody measured
+          cannot support a headcount or a rate, and counting it once inflated
+          every denominator it reached. Population and denominator are therefore
+          the same number and cannot drift apart.
+
+          Leave the date open for an ever-enrolled count over a range; pin
+          attendance_date to a single date for a point-in-time headcount as of
+          that date. Use attendance_date rather than dates_date_day, because it
+          prunes the fact's date partition and dates_date_day does not. No
+          anchor filter is needed or available — the fact carries a row for
+          every calendar day a student was enrolled, break days included, so a
+          weekend or holiday resolves the same as a school day.
+
+          Pre-AY2026 Miami reads zero here, because #4803 dropped its attendance
+          archive. #5114 restores it. For students served across a whole period
+          use student_periods_view.count_students, which answers a different
+          question from enrolled on a given date.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
+        filters:
+          - sql: "{CUBE}.n_membership_days_ytd > 0"
 
       # Numerator and denominator must span the SAME set of days, or days
       # present in one and absent from the other silently become absences.
@@ -381,13 +392,11 @@ cubes:
         description: >-
           Share of students at Tier 3 or Tier 4 as of the pinned date.
           Denominator is count_students, every student in the queried slice. No
-          minimum-membership-day floor applies. Caveat for pre-AY2026 figures: a
-          student the enrollment spine holds but with no recorded attendance
-          sits in this denominator and can never reach the numerator, so the
-          rate reads low -- 3.7 points for AY2025, 5.4 for AY2024, 6.3 for
-          AY2023, essentially all of it Miami's missing attendance. #5114
-          restores that archive and closes the gap; AY2026 forward is already
-          unaffected. Pin attendance_date, and show count_students beside this:
+          minimum-membership-day floor applies. Numerator and denominator share
+          the same population, so a student whose attendance was never recorded
+          is outside both and cannot pull the rate down. Pre-AY2026 Miami is
+          absent from this rate rather than deflating it, and #5114 restores its
+          attendance. Pin attendance_date, and show count_students beside this:
           a rate over students with only a few membership days each is volatile,
           not wrong.
         sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
@@ -415,14 +424,12 @@ cubes:
         description: >-
           Share of students meeting regional truancy criteria as of the pinned
           date. Denominator is count_students, every student in the queried
-          slice. No minimum-membership-day floor applies. Caveat for pre-AY2026
-          figures: a student the enrollment spine holds but with no recorded
-          attendance sits in this denominator and can never reach the numerator,
-          so the rate reads low -- 3.7 points for AY2025, 5.4 for AY2024, 6.3
-          for AY2023, essentially all of it Miami's missing attendance. #5114
-          restores that archive and closes the gap; AY2026 forward is already
-          unaffected. Truancy has no eligibility concept in either regional
-          rule. Pin attendance_date.
+          slice. No minimum-membership-day floor applies. Numerator and
+          denominator share the same population, so a student whose attendance
+          was never recorded is outside both and cannot pull the rate down.
+          Pre-AY2026 Miami is absent from this rate rather than deflating it,
+          and #5114 restores its attendance. Truancy has no eligibility concept
+          in either regional rule. Pin attendance_date.
         sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
         type: number
         format: percent

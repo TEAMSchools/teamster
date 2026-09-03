@@ -50,53 +50,37 @@ measured, plus the one question still open.
 
 ### The three big decisions
 
-#### 2.1 · Chronic absence — the floor is gone
+#### 2.1 · Chronic absence — no minimum day floor, CA by student does not reset after transfer
 
-Walters' call. No minimum-membership-day floor anywhere, so every student with a
-resolvable ADA counts. The 1–9 day band the floor used to discard is 15,609
-students carrying 4,544 chronic-absence cases at AY2026 month grain, all now on
-both sides of the rate.
+Walters' call, shipped. No minimum-membership-day floor anywhere. The 1-9 day
+band the floor used to discard is 15,609 students carrying 4,544 chronic-absence
+cases at AY2026 month grain, all now counted on both sides.
 
-**At year end this now agrees with Topline.**
+**It reconciles to Topline on the same population.** AY2025, complete year,
+three regions:
 
-| AY2025, complete year, three regions | Denominator | Chronically absent |       Rate |
-| ------------------------------------ | ----------: | -----------------: | ---------: |
-| Topline as published                 |       9,724 |              2,669 |     27.45% |
-| **Built fact**                       |       9,740 |              2,678 | **27.49%** |
+|                      | Denominator | Chronically absent |   Rate |
+| -------------------- | ----------: | -----------------: | -----: |
+| Topline as published |       9,724 |              2,669 | 27.45% |
+| Built fact           |       9,724 |              2,671 | 27.47% |
 
-0.04 points apart. The floored version read 27.21%; removing the floor closed
-the gap rather than opening one, which is worth saying out loud because it was
-not the expected direction.
+Identical denominator. The numerator differs by exactly 2 students, and no
+student is flagged by Topline that this fact does not also flag.
 
-**The cost is volatility, and it is large right now.** AY2026 chronic absence,
-by the date it is read:
-
-| As of          | Avg membership days |  Rated | Chronically absent |       Rate |
-| -------------- | ------------------: | -----: | -----------------: | ---------: |
-| 2026-08-24     |                 3.3 | 10,935 |              2,187 |     20.00% |
-| 2026-08-28     |                 7.2 | 10,896 |              2,634 |     24.17% |
-| 2026-08-31     |                 8.1 | 10,919 |              2,916 |     26.71% |
-| 2026-09-01     |                 9.1 | 10,934 |              3,098 |     28.33% |
-| **2026-09-02** |                10.1 | 10,937 |              2,657 | **24.29%** |
-
-**The rate moved 4.0 points in one day**, 28.33% to 24.29%. At ten membership
-days a single present-or-absent day pushes a student across the 90% line, so
-this is arithmetic, not a data problem. It settles as the denominator grows — by
-AY2025 year end the same rule agrees with Topline to 0.04 points.
-
-**What that means for a dashboard.** A chronic-absence figure published in the
-first three weeks of a year will be revised by several points, day to day, and
-nothing in the data model can prevent that. `count_students` is on both views so
-the population is always visible beside the rate. If a stakeholder needs a
-stable number in September, the honest answer is a stated start date, not a
-floor.
+**Both students are mid-year transfers, and Topline resets on transfer.**
+Chronic absence follows the student, while the school stays answerable for the
+days the student was there. They moved between two Newark schools on 2026-01-09.
+Topline partitions its running ADA by school, so it reports each on the
+post-transfer leg alone — 92.7% and 91.8%, both on track. Counted whole they are
+70.8% and 89.8%, both chronically absent. One of them missed 45 of 82 days at
+the first school and Topline publishes 92.7% for that child. Filed as #5122.
 
 **One caveat that outlives this meeting.** Every rate divides by
 `count_students`, so a pre-AY2026 figure reads low — a student the enrollment
 spine holds with no recorded attendance sits in the denominator and can never
 reach the numerator. At year grain that is 3.7 points for AY2025, 5.4 for
 AY2024, 6.3 for AY2023, essentially all of it Miami. #5114 closes it. AY2026
-forward is already unaffected, so this only bites on historical figures.
+forward is already unaffected.
 
 #### 2.2 · Truancy — any day in the week, or the week's last day
 

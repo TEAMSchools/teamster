@@ -46,14 +46,12 @@ views:
       — is two queries, one per view. Do not substitute a tier percentage for an
       attendance rate.
 
-      Every rate on this view divides by count_students, with no
-      minimum-membership-day floor. For pre-AY2026 figures that reads low: a
-      student the enrollment spine holds but with no recorded attendance sits in
-      the denominator and can never reach the numerator. Measured at year grain
-      that is 3.7 points for AY2025, 5.4 for AY2024 and 6.3 for AY2023, and
-      essentially all of it is Miami's missing attendance. #5114 restores that
-      archive and closes the gap. AY2026 forward is already unaffected -- the
-      two populations are identical there.
+      Every rate on this view divides by count_students, which counts students
+      with recorded attendance. No minimum-day floor applies -- one measured day
+      is enough -- but a student whose attendance was never recorded is outside
+      both the numerator and the denominator. Population and denominator are the
+      same number, so they cannot drift apart and an unmeasured student cannot
+      pull a rate down.
 
     cubes:
       - join_path: student_days
