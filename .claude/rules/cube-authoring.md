@@ -1,0 +1,382 @@
+---
+paths:
+  - "**/src/cube/model/**"
+  - "**/src/cube/*.js"
+---
+
+# Cube authoring
+
+Loads on the first read of a Cube model file or `cube.js` / `access.js`. Layout,
+MCP access, and operational notes stay in `src/cube/CLAUDE.md`; local testing
+and diagnostics are in the `cube-ops` skill.
+
+## Authoring conventions
+
+- **Cubes private, views public.** Every cube YAML gets `public: false` at the
+  cube level. Dimensions/measures use `public: true` only when meant to be
+  exposed via a view. Never flip a cube to `public: true`.
+- **Transformation lives in dbt, not cube. A cube's `sql:` / `sql_table:` reads
+  exactly ONE dbt model — never a `JOIN`, subquery, CTE, or `SELECT t.*`.**
+  Multi-table joins, window functions, and derived grains (SCD2
+  period-intersection / status spines) belong in a dbt mart. To surface columns
+  from a second table on a view, give that table its own cube (`public: false`,
+  exposing only the needed dimensions) and bring them in with a **Cube join**
+  keyed on the shared grain — never inline the join in a cube `sql:`.
+  `SELECT t.*` is separately forbidden: it silently breaks the moment the base
+  model gains a same-named column. The Cube custom-calendar **range-join
+  recipe** (`BETWEEN` / `>=`) applies only to a _join's_ `sql:` predicate — it
+  is NOT a license for a `JOIN` inside a cube-body `sql:`. (Cube's own dbt
+  guidance and the `original_sql` pre-agg confirm the one-model rule.) The
+  one-model rule holds with zero exceptions: SCD2 period-intersection grains
+  (`staff_work_history` ← `dim_staff_work_history`,
+  `staff_reporting_relationships` ← `dim_staff_reporting_periods`) are
+  materialized in dbt marts and read via `sql_table:`, not built in a cube-body
+  `sql:`.
+- **Naming.** Cube `name:` always matches its filename, and neither carries the
+  warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
+  `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
+  rule:** student-domain cubes start with `student` (`student_attendance`,
+  `student_enrollments`, `students`); staff-domain cubes start with `staff`.
+  This is an organizational convention only — RLS is no longer keyed off the
+  cube-name prefix. Every view enforces access through its own `access_policy`
+  matching a `securityContext` group (see View access policies below); a
+  misnamed cube has no security consequence, but keep the convention so the
+  domain is legible from the name. Conformed dims (`dates`, `locations`,
+  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
+  carry no domain access tier. Student views are single, collapsed views named
+  `<domain>_view` (`student_attendance_view`, `student_assessment_scores_view`,
+  `student_enrollments_view`) — a view can't share a bare name with its
+  same-domain cube, hence the `_view` suffix. Staff views keep the
+  `<domain>_<grain>` pattern (`staff_directory`, `staff_pii`) since that split
+  is a genuine access tier, not a grain distinction (see View access policies
+  below). `sql_table` always points at `kipptaf_marts.<table>` (the warehouse
+  table keeps its `dim_`/`fct_` prefix) — cubes never read district datasets
+  directly.
+- **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
+  identifiers. Dim joins from facts set `relationship: many_to_one`.
+- **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
+  `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
+  your declared `relationship` + `primary_key`, so any non-overlap invariant the
+  join relies on must be test-enforced upstream in dbt.
+- **Avoid diamond paths.** Two join paths to the same dim → resolve to one
+  canonical path. Reach deeper dims by traversing the FK chain (e.g.
+  `student_enrollments` and `student_attendance` both reach `locations` only via
+  `student_enrollment_stints.locations` — no direct second join). Alternative
+  resolutions: a compound join on the canonical path (see
+  `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
+  declared join. Comment the choice.
+- **Second join to an already-role-played mart → fresh `sql_table` cube, not
+  `extends`.** To add a SECOND, differently-filtered join to a mart another cube
+  already reaches (e.g. a stint cube reaching "the current homeroom section" of
+  `dim_student_section_enrollments`), define a fresh `public: false`
+  `sql_table:` cube — NOT `extends` the existing one. `extends` inherits the
+  base's joins, forming a cycle with the new reverse join.
+- **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:` — but never
+  reference a time dimension in a join `sql:`. Cube substitutes the
+  query-timezone conversion (`convertTz`) into join predicates, so
+  `{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)` matches zero rows
+  under any non-UTC query timezone (#4298). Join on raw DATE keys instead
+  (`{dates.date_key} = {CUBE}.date_key`).
+- **Hidden helper measures** prefix with `_` and set `public: false` (see
+  `_sum_attendance_value` building blocks).
+- **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
+  `description:`, not `meta.usage` / `meta.synonyms` / etc. — those land in
+  `/v1/meta` but Cube Cloud and the chat agent don't read them.
+- **Measure grain: query-time vs pre-agg.** At query time Cube recomputes every
+  measure fresh at the requested grain — including `count_distinct` (a valid
+  distinct count at any grain). A description's "non-additive" note is a
+  **pre-aggregation rollup** property, NOT a query-time-grain hazard; don't let
+  it read as "unsafe to drop a dimension." The real drop-a-dimension trap is
+  **semantic**: measures that recompute mathematically but are meaningful only
+  within a comparable scope (`avg_scale_score` / `avg_percent_correct` pooled
+  across incompatible assessment sources). Give such scope-bound measures a
+  leading `Grain: ... meaningful only within {scope} ... silent-failure trap`
+  clause in `description:` (#4476). No schema field enforces this — a
+  `reaggregatable` boolean was rejected because "scope-bound" isn't
+  machine-detectable; it's a review-checked convention.
+- **Folders group dimensions only.** Cube Cloud separates measures natively;
+  don't list measures under `members:`.
+- **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
+  `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
+  `regions_region_name` for
+  `student_attendance.student_enrollments.locations.regions`.
+- **Branch schema validation is manual.** Cube Cloud Staging Environments don't
+  auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
+  by name to spin up a per-branch staging instance.
+- **Partitioned pre-aggregations need explicit `build_range_start` /
+  `build_range_end`.** Without them Cube derives the range from the
+  `time_dimension` min/max — and a `dates.date_day` anchor routes through
+  `dim_dates` (calendar spine to 9999), so the refresh worker enumerates ~8,000
+  empty yearly partitions on the post-merge prod redeploy (incident: #4460 →
+  revert #4462 → bounded #4463). Bound to real data (`SELECT DATE('2015-07-01')`
+  to `CURRENT_DATE`). Cube rebuilds a changed pre-agg on merge to `main`, so
+  validate the build stays bounded on a branch staging deployment FIRST —
+  confirm the partition count via `JOBS_BY_PROJECT` for
+  `cube-cloud@teamster-332318`.
+
+## View access policies
+
+Views own access entirely via `access_policy:` — RLS is Cube-native and
+declarative, not injected server-side. `cube.js`'s `queryRewrite` carries none
+of it (see `cube.js` security model below). Each policy matches one
+scope-specific group emitted by `access.buildGroups`; a viewer holds exactly one
+group per domain axis, so exactly one policy per view is ever active — no AND/OR
+combination to reason about.
+
+- **Student views are single, collapsed views** — each student domain
+  (`student_attendance_view`, `student_assessment_scores_view`,
+  `student_enrollments_view`) exposes both row-level identifiers and
+  aggregate-breakdown dimensions on the same view; there is no separate
+  detail/summary pair. Three policies, one per non-`none`
+  `student_location_scope` — `student-region` (`row_level` on the region key),
+  `student-school` (`row_level` on the school abbreviation), `student-network`
+  (no `row_level` — every location). All three use
+  `member_level: { includes: "*" }` — any viewer holding one of these groups
+  sees every field on every student view, including PII. `none` scope → no group
+  → default-deny (zero rows).
+- **Staff views are split.** `staff_directory` (roster/employment/work-contact
+  fields — no personal or sensitive data) has one open block:
+  `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
+  every resolved staff viewer gets this group. `staff_pii` (the six sensitive
+  fields — `personal_email`, `personal_cell_phone`, `birth_date`,
+  `gender_identity`, `race`, `is_hispanic` — plus the identity/remit keys needed
+  to filter on) has one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
+  (`locations_abbreviation` ∩ `department_group` remit),
+  `staff-pii-teaching_staff` (that remit +
+  `job_function_code IN ('TEACH', 'TIR')`), `staff-pii-reporting_chain`
+  (`staff_key IN reportee_staff_keys`),
+  `staff-pii-reporting_chain_or_below_rank` (OR of the remit-plus-rank check and
+  the chain-IN check). The location∩department remit is precomputed server-side
+  into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
+  domain-agnostic, reused as-is when comp/observations/benefits views are built.
+- **No aggregate-demographics view yet.** A `staff_summary` view once exposed
+  `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
+  — removed because small-cell slices (e.g. location × race) can re-identify an
+  individual, and suppression isn't built. Re-introduce only once
+  [#4237](https://github.com/TEAMSchools/teamster/issues/4237) (small-cell
+  suppression) ships; don't add demographic fields to `staff_directory` in the
+  meantime as a workaround.
+- **Forward-compatible staff tiers**: `staff-compensation`,
+  `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
+  corresponding `*_scope` column is non-`none`, but no view has an
+  `access_policy` block for them yet. Wire them when those cubes/views are
+  built.
+
+**Authoring rule — `row_level.filters[].member` is a flat view-member name, not
+a cube-qualified path.** A path (`locations.abbreviation`) fails to compile:
+"Paths aren't allowed in the accessPolicy policy." The exposed name follows the
+`prefix:` setting on the `includes:` block that surfaces it: `prefix: true` →
+`<lastJoinPathSegment>_<member>` (e.g. `locations_abbreviation`,
+`locations_region_key`); `prefix: false` → bare (`department_group`,
+`staff_key`, `job_function_code`, `job_function_level`, and — in the student
+assessment views, which join `locations` unprefixed — bare
+`abbreviation`/`region_key`). Check the view's own `includes:` blocks for the
+`prefix:` setting before writing a filter; don't assume it matches another view.
+
+**Interpolation forms.** An array value (`IN`) uses the UNBRACKETED string form:
+`values: "{ securityContext.allowed_abbreviations }"`. A single scalar uses the
+bracketed form: `values: ["{ securityContext.region_key }"]`.
+`operator: equals` + array value compiles to SQL `IN`. An **empty** array does
+NOT compile to `IN ()`/zero rows — Cube (Tesseract) throws "Values required for
+filter" and fails the query (fail-closed, but a hard error, not a clean deny;
+verified empirically, #4269). `access.buildGroups` therefore does not emit a
+staff-pii group whose remit/chain array resolved empty, so such a viewer takes
+the no-group default-deny path instead of hitting that error.
+
+**Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
+only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`
+comparison does not compile (Task 1 spike finding). That's why `buildGroups`
+emits one scope-specific group per enum value instead of a single group gated by
+a `conditions.if` branch.
+
+When adding a sensitive staff field, decide PII status per project CLAUDE.md
+FERPA guidance. If PII, add it to `staff_pii.yml` (not `staff_directory.yml`)
+and wire its per-field scope in `access.js`'s `STAFF_SENSITIVE_SCOPE_BY_MEMBER`.
+Student views have no PII split — any scope-specific `student-*` group sees
+every field.
+
+## `cube.js` security model
+
+Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
+[`access.js`](access.js) before modifying. All pure access helpers live in
+`access.js` (unit-tested); `cube.js` owns BigQuery reads, caching, and the two
+auth hooks. RLS itself lives entirely in per-view `access_policy` (see View
+access policies above) — `queryRewrite` retains only the snapshot-anchor guard.
+
+- **`resolveAccess(email)`** is the shared identity-resolution function, called
+  from both auth hooks below (not from `contextToGroups`). It reads one row from
+  `dim_staff_cube_access` (per-field scope enums) plus the caller's transitive
+  reportees from `dim_staff_reporting_chain`, loads the global "universes"
+  (`loadUniverses`: every location abbreviation+region, every distinct
+  `department_group`), computes `allowed_abbreviations` /
+  `allowed_department_groups` via `access.computeAllowedAbbreviations` /
+  `computeAllowedDepartmentGroups`, and returns
+  `access.buildSecurityContext(...)`. Per-email cache and the global universe
+  cache both expire at next midnight ET. Wrapped in try/catch — any BigQuery
+  error fails closed to an empty (default-deny) context rather than throwing.
+- **`checkAuth` (REST/MCP)** receives the RAW bearer token STRING — a custom
+  `checkAuth` replaces Cube's default JWT verify+decode. It verifies the HS256
+  signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
+  sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
+  `jwt.verify` throws → Cube rejects the request; no `Authorization` header
+  resolves to the empty default-deny context. **It runs in developer mode too**
+  (verified on Cube 1.6.59 and 1.7.14) — so the local REST Playground resolves a
+  pasted `{"email": ...}`; do not assume `NODE_ENV=production` is needed.
+  `jwt.verify` also enforces `maxAge: "12h"` derived from `iat`, which rejects a
+  stale cached Playground token and any token with no `iat` at all. Cube Cloud's
+  `iss: "cubecloud"` context never reaches `jwt.verify` — it bypasses
+  `checkAuth` entirely and is handled in `contextToGroups` (#4526). **Every 403
+  names the failed check** via `jwtRejectionReason` (too-old-from-`iat` with the
+  re-mint step / expired past `exp` / bad signature pointing at this
+  deployment's `CUBEJS_API_SECRET` / missing `iat`); a bare "Invalid token" for
+  all of them is what made the `maxAge` cap read as an access bug. Keep them
+  distinguishable.
+- **`checkSqlAuth` (SQL API)** returns
+  `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
+  validates the presented password against the RETURNED one, so returning `null`
+  rejects every connection. Identity is resolved from the connecting `user` (or
+  `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
+  and is absent entirely on `SET USER` re-auth flows.
+- **`contextToGroups` owns the Cube Cloud path** (#4526). Cube Cloud bypasses
+  `checkAuth`, so this hook re-derives the context from `cubeCloud.username` and
+  **overwrites** it. **Cube Cloud MERGES a pasted Security Context into the TOP
+  LEVEL**, so every top-level value there is caller-supplied: pasting
+  `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
+  honored verbatim before the overwrite landed. Never reintroduce a
+  `!securityContext.groups` guard here — that guard IS the bypass. The branch
+  gates on the presence of the top-level `cubeCloud` key, not on
+  `cubeCloud.username` being truthy: a REST/MCP context (no `cubeCloud` key at
+  all) skips the block entirely and is passed through untouched, since
+  `checkAuth` already resolved it. A Cube Cloud request (`cubeCloud` key
+  present) whose `username` is missing still enters the block and resolves to
+  the empty default-deny context via `resolveAccess` — a missing `username` is a
+  DENY, not a pass-through.
+- **Gating on the `cubeCloud` key assumes a paste cannot REPLACE that key.**
+  Cube Cloud must apply its own block after the merged paste; if a paste could
+  win, pasting `{"cubeCloud": {"username": "<anyone>"}}` would resolve that
+  person's real context and collapse the design, not merely the gate. Tested on
+  a Dev Mode deployment: a network-scoped caller pasting a school-scoped
+  viewer's email as `cubeCloud.username` still got their own four-region scope,
+  so the injected block wins. It wins against a FALSY paste too: pasting
+  `{"cubeCloud": null, "groups": ["student-region"], "region_key": "<a region>"}`
+  returned the caller's own four-region scope rather than the single pasted
+  region, so the gate still fired AND the pasted `groups` / `region_key` were
+  both overwritten. The merge order is therefore
+  `{...paste, cubeCloud: realBlock}`, which makes the pasted value irrelevant.
+  Empirical, not guaranteed — Cube Cloud's merge is closed-source and the OSS
+  tree has no `cubeCloud` reference — so re-confirm after a Cube Cloud upgrade.
+- **Every securityContext field a policy interpolates MUST be returned by
+  `access.buildSecurityContext`.** This is what makes the overwrite above a
+  COMPLETE one, and it is the load-bearing assumption of the paste fix — not a
+  style preference. Add a policy-read field anywhere else (computed in a hook,
+  spread in from elsewhere) and `Object.assign` will not overwrite a pasted
+  value for it, reopening the Cube Cloud paste vector for that field alone,
+  silently and only on that surface. When adding a `row_level` filter that
+  interpolates a new `securityContext.*` value, add the field to
+  `buildSecurityContext`'s return in the same change.
+- **Emulation gate, both surfaces**: caller is the signed `email` claim on
+  REST/MCP and `cubeCloud.username` on Cube Cloud; target is `act_as` on REST
+  and a pasted top-level `email` (mirrored at `cubeCloud.userAttributes.email`)
+  on Cube Cloud. `access.resolveEmulationTarget` decides, from the caller's
+  identity only, so a non-impersonator's target is ignored and they keep their
+  own scope. Impersonators come from `CUBE_IMPERSONATORS`; unset means emulation
+  is inert. Each real emulation logs one `cube_emulation` line (identities
+  only). Case is preserved on the resolved email — `resolveAccess` matches
+  `google_email` exactly and keys its cache on the raw string.
+- **`CUBE_IMPERSONATORS` is a deployment control, not a local one.** Read from
+  the environment per request, so nothing is committed to enable it. Locally it
+  is self-asserted (the dotenv file is the developer's own) and grants nothing
+  they could not already query directly, since running the server needs ADC
+  access to `kipptaf_marts`. It only bites on Cube Cloud. **Selection rule:**
+  prefer callers whose own scope already covers anything they could emulate
+  (`network` student scope + `all_in_scope` staff PII) — for them emulation is a
+  viewport change, not a grant. Anyone narrower gains real access and needs its
+  own decision. Those emails are PII: deployment config only, never a commit.
+- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
+  (`student-region` / `student-school` / `student-network`); `staff-directory`
+  (always, for any resolved row); `staff-pii-<staff_pii_scope>`
+  (`staff-pii-all_in_scope` / `-reporting_chain` /
+  `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
+  flat `staff-compensation` / `-observations` / `-benefits` (emitted per
+  non-`none` scope; no view consumes them yet). `none` on any axis → no group
+  for that axis → default-deny on the views gated by it.
+- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
+  For cubes built on fact tables with cumulative daily-status flags (values
+  re-stamped on every row — overcounts without a point-in-time anchor), or a
+  `count_distinct` over a daily grain (a member appearing on N days counts N
+  without an anchor). `queryRewrite` auto-injects `is_latest_record`,
+  `is_month_end_record`, or `is_week_end_record` depending on query granularity.
+  To add a new domain: append the cube `name:` to `SNAPSHOT_CUBES` and add its
+  snapshot measure name stems under that **same cube key** in
+  `SNAPSHOT_MEASURE_STEMS` (a per-cube map — stems are NOT shared across cubes,
+  so e.g. `count_students` is a snapshot stem for `student_enrollments` but not
+  `student_attendance`, whose `count_students` is stint-keyed and
+  additive-safe). The cube must expose `is_latest_record`,
+  `is_month_end_record`, and `is_week_end_record` dimensions. To change a cube's
+  no-granularity default anchor (e.g. enrollment uses `is_current_record`, the
+  per-school period-end-as-of-now flag, instead of the `is_latest_record`
+  default), add a per-cube entry to `SNAPSHOT_ANCHOR_OVERRIDES`. **The injected
+  anchor is a query-level filter, so it constrains every measure in the query**
+  — do not put an additive measure (e.g. `avg_daily_attendance`) and a guarded
+  snapshot measure in the same request, or the additive one is wrongly anchored
+  ([#4160](https://github.com/TEAMSchools/teamster/issues/4160)).
+- **`access_policy` blocks, it does not strip.** When a user requests a member
+  their tier excludes, Cube denies the whole query — it does not silently drop
+  the column and return the rest. BI tools connected via the SQL API (Superset)
+  avoid this because the field list is filtered per-user at connection time. In
+  Tableau, a workbook published by someone with broader access may error at
+  query time for viewers with narrower access. A `queryRewrite` member-strip
+  approach (detect and remove inaccessible members before execution) is tracked
+  in [#4268](https://github.com/TEAMSchools/teamster/issues/4268).
+- **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
+  `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
+  suffix check.
+
+## Jinja in cube YAML
+
+Cube data models support Jinja macros and `{% set %}` variables for SQL snippet
+reuse. Before factoring with Jinja, check whether a dbt-derived dim column (e.g.
+`dates.is_current_academic_year` from `{{ var("current_academic_year") }}`) is a
+better fit — keeps Cube and dbt in lockstep.
+
+## Measure filters and joined-cube references
+
+Measure `filters:` SQL substitutes dimension expressions at compile time,
+including `{other_cube.member}` references to joined cubes. Transitive joins
+auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
+a filter usually means the dimension SQL references a bare column on the
+filtering cube — route through `{joined_cube.col}` instead.
+
+## Cube can't classify an aggregate by a data-driven range
+
+Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a
+measure (only surface one via `sub_query`). Mapping an aggregated value to a
+band via per-row threshold rows (e.g. percent_correct → performance band) can't
+be expressed in Cube — materialize that classification upstream in dbt.
+
+## School weeks vs ISO weeks
+
+PowerSchool's per-school school week (`week_start_monday`) is NOT a clean
+Monday-Sunday grid — weeks split at month/term boundaries (~14% of calendar days
+diverge from ISO Monday). Both topline surfaces key on school weeks:
+`int_topline__ada_running_weekly` (attendance) and
+`int_extracts__student_enrollments_weeks` (enrollment) both group by
+`week_start_monday`. Use `dim_dates.school_week_start_date` (same values, routed
+cleanly via the join) rather than a raw fact column — Cube can throw "not found"
+on a `DATE` fact column cast to `TIMESTAMP` in a BigQuery view.
+
+**Snapshot guard drives the week period off `dates_school_week_start_date`
+grouping, not Cube's native `granularity: "week"` (ISO).** The guard detects a
+weekly trend when any query member's last dotted segment equals
+`dates_school_week_start_date`; ISO `granularity: "week"` throws for snapshot
+measures. `_week_end` named measures require this grouping.
+
+## `prefix: true` join member names
+
+A member inside a `prefix: true` includes block is exposed with the last
+`join_path` segment prepended: `school_week_start_date` under
+`join_path: student_enrollments.dates` (prefix: true) surfaces as
+`dates_school_week_start_date`. A same-named fact-level dimension alongside the
+join creates ambiguity Cube can't resolve at query time. Route via the join when
+`dim_dates` carries the same value — avoids the compile error and the redundant
+fact column.
