@@ -9,10 +9,14 @@ select
 
     if(grade = 0, 'K', cast(grade as string)) as grade_level_text,
 
-    if(admin_season in ('BOY', 'MOY', 'EOY'), 'Benchmark', 'PM') as assessment_type,
-
     case
         admin_season when 'BOY' then 'BOY->MOY' when 'MOY' then 'MOY->EOY'
     end as matching_pm_season,
 
-from {{ source("google_sheets", "src_google_sheets__dibels__expected_assessments") }}
+from
+    {{
+        source(
+            "google_sheets",
+            "src_google_sheets__dibels__expected_assessments_by_levels",
+        )
+    }}
