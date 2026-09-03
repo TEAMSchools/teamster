@@ -21,6 +21,12 @@ models:
       Metadata would answer this differently and wrongly. int_focus__schools
       reports max_syear 2025 for KIPP Sunrise and KIPP Liberty, but the last
       students enrolled at both in 2022.
+
+      School attributes come from a deduplicated
+      stg_google_sheets__people__locations, not int_people__location_crosswalk.
+      The crosswalk carries one row per alias name, so joining it on a school id
+      fans out. The crosswalk is still the right lookup for the Finalsite
+      branch, which resolves an assigned school by name.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -71,11 +77,10 @@ models:
         description: >
           School id native to whichever system produced the row -- the network
           school number on PowerSchool rows, Focus's own internal school id on
-          Focus rows. Finalsite rows resolve to a network school number through
-          int_people__location_crosswalk, so schoolid and ps_schoolid match
-          there. Join on ps_schoolid when you need one key across all three
-          branches. Excludes 999999, the graduated-students placeholder, which
-          is not a physical school.
+          Focus rows. Finalsite rows resolve to a network school number, so
+          schoolid and ps_schoolid match there. Join on ps_schoolid when you
+          need one key across all three branches. Excludes 999999, the
+          graduated-students placeholder, which is not a physical school.
       - name: ps_schoolid
         description: >
           PowerSchool network school number, populated on every row including
@@ -84,8 +89,31 @@ models:
           up with PowerSchool-keyed models even though Miami no longer runs on
           PowerSchool -- KIPP Courage carries schoolid 30200803 in AY2025 and
           schoolid 15 in AY2026, with ps_schoolid 30200803 in both.
+      - name: focus_school_id
+        description: >
+          Focus's own school code, such as 2332B, from the locations sheet.
+          Populated for any school the sheet maps to Focus regardless of which
+          branch produced the row. This is the key
+          int_tableau__fresh_enrollment_scaffold joins int_focus__schools on, so
+          a consumer can reach Focus-keyed models without its own crosswalk.
       - name: grade_level
         description: >
           Grade level offered at the school that year, with kindergarten as 0.
           Present only where students enrolled, so a grade a school adds or
           drops shows up as the row appearing or disappearing in that year.
+      - name: school_name
+        description: Full school name from the locations sheet.
+      - name: school_short_name
+        description:
+          School abbreviation from the locations sheet, such as Sumner.
+      - name: school_level
+        description: >
+          Grade band the locations sheet assigns the school -- ES, MS or HS. It
+          is a property of the school, so it does not vary by grade level or
+          year.
+      - name: school_level_alt
+        description: >
+          school_level with the Sumner override applied, matching the same field
+          on int_extracts__student_enrollments. From AY2025, Sumner grade 5 and
+          above reports MS while the sheet still calls the school ES. Every
+          other row equals school_level.
