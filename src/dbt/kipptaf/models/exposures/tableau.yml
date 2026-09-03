@@ -816,8 +816,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("rpt_tableau__gpa_cumulative_year")
-      - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_goal_progress")
     # TODO(#4619): update to the published Cumulative GPA Monitor workbook URL
     url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/TBD
     config:
