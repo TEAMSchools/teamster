@@ -18,12 +18,12 @@ lint:
     - isort@9.0.1
     - markdownlint@0.49.1
     - osv-scanner@2.5.1
-    - oxipng@10.2.0
+    - oxipng@10.2.1
     - prettier@3.9.6
     - pyright@1.1.413
-    - ruff@0.16.5
+    - ruff@0.16.6
     - shellcheck@0.11.0
-    - shfmt@3.13.1
+    - shfmt@3.14.0
     - sqlfluff@4.3.0
     - sqlfmt@0.32.0
     - svgo@4.1.0
