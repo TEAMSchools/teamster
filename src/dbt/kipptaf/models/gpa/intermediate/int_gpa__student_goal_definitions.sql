@@ -24,6 +24,11 @@ left join
     and e.grade_level between gr.grade_low and gr.grade_high
     and go.metric = gr.metric
     and gr.org_level = 'region'
+-- School rung matches on schoolid alone, where int_gpa__goal_aggregations also
+-- matches region. Deliberate: the only schoolid appearing in more than one
+-- region is the 999999 unknown-school sentinel, which has no grade 9-12
+-- enrollments, and this model emits rows only for grades carrying a network
+-- goal. Adding region here would be harmless but redundant.
 left join
     {{ ref("int_google_sheets__gpa_goals") }} as gs
     on e.academic_year = gs.academic_year

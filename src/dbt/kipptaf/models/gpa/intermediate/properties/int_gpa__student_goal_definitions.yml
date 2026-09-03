@@ -81,3 +81,170 @@ models:
         description: >-
           Target share for the student's school. NULL when the metric has no
           school-rung goal.
+
+unit_tests:
+  - name: unit_gpa_student_goal_definitions
+    description: >-
+      Verifies rung resolution and the population/duplication behavior implied
+      by the model's inner-join scoping. A Newark student and a Miami student,
+      both grade 10, share a network-rung goal for `cumulative_gpa_unweighted`,
+      grades 9-12; the Newark student (`schoolid` 101) additionally matches a
+      region-rung and a school-rung goal, proving all three rungs resolve
+      together, while the Miami student has no region- or school-rung goal
+      defined for that band, proving
+      `goal_proportion_region`/`goal_proportion_school` come back null rather
+      than falling back to another rung — the live Miami state. A grade-6
+      student produces no output row at all, proving the inner join to the
+      network rung — not an explicit grade filter — is what drops K-8 from this
+      model. Two overlapping network-rung bands for `y1_gpa_weighted` (`3-5` and
+      `4-4`) both match a fourth-grade student and are asserted as two separate
+      output rows: production data has no such overlap today, so this is the
+      only coverage proving a future overlap fans out rather than being silently
+      deduped — the `unique_combination_of_columns` test is what should catch it
+      against a real load. A sixth enrollment row carries `rn_year = 2` with no
+      matching `rn_year = 1` row for that student, proving the `where e.rn_year
+      = 1` filter excludes it.
+    model: int_gpa__student_goal_definitions
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        format: sql
+        rows: |
+          /* Newark, grade 10, schoolid 101 — matches org, region, and school rungs */
+          select
+              2026 as academic_year,
+              80001 as student_number,
+              10 as grade_level,
+              'Newark' as region,
+              101 as schoolid,
+              1 as rn_year
+          union all
+          /* Miami, grade 10, no region/school rung goal at this band */
+          select 2026, 80002, 10, 'Miami', 401, 1
+          union all
+          /* grade 6 — no network-rung goal covers this grade */
+          select 2026, 80003, 6, 'Newark', 101, 1
+          union all
+          /* grade 4 — matches two overlapping org-rung bands for y1_gpa_weighted */
+          select 2026, 80004, 4, 'Newark', 101, 1
+          union all
+          /* rn_year != 1: a prior enrollment stint that must be filtered out */
+          select 2026, 80005, 10, 'Newark', 101, 2
+      - input: ref('int_google_sheets__gpa_goals')
+        format: sql
+        rows: |
+          /* org rung, cumulative_gpa_unweighted, grade band 9-12 */
+          select
+              2026 as academic_year,
+              'org' as org_level,
+              cast(null as string) as region,
+              cast(null as int64) as schoolid,
+              9 as grade_low,
+              12 as grade_high,
+              'cumulative_gpa_unweighted' as metric,
+              cast(2.75 as numeric) as threshold,
+              '>=' as direction,
+              cast(0.70 as numeric) as goal_proportion,
+              true as higher_is_better
+          union all
+          /* region rung, Newark only — Miami has no region-rung goal at all */
+          select
+              2026,
+              'region',
+              'Newark',
+              cast(null as int64),
+              9,
+              12,
+              'cumulative_gpa_unweighted',
+              cast(null as numeric),
+              cast(null as string),
+              cast(0.65 as numeric),
+              cast(null as boolean)
+          union all
+          /* school rung, schoolid 101 only */
+          select
+              2026,
+              'school',
+              'Newark',
+              101,
+              9,
+              12,
+              'cumulative_gpa_unweighted',
+              cast(null as numeric),
+              cast(null as string),
+              cast(0.60 as numeric),
+              cast(null as boolean)
+          union all
+          /* overlapping org-rung bands for y1_gpa_weighted — both cover grade 4, and
+             neither overlaps the 9-12 band above or grade 6, so this stays isolated
+             to the grade-4 student */
+          select
+              2026,
+              'org',
+              cast(null as string),
+              cast(null as int64),
+              3,
+              5,
+              'y1_gpa_weighted',
+              cast(3.0 as numeric),
+              '>=',
+              cast(0.50 as numeric),
+              true
+          union all
+          select
+              2026,
+              'org',
+              cast(null as string),
+              cast(null as int64),
+              4,
+              4,
+              'y1_gpa_weighted',
+              cast(2.5 as numeric),
+              '>=',
+              cast(0.90 as numeric),
+              true
+    expect:
+      rows:
+        - {
+            academic_year: 2026,
+            student_number: 80001,
+            metric: cumulative_gpa_unweighted,
+            threshold: 2.75,
+            direction: ">=",
+            higher_is_better: true,
+            goal_proportion_org: 0.70,
+            goal_proportion_region: 0.65,
+            goal_proportion_school: 0.60,
+          }
+        - {
+            academic_year: 2026,
+            student_number: 80002,
+            metric: cumulative_gpa_unweighted,
+            threshold: 2.75,
+            direction: ">=",
+            higher_is_better: true,
+            goal_proportion_org: 0.70,
+            goal_proportion_region: null,
+            goal_proportion_school: null,
+          }
+        - {
+            academic_year: 2026,
+            student_number: 80004,
+            metric: y1_gpa_weighted,
+            threshold: 3.0,
+            direction: ">=",
+            higher_is_better: true,
+            goal_proportion_org: 0.50,
+            goal_proportion_region: null,
+            goal_proportion_school: null,
+          }
+        - {
+            academic_year: 2026,
+            student_number: 80004,
+            metric: y1_gpa_weighted,
+            threshold: 2.5,
+            direction: ">=",
+            higher_is_better: true,
+            goal_proportion_org: 0.90,
+            goal_proportion_region: null,
+            goal_proportion_school: null,
+          }
