@@ -50,11 +50,19 @@ views:
       likely permanent -- the conversion items were never captured, so there is
       nothing to restore.
 
+      Every rate on this view divides by count_students, with no
+      minimum-membership-day floor. For pre-AY2026 figures that reads low: a
+      student the enrollment spine holds but with no recorded attendance sits in
+      the denominator and can never reach the numerator. Measured at year grain
+      that is 3.7 points for AY2025, 5.4 for AY2024 and 6.3 for AY2023, and
+      essentially all of it is Miami's missing attendance. #5114 restores that
+      archive and closes the gap. AY2026 forward is already unaffected -- the
+      two populations are identical there.
+
     cubes:
       - join_path: student_periods
         includes:
           - count_students
-          - count_students_rated
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2

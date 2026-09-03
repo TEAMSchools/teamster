@@ -32,10 +32,9 @@ What that buys, in the order it matters to the dashboard:
   teacher, term, campus, city. That is the equity analysis the dashboard exists
   for, and it did not work at period grain before.
 - **A population count beside every rate, from the same query.** Enrollment and
-  attendance sit on one cube now, so `count_students` (everyone enrolled) and
-  `count_students_rated` (everyone whose attendance resolves) come back
-  alongside the rate they scope. Early in a year the rate is volatile, so a
-  figure without its denominator is unreadable — see 2.1.
+  attendance sit on one cube now, so `count_students` comes back alongside the
+  rate it scopes. Early in a year the rate is volatile, so a figure without its
+  denominator is unreadable — see 2.1.
 - **Any pinned date resolves.** Break days carry a row, so a weekend or holiday
   answers the same as a school day. Chronic absence and truancy are available
   for one specific date, not only at period end.
@@ -87,41 +86,80 @@ AY2025 year end the same rule agrees with Topline to 0.04 points.
 
 **What that means for a dashboard.** A chronic-absence figure published in the
 first three weeks of a year will be revised by several points, day to day, and
-nothing in the data model can prevent that. `count_students_rated` is on both
-views so the population is always visible beside the rate. If a stakeholder
-needs a stable number in September, the honest answer is a stated start date,
-not a floor.
+nothing in the data model can prevent that. `count_students` is on both views so
+the population is always visible beside the rate. If a stakeholder needs a
+stable number in September, the honest answer is a stated start date, not a
+floor.
 
-#### 2.2 · Truancy — still open, and the numbers are stronger than expected
+**One caveat that outlives this meeting.** Every rate divides by
+`count_students`, so a pre-AY2026 figure reads low — a student the enrollment
+spine holds with no recorded attendance sits in the denominator and can never
+reach the numerator. At year grain that is 3.7 points for AY2025, 5.4 for
+AY2024, 6.3 for AY2023, essentially all of it Miami. #5114 closes it. AY2026
+forward is already unaffected, so this only bites on historical figures.
 
-Walters leans Topline's any-day reading but asked for the tradeoffs first. This
-is the one decision not yet made.
+#### 2.2 · Truancy — any day in the week, or the week's last day
 
-| AY2025, week grain, three regions                         | Student-weeks | Truant |   Rate |
-| --------------------------------------------------------- | ------------: | -----: | -----: |
-| Topline — truant on **any** day of the week               |       370,863 | 11,848 | 3.195% |
-| Built fact — status on the week's **last** membership day |       369,980 |  9,391 | 2.538% |
+Truancy is a **status**, not an event: both regional rules test a running
+absence figure, so it turns on and off within a week. Topline keeps the max
+across the week; this fact reads the last membership day. Walters asked for the
+magnitude.
 
-A fifth lower over a settled year. But the current year shows the real size of
-the choice:
+**The disagreement is strictly one-directional.** Period-end can only ever be a
+subset of any-day, so the whole question is whether we keep a student who was
+truant on Monday and recovered by Friday. Measured off the same rows, so this
+isolates the reading and nothing else:
 
-| AY2026 week    | Topline any-day | Built fact period-end |
-| -------------- | --------------: | --------------------: |
-| 2026-08-17     |          57.69% |                24.19% |
-| 2026-08-24     |          53.36% |                49.39% |
-| **2026-08-31** |      **50.85%** |            **21.24%** |
+| Academic year  | Student-weeks | Any-day | Period-end | Dropped | Share of any-day |
+| -------------- | ------------: | ------: | ---------: | ------: | ---------------: |
+| AY2024         |       350,367 |  14,381 |     11,796 |   2,585 |        **18.0%** |
+| AY2025         |       369,984 |  11,448 |      9,391 |   2,057 |        **18.0%** |
+| AY2026 to date |        29,893 |  13,145 |      9,324 |   3,821 |            29.1% |
 
-**Two and a half times apart in the current week.** The NJ rule projects a
-student's absences to a full-year total, and the projection settles as days
-accrue — so the status on Monday and the status on Friday are different answers,
-and any-day takes the worst of the week while period-end takes the settled one.
+Zero student-weeks go the other way in any year. Over a settled year period-end
+drops **18% of the any-day count**, and it landed on 18.0% twice running — as
+stable a figure as anything in this document.
 
-Neither is wrong. Any-day answers "was this student ever truant this week",
-period-end answers "is this student truant now". The second is the one that
-stops the 50% headline; the first is what Topline has always published.
+**But almost all of it is the start of the year.** AY2025, share of the any-day
+count that period-end drops, by month:
 
-**Still needed:** how other networks and the states themselves report this.
-Walters asked for that comparison and I have not done it.
+| Month        | Any-day | Period-end | Share dropped |
+| ------------ | ------: | ---------: | ------------: |
+| Aug 2025     |   1,360 |        879 |     **35.4%** |
+| Sep 2025     |   2,729 |      1,866 |         31.6% |
+| Oct 2025     |   1,086 |        853 |         21.5% |
+| Nov 2025     |     880 |        755 |         14.2% |
+| Dec 2025     |     810 |        731 |          9.8% |
+| Jan 2026     |     891 |        789 |         11.4% |
+| Feb 2026     |     631 |        575 |          8.9% |
+| Mar 2026     |   1,010 |        955 |          5.4% |
+| Apr 2026     |     608 |        584 |          3.9% |
+| May 2026     |     806 |        773 |          4.1% |
+| **Jun 2026** |     637 |        631 |      **0.9%** |
+
+Monotonic decay, 35.4% to 0.9%. **After October the two readings are the same
+measure.** The NJ figure is a running rate times the year's membership days, so
+early on the rate swings week to week on a handful of days and a student flips
+in and out; by spring the rate barely moves and there is nothing to flip.
+
+**The human magnitude, AY2025.** Of 9,724 students:
+
+- 1,938 were truant at some point under any-day, 1,429 under period-end.
+- **509 students would carry a truancy flag at some point under Topline's
+  reading and never under ours** — 5.2% of all students, and 26% of the any-day
+  truant population.
+- 1,570 students had at least one week where the status flipped mid-week.
+
+**Recommendation: period-end, and it costs less than it looks.** Any-day asks
+"was this student ever truant this week", which for a running-rate status means
+"did the noisiest day of the week cross the line". Period-end asks "is this
+student truant now", which is what a status is for and what an intervention list
+needs. The reading only diverges materially in August and September, and that is
+exactly where the underlying projection is least trustworthy — see 2.4.
+
+If Walters prefers any-day for continuity with Topline, the cost is a September
+truancy count roughly a third higher than the settled status, and 509 students a
+year appearing on a list they are off by Friday.
 
 #### 2.3 · Total Enrollment — anchored on the first membership day
 
@@ -317,10 +355,10 @@ live wrong number.
   `int_extracts__student_enrollments_weeks`.
 - AY2025 figures exclude Miami on both sides, so they compare the three regions
   production serves today. #5114 will change that.
-- Rates divide by `count_students_rated` (rows where the flag resolves), never
-  by `count_students`. The two differ by the enrolled-but-unmeasured population
-  — 19 rows at AY2025 year grain, up to 9.79% at AY2024 month grain, and far
-  more for pre-AY2026 Miami in production.
+- Rates divide by `count_students`, every student in the slice. A second
+  flag-scoped denominator was built and then dropped as confusing; the cost is
+  that pre-AY2026 rates read 3.7 to 6.3 points low until #5114 lands, which the
+  cube and view descriptions now state.
 - `int_topline__truancy_weekly` carries rows for weeks that have not happened
   yet, because `int_students__attendance_daily` holds the full scheduled
   calendar. `int_topline__dashboard_aggregations` filters them with
