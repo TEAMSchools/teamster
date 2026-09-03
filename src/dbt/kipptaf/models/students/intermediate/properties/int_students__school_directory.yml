@@ -13,6 +13,22 @@ models:
       A grade counts as offered if any enrollment row exists for it, active or
       not -- filtering to currently-enrolled students would blank out every
       historic year.
+
+      TODO -- SRE rollover practice, and the change it needs first. At SY27
+      rollover, SRE should enter placeholder students in Finalsite assigned to
+      every grade level of every school planned for that year, so the incoming
+      branch stops depending on a real applicant having been routed to a campus.
+      Those ids then go on the finalsite exclude_ids sheet to keep them off the
+      FRESH dashboard.
+
+      This does NOT work as the models stand. stg_finalsite__status_report
+      applies the exclusion itself, upstream of this model, so placeholder ids
+      added to exclude_ids would be filtered out before reaching the directory
+      and would show up in neither place. The exclusion has to move down into
+      the FRESH models and rpt_gsheets__finalsite__log -- the only other
+      consumers of that staging model -- or this branch has to read the four
+      per-region sources ahead of the exclusion. Decide that before asking SRE
+      to enter anything.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
