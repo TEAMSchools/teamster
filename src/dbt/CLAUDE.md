@@ -85,6 +85,13 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
   `job_retries: 3` on the `prod` output. Set on all district profiles and
   kipptaf.
+- **`job_retries` fires on 7 reasons only**: `rateLimitExceeded`,
+  `backendError`, `internalError`, `badGateway` (`_RETRYABLE_REASONS`) plus
+  `jobBackendError`, `jobInternalError`, `jobRateLimitExceeded`
+  (`job_retry_reasons`), per `_job_should_retry` in
+  `google/cloud/bigquery/retry.py`. Every other reason — `notFound`,
+  `resourcesExceeded`, `invalidQuery` — fails on attempt 1 at any `job_retries`
+  value, so never propose raising it for those.
 - **`job_execution_timeout_seconds`**: Set to `900` on the `prod` output of all
   five kipp\* profiles. Caps each BigQuery job server-side (`job_timeout_ms`) so
   a runaway single model is cancelled by BigQuery before Dagster's run-level
