@@ -160,11 +160,12 @@
   regions: [newark]
   status: verified
 
-- id: gradebook_and_gpa_dashboard
-  name: Gradebook and GPA Dashboard
-  url: https://tableau.kipp.org/t/KIPPNJ/views/GradebookandGPADashboard/GradebookGPADashboardLandingPage?%3Aembed=y
+- id: academic_gradebook_health_suite
+  name: Academic & Gradebook Health Suite
+  url: https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome?:embed=y
   description:
-    GPA, Gradebook Audit, Elementary School (ES) Teacher/Monitor Audit.
+    Academic health across schools — GPA against goal, cumulative GPA, and
+    student course grades.
   audiences: [region, teachers]
   system: tableau
   group: academics
