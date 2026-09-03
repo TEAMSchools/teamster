@@ -151,6 +151,12 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   where the raw value first appears, as a named column. Downstream expressions
   operate on already-typed columns — never nest `cast()` inside another
   function.
+- **`select * replace (...)` only for simple conversions.** A column that is
+  excepted from `*` and re-added under its own name as a plain `cast`,
+  `safe_cast`, or `parse_date` goes in `replace`. Anything that branches or
+  merges — `coalesce`, `if`, `case` — stays as `except` plus an explicit re-add,
+  so the logic reads in the select list rather than inside the star. Renamed or
+  merged-away columns stay in `except`; both clauses can sit on one `*`.
 - **`cast(col as type)` needs an explicit alias** — unaliased, BigQuery names
   the column `f0_`, not `col`, so a contracted / explicitly-projected `select`
   gets the wrong column name and fails. Write `cast(col as type) as col`; the
