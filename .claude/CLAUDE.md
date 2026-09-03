@@ -19,26 +19,37 @@ behavior.
 Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
 
 - **Allow**: exit 0 with no output (or empty stdout)
-- **Deny**: exit 0 with
+- **PreToolUse deny**: exit 0 with
   `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` on stdout
+- **PostToolUse redact**: exit 0 with
+  `{"hookSpecificOutput": {"updatedToolOutput": <redacted tool_response>, ...}}`.
+  PostToolUse cannot deny: the tool already ran, and `permissionDecision` is
+  silently ignored on this event (the scanner emitted it for months with no
+  effect). `updatedToolOutput` must keep the tool's output shape or the harness
+  drops it and shows the original. `{"decision": "block", "reason": ...}` ends
+  the turn with a warning and is used only when there is nothing to redact.
 
 **Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
 anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The
 regression test suite (`expect_deny_exit0`) enforces both invariants.
+
+Auto mode does not replace either hook: `permissions.deny` and PreToolUse hooks
+run before the classifier, and the classifier never sees tool results.
 
 ## What is blocked
 
 **Outbound secret-value egress scan** (PreToolUse, Section 4) — write-capable
 MCP tools (tool name contains
 `create`/`update`/`write`/`add`/`comment`/`upload`/
-`send`/`post`/`put`/`delete`/`append`/`insert`/`merge`/`push`/`reply`) and
-WebFetch URLs are scanned for secret VALUES (`op://` refs, private-key headers,
-cloud tokens, connection strings — the same pattern set as `check-output.sh`). A
-match is blocked to stop exfiltration. Practical effect: a GitHub issue/PR write
-or an Asana/Drive write whose body contains a real-looking secret is denied —
-redact it (e.g. `op://…` → `op-uri`). Read-only MCP tools (bigquery / dagster /
-dbt `get_`/`list_`/`search_`) are not scanned. There is no keyword-based URL
-scanner — only secret-value shapes match.
+`send`/`post`/`put`/`delete`/`append`/`insert`/`merge`/`push`/`reply`/
+`share`/`forward`/`schedule`/`launch`/`trigger`), WebFetch URLs, and WebSearch
+queries are scanned for secret VALUES (`op://` refs, private-key headers, cloud
+tokens, connection strings — the same pattern set as `check-output.sh`). A match
+is blocked to stop exfiltration. Practical effect: a GitHub issue/PR write or an
+Asana/Drive write whose body contains a real-looking secret is denied — redact
+it (e.g. `op://…` → `op-uri`). Read-only MCP tools (bigquery / dagster / dbt
+`get_`/`list_`/`search_`) are not scanned. There is no keyword-based URL scanner
+— only secret-value shapes match.
 
 **Secret paths** (all tools blocked) — dotenv files, private key/cert files, SSH
 directory, secret-volume, credentials JSON files, devcontainer template
@@ -102,10 +113,10 @@ evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
 
 **Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
-text containing a bare `env` (or other sensitive-path token) trips "Cannot
-access sensitive path". Reword (`environment variable`; avoid cred-suffix tokens
-like `_KIPPMIAMI`). Also fires on `mcp__github__*` PR / issue bodies — prose
-like "staging env" / "dev env" is denied; write "environment".
+text containing a bare `env` (or other sensitive-path token) trips Rule 1 or 3c.
+Reword (`environment variable`; avoid cred-suffix tokens like `_KIPPMIAMI`).
+Also fires on `mcp__github__*` PR / issue bodies — prose like "staging env" /
+"dev env" is denied; write "environment".
 
 **Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
 command expanding a non-allowlisted uppercase var — including one you define in
@@ -115,19 +126,22 @@ that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
 DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
 matches the keyword as a substring — including inside a string literal
-(`where type = 'Drop'`), which is denied with the misleading "Cannot access
-sensitive path" message. Reword to avoid the literal (`like 'Dr%'`).
+(`where type = 'Drop'`). Reword to avoid the literal (`like 'Dr%'`).
 
-**Output scanning** (PostToolUse) — blocks tool results containing secret
-material (keys, tokens, connection strings, high-entropy strings). Fires for
-Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and MCP tools. Does NOT
-fire for Edit.
+**Deny messages name the rule.** Every `check-sensitive.sh` denial reads
+`❌ check-sensitive.sh Rule N: <what matched>. <what to do instead>.` Follow the
+instruction in the message before consulting this file; the two agree.
+
+**Output scanning** (PostToolUse) — redacts tool results containing secret
+material (keys, tokens, connection strings, high-entropy strings): every string
+in the result becomes `[redacted: secret material]` and an `additionalContext`
+note says why. Fires for Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch,
+and MCP tools. Does NOT fire for Edit.
 
 **MCP spill files are Bash-unreadable:** a large MCP result that overflows the
 context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
-(`jq`/`cat`) on that path is denied ("Cannot access sensitive path"). Use a
-subagent (as the spill message suggests) or reconstruct the data from prior tool
-output instead.
+(`jq`/`cat`) on that path is denied by the hook. Use a subagent (as the spill
+message suggests) or reconstruct the data from prior tool output instead.
 
 ## Context injection (`tool-gotchas.sh`)
 
