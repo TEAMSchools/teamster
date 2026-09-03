@@ -6,40 +6,14 @@ with
             _dbt_source_project,
             academic_year,
             region,
-            schoolid,
             schoolid as ps_schoolid,
             grade_level,
 
-            'powerschool' as school_source,
+            'sis' as school_source,
 
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         -- 999999 is the graduated-students placeholder
         where schoolid != 999999 and grade_level is not null
-
-        union all
-
-        -- grain projection, not dup-masking:
-        -- academic_year/region/ps_schoolid/grade_level
-        select distinct
-            _dbt_source_project,
-            academic_year,
-            region,
-            schoolid,
-            ps_schoolid,
-            grade_level,
-
-            'focus' as school_source,
-
-        from {{ ref("int_focus__student_enrollment_roster") }}
-        -- A fixed boundary, not the current year -- do not swap for
-        -- current_academic_year. Focus reaches back to AY2018, but Miami's
-        -- PowerSchool archive owns through AY2025. Null ps_schoolid drops Focus's
-        -- non-instructional Applicants school and would break ps_schoolid's job as
-        -- the cross-SIS join key.
-        where
-            academic_year >= 2026
-            and ps_schoolid is not null
-            and grade_level is not null
 
         union all
 
@@ -49,22 +23,24 @@ with
             sr._dbt_source_project,
             sr.active_school_year_int as academic_year,
             sr.region,
-            x.location_powerschool_school_id as schoolid,
             x.location_powerschool_school_id as ps_schoolid,
             sr.grade_level,
 
             'finalsite' as school_source,
 
         from {{ ref("stg_finalsite__status_report") }} as sr
-        -- location_name is the crosswalk's unique key. Joining on
-        -- location_powerschool_school_id instead fans out, because the crosswalk
-        -- carries one row per alias name.
+        -- location_name is the crosswalk's unique key; the school id fans out
         inner join
             {{ ref("int_people__location_crosswalk") }} as x
             on sr.assigned_school = x.location_name
         where
             sr.active_school_year_int = {{ var("current_academic_year") }} + 1
+            -- a file's grade is correct only for its own cycle year
+            and cast(left(sr._dagster_partition_key, 4) as int)
+            = sr.active_school_year_int
             and x.location_powerschool_school_id is not null
+            and x.location_powerschool_school_id != 0
+            and not x.location_is_pathways
             and sr.grade_level is not null
     ),
 
@@ -88,7 +64,6 @@ select
     d._dbt_source_project,
     d.academic_year,
     d.region,
-    d.schoolid,
     d.ps_schoolid,
     d.grade_level,
     d.school_source,
