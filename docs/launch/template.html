@@ -11,19 +11,24 @@
     <style>
       /* Tokens lifted from the KIPP NJ | Miami design system.
 
-   Both stacks name a real face for every platform rather than relying on
-   a generic keyword. `ui-monospace` resolves only on Apple platforms, and
-   Menlo is macOS-only, so a stack ending there falls through to the
-   generic `monospace` on Windows -- which is Courier New, a thin serifed
-   typewriter face that looks broken at the 11-12px this design uses it at.
-   Cascadia Mono and Consolas both ship with Windows and cover it.
+   Three type stacks, split by size rather than by role, because what
+   renders well at 26px and what renders well at 11px are different fonts.
+   Each names a real face for every platform instead of trusting a generic
+   keyword to resolve. Per-stack reasoning sits with each one below.
 
-   Same reasoning for the brand stack: licensed Whitney first, then the
-   native UI face per platform (San Francisco, Segoe UI, Roboto), then
-   Calibri. Segoe UI precedes Calibri deliberately -- both are Microsoft
-   faces, but Segoe UI is drawn for screen chrome at small sizes while
-   Calibri is a document face, and this page is almost entirely small
-   uppercase labels and letter-spaced chrome. */
+   Two Windows notes that drove the current shape, since both are invisible
+   on a Mac and neither is obvious from reading the CSS:
+
+   - `ui-monospace` resolves only on Apple platforms and Menlo is macOS-only,
+     so a mono stack ending there falls through to generic `monospace`, which
+     Windows maps to Courier New.
+   - Windows rasterization depends on font hinting in a way macOS does not.
+     A face that is unhinted at small sizes looks fine on one and poor on the
+     other, from identical CSS.
+
+   Segoe UI precedes Calibri throughout: both are Microsoft faces, but Segoe
+   UI is drawn for screen chrome at small sizes and Calibri is a document
+   face. */
       :root {
         --kipp-indigo: #001e62;
         --kipp-red: #ee3c37;
@@ -53,9 +58,21 @@
         --border-subtle: var(--neutral-200);
         --border-default: var(--neutral-300);
         --focus-ring: var(--kipp-blue);
-        --font-brand:
+        /* Display sizes only -- the logotype at 17px and the page heading at
+           26px. Desktop Whitney is cut for sizes like these and holds up. */
+        --font-display:
           "Whitney SSm A", "Whitney", -apple-system, BlinkMacSystemFont,
           "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        /* Everything else, which is 17 rules between 11px and 16px. Note the
+           absence of plain "Whitney": staff Windows machines carry the DESKTOP
+           cut, not ScreenSmart, and it is not hinted for these sizes. macOS
+           rasterizes outlines and mostly ignores hinting, so it looks fine
+           there and poor on Windows -- the same file, the same CSS. Whitney
+           SSm stays first because ScreenSmart is cut for exactly this range;
+           anyone who has it should get it. */
+        --font-brand:
+          "Whitney SSm A", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
         --font-mono:
           "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, "SF Mono",
           Menlo, "Roboto Mono", monospace;
@@ -106,7 +123,7 @@
         gap: 16px;
       }
       .wordmark {
-        font: 800 17px/1 var(--font-brand);
+        font: 800 17px/1 var(--font-display);
         letter-spacing: 0.02em;
         color: #fff;
       }
@@ -145,7 +162,7 @@
         flex-wrap: wrap;
       }
       .head h1 {
-        font: 700 26px/1.2 var(--font-brand);
+        font: 700 26px/1.2 var(--font-display);
         color: var(--kipp-indigo);
         margin: 0 0 4px;
       }
