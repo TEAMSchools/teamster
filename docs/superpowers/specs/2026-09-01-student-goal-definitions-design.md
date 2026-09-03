@@ -272,7 +272,10 @@ and is expected to happen. It requires, in order:
    only control that stops a bad view being baked into the published extract.
 4. Tableau **Replace Data Source** on the Cumulative GPA Monitor.
 5. Disabling `rpt_tableau__gpa_goal_progress` with `config: enabled: false`,
-   including its tests. Retire, never delete.
+   including its tests. Retire, never delete. In the same change, repoint the
+   `cumulative_gpa_monitor` exposure's `depends_on` back to
+   `rpt_tableau__gpa_cumulative_year` — dbt errors when an exposure depends on a
+   disabled node, so the disable and the repoint must land together.
 
 Until then the wrapper carries a maintenance tax: a column added to
 `rpt_tableau__gpa_cumulative_year` must be added to the wrapper's explicit

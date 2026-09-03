@@ -37,6 +37,9 @@ on. Nothing published is modified.
   left.
 - The project sets `data_tests: +severity: warn`. Every test in this plan needs
   an explicit `config: severity: error`.
+- Every dbt command needs `--favor-state` alongside `--defer --state`, because
+  `--defer` does not redirect a ref when a stale dev relation already exists —
+  this cost a wrong verification result during the build.
 
 ---
 

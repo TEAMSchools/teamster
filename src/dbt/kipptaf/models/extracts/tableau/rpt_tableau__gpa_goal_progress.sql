@@ -1,3 +1,9 @@
+-- Temporary wrapper. Passes rpt_tableau__gpa_cumulative_year through unchanged
+-- and adds the four gpa_goal_* columns. A column added to that model does NOT
+-- arrive here on its own -- add it to the select list below AND to this model's
+-- contract yml, or it silently never reaches the Cumulative GPA Monitor.
+-- Folding this into the extract is planned; see
+-- docs/superpowers/specs/2026-09-01-student-goal-definitions-design.md
 select
     cy._dbt_source_relation,
     cy._dbt_source_project,

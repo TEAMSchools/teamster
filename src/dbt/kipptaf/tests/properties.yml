@@ -708,14 +708,35 @@ data_tests:
 
   - name: int_gpa__student_goal_definitions__org_rung_covers_all_rungs
     description: >-
-      Asserts every region- and school-rung GPA goal has a network-rung goal at
-      the same academic year, metric, and grade band.
-      int_gpa__student_goal_definitions inner joins the network rung to scope
-      its population, so a school goal without a network parent would drop those
-      students with no error.
+      Asserts every region- and school-rung GPA goal's grade band is contained
+      within a network-rung goal's grade band at the same academic year and
+      metric. int_gpa__student_goal_definitions inner joins the network rung to
+      scope its population, so a school goal without a network parent would drop
+      those students with no error.
     config:
       severity: error
       meta:
         dagster:
           ref:
             name: stg_google_sheets__gpa_goals
+
+  - name: rpt_tableau__gpa_goal_progress__goals_land_on_students
+    description: >-
+      Mirrors the coverage guard above from the other direction. That test
+      guards the goals-sheet side of the wrapper's join —
+      int_gpa__student_goal_definitions inner joins the network rung, so a
+      school goal without a network parent drops silently. Nothing guarded the
+      wrapper's own left join landing on students: if
+      int_extracts__student_enrollments' rn_year semantics change, or a
+      student_number key drifts, every high school student would silently lose
+      their goal, the dashboard's goal line would go blank, and no test would
+      fail. Fails on any grade 9-12 row of rpt_tableau__gpa_goal_progress with a
+      null gpa_goal_proportion_org in an academic year the goals sheet covers.
+      Scoped to academic years present in int_google_sheets__gpa_goals so it
+      cannot false-fire for a year the goals sheet has not loaded yet.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__gpa_goal_progress

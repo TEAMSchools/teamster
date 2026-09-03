@@ -8,7 +8,11 @@ models:
       published dashboards read the extract through a Tableau relationship that
       declares it unique, and it is a view, so a fan-out there would ship
       silently. Fold this model into the extract once that change can be made
-      behind its own controls, then disable this one.
+      behind its own controls, then disable this one. Every passthrough column
+      is listed explicitly because the repo forbids `select *` in a final rpt_
+      select — so a column added to rpt_tableau__gpa_cumulative_year does NOT
+      appear here automatically and must be added to this model's select list
+      and to this contract by hand.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -230,29 +234,35 @@ models:
         data_type: numeric
         description: >-
           Cumulative unweighted GPA the student must reach to count toward their
-          grade's goal. Comes from the network-rung goal, so it is NULL only for
-          a grade with no goal at all, which today means every grade below 9.
+          grade's goal, from the network-rung goal. NULL when no goal applies to
+          the row: any grade below 9, and every academic year before 2025, since
+          the goals sheet only carries 2025 onward. The dashboard compares with
+          `>=`; see gpa_goal_proportion_org.
       - name: gpa_goal_proportion_org
         data_type: numeric
         description: >-
           Target share of students network-wide expected to reach the threshold,
-          as a proportion. NULL only for a grade with no goal at all. Every
-          grade that has a goal has a network-rung target, so this is the column
-          to test when you want to know whether a student has a goal.
+          as a proportion. NULL exactly when gpa_goal_threshold is NULL — a
+          grade below 9, or an academic year the goals sheet does not cover
+          (anything before 2025). This is the column to test when you want to
+          know whether a row has a goal at all. The goal is stated as a share
+          reaching the threshold, so the comparison is `>=`; the underlying
+          `direction` is not carried on this model, and a change to it upstream
+          would not be reflected here.
       - name: gpa_goal_proportion_region
         data_type: numeric
         description: >-
-          Target share for the student's region, as a proportion. NULL when no
-          region-rung goal is defined for that region and grade. This does NOT
-          mean the student has no goal — the network target in
-          gpa_goal_proportion_org still applies. Miami has no region-rung goals
-          today, so every Miami row is NULL here while carrying a network goal.
-          Do not filter on this column to find students with goals; use
-          gpa_goal_proportion_org.
+          Target share for the student's region, as a proportion. NULL when the
+          region has no region-rung goal for that grade and year, which does NOT
+          mean the row has no goal — the network target in
+          gpa_goal_proportion_org still applies. Every region this model covers
+          has region-rung goals today, so in practice this is non-NULL wherever
+          gpa_goal_proportion_org is. Test gpa_goal_proportion_org, not this
+          column, to find rows with goals.
       - name: gpa_goal_proportion_school
         data_type: numeric
         description: >-
-          Target share for the student's school, as a proportion. NULL when no
-          school-rung goal is defined for that school and grade, on the same
+          Target share for the student's school, as a proportion. NULL when the
+          school has no school-rung goal for that grade and year, on the same
           basis as gpa_goal_proportion_region — a NULL here does not mean the
-          student has no goal.
+          row has no goal.

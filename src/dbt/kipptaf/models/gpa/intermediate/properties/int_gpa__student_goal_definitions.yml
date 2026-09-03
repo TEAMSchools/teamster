@@ -10,7 +10,13 @@ models:
       join to the network-rung goal, so a student in a grade with no goal
       produces no row at all rather than a row of nulls. A null
       goal_proportion_region means that metric has no region-rung goal, which is
-      true of y1_gpa_weighted.
+      true of y1_gpa_weighted. A null goal_proportion_region also occurs when
+      the student's region has no region-rung goal at all, which is true of
+      Miami today — those students still carry the network goal. Scoped only by
+      rn_year = 1 and by the inner join to the network goal. It deliberately
+      does not apply the enrollment guards (is_out_of_district, enroll_status,
+      is_enrolled_recent) that sibling models use, so a consumer needing a
+      scoped spine must apply its own.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

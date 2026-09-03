@@ -11,6 +11,6 @@ left join
     org_goals as o
     on n.academic_year = o.academic_year
     and n.metric = o.metric
-    and n.grade_low = o.grade_low
-    and n.grade_high = o.grade_high
+    and n.grade_low >= o.grade_low
+    and n.grade_high <= o.grade_high
 where n.org_level != 'org' and o.academic_year is null
