@@ -40,8 +40,8 @@ with
 
             _dagster_partition_academic_year as academic_year_int,
 
-            cast(overall_scale_score as int) as overall_scale_score,
-            cast(duration_min as int) as duration_min,
+            cast(cast(overall_scale_score as numeric) as int) as overall_scale_score,
+            cast(cast(duration_min as numeric) as int) as duration_min,
 
             cast(
                 percent_progress_to_annual_stretch_growth_percent as numeric
@@ -158,7 +158,9 @@ with
                 percent_progress_to_annual_stretch_growth_percent >= 100, true, false
             ) as is_met_stretch,
 
-            if(student_grade = 'K', 0, cast(student_grade as int)) as student_grade_int,
+            if(
+                student_grade = 'K', 0, cast(cast(student_grade as numeric) as int)
+            ) as student_grade_int,
 
             case
                 _dagster_partition_subject when 'ela' then 'ELA' when 'math' then 'Math'

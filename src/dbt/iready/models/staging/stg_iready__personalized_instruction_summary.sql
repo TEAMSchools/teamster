@@ -21,87 +21,115 @@ select
     user_name,
 
     cast(_dagster_partition_academic_year as int) as academic_year_int,
-    cast(all_lessons_completed as int) as all_lessons_completed,
-    cast(all_lessons_passed as int) as all_lessons_passed,
-    cast(total_lesson_time_on_task_min as int) as total_lesson_time_on_task_min,
+    cast(cast(all_lessons_completed as numeric) as int) as all_lessons_completed,
+    cast(cast(all_lessons_passed as numeric) as int) as all_lessons_passed,
+    cast(
+        cast(total_lesson_time_on_task_min as numeric) as int
+    ) as total_lesson_time_on_task_min,
     cast(percent_all_lessons_passed as numeric) as percent_all_lessons_passed,
 
     cast(
-        i_ready_algebra_and_algebraic_thinking_lessons_completed as int
+        cast(i_ready_algebra_and_algebraic_thinking_lessons_completed as numeric) as int
     ) as algebra_and_algebraic_thinking_lessons_completed,
     cast(
-        i_ready_algebra_and_algebraic_thinking_lessons_passed as int
+        cast(i_ready_algebra_and_algebraic_thinking_lessons_passed as numeric) as int
     ) as algebra_and_algebraic_thinking_lessons_passed,
     cast(
-        i_ready_algebra_and_algebraic_thinking_percent_lessons_passed as int
+        cast(
+            i_ready_algebra_and_algebraic_thinking_percent_lessons_passed as numeric
+        ) as int
     ) as algebra_and_algebraic_thinking_percent_lessons_passed,
-    cast(i_ready_geometry_lessons_completed as int) as geometry_lessons_completed,
-    cast(i_ready_geometry_lessons_passed as int) as geometry_lessons_passed,
     cast(
-        i_ready_geometry_percent_lessons_passed as int
+        cast(i_ready_geometry_lessons_completed as numeric) as int
+    ) as geometry_lessons_completed,
+    cast(
+        cast(i_ready_geometry_lessons_passed as numeric) as int
+    ) as geometry_lessons_passed,
+    cast(
+        cast(i_ready_geometry_percent_lessons_passed as numeric) as int
     ) as geometry_percent_lessons_passed,
     cast(
-        i_ready_measurement_and_data_lessons_completed as int
+        cast(i_ready_measurement_and_data_lessons_completed as numeric) as int
     ) as measurement_and_data_lessons_completed,
     cast(
-        i_ready_measurement_and_data_lessons_passed as int
+        cast(i_ready_measurement_and_data_lessons_passed as numeric) as int
     ) as measurement_and_data_lessons_passed,
     cast(
-        i_ready_measurement_and_data_percent_lessons_passed as int
+        cast(i_ready_measurement_and_data_percent_lessons_passed as numeric) as int
     ) as measurement_and_data_percent_lessons_passed,
     cast(
-        i_ready_number_and_operations_lessons_completed as int
+        cast(i_ready_number_and_operations_lessons_completed as numeric) as int
     ) as number_and_operations_lessons_completed,
     cast(
-        i_ready_number_and_operations_lessons_passed as int
+        cast(i_ready_number_and_operations_lessons_passed as numeric) as int
     ) as number_and_operations_lessons_passed,
     cast(
-        i_ready_number_and_operations_percent_lessons_passed as int
+        cast(i_ready_number_and_operations_percent_lessons_passed as numeric) as int
     ) as number_and_operations_percent_lessons_passed,
     cast(
-        i_ready_pro_data_statistics_and_probability_percent_skills_successful as int
+        cast(
+            i_ready_pro_data_statistics_and_probability_percent_skills_successful
+            as numeric
+        ) as int
     ) as data_statistics_and_probability_percent_skills_successful,
     cast(
-        i_ready_pro_data_statistics_and_probability_skills_completed as int
+        cast(
+            i_ready_pro_data_statistics_and_probability_skills_completed as numeric
+        ) as int
     ) as data_statistics_and_probability_skills_completed,
     cast(
-        i_ready_pro_data_statistics_and_probability_skills_successful as int
+        cast(
+            i_ready_pro_data_statistics_and_probability_skills_successful as numeric
+        ) as int
     ) as data_statistics_and_probability_skills_successful,
     cast(
-        i_ready_pro_decimals_and_operations_percent_skills_successful as int
+        cast(
+            i_ready_pro_decimals_and_operations_percent_skills_successful as numeric
+        ) as int
     ) as decimals_and_operations_percent_skills_successful,
     cast(
-        i_ready_pro_decimals_and_operations_skills_completed as int
+        cast(i_ready_pro_decimals_and_operations_skills_completed as numeric) as int
     ) as decimals_and_operations_skills_completed,
     cast(
-        i_ready_pro_decimals_and_operations_skills_successful as int
+        cast(i_ready_pro_decimals_and_operations_skills_successful as numeric) as int
     ) as decimals_and_operations_skills_successful,
     cast(
-        i_ready_pro_equations_and_functions_percent_skills_successful as int
+        cast(
+            i_ready_pro_equations_and_functions_percent_skills_successful as numeric
+        ) as int
     ) as equations_and_functions_percent_skills_successful,
     cast(
-        i_ready_pro_equations_and_functions_skills_completed as int
+        cast(i_ready_pro_equations_and_functions_skills_completed as numeric) as int
     ) as equations_and_functions_skills_completed,
     cast(
-        i_ready_pro_equations_and_functions_skills_successful as int
+        cast(i_ready_pro_equations_and_functions_skills_successful as numeric) as int
     ) as equations_and_functions_skills_successful,
     cast(
-        i_ready_pro_fractions_and_operations_percent_skills_successful as int
+        cast(
+            i_ready_pro_fractions_and_operations_percent_skills_successful as numeric
+        ) as int
     ) as fractions_and_operations_percent_skills_successful,
     cast(
-        i_ready_pro_fractions_and_operations_skills_completed as int
+        cast(i_ready_pro_fractions_and_operations_skills_completed as numeric) as int
     ) as fractions_and_operations_skills_completed,
     cast(
-        i_ready_pro_fractions_and_operations_skills_successful as int
+        cast(i_ready_pro_fractions_and_operations_skills_successful as numeric) as int
     ) as fractions_and_operations_skills_successful,
     cast(
-        i_ready_pro_geometric_measurement_and_figures_percent_skills_successful as int
+        cast(
+            i_ready_pro_geometric_measurement_and_figures_percent_skills_successful
+            as numeric
+        ) as int
     ) as geometric_measurement_and_figures_percent_skills_successful,
     cast(
-        i_ready_pro_geometric_measurement_and_figures_skills_completed as int
+        cast(
+            i_ready_pro_geometric_measurement_and_figures_skills_completed as numeric
+        ) as int
     ) as geometric_measurement_and_figures_skills_completed,
     cast(
-        i_ready_pro_geometric_measurement_and_figures_skills_successful as int
+        cast(
+            i_ready_pro_geometric_measurement_and_figures_skills_successful as numeric
+        ) as int
     ) as geometric_measurement_and_figures_skills_successful,
     cast(
         -- trunk-ignore(sqlfluff/LT05): vendor column name exceeds 88 chars
@@ -109,155 +137,184 @@ select
         as int
     ) as number_relationships_and_operation_concepts_percent_k_2_skills_successful,
     cast(
-        i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_completed
-        as int
+        cast(
+            i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_completed
+            as numeric
+        ) as int
     ) as number_relationships_and_operation_concepts_k_2_skills_completed,
     cast(
-        i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_successful
-        as int
+        cast(
+            -- trunk-ignore(sqlfluff/LT05): 77-char column name, can't wrap
+            i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_successful
+            as numeric
+        ) as int
     ) as number_relationships_and_operation_concepts_k_2_skills_successful,
     cast(
-        i_ready_pro_number_sense_percent_k_2_skills_successful as int
+        cast(i_ready_pro_number_sense_percent_k_2_skills_successful as numeric) as int
     ) as number_sense_percent_k_2_skills_successful,
     cast(
-        i_ready_pro_number_sense_k_2_skills_completed as int
+        cast(i_ready_pro_number_sense_k_2_skills_completed as numeric) as int
     ) as number_sense_k_2_skills_completed,
     cast(
-        i_ready_pro_number_sense_k_2_skills_successful as int
+        cast(i_ready_pro_number_sense_k_2_skills_successful as numeric) as int
     ) as number_sense_k_2_skills_successful,
     cast(
-        i_ready_pro_rational_numbers_and_operations_percent_skills_successful as int
+        cast(
+            i_ready_pro_rational_numbers_and_operations_percent_skills_successful
+            as numeric
+        ) as int
     ) as rational_numbers_and_operations_percent_skills_successful,
     cast(
-        i_ready_pro_rational_numbers_and_operations_skills_completed as int
+        cast(
+            i_ready_pro_rational_numbers_and_operations_skills_completed as numeric
+        ) as int
     ) as rational_numbers_and_operations_skills_completed,
     cast(
-        i_ready_pro_rational_numbers_and_operations_skills_successful as int
+        cast(
+            i_ready_pro_rational_numbers_and_operations_skills_successful as numeric
+        ) as int
     ) as rational_numbers_and_operations_skills_successful,
     cast(
-        i_ready_pro_ratios_and_proportions_percent_skills_successful as int
+        cast(
+            i_ready_pro_ratios_and_proportions_percent_skills_successful as numeric
+        ) as int
     ) as ratios_and_proportions_percent_skills_successful,
     cast(
-        i_ready_pro_ratios_and_proportions_skills_completed as int
+        cast(i_ready_pro_ratios_and_proportions_skills_completed as numeric) as int
     ) as ratios_and_proportions_skills_completed,
     cast(
-        i_ready_pro_ratios_and_proportions_skills_successful as int
+        cast(i_ready_pro_ratios_and_proportions_skills_successful as numeric) as int
     ) as ratios_and_proportions_skills_successful,
     cast(
-        i_ready_pro_whole_numbers_and_operations_percent_skills_successful as int
+        cast(
+            i_ready_pro_whole_numbers_and_operations_percent_skills_successful
+            as numeric
+        ) as int
     ) as whole_numbers_and_operations_percent_skills_successful,
     cast(
-        i_ready_pro_whole_numbers_and_operations_skills_completed as int
+        cast(
+            i_ready_pro_whole_numbers_and_operations_skills_completed as numeric
+        ) as int
     ) as whole_numbers_and_operations_skills_completed,
     cast(
-        i_ready_pro_whole_numbers_and_operations_skills_successful as int
+        cast(
+            i_ready_pro_whole_numbers_and_operations_skills_successful as numeric
+        ) as int
     ) as whole_numbers_and_operations_skills_successful,
 
     cast(
-        i_ready_comprehension_close_reading_lessons_completed as int
+        cast(i_ready_comprehension_close_reading_lessons_completed as numeric) as int
     ) as comprehension_close_reading_lessons_completed,
     cast(
-        i_ready_comprehension_close_reading_lessons_passed as int
+        cast(i_ready_comprehension_close_reading_lessons_passed as numeric) as int
     ) as comprehension_close_reading_lessons_passed,
     cast(
-        i_ready_comprehension_close_reading_percent_lessons_passed as int
+        cast(
+            i_ready_comprehension_close_reading_percent_lessons_passed as numeric
+        ) as int
     ) as comprehension_close_reading_percent_lessons_passed,
     cast(
-        i_ready_high_frequency_words_lessons_completed as int
+        cast(i_ready_high_frequency_words_lessons_completed as numeric) as int
     ) as high_frequency_words_lessons_completed,
     cast(
-        i_ready_high_frequency_words_lessons_passed as int
+        cast(i_ready_high_frequency_words_lessons_passed as numeric) as int
     ) as high_frequency_words_lessons_passed,
     cast(
-        i_ready_high_frequency_words_percent_lessons_passed as int
+        cast(i_ready_high_frequency_words_percent_lessons_passed as numeric) as int
     ) as high_frequency_words_percent_lessons_passed,
-    cast(i_ready_phonics_lessons_completed as int) as phonics_lessons_completed,
-    cast(i_ready_phonics_lessons_passed as int) as phonics_lessons_passed,
     cast(
-        i_ready_phonics_percent_lessons_passed as int
+        cast(i_ready_phonics_lessons_completed as numeric) as int
+    ) as phonics_lessons_completed,
+    cast(
+        cast(i_ready_phonics_lessons_passed as numeric) as int
+    ) as phonics_lessons_passed,
+    cast(
+        cast(i_ready_phonics_percent_lessons_passed as numeric) as int
     ) as phonics_percent_lessons_passed,
     cast(
-        i_ready_phonological_awareness_lessons_completed as int
+        cast(i_ready_phonological_awareness_lessons_completed as numeric) as int
     ) as phonological_awareness_lessons_completed,
     cast(
-        i_ready_phonological_awareness_lessons_passed as int
+        cast(i_ready_phonological_awareness_lessons_passed as numeric) as int
     ) as phonological_awareness_lessons_passed,
     cast(
-        i_ready_phonological_awareness_percent_lessons_passed as int
+        cast(i_ready_phonological_awareness_percent_lessons_passed as numeric) as int
     ) as phonological_awareness_percent_lessons_passed,
     cast(
-        i_ready_pro_endings_affixes_percent_skills_successful as int
+        cast(i_ready_pro_endings_affixes_percent_skills_successful as numeric) as int
     ) as endings_affixes_percent_skills_successful,
     cast(
-        i_ready_pro_endings_affixes_skills_completed as int
+        cast(i_ready_pro_endings_affixes_skills_completed as numeric) as int
     ) as endings_affixes_skills_completed,
     cast(
-        i_ready_pro_endings_affixes_skills_successful as int
+        cast(i_ready_pro_endings_affixes_skills_successful as numeric) as int
     ) as endings_affixes_skills_successful,
     cast(
-        i_ready_pro_high_frequency_words_percent_skills_successful as int
+        cast(
+            i_ready_pro_high_frequency_words_percent_skills_successful as numeric
+        ) as int
     ) as high_frequency_words_percent_skills_successful,
     cast(
-        i_ready_pro_high_frequency_words_skills_completed as int
+        cast(i_ready_pro_high_frequency_words_skills_completed as numeric) as int
     ) as high_frequency_words_skills_completed,
     cast(
-        i_ready_pro_high_frequency_words_skills_successful as int
+        cast(i_ready_pro_high_frequency_words_skills_successful as numeric) as int
     ) as high_frequency_words_skills_successful,
     cast(
-        i_ready_pro_language_structures_lessons_completed as int
+        cast(i_ready_pro_language_structures_lessons_completed as numeric) as int
     ) as language_structures_lessons_completed,
     cast(
-        i_ready_pro_language_structures_lessons_passed as int
+        cast(i_ready_pro_language_structures_lessons_passed as numeric) as int
     ) as language_structures_lessons_passed,
     cast(
-        i_ready_pro_language_structures_percent_lessons_passed as int
+        cast(i_ready_pro_language_structures_percent_lessons_passed as numeric) as int
     ) as language_structures_percent_lessons_passed,
     cast(
-        i_ready_pro_multi_syllable_percent_skills_successful as int
+        cast(i_ready_pro_multi_syllable_percent_skills_successful as numeric) as int
     ) as multi_syllable_percent_skills_successful,
     cast(
-        i_ready_pro_multi_syllable_skills_completed as int
+        cast(i_ready_pro_multi_syllable_skills_completed as numeric) as int
     ) as multi_syllable_skills_completed,
     cast(
-        i_ready_pro_multi_syllable_skills_successful as int
+        cast(i_ready_pro_multi_syllable_skills_successful as numeric) as int
     ) as multi_syllable_skills_successful,
     cast(
-        i_ready_pro_single_syllable_percent_skills_successful as int
+        cast(i_ready_pro_single_syllable_percent_skills_successful as numeric) as int
     ) as single_syllable_percent_skills_successful,
     cast(
-        i_ready_pro_single_syllable_skills_completed as int
+        cast(i_ready_pro_single_syllable_skills_completed as numeric) as int
     ) as single_syllable_skills_completed,
     cast(
-        i_ready_pro_single_syllable_skills_successful as int
+        cast(i_ready_pro_single_syllable_skills_successful as numeric) as int
     ) as single_syllable_skills_successful,
 
     coalesce(
-        cast(i_ready_comprehension_lessons_completed as int),
-        cast(i_ready_pro_comprehension_lessons_completed as int)
+        cast(cast(i_ready_comprehension_lessons_completed as numeric) as int),
+        cast(cast(i_ready_pro_comprehension_lessons_completed as numeric) as int)
     ) as comprehension_lessons_completed,
 
     coalesce(
-        cast(i_ready_comprehension_lessons_passed as int),
-        cast(i_ready_pro_comprehension_lessons_passed as int)
+        cast(cast(i_ready_comprehension_lessons_passed as numeric) as int),
+        cast(cast(i_ready_pro_comprehension_lessons_passed as numeric) as int)
     ) as comprehension_lessons_passed,
 
     coalesce(
-        cast(i_ready_comprehension_percent_lessons_passed as int),
-        cast(i_ready_pro_comprehension_percent_lessons_passed as int)
+        cast(cast(i_ready_comprehension_percent_lessons_passed as numeric) as int),
+        cast(cast(i_ready_pro_comprehension_percent_lessons_passed as numeric) as int)
     ) as comprehension_percent_lessons_passed,
     coalesce(
-        cast(i_ready_vocabulary_lessons_completed as int),
-        cast(i_ready_pro_vocabulary_lessons_completed as int)
+        cast(cast(i_ready_vocabulary_lessons_completed as numeric) as int),
+        cast(cast(i_ready_pro_vocabulary_lessons_completed as numeric) as int)
     ) as vocabulary_lessons_completed,
 
     coalesce(
-        cast(i_ready_vocabulary_lessons_passed as int),
-        cast(i_ready_pro_vocabulary_lessons_passed as int)
+        cast(cast(i_ready_vocabulary_lessons_passed as numeric) as int),
+        cast(cast(i_ready_pro_vocabulary_lessons_passed as numeric) as int)
     ) as vocabulary_lessons_passed,
 
     coalesce(
-        cast(i_ready_vocabulary_percent_lessons_passed as int),
-        cast(i_ready_pro_vocabulary_percent_lessons_passed as int)
+        cast(cast(i_ready_vocabulary_percent_lessons_passed as numeric) as int),
+        cast(cast(i_ready_pro_vocabulary_percent_lessons_passed as numeric) as int)
     ) as vocabulary_percent_lessons_passed,
 
     safe_cast(student_id as int) as student_id,
