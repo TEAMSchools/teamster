@@ -861,6 +861,34 @@ roughly the first day of school), so the "copy the Benchmark start" shortcut
 used for NJ does NOT transfer -- Miami's Benchmark sits a month into the year.
 Get `PLIT1.start` confirmed by T&L for Miami rather than deriving it.
 
+### A round can legitimately have NO `PLIT` window -- 10 rows against 11 rounds is not a bug
+
+SY26-27 Miami has 11 rounds but only 10 `PLIT` rows. That is correct. T&L
+extended PM #2 to run `10/26` through `11/06`, and PM #3 starts `11/09`, so no
+school days remain between them -- the derived `PLIT3` start (`11/09`) lands
+after its derived end (`11/06`). `generate_sy2627_miami_lit_plit_rows.py` skips
+such a round and prints which one, rather than emitting an inverted range.
+
+**Do not "restore" the missing row.** The two ways to force one are both worse
+than omitting it: an inverted range counts zero days anyway, and a range
+overlapping `LIT2` double-counts those 5 days and inflates `pm_days`, which is
+the goal-math denominator.
+
+**No days are lost, they move.** `pm_round_days` maps `LITn` and `PLITn` to the
+same round, so the 5 days that used to sit in `PLIT3` now sit inside the
+extended `LIT2`. Measured before and after: round 2 went 14 to 19 days, round 3
+went 9 to 4, and the `BOY->MOY` season total held at 85. Because the season
+total is the denominator, no other round's proportion moved.
+
+**Nothing downstream filters on `PLIT`.** Verified with a case-sensitive
+word-boundary search across `src/dbt` and `src/cube`: zero explicit `PLIT`
+references. Expected Assessments never carries a `PLIT` test code either -- its
+PM rows use `LIT1` through `LIT11` only -- so the `test_code = code` join to
+`reporting__terms` never looks for one. `pm_rounds_agg` also attaches by
+`LEFT JOIN`, so a round with zero days keeps its row instead of vanishing. Had
+any model filtered `code like 'PLIT%'`, omitting the row would have silently
+dropped round 3 rather than reassigning its days.
+
 ### `pm_goal_include` scaffolding -- K-2 only, same pattern as `PLIT`
 
 Confirmed with the user against real AY2025 data before building SY26-27 rows: a

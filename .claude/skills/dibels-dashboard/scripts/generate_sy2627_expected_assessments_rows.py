@@ -359,7 +359,7 @@ MIAMI_LATE = {
 # MOY->EOY.
 MIAMI_SCHEDULE = [
     (1, "2026-10-05", "2026-10-09", MIAMI_ROUND_1),
-    (2, "2026-10-26", "2026-10-30", MIAMI_EARLY),
+    (2, "2026-10-26", "2026-11-06", MIAMI_EARLY),
     (3, "2026-11-09", "2026-11-13", MIAMI_EARLY),
     (4, "2026-11-30", "2026-12-04", MIAMI_EARLY),
     (5, "2026-12-14", "2026-12-18", MIAMI_EARLY),
@@ -459,7 +459,18 @@ def base_row(
     ]
 
 
-def emit(rows: list[list[str]], base: list[str], cohort: str) -> None:
+def emit(
+    rows: list[list[str]], base: list[str], cohort: str, single: bool = False
+) -> None:
+    """Append the cohort copies of a row, or one cohort-free row.
+
+    The round data carries ONE measure list per grade/round plus a cohort tag,
+    never per-cohort measure lists -- so single-row mode is just dropping the
+    tag, not choosing between cohorts.
+    """
+    if single:
+        rows.append(list(base))
+        return
     levels = ["Below", "Well Below"] if cohort == BOTH else ["Well Below"]
     for level in levels:
         r = list(base)
@@ -471,6 +482,17 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
     parser.add_argument(
+        "--single-rows",
+        action="store_true",
+        help=(
+            "Emit the old 16-column shape for the Expected Assessments tab: one"
+            " row per grade/round/measure with no assessment_type or"
+            " measure_standard_level, and the goal scaffold applied to every"
+            " grade. Use this for the internal-only fallback, where 3-8 needs"
+            " the same trajectory scaffold K-2 gets."
+        ),
+    )
+    parser.add_argument(
         "--regions",
         default=",".join(REGION_ROUNDS),
         help=(
@@ -480,6 +502,8 @@ def main() -> None:
         ),
     )
     args = parser.parse_args()
+
+    scaffold_grades = set(range(0, 9)) if args.single_rows else K2_GRADES
 
     selected = [r.strip() for r in args.regions.split(",") if r.strip()]
     unknown = [r for r in selected if r not in REGION_ROUNDS]
@@ -493,11 +517,11 @@ def main() -> None:
         # -- grades 3-8: only rounds actually listed, pm_goal_include always blank --
         for round_number, season, start, _end, grades in rounds:
             for grade, (measure_codes, cohort) in grades.items():
-                if grade in K2_GRADES:
+                if grade in scaffold_grades:
                     continue
                 for ms in measure_rows(measure_codes):
                     base = base_row(region, grade, round_number, season, start, "", ms)
-                    emit(out_rows, base, cohort)
+                    emit(out_rows, base, cohort, args.single_rows)
 
         # -- grades K-2: scaffold every round per season for any measure tested
         # at least once that season; pm_goal_include=false on untested rounds --
@@ -506,7 +530,7 @@ def main() -> None:
             seasons.setdefault(season, []).append((round_number, start, end, grades))
 
         for season, season_rounds in seasons.items():
-            for grade in K2_GRADES:
+            for grade in scaffold_grades:
                 tested_measures: set[str] = set()
                 for _round_number, _start, _end, grades in season_rounds:
                     if grade in grades:
@@ -529,11 +553,23 @@ def main() -> None:
                                 pm_goal_include,
                                 ms,
                             )
-                            emit(out_rows, base, k2_cohort(grades, grade))
+                            emit(
+                                out_rows,
+                                base,
+                                k2_cohort(grades, grade),
+                                args.single_rows,
+                            )
 
     with open(args.out, "w") as f:
         for row in out_rows:
-            f.write("\t".join(row) + "\n")
+            # the old tab has neither assessment_type (derived) nor
+            # measure_standard_level; dropping 6 and 7 leaves its 16-column order
+            out = (
+                [v for i, v in enumerate(row) if i not in (6, 7)]
+                if args.single_rows
+                else row
+            )
+            f.write("\t".join(out) + "\n")
 
     print(f"rows written: {len(out_rows)} -> {args.out}")
 

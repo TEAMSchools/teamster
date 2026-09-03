@@ -68,7 +68,7 @@ BANDS = [("0,1,2", True), ("3,4", False), ("5,6,7,8", False)]
 # (round_number, start, end) -- T&L SY27 doc, Miami tab.
 ROUNDS = [
     (1, "2026-10-05", "2026-10-09"),
-    (2, "2026-10-26", "2026-10-30"),
+    (2, "2026-10-26", "2026-11-06"),
     (3, "2026-11-09", "2026-11-13"),
     (4, "2026-11-30", "2026-12-04"),
     (5, "2026-12-14", "2026-12-18"),
@@ -149,6 +149,7 @@ def main() -> None:
     first_day = min(in_session)
 
     plit: dict[int, tuple[str, str]] = {}
+    skipped: list[int] = []
     prev_round_end: datetime.date | None = None
     for round_number, r_start, r_end in ROUNDS:
         if prev_round_end is None:
@@ -156,18 +157,24 @@ def main() -> None:
         else:
             plit_start = first_in_session_after(in_session, prev_round_end)
         plit_end = last_in_session_before(in_session, d(r_start))
+        # A round can legitimately have NO pre-round window. When T&L extends a
+        # round to butt up against the next one -- SY26-27 PM #2 runs 10/26 to
+        # 11/06 and PM #3 starts 11/09 -- there are no school days left between
+        # them, so the derived start lands after the derived end. Skip the row
+        # rather than emit an inverted range: the days are not lost, they now sit
+        # inside the previous round's LIT window, and pm_round_days maps LITn and
+        # PLITn to the same round anyway. Nothing downstream filters on PLIT.
         if plit_start > plit_end:
-            raise ValueError(
-                f"PLIT{round_number} start {plit_start} is after end {plit_end}"
-            )
-        plit[round_number] = (plit_start.isoformat(), plit_end.isoformat())
+            skipped.append(round_number)
+        else:
+            plit[round_number] = (plit_start.isoformat(), plit_end.isoformat())
         prev_round_end = d(r_end)
 
     out_rows = []
     for grade_band, carries_plit in BANDS:
         for round_number, r_start, r_end in ROUNDS:
             season = "BOY->MOY" if round_number <= SEASON_SPLIT else "MOY->EOY"
-            if carries_plit:
+            if carries_plit and round_number in plit:
                 p_start, p_end = plit[round_number]
                 out_rows.append(
                     row(f"PLIT{round_number}", season, p_start, p_end, grade_band)
@@ -184,6 +191,11 @@ def main() -> None:
     print("derived PLIT windows:")
     for round_number, (p_start, p_end) in plit.items():
         print(f"  PLIT{round_number:<2} {p_start} -> {p_end}")
+    if skipped:
+        print(
+            "PLIT skipped, no school days between rounds: "
+            + ", ".join(f"PLIT{n}" for n in skipped)
+        )
     print(f"rows written: {len(out_rows)} -> {args.out}")
 
 
