@@ -38,7 +38,8 @@ The audit operates at several grains:
 - **Assignment** — did this assignment receive valid scores (correct point
   value, enough of the class graded, not over-exempt)? This is the
   `assignment_has_flags` rollup, surfaced on the dashboard as per-assignment
-  detail rows.
+  detail rows and, in plain language, in the `flag_reasons` column on the
+  category row.
 - **Section-category, quarter-to-date** — has this teacher entered the required
   number of assignments in this category so far this quarter? (Quarter-grain as
   of AY 2026-2027 — previously a weekly check.)
@@ -455,9 +456,13 @@ this is an internal ops artifact, unlike the Tableau-facing report below.
 
 `rpt_tableau__gradebook_audit` reads the intermediate above (aggregated, with
 PII dropped) for its section-level "any student flagged" booleans — see below.
-No per-rule "reason" is ever surfaced for either flag; the whole point of the
-July 2026 split was to move to aggregated boolean signals instead of granular
-rule-level detail.
+No per-rule "reason" is ever surfaced for either **student** flag; the whole
+point of the July 2026 split was to move to aggregated boolean signals instead
+of granular rule-level detail. That rule is scoped to the student flags, which
+carry PII and fan out per student. **Assignment** flags do carry a reason:
+`flag_reasons` names them in plain language on the category row (see below).
+Assignment flags sit at section grain, carry no PII, and come from a fixed set
+of 4 checks, so naming them adds no rows and exposes nothing.
 
 ### Final extract: `rpt_tableau__gradebook_audit`
 
@@ -478,7 +483,12 @@ concept, unlike the pre-July-2026 design below.
    rollup data. Computes `expectation`, `assignments_entered_count`, and
    `assignments_entered_count_no_flags` as **window functions** partitioned by
    `_dbt_source_project, sectionid, quarter, assignment_category_code` — not a
-   `GROUP BY` — so the per-assignment row grain survives for step 2 to use.
+   `GROUP BY` — so the per-assignment row grain survives for step 2 to use. Four
+   more window `countif`s over the same partition count the assignments tripping
+   each term of `assignment_has_flags`: `n_percent_graded_min_not_met`,
+   `n_invalid_scores` (the `flags_sum > 0` term), `n_max_score_not_10` and
+   `n_overly_exempt`. They reuse the existing partition rather than introducing
+   a second one.
 2. `category_summary` — a grain-projection `SELECT DISTINCT` over
    `category_join` that collapses the per-assignment fan-out to one row per
    section × quarter × category, and adds `not_enough_assignments`
@@ -490,14 +500,21 @@ concept, unlike the pre-July-2026 design below.
    window aggregates from step 1 over that same partition — so `DISTINCT` is a
    pure grain projection, not a mask for upstream duplicates. The
    assignment-level columns from the rollup are not projected, so they collapse
-   out.
+   out. This step also builds `flag_reasons` from the 4 window counts —
+   `array_to_string` over an array of conditional labels, wrapped in `nullif`
+   because `array_to_string` returns `''`, not NULL, when every element is NULL.
+   The labels print in a fixed order: `Under 90% graded`,
+   `Invalid scores entered`, `Not out of 10 points`, `Half the class exempt`.
+   `Under 90% graded` never appears alone, because grading below 90% of expected
+   students leaves unscored expected students, which increments
+   `n_expected_null` and so trips the `flags_sum > 0` term too.
 3. `assignment_detail` — reads `category_join` directly (the full fanned-out
    set), filtered to `assignment_has_flags`.
 4. `combined` — explicit-column `UNION ALL` of `category_summary` and
    `assignment_detail`, tagging `row_type`. `expectation`,
-   `assignments_entered_count`, and `not_enough_assignments` are null on
-   `assignment_detail` rows; the assignment-identity columns are null on
-   `category_summary` rows.
+   `assignments_entered_count`, `assignments_entered_count_no_flags`,
+   `not_enough_assignments`, and `flag_reasons` are null on `assignment_detail`
+   rows; the assignment-identity columns are null on `category_summary` rows.
 5. `student_flags_aggregate` — reads
    `int_extracts__gradebook_audit_student_flags` (see above), grouped to
    `_dbt_source_project, sectionid, quarter`, computing `has_grade_above_100` /
