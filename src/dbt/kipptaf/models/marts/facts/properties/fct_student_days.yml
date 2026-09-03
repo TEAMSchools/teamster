@@ -14,17 +14,11 @@ models:
       included, without a per-school anchor flag. Nothing on this fact is
       anchored -- pin a date instead.
 
-      Miami is present for every year, unlike the model this replaced. The
-      enrollment spine retains it and so does the school calendar, so Miami
-      enrollment reconciles to Topline across history. Miami attendance before
-      AY2026 is still absent, because #4803 dropped the frozen PowerSchool
-      archive and Focus does not carry those years -- every Tableau attendance
-      surface has the same gap. Those rows carry null attendance rather than a
-      fabricated zero, and every rate on them already excludes null attendance
-      from both numerator and denominator (#4744), so the gap cannot move a
-      network rate. #5114 is open to restore the archive, so treat the Miami gap
-      as temporary; when it lands, or when Focus historical attendance is
-      modelled, it fills in here with no change to this model.
+      A student-day with no recorded attendance carries a null attendance_value
+      rather than a fabricated zero, and every value derived from presence is
+      null with it. Rates exclude those rows from both numerator and denominator
+      (#4744), so a region or year that gains attendance later fills in here
+      with no change to this model.
 
       Paterson's attendance_value depends on PowerSchool attendance-conversion
       items that #4193 reports as incomplete, so every value derived from
@@ -32,10 +26,9 @@ models:
       -- carries a known upstream uncertainty there. The AY2025 aggregates show
       no obvious distortion (Paterson ADA 92.7 to 93.4 percent by school against
       Newark's 92.5), so treat the size and direction as unestablished rather
-      than measured. Unlike Miami's, this gap is likely permanent for pre-AY2026
-      -- the conversion items were never captured, so there is nothing to
-      restore from. membership_value is clean, so enrollment counts and
-      n_membership_days_ytd are unaffected.
+      than measured. The conversion items were never captured at the time, so
+      treat this as unlikely to be backfilled. membership_value is clean, so
+      enrollment counts and n_membership_days_ytd are unaffected.
 
       Location, school calendar, and academic year are reached via
       dim_student_enrollments and dim_terms, not stored on the fact. FK to
@@ -151,13 +144,12 @@ models:
                 field: student_enrollment_key
               config:
                 # Baseline, not a target. 2,286 rows across 15 enrollment keys
-                # predate the Focus cutover and are unrelated to it: 10 Newark
-                # stints (AY2016-2024), 4 Camden (AY2020, AY2023), 1 Paterson
-                # (AY2025). #4803 took this from 155,863 down to the residue by
-                # dropping the frozen Miami PowerSchool archive, whose 153,577
-                # AY2025 rows keyed to enrollment records Focus re-dated. Warn
-                # above the residue so a NEW orphan source stays visible; do
-                # not raise the threshold to silence one.
+                # come from an upstream divergence between
+                # int_extracts__student_enrollments and
+                # dim_student_enrollments: 10 Newark stints (AY2016-2024), 4
+                # Camden (AY2020, AY2023), 1 Paterson (AY2025). Warn above
+                # the residue so a NEW orphan source stays visible; do not
+                # raise the threshold to silence one.
                 warn_if: ">2286"
       - name: date_key
         data_type: date

@@ -248,8 +248,7 @@ cubes:
           every calendar day a student was enrolled, break days included, so a
           weekend or holiday resolves the same as a school day.
 
-          Pre-AY2026 Miami reads zero here, because #4803 dropped its attendance
-          archive. #5114 restores it. For students served across a whole period
+           For students served across a whole period
           use student_periods_view.count_students, which answers a different
           question from enrolled on a given date.
         sql: "{student_school_enrollments.student_key}"
@@ -394,11 +393,9 @@ cubes:
           Denominator is count_students, every student in the queried slice. No
           minimum-membership-day floor applies. Numerator and denominator share
           the same population, so a student whose attendance was never recorded
-          is outside both and cannot pull the rate down. Pre-AY2026 Miami is
-          absent from this rate rather than deflating it, and #5114 restores its
-          attendance. Pin attendance_date, and show count_students beside this:
-          a rate over students with only a few membership days each is volatile,
-          not wrong.
+          is outside both and cannot pull the rate down.  Pin attendance_date,
+          and show count_students beside this: a rate over students with only a
+          few membership days each is volatile, not wrong.
         sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
         type: number
         format: percent
@@ -427,8 +424,7 @@ cubes:
           slice. No minimum-membership-day floor applies. Numerator and
           denominator share the same population, so a student whose attendance
           was never recorded is outside both and cannot pull the rate down.
-          Pre-AY2026 Miami is absent from this rate rather than deflating it,
-          and #5114 restores its attendance. Truancy has no eligibility concept
+           Truancy has no eligibility concept
           in either regional rule. Pin attendance_date.
         sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
         type: number

@@ -34,20 +34,11 @@ views:
       weeks of an academic year volatile rather than wrong. Always display
       count_students alongside any rate measure on this view.
 
-      Miami's attendance runs from AY2026 forward only — the accepted result of
-      the Focus cutover, and the same gap every Tableau attendance surface has.
-      Its pre-AY2026 rows carry no recorded attendance, so Miami is absent from
-      count_students and from every rate for those years rather than sitting in
-      a denominator it cannot reach. Read any pre-AY2026 figure here as three
-      regions, both for the population and for the rate. #5114 is open to
-      restore the archive, after which those years gain a fourth region.
-
       Paterson's presence-derived measures (ada_tier, pct_chronically_absent,
       truancy) carry a known upstream uncertainty from incomplete PowerSchool
       attendance-conversion items (#4193), unquantified as of AY2025;
-      count_students is unaffected. Unlike Miami's, Paterson's pre-AY2026 gap is
-      likely permanent -- the conversion items were never captured, so there is
-      nothing to restore.
+      count_students is unaffected. The conversion items were never captured at
+      the time, so this is unlikely to be backfilled.
 
       Every rate on this view divides by count_students, which counts students
       with recorded attendance. No minimum-day floor applies -- one measured day

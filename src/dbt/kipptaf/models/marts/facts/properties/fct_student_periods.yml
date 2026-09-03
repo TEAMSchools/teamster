@@ -33,16 +33,10 @@ models:
       academic year as volatile rather than wrong, and display the population
       count beside any rate derived from this fact.
 
-      AY2025 and earlier cover Camden, Newark, and Paterson only — Miami is
-      present starting AY2026. Miami migrated from PowerSchool to Focus, and
-      Focus re-dated 959 of Miami's AY2025 enrollment stints, leaving 153,577
-      fact rows pointed at enrollment records dim_student_enrollments no longer
-      holds; re-keying from Focus dates was measured and rejected, so the frozen
-      PowerSchool attendance archive was dropped rather than kept misaligned
-      (#4803). This was the accepted outcome of the Focus cutover rather than
-      missing data, and #5114 is now open to restore the archive — so treat the
-      Miami gap as temporary and expect pre-AY2026 rates to gain a fourth region
-      when it lands.
+      A student-school-period with no recorded attendance produces no rateable
+      row: ada_tier and is_truant are both null, and count_students excludes it.
+      A region or year that gains attendance later appears here with no change
+      to this model.
 
       Paterson's attendance_value depends on PowerSchool attendance-conversion
       items that #4193 reports as incomplete, so every value this fact derives
@@ -54,11 +48,9 @@ models:
       and direction as unestablished rather than measured. membership_value is
       clean, so n_membership_days_ytd is unaffected.
 
-      Unlike the Miami gap, Paterson's is likely permanent for pre-AY2026: the
-      conversion items were never captured at the time, so there is nothing to
-      restore from. Read Paterson's pre-AY2026 presence-derived values as
-      carrying an uncertainty that will not be resolved, not as pending a
-      backfill.
+      The conversion items were never captured at the time, so read Paterson's
+      pre-AY2026 presence-derived values as carrying an uncertainty that is
+      unlikely to be backfilled.
 
       Mid-year leavers are included by design — a student who withdraws mid-year
       still accumulates through their last membership day and counts in the year

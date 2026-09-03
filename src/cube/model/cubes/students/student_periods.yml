@@ -184,8 +184,7 @@ cubes:
 
           This is a served-during-the-period count, a different question from
           enrolled on a given date — for that, pin the date on
-          student_days_view. Pre-AY2026 Miami reads zero here, because #4803
-          dropped its attendance archive. #5114 restores it.
+          student_days_view.
 
           This is the denominator for every rate on this cube — chronic absence,
           both ADA-tier shares, and truancy. No rate here applies a
@@ -217,8 +216,7 @@ cubes:
           the queried slice. No minimum-membership-day floor applies. Numerator
           and denominator share the same population, so a student whose
           attendance was never recorded is outside both and cannot pull the rate
-          down. Pre-AY2026 Miami is absent from this rate rather than deflating
-          it, and #5114 restores its attendance.
+          down.
 
           So an early period reports a rate over students judged on very few
           days: a student who misses one of their first four days sits at 75%
@@ -246,9 +244,7 @@ cubes:
           Denominator is count_students, every student in the queried slice. No
           minimum-membership-day floor applies. Numerator and denominator share
           the same population, so a student whose attendance was never recorded
-          is outside both and cannot pull the rate down. Pre-AY2026 Miami is
-          absent from this rate rather than deflating it, and #5114 restores its
-          attendance.
+          is outside both and cannot pull the rate down.
         sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students}, 0)"
         type: number
         format: percent
@@ -270,9 +266,7 @@ cubes:
           Denominator is count_students, every student in the queried slice. No
           minimum-membership-day floor applies. Numerator and denominator share
           the same population, so a student whose attendance was never recorded
-          is outside both and cannot pull the rate down. Pre-AY2026 Miami is
-          absent from this rate rather than deflating it, and #5114 restores its
-          attendance.
+          is outside both and cannot pull the rate down.
         sql: "1.0 * {_count_tier_3} / NULLIF({count_students}, 0)"
         type: number
         format: percent
@@ -308,8 +302,7 @@ cubes:
           queried slice. No minimum-membership-day floor applies. Numerator and
           denominator share the same population, so a student whose attendance
           was never recorded is outside both and cannot pull the rate down.
-          Pre-AY2026 Miami is absent from this rate rather than deflating it,
-          and #5114 restores its attendance. Truancy has no eligibility concept
+           Truancy has no eligibility concept
           in either the Miami or the NJ rule.
 
           Any minimum-membership-day condition would belong inside is_truant on
