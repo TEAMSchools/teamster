@@ -43,28 +43,35 @@ with
     -- region/ps_schoolid/grade_level, and academic_year is a literal
     incoming as (
         select distinct
-            u.region,
-            u.grade_level,
-            u.schoolid,
-            u.schoolid as ps_schoolid,
+            sr._dbt_source_project,
+            sr.region,
+            sr.grade_level,
+            x.location_powerschool_school_id as schoolid,
+            x.location_powerschool_school_id as ps_schoolid,
 
             {{ var("current_academic_year") }} + 1 as academic_year,
 
             'finalsite' as school_source,
 
-            'kipp' || lower(u.region) as _dbt_source_project,
-
-        from {{ ref("int_finalsite__status_report_unpivot") }} as u
+        from {{ ref("stg_finalsite__status_report") }} as sr
+        inner join
+            {{ ref("int_people__location_crosswalk") }} as x
+            on sr.assigned_school = x.location_name
         left join
             enrolled as e
-            on u.region = e.region
-            and u.schoolid = e.ps_schoolid
-            and u.grade_level = e.grade_level
+            on sr.region = e.region
+            and sr.grade_level = e.grade_level
+            and sr.active_school_year_int = e.academic_year
+            and x.location_powerschool_school_id = e.ps_schoolid
         where
-            u.enrollment_academic_year = {{ var("current_academic_year") }} + 1
-            -- schoolid 0 is Finalsite's "No School Assigned"
-            and u.schoolid != 0
-            -- anti-join: only school/grade pairs no SIS has ever carried
+            sr.active_school_year_int = {{ var("current_academic_year") }} + 1
+            -- ps_schoolid is the grain key and the cross-SIS join key, so an
+            -- unresolved crosswalk row cannot be carried
+            and x.location_powerschool_school_id is not null
+            -- Finalsite is authoritative for next year, so this keeps continuing
+            -- schools, not just brand-new ones. Scoped to the SAME year purely to
+            -- stop a duplicate once a SIS starts carrying next year too, which
+            -- happens when PowerSchool rolls over before the year begins.
             and e.ps_schoolid is null
     )
 
