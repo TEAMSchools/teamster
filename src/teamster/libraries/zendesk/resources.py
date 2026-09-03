@@ -4,13 +4,20 @@ from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import HTTPError, Response, Session
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import Timeout
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 
 class ZendeskResource(ConfigurableResource):
     subdomain: str
     client_id: str
     client_secret: str
-    scope: str = "read users:write"
     page_size: int = 100
     api_version: str = "v2"
 
@@ -21,6 +28,19 @@ class ZendeskResource(ConfigurableResource):
         self._log = check.not_none(value=context.log)
         self._service_root = self._service_root.format(self.subdomain)
 
+        self._session.headers.update(
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self._fetch_access_token()}",
+            }
+        )
+
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
+    )
+    def _fetch_access_token(self) -> str:
         # OAuth client_credentials grant: the token acts as the Zendesk user who
         # owns the OAuth client. Lifetime is ~30 min; the sync runs in minutes.
         # ponytail: mint once per run, add re-mint-on-401 if a run ever outlives it
@@ -30,17 +50,17 @@ class ZendeskResource(ConfigurableResource):
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
                 "client_secret": self.client_secret,
-                "scope": self.scope,
+                "scope": "read users:write",
             },
         )
-        response.raise_for_status()
 
-        self._session.headers.update(
-            {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {response.json()['access_token']}",
-            }
-        )
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            self._log.error(response.text)
+            raise e
+
+        return response.json()["access_token"]
 
     def _get_url(self, *args) -> str:
         return f"{self._service_root}/{self.api_version}/" + "/".join(
