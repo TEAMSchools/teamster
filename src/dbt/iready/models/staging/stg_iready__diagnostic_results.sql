@@ -1,125 +1,107 @@
 with
+    source_grade_normalized as (
+        select *, if(student_grade = 'K', '0', student_grade) as student_grade_numeric,
+        from {{ source("iready", "src_iready__diagnostic_results") }}
+    ),
+
     diagnostic_results as (
         select
             * except (
                 `grouping`,
-                `start_date`,
+                student_grade_numeric,
                 `subject`,
-                algebra_and_algebraic_thinking_scale_score,
-                annual_stretch_growth_measure,
-                annual_typical_growth_measure,
                 assessment_gain,
                 baseline_assessment_y_n,
-                baseline_diagnostic_y_n,
-                completion_date,
-                comprehension_informational_text_scale_score,
-                comprehension_literature_scale_score,
-                comprehension_overall_scale_score,
-                diagnostic_gain,
-                duration_min,
-                geometry_scale_score,
-                high_frequency_words_scale_score,
-                measurement_and_data_scale_score,
-                mid_on_grade_level_scale_score,
                 most_recent_assessment_ytd_y_n,
                 most_recent_diagnostic_y_n,
+                diagnostic_gain,
                 most_recent_diagnostic_ytd_y_n,
-                number_and_operations_scale_score,
-                overall_scale_score,
-                percent_progress_to_annual_stretch_growth_percent,
-                percent_progress_to_annual_typical_growth_percent,
-                percentile,
-                phonics_scale_score,
-                phonological_awareness_scale_score,
-                reading_comprehension_informational_text_scale_score,
-                reading_comprehension_literature_scale_score,
-                reading_comprehension_overall_scale_score,
-                student_id,
-                vocabulary_scale_score
+                baseline_diagnostic_y_n
+            ) replace (
+                cast(
+                    cast(overall_scale_score as numeric) as int
+                ) as overall_scale_score,
+                cast(cast(duration_min as numeric) as int) as duration_min,
+                cast(
+                    percent_progress_to_annual_stretch_growth_percent as numeric
+                ) as percent_progress_to_annual_stretch_growth_percent,
+                cast(
+                    percent_progress_to_annual_typical_growth_percent as numeric
+                ) as percent_progress_to_annual_typical_growth_percent,
+                cast(
+                    cast(annual_stretch_growth_measure as numeric) as int
+                ) as annual_stretch_growth_measure,
+                cast(
+                    cast(annual_typical_growth_measure as numeric) as int
+                ) as annual_typical_growth_measure,
+                cast(cast(percentile as numeric) as int) as percentile,
+                cast(
+                    cast(algebra_and_algebraic_thinking_scale_score as numeric) as int
+                ) as algebra_and_algebraic_thinking_scale_score,
+                cast(
+                    cast(comprehension_informational_text_scale_score as numeric) as int
+                ) as comprehension_informational_text_scale_score,
+                cast(
+                    cast(comprehension_literature_scale_score as numeric) as int
+                ) as comprehension_literature_scale_score,
+                cast(
+                    cast(comprehension_overall_scale_score as numeric) as int
+                ) as comprehension_overall_scale_score,
+                cast(
+                    cast(geometry_scale_score as numeric) as int
+                ) as geometry_scale_score,
+                cast(
+                    cast(high_frequency_words_scale_score as numeric) as int
+                ) as high_frequency_words_scale_score,
+                cast(
+                    cast(measurement_and_data_scale_score as numeric) as int
+                ) as measurement_and_data_scale_score,
+                cast(
+                    cast(mid_on_grade_level_scale_score as numeric) as int
+                ) as mid_on_grade_level_scale_score,
+                cast(
+                    cast(number_and_operations_scale_score as numeric) as int
+                ) as number_and_operations_scale_score,
+                cast(
+                    cast(phonics_scale_score as numeric) as int
+                ) as phonics_scale_score,
+                cast(
+                    cast(phonological_awareness_scale_score as numeric) as int
+                ) as phonological_awareness_scale_score,
+                cast(
+                    cast(
+                        reading_comprehension_informational_text_scale_score as numeric
+                    ) as int
+                ) as reading_comprehension_informational_text_scale_score,
+                cast(
+                    cast(reading_comprehension_literature_scale_score as numeric) as int
+                ) as reading_comprehension_literature_scale_score,
+                cast(
+                    cast(reading_comprehension_overall_scale_score as numeric) as int
+                ) as reading_comprehension_overall_scale_score,
+                cast(
+                    cast(vocabulary_scale_score as numeric) as int
+                ) as vocabulary_scale_score,
+                safe_cast(student_id as int) as student_id,
+                parse_date('%m/%d/%Y', `start_date`) as `start_date`,
+                parse_date('%m/%d/%Y', completion_date) as completion_date
             ),
 
             _dagster_partition_academic_year as academic_year_int,
-
-            cast(overall_scale_score as int) as overall_scale_score,
-            cast(duration_min as int) as duration_min,
-
-            cast(
-                percent_progress_to_annual_stretch_growth_percent as numeric
-            ) as percent_progress_to_annual_stretch_growth_percent,
-            cast(
-                percent_progress_to_annual_typical_growth_percent as numeric
-            ) as percent_progress_to_annual_typical_growth_percent,
-
+            cast(cast(student_grade_numeric as numeric) as int) as student_grade_int,
             cast(
                 cast(coalesce(diagnostic_gain, assessment_gain) as numeric) as int
             ) as diagnostic_gain,
-            cast(
-                cast(annual_stretch_growth_measure as numeric) as int
-            ) as annual_stretch_growth_measure,
-            cast(
-                cast(annual_typical_growth_measure as numeric) as int
-            ) as annual_typical_growth_measure,
             cast(cast(`grouping` as numeric) as int) as _grouping,
-            cast(cast(percentile as numeric) as int) as percentile,
-            cast(
-                cast(algebra_and_algebraic_thinking_scale_score as numeric) as int
-            ) as algebra_and_algebraic_thinking_scale_score,
-            cast(
-                cast(comprehension_informational_text_scale_score as numeric) as int
-            ) as comprehension_informational_text_scale_score,
-            cast(
-                cast(comprehension_literature_scale_score as numeric) as int
-            ) as comprehension_literature_scale_score,
-            cast(
-                cast(comprehension_overall_scale_score as numeric) as int
-            ) as comprehension_overall_scale_score,
-            cast(cast(geometry_scale_score as numeric) as int) as geometry_scale_score,
-            cast(
-                cast(high_frequency_words_scale_score as numeric) as int
-            ) as high_frequency_words_scale_score,
-            cast(
-                cast(measurement_and_data_scale_score as numeric) as int
-            ) as measurement_and_data_scale_score,
-            cast(
-                cast(mid_on_grade_level_scale_score as numeric) as int
-            ) as mid_on_grade_level_scale_score,
-            cast(
-                cast(number_and_operations_scale_score as numeric) as int
-            ) as number_and_operations_scale_score,
-            cast(cast(phonics_scale_score as numeric) as int) as phonics_scale_score,
-            cast(
-                cast(phonological_awareness_scale_score as numeric) as int
-            ) as phonological_awareness_scale_score,
-            cast(
-                cast(
-                    reading_comprehension_informational_text_scale_score as numeric
-                ) as int
-            ) as reading_comprehension_informational_text_scale_score,
-            cast(
-                cast(reading_comprehension_literature_scale_score as numeric) as int
-            ) as reading_comprehension_literature_scale_score,
-            cast(
-                cast(reading_comprehension_overall_scale_score as numeric) as int
-            ) as reading_comprehension_overall_scale_score,
-            cast(
-                cast(vocabulary_scale_score as numeric) as int
-            ) as vocabulary_scale_score,
-
             coalesce(
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
                 most_recent_assessment_ytd_y_n
             ) as most_recent_diagnostic_ytd_y_n,
-
             coalesce(
                 baseline_diagnostic_y_n, baseline_assessment_y_n
             ) as baseline_diagnostic_y_n,
-
-            safe_cast(student_id as int) as student_id,
-
-            parse_date('%m/%d/%Y', `start_date`) as `start_date`,
-            parse_date('%m/%d/%Y', completion_date) as completion_date,
-        from {{ source("iready", "src_iready__diagnostic_results") }}
+        from source_grade_normalized
     ),
 
     hs_goals as (
@@ -157,8 +139,6 @@ with
             if(
                 percent_progress_to_annual_stretch_growth_percent >= 100, true, false
             ) as is_met_stretch,
-
-            if(student_grade = 'K', 0, cast(student_grade as int)) as student_grade_int,
 
             case
                 _dagster_partition_subject when 'ela' then 'ELA' when 'math' then 'Math'
