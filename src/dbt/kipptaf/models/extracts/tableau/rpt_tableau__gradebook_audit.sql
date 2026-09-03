@@ -188,6 +188,11 @@ with
                 assignments_entered_count_no_flags < expectation, true, false
             ) as not_enough_assignments,
 
+            -- user-facing display vector: Tableau groups and filters on this
+            -- string, so the label order is load-bearing -- appending is safe,
+            -- reordering or rewording changes existing values. nullif is
+            -- required because array_to_string returns '' (not null) when every
+            -- element is null.
             nullif(
                 array_to_string(
                     [
