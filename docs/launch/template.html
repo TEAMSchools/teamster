@@ -6,8 +6,20 @@
     <title>Data tools — KIPP NJ | Miami</title>
     <style>
       /* Tokens lifted from the KIPP NJ | Miami design system.
-   --font-brand tries licensed Whitney first, then falls back to Calibri
-   and system fonts for anyone without it installed. */
+
+   Both stacks name a real face for every platform rather than relying on
+   a generic keyword. `ui-monospace` resolves only on Apple platforms, and
+   Menlo is macOS-only, so a stack ending there falls through to the
+   generic `monospace` on Windows -- which is Courier New, a thin serifed
+   typewriter face that looks broken at the 11-12px this design uses it at.
+   Cascadia Mono and Consolas both ship with Windows and cover it.
+
+   Same reasoning for the brand stack: licensed Whitney first, then the
+   native UI face per platform (San Francisco, Segoe UI, Roboto), then
+   Calibri. Segoe UI precedes Calibri deliberately -- both are Microsoft
+   faces, but Segoe UI is drawn for screen chrome at small sizes while
+   Calibri is a document face, and this page is almost entirely small
+   uppercase labels and letter-spaced chrome. */
       :root {
         --kipp-indigo: #001e62;
         --kipp-red: #ee3c37;
@@ -38,9 +50,11 @@
         --border-default: var(--neutral-300);
         --focus-ring: var(--kipp-blue);
         --font-brand:
-          "Whitney SSm A", "Whitney", Calibri, "Segoe UI", system-ui,
-          -apple-system, "Helvetica Neue", Arial, sans-serif;
-        --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+          "Whitney SSm A", "Whitney", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-mono:
+          "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, "SF Mono",
+          Menlo, "Roboto Mono", monospace;
       }
       *,
       *::before,
@@ -174,7 +188,10 @@
       /* promo cards */
       .promos {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        /* auto-fill, not a fixed 5, so cards keep a consistent width
+           whatever the card count is -- the list grows and shrinks as
+           prose lands in Zendesk. */
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 10px;
         margin-bottom: 18px;
       }

@@ -43,6 +43,9 @@ families:
 
 # "From the data team" cards, pointing at prose that lives in Zendesk.
 promos:
+  - label: Meet the data team
+    blurb: Who's on the team, and who to ask.
+    url: https://teamschools.zendesk.com/hc/en-us/articles/43201228776855-Meet-the-data-team
   - label: All help guides
     blurb: Every written guide in one list.
     url: https://teamschools.zendesk.com/hc/en-us/categories/204269047-Data-Launch
