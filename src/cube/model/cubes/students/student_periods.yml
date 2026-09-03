@@ -20,9 +20,10 @@ cubes:
       # point of it, and it is the same chain that cube reaching locations
       # only via student_school_enrollments.
       #
-      # The fact's own location_key is deliberately NOT joined here. It exists
-      # to partition the cumulative windows so every count is per school, and
-      # to key the grain -- a computation input, not a published dimension. A
+      # The fact's own location_key is deliberately NOT joined here. It keys
+      # the grain -- one row per student per school per period -- and nothing
+      # else; the cumulative windows partition by student alone, so the counts
+      # above are distinct students rather than student-schools. A
       # second locations join on it would give this cube two routes to the same
       # dim, which is the diamond the marts layer forbids. Degenerate FK, no
       # declared join.
@@ -170,9 +171,11 @@ cubes:
       - name: count_students
         description: >-
           Student-school records served at any point in the period, with no
-          eligibility floor applied. Counted per school, so a student who
-          changed schools mid-period is counted once per school. This is a
-          served-during-the-period count, which is a different question from
+          eligibility floor applied. Counts distinct students, so a student who
+          changed schools mid-period counts once at each school when grouped by
+          school and once overall when not -- the school is answerable for the
+          days the student was there, while the student is one student. This is
+          a served-during-the-period count, which is a different question from
           enrolled on the period's last day — for that, pin the date on
           student_days_view.
 
@@ -181,16 +184,18 @@ cubes:
           minimum-membership-day floor, so show this count beside any of them
           for an early period, where the rate is computed over students judged
           on very few days.
-        sql: student_period_key
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
 
       - name: count_chronically_absent
         description: >-
           Student-school records with cumulative ADA at or below 90.0% (ada_tier
-          Tier 3 or Tier 4) as of period_end_date. Same per-school counting
-          grain as count_students, and no minimum-membership-day floor.
-        sql: student_period_key
+          Tier 3 or Tier 4) as of period_end_date. Same distinct-student
+          counting as count_students, and no minimum-membership-day floor. The
+          tier itself accumulates per student across a school change, so a
+          transferring student arrives already carrying their position.
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
         filters:
@@ -218,7 +223,7 @@ cubes:
         public: true
 
       - name: _count_tier_1_2
-        sql: student_period_key
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: false
         filters:
@@ -244,7 +249,7 @@ cubes:
         public: true
 
       - name: _count_tier_3
-        sql: student_period_key
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: false
         filters:
@@ -273,8 +278,8 @@ cubes:
         description: >-
           Student-school records meeting regional truancy criteria as of
           period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
-          regions: projected absences reach 50+ for the year. Same per-school
-          counting grain as count_students.
+          regions: projected absences reach 50+ for the year. Same
+          distinct-student counting grain as count_students.
 
           No eligibility floor is applied here. Neither the Miami nor the NJ
           truancy rule requires a minimum membership-day count, so any such
@@ -286,7 +291,7 @@ cubes:
           month grain it is concentrated in the first weeks (2025-08: 550 rows
           here that an eligibility floor would have reported as zero). Show
           count_students beside this measure for any early period.
-        sql: student_period_key
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
         filters:

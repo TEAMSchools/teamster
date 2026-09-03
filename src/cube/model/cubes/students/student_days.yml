@@ -367,8 +367,10 @@ cubes:
           Students at Tier 3 or Tier 4 as of the pinned date. Pin
           attendance_date. No minimum-membership-day floor is applied, so early
           in an academic year this counts students judged on very few days --
-          show count_students beside it. Counted per school; the cumulative
-          position it reads accumulates per student across a school change.
+          show count_students beside it. Counts distinct students, so a student
+          who changed schools counts once at each school when grouped by school
+          and once overall when not; the cumulative position it reads
+          accumulates per student across the change rather than resetting.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
