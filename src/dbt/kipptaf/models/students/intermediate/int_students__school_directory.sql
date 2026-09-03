@@ -36,7 +36,10 @@ with
         -- PowerSchool archive owns through AY2025. Null ps_schoolid drops Focus's
         -- non-instructional Applicants school and would break ps_schoolid's job as
         -- the cross-SIS join key.
-        where academic_year >= 2026 and ps_schoolid is not null
+        where
+            academic_year >= 2026
+            and ps_schoolid is not null
+            and grade_level is not null
 
         union all
 

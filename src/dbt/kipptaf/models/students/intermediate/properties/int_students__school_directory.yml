@@ -77,6 +77,8 @@ models:
                   - focus
                   - finalsite
       - name: schoolid
+        data_tests:
+          - not_null
         description: >
           School id native to whichever system produced the row -- the network
           school number on PowerSchool rows, Focus's own internal school id on
