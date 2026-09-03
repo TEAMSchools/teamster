@@ -1,25 +1,31 @@
 # GitHub MCP gotchas
 
-- **GitHub MCP write tools HTML-sanitize body text**: `issue_write`,
-  `add_issue_comment`, `update_pull_request`, and `create_pull_request` strip
-  `<...>` tokens (e.g. `<role>`, `<col>`) — **even inside inline backticks**.
-  Use `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
-  `<=`, `>=`). Read the stored body back and verify after writing. They also
-  entity-encode `&`→`&amp;` and `"`→`&#34;` (not strip) — harmless in rendered
-  prose but rendered literally inside code spans and in titles, so avoid `&` /
-  `"` in PR/issue titles and code spans (use "and" / single quotes). Corollary:
-  the encoding is RE-APPLIED on every write, so round-tripping a fetched body
-  back through `update_pull_request` double-encodes what is already there
-  (`&amp;` → `&amp;amp;`). Edit a PR body with
-  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` instead.
-- **The `mcp__github__*` read tools also sanitize on OUTPUT**:
-  `pull_request_read` / `issue_read` strip `<...>` and encode `'`→`&#39;` in the
-  body they return, so a just-written body read back through them shows phantom
-  corruption even when the stored body is intact (likely why the "even inside a
-  fence" stripping above reads worse than it stores). Verify the TRUE stored
-  body with raw `gh api repos/<owner>/<repo>/pulls/<n> --jq .body` (a GET —
-  works via Bash, whereas `gh pr view` is denied) before re-writing to "fix"
-  apparent corruption.
+- **The mangling is on the READ side, not the write side.** `pull_request_read`
+  / `issue_read` strip `<...>` tokens (e.g. `<role>`, `<col>`) — in prose,
+  inside inline backticks, and inside fenced blocks — and entity-encode
+  `&`→`&amp;`, `"`→`&#34;`, `'`→`&#39;`, `<=`→`&lt;=`, `>=`→`&gt;=` in the body
+  they return. So a body read back through them shows phantom corruption even
+  when storage is clean. Verify the TRUE stored body with raw
+  `gh api repos/<owner>/<repo>/pulls/<n> --jq .body` (a GET — works via Bash,
+  whereas `gh pr view` is denied) before re-writing to "fix" it.
+- **The write tools do NOT alter body text** — verified 2026-09-02 by posting
+  bare `<role>` / `<col>` tokens plus `&`, `"` and `'` through
+  `add_issue_comment` in prose, a code span, and a fence: the stored body came
+  back identical (probe recorded at PR #5105, comment 5515033123). `&` and `"`
+  are safe in titles and code spans. An older note here claimed `issue_write` /
+  `create_pull_request` strip and encode on write; that was the read tools
+  misleading the observer.
+- **Never round-trip a body through the MCP read tools into a write.** The read
+  encodes, so writing that body back stores the entities for real, and the next
+  round-trip double-encodes them (`&amp;` → `&amp;amp;`). Edit a PR body with
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, sourcing the
+  text from a raw GET or from your own draft.
+- **Never hard-wrap body text.** GitHub renders every single newline in a PR
+  body, issue body, or comment as a line break, so 80-column prose displays as a
+  ragged narrow column (verified: PR #4933's body renders 69 forced breaks
+  mid-sentence). Write one line per paragraph and let it reflow. The repo's
+  prettier `proseWrap: always` governs `.md` files in the checkout only —
+  nothing formats a GitHub body, so wrapping there is never automatic.
 - `mcp__github__pull_request_review_write` `method=create` requires the FULL
   40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
   to GitObjectID".
@@ -59,9 +65,9 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
   big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
   comment creation via `gh api`.
-- Editing a PR **body** — round-tripping a fetched body through
-  `mcp__github__update_pull_request` double-encodes existing entities (it
-  re-applies the `&`→`&amp;` encoding). Edit cleanly via
+- Editing a PR **body** — round-tripping a body fetched through the MCP read
+  tools and back out through `mcp__github__update_pull_request` stores the
+  read's entities for real. Edit cleanly via
   `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (raw, no
   re-encoding).
 - Replying to a PR inline review comment in-thread —
