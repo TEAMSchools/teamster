@@ -487,8 +487,8 @@ concept, unlike the pre-July-2026 design below.
    more window `countif`s over the same partition count the assignments tripping
    each term of `assignment_has_flags`: `n_percent_graded_min_not_met`,
    `n_invalid_scores` (the `flags_sum > 0` term), `n_max_score_not_10` and
-   `n_overly_exempt`. They share the existing partition, so BigQuery computes
-   one window for all seven.
+   `n_overly_exempt`. They reuse the existing partition rather than introducing
+   a second one.
 2. `category_summary` — a grain-projection `SELECT DISTINCT` over
    `category_join` that collapses the per-assignment fan-out to one row per
    section × quarter × category, and adds `not_enough_assignments`
