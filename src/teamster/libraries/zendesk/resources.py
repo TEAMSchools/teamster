@@ -4,13 +4,13 @@ from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import HTTPError, Response, Session
-from requests.auth import HTTPBasicAuth
 
 
 class ZendeskResource(ConfigurableResource):
     subdomain: str
-    email: str
-    token: str
+    client_id: str
+    client_secret: str
+    scope: str = "read users:write"
     page_size: int = 100
     api_version: str = "v2"
 
@@ -20,9 +20,26 @@ class ZendeskResource(ConfigurableResource):
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
         self._service_root = self._service_root.format(self.subdomain)
-        self._session.headers = {"Content-Type": "application/json"}
-        self._session.auth = HTTPBasicAuth(
-            username=f"{self.email}/token", password=self.token
+
+        # OAuth client_credentials grant: the token acts as the Zendesk user who
+        # owns the OAuth client. Lifetime is ~30 min; the sync runs in minutes.
+        # ponytail: mint once per run, add re-mint-on-401 if a run ever outlives it
+        response = self._session.post(
+            url=f"https://{self.subdomain}.zendesk.com/oauth/tokens",
+            json={
+                "grant_type": "client_credentials",
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "scope": self.scope,
+            },
+        )
+        response.raise_for_status()
+
+        self._session.headers.update(
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {response.json()['access_token']}",
+            }
         )
 
     def _get_url(self, *args) -> str:
