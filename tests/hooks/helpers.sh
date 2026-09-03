@@ -172,6 +172,40 @@ expect_allow() {
 	fi
 }
 
+# Assert the PostToolUse hook REDACTED the content: stdout carries
+# updatedToolOutput, the redaction literal is present, and the secret is gone.
+# Presence of the key alone is not enough — an empty {} replacement is ignored
+# by the harness for built-in tools and the original output is shown.
+# Usage: expect_redacted <description> <json_input> <secret_literal>
+expect_redacted() {
+	local desc="$1" input="$2" secret="$3" output
+	output=$(printf '%s' "${input}" | bash "${OUTPUT_HOOK}" 2>/dev/null)
+	if grep -q '"updatedToolOutput"' <<<"${output}" &&
+		grep -qF '[redacted: secret material]' <<<"${output}" &&
+		! grep -qF -- "${secret}" <<<"${output}"; then
+		PASS=$((PASS + 1))
+		echo -e "  ${GREEN}PASS${NC} [redacted]: ${desc}"
+	else
+		FAIL=$((FAIL + 1))
+		ERRORS+="\n  ${RED}FAIL${NC} [redacted]: ${desc} (secret survived or no redaction literal)"
+	fi
+}
+
+# Assert the PostToolUse hook ended the turn (decision:block) — the fail-closed
+# path for payloads it cannot redact (unparseable, or no .tool_response key).
+# Usage: expect_block <description> <json_input>
+expect_block() {
+	local desc="$1" input="$2" output
+	output=$(printf '%s' "${input}" | bash "${OUTPUT_HOOK}" 2>/dev/null)
+	if grep -q '"decision"' <<<"${output}" && grep -q '"block"' <<<"${output}"; then
+		PASS=$((PASS + 1))
+		echo -e "  ${GREEN}PASS${NC} [block]: ${desc}"
+	else
+		FAIL=$((FAIL + 1))
+		ERRORS+="\n  ${RED}FAIL${NC} [block]: ${desc} (expected decision:block)"
+	fi
+}
+
 # PostToolUse helper
 # check_output <desc> <expect> [tool] <content>
 # 3-arg form: check_output "desc" deny|clean "output"        (defaults to Bash)

@@ -11,6 +11,12 @@ input=$(cat)
 # replacement that fails its output schema is silently ignored and the original
 # output is shown. additionalContext tells Claude what happened.
 emit_redacted() {
+	# Payload-key drift (#20): the scan below reads the whole payload when
+	# .tool_response is absent, but a replacement built from {} fails the tool's
+	# output schema and the harness shows the ORIGINAL. Nothing to redact safely,
+	# so fail closed and end the turn instead.
+	jq -e 'has("tool_response")' >/dev/null 2>&1 <<<"${input}" || deny_output
+
 	jq -c --arg r "$1" '
     def redact: if type == "object" then with_entries(if (.key | IN("type", "filePath")) then . else .value |= redact end)
       elif type == "array" then map(redact)
