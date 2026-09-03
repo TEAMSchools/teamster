@@ -898,6 +898,67 @@ Generated 878 rows for Newark/Paterson/Camden; verified byte-for-byte against
 the live sheet after pasting (one cosmetic mismatch caught and cleared: Sheets
 normalizes `false` to `FALSE` on paste -- not a data problem).
 
+### Fallback -- reverting SY26-27 to last year's PM process if aimline data is not fixed
+
+T&L flagged that if the aimline feed is not fixed in time, SY26-27 reverts to
+last year's in-house PM process for all grades. It would be a fast turnaround.
+Read this before touching anything, because the obvious move is the wrong one.
+
+**Do NOT collapse the cohort split back to single rows.** The instinct is that
+"last year's process" means one Expected Assessments row per measure again, but
+that is not the difference, and collapsing loses real information:
+
+- `measure_standard_level` is populated on AY2025 PM rows too. Both years are
+  split; the split is not the aimline-dependent part.
+- The AY2026 split is NOT mechanical the way the AY2025 retrofit was. Of 771
+  `(region, grade, round, measure)` combos, 523 carry both cohorts and **248
+  carry `Well Below` only**. Those 248 encode who gets tested -- Miami
+  alternates cohorts by round, and several NJ rounds are Well-Below-only.
+  Flattening them either over-tests `Below` students or throws away the
+  distinction. Which cohorts a round tests is a T&L testing decision,
+  independent of where the goal comes from.
+
+**The actual difference is the `pm_goal_include` scaffold for grades 3-8.**
+Under aimline, 3-8 rows carry a blank `pm_goal_include` and exist only for
+rounds the doc lists -- Amplify supplies the goal, so no trajectory scaffold is
+needed. Last year 3-8 got the same scaffold K-2 still gets: a row for every
+round of a season for any measure tested at least once that season, with
+`pm_goal_include = false` on the untested rounds. Measured on the sheet: AY2025
+3-8 has 504 rows at `false`; AY2026 3-8 has 0.
+
+**The swap is one constant in
+`scripts/generate_sy2627_expected_assessments_rows.py`:**
+
+```python
+K2_GRADES = {0, 1, 2}        # aimline: 3-8 skips the scaffold
+K2_GRADES = set(range(0, 9)) # reverted: every grade gets the scaffold
+```
+
+One line covers it because that set drives all three decision points -- the
+`continue` that sends a grade down the no-scaffold branch, the loop that runs
+the scaffold, and `k2_cohort`'s sibling fallback. Verified by running both
+shapes: **1,294 rows to 1,474**, the 180 new rows are all 3-8 at
+`pm_goal_include = false`, and every K-2 row is byte-identical. Rename the
+constant to `SCAFFOLD_GRADES` if you make the flip permanent; leave it alone for
+a temporary revert so the diff back is trivial.
+
+**`reporting__terms` needs no change.** `PLIT` was already K-2-only in AY2025
+across all four regions (verified: `0,1,2` carries `PLIT` rows, `3,4` and
+`5,6,7,8` carry zero). The revert is confined to the Expected Assessments sheet.
+
+**`pm_goal_criteria` stays `AND`** -- that is a T&L requirement for the year,
+not an aimline artifact.
+
+**Do not point `sheet_range` back at the V1 tab.** "Expected Assessments V1" is
+a frozen pre-cutover snapshot with no SY26-27 rows in it, so it is not a
+rollback path -- see _Two "Expected Assessments" tabs_ above.
+
+**If the data model itself reverts too**, not just the process, and single rows
+really are required, that is a different and lossy job: the 248 Well-Below-only
+combos need an explicit decision per round about whether `Below` students are
+tested, and no script can infer it. Get that decision from T&L in writing before
+generating anything.
+
 ### Paterson's grade bands changed between AY2025 and AY2026 -- don't reuse last year's override
 
 The ref doc documents Paterson's AY2025 grade bands as `3` / `5,6,7` (no grade
