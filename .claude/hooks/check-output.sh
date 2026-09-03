@@ -4,16 +4,39 @@
 
 input=$(cat)
 
+# PostToolUse ignores hookSpecificOutput.permissionDecision (PreToolUse-only).
+# The only way to keep secret material out of the model's context here is
+# updatedToolOutput, which REPLACES the tool result. Redact every string leaf of
+# tool_response but keep the shape keys `type` and `filePath`: a built-in tool's
+# replacement that fails its output schema is silently ignored and the original
+# output is shown. additionalContext tells Claude what happened.
+emit_redacted() {
+	# Payload-key drift (#20): the scan below reads the whole payload when
+	# .tool_response is absent, but a replacement built from {} fails the tool's
+	# output schema and the harness shows the ORIGINAL. Nothing to redact safely,
+	# so fail closed and end the turn instead.
+	jq -e 'has("tool_response")' >/dev/null 2>&1 <<<"${input}" || deny_output
+
+	jq -c --arg r "$1" '
+    def redact: if type == "object" then with_entries(if (.key | IN("type", "filePath")) then . else .value |= redact end)
+      elif type == "array" then map(redact)
+      elif type == "string" then "[redacted: secret material]" else . end;
+    {hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: $r,
+      updatedToolOutput: ((.tool_response // {}) | redact)}}' <<<"${input}"
+	exit 0
+}
+
 deny_output() {
-  echo '{"hookSpecificOutput": {"hookEventName": "PostToolUse", "permissionDecision": "deny", "permissionDecisionReason": "⛔ Output blocked — unscannable input or secret material"}}'
-  exit 0
+	# Nothing parsable to redact: end the turn with a visible warning instead.
+	echo '{"decision": "block", "reason": "⛔ Output blocked — unscannable input or secret material"}'
+	exit 0
 }
 
 # Fail closed on input this hook cannot understand (empty stdin, unparseable
 # JSON, non-object frame, or missing/empty tool_name) — otherwise a nonstandard
 # envelope skips scanning entirely and re-opens full passthrough.
 if [[ -z ${input} ]] || ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${input}"; then
-  deny_output
+	deny_output
 fi
 tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
 # Normalize once: lowercase + strip all whitespace so a re-cased name cannot
@@ -21,7 +44,7 @@ tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
 tool_name=${tool_name,,}
 tool_name=${tool_name//[[:space:]]/}
 if [[ -z ${tool_name} ]]; then
-  deny_output
+	deny_output
 fi
 
 # Scan output from tools that can return sensitive content (names normalized)
@@ -41,17 +64,17 @@ combined=$(jq -r '[(.tool_response // .) | .. | strings] | join(" ")' <<<"${inpu
 std_blobs=$(echo "${combined}" | grep -oE '[A-Za-z0-9+/]{24,}={0,2}' || true)
 url_blobs=$(echo "${combined}" | grep -oE '[A-Za-z0-9_-]{24,}' || true)
 if [[ -n ${std_blobs} || -n ${url_blobs} ]]; then
-  # tr '_-' '/+' is a no-op on standard blobs and normalizes url-safe ones.
-  # trunk-ignore(shellcheck/SC2312): read returns 1 at EOF to terminate the loop — expected
-  decoded=$(printf '%s\n%s\n' "${std_blobs}" "${url_blobs}" | while read -r blob; do
-    printf '%s' "${blob}" | tr '_-' '/+' | base64 -d 2>/dev/null || true
-  done | tr -d '\0')
-  [[ -n ${decoded} ]] && combined="${combined} ${decoded}"
-  # trunk-ignore(shellcheck/SC2312): read returns 1 at EOF to terminate the loop — expected
-  inflated=$(printf '%s\n%s\n' "${std_blobs}" "${url_blobs}" | while read -r blob; do
-    printf '%s' "${blob}" | tr '_-' '/+' | base64 -d 2>/dev/null | gunzip -c 2>/dev/null | head -c 65536 || true
-  done | tr -d '\0')
-  [[ -n ${inflated} ]] && combined="${combined} ${inflated}"
+	# tr '_-' '/+' is a no-op on standard blobs and normalizes url-safe ones.
+	# trunk-ignore(shellcheck/SC2312): read returns 1 at EOF to terminate the loop — expected
+	decoded=$(printf '%s\n%s\n' "${std_blobs}" "${url_blobs}" | while read -r blob; do
+		printf '%s' "${blob}" | tr '_-' '/+' | base64 -d 2>/dev/null || true
+	done | tr -d '\0')
+	[[ -n ${decoded} ]] && combined="${combined} ${decoded}"
+	# trunk-ignore(shellcheck/SC2312): read returns 1 at EOF to terminate the loop — expected
+	inflated=$(printf '%s\n%s\n' "${std_blobs}" "${url_blobs}" | while read -r blob; do
+		printf '%s' "${blob}" | tr '_-' '/+' | base64 -d 2>/dev/null | gunzip -c 2>/dev/null | head -c 65536 || true
+	done | tr -d '\0')
+	[[ -n ${inflated} ]] && combined="${combined} ${inflated}"
 fi
 
 # Whitespace-stripped copy catches a token split across newlines/spaces (#30).
@@ -71,8 +94,7 @@ secret_re='op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIz
 # Slack/Stripe token split across a newline is not reassembled here.
 jwt_re='eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}'
 if echo "${combined}" | grep -qiE "${secret_re}" || echo "${stripped}" | grep -qiE "${jwt_re}"; then
-  echo '{"hookSpecificOutput": {"hookEventName": "PostToolUse", "permissionDecision": "deny", "permissionDecisionReason": "⛔ Output contains secret material — blocked"}}'
-  exit 0
+	emit_redacted "⛔ Tool output contained secret material — redacted by check-output.sh"
 fi
 
 # Heuristic: long high-entropy strings not already matched. Strip base64 image
@@ -81,6 +103,5 @@ fi
 entropy_input=$(echo "${combined}" | sed -E 's#data:[^,[:space:]]*;base64,[A-Za-z0-9+/=]+##g')
 long_runs=$(echo "${entropy_input}" | grep -oE '[A-Za-z0-9+/=_-]{120,}' || true)
 if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$'; then
-  echo '{"hookSpecificOutput": {"hookEventName": "PostToolUse", "permissionDecision": "deny", "permissionDecisionReason": "⛔ Output contains high-entropy string — possible encoded secret"}}'
-  exit 0
+	emit_redacted "⛔ Tool output contained a high-entropy string (possible encoded secret) — redacted by check-output.sh"
 fi

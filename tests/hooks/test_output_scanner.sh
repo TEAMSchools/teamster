@@ -14,8 +14,8 @@ echo " Output Scanner (check-output.sh)"
 echo "========================================="
 
 if [[ ! -f ${OUTPUT_HOOK} ]]; then
-  echo -e "  ${YELLOW}SKIP${NC}: ${OUTPUT_HOOK} not found"
-  exit 0
+	echo -e "  ${YELLOW}SKIP${NC}: ${OUTPUT_HOOK} not found"
+	exit 0
 fi
 
 # ─── Secret pattern detection ────────────────────────────────────────────────
@@ -106,14 +106,14 @@ echo -e "${YELLOW}PostToolUse: Exit code regression (must exit 0 on deny)${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
 expect_deny_exit0 "PostToolUse JWT deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
-    '{tool_name: "Read", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
+		'{tool_name: "Read", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse op:// deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c 'config: op://vault/item/field' \
-    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c 'config: op://vault/item/field' \
+		'{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse high-entropy deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "$(printf 'g%.0s' {1..120})" \
-    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c "$(printf 'g%.0s' {1..120})" \
+		'{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Schema regression: hook must read .tool_response (Claude Code's payload key) ──
@@ -125,16 +125,16 @@ echo -e "${YELLOW}PostToolUse: Schema regression (.tool_response is the real key
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_exit0 "scans .tool_response high-entropy string" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "$(printf 'g%.0s' {1..200})" \
-    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c "$(printf 'g%.0s' {1..200})" \
+		'{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "scans .tool_response named pattern (op://)" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "leaked: op://vault/item/field" \
-    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c "leaked: op://vault/item/field" \
+		'{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
 # trunk-ignore(gitleaks/generic-api-key): synthetic ops_ token fixture
 _fake_op_trace='+ token=ops_eyJzaWduSW5BZGRyZXNzIjoiZXhhbXBsZS4xcGFzc3dvcmQuY29tIiwidXNlckF1dGgiOnsibWV0aG9kIjoiU1JQZy00MDk2In19'
 expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "${_fake_op_trace}" \
-    '{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
+	"$(jq -n --arg c "${_fake_op_trace}" \
+		'{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Schema fallback (#6e/#20): payload under a non-tool_response key ────────
@@ -143,14 +143,42 @@ expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_H
 echo ""
 echo -e "${YELLOW}PostToolUse: payload-key drift fallback (#20)${NC}"
 
+# With no .tool_response there is nothing to redact in the tool's own shape, so
+# the hook must end the turn (decision:block), not emit an empty replacement
+# that the harness ignores.
 # trunk-ignore-begin(shellcheck/SC2312)
-expect_deny_exit0 "secret under .output (not .tool_response)" "${OUTPUT_HOOK}" \
-  "$(jq -n '{tool_name:"Bash", output:{stdout:"leaked op://vault/item/field"}}')"
-expect_deny_exit0 "secret at top level (no tool_response)" "${OUTPUT_HOOK}" \
-  "$(jq -n '{tool_name:"mcp__github__issue_read", result:"op://vault/item/field"}')"
+expect_block "secret under .output (not .tool_response) ends the turn" \
+	"$(jq -n '{tool_name:"Bash", output:{stdout:"leaked op://vault/item/field"}}')"
+expect_block "secret at top level (no tool_response) ends the turn" \
+	"$(jq -n '{tool_name:"mcp__github__issue_read", result:"op://vault/item/field"}')"
 # trunk-ignore-end(shellcheck/SC2312)
 # control: clean .tool_response output still passes (fallback no overreach)
 check_output "clean .tool_response still clean" clean "rows: 5"
+
+# ─── Redaction content: the secret must be GONE from updatedToolOutput ────────
+echo ""
+echo -e "${YELLOW}PostToolUse: redaction replaces the secret, keeps the shape${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_redacted "Bash stdout secret replaced" \
+	"$(jq -n '{tool_name:"Bash", tool_response:{stdout:"x op://vault/item/field y", stderr:"", interrupted:false, isImage:false}}')" \
+	"op://vault/item/field"
+expect_redacted "Read file.content secret replaced" \
+	"$(jq -n '{tool_name:"Read", tool_response:{type:"text", file:{filePath:"/repo/a.sh", content:"op://vault/item/field", numLines:1}}}')" \
+	"op://vault/item/field"
+expect_redacted "MCP array-of-content secret replaced" \
+	"$(jq -n '{tool_name:"mcp__github__issue_read", tool_response:[{type:"text", text:"ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"}]}')" \
+	"ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+# shape keys survive so built-in tools accept the replacement
+_shape=$(jq -n '{tool_name:"Read", tool_response:{type:"text", file:{filePath:"/repo/a.sh", content:"op://vault/item/field"}}}' | bash "${OUTPUT_HOOK}" 2>/dev/null)
+if jq -e '.hookSpecificOutput.updatedToolOutput | .type == "text" and .file.filePath == "/repo/a.sh"' <<<"${_shape}" >/dev/null 2>&1; then
+	PASS=$((PASS + 1))
+	echo -e "  ${GREEN}PASS${NC} [shape]: type and filePath preserved"
+else
+	FAIL=$((FAIL + 1))
+	ERRORS+="\n  ${RED}FAIL${NC} [shape]: type/filePath not preserved"
+fi
+# trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Batch 6: new detections (#16 base64url, #18 gzip, #19 patterns, #30 split) ─
 echo ""
