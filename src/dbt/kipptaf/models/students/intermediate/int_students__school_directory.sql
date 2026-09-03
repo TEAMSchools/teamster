@@ -65,7 +65,6 @@ with
             and sr.grade_level is not null
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     school_attributes as (
         select
             powerschool_school_id as ps_schoolid,
@@ -75,24 +74,11 @@ with
             focus_school_id,
 
         from {{ ref("stg_google_sheets__people__locations") }}
-        -- schoolid 0 is the no-school-assigned bucket; Pathways sites are not
-        -- schools students enroll into grade levels at.
         where
             powerschool_school_id is not null
+            and abbreviation is not null
             and powerschool_school_id != 0
             and not is_pathways
-    ),
-
-    -- One row per school. ps_schoolid 179901 carries two locations rows,
-    -- identical but for a null abbreviation on one, so prefer the populated one.
-    schools as (
-        {{
-            dbt_utils.deduplicate(
-                relation="school_attributes",
-                partition_by="ps_schoolid",
-                order_by="(school_short_name is null) asc",
-            )
-        }}
     )
 
 select
@@ -120,4 +106,4 @@ select
     end as school_level_alt,
 
 from directory as d
-left join schools as s on d.ps_schoolid = s.ps_schoolid
+left join school_attributes as s on d.ps_schoolid = s.ps_schoolid

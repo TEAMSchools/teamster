@@ -22,11 +22,14 @@ models:
       reports max_syear 2025 for KIPP Sunrise and KIPP Liberty, but the last
       students enrolled at both in 2022.
 
-      School attributes come from a deduplicated
-      stg_google_sheets__people__locations, not int_people__location_crosswalk.
-      The crosswalk carries one row per alias name, so joining it on a school id
-      fans out. The crosswalk is still the right lookup for the Finalsite
-      branch, which resolves an assigned school by name.
+      School attributes come from stg_google_sheets__people__locations, not
+      int_people__location_crosswalk. The crosswalk carries one row per alias
+      name -- 254 rows across 29 schools -- so joining it on a school id fans
+      out. The locations sheet reaches one row per school once the
+      no-school-assigned bucket, Pathways sites, and the single
+      null-abbreviation row are filtered out. The crosswalk is still the right
+      lookup inside the Finalsite branch, which resolves an assigned school by
+      name on location_name, its unique key.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
