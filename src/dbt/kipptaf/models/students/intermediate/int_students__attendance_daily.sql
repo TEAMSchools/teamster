@@ -19,6 +19,18 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
+    -- Focus re-dated Miami's enrollment stints (a returning student's stint
+    -- starts on the real first day of school, where PowerSchool used a July 1
+    -- rollover), and entrydate feeds student_enrollment_key, so the frozen
+    -- archive's Miami rows are re-keyed to the Focus stint that contains the
+    -- day (#4803, #5114). Only Miami stints: NJ attendance already agrees with
+    -- its enrollment source.
+    focus_stints as (
+        select student_number, entrydate, exitdate, academic_year - 1990 as yearid,
+        from {{ ref("int_students__student_enrollment_union") }}
+        where _dbt_source_project = 'kippmiami'
+    ),
+
     -- The per-district ctod source carries 561 duplicate (studentid,
     -- calendardate) keys network-wide (1,301 excess rows: every column
     -- byte-identical, a raw double-write -- confirmed against the raw
@@ -52,21 +64,37 @@ with
         }}
     ),
 
+    -- Miami's student_number is the 8400-prefixed Focus id since #5148, and the
+    -- frozen archive carries the bare PowerSchool number, like the pre-Focus
+    -- vendor rows the macro was written for. int_focus__students.powerschool_id
+    -- confirms the offset for every archive student.
+    powerschool_renumbered as (
+        select
+            * except (student_number),
+
+            {{
+                focus_student_number(
+                    "student_number", "yearid + 1990", "_dbt_source_project"
+                )
+            }} as student_number,
+        from powerschool_deduped
+    ),
+
     -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
     -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
     -- outright (the way int_students__terms does) would delete six years of
     -- history.
     powerschool_conformed as (
         select
-            powerschool_deduped.*,
+            ps.* except (entrydate),
 
             -- PowerSchool has no analog to Focus's "register never taken"
-            -- signal -- every PowerSchool row IS a recorded attendance row
-            -- (PowerSchool records only absences, so presence is implied).
+            -- signal. Every PowerSchool row IS a recorded attendance row,
+            -- because PowerSchool records only absences and implies presence.
             -- False, not null: this column must never be null network-wide
             -- (see the model's grain/null-scaffold test), and null here would
-            -- misread as "unknown" when it is actually "not the Focus
-            -- recorded-register concept."
+            -- read as "unknown" when it actually means "not the Focus
+            -- recorded-register concept".
             false as is_attendance_recorded,
 
             -- Explicit, system-agnostic discriminator for the calcs CTE's
@@ -75,12 +103,24 @@ with
             -- compatibility scaffolding (studentid included) eventually
             -- leaving this model.
             false as is_focus_source,
-        from powerschool_deduped
+
+            -- Archive date when no Focus stint contains the day (51 AY2025 rows
+            -- per #4803); those rows already resolve on the archive date.
+            coalesce(fs.entrydate, ps.entrydate) as entrydate,
+        from powerschool_renumbered as ps
         cross join cutover as c
+        -- Inclusive on both ends: the roster's exitdate is the stint's last
+        -- day, and it trims each stint to the day before the next starts, so
+        -- one day matches at most one stint.
+        left join
+            focus_stints as fs
+            on ps.student_number = fs.student_number
+            and ps.yearid = fs.yearid
+            and ps.calendardate between fs.entrydate and fs.exitdate
         where
             not (
-                powerschool_deduped._dbt_source_project = 'kippmiami'
-                and powerschool_deduped.yearid >= c.focus_start_academic_year - 1990
+                ps._dbt_source_project = 'kippmiami'
+                and ps.yearid >= c.focus_start_academic_year - 1990
             )
     ),
 
@@ -92,33 +132,24 @@ with
             ad.student_number,
             ad.grade_level,
             ad.is_attendance_recorded,
-
-            -- See powerschool_conformed's is_focus_source for why this is an
-            -- explicit flag rather than a studentid-null proxy.
-            true as is_focus_source,
+            ad.startdate as entrydate,
+            ad.school_date as calendardate,
 
             -- Carried through explicitly. Every downstream join keys on
-            -- _dbt_source_project, and student_enrollment_key hashes it, so
-            -- letting it null-fill through `full union all corresponding`
-            -- would break the Miami joins and mis-hash the key. The kipptaf
-            -- passthrough wrapper supplies both: union_relations adds
-            -- _dbt_source_relation and extract_source_project adds
-            -- _dbt_source_project.
+            -- `_dbt_source_project`, and `student_enrollment_key` hashes it,
+            -- so null-filling it through `full union all corresponding` breaks
+            -- the Miami joins and mis-hashes the key. The kipptaf passthrough
+            -- wrapper supplies both: `union_relations` adds
+            -- `_dbt_source_relation`, and `extract_source_project` adds
+            -- `_dbt_source_project`.
             ad._dbt_source_relation,
             ad._dbt_source_project,
 
             fs.schoolid,
 
-            ad.academic_year - 1990 as yearid,
-            ad.startdate as entrydate,
-            ad.school_date as calendardate,
-
-            -- U means an unexcused absence in Focus and "Unprepared" in
-            -- PowerSchool, so it MUST be remapped. AE and AD already mean the
-            -- same thing in both systems and pass through. A present or
-            -- unrecorded day leaves daily_code null, which is exactly how
-            -- PowerSchool encodes it.
-            if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
+            -- See powerschool_conformed's is_focus_source for why this is an
+            -- explicit flag rather than a studentid-null proxy.
+            true as is_focus_source,
 
             cast(ad.state_value as float64) as attendancevalue,
 
@@ -137,6 +168,15 @@ with
             cast(null as int64) as ontrack,
             cast(null as int64) as offtrack,
             cast(null as string) as student_track,
+
+            ad.academic_year - 1990 as yearid,
+
+            -- U means an unexcused absence in Focus and "Unprepared" in
+            -- PowerSchool, so it MUST be remapped. AE and AD already mean the
+            -- same thing in both systems and pass through. A present or
+            -- unrecorded day leaves daily_code null, which is exactly how
+            -- PowerSchool encodes it.
+            if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
         cross join cutover as c
@@ -237,11 +277,11 @@ with
             ) as is_absent_non_susp,
 
             -- A day that has actually occurred (<= today). The
-            -- membership_reg calendar join emits a row for every in-session
-            -- day in the enrollment span, including future year-end days;
-            -- point-in-time anchors must ignore those or they latch onto the
-            -- future last day of the year and collapse to zero once the fact
-            -- filters to calendardate <= current_date.
+            -- `membership_reg` calendar join emits a row for every in-session
+            -- day in the enrollment span, including future year-end days.
+            -- Point-in-time anchors must ignore those days, or they latch onto
+            -- the future last day of the year and collapse to zero once the
+            -- fact filters to `calendardate` <= `current_date`.
             mem.calendardate
             <= current_date('{{ var("local_timezone") }}') as is_realized,
 
@@ -286,12 +326,13 @@ with
                 partition by schoolid, _dbt_source_project, week_start_monday
             ) as is_enrollment_week_end_record,
 
-            -- Per-stint attendance anchors. Drive the student_attendance
-            -- Cube's latest / month-end / week-end CA snapshots. The stint is
-            -- (student_number, _dbt_source_project, academic_year,
-            -- entrydate) -- the natural key behind student_enrollment_key in
-            -- the fact. Latest is the stint's last realized day; month/week-
-            -- end are its last realized *membership* day in the period.
+            -- Per-stint attendance anchors. These drive the
+            -- `student_attendance` Cube's latest, month-end and week-end CA
+            -- snapshots. The stint is (`student_number`,
+            -- `_dbt_source_project`, `academic_year`, `entrydate`), the
+            -- natural key behind `student_enrollment_key` in the fact. Latest
+            -- is the stint's last realized day; month-end and week-end are its
+            -- last realized membership day in the period.
             calendardate = max(if(is_realized, calendardate, null)) over (
                 partition by
                     student_number, _dbt_source_project, academic_year, entrydate

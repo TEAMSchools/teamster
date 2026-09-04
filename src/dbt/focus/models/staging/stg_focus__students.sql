@@ -29,9 +29,7 @@ select
     custom_200000004 as birthdate,
     custom_861 as florida_alias,
     custom_159 as florida_student_number,
-    custom_l1482 as powerschool_id,
     custom_200000012 as student_e_mail_address,
-    custom_l1483 as disis_id,
     custom_200000225 as fleid_verified,
     custom_200000224 as florida_education_identifier,
     custom_546 as primary_language_spoken_in_home,
@@ -45,6 +43,7 @@ select
     custom_760 as graduation_option,
     custom_829 as doe_test_accommodations_access_for_ells,
     custom_698 as ese_fefp_code,
+    custom_621 as section_504_eligible,
     custom_999 as gifted_eligibility,
     custom_640 as prekindergarten_program_participation,
     custom_728 as country_of_birth,
@@ -72,5 +71,8 @@ select
     custom_660 as basis_of_entry,
     custom_661 as first_basis_of_exit,
     custom_200000001 as single_ethnicity,
+
+    cast(custom_l1482 as numeric) as powerschool_id,
+    cast(custom_l1483 as numeric) as disis_id,
 from {{ source("focus", "students") }}
 where deleted is null

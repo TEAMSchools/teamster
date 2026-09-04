@@ -50,9 +50,9 @@ models:
           USDA Provision 2, which says nothing about the individual student.
       - name: student_number
         description: >-
-          Canonical network student number — student_id with the leading 8400
-          Miami-Dade district prefix stripped. An id not carrying that prefix
-          passes through unchanged rather than being guessed at.
+          Canonical network student number for Miami: the Focus student_id,
+          which carries the 8400 Miami-Dade district prefix. The bare
+          pre-migration number is on powerschool_id for returning students.
         config:
           meta:
             contains_pii: true
@@ -74,11 +74,27 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: has_iep
+        description: >-
+          True when the student has an ESE Exceptionalities log entry that is
+          placed (P or T), not dismissed, and not gifted (L). The log is the
+          determination record Focus's own "ESE Primary Computed" field reads;
+          the ESE FEFP funding code is a downstream consequence and is not
+          consulted.
       - name: spedlep
         description: >-
-          IEP classification in the network domain. 'SPED' where an ESE FEFP
-          code is present, else null — a missing funding code does not assert
-          that the student has no IEP.
+          IEP classification in the network domain. 'SPED' where has_iep, else
+          null — a missing log entry does not assert that the student has no
+          IEP.
+      - name: fedethnicity
+        description: >-
+          Hispanic/Latino flag in the PowerSchool domain: 1 for the "Yes"
+          option, 0 for "No", null where unset.
+      - name: is_504
+        description: >-
+          Section 504 status from custom_621. True for codes Y and N (both
+          assert a 504 plan), false for I and Z, null where the field is unset —
+          a blank does not assert that the student has no plan.
       - name: gifted_and_talented
         description: >-
           Y where Gifted Eligibility names a qualifying FLDOE criteria
@@ -88,6 +104,21 @@ models:
           English learner status. True for LY, false for the followup, exited
           and not-applicable codes, and null for the tested-or-pending codes,
           which are unknown rather than negative.
+      - name: idea_educational_environment_code
+        description: >-
+          Focus option code for custom_863, the IDEA educational environment. C,
+          D, F, H and P are the age 6-21 out-of-district placements Florida
+          reports; Z is the default and N/A is explicit not-applicable; the
+          remaining codes are the age 3-5 options. Passed through from
+          int_focus__students__pivot, which decodes it in its own pivot;
+          int_students__student_enrollments derives is_out_of_district from this
+          code rather than the editable label.
+      - name: idea_educational_environment_label
+        description: >-
+          Decoded label for custom_863, passed through from
+          int_focus__students__pivot. Supplies reporting_school_name for a Miami
+          out-of-district placement, the way PowerSchool supplies the special
+          program's name.
       - name: race_count
         description: Number of race flags set on the student.
       - name: ethnicity

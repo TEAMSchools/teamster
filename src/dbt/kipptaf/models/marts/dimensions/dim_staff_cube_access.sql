@@ -101,11 +101,10 @@ with
     ),
 
     -- Rank the crosswalk role rows so a specific-entity match beats the 'any'
-    -- wildcard, then keep one per staff (role_picked). Prevents the fan-out when
-    -- the sheet carries both a wildcard and a specific row for one
-    -- job_function_code. Window rank as a named column, filtered in the next CTE
-    -- (no QUALIFY, per the SQL guide). A LEFT-join miss yields one null-role row
-    -- (role_rank 1) that coalesces to 'none' downstream.
+    -- wildcard, then keep 1 per staff member (`role_picked`). The rank prevents
+    -- a fan-out when the sheet carries both a wildcard and a specific row for
+    -- one `job_function_code`. A LEFT-join miss yields 1 null-role row at
+    -- `role_rank` 1, which coalesces to 'none' downstream.
     role_ranked as (
         select
             e.staff_key,

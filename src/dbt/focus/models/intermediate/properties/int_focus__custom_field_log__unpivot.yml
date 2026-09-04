@@ -4,8 +4,9 @@ models:
       Long reshape of Focus log-type custom fields. One row per log entry per
       populated slot: the entry keys, the slot's metadata (title/type/sort order
       from custom_field_log_columns), the stored value, and a decoded
-      value_label for select-type slots. Currently covers the two populated
-      student log fields (Immunization Compliance, ARMS Student Field Tracker).
+      value_label and value_code for select-type slots. Currently covers the
+      three populated student log fields (Immunization Compliance, ARMS Student
+      Field Tracker, ESE Exceptionalities).
     config:
       meta:
         contains_pii: true
@@ -61,3 +62,8 @@ models:
           non-select slots and for option_query-backed select slots (e.g. the
           Immunization "Vaccination" slot), where the raw value carries the
           content.
+      - name: value_code
+        description: >-
+          Focus option code for select-type slots whose options are stored — the
+          stable import/export value, as opposed to the editable label. Null in
+          the same cases as value_label.

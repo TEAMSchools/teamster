@@ -17,11 +17,11 @@ with
     ),
 
     -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project is what preserves
-    -- Miami AY2020 through AY2025. Star qualified to the aliased relation --
-    -- an unqualified `select *,` would leak the cross-joined cutover CTE's
-    -- focus_start_academic_year into the output via `full union all
-    -- corresponding` null-filling it on the focus_conformed side.
+    -- does not cover. Scoping by year rather than by project preserves Miami
+    -- AY2020 through AY2025. The star is qualified to the aliased relation: an
+    -- unqualified `select *,` leaks the cross-joined cutover CTE's
+    -- `focus_start_academic_year` into the output, because `full union all
+    -- corresponding` null-fills it on the `focus_conformed` side.
     powerschool_conformed as (
         select cr.*,
         from {{ ref("int_powerschool__calendar_rollup") }} as cr

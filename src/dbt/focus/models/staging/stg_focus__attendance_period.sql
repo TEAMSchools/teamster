@@ -10,12 +10,8 @@ select
     attendance_reason,
     hourly_attendance,
     hours,
-    minutes_present,
-    minutes_absent,
     breaks,
-    break_minutes,
     break_times,
-    break_out_time,
     admin,
     admin_user_id,
     mass_assigned,
@@ -27,4 +23,9 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(break_minutes as numeric) as break_minutes,
+    cast(break_out_time as numeric) as break_out_time,
+    cast(minutes_absent as numeric) as minutes_absent,
+    cast(minutes_present as numeric) as minutes_present,
 from {{ source("focus", "attendance_period") }}

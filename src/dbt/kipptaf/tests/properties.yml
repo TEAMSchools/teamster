@@ -126,21 +126,6 @@ data_tests:
           ref:
             name: int_surveys__manager_survey_details
 
-  - name: test_base_powerschool__course_enrollments_no_studyear_course_overlap
-    description: >-
-      Within a (student, year, course) — `cc_studyear` is PowerSchool's
-      composite student+year identifier — consecutive enrollment rows must not
-      have date ranges that overlap by more than one day. A single shared
-      boundary day (one row's `cc_dateleft` equal to the next row's
-      `cc_dateenrolled`) is a normal sequential transfer and is allowed;
-      multi-day overlap is a source-side defect that causes scaffold's
-      date-between join to fan out an admin to multiple schools.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: base_powerschool__course_enrollments
-
   - name: dim_work_assignment_primary__no_overlapping_primary_spans
     description: >-
       Within a `staff_key` partition, the primary-position spans (joined from
@@ -409,11 +394,11 @@ data_tests:
       than a count, because Miami's volume moves with enrollment and a floor
       would drift stale or fire on legitimate change, while zero is always
       wrong. It stays year-agnostic on purpose. #4968 made the Focus drop flags
-      non-null, so Miami AY2026 now passes `int_assessments__course_enrollments`
-      -- but `int_extracts__course_enrollments_by_term` also requires a non-null
-      `cc_dateleft`, which Focus leaves null on 96.8% of Miami AY2026 rows, so
-      coverage still differs sharply by model and a year-scoped assertion would
-      be measuring two different things at once.
+      non-null, and #5043 made the section-count filter null-safe and added
+      `scheduled_end_date`, so both models now carry Miami AY2026. The assertion
+      stays presence-only and year-agnostic anyway: the two models reach Miami
+      through different filters, so a year-scoped count would be measuring two
+      different things at once.
     config:
       severity: error
       meta:
@@ -644,21 +629,6 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
-  - name: test_focus_unprefix_rule_holds
-    description: >-
-      Focus records the pre-migration student number on returning students, so
-      it is an independent check on the unprefix rule: stripping the 8400 prefix
-      must land on the same value Focus already stored. Warn rather than error,
-      because the one known anomalous id (a 10-digit value carrying no 8400
-      prefix) passes through deliberately and is an Ops correction in Focus, not
-      a modeling defect.
-    config:
-      severity: warn
-      meta:
-        dagster:
-          ref:
-            name: int_students__students
-
   - name: int_students__calendar_day__zero_enrollment_in_session_days
     description: >-
       Focus in-session days at a school that enrolled nobody that year. Five
@@ -691,6 +661,21 @@ data_tests:
           ref:
             name: stg_google_sheets__google_forms__question_department_crosswalk
 
+  - name: rpt_tableau__okrts_behavior__all_categories_mapped
+    description: >-
+      Fires when stg_deanslist__behavior holds a behavior_category that is
+      neither mapped in rpt_tableau__okrts_behavior's category_type CASE nor on
+      the test's deliberate-exclusion list. Such a category is dropped from the
+      OKRTS extract silently, which is how the AY2026 taxonomy change went
+      unnoticed. A hit means either map it in the CASE, or add it to the
+      exclusion list if it is intentionally out of scope.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_deanslist__behavior
+
   - name: stg_google_sheets__google_forms__question_department_crosswalk__covers_all_abbreviations
     description: >-
       The crosswalk is maintained by hand and separately from the form items
@@ -705,3 +690,61 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__google_forms__question_department_crosswalk
+
+  - name: int_gpa__student_goal_definitions__org_rung_covers_all_rungs
+    description: >-
+      Asserts every region- and school-rung GPA goal's grade band is contained
+      within a network-rung goal's grade band at the same academic year and
+      metric. int_gpa__student_goal_definitions inner joins the network rung to
+      scope its population, so a school goal without a network parent would drop
+      those students with no error.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__gpa_goals
+
+  - name: rpt_tableau__gpa_goal_progress__goals_land_on_students
+    description: >-
+      Mirrors the coverage guard above from the other direction. That test
+      guards the goals-sheet side of the wrapper's join —
+      int_gpa__student_goal_definitions inner joins the network rung, so a
+      school goal without a network parent drops silently. Nothing guarded the
+      wrapper's own left join landing on students: if
+      int_extracts__student_enrollments' rn_year semantics change, or a
+      student_number key drifts, every high school student would silently lose
+      their goal, the dashboard's goal line would go blank, and no test would
+      fail. Fails on any grade 9-12 row of rpt_tableau__gpa_goal_progress with a
+      null gpa_goal_proportion_org in an academic year the goals sheet covers.
+      Scoped to academic years present in int_google_sheets__gpa_goals so it
+      cannot false-fire for a year the goals sheet has not loaded yet.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__gpa_goal_progress
+
+  - name: stg_cambium__njgpa__not_empty
+    description: >-
+      stg_cambium__njgpa must never build empty. If Cambium drops or renames a
+      column the model depends on -- Summative Flag, say -- that column reads
+      entirely NULL, the district staging filter (where summative_flag = 'Y' and
+      test_attemptedness_flag = 'Y') returns zero rows, and unique / not_null
+      pass vacuously over an empty relation. The Avro schema check cannot catch
+      it either: it compares record fields against schema fields and warns only
+      on extras, so a removed column produces no signal and fastavro writes
+      null. Without this test NJGPA disappears from every downstream model with
+      every other test still green. Declared here in kipptaf rather than in the
+      cambium package because both district projects set an unscoped
+      `data_tests: +severity: warn`, which overrides installed-package test
+      config -- an `error` declared in the package silently resolves to `warn`,
+      leaving this guard non-blocking. kipptaf's root-project tests do hold
+      `error`.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_cambium__njgpa

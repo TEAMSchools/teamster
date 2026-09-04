@@ -2,7 +2,7 @@ select
     localstudentidentifier as student_number,
     assessmentyear as academic_year,
     academic_year as academic_year_int,
-    `period` as test_round,
+    administration_period as test_round,
     assessment_name as test_type,
     discipline as `subject`,
     `subject` as test_name,

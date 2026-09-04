@@ -5,13 +5,30 @@ models:
       course enrollment overlap with term dates. Students who re-enrolled in the
       same course within a quarter are deduped to the most recent stint.
 
-
-      Covers Miami through AY2025 only. The student join keys on
+      Covers all regions and all academic years. The student join keys on
       `student_number` rather than PowerSchool's internal `cc_studentid`, which
-      Focus leaves null -- before that change this model held no Miami rows in
-      any year. Miami AY2026 forward is still excluded, because the `not
-      is_dropped_section` and `sections_no_of_students != 0` filters both drop
-      rows whose value is null and Focus sets neither. #4996 owns those filters.
+      Focus leaves null — before that change this model held no Miami rows in
+      any year.
+
+      Miami is included by decision (ratified on #4996) and, since #5043, in
+      practice. Two null comparisons had kept it out, both fixed there.
+
+      `sections_no_of_students` is null on every Focus row, because Focus
+      records no section student count, so the `!= 0` filter dropped all 19,398
+      AY2026 enrollments. The predicate is now null-safe and still excludes the
+      PowerSchool quirk it targets — a section holding enrollment rows while
+      recording its count as zero, 202 New Jersey rows in AY2026.
+
+      `cc_dateleft` was null while a Focus enrollment was open, true of 95.8% of
+      Miami rows, so the quarter join dropped all but 230 of the survivors. That
+      one is not fixed here. It is fixed at the Focus leg of
+      `int_students__course_enrollments`, which now conforms the column to
+      PowerSchool's convention — the day after the section's term ends — so this
+      model compares it directly, unchanged.
+
+      Neither change moves New Jersey: `sections_no_of_students` is non-null on
+      every NJ row, so the new predicate is identical to the old one there, and
+      the conforming change touches only the Focus leg.
     config:
       schema: extracts
       materialized: table
@@ -1197,7 +1214,12 @@ models:
             source_column: cc_dateenrolled
       - name: dateleft
         data_type: date
-        description: Raw cc_dateleft for the enrolled course section stint.
+        description: >
+          Raw `cc_dateleft` for the enrolled course section stint. Non-null in
+          both SIS branches, and for an open enrollment it is the day after the
+          section's term ends rather than a departure date, so it cannot be read
+          as a still-enrolled signal. See the column description on
+          `int_students__course_enrollments`.
         config:
           meta:
             source_system: PowerSchool

@@ -7,8 +7,6 @@ select
     title,
     short_name,
     type,
-    sort_order,
-    year_fraction,
     tuition_hours,
     year_id,
     semester_id,
@@ -29,6 +27,9 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
+    cast(year_fraction as numeric) as year_fraction,
 
     if(short_name in ('Q1', 'Q2'), 'S1', 'S2') as quarter_semester,
 

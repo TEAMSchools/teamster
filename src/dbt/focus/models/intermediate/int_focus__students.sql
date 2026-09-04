@@ -1,26 +1,68 @@
 with
+    -- One row per ESE Exceptionalities log entry. Unlike Focus's own
+    -- "ESE Primary Computed" query, the Primary checkbox (log_field4) is not
+    -- required: it marks which exceptionality leads, not whether a plan exists.
+    ese_entries as (
+        select
+            student_id,
+            log_entry_id,
+
+            max(
+                if(slot_column_name = 'log_field3', value_code, null)
+            ) as exceptionality_code,
+
+            max(
+                if(slot_column_name = 'log_field5', value_code, null)
+            ) as placement_code,
+
+            max(if(slot_column_name = 'log_field12', value, null)) as dismissal_date,
+        from {{ ref("int_focus__custom_field_log__unpivot") }}
+        where field_title = 'ESE Exceptionalities'
+        group by student_id, log_entry_id
+    ),
+
+    ese_students as (
+        select distinct student_id,
+        from ese_entries
+        where
+            placement_code in ('P', 'T')
+            and dismissal_date is null
+            and exceptionality_code != 'L'
+    ),
+
     labeled as (
         select
             s.*,
 
-            p.ethnicity_hispanic_or_latino_label,
-            p.race_white_label,
-            p.race_black_or_african_american_label,
-            p.race_asian_label,
-            p.sex_label,
-            p.race_american_indian_or_alaska_native_label,
-            p.race_native_hawaiian_or_other_pacific_islander_label,
-            p.residence_county_label,
-            p.language_label,
-            p.ese_fefp_code_label,
-            p.english_language_learner_pk_12_label,
-            p.gifted_eligibility_label,
-            p.homeless_student_pk_12_label,
-            p.homeless_unaccompanied_youth_label,
-            p.free_reduced_meals_program_label,
+            p.label_ethnicity_hispanic_or_latino as ethnicity_hispanic_or_latino_label,
+            p.label_race_white as race_white_label,
+            p.label_race_black_or_african_american
+            as race_black_or_african_american_label,
+            p.label_race_asian as race_asian_label,
+            p.label_sex as sex_label,
+            p.label_race_american_indian_or_alaska_native
+            as race_american_indian_or_alaska_native_label,
+            p.label_race_native_hawaiian_or_other_pacific_islander
+            as race_native_hawaiian_or_other_pacific_islander_label,
+            p.label_residence_county as residence_county_label,
+            p.label_language as language_label,
+            p.label_ese_fefp_code as ese_fefp_code_label,
+            p.code_section_504_eligible as section_504_eligible_code,
+            p.label_section_504_eligible as section_504_eligible_label,
+            p.label_english_language_learner_pk_12
+            as english_language_learner_pk_12_label,
+            p.label_gifted_eligibility as gifted_eligibility_label,
+            p.label_homeless_student_pk_12 as homeless_student_pk_12_label,
+            p.label_homeless_unaccompanied_youth as homeless_unaccompanied_youth_label,
+            p.label_free_reduced_meals_program as free_reduced_meals_program_label,
+            p.code_idea_educational_environment as idea_educational_environment_code,
+            p.label_idea_educational_environment as idea_educational_environment_label,
+
+            ese.student_id is not null as has_iep,
         from {{ ref("stg_focus__students") }} as s
         left join
             {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
+        left join ese_students as ese on s.student_id = ese.student_id
     ),
 
     raced as (
@@ -53,9 +95,10 @@ with
         select
             *,
 
-            cast(
-                regexp_replace(cast(student_id as string), r'^8400', '') as int64
-            ) as student_number,
+            -- The Focus student_id (8400-prefixed) is the Miami student number.
+            -- The bare pre-migration number lives on powerschool_id for
+            -- returning students and is no longer a join key.
+            student_id as student_number,
 
             date(birthdate) as dob,
 
@@ -63,7 +106,22 @@ with
 
             lpad(cast(disis_id as string), 7, '0') as state_studentnumber,
 
-            if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
+            if(has_iep, 'SPED', null) as spedlep,
+
+            -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. The
+            -- label is the stable key for this select option.
+            case
+                ethnicity_hispanic_or_latino_label when 'Yes' then 1 when 'No' then 0
+            end as fedethnicity,
+
+            -- Y and N both assert a 504 plan (N is 504-eligible but not IDEA);
+            -- I and Z are explicit negatives; unset stays null, not false.
+            case
+                when section_504_eligible_code in ('Y', 'N')
+                then true
+                when section_504_eligible_code in ('I', 'Z')
+                then false
+            end as is_504,
 
             case
                 when gifted_eligibility_label like 'Student was determined eligible%'
@@ -89,12 +147,12 @@ with
             end as lep_status,
 
             -- FLDOE homeless codes describe the student's nighttime residence. Any
-            -- residence type means homeless; N is the not-homeless default. The network
-            -- domain splits homeless by custody instead, so the separate
+            -- residence type means homeless, and N is the not-homeless default. The
+            -- network domain splits homeless by custody instead, so the separate
             -- unaccompanied-youth field decides Y2 versus Y1. That field is a
-            -- five-option select, not a flag -- Y, C and U all mean unaccompanied,
-            -- while N means homeless but accompanied and Z means not homeless, so a
-            -- null check would mislabel an accompanied homeless student as Y2.
+            -- 5-option select, not a flag: Y, C and U all mean unaccompanied, N
+            -- means homeless but accompanied, and Z means not homeless. A null check
+            -- would therefore mislabel an accompanied homeless student as Y2.
             case
                 when homeless_c = 'N'
                 then 'N'

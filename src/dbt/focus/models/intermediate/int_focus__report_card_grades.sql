@@ -76,10 +76,10 @@ left join
     course_flag_options as f2
     on g.course_flag_2 in (f2.option_id, f2.code)
     and f2.column_name = 'custom_2'
--- DY is the cron admin account's snapshot of yesterday's grade, mirroring the
--- DT row's grade with no grade_scale_id. Carrying it would double-count every
+-- DY is the cron admin account's snapshot of yesterday's grade. It mirrors the
+-- DT row's grade with no `grade_scale_id`, so carrying it double-counts every
 -- live Miami grade downstream. DT (the running gradebook) and E (an exam) are
--- distinct measures and both stay -- no E row exists yet, so filtering to DT
+-- distinct measures, and both stay. No E row exists yet, so filtering to DT
 -- alone would silently drop exam grades the moment they post. Imported course
 -- history carries no token and is unaffected.
 where coalesce(g.grade_type_token, '') != 'DY'

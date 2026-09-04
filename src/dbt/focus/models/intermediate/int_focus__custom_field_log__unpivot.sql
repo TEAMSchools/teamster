@@ -127,6 +127,7 @@ select
     unpivoted.created_at,
     unpivoted.updated_at,
     options.label as value_label,
+    options.code as value_code,
 from unpivoted
 inner join
     columns_meta

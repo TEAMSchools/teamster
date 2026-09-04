@@ -9,6 +9,12 @@ models:
     config:
       materialized: table
     columns:
+      - name: assessment_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: _dbt_source_relation
         data_type: string
       - name: _dagster_partition_fiscal_year
@@ -20,8 +26,6 @@ models:
       - name: american_indian_or_alaska_native
         data_type: string
       - name: asian
-        data_type: string
-      - name: assessment_id
         data_type: string
       - name: assessment_number
         data_type: int64
@@ -267,8 +271,13 @@ models:
         data_type: int64
       - name: student_display_id
         data_type: int64
+        description: >-
+          Network student number. Miami rows through SY2025 carry the bare
+          pre-Focus number in the source; they are brought onto the
+          8400-prefixed Focus student number here.
       - name: student_identifier
         data_type: int64
+        description: Same value as student_display_id in every row.
       - name: student_sourced_id
         data_type: int64
       - name: student_user_id

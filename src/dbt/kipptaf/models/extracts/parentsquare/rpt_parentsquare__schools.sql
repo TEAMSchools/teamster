@@ -1,11 +1,10 @@
 with
     principals as (
         -- ParentSquare wants the principal's given and family name as separate
-        -- fields, but PowerSchool stores only one combined `principal` string
-        -- that also carries honorifics ('Dr. Jane Doe'), so a whitespace split
-        -- would put the honorific in first_name. Resolve the pair from the staff
-        -- roster by email instead. `mail` is unique on the roster, so this
-        -- cannot fan out.
+        -- fields, but PowerSchool stores one combined `principal` string that
+        -- also carries honorifics. A whitespace split would put the honorific in
+        -- `first_name`, so resolve the pair from the staff roster by email
+        -- instead. `mail` is unique on the roster, so this join cannot fan out.
         select
             given_name as principal_first_name,
             family_name_1 as principal_last_name,

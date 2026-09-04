@@ -33,6 +33,7 @@ with
 
 select
     * except (
+        student_primary_id,
         basic_comprehension_maze_local_percentile,
         enrollment_teacher_staff_id,
         official_teacher_staff_id,
@@ -60,6 +61,12 @@ select
 
     basic_comprehension_maze_local_percentile
     as reading_comprehension_maze_local_percentile,
+
+    {{
+        focus_student_number(
+            "student_primary_id", "academic_year", "_dbt_source_project"
+        )
+    }} as student_primary_id,
 
     coalesce(
         enrollment_teacher_staff_id, official_teacher_staff_id

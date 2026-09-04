@@ -76,13 +76,13 @@ select
 
     cast(fg.exclude_from_gpa as bool) as is_excluded_from_gpa,
 from {{ ref("int_students__final_grades") }} as fg
--- retained as a row-population filter (term grade must fall within a covering
--- school enrollment); enrollment linkage now flows via
--- student_section_enrollment_key -> dim_student_section_enrollments
--- joined on student_number, not studentid: the Focus branch has no PowerSchool
--- studentid, and student_number is the only student key both branches carry.
--- Row-identical to the studentid join for all 3 NJ regions, measured against
--- prod before the swap.
+-- Retained as a row-population filter: a term grade must fall within a covering
+-- school enrollment. Enrollment linkage now flows through
+-- `student_section_enrollment_key` to `dim_student_section_enrollments`, joined
+-- on `student_number` rather than `studentid`. The Focus branch has no
+-- PowerSchool `studentid`, and `student_number` is the only student key both
+-- branches carry. Measured against prod before the swap: row-identical to the
+-- `studentid` join for all 3 NJ regions.
 inner join
     student_enrollments as enr
     on fg.student_number = enr.student_number

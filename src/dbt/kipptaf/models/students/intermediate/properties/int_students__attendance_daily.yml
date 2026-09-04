@@ -5,10 +5,14 @@ models:
       to int_powerschool__ps_adaadm_daily_ctod, which is now a thin PowerSchool
       union. Holds every derived flag, point-in-time anchor, and running calc
       for both SIS branches, so there is one definition rather than one per
-      branch. The PowerSchool branch is year-scoped, so the frozen Miami archive
-      keeps serving AY2020 through AY2025 while Focus serves AY2026 forward. Six
-      flags are null for Focus-sourced Miami rows because Focus has no day-grain
-      source for them — see #4927.
+      branch. The PowerSchool branch is year-scoped, so the frozen Miami
+      PowerSchool archive keeps serving AY2020 through AY2025 while Focus serves
+      AY2026 forward, the same split int_students__ada and
+      int_students__attendance_streak apply. Focus is the enrollment source of
+      record for Miami and re-dated the archive's stints, so Miami archive rows
+      take entrydate from the Focus stint that contains the day and fall back to
+      the archive date when none does. Six flags are null for Focus-sourced
+      Miami rows because Focus has no day-grain source for them — see #4927.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -60,8 +64,10 @@ models:
         description: Network school number.
       - name: entrydate
         description: >-
-          Enrollment stint start date the row belongs to. Legacy alias,
-          transitional — see enrollment_start_date.
+          Enrollment stint start date the row belongs to. On Miami archive rows
+          this is the Focus stint's start date, not PowerSchool's, so the row
+          keys to dim_student_enrollments. Legacy alias, transitional — see
+          enrollment_start_date.
       - name: fteid
         description: >-
           PowerSchool internal FTE id. Null for every Focus-sourced row — Focus

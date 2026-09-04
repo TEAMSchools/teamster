@@ -9,6 +9,10 @@ models:
       are carried through that pivot even though they aren't projected directly,
       so the exemption reason columns below can still be derived after the
       per-subject rows collapse to one row per student.
+
+      **Excludes Miami by design.** This is New Jersey state test registration,
+      so Florida students have no place in it; the model already filters
+      `co.region != 'Miami'` explicitly. Ratified on #4996.
     columns:
       - name: region
         data_type: string

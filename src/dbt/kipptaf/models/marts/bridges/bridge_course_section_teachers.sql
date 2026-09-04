@@ -21,13 +21,12 @@
 -- teacher assigned in Focus at all, plus 13 whose user resolves to no staff
 -- roster row.
 with
-    -- The year boundary keeps the two branches disjoint. Miami's frozen
-    -- PowerSchool archive still holds sectionteacher rows through AY2025, and
-    -- those sections also carry a resolved teachernumber, so an unscoped Focus
-    -- branch would emit a duplicate Lead Teacher row for every archive
-    -- section. coalesce to 9999 fails toward emitting nothing rather than
-    -- duplicating, when int_focus__schedule is empty in an unbuilt --defer dev
-    -- copy.
+    -- The year boundary keeps the 2 branches disjoint. Miami's frozen
+    -- PowerSchool archive still holds `sectionteacher` rows through AY2025, and
+    -- those sections carry a resolved `teachernumber`, so an unscoped Focus
+    -- branch emits a duplicate Lead Teacher row for every archive section.
+    -- `coalesce` to 9999 fails toward emitting nothing rather than duplicating
+    -- when `int_focus__schedule` is empty in an unbuilt --defer dev copy.
     focus_academic_year_boundary as (
         select coalesce(min(academic_year), 9999) as min_academic_year,
         from {{ ref("int_focus__schedule") }}

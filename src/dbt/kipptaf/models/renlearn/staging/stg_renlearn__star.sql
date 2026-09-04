@@ -3,15 +3,34 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnj_renlearn", "stg_renlearn__star"),
                     source("kippmiami_renlearn", "stg_renlearn__star"),
                 ]
             )
         }}
     ),
 
+    sourced as (
+        select
+            * except (student_display_id, student_identifier),
+
+            {{
+                focus_student_number(
+                    "student_display_id",
+                    "_dagster_partition_fiscal_year - 1",
+                    extract_source_project(),
+                )
+            }} as student_display_id,
+            {{
+                focus_student_number(
+                    "student_identifier",
+                    "_dagster_partition_fiscal_year - 1",
+                    extract_source_project(),
+                )
+            }} as student_identifier,
+        from union_relations
+    ),
+
     derived as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 
@@ -95,7 +114,7 @@ with
                     student_identifier
                 order by completed_date desc
             ) as rn_subject_year,
-        from union_relations
+        from sourced
         where deactivation_reason is null
     )
 

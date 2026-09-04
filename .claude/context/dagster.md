@@ -87,6 +87,18 @@ Exception — a `dbt build` step failure has an EMPTY `errorChain`; the parsed d
 errors (compilation error, failing model, log path) are already in the top-level
 `error.message`. Read it directly.
 
+A dbt test failing
+`Not found: Table ...<schema>_dbt_test__audit.<test> was not found in location US`
+is a collision between two concurrent runs, not a code or data defect.
+`store_failures` makes the test materialization drop → create → select a
+fixed-name audit relation, and `eager` indirect selection has several runs pull
+the same test (4 concurrent `kipptaf` `__ASSET_JOB` runs is normal). The other
+run's `adapter.drop_relation` — a REST `tables.delete`, absent from
+`JOBS_BY_PROJECT` — lands between this run's create and select, so the job
+timestamps look impossible. Confirm with a self-join on `CREATE_VIEW` jobs for
+that relation within 5s. `job_retries` cannot absorb it; the Dagster run retry
+is the handling.
+
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:
 `get_run_logs(filter_types=["LogsCapturedEvent"])` →
@@ -128,3 +140,18 @@ Claude cannot authenticate direct GraphQL calls — the token comes from `op rea
 (hook-blocked). Hand queries to the user to run in the Dagster+ UI GraphQL
 playground; the MCP's fixed field selections omit some fields (e.g.
 `materializationFailureType` on `FailedToMaterializeEvent`).
+
+## Run logs
+
+For run-internal timelines (steps, engine events, failures), use
+`mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
+unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
+`get_run_logs` event `timestamp` is a millisecond string.
+
+## MCP launcher
+
+Do not revert `.mcp.json` to `op run`. The 1Password service-account token is
+scrubbed post-boot, so `op run` silently breaks after the first Codespace
+restart. Keep `scripts/dagster-mcp-launch.sh` as the launcher. Package
+internals:
+[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).

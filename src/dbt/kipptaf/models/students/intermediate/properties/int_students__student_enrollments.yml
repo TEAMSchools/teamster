@@ -13,11 +13,23 @@ models:
 
       Also carries the demographic data and student identifiers the enrollment
       consumers read. Columns PowerSchool supplies and Focus does not are null
-      for Miami -- `is_self_contained` and `is_out_of_district` (no
-      special-programs equivalent in Focus), the KIPP Forward exit codes
-      (`exit_code_kf`, `exit_code_ts`), `advisor_teachernumber` (no network
-      teacher number in Focus), `rn_school`, `rn_undergrad`,
-      `is_enrolled_y1`, `is_enrolled_recent`, `track`, and `cohort_graduated`.
+      for Miami -- `is_self_contained` (a SPED service-delivery fact Focus does
+      not carry, left null rather than asserted false per #4968), the KIPP
+      Forward exit codes (`exit_code_kf`, `exit_code_ts`),
+      `advisor_teachernumber` (no network teacher number in Focus), `rn_school`,
+      `rn_undergrad`, `track`, and `cohort_graduated`.
+
+      `is_enrolled_y1` and `is_enrolled_recent` are derived for Miami from the
+      roster's enrollment dates, using PowerSchool's expressions.
+      `is_out_of_district` is derived from `custom_863`, the IDEA educational
+      environment, with `reporting_schoolid`, `reporting_school_name` and
+      `school_level` branching on the same match -- PowerSchool derives all
+      four from one special-programs record, so Focus branches all four on one
+      option (#5041). Every Miami student holds `custom_863`'s default today,
+      so the flag resolves false for every Miami row, exactly as it did while
+      it was a literal. `is_enrolled_y1`, `is_enrolled_recent` and
+      `is_out_of_district` were all null before #4996, which silently removed
+      Miami from every consumer that filtered on them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -27,6 +39,39 @@ models:
               - schoolid
               - entrydate
     columns:
+      - name: is_enrolled_y1
+        data_type: boolean
+        description: >-
+          Whether the student held an enrollment at any point in the academic
+          year. Derived from the enrollment dates on both SIS branches, taken to
+          the year grain so any qualifying stint counts. True on every row in
+          every region today, because neither branch leaves an exit date unset.
+        data_tests:
+          - not_null
+      - name: is_enrolled_recent
+        data_type: boolean
+        description: >-
+          Whether the student completed the academic year or is currently
+          enrolled. Mid-year withdrawals are false, which is how consumers drop
+          them. Derived on both SIS branches from the enrollment dates against
+          the last day of the school year, taken to the year grain.
+        data_tests:
+          - not_null
+      - name: is_out_of_district
+        data_type: boolean
+        description: >-
+          Whether the student is served in an out-of-district placement.
+          PowerSchool reads it off an "Out of District" special program. Miami
+          derives it from `custom_863`, the IDEA educational environment, and it
+          is true for the age 6-21 options that place a student at another
+          institution -- correctional facility, center school, public
+          residential facility, hospital or homebound, and private school with
+          public school services -- which is PowerSchool's out-of-district set
+          exactly. Florida's age 3-5 options are excluded, since Miami enrolls
+          no pre-K. Every Miami student holds the default option today, so this
+          resolves false for every Miami row.
+        data_tests:
+          - not_null
       - name: homeless_code
         data_type: string
         data_tests:
@@ -66,7 +111,9 @@ models:
       - name: student_number
         data_type: int64
         description: |-
-          Student Number assigned by the school. Indexed.
+          Student Number assigned by the school. Indexed. For Miami, the
+          8400-prefixed Focus student id; the bare pre-migration number is no
+          longer a join key.
         config:
           meta:
             source_system: PowerSchool
@@ -192,7 +239,9 @@ models:
             contains_pii: true
       - name: middle_name
         data_type: string
-        description: Student's middle name.
+        description:
+          Student's middle name. PowerSchool for NJ regions; Focus students for
+          Miami.
         config:
           meta:
             source_system: PowerSchool
@@ -280,9 +329,10 @@ models:
             contains_pii: true
       - name: fedethnicity
         data_type: int64
-        description:
-          'Numerical answer to the question "Is the student Hispanic or Latino?"
-          Valid values :'
+        description: >-
+          Numerical answer to the question "Is the student Hispanic or Latino?"
+          1 = yes, 0 = no. PowerSchool for NJ regions; for Miami, derived from
+          the Focus "Ethnicity Hispanic or Latino" select option label.
         config:
           meta:
             source_system: PowerSchool
@@ -374,15 +424,11 @@ models:
         data_type: int64
       - name: year_in_network
         data_type: int64
-      - name: is_enrolled_y1
-        data_type: boolean
       - name: is_enrolled_oct01
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
       - name: is_enrolled_mar15
-        data_type: boolean
-      - name: is_enrolled_recent
         data_type: boolean
       - name: is_retained_year
         data_type: boolean
@@ -414,14 +460,33 @@ models:
         data_type: int64
       - name: is_self_contained
         data_type: boolean
-      - name: is_out_of_district
-        data_type: boolean
+        description: >-
+          Whether the student is served in a self-contained classroom. Null for
+          Miami: Focus records no placement fact, and the nearest field
+          (`ese_fefp_code_label`) encodes Florida funding levels rather than
+          placement, so false would assert a verified negative the data cannot
+          support. Consumers that filter `not is_self_contained` therefore still
+          exclude Miami.
       - name: reporting_schoolid
         data_type: int64
+        description: >-
+          School the enrollment reports under. Matches `schoolid` unless
+          `is_out_of_district` is true, in which case PowerSchool supplies the
+          special program's `programid` and Miami supplies the `custom_863`
+          option id -- a hospital or a center school has no Florida school
+          number to use instead.
       - name: reporting_school_name
         data_type: string
+        description: >-
+          Name of the school named by `reporting_schoolid`. The real school name
+          for an in-district enrollment; for an out-of-district placement, the
+          PowerSchool special-program name, or for Miami the decoded
+          `custom_863` option label.
       - name: school_level
         data_type: string
+        description: >-
+          ES, MS or HS for an in-district enrollment, or `OD` when
+          `is_out_of_district` is true, matching `reporting_schoolid`.
       - name: _dbt_source_project
         data_type: string
         description: |
@@ -449,6 +514,7 @@ models:
             source_system: PowerSchool
             source_model: stg_people__student_logins
             source_column: username
+            contains_pii: true
       - name: student_web_password
         data_type: string
         description:
@@ -465,8 +531,17 @@ models:
       - name: student_email_google
         data_type: string
         description: Conditional on email, google_email, region.
+        config:
+          meta:
+            contains_pii: true
       - name: fleid
         data_type: string
+        description:
+          Florida Education Identifier, from Focus florida_education_identifier.
+          Miami only; the PowerSchool u_studentsuserfields copy is retired.
+        config:
+          meta:
+            contains_pii: true
       - name: newark_enrollment_number
         data_type: string
       - name: infosnap_id
@@ -532,9 +607,9 @@ models:
         data_type: boolean
         description:
           For the New Jersey regions, first non-null of `pid_504_tf`, `is_504`.
-          Always null for Miami -- both coalesce inputs resolve through
-          `students_dcid`, which Focus never populates, so Miami has no 504
-          source at all. Null means unknown 504 status, not the absence of a
+          For Miami, `int_focus__students.is_504`, read from the Focus "Section
+          504 Eligible" field (custom_621), which is unset for nearly every
+          student today. Null means unknown 504 status, not the absence of a
           plan.
       - name: is_fldoe_fte_2
         data_type: boolean

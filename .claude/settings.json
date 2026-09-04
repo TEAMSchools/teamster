@@ -1,4 +1,7 @@
 {
+  "env": {
+    "MCP_TIMEOUT": "90000"
+  },
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
@@ -194,7 +197,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*",
+        "matcher": "Agent|Workflow|mcp__.*",
         "hooks": [
           {
             "type": "command",

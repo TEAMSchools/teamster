@@ -801,7 +801,7 @@ exposures:
     type: analysis
     owner:
       name: Data Team - grangel
-    url: https://docs.google.com/spreadsheets/d/1e52D42Zhlhasj-_Tf429ZWxJdtSr05YedsI4Ur0Tva8
+    url: https://docs.google.com/spreadsheets/d/1d9hApvHMf_865-rQgXwnpxcbOLhiMaP6tkDz_YZTdSU
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_student_flags")
     config:
@@ -818,6 +818,7 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_template")
+      - ref("rpt_gsheets__gradebook_audit_current_expectations")
     config:
       meta:
         dagster:

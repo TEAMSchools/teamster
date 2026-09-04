@@ -123,10 +123,10 @@ with
         -- Imported course history predates the Focus cutover and overlaps the
         -- frozen PowerSchool archive for the years the archive covers. The
         -- archive branch above already owns those years, so admit only rows at
-        -- or after the cutover -- the same boundary, applied from the other side.
-        -- It also carries an invariant the schedule join depends on: every
-        -- course-history row has a null course_period_id (15,278 of 15,278) and
-        -- would drop out of that inner join anyway.
+        -- or after the cutover — the same boundary, applied from the other
+        -- side. Course history also carries an invariant the schedule join
+        -- depends on: every row has a null `course_period_id` (15,278 of
+        -- 15,278) and drops out of that inner join anyway.
         cross join sis_cutover as sc
         where g.academic_year >= sc.focus_start_academic_year
     )

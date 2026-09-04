@@ -1,14 +1,9 @@
 with
-    -- Focus is Miami's system of record from AY2026 forward, but the frozen
-    -- archive still holds Miami AY2020 through AY2025. Scope by year rather
-    -- than excluding Miami wholesale, and derive the boundary so a Focus
-    -- backfill of an earlier year does not silently double-count.
-    -- coalesce guards against an empty int_focus__schedule (e.g. an unbuilt
-    -- --defer dev copy): min(academic_year) with no rows is NULL, and NULL >=
-    -- fay.min_academic_year evaluates to NULL rather than false below, so
-    -- `not (...)` also evaluates to NULL and the WHERE filter drops every
-    -- Miami row instead of keeping the archive. 9999 fails toward preserving
-    -- the data that exists.
+    -- coalesce guards an empty int_focus__schedule (an unbuilt --defer dev
+    -- copy): min(academic_year) over no rows is NULL, and NULL >=
+    -- fay.min_academic_year evaluates to NULL rather than false, so `not (...)`
+    -- is NULL too and the WHERE filter drops every Miami row instead of keeping
+    -- the archive. 9999 fails toward preserving the data that exists.
     focus_academic_year_boundary as (
         select coalesce(min(academic_year), 9999) as min_academic_year,
         from {{ ref("int_focus__schedule") }}
@@ -41,6 +36,12 @@ with
             csc.is_foundations,
             csc.is_advanced_math,
             csc.discipline,
+
+            -- PowerSchool has no separate departure date: cc_dateleft is the
+            -- actual leave date when the student left and the term end plus a
+            -- day while the enrollment is open. It is therefore already the
+            -- neutral concept, and is non-null on all 751,359 rows since 2004.
+            a.cc_dateleft as exit_date,
 
             {{ extract_region("a") }} as region,
 
@@ -97,6 +98,12 @@ with
             -- future-term row therefore carries a future date. #5002
             s.start_date as cc_dateenrolled,
             s.end_date as cc_dateleft,
+
+            -- Focus records the departure and the scheduled term end as two
+            -- facts; PowerSchool conflates them into cc_dateleft. Resolve the
+            -- neutral column from whichever this SIS actually has, rather than
+            -- back-filling PowerSchool's conflated column. #5043
+            coalesce(s.end_date, s.marking_period_end_date) as exit_date,
             st.student_number as students_student_number,
             loc.powerschool_school_id as sections_schoolid,
             loc.powerschool_school_id as cc_schoolid,

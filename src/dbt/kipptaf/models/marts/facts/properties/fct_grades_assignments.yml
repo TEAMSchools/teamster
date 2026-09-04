@@ -10,17 +10,12 @@ models:
       by traversing student_section_enrollment_key.
 
 
-      PowerSchool only. Miami is absent from AY2026 forward, and repointing this
-      model's join keys would not change that, because the gradebook itself has
-      no Focus branch. int_powerschool__gradebook_assignments_scores unions the
-      district PowerSchool packages, and Miami left that package when it moved
-      to Focus, so its archive stops at AY2025 -- 523,021 rows for AY2025 and
-      zero for AY2026, measured against prod. Focus does hold gradebook data
-      (int_focus__gradebook_grades in the focus package), but it has no kipptaf
-      wrapper, so nothing reaches the network layer. Wiring that branch is
-      tracked in #5010, and was ruled out of #4995 on measurement. Miami's null
-      is_dropped_section also trips this model's `not is_dropped_section`
-      filter; that half is #4996.
+      Sourced from int_students__gradebook_assignments_scores, which unions the
+      three NJ PowerSchool districts with Miami's Focus gradebook. Miami's
+      PowerSchool gradebook archive is excluded in every year — Focus is Miami's
+      sole gradebook source. Focus records no missing flag and no numeric grade
+      distinct from the points score, so is_missing and numeric_grade_earned are
+      null on every Miami row.
     columns:
       - name: grades_assignment_key
         data_type: string
@@ -99,7 +94,7 @@ models:
         quote: true
         data_type: string
         description: >-
-          Name of the assignment as entered in the PowerSchool gradebook.
+          Name of the assignment as the teacher entered it in the gradebook.
 
       - name: category_name
         data_type: string
@@ -160,12 +155,14 @@ models:
       - name: is_missing
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as missing in PowerSchool.
+          TRUE if the assignment is flagged as missing. NULL on Focus rows —
+          Focus records no missing flag on a gradebook score.
 
       - name: is_late
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as late in PowerSchool.
+          TRUE if the assignment is flagged as late. On Focus rows this is the
+          score's late flag.
 
       - name: is_exempt
         data_type: boolean
