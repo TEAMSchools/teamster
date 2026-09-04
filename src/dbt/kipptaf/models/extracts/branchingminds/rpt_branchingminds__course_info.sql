@@ -1,12 +1,11 @@
 with
-    -- grain projection from section to (region, course_number), not dup-masking:
-    -- a course with real enrollment this year has one or more sections
+    -- courses with at least one enrolled section this year
     active_courses as (
-        select distinct _dbt_source_project, sections_course_number,
+        select _dbt_source_project, sections_course_number,
         from {{ ref("int_students__course_sections") }}
-        where
-            terms_academic_year = {{ var("current_academic_year") }}
-            and sections_no_of_students > 0
+        where terms_academic_year = {{ var("current_academic_year") }}
+        group by _dbt_source_project, sections_course_number
+        having sum(sections_no_of_students) > 0
     )
 
 select
