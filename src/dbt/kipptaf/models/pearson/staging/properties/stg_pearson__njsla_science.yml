@@ -3,6 +3,13 @@ models:
     config:
       materialized: table
     columns:
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Literal 'NJSLA Science'. NJSLA Science has only one version, so the
+          value restates assessment_name. It is set here so every relation
+          unioned into int_pearson__all_assessments supplies the column rather
+          than null-filling it.
       - name: subject_area
         data_type: string
         description:

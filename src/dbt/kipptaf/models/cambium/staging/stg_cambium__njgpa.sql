@@ -42,6 +42,7 @@ select
     white,
 
     'NJGPA' as assessment_name,
+    'NJGPA-A' as assessment_version,
 
     case test_code when 'ELAGP' then 11 when 'MATGP' then 11 end as test_grade,
 

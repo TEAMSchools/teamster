@@ -3,6 +3,13 @@ models:
     config:
       materialized: table
     columns:
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Literal 'NJGPA', marking every row here as the retired Pearson form of
+          the assessment. int_pearson__all_assessments carries the value up so
+          graduation pathway cut scores can be keyed to the score scale the row
+          was produced on, rather than to the student's cohort.
       - name: subject_area
         data_type: string
         description:

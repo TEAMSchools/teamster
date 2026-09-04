@@ -58,6 +58,7 @@ with
             x.testcode as score_type,
             x.testcode as subject_area,
             x.test_name as pathway_option,
+            x.test_name as assessment_version,
             x.discipline,
 
         from students as s
@@ -76,6 +77,7 @@ with
             n.testcode as score_type,
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
+            n.assessment_version,
             n.discipline,
 
         from students as s
@@ -100,6 +102,7 @@ with
             score_type,
             subject_area,
             scope as pathway_option,
+            scope as assessment_version,
 
             if(course_discipline = 'ENG', 'ELA', 'Math') as discipline,
         from {{ ref("int_assessments__college_assessment") }}
@@ -166,6 +169,7 @@ with
             scores as p
             on c.pathway_option = p.pathway_option
             and c.score_type = p.score_type
+            and c.assessment_version = p.assessment_version
             and s.student_number = p.student_number
         where
             s.ps_grad_path_code is null
