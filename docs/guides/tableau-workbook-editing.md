@@ -260,15 +260,20 @@ degrades:
     **After any publish, trigger a refresh and confirm it succeeds.** Metadata
     verification is not sufficient — that is exactly the check that missed this.
 
-!!! tip "The durable fix is in the connection attributes"
+!!! tip "The durable fix is in the connection attributes — tracked in #5157"
 
     Each BigQuery connection carries `workgroup-auth-mode='prompt'`, which is why
     the credential lives on the workbook and dies with a publish, alongside
     `server-oauth='server-custom'` — a custom OAuth client that already exists at
     server level. Pointing these connections at a server- or site-level saved
     credential instead of prompting leaves a publish nothing to strip, across all
-    11 gated workbooks. It is a Tableau admin plus Desktop change, and it is worth
-    doing before many more publishes rather than re-embedding by hand every time.
+    11 gated workbooks. It is a Tableau admin plus Desktop change, filed as
+    [#5157](https://github.com/TEAMSchools/teamster/issues/5157).
+
+    Until that lands, **publish and then re-embed by hand** is the accepted
+    recipe. The manual step is the price of editing calculations
+    programmatically, and the trade is worth it — but the refresh check is not
+    optional, because a missed re-embed fails silently.
 
 **`hidden_views` is the one that bites.** Which sheets Desktop chose to publish
 is server-side state absent from the file, so a REST publish exposes every sheet

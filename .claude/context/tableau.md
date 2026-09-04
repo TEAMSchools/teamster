@@ -123,9 +123,12 @@ connector.
 
 So a publish to these workbooks **must be followed by re-embedding the
 credential by hand** — Desktop republish with _Embed password_ checked, or the
-workbook's Data Connections page on Server.
+workbook's Data Connections page on Server. **Then trigger a refresh and confirm
+it succeeds.** This manual step is the accepted recipe for now; the time saved
+by editing calcs programmatically is worth it.
 
-**The durable fix is visible in the connection attributes.** Each carries
+**The durable fix is visible in the connection attributes**, and is tracked in
+[#5157](https://github.com/TEAMSchools/teamster/issues/5157). Each carries
 `workgroup-auth-mode='prompt'`, which is exactly why the credential lives on the
 workbook and dies with a publish, alongside `server-oauth='server-custom'` — a
 custom BigQuery OAuth client that already exists at server level. Pointing these
