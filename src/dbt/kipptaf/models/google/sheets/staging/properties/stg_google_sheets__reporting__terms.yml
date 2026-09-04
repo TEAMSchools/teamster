@@ -16,6 +16,23 @@ models:
           config:
             severity: error
             where: type = 'RT'
+      # Guards the dim_terms term_key grain HERE rather than on dim_terms
+      # itself. dim_terms is a view, so sheet edits reach it instantly but its
+      # own unique test only re-runs when someone changes its SQL -- a 2026-08
+      # grade_band split tripled 60 LIT keys and sat undetected for 3 weeks.
+      # This model is a table rebuilt by the google_sheet asset on every sheet
+      # edit, so the test fires exactly when the sheet can break the key.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - type
+              - code
+              - name
+              - start_date
+              - region
+              - school_id
+          config:
+            severity: error
     columns:
       - name: type
         data_type: string
