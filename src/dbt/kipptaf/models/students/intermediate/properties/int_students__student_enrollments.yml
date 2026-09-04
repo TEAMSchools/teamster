@@ -529,6 +529,19 @@ models:
       - name: student_email_google
         data_type: string
         description: Conditional on email, google_email, region.
+      - name: focus_student_id
+        data_type: int64
+        description: >-
+          Focus's 8400-prefixed student id, the canonical Miami student number
+          in Focus-keyed systems (student logins, parts of iReady). Null for NJ
+          regions. student_number holds the bare network number for every
+          region.
+        config:
+          meta:
+            source_system: Focus
+            source_model: int_focus__student_enrollment_roster
+            source_column: student_number
+            contains_pii: true
       - name: fleid
         data_type: string
         description:
@@ -599,9 +612,9 @@ models:
         data_type: boolean
         description:
           For the New Jersey regions, first non-null of `pid_504_tf`, `is_504`.
-          Always null for Miami -- both coalesce inputs resolve through
-          `students_dcid`, which Focus never populates, so Miami has no 504
-          source at all. Null means unknown 504 status, not the absence of a
+          For Miami, `int_focus__students.is_504`, read from the Focus "Section
+          504 Eligible" field (custom_621), which is unset for nearly every
+          student today. Null means unknown 504 status, not the absence of a
           plan.
       - name: is_fldoe_fte_2
         data_type: boolean

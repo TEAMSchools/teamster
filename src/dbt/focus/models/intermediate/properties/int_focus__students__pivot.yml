@@ -438,6 +438,27 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: value_section_504_eligible
+        description: >-
+          Stored value for the section_504_eligible select field -- the option
+          id or code Focus persists on the student record, before decoding.
+        config:
+          meta:
+            contains_pii: true
+      - name: code_section_504_eligible
+        description: >-
+          Focus option code for the section_504_eligible select field. Y is 504
+          eligible, N is eligible under 504 but not IDEA, I is evaluated and not
+          eligible, Z is not eligible.
+        config:
+          meta:
+            contains_pii: true
+      - name: label_section_504_eligible
+        description: >-
+          Decoded label for the section_504_eligible select field.
+        config:
+          meta:
+            contains_pii: true
       - name: value_gifted_eligibility
         description: >-
           Stored value for the gifted_eligibility select field -- the option id

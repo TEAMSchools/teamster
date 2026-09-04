@@ -16,6 +16,8 @@ with
             p.label_residence_county as residence_county_label,
             p.label_language as language_label,
             p.label_ese_fefp_code as ese_fefp_code_label,
+            p.code_section_504_eligible as section_504_eligible_code,
+            p.label_section_504_eligible as section_504_eligible_label,
             p.label_english_language_learner_pk_12
             as english_language_learner_pk_12_label,
             p.label_gifted_eligibility as gifted_eligibility_label,
@@ -70,6 +72,15 @@ with
             lpad(cast(disis_id as string), 7, '0') as state_studentnumber,
 
             if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
+
+            -- Y and N both assert a 504 plan (N is 504-eligible but not IDEA);
+            -- I and Z are explicit negatives; unset stays null, not false.
+            case
+                when section_504_eligible_code in ('Y', 'N')
+                then true
+                when section_504_eligible_code in ('I', 'Z')
+                then false
+            end as is_504,
 
             case
                 when gifted_eligibility_label like 'Student was determined eligible%'
