@@ -378,9 +378,13 @@ correctly gated, and the per-sheet answer is in the playbook rather than here.
 ### The gated workbooks
 
 Nine workbooks carry a `Permissions` field. All sit in the `Production` project
-and all are tagged `entra-ready` on Tableau Server. **That tag is the
-inventory** — a gated workbook without it is either unfinished or was built
-without following the playbook.
+and all are tagged `entra-ready` on Tableau Server. **A gated workbook without
+that tag is either unfinished or was built without following the playbook.**
+
+The reverse does not hold yet. Querying the tag today returns **11**, not nine —
+the two workbooks leaving the model below are still tagged. They lose the tag
+when they are retired, and until then the table below is the inventory and the
+tag is a superset of it.
 
 | Workbook                    | Datasource                                                                                                                    |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -401,10 +405,14 @@ moves to Lattice. Neither is a gap. Until they are retired, Leadership
 Development is also one of three workbooks that shield senior leaders from each
 other, which then becomes two.
 
-Nothing on Tableau Server links a workbook to its table — each of these uses an
-**embedded** extract — so this table is the mapping, maintained by hand when a
-workbook is repointed. Per-workbook variants, and the two archived workbooks
-that predate this model, are in the playbook.
+Each of these uses an **embedded** extract rather than a published datasource,
+so this table is the readable mapping. It is not the only one: Tableau Server
+does report a workbook's upstream datasources, embedded ones included, so the
+table can be checked against the server rather than trusted on faith. Do check
+it after any repoint — a repoint that adds the new datasource without detaching
+the old one leaves both attached, and only the server shows that. Per-workbook
+variants, and the two archived workbooks that predate this model, are in the
+playbook.
 
 ### Related
 

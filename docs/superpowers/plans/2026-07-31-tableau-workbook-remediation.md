@@ -1025,10 +1025,13 @@ design doc's earlier estimate.
 
 - **No field fixes.** No dbt-side rename touches this workbook.
 - **Apply the canonical Permissions block only.**
-- **No exposure was added** — its datasource could not be determined, because
-  every workbook here uses an embedded extract and the read-only Tableau MCP
-  exposes no workbook-to-table mapping. If you identify the model while in
-  Desktop, say so and the exposure can be added in a one-line PR.
+- **No exposure should be added, and this is now settled.** Read off the server
+  2026-09-04, the Archive copy's five embedded datasources are all pre-dbt
+  `gabby`-era tables — `pm_teacher_goals`, `pm_etr_dashboard`, `staff_roster`,
+  `self_and_others_survey_detail`, and a `Sheet1` workbook connection. None is
+  an `rpt_tableau__` model, so there is nothing for an exposure to point at. If
+  this workbook is ever restored it needs repointing onto a current extract
+  first, and that is a build, not a permissions fix.
 
 ---
 
@@ -1172,6 +1175,48 @@ uncommitted because it names staff usernames.
 | 5   | Federal Grants Timesheet Approval | no permission fields at all, 7 ungated data sheets                                                                                                                    | **Not a gap** — the workbook reads a live Google Sheet, not a gated extract. Leaving the model in [#4726](https://github.com/TEAMSchools/teamster/pull/4726) |
 | 6   | Leadership Development            | `RLS - Entity Gate` has no Paterson branch, so Paterson rows are invisible to Paterson's own leadership                                                               | **Not worth fixing** — archived for the Lattice migration in [#4629](https://github.com/TEAMSchools/teamster/pull/4629)                                      |
 
+### Gap 7 — Manager Survey Rollup keeps the datasource it was repointed off
+
+Found 2026-09-04 by downloading the `.twbx` and reading the XML. **No live
+leak** — all eight worksheets bind to `rpt_tableau__manager_survey_details`, and
+its gate audits clean: canonical five-tier `Permissions`, 26 location branches,
+region-scoped KTAF entity branch, the senior-leader shield present and ANDed
+onto the TEAM Council branch, and zero by-name `USERNAME()` grants.
+
+What remains is dead weight the repoint left behind:
+
+| Left attached                                           | Carries                                        |
+| ------------------------------------------------------- | ---------------------------------------------- |
+| `int_surveys__manager_survey_details (kipptaf_surveys)` | `Permissions (summary)`, `Permission (detail)` |
+
+These are the "two dead permission fields" in the cleanup note above — this is
+the workbook they are in, and a whole stale datasource comes with them.
+
+Delete them anyway, and delete the datasource. Step 2's warning is the reason:
+containment by a datasource-wide gate is invisible and temporary, and these two
+fields are exactly the kind that get copied into a new workbook.
+`Permission (detail)` is 8,670 characters and tests 45 distinct groups,
+including nine retired locations (`KIPP Liberty Academy`,
+`KIPP Newark Community Prep`, `KIPP Sunrise Academy`, `KIPP Truth Academy`,
+`KIPP Whittier MIddle` — the typo is in the group name — `18th Ave Campus`,
+`Norfolk St Campus`, `Lanning Sq Campus`, `Group Staff Sumner Elementary`) and
+two groups that appear nowhere in the guide: `KNJ-SG-Tableau Parliament` and
+`MRT Special Access`. Pasted into a live workbook it would grant on names that
+no longer mean anything.
+
+**Do this in Desktop:** delete both fields, delete the
+`int_surveys__manager_survey_details` datasource, republish. No persona re-run
+needed — no sheet reads it.
+
+### Gap 8 — Content Team Dashboard is gone, not archived
+
+_Current state_ says two workbooks were archived rather than remediated. Only
+`Teacher Goals` is actually on the site; a name query for
+`Content Team Dashboard` returned nothing on 2026-09-04. It was deleted. Nothing
+to do — but do not go looking for it, and do not count it as a restorable
+archive. Its pre-migration calculation is recoverable only from a Server
+revision history that no longer has a workbook to hang off.
+
 Three cleanups with no live leak: two dead permission fields, SchoolMint Grow's
 three legacy sheet-local fields (contained today only because a datasource-wide
 gate ANDs over them), and 16 by-name `USERNAME()` grants across five fields.
@@ -1258,9 +1303,15 @@ schools they do not lead.
 
 ## Tagging and close-out
 
-1. Tag each finished workbook `entra-ready` on Server.
-1. The 8 TEMP and Archive copies already tagged `entra-broken-accepted` need no
-   work — confirm none is still published to a Production project.
+1. Tag each finished workbook `entra-ready` on Server. **Untag the two leavers**
+   when #4726 and #4629 land — a tag query returned 11 on 2026-09-04, so the tag
+   is not yet the nine-workbook inventory the guide points at.
+1. **`entra-broken-accepted` is on zero workbooks** — checked 2026-09-04, the
+   tag does not exist on the site, so the 8 TEMP and Archive copies are
+   unmarked. Either apply it or drop the convention; do not rely on it to tell a
+   deliberately-broken copy from an unreviewed one. The underlying check does
+   pass: both `Teacher Goals` copies sit in `Archive` and `TEMP-KV`, neither in
+   a Production project.
 1. Update _Known gaps_ above. #4638, which tracked the original migration, is
    closed — this file is now the record of what is outstanding, so a gap that is
    fixed or newly found belongs in that table rather than on an issue.
