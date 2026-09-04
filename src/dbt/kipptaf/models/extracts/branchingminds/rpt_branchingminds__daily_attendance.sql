@@ -30,4 +30,8 @@ inner join
     {{ ref("rpt_branchingminds__school_year") }} as sy
     on dr.branchingminds_district_id = sy.district_id
     and fsad.date_key >= sy.start_date
-where dd.is_current_academic_year and fsad.membership_value > 0
+where
+    dd.is_current_academic_year
+    and fsad.membership_value > 0
+    -- days with no recorded attendance have no category to send
+    and fsad.attendance_category is not null
