@@ -50,6 +50,8 @@ _DOMAIN_RULES: tuple[tuple[str, str], ...] = (
     ("work_assignment", "Staff"),
     ("staffing", "Staffing"),
     ("student_attendance", "Attendance"),
+    ("student_days", "Attendance"),
+    ("student_periods", "Attendance"),
     ("student_contact", "Student"),
     ("student_section_enrollment", "Student"),
     ("student_enrollment", "Student"),

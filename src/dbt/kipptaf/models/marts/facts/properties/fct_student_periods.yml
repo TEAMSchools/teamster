@@ -1,0 +1,717 @@
+models:
+  - name: fct_student_periods
+    description: >-
+      Student attendance period-snapshot fact. One row per student x school x
+      period type x period start date, carrying that student's cumulative
+      position at that school as of the period's end.
+
+      It derives nothing. Every value is read from fct_student_days at
+      period_end_date_key, which is where the tier ladder, the eligibility floor
+      and the year-to-date accumulation are expressed — so this fact and that
+      one cannot disagree. All this model decides is which day ends each period.
+      Identity comes from int_students__enrollment_days, because no fact in this
+      layer publishes a natural student identifier.
+
+      School is not projected. It groups the periods and is a hash input to
+      student_period_key, but it is reachable from student_enrollment_key
+      through dim_student_enrollments, so declaring it would put two paths to
+      dim_locations in the generated reference. The Cube layer traverses the
+      enrollment chain for location, matching how the daily cube reaches it.
+
+      A period with no membership day produces no row, so a withdrawn student
+      stops appearing rather than carrying forward. period_end_date_key is the
+      student's own last membership day inside the bucket, not the period's
+      calendar end — a weekend, a holiday and a mid-period withdrawal all move
+      it, so two students in the same month can carry different end dates.
+      Populated for year, month, and week period types.
+
+      No minimum-membership-day floor is applied. Every rate built on this fact
+      divides by the students holding at least one recorded attendance day in
+      the period, so an early period reports a rate over students judged on very
+      few days each — a student who misses one of their first four days sits at
+      75% ADA and counts as chronically absent. Treat the first weeks of an
+      academic year as volatile rather than wrong, and display the population
+      count beside any rate derived from this fact.
+
+      A student-school-period with no recorded attendance produces no rateable
+      row: ada_tier and is_truant are both null, and count_students excludes it.
+      A region or year that gains attendance later appears here with no change
+      to this model.
+
+      Paterson's attendance_value depends on PowerSchool attendance-conversion
+      items that #4193 reports as incomplete, so every value this fact derives
+      from presence (n_present_days_ytd, ada_tier, is_chronically_absent, and
+      truancy) carries a known upstream uncertainty for Paterson. #4193
+      describes the effect as Paterson ADA reading artificially low, but the
+      AY2025 aggregates show no obvious distortion — Paterson ADA is 92.7 to
+      93.4 percent by school, in line with Newark at 92.5 — so treat the size
+      and direction as unestablished rather than measured. membership_value is
+      clean, so n_membership_days_ytd is unaffected.
+
+      The conversion items were never captured at the time, so read Paterson's
+      pre-AY2026 presence-derived values as carrying an uncertainty that is
+      unlikely to be backfilled.
+
+      Mid-year leavers are included by design — a student who withdraws mid-year
+      still accumulates through their last membership day and counts in the year
+      row. The legacy fct_student_days year-end anchor excluded a student whose
+      enrollment_status was Transferred Out, but only within the CURRENT
+      academic year (its predicate was enrollment_status != 'Transferred Out' OR
+      NOT is_current_academic_year, so the exclusion never applied to a prior
+      year). That half of the predicate never fired during the AY2025
+      reconciliation, because AY2025 was not the current academic year while the
+      reconciliation ran — so the reconciliation could not size this difference,
+      and a live comparison against the legacy path for the CURRENT academic
+      year (what an AY2026 dashboard will actually show) will differ by an
+      amount no bridge has sized.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Table, not the marts-default view. Every attendance-star model in
+          # prod is a view today, so a Cube query re-expands the whole chain —
+          # the #4333 defect that #4468 fixed for the assessment star. Cron
+          # rather than eager: the upstreams are eager and would drive
+          # repeated rebuilds of a 3.6M row model for no freshness anyone
+          # consumes. Ticks match fct_student_days exactly
+          # (0 6,15 * * *), not the midnight tick this comment used to name —
+          # both facts derive from int_students__attendance_daily, and this
+          # model is now Cube's only chronic-absence/tier/truancy source, so a
+          # split cron would let the two facts disagree on the same attendance
+          # values for up to ~15 hours a day. Aligning them keeps that "both
+          # derive from the same upstream, so they agree" property true after
+          # Task 4b materialized the daily fact as a table. The KIPP
+          # Foundation criteria only require a nightly refresh floor; this
+          # tick clears that floor same as before.
+          automation_condition:
+            cron_schedule: 0 6,15 * * *
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: (ada_tier is null) = (is_truant is null)
+          config:
+            severity: error
+          name: fct_student_periods_truancy_resolves_with_the_ada_tier
+          description: >-
+            A truancy status must resolve over exactly the rows an ADA tier
+            does. Both are gated on the cumulative membership count, so a day we
+            could not measure attendance for supports neither verdict and every
+            rate can share one denominator. Before that gate, is_truant survived
+            a null attendance value, a break day and a pre-AY2021
+            membership_value = 0 row, publishing a truancy verdict on rows
+            carrying no tier at all -- which put part of the truancy numerator
+            outside any denominator scoped to the tier.
+
+    columns:
+      - name: student_period_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_project,
+          location_key, academic_year, period_type, and period_start_date_key.
+          academic_year is required: week's period_start_date_key
+          (week_start_monday) can carry two different academic years across a
+          June 30 / July 1 school-week boundary, so omitting it lets one
+          calendar week collide into a single row across two academic years.
+          Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments, the enrollment stint that was active on
+          period_end_date_key. Read from that day's row on fct_student_days
+          rather than resolved here, so every attribute reached through it --
+          grade level, IEP and ELL status, meal eligibility, homeroom teacher --
+          is the one that applied as of period end, consistent with every other
+          value on the row.
+
+          This is what lets a rate on this fact be cut by the same student and
+          enrollment attributes as the daily fact, and it is also the single
+          canonical path to dim_locations, matching how the daily cube reaches
+          it. Measured against this fact's rows the two possible location routes
+          agree on 4,363,667 of 4,363,672 and disagree on none; the five
+          exceptions are one enrollment stint absent from
+          dim_student_enrollments, which resolves a null location and is
+          therefore hidden from a location-scoped viewer rather than exposed.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms, the reporting term in effect on period_end_date_key.
+          Read from that day's row on fct_student_days. A month or a week can
+          span two terms, so a period row has no single term of its own; this is
+          the term as of period end, consistent with every other value here.
+          Null where no reporting term covers that date.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
+
+      - name: period_start_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. First calendar date of the period. For period_type =
+          'year', the academic year's July 1 start date, regardless of the
+          student's actual entry date. For 'month', the first day of the
+          calendar month. For 'week', the PowerSchool school week's Monday
+          (week_start_monday), not a derived ISO week.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: period_start_membership_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. First membership day (membershipvalue = 1) observed
+          within the period, not the period's calendar start date. This is the
+          date to report a period headcount as of. The calendar start is the
+          wrong one where a school year opens mid-week or a region opens on a
+          different day than its siblings -- anchoring on the week's Monday
+          reports nobody for the week Miami opened, whose first student day was
+          a Wednesday, and the full New Jersey roster two days before New Jersey
+          opened. Equals the calendar start whenever that day was in session.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: period_end_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. Last membership day (membershipvalue = 1) observed
+          within the period, not the period's calendar end date. For an
+          in-progress period this is capped by the membership days that have
+          occurred so far, not a future scheduled end.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the period belongs to, read from fct_student_days, whose
+          own academic_year comes from the enrollment spine
+          (int_students__enrollment_days, ultimately
+          int_extracts__student_enrollments) rather than from attendance. That
+          matters at a June 30 / July 1 boundary: dim_dates carries a pure
+          calendar cutover and can disagree with the stint's own year, which is
+          why this reads the fact's column and not the dates join.
+
+      - name: period_type
+        data_type: string
+        description: >-
+          Period grain for this row: 'year', 'month', or 'week'.
+
+      - name: n_membership_days_ytd
+        data_type: float64
+        description: >-
+          Count of full membership days (membershipvalue = 1) with a recorded
+          attendance value, accumulated from the start of the academic year
+          through period_end_date_key — not within the period.
+
+      - name: n_present_days_ytd
+        data_type: float64
+        description: >-
+          Sum of attendancevalue on full membership days (membershipvalue = 1)
+          with a recorded attendance value, accumulated from the start of the
+          academic year through period_end_date_key — not within the period.
+
+      - name: is_truant
+        data_type: boolean
+        description: >-
+          Truancy status as of period_end_date_key, read from
+          int_students__attendance_daily on that same date. Regional truancy
+          criteria (Miami: 15 or more absences in a 90-day window; the NJ
+          regions: a projected 50 or more for the year) are computed upstream
+          and carried through unchanged here. No membership-day floor is applied
+          to it, which matches both regional rules — neither requires one.
+
+      - name: ada_tier
+        data_type: string
+        description: >-
+          Attendance tier from cumulative n_present_days_ytd over
+          n_membership_days_ytd, compared as integer day counts rather than a
+          rounded percentage so the boundary at exactly 90.0 percent sorts
+          deterministically: Tier 1 is 95 percent and above; Tier 2 is strictly
+          above 90.0 percent and below 95 percent; Tier 3 is 80 percent through
+          90.0 percent inclusive; Tier 4 is below 80 percent. Null when
+          n_membership_days_ytd is 0.
+
+      - name: is_chronically_absent
+        data_type: boolean
+        description: >-
+          Derived from ada_tier (Tier 3 or Tier 4), never computed as an
+          independent comparison against the 90.0 percent threshold — the two
+          are the same fact stated once, so they cannot disagree at exactly 90.0
+          percent the way two separately-evaluated expressions did.
+
+unit_tests:
+  - name: test_periods_cumulative_carries_across_schools_rows_stay_per_school
+    description:
+      One student at two schools in the same academic year, six membership days
+      at each. Two things must hold at once. The cumulative count does not reset
+      at the second school -- its rows read seven through twelve, not one
+      through six -- because chronic absence and truancy accumulate per student
+      across a school change. And the period rows stay per school, each school
+      getting its own year, month and week row keyed on its own location, so a
+      school-level rate still counts only the students it served. The September
+      month bucket therefore yields two rows, one per school, rather than one
+      combined row.
+    model: fct_student_periods
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            student_number,
+            _dbt_source_project,
+            calendardate,
+          from unnest([
+            struct<
+              student_number int64, _dbt_source_project string,
+              calendardate date
+            >
+            (1, 'kippnewark', date '2025-09-01'),
+            (1, 'kippnewark', date '2025-09-02'),
+            (1, 'kippnewark', date '2025-09-03'),
+            (1, 'kippnewark', date '2025-09-04'),
+            (1, 'kippnewark', date '2025-09-05'),
+            (1, 'kippnewark', date '2025-09-06'),
+            (1, 'kippnewark', date '2025-09-08'),
+            (1, 'kippnewark', date '2025-09-09'),
+            (1, 'kippnewark', date '2025-09-10'),
+            (1, 'kippnewark', date '2025-09-11'),
+            (1, 'kippnewark', date '2025-09-12'),
+            (1, 'kippnewark', date '2025-09-13')
+          ])
+
+      - input: ref('fct_student_days')
+        format: sql
+        rows: |
+          select
+            student_day_key,
+            student_enrollment_key,
+            term_key,
+            date_key,
+            location_key,
+            academic_year,
+            week_start_monday,
+            membership_value,
+            n_membership_days_ytd,
+            n_present_days_ytd,
+            is_truant,
+            ada_tier,
+            is_chronically_absent,
+          from unnest([
+            struct<
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
+              academic_year int64, week_start_monday date, membership_value float64,
+              n_membership_days_ytd float64, n_present_days_ytd float64,
+              is_truant bool, ada_tier string,
+              is_chronically_absent bool
+            >
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, 'Tier 1', false),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, 'Tier 1', false),
+            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-b', 2025, date '2025-09-08', 1.0, 7.0, 7.0, false, 'Tier 1', false),
+            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-b', 2025, date '2025-09-08', 1.0, 8.0, 8.0, false, 'Tier 1', false),
+            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-b', 2025, date '2025-09-08', 1.0, 9.0, 9.0, false, 'Tier 1', false),
+            ('3386cdede6c629ba33437e1dcee4162d', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-11', 'loc-b', 2025, date '2025-09-08', 1.0, 10.0, 10.0, false, 'Tier 1', false),
+            ('62e8379d943d5835b8647524c3fb5f14', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-12', 'loc-b', 2025, date '2025-09-08', 1.0, 11.0, 11.0, false, 'Tier 1', false),
+            ('5b84b5eb16ae0ec39759761da3a19b5c', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-13', 'loc-b', 2025, date '2025-09-08', 1.0, 12.0, 12.0, false, 'Tier 1', false)
+          ])
+
+    expect:
+      format: sql
+      rows: |
+        select
+          student_period_key,
+          student_enrollment_key,
+          term_key,
+          academic_year,
+          period_type,
+          period_start_date_key,
+          period_start_membership_date_key,
+          period_end_date_key,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_truant,
+          ada_tier,
+          is_chronically_absent,
+        from unnest([
+          struct<
+            student_period_key string, student_enrollment_key string,
+            term_key string,
+            academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
+            period_end_date_key date, n_membership_days_ytd float64,
+            n_present_days_ytd float64, is_truant bool,
+            ada_tier string, is_chronically_absent bool
+          >
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-06', 6.0, 6.0, false, 'Tier 1', false),
+          ('eb89d84900014832a74d4cbea609f9fc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
+          ('433a57fcce7a35d720d8581d54da5269', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false),
+          ('c056370b02a9b117ef343dd8cc74d729', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-08', date '2025-09-08', date '2025-09-13', 12.0, 12.0, false, 'Tier 1', false)
+        ])
+
+  - name: test_periods_mid_year_leaver_keeps_own_period_end
+    description:
+      Two students at one school in one month. One has five membership days, the
+      other leaves after three. period_end_date_key is each student's own last
+      membership day, not a shared calendar month end, so the two rows carry
+      different end dates and different cumulative counts inside the same
+      bucket.
+    model: fct_student_periods
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            student_number,
+            _dbt_source_project,
+            calendardate,
+          from unnest([
+            struct<
+              student_number int64, _dbt_source_project string,
+              calendardate date
+            >
+            (1, 'kippnewark', date '2025-09-01'),
+            (1, 'kippnewark', date '2025-09-02'),
+            (1, 'kippnewark', date '2025-09-03'),
+            (1, 'kippnewark', date '2025-09-04'),
+            (1, 'kippnewark', date '2025-09-05'),
+            (2, 'kippnewark', date '2025-09-01'),
+            (2, 'kippnewark', date '2025-09-02'),
+            (2, 'kippnewark', date '2025-09-03')
+          ])
+
+      - input: ref('fct_student_days')
+        format: sql
+        rows: |
+          select
+            student_day_key,
+            student_enrollment_key,
+            term_key,
+            date_key,
+            location_key,
+            academic_year,
+            week_start_monday,
+            membership_value,
+            n_membership_days_ytd,
+            n_present_days_ytd,
+            is_truant,
+            ada_tier,
+            is_chronically_absent,
+          from unnest([
+            struct<
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
+              academic_year int64, week_start_monday date, membership_value float64,
+              n_membership_days_ytd float64, n_present_days_ytd float64,
+              is_truant bool, ada_tier string,
+              is_chronically_absent bool
+            >
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, 'Tier 1', false),
+            ('88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('59505aa7f7c1d16b45240af568a2ef1f', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('eb5fe9064ec8e7917ce6794adbd953a5', 'bb5dba58abf65aa286355188dbabbabe', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false)
+          ])
+
+    expect:
+      format: sql
+      rows: |
+        select
+          student_period_key,
+          student_enrollment_key,
+          term_key,
+          academic_year,
+          period_type,
+          period_start_date_key,
+          period_start_membership_date_key,
+          period_end_date_key,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_truant,
+          ada_tier,
+          is_chronically_absent,
+        from unnest([
+          struct<
+            student_period_key string, student_enrollment_key string,
+            term_key string,
+            academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
+            period_end_date_key date, n_membership_days_ytd float64,
+            n_present_days_ytd float64, is_truant bool,
+            ada_tier string, is_chronically_absent bool
+          >
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, false, 'Tier 1', false),
+          ('a28bd0cb8d767fda67687b3e03ac54b4', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
+          ('469b5b8b6ef42be202979e0bbf7699bd', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false),
+          ('f9e83d295f5293f1eb52d94a028ed666', 'bb5dba58abf65aa286355188dbabbabe', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-03', 3.0, 3.0, false, 'Tier 1', false)
+        ])
+
+  - name: test_periods_gap_in_enrollment_does_not_carry_values_forward
+    description: Ten membership days in September, a full calendar month with no
+      rows at all in October, then five more in November. October must emit no
+      row -- not a repeat of September's totals -- because a bucket with no
+      membership day is dropped rather than carried. November reports fifteen
+      cumulative days, so the gap neither resets the count to five nor freezes
+      it at ten.
+
+      Distinct from the carry-forward across break days on fct_student_days -- a
+      break day is a row with zero membership, which leaves the running total
+      unchanged, while a gap in enrollment is the absence of any row.
+    model: fct_student_periods
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            student_number,
+            _dbt_source_project,
+            calendardate,
+          from unnest([
+            struct<
+              student_number int64, _dbt_source_project string,
+              calendardate date
+            >
+            (1, 'kippnewark', date '2025-09-01'),
+            (1, 'kippnewark', date '2025-09-02'),
+            (1, 'kippnewark', date '2025-09-03'),
+            (1, 'kippnewark', date '2025-09-04'),
+            (1, 'kippnewark', date '2025-09-05'),
+            (1, 'kippnewark', date '2025-09-06'),
+            (1, 'kippnewark', date '2025-09-07'),
+            (1, 'kippnewark', date '2025-09-08'),
+            (1, 'kippnewark', date '2025-09-09'),
+            (1, 'kippnewark', date '2025-09-10'),
+            (1, 'kippnewark', date '2025-11-01'),
+            (1, 'kippnewark', date '2025-11-02'),
+            (1, 'kippnewark', date '2025-11-03'),
+            (1, 'kippnewark', date '2025-11-04'),
+            (1, 'kippnewark', date '2025-11-05')
+          ])
+
+      - input: ref('fct_student_days')
+        format: sql
+        rows: |
+          select
+            student_day_key,
+            student_enrollment_key,
+            term_key,
+            date_key,
+            location_key,
+            academic_year,
+            week_start_monday,
+            membership_value,
+            n_membership_days_ytd,
+            n_present_days_ytd,
+            is_truant,
+            ada_tier,
+            is_chronically_absent,
+          from unnest([
+            struct<
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
+              academic_year int64, week_start_monday date, membership_value float64,
+              n_membership_days_ytd float64, n_present_days_ytd float64,
+              is_truant bool, ada_tier string,
+              is_chronically_absent bool
+            >
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 1', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, false, 'Tier 1', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, false, 'Tier 1', false),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 1.0, 6.0, 6.0, false, 'Tier 1', false),
+            ('3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-07', 'loc-a', 2025, date '2025-09-01', 1.0, 7.0, 7.0, false, 'Tier 1', false),
+            ('834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-08', 'loc-a', 2025, date '2025-09-01', 1.0, 8.0, 8.0, false, 'Tier 1', false),
+            ('59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-09', 'loc-a', 2025, date '2025-09-01', 1.0, 9.0, 9.0, false, 'Tier 1', false),
+            ('674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-10', 'loc-a', 2025, date '2025-09-01', 1.0, 10.0, 10.0, false, 'Tier 1', false),
+            ('f209c53b2f6d91166be3587b5c1b024b', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-01', 'loc-a', 2025, date '2025-11-03', 1.0, 11.0, 11.0, false, 'Tier 1', false),
+            ('9adbbafbe3f0e9ad748929c2e7958bf7', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-02', 'loc-a', 2025, date '2025-11-03', 1.0, 12.0, 12.0, false, 'Tier 1', false),
+            ('de3ac95fe7dd8c3a8ee0367fadc2ecff', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-03', 'loc-a', 2025, date '2025-11-03', 1.0, 13.0, 13.0, false, 'Tier 1', false),
+            ('a8bf94ff7dd137241bad95b7363f5fb4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-04', 'loc-a', 2025, date '2025-11-03', 1.0, 14.0, 14.0, false, 'Tier 1', false),
+            ('602cc4663724e20218f02020b24251ec', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-11-05', 'loc-a', 2025, date '2025-11-03', 1.0, 15.0, 15.0, false, 'Tier 1', false)
+          ])
+
+    expect:
+      format: sql
+      rows: |
+        select
+          student_period_key,
+          student_enrollment_key,
+          term_key,
+          academic_year,
+          period_type,
+          period_start_date_key,
+          period_start_membership_date_key,
+          period_end_date_key,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_truant,
+          ada_tier,
+          is_chronically_absent,
+        from unnest([
+          struct<
+            student_period_key string, student_enrollment_key string,
+            term_key string,
+            academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
+            period_end_date_key date, n_membership_days_ytd float64,
+            n_present_days_ytd float64, is_truant bool,
+            ada_tier string, is_chronically_absent bool
+          >
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
+          ('cfccc372dfe154c3304b630ca97f82b1', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-11-01', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-10', 10.0, 10.0, false, 'Tier 1', false),
+          ('dbe905eac0b9ecc8f53526cae0624d7a', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-11-03', date '2025-11-01', date '2025-11-05', 15.0, 15.0, false, 'Tier 1', false)
+        ])
+
+  - name: test_periods_reads_the_value_from_period_end_not_another_day
+    description: Five membership days whose ada_tier deliberately differs per
+      day, ending Tier 4, followed by a sixth day with zero membership carrying
+      Tier 1. Every period row must report the fifth day's values -- Tier 4,
+      chronically absent, truant -- proving two things at once --
+      period_end_date_key is the last MEMBERSHIP day rather than the last day
+      present, and the cumulative columns are read from exactly that row rather
+      than from the period start, an aggregate, or the latest row in the bucket.
+
+      This is the join fct_student_periods now depends on, since it reads every
+      value from fct_student_days rather than deriving any of them.
+    model: fct_student_periods
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            student_number,
+            _dbt_source_project,
+            calendardate,
+          from unnest([
+            struct<
+              student_number int64, _dbt_source_project string,
+              calendardate date
+            >
+            (1, 'kippnewark', date '2025-09-01'),
+            (1, 'kippnewark', date '2025-09-02'),
+            (1, 'kippnewark', date '2025-09-03'),
+            (1, 'kippnewark', date '2025-09-04'),
+            (1, 'kippnewark', date '2025-09-05'),
+            (1, 'kippnewark', date '2025-09-06')
+          ])
+
+      - input: ref('fct_student_days')
+        format: sql
+        rows: |
+          select
+            student_day_key,
+            student_enrollment_key,
+            term_key,
+            date_key,
+            location_key,
+            academic_year,
+            week_start_monday,
+            membership_value,
+            n_membership_days_ytd,
+            n_present_days_ytd,
+            is_truant,
+            ada_tier,
+            is_chronically_absent,
+          from unnest([
+            struct<
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
+              academic_year int64, week_start_monday date, membership_value float64,
+              n_membership_days_ytd float64, n_present_days_ytd float64,
+              is_truant bool, ada_tier string,
+              is_chronically_absent bool
+            >
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 2.0, false, 'Tier 1', false),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 3.0, false, 'Tier 2', false),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 4.0, true, 'Tier 3', true),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 5.0, true, 'Tier 4', true),
+            ('6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-06', 'loc-a', 2025, date '2025-09-01', 0.0, 5.0, 5.0, true, 'Tier 1', false)
+          ])
+
+    expect:
+      format: sql
+      rows: |
+        select
+          student_period_key,
+          student_enrollment_key,
+          term_key,
+          academic_year,
+          period_type,
+          period_start_date_key,
+          period_start_membership_date_key,
+          period_end_date_key,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_truant,
+          ada_tier,
+          is_chronically_absent,
+        from unnest([
+          struct<
+            student_period_key string, student_enrollment_key string,
+            term_key string,
+            academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
+            period_end_date_key date, n_membership_days_ytd float64,
+            n_present_days_ytd float64, is_truant bool,
+            ada_tier string, is_chronically_absent bool
+          >
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true)
+        ])

@@ -240,6 +240,17 @@ columns at parse time, so they cannot be declared. See
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
 Facebook, Illuminate Fivetran, Instagram.
 
+**`partition_by` on a Cube-read mart is a no-op on its own.** Cube compiles a
+date filter routed through the `dates` join into a predicate on `dim_dates`, and
+BigQuery cannot prune a fact's partitions from a predicate on a joined table.
+The partition only pays off paired with a fact-side time dimension the view's
+description sends date filters to — `fct_student_days`
+(`PARTITION BY DATE_TRUNC(date_key, MONTH)`) with `student_days.attendance_date`
+is the worked example. Pick monthly over daily for a multi-year daily-grain
+fact: 7,058 distinct dates already, so daily passes BigQuery's 4,000-partition
+cap inside a decade. See `src/cube/CLAUDE.md` for the measurements and the
+Cube-side rule.
+
 ## Known Upstream Issues
 
 **Miami is the exception, deliberately.** Focus is Miami's sole enrollment
@@ -251,14 +262,33 @@ retain-graduate-placeholder rule below still binds the three NJ regions. Do not
 decided against on 2026-08-14.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
-`enroll_status`.** `count_students` in the `student_enrollments` Cube derives
-from `fct_student_attendance_daily` anchored on per-school `is_current_record` /
-`is_enrollment_month_end_record` / `is_enrollment_week_end_record`. Topline
-Total Enrollment reconciles at Oct-1 2025 = 10,637 (Camden 2,161 / Miami 1,346 /
-Newark 6,608 / Paterson 522). Break weeks (no in-session rows) return 0 by
-design — gap-fill in the BI layer. Paterson `attendance_value` is unreliable
-(upstream PS conversion-items gap, #4193) but `membership_value` is clean —
-enrollment counts include Paterson correctly.
+`enroll_status`.** `count_students` on the `student_days` Cube counts distinct
+students over whatever slice is queried. There are no anchor measures and no
+anchor columns — pin `dates_date_day` to a date for a point-in-time figure,
+leave it open for ever-enrolled over a range. `fct_student_days` carries a row
+for every calendar day inside a stint, break days included, so any date resolves
+for every school.
+
+**Each stint's day window is clamped to its school's academic year, and that
+clamp is load-bearing.** PowerSchool rolls NJ stints over on 1 July while Focus
+dates Miami stints to the real first day of school (19,979 Newark July entries
+against 2,955 Miami August entries, AY2024-26). An unclamped window would report
+Newark at roughly 20,000 students in mid-July against almost no Miami students,
+purely from a source-system date convention. Clamping to the school year makes
+any calendar date comparable across regions; mid-July correctly returns nobody
+anywhere.
+
+**Miami is present across history on `fct_student_days`.** Its rows come from
+`int_extracts__student_enrollments` × `int_students__calendar_day`, and both
+retain Miami — the calendar keeps the frozen PowerSchool archive for the years
+Focus does not cover. Miami _attendance_ before AY2026 is still absent (#4803
+dropped that archive, and every Tableau attendance surface has the same gap), so
+those rows carry null attendance. Every rate already excludes null attendance
+from both numerator and denominator (#4744), so the gap cannot move a network
+rate — and Focus historical attendance, if it is ever modelled, fills in with no
+change to these models. Paterson `attendance_value` is unreliable (upstream PS
+conversion-items gap, #4193) but `membership_value` is clean, so enrollment
+counts include Paterson correctly.
 
 **School calendars diverge at year-end; never anchor a point-in-time count on a
 network-wide `max(date)`.** Mid-year months share a last in-session day across

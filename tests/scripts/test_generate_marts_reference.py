@@ -142,7 +142,7 @@ def test_collect_fact_names_sorted_from_facts_dir() -> None:
     names = gen.collect_fact_names(gen.MARTS_DIR)
     assert names == sorted(names)
     assert all(n.startswith("fct_") for n in names)
-    assert "fct_student_attendance_daily" in names
+    assert "fct_student_days" in names
     assert len(names) >= 20
 
 

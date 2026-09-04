@@ -1,0 +1,743 @@
+models:
+  - name: fct_student_days
+    description: >-
+      One row per student per calendar day they were enrolled, network-wide.
+      Enrollment decides which rows exist and attendance is joined onto them, so
+      a day with no recorded attendance is still a row -- this is an enrollment
+      surface and an attendance surface at once, which is why it is named for
+      its grain rather than for either concept.
+
+      Rows come from int_students__enrollment_days, whose day window is clamped
+      to each school's own academic year. Break days are present and carry
+      is_in_session_day = false with membership_value = 0 and no attendance, so
+      a point-in-time question lands on any calendar date, weekend and holiday
+      included, without a per-school anchor flag. Nothing on this fact is
+      anchored -- pin a date instead.
+
+      A student-day with no recorded attendance carries a null attendance_value
+      rather than a fabricated zero, and every value derived from presence is
+      null with it. Rates exclude those rows from both numerator and denominator
+      (#4744), so a region or year that gains attendance later fills in here
+      with no change to this model.
+
+      Paterson's attendance_value depends on PowerSchool attendance-conversion
+      items that #4193 reports as incomplete, so every value derived from
+      presence -- n_present_days_ytd, ada_tier, is_chronically_absent, is_truant
+      -- carries a known upstream uncertainty there. The AY2025 aggregates show
+      no obvious distortion (Paterson ADA 92.7 to 93.4 percent by school against
+      Newark's 92.5), so treat the size and direction as unestablished rather
+      than measured. The conversion items were never captured at the time, so
+      treat this as unlikely to be backfilled. membership_value is clean, so
+      enrollment counts and n_membership_days_ytd are unaffected.
+
+      Location, school calendar, and academic year are reached via
+      dim_student_enrollments and dim_terms, not stored on the fact. FK to
+      dim_student_enrollments, dim_dates, and dim_terms.
+
+      Three numeric measures coexist -- use the right one for the question:
+
+      - `attendance_value` (0.0 to 1.0) is the raw fractional attendance
+        contribution from the source SIS's attendance mode. Null when no
+        attendance was recorded, including on every break day.
+      - `membership_value` (0.0 to 1.0) is the fractional enrollment claim on
+        the day -- a half-day membership counts 0.5. Zero on every break day.
+        One row per student per day: no student has ever held two overlapping
+        enrollment stints in one source project (0 overlapping pairs across
+        112,825 stints), which is why `student_day_key` can hash student,
+        project and date alone.
+      - `present_weight` is like `attendance_value` but tardies weight 0.67.
+        Use it when a tardy should count as partial presence, not full.
+
+      For ADA, divide the sum of `attendance_value` by the sum of
+      `membership_value` over days where `attendance_value` is not null. Use the
+      `is_*` flags for categorical breakdowns, or `attendance_category` for a
+      single GROUP BY axis.
+    config:
+      materialized: table
+      # Monthly, not daily: 7,058 distinct dates are already in the fact and it
+      # gains ~180 a year, so daily partitioning would pass BigQuery's 4,000
+      # limit inside a decade. Monthly is 246 partitions today.
+      #
+      # This only pays off for a filter on the fact's OWN date_key, which is
+      # what student_days.attendance_date compiles to. A filter on
+      # dates.date_day lands on dim_dates instead and cannot prune this table,
+      # so the view's description routes point-in-time questions to
+      # attendance_date. Measured on the dev build, single-date network
+      # headcount through student_days_view, identical results both ways:
+      #
+      #   dates_date_day    1,257 MiB   23.7-82.1 slot-seconds
+      #   attendance_date      63 MiB    0.66-0.95 slot-seconds
+      #
+      # A CAST around the partitioning column does NOT block pruning --
+      # verified against a partitioned table, bare and CAST-wrapped predicates
+      # both read 34,224 bytes against 38,659,756 unfiltered -- which is why
+      # attendance_date's CAST(date_key AS TIMESTAMP) is still prunable.
+      #
+      # The 63 MiB that survives is almost entirely dim_dates: reading its
+      # date_key, date_timestamp and academic_year costs 67 MiB on its own,
+      # because the spine runs to 9999 (#5094). Bounding it there takes this
+      # query the rest of the way down; nothing else here will.
+      partition_by:
+        field: date_key
+        data_type: date
+        granularity: month
+      meta:
+        dagster:
+          # Cube is the only exposure on this mart, and it is the deepest view
+          # chain the attendance cubes read. Safe to materialize since
+          # bae9382fb moved every mart FK to config.meta, which retired the
+          # #4587 CTAS-DDL failure class. Scope is this model alone: cd858d891
+          # set the precedent of materializing domain-specific marts and
+          # leaving conformed dims as views.
+          #
+          # 06:00 and 15:00 are the attendance dashboard's observed
+          # materialization times across 12 consecutive runs, so they are when
+          # attendance data actually lands. LOCAL hours, not UTC — the dbt
+          # translator passes the code location's LOCAL_TIMEZONE
+          # (America/New_York).
+          automation_condition:
+            cron_schedule: 0 6,15 * * *
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: (ada_tier is null) = (is_truant is null)
+          config:
+            severity: error
+          name: fct_student_days_truancy_resolves_with_the_ada_tier
+          description: >-
+            A truancy status must resolve over exactly the rows an ADA tier
+            does. Both are gated on the cumulative membership count, so a day we
+            could not measure attendance for supports neither verdict and every
+            rate can share one denominator. Before that gate, is_truant survived
+            a null attendance value, a break day and a pre-AY2021
+            membership_value = 0 row, publishing a truancy verdict on rows
+            carrying no tier at all -- which put part of the truancy numerator
+            outside any denominator scoped to the tier.
+
+    columns:
+      - name: student_day_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_project, and
+          calendardate. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_project, academic_year, and entrydate.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+              config:
+                # Baseline, not a target. 2,286 rows across 15 enrollment keys
+                # come from an upstream divergence between
+                # int_extracts__student_enrollments and
+                # dim_student_enrollments: 10 Newark stints (AY2016-2024), 4
+                # Camden (AY2020, AY2023), 1 Paterson (AY2025). Warn above
+                # the residue so a NEW orphan source stays visible; do not
+                # raise the threshold to silence one.
+                warn_if: ">2286"
+      - name: date_key
+        data_type: date
+        description: >-
+          Calendar date of the attendance record. FK to dim_dates.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. Surrogate key derived from (term_type, term_code,
+          term_name, term_start_date, region, school_id) via left join to
+          stg_google_sheets__reporting__terms on (schoolid, term,
+          academic_year). Null when the attendance row's term does not appear in
+          the terms sheet for that school-year.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
+
+      - name: attendance_code
+        data_type: string
+        description: >-
+          Attendance identifier set by school. Examples Tardy, Absent, etc.
+
+        config:
+          meta:
+            source_system: PowerSchool + Focus
+            source_model: int_students__attendance_daily
+            source_column: att_code
+      - name: attendance_value
+        data_type: float64
+        description: >-
+          Daily attendance value — a real number, typically a fraction of 1
+          where 1 is a full attendance day. Used with membership_value to
+          compute ADA. Precision depends on the source SIS's attendance mode
+          (full-day vs period-level vs day-part); see source_model for
+          provenance.
+
+        config:
+          meta:
+            source_system: PowerSchool + Focus
+            source_model: int_students__attendance_daily
+            source_column: attendancevalue
+      - name: membership_value
+        data_type: float64
+        description: >-
+          The amount of a student's membership this school claims. If a student
+          attends more than one school each one will only be able to claim a
+          certain portion of the membership. The largest number for this will
+          usually be 1 and fractions expressed as decimals. Like .5 or .25.
+
+        config:
+          meta:
+            source_system: PowerSchool + Focus
+            source_model: int_students__attendance_daily
+            source_column: membershipvalue
+      - name: present_weight
+        data_type: float64
+        description: >-
+          Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
+          equals attendance_value. Fractional by design — not a 0/1 flag.
+
+      - name: is_truant
+        data_type: boolean
+        description: >-
+          TRUE if the student meets regional truancy criteria. Miami: 15+
+          absences in 90-day rolling window. NJ regions: projected absences
+          reach 50+ for the year.
+
+          Carried forward across days with no recorded attendance, so a break
+          day answers with the value from the last day that recorded any. This
+          is a status rather than an event, so the carry matches how
+          n_membership_days_ytd and ada_tier behave on the same row; without it
+          a pinned Saturday would return a chronic-absence tier beside a null
+          truancy flag. Consequence: on a session day whose register was never
+          taken this reports the prior value rather than null.
+
+      - name: is_absent
+        data_type: int64
+        description: >-
+          1 if the student was absent, 0 if present. Sum-friendly flag.
+
+      - name: is_tardy
+        data_type: int64
+        description: >-
+          1 if the student was tardy (T-prefix attendance code), 0 otherwise.
+          Null for Focus-sourced Miami rows — Focus records tardies only at
+          period grain. See #4927.
+
+      - name: is_ontime
+        data_type: int64
+        description: >-
+          1 if the student arrived on time (non-tardy), 0 if tardy. Null for
+          Focus-sourced Miami rows. See #4927.
+
+      - name: is_oss
+        data_type: int64
+        description: >-
+          1 if the student received out-of-school suspension on this date (OS,
+          OSS, OSSP, SHI codes), 0 otherwise. Null for Focus-sourced Miami rows
+          — Focus carries no suspension codes. See #4927.
+
+      - name: is_iss
+        data_type: int64
+        description: >-
+          1 if the student received in-school suspension on this date (S, ISS
+          codes), 0 otherwise. Null for Focus-sourced Miami rows. See #4927.
+
+      - name: is_suspended
+        data_type: int64
+        description: >-
+          1 if the student was suspended (any type) on this date. Union of
+          is_oss and is_iss codes. Null for Focus-sourced Miami rows. See #4927.
+
+      - name: attendance_category
+        data_type: string
+        description: >-
+          Coarse attendance category derived from the is_* flags with priority
+          ordering (suspension > absent > tardy > present). Values:
+          Out-of-School Suspension, In-School Suspension, Absent, Tardy,
+          Present. Use this column for GROUP BY in BI tools; use the raw
+          attendance_code for specific-code drill-down. Null when no attendance
+          row joined -- a break day, or a session day whose register was never
+          taken. Null means unknown, never Present.
+
+      - name: is_in_session_day
+        data_type: boolean
+        description: >-
+          Whether school was in session for this student's school on this day.
+          False on every carried break day. A false row carries enrollment but
+          no attendance and a membership_value of zero, so it can never reach a
+          rate denominator.
+
+      - name: location_key
+        data_type: string
+        description: >-
+          The school this row's enrollment stint belongs to, resolved from
+          int_students__schools on schoolid and _dbt_source_project. The
+          cumulative columns below do NOT accumulate per location_key -- they
+          accumulate per student per academic year, so a student who transfers
+          mid-year carries their position to the new school rather than starting
+          a fresh count. This column records which school owned the day, and
+          fct_student_periods reads it to group its periods, so a school-level
+          rate still counts only the students that school served.
+
+          Degenerate: deliberately carries no declared foreign key. Location is
+          already reachable from student_enrollment_key through
+          dim_student_enrollments, and a second edge here would put two paths to
+          dim_locations in the generated marts reference. The Cube layer reaches
+          location by traversing the enrollment chain for the same reason.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year of this row's enrollment stint, expressed as the
+          calendar year in which the year ends. Sourced from the enrollment
+          spine rather than from dim_dates, whose academic_year is a pure July 1
+          calendar cutover and can disagree at a June 30 / July 1 boundary.
+          Partitions every cumulative column below.
+
+      - name: week_start_monday
+        data_type: date
+        description: >-
+          Monday of the school week containing this date, from
+          int_students__calendar_week and therefore school-specific. Carried on
+          this fact because a school week's Monday has no formula -- unlike the
+          academic year (July 1) or the month (date_trunc) -- so week-grain
+          bucketing downstream cannot be derived from date_key alone.
+
+      - name: n_membership_days_ytd
+        data_type: float64
+        description: >-
+          Membership days accumulated from the start of the academic year at
+          this school, through and including this date. Counts only days with
+          membership_value = 1 AND a recorded attendance_value, so a day with an
+          untaken register raises neither this nor n_present_days_ytd.
+
+          Unchanged across break days: a break day contributes zero, so the
+          running total carries. That is what lets a chronic-absence question
+          resolve on any calendar date without an anchor flag.
+
+          float64 rather than an integer type because it accumulates
+          membership_value, which is fractional. The arithmetic is exact for the
+          values in play -- membership_value is 1 or 0.5, so products are dyadic
+          and well inside 2^53 -- so the tier boundaries below are
+          deterministic.
+
+      - name: n_present_days_ytd
+        data_type: float64
+        description: >-
+          Attendance value accumulated from the start of the academic year at
+          this school, through and including this date, over the same days
+          n_membership_days_ytd counts. Divide by n_membership_days_ytd for
+          cumulative ADA as of this date; that is a different number from the
+          day-weighted ADA over a date range, which sums both sides over the
+          slice instead.
+
+      - name: ada_tier
+        data_type: string
+        description: >-
+          Cumulative ADA band as of this date, on accumulated integer counts
+          cross-multiplied against each other -- never on an averaged float,
+          which would put boundary students on the wrong side of the line. Tier
+          1 at 95% and above, Tier 2 strictly above 90.0%, Tier 3 from 80%
+          through 90.0% inclusive, Tier 4 below 80%. Null when
+          n_membership_days_ytd is zero.
+
+          Exactly 90.0% is Tier 3, and therefore chronically absent. KIPP
+          Foundation criteria contradict themselves here -- item 1 calls Tier 2
+          on track at 90% and above, item 8 defines chronic absence as at or
+          below 90.0% -- and this follows item 8 and the state criteria. See the
+          model description.
+
+          This is the only place in the project where the tier ladder is
+          expressed. fct_student_periods reads this column at period end rather
+          than recomputing it, so the two facts cannot disagree.
+
+      - name: is_chronically_absent
+        data_type: boolean
+        description: >-
+          Whether ada_tier is Tier 3 or Tier 4 as of this date. Derived solely
+          from ada_tier, never recomputed from a ratio, so the flag and the tier
+          cannot drift apart. Null when ada_tier is null.
+
+          Accumulates per student from the start of the academic year and does
+          not reset when the student changes schools, so a student who arrives
+          mid-year carries the position they built at the previous school. No
+          minimum-membership-day floor is applied anywhere, so a student judged
+          on very few days still carries a tier and this flag.
+
+unit_tests:
+  - name: test_days_tier_ladder_boundaries_on_one_membership_day
+    description:
+      The tier ladder is a ratio, so one membership day pins every boundary
+      exactly and no multi-day fixture is needed. Five students, one day each.
+      0.95 is Tier 1. 0.901 is strictly above 90.0 percent and must be Tier 2.
+      0.9 is exactly 90.0 percent and must be Tier 3, never Tier 2, and must be
+      chronically absent. 0.8 is exactly 80 percent and must be Tier 3. 0.799 is
+      below 80 percent and must be Tier 4.
+    model: fct_student_days
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            date '2025-09-01' as calendardate,
+            date '2025-09-01' as week_start_monday,
+            100 as schoolid,
+            cast(null as string) as term,
+            true as is_in_session_day,
+            1.0 as membershipvalue
+          union all
+          select 2, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+          union all
+          select 3, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+          union all
+          select 4, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+          union all
+          select 5, 'kippnewark', 2025, date '2025-09-01', date '2025-09-01', date '2025-09-01', 100, cast(null as string), true, 1.0
+
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            date '2025-09-01' as calendardate,
+            'A' as att_code,
+            0.95 as attendancevalue,
+            0.95 as is_present_weighted,
+            false as is_truant,
+            0.0 as is_absent,
+            0.0 as is_tardy,
+            1.0 as is_ontime,
+            0.0 as is_oss,
+            0.0 as is_iss,
+            0.0 as is_suspended,
+            1.0 as membershipvalue
+          union all
+          select 2, 'kippnewark', date '2025-09-01', 'A', 0.901, 0.901, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          union all
+          select 3, 'kippnewark', date '2025-09-01', 'A', 0.9, 0.9, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          union all
+          select 4, 'kippnewark', date '2025-09-01', 'A', 0.8, 0.8, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+          union all
+          select 5, 'kippnewark', date '2025-09-01', 'A', 0.799, 0.799, false, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+
+      - input: ref('dim_terms')
+        format: sql
+        rows: |
+          select
+            999 as school_id,
+            'NOMATCH' as term_name,
+            1900 as academic_year,
+            'RT' as `type`,
+            'term-none' as term_key
+    expect:
+      format: sql
+      rows: |
+        select
+          student_day_key,
+          student_enrollment_key,
+          date_key,
+          location_key,
+          academic_year,
+          week_start_monday,
+          is_in_session_day,
+          term_key,
+          attendance_code,
+          attendance_value,
+          present_weight,
+          is_truant,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          ada_tier,
+          membership_value,
+          is_chronically_absent,
+          is_absent,
+          is_tardy,
+          is_ontime,
+          is_oss,
+          is_iss,
+          is_suspended,
+          attendance_category,
+        from unnest([
+          struct<
+            student_day_key string, student_enrollment_key string,
+            date_key date, location_key string, academic_year int64,
+            week_start_monday date, is_in_session_day bool, term_key string,
+            attendance_code string, attendance_value float64,
+            present_weight float64, is_truant bool,
+            n_membership_days_ytd float64, n_present_days_ytd float64,
+            ada_tier string, membership_value float64,
+            is_chronically_absent bool, is_absent int64, is_tardy int64,
+            is_ontime int64, is_oss int64, is_iss int64, is_suspended int64,
+            attendance_category string
+          >
+          (
+          'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.95, 0.95, false,
+          1.0, 0.95, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '88069d903ef3d092c4eeb74fdb9bd014', 'bb5dba58abf65aa286355188dbabbabe',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.901, 0.901, false,
+          1.0, 0.901, 'Tier 2', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '7afe022f600a6ca5344d8c145da2a9a2', 'd19e8f58fae7d84a143ad77654b70fd6',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.9, 0.9, false,
+          1.0, 0.9, 'Tier 3', 1.0,
+          true, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'e0003d963cf966b7fd5598cd9617d126', 'b67399aa30b11a32d67d205700423eb6',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.8, 0.8, false,
+          1.0, 0.8, 'Tier 3', 1.0,
+          true, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'a6a93c5cfe4ecf2c99dabdb483691a9f', '6bc1cec9217a9de43e98d3fffa4e7d57',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 0.799, 0.799, false,
+          1.0, 0.799, 'Tier 4', 1.0,
+          true, 0, 0, 1, 0, 0, 0, 'Present'
+          )
+        ])
+
+  - name: test_days_cumulative_does_not_reset_across_a_school_change
+    description:
+      Ten consecutive membership days, all present, with the student moving from
+      school 100 to school 200 on day six. n_membership_days_ytd and
+      n_present_days_ytd must keep climbing to ten rather than restarting at one
+      on day six -- the cumulative windows partition by student and academic
+      year, never by location, because chronic absence and truancy are
+      properties of a child's year and not of a school's roster. location_key
+      flips with the move, so the row still reports which school the day
+      belonged to.
+    model: fct_student_days
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            2025 as academic_year,
+            date '2025-09-01' as entrydate,
+            d as calendardate,
+            date '2025-09-01' as week_start_monday,
+            100 as schoolid,
+            cast(null as string) as term,
+            true as is_in_session_day,
+            1.0 as membershipvalue
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-05'
+          )) as d
+          union all
+          select
+            1, 'kippnewark', 2025, date '2025-09-01', d, date '2025-09-01',
+            200, cast(null as string), true, 1.0
+          from unnest(generate_date_array(
+            date '2025-09-06', date '2025-09-10'
+          )) as d
+
+      - input: ref('int_students__attendance_daily')
+        format: sql
+        rows: |
+          select
+            1 as student_number,
+            'kippnewark' as _dbt_source_project,
+            d as calendardate,
+            'A' as att_code,
+            1.0 as attendancevalue,
+            1.0 as is_present_weighted,
+            false as is_truant,
+            0.0 as is_absent,
+            0.0 as is_tardy,
+            1.0 as is_ontime,
+            0.0 as is_oss,
+            0.0 as is_iss,
+            0.0 as is_suspended,
+            1.0 as membershipvalue
+          from unnest(generate_date_array(
+            date '2025-09-01', date '2025-09-10'
+          )) as d
+
+      - input: ref('int_students__schools')
+        format: sql
+        rows: |
+          select
+            100 as school_number,
+            'kippnewark' as _dbt_source_project,
+            'loc-abc' as location_key
+          union all
+          select 200, 'kippnewark', 'loc-xyz'
+
+      - input: ref('dim_terms')
+        format: sql
+        rows: |
+          select
+            999 as school_id,
+            'NOMATCH' as term_name,
+            1900 as academic_year,
+            'RT' as `type`,
+            'term-none' as term_key
+    expect:
+      format: sql
+      rows: |
+        select
+          student_day_key,
+          student_enrollment_key,
+          date_key,
+          location_key,
+          academic_year,
+          week_start_monday,
+          is_in_session_day,
+          term_key,
+          attendance_code,
+          attendance_value,
+          present_weight,
+          is_truant,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          ada_tier,
+          membership_value,
+          is_chronically_absent,
+          is_absent,
+          is_tardy,
+          is_ontime,
+          is_oss,
+          is_iss,
+          is_suspended,
+          attendance_category,
+        from unnest([
+          struct<
+            student_day_key string, student_enrollment_key string,
+            date_key date, location_key string, academic_year int64,
+            week_start_monday date, is_in_session_day bool, term_key string,
+            attendance_code string, attendance_value float64,
+            present_weight float64, is_truant bool,
+            n_membership_days_ytd float64, n_present_days_ytd float64,
+            ada_tier string, membership_value float64,
+            is_chronically_absent bool, is_absent int64, is_tardy int64,
+            is_ontime int64, is_oss int64, is_iss int64, is_suspended int64,
+            attendance_category string
+          >
+          (
+          'e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-01', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          1.0, 1.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-02', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          2.0, 2.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-03', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          3.0, 3.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-04', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          4.0, 4.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          'ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-05', 'loc-abc', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          5.0, 5.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '6e08aa68d489252ea7fd0d9d141a58ef', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-06', 'loc-xyz', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          6.0, 6.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '3e0dab96a6aa3a11932d4cf6e71c5804', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-07', 'loc-xyz', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          7.0, 7.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '834cc7ffb573a083317863903737cb08', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-08', 'loc-xyz', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          8.0, 8.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '59b890f26e9ad5329f31a7d9ed312d1a', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-09', 'loc-xyz', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          9.0, 9.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          ),
+          (
+          '674757e4469ff12965e8cd5ff67ab3e6', '53b6a73797c6a5dadb03eb37053e45f4',
+          date '2025-09-10', 'loc-xyz', 2025, date '2025-09-01', true, null,
+          'A', 1.0, 1.0, false,
+          10.0, 10.0, 'Tier 1', 1.0,
+          false, 0, 0, 1, 0, 0, 0, 'Present'
+          )
+        ])

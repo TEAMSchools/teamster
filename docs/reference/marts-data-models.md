@@ -5,8 +5,8 @@
 The `kipptaf` marts are dimensional models (fact and dimension tables) consumed
 by Cube and Tableau. They follow a **strict-chain snowflake** design: each fact
 table holds foreign keys to its _direct_ parents only, and deeper context is
-reached by chaining one dimension to its parent dimension
-(`fct_student_attendance_daily` → `dim_student_enrollments` → `dim_students`).
+reached by chaining one dimension to its parent dimension (`fct_student_days` →
+`dim_student_enrollments` → `dim_students`).
 
 Each section below shows one fact table and the snowflake chain reachable from
 it, followed by the fact's own foreign keys. **Conformed dimensions —
@@ -309,22 +309,6 @@ erDiagram
 | `teacher_staff_key`            | `dim_staff`                     |
 | `term_key`                     | `dim_terms`                     |
 
-## fct_student_attendance_daily
-
-```mermaid
-erDiagram
-  fct_student_attendance_daily }o--|| dim_student_enrollments : "student_enrollment_key"
-  dim_student_enrollments }o--|| dim_students : "student_key"
-```
-
-### Foreign keys
-
-| FK column                | References                |
-| ------------------------ | ------------------------- |
-| `date_key`               | `dim_dates`               |
-| `student_enrollment_key` | `dim_student_enrollments` |
-| `term_key`               | `dim_terms`               |
-
 ## fct_student_attendance_interventions
 
 ```mermaid
@@ -361,6 +345,39 @@ erDiagram
 | `streak_end_date_key`    | `dim_dates`               |
 | `streak_start_date_key`  | `dim_dates`               |
 | `student_enrollment_key` | `dim_student_enrollments` |
+
+## fct_student_days
+
+```mermaid
+erDiagram
+  fct_student_days }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `date_key`               | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
+
+## fct_student_periods
+
+```mermaid
+erDiagram
+  fct_student_periods }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `period_end_date_key`    | `dim_dates`               |
+| `period_start_date_key`  | `dim_dates`               |
+| `student_enrollment_key` | `dim_student_enrollments` |
+| `term_key`               | `dim_terms`               |
 
 ## fct_support_tickets
 

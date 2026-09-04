@@ -229,7 +229,7 @@ The `kipptaf` marts are dimensional models (fact and dimension tables) consumed
 by Cube and Tableau. They follow a **strict-chain snowflake** design: each fact
 table holds foreign keys to its _direct_ parents only, and deeper context is
 reached by chaining one dimension to its parent dimension
-(`fct_student_attendance_daily` → `dim_student_enrollments` → `dim_students`).
+(`fct_student_days` → `dim_student_enrollments` → `dim_students`).
 
 Each section below shows one fact table and the snowflake chain reachable from
 it, followed by the fact's own foreign keys. **Conformed dimensions —

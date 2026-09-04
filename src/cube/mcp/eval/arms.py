@@ -64,53 +64,91 @@ _ACADEMIC_YEAR_LABEL_DESC = (
 META_STUB: dict[str, Any] = {
     "cubes": [
         {
-            "name": "student_attendance_view",
+            "name": "student_days_view",
             "title": "Student Attendance",
             "type": "view",
             "measures": [
                 {
-                    "name": "student_attendance_view.count_students",
+                    "name": "student_days_view.count_students",
                     "title": "Count Students",
                     "type": "number",
-                    "description": "Distinct students served.",
-                },
-                {
-                    "name": "student_attendance_view.count_chronically_absent",
-                    "title": "Count Chronically Absent",
-                    "type": "number",
                     "description": (
-                        "Students flagged chronically absent (under 90% attendance)."
+                        "Distinct students in the queried slice. Pin a date for a "
+                        "point-in-time headcount; leave it open for ever-enrolled."
                     ),
-                },
-                {
-                    "name": "student_attendance_view.percent_chronically_absent",
-                    "title": "Percent Chronically Absent",
-                    "type": "number",
-                    "description": "Share of students chronically absent.",
                 },
             ],
             "dimensions": [
                 {
-                    "name": "student_attendance_view.dates_academic_year",
+                    "name": "student_days_view.dates_academic_year",
                     "title": "Dates Academic Year",
                     "type": "number",
                     "description": _ACADEMIC_YEAR_DESC,
                 },
                 {
-                    "name": "student_attendance_view.dates_academic_year_label",
+                    "name": "student_days_view.dates_academic_year_label",
                     "title": "Dates Academic Year Label",
                     "type": "string",
                     "description": _ACADEMIC_YEAR_LABEL_DESC,
                 },
                 {
-                    "name": "student_attendance_view.school_abbreviation",
+                    "name": "student_days_view.school_abbreviation",
                     "title": "School",
                     "type": "string",
                     "description": "School abbreviation.",
                 },
             ],
             "segments": [],
-        }
+        },
+        {
+            "name": "student_periods_view",
+            "title": "Student Attendance Periods",
+            "type": "view",
+            "measures": [
+                {
+                    "name": "student_periods_view.count_students",
+                    "title": "Count Students",
+                    "type": "number",
+                    "description": (
+                        "Student-school records served at any point in the period. "
+                        "Show it beside every rate on this view."
+                    ),
+                },
+                {
+                    "name": "student_periods_view.count_chronically_absent",
+                    "title": "Count Chronically Absent",
+                    "type": "number",
+                    "description": (
+                        "Students at or below 90.0% cumulative attendance as of "
+                        "period end."
+                    ),
+                },
+                {
+                    "name": "student_periods_view.pct_chronically_absent",
+                    "title": "Percent Chronically Absent",
+                    "type": "number",
+                    "description": (
+                        "Chronic absence rate. Excludes anyone with fewer than 10 "
+                        "membership days year-to-date."
+                    ),
+                },
+            ],
+            "dimensions": [
+                {
+                    "name": "student_periods_view.period_type",
+                    "title": "Period Type",
+                    "type": "string",
+                    "description": "year, month, or week.",
+                },
+                {
+                    "name": "student_periods_view.academic_year_label",
+                    "title": "Academic Year Label",
+                    "type": "string",
+                    "description": _ACADEMIC_YEAR_LABEL_DESC,
+                },
+            ],
+            "segments": [],
+        },
     ]
 }
 

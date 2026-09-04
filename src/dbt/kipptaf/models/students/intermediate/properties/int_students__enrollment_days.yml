@@ -1,0 +1,139 @@
+models:
+  - name: int_students__enrollment_days
+    description: >-
+      One row per enrollment stint per calendar day, network-wide and
+      SIS-neutral. This is the row source for the daily and period student facts
+      -- it decides which student-days exist, and attendance is joined onto it
+      downstream rather than the other way round.
+
+      Days come from dim_dates rather than the school calendar, because the
+      Focus calendar emits in-session days only and would leave Miami with no
+      break-day rows from AY2026 forward while the NJ regions had them. The
+      school calendar is instead left-joined to stamp is_in_session_day, so a
+      day the calendar does not carry is simply not in session.
+
+      Each stint's day window is clamped to its school's own academic year --
+      from the year's first in-session day to its last, capped at today. That
+      clamp is load-bearing. PowerSchool rolls NJ stints over on 1 July while
+      Focus dates Miami stints to the real first day of school, so an unclamped
+      window would report roughly 20,000 Newark students enrolled in mid-July
+      against almost no Miami students, purely from a source-system date
+      convention. Clamping makes any calendar date comparable across regions.
+
+      Carrying enrollment across break days is what lets a point-in-time
+      question land on any date, including a weekend or a holiday, without a
+      per-school anchor flag. Enrollment attributes are stint attributes and so
+      are constant across the window by construction, not carried by a window
+      function. No attendance is carried -- attendance is absent on a
+      non-session day, which is what keeps break days out of every rate
+      denominator downstream.
+
+      Miami is present throughout, because both parents retain it. The
+      enrollment spine is the same one Topline and the Tableau extracts read,
+      and int_students__calendar_day keeps the frozen PowerSchool archive for
+      the years Focus does not cover.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              [
+                student_number,
+                _dbt_source_project,
+                academic_year,
+                entrydate,
+                calendardate,
+              ]
+          config:
+            severity: error
+    columns:
+      - name: calendardate
+        description: >-
+          The calendar day this row represents. Present for every day in the
+          stint's clamped window, in session or not.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: student_number
+        description: Network-wide student identifier.
+
+      - name: _dbt_source_project
+        description: District code location the enrollment stint came from.
+
+      - name: academic_year
+        description: >-
+          Academic year of the enrollment stint, expressed as the calendar year
+          in which the year ends.
+
+      - name: entrydate
+        description: >-
+          First day of the enrollment stint as the source system records it.
+          Part of the stint's natural key, so it feeds the enrollment surrogate
+          key downstream.
+
+      - name: schoolid
+        description: Network school number.
+
+      - name: grade_level
+        description: Grade level of the enrollment stint.
+
+      - name: enroll_status
+        description: >-
+          Source-system enrollment status code for the stint. Carried for
+          downstream filtering only -- this model decides membership by entry
+          and exit dates, never by status.
+
+      - name: week_start_date
+        description: >-
+          First day of the school calendar week containing this day. Null on a
+          day the school calendar does not carry.
+
+      - name: week_end_date
+        description: >-
+          Last day of the school calendar week containing this day. Null on a
+          day the school calendar does not carry.
+
+      - name: week_start_monday
+        description: >-
+          Monday of the school week containing this day. Null on a break day
+          that falls outside every school week.
+
+      - name: week_end_sunday
+        description: >-
+          Sunday of the school week containing this day. Null on a break day
+          that falls outside every school week.
+
+      - name: week_number_academic_year
+        description: >-
+          Ordinal school week within the academic year. Null on a break day that
+          falls outside every school week.
+
+      - name: term
+        description: >-
+          Reporting term covering this day. Null on a day that falls outside
+          every term window, which includes most long breaks.
+
+      - name: semester
+        description: >-
+          Semester covering this day. Null on a day that falls outside every
+          term window.
+
+      - name: yearid
+        description: >-
+          Legacy PowerSchool year identifier, derived from academic_year.
+          Transitional, kept so existing consumers can migrate independently.
+
+      - name: is_in_session_day
+        description: >-
+          Whether school was in session for this school on this day. False on
+          every carried break day, and false on a day the school calendar does
+          not carry at all.
+
+      - name: membershipvalue
+        description: >-
+          Membership weight for the day, taken from the school calendar. Zero on
+          every carried break day, so a break day can never reach a rate
+          denominator downstream.

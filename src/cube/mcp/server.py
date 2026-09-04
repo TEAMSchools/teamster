@@ -372,15 +372,35 @@ async def meta(
     or `sql`.
 
     Call with no arguments first to discover which views exist — analyst-facing
-    surfaces are views (e.g. `student_attendance_view`,
-    `student_assessment_scores_view`; staff is split into `staff_directory` and
-    `staff_pii` by access tier). Once you know the view(s) you need, pass
+    surfaces are views (e.g. `student_days_view`,
+    `student_periods_view`, `student_assessment_scores_view`; staff
+    is split into `staff_directory` and `staff_pii` by access tier). Once you
+    know the view(s) you need, pass
     `views` to get back just their measures and dimensions — a fraction of the
     full catalog's size, filtered client-side from the same underlying `/meta`
     fetch (Cube's REST API doesn't take a filter param, and its separate
     `/entities` endpoints need a differently scoped token this server doesn't
     mint) — so it avoids exceeding a response size budget on large models
     without any extra round trip once the full catalog is cached.
+
+    Two views can cover one domain at different grains. Attendance splits this
+    way: `student_days_view` answers day-level questions (was a student
+    absent on a date, calendar heatmaps, day-of-week patterns), while
+    `student_periods_view` answers rates as of a period (chronic
+    absence, ADA tier, truancy) via its `period_type` dimension. Pick by whether
+    the question is about a day or about a period, and do not add an anchor
+    filter to either — neither view needs one.
+
+    Enrollment lives on those same two views — there is no separate
+    enrollment view. `student_days_view.count_students` counts distinct students
+    over whatever slice is queried, so it answers ever-enrolled over a range and
+    point-in-time on a single date, depending only on how you filter
+    `dates_date_day`. It needs no anchor: the fact carries a row for every
+    calendar day a student was enrolled, break days included, so any date
+    resolves for every school. `student_periods_view.count_students` counts
+    students served during a period, which is a different question from
+    enrolled on its last day — for the latter, pin the date on
+    `student_days_view`.
 
     Access is group-driven and default-deny: an empty catalog (`cubes: []`)
     usually means the requester lacks the required `cube-*` Workspace group, not
@@ -456,7 +476,7 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     before coarsening.
 
     Member naming: every measure/dimension is dotted `view.member` (e.g.
-    `student_attendance_view.count_students`). Bare names won't resolve.
+    `student_days_view.count_students`). Bare names won't resolve.
 
     Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
     `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,

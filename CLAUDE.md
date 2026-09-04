@@ -220,6 +220,12 @@ exploration that led nowhere (keep only the conclusion).
 
 - Before adding a line to any CLAUDE.md: name the specific decision Claude will
   make differently because of it. If you cannot, cut it.
+- When a change deletes something, delete the text about it; do not add text
+  saying it was deleted. A tombstone ("`X` was retired", "there is no longer a
+  `Y`") reads like it passes the necessity test and does not — the decision it
+  guards against cannot arise once nothing surfaces the name. Add the negative
+  only when a live pointer survives, and then point at the replacement, not at
+  the corpse. Retirement history belongs in the commit message and the diff.
 - Where a new line goes: one MCP server's behavior goes in
   `.claude/context/<server>.md` (auto-injected on first use). One directory's
   specifics go in that directory's CLAUDE.md. Worktree mechanics go in

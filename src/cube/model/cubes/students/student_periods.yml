@@ -1,0 +1,315 @@
+cubes:
+  - name: student_periods
+    public: false
+    sql_table: kipptaf_marts.fct_student_periods
+
+    joins:
+      # No dates join. dim_dates describes a single day, and a period row spans
+      # many -- a join on period_end_date_key would only ever describe the last
+      # one, which is misleading at year grain and redundant at month and week.
+      # period_start_date and period_end_date are native time dimensions
+      # instead, so Cube applies its own granularities with no calendar join.
+      - name: terms
+        sql: "{terms.term_key} = {CUBE}.term_key"
+        relationship: many_to_one
+
+      # The canonical path to everything dimensional about a student: grade
+      # level, ELL and IEP status, meal eligibility, the homeroom teacher, the
+      # demographics behind it, and locations. Every cut available on
+      # student_days_view is available here through this join, which is the
+      # point of it, and it is the same chain that cube reaching locations
+      # only via student_school_enrollments.
+      #
+      # The fact's own location_key is deliberately NOT joined here. It keys
+      # the grain -- one row per student per school per period -- and nothing
+      # else; the cumulative windows partition by student alone, so the counts
+      # above are distinct students rather than student-schools. A
+      # second locations join on it would give this cube two routes to the same
+      # dim, which is the diamond the marts layer forbids. Degenerate FK, no
+      # declared join.
+      - name: student_school_enrollments
+        sql: >
+          {student_school_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_period_key
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_project,
+          location_key, academic_year, period_type, and period_start_date_key.
+          Primary key for this fact.
+        sql: student_period_key
+        type: string
+        primary_key: true
+        public: false
+
+      - name: period_type
+        description: >-
+          Selects the grain: year, month, or week. Week is the PowerSchool
+          school week (not a clean Monday-Sunday ISO grid). Each period_type
+          produces exactly one pre-computed row per eligible student per period
+          — no anchor filter is needed or accepted. The dates join is on
+          period_end_date_key, so a single-date filter selects the periods that
+          ended on that date rather than pinning a point in time within one.
+        sql: period_type
+        type: string
+        public: true
+
+      - name: period_start_date
+        description: >-
+          Start of the period. For period_type = year, July 1 of the academic
+          year. For month, the first of the calendar month. For week, the
+          PowerSchool school-week start (week_start_monday).
+        sql: CAST(period_start_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: period_start_membership_date
+        description: >-
+          First membership day observed within the period — not the period's
+          calendar start date. Pin count_students to this for a period headcount
+          the way Topline's Total Enrollment is meant to read, rather than to
+          the calendar start, which reports nobody for a week whose Monday was
+          not in session and a full roster for a week that had not begun. Equals
+          the calendar start whenever that day was in session.
+        sql: CAST({CUBE}.period_start_membership_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: period_end_date
+        description: >-
+          Last membership day observed within the period as of this snapshot —
+          not the period's calendar end date. Join target for the dates cube
+          (joined on the raw period_end_date_key column, not this time dimension
+          — Cube's query-timezone conversion inside a join predicate breaks the
+          equality under any non-UTC timezone, #4298).
+        sql: CAST(period_end_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: academic_year
+        description: >-
+          Academic year this period belongs to, per the fact's own school-year
+          assignment — not derived from period_end_date's calendar year. The
+          dates join resolves period_end_date_key through a pure July-1 calendar
+          cutover, which can disagree with the fact's assignment across the June
+          30 / July 1 boundary.
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: academic_year_label
+        description: >-
+          Full span label for academic_year (e.g. "2025-2026" for the year
+          beginning July 2025), derived from the fact's own school-year
+          assignment rather than the period_end_date calendar year — see
+          academic_year for why that distinction matters here.
+        sql: >-
+          CONCAT(CAST({CUBE}.academic_year AS STRING), '-',
+          CAST({CUBE}.academic_year + 1 AS STRING))
+        type: string
+        public: true
+
+      - name: ada_tier
+        description: >-
+          Cumulative ADA tier as of period_end_date, based on membership days
+          accumulated since the start of the academic year. Tier 1 is 95% and
+          above (on track). Tier 2 is strictly above 90.0%; Tier 3 includes
+          exactly 90.0%, extending down through 80% inclusive (chronic — also
+          is_chronically_absent). Tier 4 is below 80% (severe chronic — also
+          is_chronically_absent). Null when the student has zero membership days
+          year-to-date.
+        sql: ada_tier
+        type: string
+        public: true
+
+      - name: is_chronically_absent
+        description: >-
+          Whether ada_tier is Tier 3 or Tier 4 as of period_end_date. Derived
+          from ada_tier on the fact, never recomputed, so the flag and the tier
+          cannot drift apart. It accumulates per student across a school change
+          rather than resetting, so a transferring student carries their
+          year-to-date position into the new school's rows.
+        sql: is_chronically_absent
+        type: boolean
+        public: true
+
+      - name: is_truant
+        description: >-
+          Whether the student met regional truancy criteria as of
+          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
+          regions: projected absences reach 50+ for the year. No eligibility
+          floor -- neither regional rule has one.
+        sql: is_truant
+        type: boolean
+        public: true
+
+      - name: n_membership_days_ytd
+        description: >-
+          Membership days accumulated from the start of the academic year at
+          that school, through period_end_date. Counts only days with a recorded
+          attendance value. Use it to show how much of a year a rate is built
+          on, or to filter to students with enough history to judge.
+        sql: n_membership_days_ytd
+        type: number
+        public: true
+
+      - name: n_present_days_ytd
+        description: >-
+          Attendance accumulated from the start of the academic year at that
+          school, through period_end_date, over the same days
+          n_membership_days_ytd counts. Divide by n_membership_days_ytd for one
+          student's cumulative ADA as of period end. That is a per-student
+          figure -- for a population ADA use avg_daily_attendance on
+          student_days_view, which is day-weighted and not the same number.
+        sql: n_present_days_ytd
+        type: number
+        public: true
+
+    measures:
+      - name: count_students
+        description: >-
+          Distinct students with recorded attendance at any point in the period,
+          and the denominator for every rate here. No minimum-day floor applies
+          -- one measured day is enough -- but a student whose attendance was
+          never recorded is excluded, because a day nobody measured cannot
+          support a headcount or a rate. Population and denominator are
+          therefore the same number and cannot drift apart.
+
+          Counts distinct students, so a student who changed schools mid-period
+          counts once at each school when grouped by school and once overall
+          when not: the school is answerable for the days the student was there,
+          while the student is one student.
+
+          This is a served-during-the-period count, a different question from
+          enrolled on a given date — for that, pin the date on
+          student_days_view.
+
+          This is the denominator for every rate on this cube — chronic absence,
+          both ADA-tier shares, and truancy. No rate here applies a
+          minimum-membership-day floor, so show this count beside any of them
+          for an early period, where the rate is computed over students judged
+          on very few days.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.n_membership_days_ytd > 0"
+
+      - name: count_chronically_absent
+        description: >-
+          Student-school records with cumulative ADA at or below 90.0% (ada_tier
+          Tier 3 or Tier 4) as of period_end_date. Same distinct-student
+          counting as count_students, and no minimum-membership-day floor. The
+          tier itself accumulates per student across a school change, so a
+          transferring student arrives already carrying their position.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_chronically_absent"
+
+      - name: pct_chronically_absent
+        description: >-
+          Chronic absence rate. Denominator is count_students, every student in
+          the queried slice. No minimum-membership-day floor applies. Numerator
+          and denominator share the same population, so a student whose
+          attendance was never recorded is outside both and cannot pull the rate
+          down.
+
+          So an early period reports a rate over students judged on very few
+          days: a student who misses one of their first four days sits at 75%
+          ADA and counts as chronically absent. Always display count_students
+          alongside this rate, and treat the first weeks of an academic year as
+          volatile rather than wrong.
+        sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: _count_tier_1_2
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
+
+      - name: pct_tier_1_2
+        description: >-
+          Percentage of students with cumulative ADA strictly above 90.0% (Tier
+          1 or Tier 2) as of period_end_date. Tier 2 is strictly above 90.0%;
+          Tier 3 includes exactly 90.0%.
+
+          Denominator is count_students, every student in the queried slice. No
+          minimum-membership-day floor applies. Numerator and denominator share
+          the same population, so a student whose attendance was never recorded
+          is outside both and cannot pull the rate down.
+        sql: "1.0 * {_count_tier_1_2} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: _count_tier_3
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier = 'Tier 3'"
+
+      - name: pct_tier_3
+        description: >-
+          Percentage of students with cumulative ADA from 80% through 90.0%
+          inclusive (Tier 3) as of period_end_date. Tier 2 is strictly above
+          90.0%; Tier 3 includes exactly 90.0%.
+
+          Denominator is count_students, every student in the queried slice. No
+          minimum-membership-day floor applies. Numerator and denominator share
+          the same population, so a student whose attendance was never recorded
+          is outside both and cannot pull the rate down.
+        sql: "1.0 * {_count_tier_3} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: count_truants
+        description: >-
+          Student-school records meeting regional truancy criteria as of
+          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
+          regions: projected absences reach 50+ for the year. Same
+          distinct-student counting grain as count_students.
+
+          No eligibility floor is applied here. Neither the Miami nor the NJ
+          truancy rule requires a minimum membership-day count, so any such
+          floor belongs inside is_truant on the fact, not in this measure or its
+          denominator. Miami's rule is already self-limiting — 15 absences
+          implies at least 15 membership days. NJ's is not: its projection can
+          fire in a student's first days, so early-period counts run high. At
+          year grain the effect is nil (AY2025 NJ: 233 truant either way); at
+          month grain it is concentrated in the first weeks (2025-08: 550 rows
+          here that an eligibility floor would have reported as zero). Show
+          count_students beside this measure for any early period.
+        sql: "{student_school_enrollments.student_key}"
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_truant"
+
+      - name: pct_truant
+        description: >-
+          Percentage of students meeting regional truancy criteria as of
+          period_end_date. Denominator is count_students, every student in the
+          queried slice. No minimum-membership-day floor applies. Numerator and
+          denominator share the same population, so a student whose attendance
+          was never recorded is outside both and cannot pull the rate down.
+           Truancy has no eligibility concept
+          in either the Miami or the NJ rule.
+
+          Any minimum-membership-day condition would belong inside is_truant on
+          the fact, which keeps this denominator correct through a later change
+          to that definition. See count_truants for how the numerator behaves
+          early in an academic year.
+        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
+        public: true
