@@ -1171,6 +1171,81 @@ everything else does. If the answer is "none", that is the finding.
 
 ---
 
+## Next up — start here
+
+Grow is done and verified in Production at revision 219. Four workbooks remain,
+in this order. Each is a self-contained sitting.
+
+### 1. Survey Dashboard — the only undocumented over-grant left
+
+Three findings, and the first is the one that matters.
+
+`Permissions - Completion` is **byte-identical** to `Permissions - Support`.
+Both carry an unconditional `ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF')` and
+**no Tier 1 at all** — they start at Tier 2. _Gap 3_ documents Support and says
+its KTAF grant is accepted until the department gate ships. Nobody wrote down
+that Completion is the same calculation. Worse, _Gap 1_ records Completion
+Tracking as "Fixed — five-tier gate built on `rpt_tableau__survey_completion`",
+and the gate that shipped has four tiers and no self clause.
+
+So the first question is whether the Gap 1 fix inherited the Gap 3 defect
+deliberately or by copy-paste. Ask before changing anything: scoping Completion
+may belong with #4721 rather than ahead of it.
+
+Then `Calculation1` — an **unnamed** 1,417-character field on
+`rpt_tableau__survey_responses` that is the **department gate, already built**.
+It maps `rated_department_code` onto groups (`KNJ-SG-Tableau Dept Compliance`,
+`TS-SG-R9 Development`, `TS-SG-R9 Finance` and more). The playbook says
+department scoping "has not shipped" and to treat it as future state. Something
+is half-built in the workbook. Work out whether it is attached to anything
+before #4728 lands, because a second department gate arriving on top of this one
+would be hard to reason about.
+
+Third, Tier 4 grants `TS-SG-R9 Technology`, which appears in neither the guide's
+group tables nor the _Groups_ section here.
+
+### 2. Manager Survey Rollup — one datasource to detach
+
+The repoint left `int_surveys__manager_survey_details (kipptaf_surveys)`
+attached alongside the extract, carrying two dead permission fields. **No sheet
+reads it**, and the gates on the live datasource audit clean, so this is hygiene
+rather than a leak. Detail in _Gap 7_. Delete both fields and the datasource in
+Desktop; no persona re-run needed.
+
+### 3. Stipend and Bonus — one live by-name grant
+
+`Permissions HR Download` carries 1 by-name `USERNAME()` grant, live on the
+`hr_download` and `pay code audit` sheets. The guide states plainly that
+individual grants are not permitted. Removing it means confirming first that
+whoever it names reaches those sheets another way.
+
+### 4. Manager Survey Reports — a question, not a fix
+
+Its datasource is `rpt_tableau__manager_survey_details (kipptaf_surveys)` while
+Rollup's is the same model in `(kipptaf_tableau)`. One of those datasets is
+wrong. Decide which before touching either workbook.
+
+Leadership Development still holds a dead `Rollup Permissions` field with 2
+by-name grants, and is being archived in
+[#4629](https://github.com/TEAMSchools/teamster/pull/4629). Nothing to do unless
+that PR stalls.
+
+### Before you start any of them
+
+- **Audit from the `.twbx`, not the UI.** The recipe is in
+  `docs/guides/tableau-workbook-editing.md` (landing in
+  [#5157](https://github.com/TEAMSchools/teamster/issues/5157)). The UI hides a
+  dead field and shows a filter's caption rather than the field it resolves to.
+- **Publish from Desktop, not the REST API**, and tick _Embed password_. A REST
+  publish drops the embedded credential and the next extract refresh fails hours
+  later with no other symptom. Then trigger a refresh and confirm it succeeds.
+- **Pick personas that have data.** Paterson has zero rows in the Grow extract
+  and may be empty in others; a persona at an empty school sees nothing and
+  proves nothing. Check row counts by `location_clean_name` first.
+- **Pick personas with no Tier 2 group.** Anyone in `All Data`, `All HR`,
+  `Leadership Development` or `Group Staff TEAM Council` sees everything, so the
+  test proves nothing.
+
 ## Known gaps
 
 Found by the 2026-08-05 audit of all 11 shipped workbooks, which read the
