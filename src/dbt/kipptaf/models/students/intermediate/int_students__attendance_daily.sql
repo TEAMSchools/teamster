@@ -65,18 +65,18 @@ with
     ),
 
     -- Miami's student_number is the 8400-prefixed Focus id since #5148, and the
-    -- frozen archive carries the bare PowerSchool number. Same arithmetic as
-    -- #5149 applies to pre-Focus vendor rows; int_focus__students.powerschool_id
+    -- frozen archive carries the bare PowerSchool number, like the pre-Focus
+    -- vendor rows the macro was written for. int_focus__students.powerschool_id
     -- confirms the offset for every archive student.
     powerschool_renumbered as (
         select
             * except (student_number),
 
-            if(
-                _dbt_source_project = 'kippmiami',
-                student_number + 8400000000,
-                student_number
-            ) as student_number,
+            {{
+                focus_student_number(
+                    "student_number", "yearid + 1990", "_dbt_source_project"
+                )
+            }} as student_number,
         from powerschool_deduped
     ),
 
