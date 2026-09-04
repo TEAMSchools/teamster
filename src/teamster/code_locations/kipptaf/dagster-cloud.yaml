@@ -319,7 +319,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-branchingminds-sftp
-                    key: url
+                    key: URL
               - name: CLEVER_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -712,7 +712,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-branchingminds-sftp
-                    key: url
+                    key: URL
               - name: CLEVER_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
