@@ -32,14 +32,14 @@ families:
       - "GPA Roster: Miami"
       - "GPA Roster: Newark"
   - id: student_contact_info_feed
-    name: Student Contact Info Feed
+    name: Student Contact Info Feed (SCIF)
     description: Student and guardian contact information. Pick your region.
     group: operations
     members:
-      - Student Contact Info Feed - KIPP Newark
-      - Student Contact Info Feed - KIPP Camden
-      - Student Contact Info Feed - KIPP Miami
-      - Student Contact Info Feed - KIPP Paterson
+      - Student Contact Info Feed (SCIF) - KIPP Newark
+      - Student Contact Info Feed (SCIF) - KIPP Camden
+      - Student Contact Info Feed (SCIF) - KIPP Miami
+      - Student Contact Info Feed (SCIF) - KIPP Paterson
 
 # "From the data team" cards, pointing at prose that lives in Zendesk.
 promos:
