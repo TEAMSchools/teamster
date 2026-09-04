@@ -888,15 +888,27 @@ design doc's earlier estimate.
   `[location]` → `[location_clean_name]`, `[department]` →
   `[home_department_name]`; and on the two `schoolmint_grow_*` datasources
   `[report_to_sam_account_name]` → `[reports_to_sam_account_name]`
-- **Tier 4 variant:** the `Permissions - Norming*` blocks are the ungated
-  variant that adds `KNJ-SG-Tableau All SL`
+- **This workbook was rebuilt on 2026-09-04 and no longer follows the canonical
+  block. Read _Gap 9_ before editing anything here.** In summary: no
+  datasource-wide filter on `observation_details`, three gates instead of one,
+  all filters sheet-local and `context='true'`, Tier 1 manager-only, zero
+  by-name grants.
+- **Tier 4 variants:** `Permissions - Norming` adds `All SL`, `All DSO` and
+  `All AP` region-scoped; `Permissions  - Norming - Individual Data` adds
+  `All SL` only, so an AP or DSO falls through to Tier 5 on sheets that name
+  specific teachers. Neither is the "ungated" variant this file used to describe
+  — that shape never worked, see _Gap 9_.
 - **Note:** `rpt_tableau__pm_outlier_detection` was **dropped from PR #4656**
   and is unchanged, so any calc referencing it needs no edit. Its remaining work
   is #4663.
 - **Note:** `rpt_tableau__teacher_observations` now excludes observations logged
   against non-teachers, and resolves ESL teachers that previously fell out
-- **Verify:** an AP sees only their own school's teachers; a school leader sees
-  their school; norming sheets show cross-region data for MDSO/HOS/AcOps/SL
+- **Verify** with _Preview as User_, using personas at a school that has data —
+  Paterson has none in this extract. The pair that proves the split is an AP and
+  a school leader at the same school: at KIPP Royalty Academy, `cdunner` (AP)
+  sees all 3 Miami schools on the aggregate norming sheets but only Royalty's
+  teachers on `norming_top_20`, while `wmealing` (SL) sees all 3 on both. A
+  teacher with no leader path and no reports sees nothing anywhere.
 
 ### Coaching Conversation Tool
 
@@ -1217,39 +1229,98 @@ to do — but do not go looking for it, and do not count it as a restorable
 archive. Its pre-migration calculation is recoverable only from a Server
 revision history that no longer has a workbook to hang off.
 
-### Gap 9 — SchoolMint Grow, audited 2026-09-04
+### Gap 9 — SchoolMint Grow, audited and rebuilt 2026-09-04
 
-Read out of the `.twbx`. The baseline is **correct**: all three datasources
-carry the canonical `Permissions` (1,170 chars, byte-identical) attached
-**datasource-wide**, with canonical entity, location and role gates.
+Audited by reading the `.twbx`, then rebuilt. **This workbook no longer matches
+the canonical block** — the deviations below are deliberate and are the reason
+this section exists.
 
-| Finding                                                                                                                | Status                                           |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `Permissions Group Filter (MG)` — dead, 7,245 chars, unconditional KTAF, 39-branch location gate, 10 banned strings    | **Fixed** — deleted and republished 2026-09-04   |
-| Cross-region norming does not work: the `Permissions - Norming*` variants are sheet-local under a datasource-wide gate | **Open** — needs a decision, see below           |
-| 15 by-name `USERNAME()` grant clauses, 5 identities, 12 of them in live fields                                         | **Open**                                         |
-| `Permissions  - Norming - Individual Data` is live and carries unconditional KTAF, a 37-branch gate, 11 banned strings | **Open** — contained by the AND, not a live leak |
-| `Permissions - PulseChecker` lives here, not on Survey Dashboard as _Per-workbook sections_ says                       | **Doc fix** — Survey Dashboard has no such field |
+| Finding                                                                                                             | Status                                                           |
+| ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `Permissions Group Filter (MG)` — dead, 7,245 chars, unconditional KTAF, 39-branch location gate, 10 banned strings | **Fixed** — deleted, published to Production as revision 218     |
+| Cross-region norming did not work: the `Norming*` variants were sheet-local under a datasource-wide gate            | **Fixed** — see _the norming rebuild_ below                      |
+| 15 by-name `USERNAME()` grant clauses, 5 identities, 12 of them live                                                | **Fixed** — zero remain on this workbook                         |
+| `Permissions  - Norming - Individual Data` carried unconditional KTAF, a 37-branch gate, 11 banned strings          | **Fixed** — rewritten from canonical, not patched                |
+| `Permissions - PulseChecker`                                                                                        | **Deleted** — its dashboard and tab placement are being reworked |
+| Teachers could see their own rows here, bypassing the Coaching Conversation Tool's release gate                     | **Fixed** — Tier 1 self-access removed, manager clauses kept     |
 
-**Cross-region norming is the one with consequences.** Tier 4's note above says
-the `Permissions - Norming*` blocks are the ungated variant "because
-cross-region norming is intentional". They are attached sheet-local on 10
-`norming_*` sheets, and the canonical `Permissions` is attached datasource-wide
-on the same datasource. Tableau ANDs, so effective access is the intersection
-and the ungated clause collapses back onto canonical Tier 4/5 — both
-region-scoped. An MDSO cannot norm across regions; an AP sees only their own
-school's teachers.
+#### The norming rebuild
 
-Step 2's warning describes this exact mechanism but only as a safety property,
-that a stale sheet-local field cannot widen access. It also nullifies a
-deliberate widening, which is Step 6's "seeing **less** than expected is a
-broken gate". Settle whether cross-region norming is still required before
-touching it; if it is, the fix is a separate datasource carrying only the
-norming gate, the way the Stipend workbook handles its HR download sheets.
+The `norming_*` sheets needed a **higher** ceiling than the rest of the
+datasource, and Step 2's AND makes that impossible while a datasource-wide
+filter is attached. Three options were weighed: add `All SL` to canonical Tier 4
+(widens the PM dashboards too), duplicate the datasource (doubles a 79 MB
+extract), or remove the datasource-wide filter and go sheet-local. The third was
+chosen knowingly, accepting the fail-open trade in Step 2.
 
-Three cleanups with no live leak: two dead permission fields, SchoolMint Grow's
-three legacy sheet-local fields (contained today only because a datasource-wide
-gate ANDs over them), and 16 by-name `USERNAME()` grants across five fields.
+So on `rpt_tableau__schoolmint_grow_observation_details` **there is no
+datasource-wide filter**. All 28 sheets carry a sheet-local context filter, and
+there are three gates instead of one:
+
+| Gate                                       | Sheets                          | Tier 4 region branch adds     |
+| ------------------------------------------ | ------------------------------- | ----------------------------- |
+| `Permissions`                              | 12 non-norming                  | nothing — canonical           |
+| `Permissions - Norming`                    | 6 aggregate norming             | `All SL`, `All DSO`, `All AP` |
+| `Permissions  - Norming - Individual Data` | 4 individual norming            | `All SL` only                 |
+| _(datasource-wide, unchanged)_             | `goals`, `teacher_observations` | canonical                     |
+
+The aggregate/individual split is the point. An AP or DSO needs to see how their
+school compares against the region, so they are region-scoped on the six
+aggregate sheets. The four individual sheets name specific teachers, so `All AP`
+and `All DSO` are deliberately absent there and fall through to Tier 5 — own
+school, and for an AP own school's **teachers** only via the role gate. School
+leaders are region-scoped on both.
+
+**Every filter is `context='true'`.** The datasource-wide filter it replaced was
+a context filter, and `norming_top_20` / `norming_bottom_20` are top-N sheets
+whose arithmetic depends on it.
+
+!!! danger "This datasource is fail-open now"
+
+    A sheet added to `observation_details` gets **no gate by default**. That is the
+    cost of the option chosen above, accepted deliberately. Any new sheet needs its
+    permission filter attached by hand, as a context filter, before it is
+    published. Verify with the per-sheet enumeration in _Validation_, never by eye.
+
+#### Tier 1 on this workbook is manager-only
+
+The three self clauses are removed from every copy of every gate here. A
+teammate sees their own observation data in the **Coaching Conversation Tool**,
+where the self clauses are wrapped in `RLS - Release Gate` so an observee waits
+for the lock and the lockbox date. Grow has no release gate, so self-access here
+was a way around it. The `reports_to_*` manager clauses are kept — removing them
+would cut a coach off from their own reports.
+
+#### Accepted, not fixed
+
+**A former manager keeps access to rows they supervised.** `reports_to_*` is a
+snapshot frozen on each row, so a match survives the role change. Measured
+2026-09-04: 459 people appear as a manager on historical rows, 331 are current
+managers, **266 are former managers and 84 of those are still employed**. Each
+sees observations of people they personally supervised at the time, not
+arbitrary staff. The alternative — binding the clause to the current year —
+would strip all 331 current managers of their reports' history, which is worse.
+The correct fix is a current-manager column carried through dbt, the way the
+Intent to Return gate does it; that is a dbt change and has not been filed.
+
+**Paterson has no rows in this extract.** TEAM, KCNA and Miami are the only
+entities present, plus 221 rows for KTAF. The entity gate's Paterson branch can
+never match here. Do not use Paterson staff as test personas for this workbook.
+
+#### Still open
+
+The six `pulse_checker__*` worksheets are orphaned — off every dashboard, no
+longer published as views, still gated by `Permissions - Norming`. They were
+removed from the PM Norming tab because they carried a **different and looser
+definition of the data** than the rest of that tab: no `Academic Year` filter
+where the other 10 sheets pin to `2025`, no
+`Observation Type Abbreviation = "PMS"`, no `Job Title`, and instead their own
+`Observation Type` filter admitting `%null%`. Aligning them is a rework, not a
+patch.
+
+Three cleanups with no live leak remain **elsewhere**: two dead permission
+fields and by-name grants on Leadership Development (2, dead field) and Stipend
+and Bonus (1, live in `Permissions HR Download`).
 
 ### Gap 3 — deferred to the department gate, which has not shipped
 
