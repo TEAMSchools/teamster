@@ -4,7 +4,7 @@ with
             dbt_utils.deduplicate(
                 relation=ref("int_powerschool__student_enrollment_union"),
                 partition_by="student_number, academic_year, entrydate",
-                order_by="student_number desc",
+                order_by="rn_year asc",
             )
         }}
     ),
