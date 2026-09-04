@@ -1,0 +1,2191 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Miami Student Emails into the Focus DEMOGRAPHICS Import — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#miami-student-emails-into-the-focus-demographics-import-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Miami Student Emails into the Focus DEMOGRAPHICS Import — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-0-worktree-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0: Worktree setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-wire-stdt_email-in-rpt_focus__demographics-tdd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Wire stdt_email in rpt_focus__demographics (TDD)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-absorb-miami-into-stg_people__student_logins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Absorb Miami into stg_people__student_logins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Open the PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-post-merge-operations-user-run-not-committed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Post-merge operations (user-run — NOT committed)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-handoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Handoff
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-23-miami-student-emails-focus-import.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="miami-student-emails-into-the-focus-demographics-import-implementation-plan">Miami Student Emails into the Focus DEMOGRAPHICS Import — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Mint a stable <code>@teamstudents.org</code> email for every enrolled KIPP Miami
+(Focus) student and land it in the Focus <code>DEMOGRAPHICS</code> import (<code>stdt_email</code>).</p>
+<p><strong>Architecture:</strong> Absorb Miami into the existing network student-login generator
+(<code>stg_people__student_logins</code>), keyed on the <code>8400</code>-prefixed Focus id. A new
+Focus/Miami branch mints emails for genuinely-new students; a one-time migration
+re-keys existing Miami rows from their bare key to the prefixed key; the
+PowerSchool branch is scoped NJ-only so it never re-mints Miami. The kipptaf
+desired-state <code>rpt_focus__demographics</code> reads the generated email; the kippmiami
+import-once wrapper is unchanged.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), dbt unit tests, dbt Cloud CI, Dagster (prod
+materialization), BigQuery MCP for validation.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-07-23-miami-student-emails-focus-import-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Email domain suffix:</strong> <code>@teamstudents.org</code> (verbatim; same as NJ). No
+  Miami-specific domain.</li>
+<li><strong>Prefixed key:</strong> <code>cast(concat('8400', cast(&lt;bare&gt; as string)) as int64)</code> —
+  equals Focus <code>students.student_id</code> and the feed's <code>stdt_id</code>.</li>
+<li><strong>Warehouse project:</strong> <code>teamster-332318</code>. Logins table:
+  <code>kipptaf_people.stg_people__student_logins</code>. Miami PS archive:
+  <code>kippmiami_powerschool.stg_powerschool__students</code>.</li>
+<li><strong>SQL conventions</strong> (<code>.trunk/config/.sqlfluff</code>, BigQuery): trailing commas in
+  <code>SELECT</code>, single quotes, 88-char lines, no <code>QUALIFY</code>, no <code>ORDER BY</code>, cast once
+  as a named column (never inline in <code>WHERE</code>/<code>ON</code>). Mirror the existing model's
+  <code>student_number not in (select t.student_number, from {{ this }} as t)</code> idiom
+  — it predates the no-subquery guideline and is the established pattern in this
+  specific model.</li>
+<li><strong>Migration is user-run DML.</strong> Claude is DML/DDL-blocked (BigQuery MCP + <code>bq</code>
+  are SELECT-only); the migration <code>UPDATE</code> and the manual Focus backfill are
+  executed by the user, not committed.</li>
+<li><strong>Worktree:</strong> all work happens in
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails</code>. Use
+  <code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/kipptaf</code> and
+  <code>git -C &lt;worktree&gt;</code>.</li>
+<li><strong>Lint gate:</strong> run
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force &lt;changed files&gt;</code> from
+  inside the worktree before pushing (sqlfluff/yamllint fire at pre-push/CI, not
+  the pre-commit <code>fmt</code> hook).</li>
+</ul>
+<hr />
+<h2 id="task-0-worktree-setup">Task 0: Worktree setup</h2>
+<p><strong>Files:</strong> none (environment prep).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Install dbt packages in the fresh worktree</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>Installed N packages</code> (no "0 package(s) installed" error).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm the prod manifest exists for <code>--defer</code></strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>ls<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod/manifest.json
+</code></pre></div>
+<p>Expected: the path prints (main repo's manifest, refreshed by <code>post-merge</code>). If
+missing, regenerate:
+<code>uv run dbt parse --target prod --project-dir /workspaces/teamster/src/dbt/kipptaf --target-path target/prod</code>.</p>
+<hr />
+<h2 id="task-1-wire-stdt_email-in-rpt_focus__demographics-tdd">Task 1: Wire <code>stdt_email</code> in <code>rpt_focus__demographics</code> (TDD)</h2>
+<p>Point the Focus DEMOGRAPHICS <code>stdt_email</code> at the generated login email instead
+of the always-empty Finalsite contact email. <code>rpt_focus__demographics</code> is a flat
+view (no <code>env_var</code>/<code>is_incremental</code> branching), so it is fully unit-testable.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__demographics.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__demographics.yml</code></li>
+<li>Test: same <code>properties/rpt_focus__demographics.yml</code> (<code>unit_tests:</code> block)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>stg_people__student_logins</code> columns <code>student_number</code> (int64) and
+  <code>google_email</code> (string), joined on the string form of <code>student_number</code> =
+  <code>int_finalsite__contact_id_attributes.focus_student_id_prefixed</code>.</li>
+<li>
+<p>Produces: <code>rpt_focus__demographics.stdt_email</code> (string) = the generated
+  <code>@teamstudents.org</code> email, or null when the student has no login row.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Update the failing unit test</strong></p>
+</li>
+</ul>
+<p>In <code>properties/rpt_focus__demographics.yml</code>, add a <code>stg_people__student_logins</code>
+input to <code>test_demographics_shape.given</code> (place it after the existing
+<code>int_finalsite__contact_id_attributes</code> input):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_people__student_logins')</span>
+<span class="w">  </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">  </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">select</span>
+<span class="w">      </span><span class="no">84001001001 as student_number,</span>
+<span class="w">      </span><span class="no">'jsmith@teamstudents.org' as google_email</span>
+</code></pre></div>
+<p>Then change the three <code>expect</code> rows' <code>stdt_email</code> values:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># enr-001 (stdt_id 84001001001) — has a login row → generated email, NOT c.email</span>
+<span class="nt">stdt_email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">jsmith@teamstudents.org</span>
+<span class="c1"># enr-002 (stdt_id 84001001002) — no login row → null</span>
+<span class="nt">stdt_email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="c1"># enr-003 (stdt_id 84001001003) — no login row → null</span>
+<span class="nt">stdt_email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+</code></pre></div>
+<p>Also update the <code>test_demographics_shape</code> description's leading sentence to note
+the new source, replacing the existing first sentence:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Verifies the 42-column DEMOGRAPHICS layout — STDT_ID and STDT_EMAIL are</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">sourced from int_finalsite__contact_id_attributes and</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">stg_people__student_logins (joined on the 8400-prefixed id); the first student</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">has a login row so STDT_EMAIL is the generated google_email (not the Finalsite</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">contact email), while the second and third have no login row so STDT_EMAIL is</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">null. DT_BIRTH is formatted as YYYYMMDD, GENDER is mapped to a single-letter</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">code, ETHNIC_HL derives from</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">student has no custom-attributes row, confirming ETHNIC_HL is null (not 'N')</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">for an unknown while PHOTO_VID_PERM defaults to 'N'. The third student has a</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">custom-attributes row whose lang_parent_ss has no crosswalk entry, confirming</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">the language columns fall through to null (not the raw label). The fourth</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">student has no int_finalsite__contact_id_attributes row (no minted Focus id)</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">and is excluded from the extract. The fifth student has status 'applied' (not</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">'enrolled') and a minted Focus id, confirming the enrolled-only filter — not</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">the missing-id filter — excludes them.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the unit test to verify it fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>test_demographics_shape<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: FAIL — either <code>stdt_email</code> mismatch (still resolving <code>c.email</code>) or a
+missing-input error for <code>stg_people__student_logins</code> (the model does not yet
+join it).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the login join and repoint <code>stdt_email</code></strong></li>
+</ul>
+<p>Edit <code>rpt_focus__demographics.sql</code>. Add a leading CTE that derives the string
+join key (real work — a cast — so not a banned pass-through CTE), then join it
+and swap the <code>stdt_email</code> source. The full file becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">student_logins</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">google_email</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">focus_student_id_prefixed</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_people__student_logins"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="c1">-- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">stdt_id</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">first_name</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">name_suffix</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">middle_name</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">preferred_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">nickname</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%Y%m%d'</span><span class="p">,</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">birth_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dt_birth</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">case</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">gender</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'M'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Male'</span><span class="p">)</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'M'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">gender</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'F'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Female'</span><span class="p">)</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'F'</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gender</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">-- LANG, PRIMARY_HOME_LANG, and NATIVE_PARENT_LANG all draw the same Focus</span>
+<span class="w">    </span><span class="c1">-- value code from the language crosswalk. NOTE: the Focus LANG field</span>
+<span class="w">    </span><span class="c1">-- (custom_200000005) historically carried a legacy 3-option set</span>
+<span class="w">    </span><span class="c1">-- (EN/English/Spanish); pending registrar confirmation it is assumed to</span>
+<span class="w">    </span><span class="c1">-- accept the same FLDOE code as the home/native-language fields.</span>
+<span class="w">    </span><span class="n">lcc</span><span class="p">.</span><span class="n">focus_language_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lang</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">sl</span><span class="p">.</span><span class="n">google_email</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">stdt_email</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">-- null (not 'N') when no custom_attributes row exists, so an unknown is not</span>
+<span class="w">    </span><span class="c1">-- silently reported as not-Hispanic for FLDOE.</span>
+<span class="w">    </span><span class="k">case</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">cca</span><span class="p">.</span><span class="n">latino_hispanic_yn</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'Y'</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">cca</span><span class="p">.</span><span class="n">latino_hispanic_yn</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'N'</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ethnic_hl</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">single_ethnic</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="s1">'American Indian'</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">cca</span><span class="p">.</span><span class="n">race_ms</span><span class="p">),</span><span class="w"> </span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">race_am_ind_ak_nat</span><span class="p">,</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="s1">'Asian'</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">cca</span><span class="p">.</span><span class="n">race_ms</span><span class="p">),</span><span class="w"> </span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">race_asian</span><span class="p">,</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="s1">'Black'</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">cca</span><span class="p">.</span><span class="n">race_ms</span><span class="p">),</span><span class="w"> </span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">race_black</span><span class="p">,</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="s1">'Native Pacific Islander'</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">cca</span><span class="p">.</span><span class="n">race_ms</span><span class="p">),</span><span class="w"> </span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">race_nat_haw_pac_isl</span><span class="p">,</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="s1">'White'</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">cca</span><span class="p">.</span><span class="n">race_ms</span><span class="p">),</span><span class="w"> </span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">race_white</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">residence_county</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">contry_birth</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeroom_tchr</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">resident_st</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">birth_loc</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bdate_verif</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">immun_st</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">lcc</span><span class="p">.</span><span class="n">focus_language_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">primary_home_lang</span><span class="p">,</span>
+<span class="w">    </span><span class="n">lcc</span><span class="p">.</span><span class="n">focus_language_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">native_parent_lang</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grde_enter_dist</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">msix_id</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeroom</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">pmrn</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">internt_perm</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">act_perm</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">direct_perm</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">screen_perm</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">cca</span><span class="p">.</span><span class="n">media_release_yn</span><span class="p">,</span><span class="w"> </span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="s1">'N'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">photo_vid_perm</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_perm</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">mckay_sch_attend</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fhsaa_el3_ind</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fhsaa_el3ch_ind</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dt_home_lang_survey</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">casas_track</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lcp_cont_stdt</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__enrollment_lifecycle"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">l</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">l</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contact_id_attributes"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ida</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contact_custom_attributes"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cca</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cca</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_google_sheets__focus__language_code_crosswalk"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lcc</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">cca</span><span class="p">.</span><span class="n">lang_parent_ss</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lcc</span><span class="p">.</span><span class="n">finalsite_language</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">student_logins</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sl</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sl</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span>
+<span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'enrolled'</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the <code>stdt_email</code> column description</strong></li>
+</ul>
+<p>In <code>properties/rpt_focus__demographics.yml</code>, replace the <code>stdt_email</code>
+description:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stdt_email</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Student KIPP email (Focus STDT_EMAIL) from</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">stg_people__student_logins.google_email, joined on the 8400-prefixed Focus</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">id. Null when the student has no minted login yet.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the unit test to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>test_demographics_shape<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: PASS (1 of 1).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the whole focus-extracts unit-test directory</strong></li>
+</ul>
+<p>Sibling focus models mock overlapping refs; confirm none broke.</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span><span class="s2">"test_type:unit,extracts.focus"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: all PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint the changed files</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__demographics.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__demographics.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code> (a <code>prettier</code>/<code>fmt</code> reflow is auto-applied at commit — not
+a failure).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__demographics.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__demographics.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s2">"feat(focus): source demographics stdt_email from generated student login"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-absorb-miami-into-stg_people__student_logins">Task 2: Absorb Miami into <code>stg_people__student_logins</code></h2>
+<p>Add a Focus/Miami mint branch (prefixed key, double-guarded) and scope the
+PowerSchool branch NJ-only. This model has an <code>env_var</code>/<code>is_incremental</code> branch
+structure — the generation logic runs ONLY in the prod incremental branch, so it
+is not exercised by dbt Cloud CI (staging reads the prod table via <code>source()</code>)
+and cannot be unit-tested here (no repo unit test overrides <code>is_incremental</code>).
+It is validated by <code>dbt parse</code> (Jinja/refs) plus a prod-simulation SELECT.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/people/staging/stg_people__student_logins.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>stg_powerschool__students</code> (<code>student_number</code>, <code>dob</code>, <code>first_name</code>,
+  <code>last_name</code>, <code>enroll_status</code>, <code>_dbt_source_project</code>);
+  <code>stg_finalsite__contacts</code> (<code>finalsite_enrollment_id</code>, <code>first_name</code>,
+  <code>last_name</code>, <code>birth_date</code>, <code>status</code>); <code>int_finalsite__contact_id_attributes</code>
+  (<code>finalsite_enrollment_id</code>, <code>focus_student_id</code>, <code>focus_student_id_prefixed</code>).</li>
+<li>
+<p>Produces: rows in <code>stg_people__student_logins</code> (<code>student_number</code> int64,
+  <code>username</code>, <code>default_password</code>, <code>google_email</code>) for new Miami students keyed
+  on the <code>8400</code>-prefixed id. Consumed by Task 1's join.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the incremental branch</strong></p>
+</li>
+</ul>
+<p>In <code>stg_people__student_logins.sql</code>, replace the <code>components as (...)</code> CTE
+(inside the <code>{% elif is_incremental() %}</code> block) with a Focus-union version and
+add the NJ-only filter. The new CTE block:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">with</span>
+<span class="w">        </span><span class="n">miami_candidates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="k">select</span>
+<span class="w">                </span><span class="k">c</span><span class="p">.</span><span class="n">first_name</span><span class="p">,</span>
+<span class="w">                </span><span class="k">c</span><span class="p">.</span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">                </span><span class="k">c</span><span class="p">.</span><span class="n">birth_date</span><span class="p">,</span>
+
+<span class="w">                </span><span class="k">cast</span><span class="p">(</span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">                </span><span class="k">cast</span><span class="p">(</span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number_bare</span><span class="p">,</span>
+<span class="w">            </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_finalsite__contacts"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">            </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">                </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_finalsite__contact_id_attributes"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ida</span>
+<span class="w">                </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'enrolled'</span>
+<span class="w">        </span><span class="p">),</span>
+
+<span class="w">        </span><span class="n">components</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="k">select</span>
+<span class="w">                </span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">                </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%m'</span><span class="p">,</span><span class="w"> </span><span class="n">dob</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dob_month</span><span class="p">,</span>
+<span class="w">                </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%d'</span><span class="p">,</span><span class="w"> </span><span class="n">dob</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dob_day</span><span class="p">,</span>
+<span class="w">                </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%y'</span><span class="p">,</span><span class="w"> </span><span class="n">dob</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dob_year</span><span class="p">,</span>
+
+<span class="w">                </span><span class="n">regexp_replace</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">normalize</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">first_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">'[\pM\W]'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span>
+<span class="w">                </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_name_clean</span><span class="p">,</span>
+
+<span class="w">                </span><span class="n">regexp_replace</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">                        </span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">last_name</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'\s[IiVvXxJjRr\.]*$'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)),</span><span class="w"> </span><span class="n">nfd</span>
+<span class="w">                    </span><span class="p">),</span>
+<span class="w">                    </span><span class="n">r</span><span class="s1">'[\pM\W]'</span><span class="p">,</span>
+<span class="w">                    </span><span class="s1">''</span>
+<span class="w">                </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_name_clean</span><span class="p">,</span>
+<span class="w">            </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_powerschool__students"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">            </span><span class="k">where</span>
+<span class="w">                </span><span class="n">student_number</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">dob</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">first_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">last_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">enroll_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+
+<span class="w">            </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="w">            </span><span class="k">select</span>
+<span class="w">                </span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">                </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%m'</span><span class="p">,</span><span class="w"> </span><span class="n">birth_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dob_month</span><span class="p">,</span>
+<span class="w">                </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%d'</span><span class="p">,</span><span class="w"> </span><span class="n">birth_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dob_day</span><span class="p">,</span>
+<span class="w">                </span><span class="n">format_date</span><span class="p">(</span><span class="s1">'%y'</span><span class="p">,</span><span class="w"> </span><span class="n">birth_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dob_year</span><span class="p">,</span>
+
+<span class="w">                </span><span class="n">regexp_replace</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">normalize</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="n">first_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">'[\pM\W]'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span>
+<span class="w">                </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_name_clean</span><span class="p">,</span>
+
+<span class="w">                </span><span class="n">regexp_replace</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">normalize</span><span class="p">(</span>
+<span class="w">                        </span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">last_name</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'\s[IiVvXxJjRr\.]*$'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)),</span><span class="w"> </span><span class="n">nfd</span>
+<span class="w">                    </span><span class="p">),</span>
+<span class="w">                    </span><span class="n">r</span><span class="s1">'[\pM\W]'</span><span class="p">,</span>
+<span class="w">                    </span><span class="s1">''</span>
+<span class="w">                </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_name_clean</span><span class="p">,</span>
+<span class="w">            </span><span class="k">from</span><span class="w"> </span><span class="n">miami_candidates</span>
+<span class="w">            </span><span class="k">where</span>
+<span class="w">                </span><span class="n">student_number</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">student_number_bare</span>
+<span class="w">                </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">birth_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">first_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">last_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="p">),</span>
+</code></pre></div>
+<p>Leave <code>username_options</code>, <code>username_filter</code>, <code>username_password</code>, and the final
+<code>select *, username || '@teamstudents.org' as google_email</code> UNCHANGED — the
+shared username-generation and dedupe-against-<code>{{ this }}</code> logic now applies to
+the unioned Miami rows automatically. Leave the <code>dev</code>/<code>staging</code> and <code>else</code>
+branches and the trailing <code>-- depends_on:</code> comments unchanged.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Parse to verify Jinja and refs resolve</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: <code>Wrote manifest</code> / no parse error. (Parse renders the non-incremental
+branch, so it will not surface SQL errors inside the incremental branch — those
+are caught in Step 3.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Validate the mint branch against prod (SELECT-only simulation)</strong></li>
+</ul>
+<p>The incremental branch never runs in CI/dev, so validate its logic directly. Run
+via the BigQuery MCP (<code>mcp__bigquery__execute_sql</code>). This mirrors the
+<code>miami_candidates</code> + guard logic against live prod and confirms the guards
+select the ~406 genuinely-new students (not the 1,091 returning):</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">  </span><span class="n">miami_candidates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">      </span><span class="k">cast</span><span class="p">(</span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">      </span><span class="k">cast</span><span class="p">(</span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number_bare</span><span class="p">,</span>
+<span class="w">      </span><span class="k">c</span><span class="p">.</span><span class="n">birth_date</span><span class="p">,</span>
+<span class="w">      </span><span class="k">c</span><span class="p">.</span><span class="n">first_name</span><span class="p">,</span>
+<span class="w">      </span><span class="k">c</span><span class="p">.</span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_finalsite</span><span class="p">.</span><span class="n">stg_finalsite__contacts</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">    </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">      </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_finalsite</span><span class="p">.</span><span class="n">int_finalsite__contact_id_attributes</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ida</span>
+<span class="w">      </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">      </span><span class="k">and</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id_prefixed</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'enrolled'</span>
+<span class="w">  </span><span class="p">),</span>
+<span class="w">  </span><span class="k">existing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_people</span><span class="p">.</span><span class="n">stg_people__student_logins</span><span class="o">`</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">candidates</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">    </span><span class="n">m</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">existing</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">student_number_bare</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">existing</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">birth_date</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">first_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">last_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">would_mint</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">m</span><span class="p">.</span><span class="n">student_number_bare</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">existing</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">returning_skipped</span>
+<span class="k">from</span><span class="w"> </span><span class="n">miami_candidates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span>
+</code></pre></div>
+<p>Expected: <code>candidates</code> ≈ 1497, <code>would_mint</code> ≈ 405–406 (the new-to-KIPP cohort
+minus any missing first/last/dob), <code>returning_skipped</code> ≈ 1090. If <code>would_mint</code>
+is ~1497, the guards are wrong (they are not excluding returning students) —
+stop and fix before committing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint the changed file</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/people/staging/stg_people__student_logins.sql<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/people/staging/stg_people__student_logins.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-miami-student-emails<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s2">"feat(people): mint Miami Focus student logins; scope PowerSchool branch NJ-only"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-open-the-pr">Task 3: Open the PR</h2>
+<p><strong>Files:</strong> none (GitHub).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push and open the PR</strong></li>
+</ul>
+<p>Push the branch (hand to the user if <code>git push</code> is classifier-blocked), then
+open a PR with <code>mcp__github__create_pull_request</code> using
+<code>.github/pull_request_template.md</code> as the body and <code>Closes #4512</code> in it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify CI</strong></li>
+</ul>
+<p>dbt Cloud CI (<code>Build - CI (Modified)</code>) will select <code>rpt_focus__demographics</code>
+(and its unit test) under <code>state:modified+</code>; <code>stg_people__student_logins</code> is
+<code>state:modified</code> but its generation branch is not exercised in staging. Confirm
+both the dbt Cloud commit status and the Trunk/<code>claude</code> check-runs are green
+(the two disjoint CI surfaces). After green, fetch warnings with
+<code>mcp__dbt__get_job_run_error(run_id=&lt;ci_run&gt;, warning_only=true)</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Merge after CODEOWNERS approval</strong></li>
+</ul>
+<p><code>src/dbt/</code> requires an analytics-engineer review (CODEOWNERS); a green PR may
+read <code>mergeable_state: blocked</code> awaiting that approval. Squash-merge once
+approved.</p>
+<hr />
+<h2 id="task-4-post-merge-operations-user-run-not-committed">Task 4: Post-merge operations (user-run — NOT committed)</h2>
+<p>These run against prod after the code deploys. Claude is DML-blocked; the user
+executes them. Order matters.</p>
+<p><strong>Pre-merge gate:</strong> Do NOT merge until Ops reconciles the PS# ↔
+<code>focus_student_id</code> discrepancy in the source.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm the code deploy landed</strong></li>
+</ul>
+<p>After merge, Dagster redeploys kipptaf and the
+<code>kipptaf__automation_condition_sensor</code> rematerializes the changed models.
+Confirm via <code>get_location_load_history</code> (new commit LOADED) and a
+materialization of <code>kipptaf/people/stg_people__student_logins</code>. The incremental
+run mints the ~406 new students (prefixed key) but does NOT touch returning
+students yet.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the migration DML (user, in their terminal)</strong></li>
+</ul>
+<p>Re-key existing Miami rows from the bare key to the <code>8400</code>-prefixed key. This is
+a warehouse mutation of a shared identity table — the user must run it with
+named consent:</p>
+<div class="highlight"><pre><span></span><code><span class="k">update</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_people</span><span class="p">.</span><span class="n">stg_people__student_logins</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="k">set</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">concat</span><span class="p">(</span><span class="s1">'8400'</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__students</span><span class="o">`</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>Expected: ~3,939 rows updated. Safe re-run: already-prefixed rows (<code>8400…</code>) are
+not in the archive set, so a second execution matches nothing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the migration (SELECT, Claude or user)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">regexp_contains</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">'^8400[0-9]{6}$'</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prefixed_rows</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span>
+<span class="w">    </span><span class="n">student_number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span>
+<span class="w">      </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__students</span><span class="o">`</span>
+<span class="w">      </span><span class="k">where</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">remaining_bare_miami</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_people</span><span class="p">.</span><span class="n">stg_people__student_logins</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>prefixed_rows</code> ≈ 3,939 (plus 406 newly minted ≈ 4,345 total
+prefixed); <code>remaining_bare_miami</code> = 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify <code>stdt_email</code> populates in the feed (SELECT)</strong></li>
+</ul>
+<p>After the next <code>rpt_focus__demographics</code> materialization:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cohort</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">stdt_email</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">with_email</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">stdt_email</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_emails</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_focus__demographics</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>with_email</code> ≈ 1,496 (cohort − 1). The PS# ≠ <code>focus_student_id</code>
+student now receives a fresh mint and is no longer excluded; only the 1
+genuinely-new student missing first/last/dob stays null. <code>distinct_emails</code> ≈
+<code>with_email</code> (no duplicate emails).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Manual Focus backfill (user)</strong></li>
+</ul>
+<p>Export <code>kipptaf_extracts.rpt_focus__demographics</code> (all rows, now carrying email)
+and import once into Focus for the ~1,473 already-enrolled students. <strong>Map only
+<code>stdt_id</code> and <code>stdt_email</code></strong> in the Focus import so no other Focus-managed
+demographics fields are overwritten. Going forward, new enrollees receive the
+email automatically through the unchanged kippmiami import-once wrapper.</p>
+<hr />
+<h2 id="self-review">Self-Review</h2>
+<p><strong>Spec coverage:</strong></p>
+<ul>
+<li>Spec §1 (migration) → Task 4 Step 2–3.</li>
+<li>Spec §2 (Miami mint branch) → Task 2 Step 1 (union branch) + Step 3
+  validation.</li>
+<li>Spec §3 (PS branch NJ-only) → Task 2 Step 1
+  (<code>_dbt_source_project != 'kippmiami'</code>).</li>
+<li>Spec §4 (wire <code>stdt_email</code>) → Task 1.</li>
+<li>Spec §5 (kippmiami unchanged; manual backfill) → no code change (confirmed
+  unchanged); backfill → Task 4 Step 5.</li>
+<li>Spec sequencing → Task 3 (deploy) → Task 4 (migration → backfill).</li>
+<li>Spec edge cases (5 missing-attr, 1 PS≠focus) → Task 4 Step 4 expected count
+  reflects the 1 genuinely-new null (PS≠focus now mints fresh, no longer null).</li>
+</ul>
+<p><strong>Placeholder scan:</strong> none — every code/SQL step is complete.</p>
+<p><strong>Type consistency:</strong> <code>student_number</code> is int64 throughout; the join key is
+<code>cast(student_number as string)</code> = <code>focus_student_id_prefixed</code> (string) in both
+Task 1 (feed CTE) and Task 2 (mint keys). <code>google_email</code> is string in the mock,
+the model, and the feed. Consistent.</p>
+<hr />
+<h2 id="execution-handoff">Execution Handoff</h2>
+<p>Two execution options:</p>
+<ol>
+<li><strong>Subagent-Driven (recommended)</strong> — a fresh subagent per task with review
+   between tasks. Note: Task 2 must be dispatched with the absolute worktree
+   path and the instruction to use <code>git -C &lt;worktree&gt;</code> + <code>uv run --project-dir</code>,
+   and that IDE Pyright/SQL diagnostics on worktree files are false positives.</li>
+<li><strong>Inline Execution</strong> — execute in this session with checkpoints.</li>
+</ol>
+<p>Tasks 1–3 are code; Task 4 is operational and user-run (migration DML + Focus
+backfill) after merge and deploy.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1677 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Reachable by link, but not surfaced in search. A robots.txt is not an
+         option: this site is served from an org-root domain the repo does not
+         control, and teamschools.github.io/robots.txt already 404s. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- The page is generated raw rather than through the Material theme, so
+         it inherits no favicon. Inline SVG keeps it self-contained; the file
+         has to open standalone as the PR gate's preview artifact. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%88%3C/text%3E%3C/svg%3E"
+    />
+    <title>Data tools — KIPP NJ | Miami</title>
+    <style>
+      /* Tokens lifted from the KIPP NJ | Miami design system.
+
+   Three type stacks, split by size rather than by role, because what
+   renders well at 26px and what renders well at 11px are different fonts.
+   Each names a real face for every platform instead of trusting a generic
+   keyword to resolve. Per-stack reasoning sits with each one below.
+
+   Two Windows notes that drove the current shape, since both are invisible
+   on a Mac and neither is obvious from reading the CSS:
+
+   - `ui-monospace` resolves only on Apple platforms and Menlo is macOS-only,
+     so a mono stack ending there falls through to generic `monospace`, which
+     Windows maps to Courier New.
+   - Windows rasterization depends on font hinting in a way macOS does not.
+     A face that is unhinted at small sizes looks fine on one and poor on the
+     other, from identical CSS.
+
+   Segoe UI precedes Calibri throughout: both are Microsoft faces, but Segoe
+   UI is drawn for screen chrome at small sizes and Calibri is a document
+   face. */
+      :root {
+        --kipp-indigo: #001e62;
+        --kipp-red: #ee3c37;
+        --kipp-orange: #f9a21a;
+        --kipp-green: #c3d52e;
+        --kipp-blue: #57c0e9;
+        --indigo-700: #0a2f7e;
+        --indigo-600: #1a44a0;
+        --indigo-200: #b9caf0;
+        --indigo-100: #dde6fa;
+        --indigo-50: #eef3fc;
+        --neutral-0: #fff;
+        --neutral-25: #fafbfc;
+        --neutral-100: #e9edf3;
+        --neutral-200: #d6dde7;
+        --neutral-300: #b6c0cf;
+        --neutral-400: #8d99ab;
+        --neutral-600: #5a6675;
+        --neutral-800: #2a3340;
+        --surface-page: var(--neutral-25);
+        --surface-card: var(--neutral-0);
+        --surface-muted: var(--neutral-100);
+        --text-body: var(--neutral-800);
+        --text-muted: var(--neutral-600);
+        --text-subtle: var(--neutral-400);
+        --text-link: var(--indigo-600);
+        --border-subtle: var(--neutral-200);
+        --border-default: var(--neutral-300);
+        --focus-ring: var(--kipp-blue);
+        /* Display sizes only -- the logotype at 17px and the page heading at
+           26px. Desktop Whitney is cut for sizes like these and holds up. */
+        --font-display:
+          "Whitney SSm A", "Whitney", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        /* Everything else, which is 17 rules between 11px and 16px. Note the
+           absence of plain "Whitney": staff Windows machines carry the DESKTOP
+           cut, not ScreenSmart, and it is not hinted for these sizes. macOS
+           rasterizes outlines and mostly ignores hinting, so it looks fine
+           there and poor on Windows -- the same file, the same CSS. Whitney
+           SSm stays first because ScreenSmart is cut for exactly this range;
+           anyone who has it should get it. */
+        --font-brand:
+          "Whitney SSm A", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Calibri, "Helvetica Neue", Arial, sans-serif;
+        --font-mono:
+          "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, "SF Mono",
+          Menlo, "Roboto Mono", monospace;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: var(--surface-page);
+        font-family: var(--font-brand);
+        color: var(--text-body);
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--text-link);
+        text-decoration: none;
+      }
+      :focus-visible {
+        outline: 2px solid var(--focus-ring);
+        outline-offset: 2px;
+      }
+      .shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* masthead */
+      .mast {
+        background: var(--kipp-indigo);
+        padding: 16px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .mast .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .wordmark {
+        font: 800 17px/1 var(--font-display);
+        letter-spacing: 0.02em;
+        color: #fff;
+      }
+      .wordmark span {
+        font-weight: 300;
+        opacity: 0.75;
+      }
+      .rule {
+        width: 1px;
+        height: 26px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+      .mast .kicker {
+        font: 600 15px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #fff;
+      }
+      .mast .meta {
+        font: 400 12.5px/1 var(--font-brand);
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      /* header block */
+      .head {
+        padding: 22px 28px 0;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .head-top {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 28px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .head h1 {
+        font: 700 26px/1.2 var(--font-display);
+        color: var(--kipp-indigo);
+        margin: 0 0 4px;
+      }
+      .head p.sub {
+        font: 400 14px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0;
+        max-width: 52ch;
+      }
+      .controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .field {
+        height: 44px;
+        border: 1px solid var(--border-default);
+        border-radius: 6px;
+        background: var(--surface-card);
+        font: 400 14px/1 var(--font-brand);
+        color: var(--text-body);
+        padding: 0 12px;
+      }
+      .field::placeholder {
+        color: var(--text-subtle);
+      }
+      #q {
+        width: 300px;
+      }
+      #dom {
+        /* auto, so the control fits the longest group name rather than
+           truncating it. The 900px breakpoint below still forces 100%. */
+        width: auto;
+        min-width: 210px;
+        cursor: pointer;
+      }
+      .eyebrow {
+        display: block;
+        font: 700 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 9px;
+      }
+
+      /* promo cards */
+      .promos {
+        display: grid;
+        /* auto-fill, not a fixed 5, so cards keep a consistent width
+           whatever the card count is -- the list grows and shrinks as
+           prose lands in Zendesk. */
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .promo {
+        display: block;
+        padding: 11px 13px;
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-100);
+        border-radius: 5px;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .promo:hover {
+        border-color: var(--kipp-indigo);
+        background: var(--indigo-100);
+      }
+      .promo.alt {
+        background: var(--surface-card);
+        border: 2px solid var(--kipp-indigo);
+      }
+      .promo.alt:hover {
+        background: var(--indigo-50);
+      }
+      .promo b {
+        display: block;
+        font: 600 13.5px/1.3 var(--font-brand);
+        color: var(--kipp-indigo);
+      }
+      .promo em {
+        display: block;
+        margin-top: 2px;
+        font: 400 12px/1.4 var(--font-brand);
+        color: var(--text-muted);
+        font-style: normal;
+      }
+
+      /* tabs */
+      .tabs {
+        display: flex;
+        gap: 2px;
+        overflow-x: auto;
+      }
+      .tab {
+        appearance: none;
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 12px 14px;
+        cursor: pointer;
+        font: 600 13.5px/1 var(--font-brand);
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+      .tab:hover {
+        color: var(--kipp-indigo);
+      }
+      .tab[aria-selected="true"] {
+        color: var(--kipp-indigo);
+        border-bottom-color: var(--kipp-indigo);
+      }
+      .tab .n {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        opacity: 0.7;
+        margin-left: 5px;
+      }
+
+      /* format chips */
+      .chips {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 28px;
+        background: var(--surface-card);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .chip {
+        appearance: none;
+        height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        cursor: pointer;
+        border: 1px solid var(--border-default);
+        background: var(--surface-card);
+        font: 600 12.5px/1 var(--font-brand);
+        color: var(--text-muted);
+      }
+      .chip:hover {
+        border-color: var(--kipp-indigo);
+        color: var(--kipp-indigo);
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--kipp-indigo);
+        border-color: var(--kipp-indigo);
+        color: #fff;
+      }
+      .chip .n {
+        font-family: var(--font-mono);
+        opacity: 0.75;
+        margin-left: 4px;
+      }
+      .linkbtn {
+        appearance: none;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        font: 600 12.5px/1 var(--font-brand);
+        color: var(--indigo-600);
+      }
+
+      /* lens banner */
+      .lens {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 28px;
+        background: var(--indigo-50);
+        border-bottom: 1px solid var(--indigo-100);
+        flex-wrap: wrap;
+      }
+      .lens span {
+        font: 400 13px/1.4 var(--font-brand);
+        color: var(--indigo-700);
+      }
+
+      /* list */
+      .list {
+        flex: 1;
+        padding: 8px 20px 48px;
+      }
+      .grouphead {
+        padding: 20px 8px 4px;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .grouphead h2 {
+        font: 700 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        color: var(--kipp-indigo);
+        margin: 0;
+      }
+      .grouphead .fill {
+        flex: 1;
+        height: 1px;
+        background: var(--border-subtle);
+      }
+      .grouphead .n {
+        font: 500 12px/1 var(--font-mono);
+        color: var(--text-subtle);
+      }
+
+      .item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 18px;
+        align-items: baseline;
+        padding: 9px 12px;
+        border-radius: 5px;
+        border: 1px solid transparent;
+      }
+      .item:hover {
+        background: var(--indigo-50);
+        border-color: var(--indigo-100);
+      }
+      .item .title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 9px;
+      }
+      .item .name {
+        font: 600 15.5px/1.35 var(--font-brand);
+        color: var(--kipp-indigo);
+      }
+      a.name:hover {
+        text-decoration: underline;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font: 600 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--indigo-700);
+        background: var(--surface-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        padding: 4px 8px 4px 6px;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+      }
+      .sys {
+        font: 500 11px/1 var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        background: var(--surface-muted);
+        border-radius: 3px;
+        padding: 4px 6px;
+      }
+      .limited {
+        font: 600 11px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--kipp-indigo);
+        background: #fdeccb;
+        border-radius: 3px;
+        padding: 4px 6px;
+      }
+      .guide {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 600 12px/1 var(--font-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--indigo-600);
+        background: var(--indigo-50);
+        border: 1px solid var(--indigo-200);
+        border-radius: 999px;
+        padding: 6px 11px 6px 9px;
+        white-space: nowrap;
+      }
+      .guide:hover {
+        background: var(--kipp-indigo);
+        border-color: var(--kipp-indigo);
+        color: #fff;
+      }
+      .desc {
+        grid-column: 1;
+        margin: 0;
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        max-width: 74ch;
+        text-wrap: pretty;
+      }
+      .desc.todo {
+        color: var(--text-subtle);
+        font-style: italic;
+      }
+      .regions {
+        grid-column: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 7px;
+      }
+      .region {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font: 600 12.5px/1 var(--font-brand);
+        color: var(--kipp-indigo);
+        background: var(--surface-card);
+        border: 1px solid var(--border-default);
+        border-radius: 5px;
+        padding: 8px 12px 8px 10px;
+      }
+      .region:hover {
+        border-color: var(--kipp-indigo);
+        background: var(--indigo-50);
+      }
+
+      .empty {
+        padding: 56px 12px;
+        text-align: center;
+      }
+      .empty b {
+        display: block;
+        font: 600 16px/1.4 var(--font-brand);
+        color: var(--kipp-indigo);
+        margin-bottom: 6px;
+      }
+      .empty p {
+        font: 400 13.5px/1.5 var(--font-brand);
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      .foot {
+        padding: 18px 28px 28px;
+        font: 400 12px/1.5 var(--font-brand);
+        color: var(--text-subtle);
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      @media (max-width: 900px) {
+        .promos {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        #q,
+        #dom {
+          width: 100%;
+        }
+        .controls {
+          width: 100%;
+        }
+        .head-top {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+      @media (max-width: 640px) {
+        .mast,
+        .head,
+        .chips,
+        .lens {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+        .list {
+          padding-left: 8px;
+          padding-right: 8px;
+        }
+        .promos {
+          grid-template-columns: 1fr;
+        }
+        .item {
+          grid-template-columns: 1fr;
+        }
+        .item .guide {
+          grid-column: 1;
+          justify-self: start;
+          margin-top: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="mast">
+        <div class="brand">
+          <span class="wordmark">KIPP NJ <span>|</span> Miami</span>
+          <span class="rule"></span>
+          <span class="kicker">Data tools</span>
+        </div>
+        <span class="meta" id="mastmeta"></span>
+      </header>
+
+      <div class="head">
+        <div class="head-top">
+          <div>
+            <h1>Find a data tool</h1>
+            <p class="sub">
+              Every link here opens somewhere else. Search if you know the name;
+              pick a view if you don't.
+            </p>
+          </div>
+          <div class="controls">
+            <input
+              id="q"
+              class="field"
+              type="search"
+              placeholder="Search tools — name or what it does"
+              aria-label="Search tools"
+            />
+            <select
+              id="dom"
+              class="field"
+              aria-label="Filter by domain"
+            ></select>
+          </div>
+        </div>
+
+        <div>
+          <span class="eyebrow">From the data team</span>
+          <div class="promos" id="promos"></div>
+        </div>
+
+        <div class="tabs" id="tabs" role="tablist"></div>
+      </div>
+
+      <div class="chips">
+        <span class="eyebrow" style="margin: 0 4px 0 0">Format</span>
+        <span id="chips" style="display: contents"></span>
+        <button class="linkbtn" id="clearsys" hidden>Clear</button>
+      </div>
+
+      <div class="lens" id="lens" hidden>
+        <span id="lenstext"></span>
+        <button class="linkbtn" id="showall"></button>
+      </div>
+
+      <main class="list" id="list"></main>
+
+      <footer class="foot" id="foot"></footer>
+    </div>
+
+    <script>
+      const CATALOG = {
+ "tools": [
+  {
+   "id": "attendance_dashboard",
+   "name": "Attendance Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/AttendanceDashboard/Trends?:embed=y",
+   "description": "Monitor ADA, Chronic Absenteeism, completion status of Chronic Absenteeism interventions, and Daily Attendance Calls",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "attendance",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "certification_dashboard",
+   "name": "Certification Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/NJCertificationDashboardSchoolsView/CertificationDashboard?:embed=y",
+   "description": "Certification status and individual teacher steps for certification, effort logging, and Praxis intensive attendance.",
+   "audiences": [
+    "leaders",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "performance",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "coaching_conversation_tool",
+   "name": "Coaching Conversation Tool",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/CoachingConversationTool/CoachingConversationTool?:embed=y",
+   "description": "View performance management results for yourself and those you coach from 2018 to present.",
+   "audiences": [
+    "leaders",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "performance",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "college_admission_readiness_assessment_tracker",
+   "name": "College Admission Readiness Assessment Tracker (CARAT)",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/CollegeAdmissionReadinessAssessmentsTrackerCARAT/LandingPage?:embed=y",
+   "description": "Tracking of any assessment that helps our students go to and through college: ACT, SAT, PSAT 10, PSAT/NMSQT, PSAT 8/9, Dual Enrollment, and AP.",
+   "audiences": [
+    "region",
+    "leaders",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "college",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "data_quality_dashboard",
+   "name": "Data Quality Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/DataQualityDashboard/Home?:embed=y",
+   "description": "Audits that alert on missing student information and assessment scores.",
+   "audiences": [
+    "ops",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "operations",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "ddi_suite",
+   "name": "DDI Suite",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/DDISuite/LandingPage?:embed=y",
+   "description": "Data-Driven Instruction metrics. Week-over-week assessment, standard, and QBL mastery.",
+   "audiences": [
+    "leaders",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "fast_and_iready_data_tool",
+   "name": "FAST \u0026 iReady Data Tool (MIA)",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/KIPPMiamiFASTi-ReadyAnalysis_16759101332760/LandingPage?:embed=y\u0026:showAppBanner=false\u0026:display_count=n\u0026:showVizHome=n\u0026:origin=viz_share_link",
+   "description": "View Florida Assessment of Student Thinking (FAST) results. Covers FAST, i-Ready, STAR, and florida DOE growth metrics.",
+   "audiences": [
+    "leaders",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "finance_and_accounting_tools",
+   "name": "Finance \u0026 Accounting Tools",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/FinanceAccountingToolsResources/TeacherSalariesbyYearDash?:embed=y",
+   "description": "Staff salary, benefits, and roster counts by year. Limited access.",
+   "audiences": [
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/16753644522391#h_01H2QN8AEA0WXWYWJJBTVXF78H",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "fresh_dashboard",
+   "name": "FRESH Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/FRESHDashboard/LandingPage?%3Aembed=y#1",
+   "description": "Track the SRE team's efforts for recruitment and registration.",
+   "audiences": [
+    "ops"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "gpa_roster_camden",
+   "name": "GPA Roster: Camden",
+   "url": "https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0",
+   "description": "Provides term GPA, Y1 GPA, and cumulative GPA (unweighted, weighted, and projected), along with basic identification information for students in the Camden region for grade levels 5 through 12.",
+   "audiences": [
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "Camden",
+   "regionColor": "var(--kipp-green)",
+   "limited": false,
+   "family": {
+    "id": "gpa_roster",
+    "name": "GPA Roster",
+    "description": "Course grades and GPA by student. One sheet per region.",
+    "group": "academics"
+   }
+  },
+  {
+   "id": "gpa_roster_miami",
+   "name": "GPA Roster: Miami",
+   "url": "https://docs.google.com/spreadsheets/d/1HsxearGC74LDySGx0QOZFkkH_HbsxmwzZ57Wi4vaZLg/edit?gid=0#gid=0",
+   "description": "Provides term GPA and Y1 GPA, along with basic identification information for students in the Miami region for grade levels 5 through 12.",
+   "audiences": [
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "Miami",
+   "regionColor": "var(--kipp-orange)",
+   "limited": false,
+   "family": {
+    "id": "gpa_roster",
+    "name": "GPA Roster",
+    "description": "Course grades and GPA by student. One sheet per region.",
+    "group": "academics"
+   }
+  },
+  {
+   "id": "gpa_roster_newark",
+   "name": "GPA Roster: Newark",
+   "url": "https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0",
+   "description": "Provides term GPA, Y1 GPA, and cumulative GPA (unweighted, weighted, and projected), along with basic identification information for students in the Newark region for grade levels 5 through 12.",
+   "audiences": [
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "Newark",
+   "regionColor": "var(--kipp-blue)",
+   "limited": false,
+   "family": {
+    "id": "gpa_roster",
+    "name": "GPA Roster",
+    "description": "Course grades and GPA by student. One sheet per region.",
+    "group": "academics"
+   }
+  },
+  {
+   "id": "academic_gradebook_health_suite",
+   "name": "Academic \u0026 Gradebook Health Suite",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome?:embed=y",
+   "description": "Academic health across schools \u2014 GPA against goal, cumulative GPA, and student course grades.",
+   "audiences": [
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "grow_dashboard",
+   "name": "Grow Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/SchoolMintGrowDashboard_17226096936880/Home?:embed=y",
+   "description": "Completion tracking, ratings, and comments for teacher performance management (ETR and Self \u0026 Others), Grow classroom walkthroughs, O3s, Microgoals, and Look-Fors.",
+   "audiences": [
+    "leaders",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "performance",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/360008681374-Performance-Management-Teacher-Goals-Coaching-Excellent-Teaching-Rubric-ETR-Observations-SchoolMint-Grow",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "high_school_early_warning",
+   "name": "High School Early Warning",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/HighSchoolEarlyWarningDashboard/HSEarlyWarningDashboard-LandingPage?:embed=y",
+   "description": "High school at-risk data and graduation eligibility.",
+   "audiences": [
+    "leaders",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "college",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/13464666347031--User-Guide-High-School-Early-Warning-Dashboard",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "i_ready_apm_tool",
+   "name": "i-Ready APM Tool",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/APMDashboard/i-Ready?%3Aembed=y\u0026%3AshowAppBanner=false\u0026%3Adisplay_count=n\u0026%3AshowVizHome=n\u0026%3Aorigin=viz_share_link",
+   "description": "i-Ready lesson data per week by school and i-Ready diagnostic data with student state assessment scores",
+   "audiences": [
+    "leaders",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "kipp_forward_data_suite",
+   "name": "KIPP Forward Data Suite",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/KIPPForwardDataSuite_16988639234650/SplashPage?:embed=y",
+   "description": "Metrics on match, persistence, college success, career launch, re-enrollment, Maher Fund Aid Report, and School Performance Index SPI).",
+   "audiences": [
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "college",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "leader_pm_dashboard",
+   "name": "Leader PM Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/LeadershipDevelopment_17017220456180/CompletionTracking?:embed=y",
+   "description": "Completion tracking and side-by-side self and manager reflections for those in Leader Performance Management.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "performance",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/19465485148183",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "lit_dashboard",
+   "name": "LIT Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/LiteracyDashboard/LITDashboard-LandingPage?:embed=y",
+   "description": "DIBELS 8 benchmark and progress monitoring performance, growth, and sight words, with fidelity tracking.",
+   "audiences": [
+    "leaders",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "manager_survey_report",
+   "name": "Manager Survey Report",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/ManagerSurveyReports/ManagerReport?:embed=y",
+   "description": "View twice-yearly feedback from your direct reports.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "surveys",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "okrts_dashboard",
+   "name": "OKRTS Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/OKRTSDashboard_17247098359700/LandingPage?:embed=y",
+   "description": "Our Kids Run To School (OKRTS). Monitor suspensions, referrals, home instruction requests, and DeansList behavior entry, as well as Promise Team metrics.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "attendance",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "ops_dashboard",
+   "name": "Ops Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/OpsDashboard/EnrollmentDashboard?:embed=y",
+   "description": "Student enrollment, demographics, SPED, and attrition metrics.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "operations",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/360035994714",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "promotional_status_dashboard",
+   "name": "Promotional Status Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/PromotionalStatusDashboard/Roll-Up?:embed=y",
+   "description": "Roll-up and roster of individual student promotional status by quarter.",
+   "audiences": [
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "college",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "recruitment_dashboard",
+   "name": "Recruitment Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/RecruitmentDashboard_17213358840600/Home?:embed=y",
+   "description": "Seat Tracker reporting view, hiring statuses over time, interview/demo tracking, candidate quality, and sourcing metrics.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/19856763832855--User-Guide-Seat-Tracker-App-and-Reporting",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "staff_attrition_dashboard",
+   "name": "Staff Attrition Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/AttritionDashboard/AttritionDashboard?:embed=y",
+   "description": "Track retention rates for staff by year, location, job title, and more.",
+   "audiences": [
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "staff_demographic_explorer",
+   "name": "Staff Demographic Explorer",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/StaffDemographicExplorer/StaffDemographicsExplorer?:embed=y",
+   "description": "View information provided by staff about race, ethnicity, and other identities by job group, titles, and more.",
+   "audiences": [
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "staff_roster",
+   "name": "Staff Roster",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/StaffRoster/StaffRosterdisabled?:embed=y\u0026:showAppBanner=false\u0026:display_count=n\u0026:showVizHome=n\u0026:origin=viz_share_link",
+   "description": "Roster of all staff for quick lookup of information, location, job title, and more.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "state_testing_analysis_tool",
+   "name": "State Testing Analysis Tool",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/StateTestingAnalysisToolSTAT_17001442186870/StateTestingAnalysisToolSTAT-LandingPage?%3Aembed=y\u0026%3AshowAppBanner=false\u0026%3Adisplay_count=n\u0026%3AshowVizHome=n\u0026%3Aorigin=viz_share_link#4",
+   "description": "Current and historical state testing reports for NJ and FL.",
+   "audiences": [
+    "leaders",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "stipend_and_bonus_dashboard",
+   "name": "Stipend and Bonus Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/StipendandBonusDashboard_17278875605220/Home?%3Aembed=y#2",
+   "description": "Live data from the Stipend and Bonus app on stipends entered by quarter and approval status.",
+   "audiences": [
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "staff",
+   "guide": "https://teamschools.zendesk.com/hc/en-us/articles/18404769341463--User-Guide-Stipend-and-Bonus-App",
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "student_contact_info_feed_camden",
+   "name": "Student Contact Info Feed (SCIF) - KIPP Camden",
+   "url": "https://docs.google.com/spreadsheets/d/1uHO67F5VNQltCTt3J1bB1ze6Hfp1QiE2O5HzJeQI97Y",
+   "description": "Student and guardian contact information for KIPP Camden.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "operations",
+   "guide": null,
+   "regionLabel": "Camden",
+   "regionColor": "var(--kipp-green)",
+   "limited": false,
+   "family": {
+    "id": "student_contact_info_feed",
+    "name": "Student Contact Info Feed (SCIF)",
+    "description": "Student and guardian contact information. Pick your region.",
+    "group": "operations"
+   }
+  },
+  {
+   "id": "student_contact_info_feed_miami",
+   "name": "Student Contact Info Feed (SCIF) - KIPP Miami",
+   "url": "https://docs.google.com/spreadsheets/d/1bhSA4rG1zgg6PBxlBaje0COyU4L5lvozXMvpGjw0Mlw",
+   "description": "Student and guardian contact information for KIPP Miami.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "operations",
+   "guide": null,
+   "regionLabel": "Miami",
+   "regionColor": "var(--kipp-orange)",
+   "limited": false,
+   "family": {
+    "id": "student_contact_info_feed",
+    "name": "Student Contact Info Feed (SCIF)",
+    "description": "Student and guardian contact information. Pick your region.",
+    "group": "operations"
+   }
+  },
+  {
+   "id": "student_contact_info_feed_newark",
+   "name": "Student Contact Info Feed (SCIF) - KIPP Newark",
+   "url": "https://docs.google.com/spreadsheets/d/18X4M7nQ25xRy_8ieZryrsaaljsWG3Es1jY8yzzmBPDQ",
+   "description": "Student and guardian contact information for KIPP Newark.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "operations",
+   "guide": null,
+   "regionLabel": "Newark",
+   "regionColor": "var(--kipp-blue)",
+   "limited": false,
+   "family": {
+    "id": "student_contact_info_feed",
+    "name": "Student Contact Info Feed (SCIF)",
+    "description": "Student and guardian contact information. Pick your region.",
+    "group": "operations"
+   }
+  },
+  {
+   "id": "student_contact_info_feed_paterson",
+   "name": "Student Contact Info Feed (SCIF) - KIPP Paterson",
+   "url": "https://docs.google.com/spreadsheets/d/13ld6WVnOoFLxYXN_HQ837j_ha8Hgr14AtWNZmhjCno0",
+   "description": "Student and guardian contact information for KIPP Paterson.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "google-sheet",
+   "systemLabel": "Google Sheet",
+   "group": "operations",
+   "guide": null,
+   "regionLabel": "Paterson",
+   "regionColor": "var(--kipp-red)",
+   "limited": false,
+   "family": {
+    "id": "student_contact_info_feed",
+    "name": "Student Contact Info Feed (SCIF)",
+    "description": "Student and guardian contact information. Pick your region.",
+    "group": "operations"
+   }
+  },
+  {
+   "id": "survey_dashboard",
+   "name": "Survey Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/SurveyDashboard_17078426466440/Home?:embed=y",
+   "description": "Completion status (all) and results (Intent to Return and Support) for KTAF-administered surveys.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "surveys",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "survey_hq",
+   "name": "Survey HQ",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/PersonalizedSurveyLinks/SurveyHQ?:embed=y",
+   "description": "Your personalized links for the School Community Diagnostic, Staff Demographic information, Intent to Return, Manager, and Support surveys (does not include Gallup and TNTP Insight).",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "surveys",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "teacher_development_dashboard",
+   "name": "Teacher Development Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/TeacherDevelopmentDashboard_16994705799120/HeatMap?:embed=y",
+   "description": "Information on observations conducted by the Teacher Development Team for TiRs and New Leads in their programs.",
+   "audiences": [
+    "leaders",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "performance",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "testing_accommodations",
+   "name": "Testing Accommodations",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/StateTestingAccommodationsTracker/StateTestingAccommodationsTracker?:embed=y",
+   "description": "Access accommodation requests for state testing.",
+   "audiences": [
+    "leaders",
+    "ops",
+    "region",
+    "teachers"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "academics",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  },
+  {
+   "id": "zendesk_dashboard",
+   "name": "Zendesk Dashboard",
+   "url": "https://tableau.kipp.org/t/KIPPNJ/views/ZendeskReporting/Launch?:embed=y",
+   "description": "Support ticket metrics by department, agent, and category.",
+   "audiences": [
+    "ops",
+    "region"
+   ],
+   "system": "tableau",
+   "systemLabel": "Tableau",
+   "group": "operations",
+   "guide": null,
+   "regionLabel": "",
+   "regionColor": "",
+   "limited": false,
+   "family": null
+  }
+ ],
+ "groups": [
+  {
+   "id": "attendance",
+   "name": "Attendance \u0026 behavior"
+  },
+  {
+   "id": "academics",
+   "name": "Academics \u0026 assessment"
+  },
+  {
+   "id": "college",
+   "name": "College readiness \u0026 pathways"
+  },
+  {
+   "id": "performance",
+   "name": "Performance management \u0026 coaching"
+  },
+  {
+   "id": "staff",
+   "name": "Staff, hiring \u0026 pay"
+  },
+  {
+   "id": "operations",
+   "name": "Enrollment \u0026 operations"
+  },
+  {
+   "id": "surveys",
+   "name": "Surveys"
+  }
+ ],
+ "views": [
+  {
+   "id": "all",
+   "label": "All tools"
+  },
+  {
+   "id": "teachers",
+   "label": "Teachers"
+  },
+  {
+   "id": "leaders",
+   "label": "Leaders"
+  },
+  {
+   "id": "ops",
+   "label": "Operations"
+  },
+  {
+   "id": "region",
+   "label": "Regional \u0026 CMO"
+  }
+ ],
+ "systems": [
+  {
+   "id": "tableau",
+   "label": "Tableau"
+  },
+  {
+   "id": "google-sheet",
+   "label": "Google Sheet"
+  }
+ ],
+ "promos": [
+  {
+   "label": "Meet the data team",
+   "blurb": "Who's on the team, and who to ask.",
+   "url": "https://teamschools.zendesk.com/hc/en-us/articles/43201228776855-Meet-the-data-team"
+  },
+  {
+   "label": "All help guides",
+   "blurb": "Every written guide in one list.",
+   "url": "https://teamschools.zendesk.com/hc/en-us/categories/204269047-Data-Launch"
+  }
+ ],
+ "meta": {
+  "updated": "4 Sep 2026",
+  "count": 38
+ }
+};
+    </script>
+    <script>
+      (() => {
+        const { tools, groups, views, systems, promos, meta } = CATALOG;
+        const state = { view: "all", q: "", sys: [], dom: "all" };
+        const esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+
+        const inView = (t, v) => v === "all" || (t.audiences || []).includes(v);
+        const viewCount = (v) => tools.filter((t) => inView(t, v)).length;
+        const sysCount = (s) => tools.filter((t) => t.system === s).length;
+
+        document.getElementById("mastmeta").textContent =
+          `${tools.length} tools` +
+          (meta.updated ? ` · updated ${meta.updated}` : "");
+        document.getElementById("foot").textContent =
+          "Generated from docs/launch/links.yml" +
+          (meta.updated ? ` · ${meta.updated}` : "");
+
+        document.getElementById("promos").innerHTML = promos
+          .map(
+            (p) =>
+              `<a class="promo${p.emphasis ? " alt" : ""}" href="${esc(p.url)}">
+       <b>${esc(p.label)}</b><em>${esc(p.blurb)}</em></a>`,
+          )
+          .join("");
+
+        document.getElementById("dom").innerHTML =
+          `<option value="all">All domains</option>` +
+          groups
+            .map((g) => `<option value="${esc(g.id)}">${esc(g.name)}</option>`)
+            .join("");
+
+        const tabsEl = document.getElementById("tabs");
+        tabsEl.innerHTML = views
+          .map(
+            (v) =>
+              `<button class="tab" role="tab" data-v="${esc(v.id)}"
+       aria-selected="${v.id === "all"}">${esc(v.label)}<span class="n">${viewCount(v.id)}</span></button>`,
+          )
+          .join("");
+
+        const chipsEl = document.getElementById("chips");
+        chipsEl.innerHTML = systems
+          .map(
+            (s) =>
+              `<button class="chip" data-s="${esc(s.id)}" aria-pressed="false">${esc(s.label)}<span class="n">${sysCount(s.id)}</span></button>`,
+          )
+          .join("");
+
+        function build() {
+          const q = state.q.trim().toLowerCase();
+          const buckets = new Map(
+            groups.map((g) => [g.id, { name: g.name, items: [] }]),
+          );
+          const seenFamily = new Map();
+
+          for (const t of tools) {
+            if (!inView(t, state.view)) continue;
+            if (state.sys.length && !state.sys.includes(t.system)) continue;
+            if (state.dom !== "all" && t.group !== state.dom) continue;
+            if (
+              q &&
+              !`${t.name} ${t.description} ${t.family ? t.family.name : ""}`
+                .toLowerCase()
+                .includes(q)
+            )
+              continue;
+
+            if (t.family) {
+              const link = {
+                label: t.regionLabel,
+                color: t.regionColor,
+                url: t.url,
+              };
+              const hit = seenFamily.get(t.family.id);
+              if (hit) {
+                hit.regions.push(link);
+                continue;
+              }
+              const item = {
+                name: t.family.name,
+                description: t.family.description,
+                system: t.systemLabel,
+                guide: null,
+                regionLabel: "",
+                limited: false,
+                regions: [link],
+                isFamily: true,
+              };
+              seenFamily.set(t.family.id, item);
+              buckets.get(t.family.group).items.push(item);
+              continue;
+            }
+            buckets
+              .get(t.group)
+              .items.push({ ...t, regions: [], isFamily: false });
+          }
+          return [...buckets.values()].filter((b) => b.items.length);
+        }
+
+        function itemHtml(it) {
+          const title = it.isFamily
+            ? `<span class="name">${esc(it.name)}</span>`
+            : `<a class="name" href="${esc(it.url)}">${esc(it.name)}</a>`;
+          const region = it.regionLabel
+            ? `<span class="pill"><span class="dot" style="background:${esc(it.regionColor)}"></span>${esc(it.regionLabel)}</span>`
+            : "";
+          const limited = it.limited
+            ? `<span class="limited">Limited access</span>`
+            : "";
+          const sys = it.system
+            ? `<span class="sys">${esc(it.systemLabel || it.system)}</span>`
+            : "";
+          const guide = it.guide
+            ? `<a class="guide" href="${esc(it.guide)}"><svg viewBox="0 0 20 20" width="14" height="14" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path
+           d="M10 5.5C8.5 4.3 6.6 4 4.2 4v11c2.4 0 4.3.3 5.8 1.5 1.5-1.2 3.4-1.5 5.8-1.5V4c-2.4 0-4.3.3-5.8 1.5z"/><path
+           d="M10 5.5v11"/></svg>Help guide</a>`
+            : "";
+          const desc = it.description
+            ? `<p class="desc">${esc(it.description)}</p>`
+            : `<p class="desc todo">No description yet.</p>`;
+          const regions = it.regions.length
+            ? `<div class="regions">${it.regions
+                .map(
+                  (r) =>
+                    `<a class="region" href="${esc(r.url)}"><span class="dot" style="background:${esc(r.color)}"></span>${esc(r.label)}</a>`,
+                )
+                .join("")}</div>`
+            : "";
+          return `<div class="item"><div class="title">${title}${region}${limited}${sys}</div>${guide}${desc}${regions}</div>`;
+        }
+
+        function render() {
+          const groupsOut = build();
+          const list = document.getElementById("list");
+          list.innerHTML = groupsOut.length
+            ? groupsOut
+                .map(
+                  (g) =>
+                    `<div class="grouphead"><h2>${esc(g.name)}</h2><span class="fill"></span><span class="n">${g.items.length}</span></div>` +
+                    g.items.map(itemHtml).join(""),
+                )
+                .join("")
+            : `<div class="empty"><b>No tool matches that</b>
+           <p>Names on this page don't always match what people call the tool.
+           <button class="linkbtn" id="clearq">Clear the search</button> and browse the groups instead.</p></div>`;
+
+          const cq = document.getElementById("clearq");
+          if (cq)
+            cq.onclick = () => {
+              state.q = "";
+              document.getElementById("q").value = "";
+              render();
+            };
+
+          // The banner appears for any engaged filter -- role, domain or
+          // format -- since all three hide tools. The lens sentence only
+          // describes role views, so it is swapped out for the other two.
+          const isRole = state.view !== "all";
+          const filtered =
+            isRole || state.dom !== "all" || state.sys.length > 0;
+          document.getElementById("lens").hidden = !filtered;
+          document.getElementById("lenstext").textContent = isRole
+            ? "Views are lenses, not folders — a tool can sit in several, and nothing here is access-controlled."
+            : "Filtered — some tools are hidden from this list.";
+          document.getElementById("showall").textContent =
+            `See all ${tools.length} tools →`;
+          document.getElementById("clearsys").hidden = state.sys.length === 0;
+          for (const b of tabsEl.querySelectorAll(".tab"))
+            b.setAttribute("aria-selected", String(b.dataset.v === state.view));
+          for (const b of chipsEl.querySelectorAll(".chip"))
+            b.setAttribute(
+              "aria-pressed",
+              String(state.sys.includes(b.dataset.s)),
+            );
+        }
+
+        tabsEl.onclick = (e) => {
+          const b = e.target.closest(".tab");
+          if (b) {
+            state.view = b.dataset.v;
+            render();
+          }
+        };
+        chipsEl.onclick = (e) => {
+          const b = e.target.closest(".chip");
+          if (!b) return;
+          const s = b.dataset.s;
+          state.sys = state.sys.includes(s)
+            ? state.sys.filter((x) => x !== s)
+            : [...state.sys, s];
+          render();
+        };
+        document.getElementById("clearsys").onclick = () => {
+          state.sys = [];
+          render();
+        };
+        document.getElementById("showall").onclick = () => {
+          // Clears every filter, not just the role view -- otherwise the
+          // banner stays up after clicking the thing that promises all tools.
+          state.view = "all";
+          state.dom = "all";
+          state.sys = [];
+          document.getElementById("dom").value = "all";
+          render();
+        };
+        document.getElementById("q").oninput = (e) => {
+          state.q = e.target.value;
+          render();
+        };
+        document.getElementById("dom").onchange = (e) => {
+          state.dom = e.target.value;
+          render();
+        };
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

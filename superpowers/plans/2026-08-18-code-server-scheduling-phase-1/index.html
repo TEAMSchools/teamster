@@ -1,0 +1,2307 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Code Server Scheduling Resilience, Phase 1 Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#code-server-scheduling-resilience-phase-1-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Code Server Scheduling Resilience, Phase 1 Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worktree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worktree
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-helm-workspace-timeout-and-code-server-eviction-protection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Helm workspace timeout and code-server eviction protection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-relax-the-per-location-self-anti-affinity-to-preferred" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Relax the per-location self-anti-affinity to preferred
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-correct-the-operational-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Correct the operational documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-deploy-activate-and-verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Deploy, activate, and verify
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-the-implementer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for the implementer
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-18-code-server-scheduling-phase-1.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="code-server-scheduling-resilience-phase-1-implementation-plan">Code Server Scheduling Resilience, Phase 1 Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Stop code-server replacement pods from timing out during placement, so
+a routine redeploy no longer leaves a code location in a terminal <code>ERROR</code> state
+that only a human can clear.</p>
+<p><strong>Architecture:</strong> Three independent configuration changes, no new components.
+Two land in the Helm values for the Dagster Cloud agent and take effect on a
+manual <code>helm upgrade</code>; one lands in the five per-location <code>dagster-cloud.yaml</code>
+files and ships through the normal deploy pipeline. Nothing in this phase
+changes pod priority or the run-pod isolation.</p>
+<p><strong>Tech Stack:</strong> GKE Autopilot, Helm (<code>dagster-cloud</code> agent chart), Dagster+
+hybrid agent, YAML.</p>
+<p>Design spec:
+<code>docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md</code>.
+Issue <a href="https://github.com/TEAMSchools/teamster/issues/4907">#4907</a>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<p>Every task's requirements implicitly include this section. Values are copied
+verbatim from the spec.</p>
+<ul>
+<li><strong>The run-pod-to-code-server isolation stays hard.</strong> Do not change
+  <code>workspace.runK8sConfig.podSpecConfig.affinity.podAntiAffinity</code>. It remains
+  <code>requiredDuringSchedulingIgnoredDuringExecution</code>. It was added after a real
+  incident in which run pods starved and killed code servers, and <code>Evicted</code> has
+  been 0 for all four measured weeks.</li>
+<li><strong>Code-server priority stays at 0.</strong> Do not add <code>priorityClassName</code> to
+  <code>workspace.serverK8sConfig</code>.</li>
+<li><code>workspace.deploymentStartupTimeout</code> is set to <code>900</code>.</li>
+<li>The annotation value is exactly
+  <code>cluster-autoscaler.kubernetes.io/safe-to-evict: "false"</code> — a quoted string,
+  not a bare boolean.</li>
+<li>Code-server requests stay at <code>cpu: 500m</code> and <code>memory: 2.0Gi</code>. These meet the
+  Autopilot extended-duration minimum of 500m / 2GiB, which
+  <code>safe-to-evict: "false"</code> requires. Lowering either breaks the annotation.</li>
+<li>Code servers must not be moved to spot. <code>safe-to-evict: "false"</code> and
+  <code>cloud.google.com/gke-spot</code> are mutually exclusive.</li>
+<li>All five <code>dagster-cloud.yaml</code> files change together. A partial change leaves
+  locations behaving inconsistently for no reason.</li>
+<li><strong>Helm value changes require a manual <code>helm upgrade</code></strong> run by the user. <code>helm</code>
+  and <code>kubectl</code> are not available to the agent in this environment, and
+  <code>kubectl</code> is classifier-blocked. Every Helm verification step is handed to the
+  user.</li>
+<li>Baseline to compare against, from the spec. Code-server pods only
+  (<code>involvedObject.name</code> containing <code>-prod-</code>) in the <code>dagster-cloud</code> namespace:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Week</th>
+<th>Agent gRPC errors</th>
+<th>Killing</th>
+<th>ScaleDown</th>
+<th>Preempted</th>
+<th>Evicted</th>
+<th>FailedScheduling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Jul 20-27</td>
+<td>85</td>
+<td>122</td>
+<td>42</td>
+<td>21</td>
+<td>0</td>
+<td>472</td>
+</tr>
+<tr>
+<td>Jul 28-Aug 4</td>
+<td>134</td>
+<td>197</td>
+<td>59</td>
+<td>37</td>
+<td>0</td>
+<td>454</td>
+</tr>
+<tr>
+<td>Aug 4-11</td>
+<td>106</td>
+<td>118</td>
+<td>48</td>
+<td>22</td>
+<td>0</td>
+<td>213</td>
+</tr>
+<tr>
+<td>Aug 11-18</td>
+<td>100</td>
+<td>142</td>
+<td>38</td>
+<td>32</td>
+<td>0</td>
+<td>438</td>
+</tr>
+</tbody>
+</table>
+<h2 id="worktree">Worktree</h2>
+<p>All file paths below are relative to
+<code>/workspaces/teamster/.worktrees/claude-code-server-scheduling</code> on branch
+<code>cbini/fix/claude-code-server-scheduling</code>.</p>
+<p>Use <code>git -C /workspaces/teamster/.worktrees/claude-code-server-scheduling</code> for
+every git call. Run <code>trunk</code> as <code>/workspaces/teamster/.trunk/tools/trunk</code> with
+the working directory set to the worktree — a relative invocation from the main
+repo checks the main checkout's copies instead.</p>
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+<th>Delivery</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.k8s/dagster/values-override.yaml</code></td>
+<td>agent + workspace Helm config: the deployment timeout and the code-server pod annotations</td>
+<td>manual <code>helm upgrade</code></td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippcamden/dagster-cloud.yaml</code></td>
+<td>kippcamden per-location server affinity</td>
+<td>normal deploy</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippmiami/dagster-cloud.yaml</code></td>
+<td>kippmiami per-location server affinity</td>
+<td>normal deploy</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippnewark/dagster-cloud.yaml</code></td>
+<td>kippnewark per-location server affinity</td>
+<td>normal deploy</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kipppaterson/dagster-cloud.yaml</code></td>
+<td>kipppaterson per-location server affinity</td>
+<td>normal deploy</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kipptaf/dagster-cloud.yaml</code></td>
+<td>kipptaf per-location server affinity</td>
+<td>normal deploy</td>
+</tr>
+<tr>
+<td><code>.k8s/CLAUDE.md</code></td>
+<td>operational reference: which timeout governs what, pre-warming, and the no-retry behaviour</td>
+<td>docs</td>
+</tr>
+</tbody>
+</table>
+<p><code>.k8s/dagster/values.yaml</code> is auto-downloaded from Helm and must never be
+edited.</p>
+<h2 id="tasks">Tasks</h2>
+<h3 id="task-1-helm-workspace-timeout-and-code-server-eviction-protection">Task 1: Helm workspace timeout and code-server eviction protection</h3>
+<p>Both changes live in one file and take effect together on a single
+<code>helm upgrade</code>, so they are one task — there is no state in which one is applied
+and the other is not.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>.k8s/dagster/values-override.yaml</code> (the <code>workspace</code> block, currently
+  starting at line 96)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing from earlier tasks.</li>
+<li>
+<p>Produces: nothing later tasks depend on. Task 4 verifies the effect of this
+  task and Task 2 together.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm the chart exposes the key and the current value is the
+      default</strong></p>
+</li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span>-B4<span class="w"> </span><span class="s1">'deploymentStartupTimeout'</span><span class="w"> </span>/workspaces/teamster/.k8s/dagster/values.yaml
+grep<span class="w"> </span>-n<span class="w"> </span><span class="s1">'deploymentStartupTimeout\|serverProcessStartupTimeout'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling/.k8s/dagster/values-override.yaml
+</code></pre></div>
+<p>Expected: <code>values.yaml</code> documents <code>deploymentStartupTimeout: ~</code> with the comment
+"If not set, defaults to 300 seconds." The override file contains
+<code>serverProcessStartupTimeout: 300</code> and <strong>no</strong> <code>deploymentStartupTimeout</code> line.
+That absence is the defect — the governing timeout has never been set.</p>
+<p>If <code>deploymentStartupTimeout</code> already appears in the override file, stop:
+someone has changed this since the spec was written, and the plan needs
+revisiting.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the deployment timeout</strong></li>
+</ul>
+<p>In <code>.k8s/dagster/values-override.yaml</code>, replace:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">workspace</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">serverProcessStartupTimeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">workspace</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Time the agent waits for a code server DEPLOYMENT to become ready -- in</span>
+<span class="w">  </span><span class="c1"># practice, for the pod to be scheduled. Distinct from</span>
+<span class="w">  </span><span class="c1"># serverProcessStartupTimeout below, which only starts once the Deployment</span>
+<span class="w">  </span><span class="c1"># exists. The chart default is 300s, which sits inside the 3-9 minute NAP</span>
+<span class="w">  </span><span class="c1"># FailedScheduling window documented in CLAUDE.md, so an ordinary provisioning</span>
+<span class="w">  </span><span class="c1"># wait times out. On timeout the agent uploads an error, the control plane</span>
+<span class="w">  </span><span class="c1"># records the location as ERROR, and _should_trigger_recovery then refuses to</span>
+<span class="w">  </span><span class="c1"># retry ("control plane agrees there is an error") -- the location stays dead</span>
+<span class="w">  </span><span class="c1"># until a push or a manual redeploy.</span>
+<span class="w">  </span><span class="nt">deploymentStartupTimeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">900</span>
+
+<span class="w">  </span><span class="nt">serverProcessStartupTimeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the eviction-protection annotation</strong></li>
+</ul>
+<p>In the same file, in <code>workspace.serverK8sConfig.podTemplateSpecMetadata</code>
+(currently line 131), replace:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">podTemplateSpecMetadata</span><span class="p">:</span><span class="w"> </span><span class="c1"># raw config for the pod's metadata</span>
+<span class="w">  </span><span class="nt">annotations</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">operator.1password.io/auto-restart</span><span class="p">:</span><span class="w"> </span><span class="s">"true"</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">podTemplateSpecMetadata</span><span class="p">:</span><span class="w"> </span><span class="c1"># raw config for the pod's metadata</span>
+<span class="w">  </span><span class="nt">annotations</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">operator.1password.io/auto-restart</span><span class="p">:</span><span class="w"> </span><span class="s">"true"</span>
+<span class="w">    </span><span class="c1"># Code servers were the only pod type without this -- the agent</span>
+<span class="w">    </span><span class="c1"># (dagsterCloudAgent.annotations) and run pods</span>
+<span class="w">    </span><span class="c1"># (runK8sConfig.podTemplateSpecMetadata) both carry it. Blocks</span>
+<span class="w">    </span><span class="c1"># cluster-autoscaler eviction, which accounted for 38-59 code-server</span>
+<span class="w">    </span><span class="c1"># relocations per week. Compatible here: requests above are 500m/2.0Gi,</span>
+<span class="w">    </span><span class="c1"># meeting the Autopilot extended-duration minimum, and code servers are</span>
+<span class="w">    </span><span class="c1"># not on spot (the two are mutually exclusive). Note extended-duration</span>
+<span class="w">    </span><span class="c1"># protection expires after 7 days, which is far longer than the interval</span>
+<span class="w">    </span><span class="c1"># between deploys.</span>
+<span class="w">    </span><span class="nt">cluster-autoscaler.kubernetes.io/safe-to-evict</span><span class="p">:</span><span class="w"> </span><span class="s">"false"</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the file still parses and the constraints hold</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">import yaml</span>
+<span class="s2">d = yaml.safe_load(open('.k8s/dagster/values-override.yaml'))</span>
+<span class="s2">w = d['workspace']</span>
+<span class="s2">assert w['deploymentStartupTimeout'] == 900, w.get('deploymentStartupTimeout')</span>
+<span class="s2">assert w['serverProcessStartupTimeout'] == 300</span>
+<span class="s2">ann = w['serverK8sConfig']['podTemplateSpecMetadata']['annotations']</span>
+<span class="s2">assert ann['cluster-autoscaler.kubernetes.io/safe-to-evict'] == 'false', ann</span>
+<span class="s2">assert ann['operator.1password.io/auto-restart'] == 'true', ann</span>
+<span class="s2">req = w['serverK8sConfig']['containerConfig']['resources']['requests']</span>
+<span class="s2">assert req['cpu'] == '500m' and req['memory'] == '2.0Gi', req</span>
+<span class="s2">run_aff = w['runK8sConfig']['podSpecConfig']['affinity']['podAntiAffinity']</span>
+<span class="s2">assert 'requiredDuringSchedulingIgnoredDuringExecution' in run_aff, 'run-pod isolation must stay required'</span>
+<span class="s2">assert 'priorityClassName' not in w['serverK8sConfig'].get('podSpecConfig', {}), 'code-server priority must stay 0'</span>
+<span class="s2">print('OK: timeout 900, safe-to-evict false as string, requests unchanged, isolation intact, no priority class')</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: <code>OK: ...</code>. The <code>safe-to-evict</code> assertion compares against the
+<strong>string</strong> <code>'false'</code>; if it fails with <code>False</code>, the value was written as a bare
+YAML boolean and must be quoted.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.k8s/dagster/values-override.yaml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>, or only <code>unformatted file</code> from prettier, which the
+pre-commit <code>fmt</code> hook fixes. Any <code>yamllint</code> finding naming a rule must be fixed
+before committing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+git<span class="w"> </span>add<span class="w"> </span>.k8s/dagster/values-override.yaml<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(k8s): set deploymentStartupTimeout and protect code servers from autoscaler eviction</span>
+
+<span class="s2">deploymentStartupTimeout was never set, so it sat at the chart default of 300s</span>
+<span class="s2">while .k8s/CLAUDE.md documents NAP FailedScheduling waits of 3 to 9 minutes. An</span>
+<span class="s2">ordinary provisioning wait therefore times out, and the resulting error is</span>
+<span class="s2">terminal: once the control plane records the location as ERROR,</span>
+<span class="s2">_should_trigger_recovery refuses to retry it.</span>
+
+<span class="s2">Code servers were also the only pod type with no safe-to-evict annotation; the</span>
+<span class="s2">agent and run pods both carry it. That accounted for 38 to 59 autoscaler</span>
+<span class="s2">relocations per week.</span>
+
+<span class="s2">Neither change touches pod priority or the run-pod isolation.</span>
+
+<span class="s2">Refs #4907"</span>
+</code></pre></div>
+<h3 id="task-2-relax-the-per-location-self-anti-affinity-to-preferred">Task 2: Relax the per-location self-anti-affinity to preferred</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippcamden/dagster-cloud.yaml:21-32</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/dagster-cloud.yaml:21-32</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/dagster-cloud.yaml:21-32</code></li>
+<li>Modify: <code>src/teamster/code_locations/kipppaterson/dagster-cloud.yaml:21-32</code></li>
+<li>Modify: <code>src/teamster/code_locations/kipptaf/dagster-cloud.yaml:34-45</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing from Task 1. This task is independently landable.</li>
+<li>Produces: nothing later tasks import. Task 4 measures its effect.</li>
+</ul>
+<p><strong>Superseded in part.</strong> The YAML-key assertion in Step 3 below is weaker than
+this note claims: it would pass on <code>podAffinityTerms</code> (plural) or a stray
+<code>weight</code> inside <code>podAffinityTerm</code>. <code>tests/test_k8s_config.py</code> now runs the
+agent's own coercion (<code>k8s_model_from_dict(V1PodSpec, ...)</code>), which rejects
+both, and includes a negative case proving it is not vacuous. Prefer that check
+for Phases 2 and 3.</p>
+<p><strong>Critical structural note.</strong> <code>preferred</code> is not a rename of <code>required</code>. The
+required form takes a list of <code>PodAffinityTerm</code> directly; the preferred form
+takes a list of <code>WeightedPodAffinityTerm</code>, where each entry is <code>weight</code> plus a
+nested <code>podAffinityTerm</code>. Renaming the key without adding that wrapper produces
+config the agent rejects at deploy time. Use <code>weight: 100</code>, the maximum, so the
+scheduler still prefers separation as strongly as it can while no longer
+treating it as a hard requirement.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm all five files currently hold the required form</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">'requiredDuringSchedulingIgnoredDuringExecution'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/*/dagster-cloud.yaml
+</code></pre></div>
+<p>Expected: exactly <code>1</code> for each of the five files. If any file reports <code>0</code>, it
+has already been changed; if any reports <code>2</code> or more, it has additional affinity
+rules this plan does not account for and you should stop and re-read the file.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Rewrite the affinity block in each of the five files</strong></li>
+</ul>
+<p>For each location, replace the <code>server_k8s_config.pod_spec_config.affinity</code>
+block. Shown for <code>kippcamden</code>; repeat for <code>kippmiami</code>, <code>kippnewark</code>,
+<code>kipppaterson</code>, and <code>kipptaf</code>, substituting the location name in <code>values</code>. Do
+not copy kippcamden's name into the other four files.</p>
+<p>Replace:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">server_k8s_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pod_spec_config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">affinity</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">podAntiAffinity</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">requiredDuringSchedulingIgnoredDuringExecution</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">labelSelector</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">matchExpressions</span><span class="p">:</span>
+<span class="w">                </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">location_name</span>
+<span class="w">                  </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">In</span>
+<span class="w">                  </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">                    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippcamden</span>
+<span class="w">            </span><span class="nt">topologyKey</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kubernetes.io/hostname</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">server_k8s_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pod_spec_config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">affinity</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">podAntiAffinity</span><span class="p">:</span>
+<span class="w">        </span><span class="c1"># Preferred, not required. With one replica per location this</span>
+<span class="w">        </span><span class="c1"># spreads nothing; as `required` its only live effect was</span>
+<span class="w">        </span><span class="c1"># forbidding the replacement pod from the outgoing pod's node</span>
+<span class="w">        </span><span class="c1"># during a rollover -- the one node guaranteed to have arm64</span>
+<span class="w">        </span><span class="c1"># Scale-Out capacity sized for a code server and, by the run-pod</span>
+<span class="w">        </span><span class="c1"># anti-affinity, no run pods on it. That forced NAP to build a new</span>
+<span class="w">        </span><span class="c1"># node on every redeploy. Cross-location spreading is handled</span>
+<span class="w">        </span><span class="c1"># separately by topologySpreadConstraints in the Helm values.</span>
+<span class="w">        </span><span class="nt">preferredDuringSchedulingIgnoredDuringExecution</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">            </span><span class="nt">podAffinityTerm</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">labelSelector</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">matchExpressions</span><span class="p">:</span>
+<span class="w">                  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">location_name</span>
+<span class="w">                    </span><span class="nt">operator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">In</span>
+<span class="w">                    </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">                      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippcamden</span>
+<span class="w">              </span><span class="nt">topologyKey</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kubernetes.io/hostname</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify all five files parse and match the
+      WeightedPodAffinityTerm shape</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">import pathlib, yaml</span>
+<span class="s2">locs = ['kippcamden', 'kippmiami', 'kippnewark', 'kipppaterson', 'kipptaf']</span>
+<span class="s2">for loc in locs:</span>
+<span class="s2">    p = pathlib.Path(f'src/teamster/code_locations/{loc}/dagster-cloud.yaml')</span>
+<span class="s2">    d = yaml.safe_load(p.read_text())</span>
+<span class="s2">    loc_cfg = d['locations'][0]</span>
+<span class="s2">    aff = loc_cfg['container_context']['k8s']['server_k8s_config']['pod_spec_config']['affinity']</span>
+<span class="s2">    anti = aff['podAntiAffinity']</span>
+<span class="s2">    assert 'requiredDuringSchedulingIgnoredDuringExecution' not in anti, f'{loc} still required'</span>
+<span class="s2">    terms = anti['preferredDuringSchedulingIgnoredDuringExecution']</span>
+<span class="s2">    assert len(terms) == 1, f'{loc}: {len(terms)} terms'</span>
+<span class="s2">    t = terms[0]</span>
+<span class="s2">    assert t['weight'] == 100, f'{loc}: weight is not 100'</span>
+<span class="s2">    pat = t['podAffinityTerm']</span>
+<span class="s2">    assert pat['topologyKey'] == 'kubernetes.io/hostname', f'{loc} topologyKey'</span>
+<span class="s2">    vals = pat['labelSelector']['matchExpressions'][0]['values']</span>
+<span class="s2">    assert vals == [loc], f'{loc} selects {vals}'</span>
+<span class="s2">    print(f'{loc}: OK')</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: five <code>OK</code> lines. The <code>vals == [loc]</code> assertion is what catches a
+copy-paste that left <code>kippcamden</code> in another location's file — the most likely
+error in this task.</p>
+<p>If the <code>d['locations'][0]['container_context']['k8s']</code> path raises <code>KeyError</code>,
+print the parsed structure and adjust the accessor; the assertion targets are
+the values, not the path.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Confirm the run-pod isolation was not touched</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">import yaml</span>
+<span class="s2">d = yaml.safe_load(open('.k8s/dagster/values-override.yaml'))</span>
+<span class="s2">anti = d['workspace']['runK8sConfig']['podSpecConfig']['affinity']['podAntiAffinity']</span>
+<span class="s2">assert 'requiredDuringSchedulingIgnoredDuringExecution' in anti, 'run-pod isolation lost'</span>
+<span class="s2">assert 'preferredDuringSchedulingIgnoredDuringExecution' not in anti, 'run-pod isolation weakened'</span>
+<span class="s2">terms = anti['requiredDuringSchedulingIgnoredDuringExecution']</span>
+<span class="s2">assert len(terms) == 2, f'expected 2 run-pod anti-affinity terms, found {len(terms)}'</span>
+<span class="s2">print('OK: run-pod isolation still required, both terms intact')</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: <code>OK: run-pod isolation still required, both terms intact</code>. This reads
+the committed file rather than a diff, so it cannot pass vacuously. The two
+terms are the code-server selector and the agent selector; losing either would
+silently undo the isolation this phase promises to preserve.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint all five files</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippcamden/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippmiami/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippnewark/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipppaterson/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kipptaf/dagster-cloud.yaml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>, or only prettier <code>unformatted file</code>. This check takes
+over two minutes across five files, so run it in the background and read the
+output file only after it exits — its progress spinner emits no result lines, so
+grepping partial output reads as a false clean.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+git<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kippcamden/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/teamster/code_locations/kippmiami/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/teamster/code_locations/kippnewark/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/teamster/code_locations/kipppaterson/dagster-cloud.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/teamster/code_locations/kipptaf/dagster-cloud.yaml<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(k8s): relax per-location code server self-anti-affinity to preferred</span>
+
+<span class="s2">With one replica per location the required form spreads nothing. Its only live</span>
+<span class="s2">effect was forbidding the replacement pod from the outgoing pod's node during a</span>
+<span class="s2">rollover -- the one node guaranteed to have arm64 Scale-Out capacity sized for a</span>
+<span class="s2">code server and, by the run-pod anti-affinity, no run pods on it. That forced NAP</span>
+<span class="s2">to provision a new node on every redeploy, which is what pushes placement past</span>
+<span class="s2">the startup timeout.</span>
+
+<span class="s2">Cross-location spreading is unaffected; it comes from topologySpreadConstraints</span>
+<span class="s2">in the Helm values, not from this rule.</span>
+
+<span class="s2">Preferred takes WeightedPodAffinityTerm rather than PodAffinityTerm, so the term</span>
+<span class="s2">is nested under podAffinityTerm with weight 100.</span>
+
+<span class="s2">The run-pod-to-code-server isolation is unchanged and stays required.</span>
+
+<span class="s2">Refs #4907"</span>
+</code></pre></div>
+<h3 id="task-3-correct-the-operational-documentation">Task 3: Correct the operational documentation</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>.k8s/CLAUDE.md</code> — the "Timeout types (do not conflate)" bullet in
+  Troubleshooting, the "Autopilot node pre-warming" bullet in Troubleshooting,
+  and the "Agent Error Observability" section</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: nothing.</li>
+</ul>
+<p>This task exists because the documentation gap actively caused a wrong
+diagnosis: the "Timeout types" bullet documents only
+<code>serverProcessStartupTimeout</code>, which led to identifying the wrong knob during
+the investigation behind this plan.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the timeout-types bullet</strong></li>
+</ul>
+<p>In <code>.k8s/CLAUDE.md</code>, find the bullet beginning
+<code>- **Timeout types** (do not conflate):</code> and replace that whole bullet with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span><span class="gs">**Timeout types**</span> (do not conflate). Three distinct waits, in the order they
+  occur:
+<span class="w">  </span><span class="k">1.</span> <span class="gs">**Deployment startup**</span> (<span class="sb">`deploymentStartupTimeout`</span>, Helm <span class="sb">`workspace`</span> key,
+     chart default 300s, set to 900s) — agent waits for the code server
+     Deployment to become ready, i.e. for the pod to be SCHEDULED. This is the
+     one that fires during a NAP <span class="sb">`FailedScheduling`</span> wait, and its failure
+     message is <span class="sb">`Timed out waiting for deployment &lt;name&gt;`</span> with
+     <span class="sb">`Pod status: Pending`</span>. Governs <span class="sb">`wait_for_deployment_complete`</span>, not
+     <span class="sb">`_wait_for_dagster_server_process`</span>.
+<span class="w">  </span><span class="k">1.</span> <span class="gs">**Server process startup**</span> (<span class="sb">`serverProcessStartupTimeout`</span>, Helm <span class="sb">`workspace`</span>
+     key, default 180s, set to 300s) — agent waits for a gRPC ping AFTER the
+     Deployment exists. Fires when Dagster definitions are slow to import, not
+     when the pod cannot be placed.
+<span class="w">  </span><span class="k">1.</span> <span class="gs">**Sensor execution**</span> (300s, Dagster+ deployment setting) — sensor ran too
+     long; the code server stays up and no churn results.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace the pre-warming bullet</strong></li>
+</ul>
+<p>Find the bullet beginning <code>- **Autopilot node pre-warming**: Not possible</code> and
+replace that whole bullet with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span><span class="gs">**Autopilot node pre-warming**</span>: no node-lifecycle control — no DaemonSets, no
+  image pre-pulling, no cordon that holds. But capacity CAN be reserved at the
+  workload layer with balloon pods: a Deployment of placeholder pods on a
+  negative <span class="sb">`PriorityClass`</span> holds nodes that real pods preempt instantly, and the
+  displaced placeholder then triggers NAP to re-warm the buffer. Google
+  documents this for Autopilot. Not currently deployed here; see
+  <span class="sb">`docs/superpowers/specs/2026-08-18-code-server-scheduling-resilience-design.md`</span>
+  Phase 2, which is gated on verifying Warden admits a negative priority value.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Document the no-retry behaviour</strong></li>
+</ul>
+<p>In the "Agent Error Observability" section, append this bullet after the
+existing "Hybrid daemon location" bullet:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span>**A timed-out code server deployment is TERMINAL — the agent never retries
+  it.** <span class="sb">`_should_trigger_recovery`</span> in
+  <span class="sb">`dagster_cloud/workspace/user_code_launcher/user_code_launcher.py`</span> returns
+  <span class="sb">`False`</span> when the location is in <span class="sb">`control_plane_error_locations`</span> ("control
+  plane agrees there is an error, don't retry"). Recovery fires only when the
+  agent holds a local error while the control plane thinks the location is
+  healthy. Normal reconciliation redeploys only when
+  <span class="sb">`actual_entry.update_timestamp != desired_entry.update_timestamp`</span>, which
+  changes on a new deploy, and the periodic health check needs a running
+  endpoint a never-started pod does not have. So a location that fails to
+  schedule stays <span class="sb">`ERROR`</span> until someone pushes a commit or clicks redeploy. No
+  agent setting changes this;
+  <span class="sb">`DAGSTER_CLOUD_DISABLE_LOCAL_ERROR_SERVER_RECOVERY`</span> only turns recovery off.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint the documentation</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>.k8s/CLAUDE.md<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: <code>No issues</code>, or only prettier <code>unformatted file</code>. Watch specifically
+for markdownlint <code>MD029</code> on the numbered list added in Step 1 — every item must
+be <code>1.</code>, because <code>trunk fmt</code> renumbers sequentially and a nested list under a
+bullet restarts numbering.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+git<span class="w"> </span>add<span class="w"> </span>.k8s/CLAUDE.md<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(k8s): distinguish the three startup timeouts, correct pre-warming, record no-retry</span>
+
+<span class="s2">The Timeout types bullet documented only serverProcessStartupTimeout and omitted</span>
+<span class="s2">deploymentStartupTimeout entirely, which is the timeout that actually fires during</span>
+<span class="s2">a NAP FailedScheduling wait. That gap caused a wrong diagnosis during the</span>
+<span class="s2">investigation behind #4907.</span>
+
+<span class="s2">Also corrects the claim that Autopilot pre-warming is impossible -- true of</span>
+<span class="s2">DaemonSets and image pre-pulling, but balloon pods are a documented workload-layer</span>
+<span class="s2">option -- and records that a timed-out code server deployment is terminal, since</span>
+<span class="s2">that is the operational consequence and it was nowhere in the repo.</span>
+
+<span class="s2">Refs #4907"</span>
+</code></pre></div>
+<h3 id="task-4-deploy-activate-and-verify">Task 4: Deploy, activate, and verify</h3>
+<p>This task is split between the agent and the user because the agent cannot run
+<code>helm</code> or <code>kubectl</code> in this environment.</p>
+<p><strong>Files:</strong> none modified.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: Tasks 1, 2, and 3, all committed.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push and open the pull request</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/claude-code-server-scheduling<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push
+</code></pre></div>
+<p>Then open a PR using <code>.github/pull_request_template.md</code>, with <code>Refs #4907</code> in
+the body. Note in Reviewer Notes that the Helm half requires a manual
+<code>helm upgrade</code> and does not take effect on merge.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm CI is green on both surfaces</strong></li>
+</ul>
+<p>A PR's CI lives on two disjoint surfaces. Check both:</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>checks<span class="w"> </span>&lt;PR_NUMBER&gt;<span class="w"> </span>--json<span class="w"> </span>name,bucket
+</code></pre></div>
+<p>Expected: every entry <code>pass</code> or <code>skipping</code>. <code>dagster-cloud-deploy / deploy</code>
+emits one same-named check-run per code location, roughly five, so wait for all
+of them to reach a terminal state. <code>mergeable_state: blocked</code> with everything
+green means the change is waiting on a CODEOWNERS approval, not on CI.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: After merge, confirm all five locations reloaded</strong></li>
+</ul>
+<p>The <code>dagster-cloud.yaml</code> change from Task 2 ships on merge. Confirm each
+location actually picked it up rather than assuming a green deploy job means it
+did:</p>
+<div class="highlight"><pre><span></span><code>Call mcp__dagster__get_location_load_history for each of kipptaf, kippnewark,
+kippcamden, kippmiami, kipppaterson with limit=3. For each location the newest
+entry must read loadStatus LOADED with a commit_hash matching the merge commit.
+</code></pre></div>
+<p>Expected: five locations, newest entry <code>LOADED</code>, matching commit hash. A green
+Actions deploy job is not evidence the agent reloaded.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: USER ACTION — run the Helm upgrade</strong></li>
+</ul>
+<p>The Task 1 changes do nothing until this runs. Hand the user:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>bash<span class="w"> </span>.k8s/dagster/install.sh
+</code></pre></div>
+<p>If <code>helm: command not found</code> or the cluster is unreachable, <code>.k8s/setup.sh</code> has
+not been run in this shell; run that first. <code>install.sh</code> is deploy-only and must
+not have bootstrap logic added to it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: USER ACTION — confirm the new timeout is live</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>dagster-cloud<span class="w"> </span>get<span class="w"> </span>configmap<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-l<span class="w"> </span>app.kubernetes.io/name<span class="o">=</span>dagster-cloud-agent<span class="w"> </span>-o<span class="w"> </span>yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>-B3<span class="w"> </span>-A3<span class="w"> </span><span class="s1">'startup_timeout'</span>
+</code></pre></div>
+<p>Expected: the agent's rendered config shows a deployment startup timeout of 900.
+If only the server-process timeout appears, the override did not reach the
+rendered config and Task 1 Step 2 should be re-checked before going further.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: USER ACTION — confirm the annotation lands on new code server
+      pods</strong></li>
+</ul>
+<p>The annotation applies to pods created after the upgrade; existing code servers
+keep the old spec until they are recycled.</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>dagster-cloud<span class="w"> </span>get<span class="w"> </span>pods<span class="w"> </span>-l<span class="w"> </span><span class="nv">managed_by</span><span class="o">=</span>K8sUserCodeLauncher<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-o<span class="w"> </span>custom-columns<span class="o">=</span><span class="s1">'NAME:.metadata.name,SAFE_TO_EVICT:.metadata.annotations.cluster-autoscaler\.kubernetes\.io/safe-to-evict'</span>
+</code></pre></div>
+<p>Expected: <code>false</code> for every code-server pod created after the upgrade. Pods
+still showing <code>&lt;none&gt;</code> predate it and will pick it up on their next rollover.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Measure against the baseline after one week</strong></li>
+</ul>
+<p>Re-run the same six counters over a full week and compare with the Global
+Constraints table. Query shapes, against project <code>teamster-332318</code>:</p>
+<p>Agent gRPC failures:</p>
+<div class="highlight"><pre><span></span><code>resource.type="k8s_container"
+resource.labels.namespace_name="dagster-cloud"
+resource.labels.pod_name:"user-cloud-dagster-cloud-agent"
+textPayload:"Could not reach user code server"
+</code></pre></div>
+<p>Code-server disruptions, run once per reason substituting <code>Preempted</code>,
+<code>ScaleDown</code>, <code>Killing</code>, <code>Evicted</code>, <code>FailedScheduling</code>:</p>
+<div class="highlight"><pre><span></span><code>resource.type="k8s_pod"
+resource.labels.namespace_name="dagster-cloud"
+logName:"events"
+jsonPayload.involvedObject.name:"-prod-"
+jsonPayload.reason="REASON"
+</code></pre></div>
+<p>These queries return well over 100 entries per week, so paginate: when a query
+returns exactly 100, re-run it with the start time advanced to the last returned
+timestamp rounded up to the next whole second, and sum. Use
+<code>format="{{.timestamp}}"</code> to keep the output small.</p>
+<p>Success criteria, from the spec:</p>
+<ul class="task-list">
+<li>Zero <code>loadStatus: ERROR</code> entries carrying the
+  <code>Timed out waiting for deployment</code> signature in any location's load history.</li>
+<li><code>FailedScheduling</code> on code-server pods materially below the 213 to 472 band.</li>
+<li>Agent gRPC errors below the 85 to 134 per week band.</li>
+<li>
+<p><code>Evicted</code> still 0, which is the check that the isolation was not weakened.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Record the result on the issue</strong></p>
+</li>
+</ul>
+<p>Post the measured week as a comment on
+<a href="https://github.com/TEAMSchools/teamster/issues/4907">#4907</a> next to the
+baseline table, and state plainly whether Phases 2 and 3 are still warranted at
+the originally proposed scale. If <code>FailedScheduling</code> collapsed and no terminal
+failures occurred, Phase 2's continuous cost may no longer be justified and
+Phase 3 may be the only remaining gap. Do not open the Phase 2 or Phase 3 plans
+before this measurement exists.</p>
+<h2 id="notes-for-the-implementer">Notes for the implementer</h2>
+<ul>
+<li>Do not run <code>trunk fmt</code> or <code>trunk check</code> outside the steps that call for it.
+  The <code>trunk-fmt-pre-commit</code> hook formats at commit time and
+  <code>trunk-check-pre-push</code> gates the push.</li>
+<li>A <code>--force</code> check over five files takes more than two minutes. Background it
+  and read the output only after it exits.</li>
+<li>The <code>trunk</code> binary lives only in the main repo; <code>.trunk/tools/</code> is gitignored
+  and absent from the worktree. If <code>/workspaces/teamster/.trunk/tools/trunk</code>
+  does not exist on a cold Codespace, use <code>~/.cache/trunk/launcher/trunk</code>, which
+  is always present and creates the symlink on first run.</li>
+<li>Editing files under the worktree path re-injects that worktree's CLAUDE.md
+  files into context on every call. For a multi-file pass like Task 2, either
+  delegate the edits to subagents or apply them with a script written to
+  <code>.claude/scratch/</code> and run by absolute path from the main repo.</li>
+<li>Nothing in this phase may add a <code>priorityClassName</code> to <code>serverK8sConfig</code> or
+  weaken <code>runK8sConfig</code>'s anti-affinity. If a step seems to require either, stop
+  and re-read the Global Constraints.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

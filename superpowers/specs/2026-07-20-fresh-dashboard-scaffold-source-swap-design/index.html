@@ -1,0 +1,2423 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>FRESH Dashboard Scaffold Source-Swap — Design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fresh-dashboard-scaffold-source-swap-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              FRESH Dashboard Scaffold Source-Swap — Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-scaffold-needs-to-be-swappable-not-just-replaced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the scaffold needs to be swappable, not just replaced
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-scaffold-sheet-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current scaffold sheet contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-seam-model-int_finalsite__enrollment_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New seam model: int_finalsite__enrollment_scaffold
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="New seam model: int_finalsite__enrollment_scaffold">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#powerschool-side-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PowerSchool-side builder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheet-side-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sheet-side builder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blend-mode-simplified-by-the-1-exclusion-and-by-the-miami-carve-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blend mode — simplified by the -1 exclusion, and by the Miami carve-out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-selection-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-selection control
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deriving-the-current-finalsite-academic-year" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deriving the current Finalsite academic year
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-data-model-caveats-for-the-reference-doc-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known data model caveats (for the reference doc &amp; skill)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known data model caveats (for the reference doc &amp; skill)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-test-status-ranking-sync-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New test: status ranking sync check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#downstream-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Downstream changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation &amp; skill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delivery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delivery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-recap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of Scope (recap)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-20-fresh-dashboard-scaffold-source-swap-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fresh-dashboard-scaffold-source-swap-design">FRESH Dashboard Scaffold Source-Swap — Design</h1>
+<ul>
+<li><strong>Issue</strong>: <a href="https://github.com/TEAMSchools/teamster/issues/4451">#4451</a></li>
+<li><strong>Date</strong>: 2026-07-20</li>
+<li><strong>Status</strong>: Draft — pending user review (revision 2)</li>
+</ul>
+<h2 id="context">Context</h2>
+<p>The FRESH dashboard (<code>kipptaf</code> Tableau exposure <code>fresh_dashboard</code>) reports
+enrollment recruitment progress against targets, broken out by
+region/school/grade. Its data model rests on two hand-maintained Google Sheets:</p>
+<ul>
+<li><code>stg_google_sheets__finalsite__goals</code> — the numeric targets (Seat Target, New
+  Student Target, FDOS Target, etc.). <strong>Unchanged by this project.</strong></li>
+<li><code>stg_google_sheets__finalsite__school_scaffold</code> — the school x grade spine
+  (<code>academic_year, region, schoolid, school, grade_level, org, school_level</code>)
+  that everything else joins against. <strong>This is what's being replaced.</strong></li>
+</ul>
+<p>The scaffold sheet is consumed in two places:</p>
+<ol>
+<li>Directly, in <code>rpt_tableau__fresh_dashboard_progress_to_goals</code>'s driving
+   <code>scaffold</code> CTE (left-joined to goals and to
+   <code>int_tableau__finalsite_student_scaffold</code> actuals, keyed on <code>schoolid</code>).</li>
+<li>Via <code>int_google_sheets__finalsite__scaffold</code> (scaffold <code>INNER JOIN</code> goals on
+   year/region/schoolid/grade_level), which feeds
+   <code>rpt_tableau__fresh_dashboard_aggregated</code>.</li>
+</ol>
+<p>Two places hardcode <code>enrollment_academic_year = 2026</code>, both needing a manual
+edit every year regardless of the scaffold source:</p>
+<ul>
+<li><code>rpt_tableau__fresh_dashboard_progress_to_goals</code>'s two <code>data_stack_*</code> CTEs.</li>
+<li><code>int_tableau__finalsite_student_scaffold</code>'s <code>latest_status_calc</code> CTE — with a
+  comment admitting why: <em>"hardcoding year here to ensure the correct enrollment
+  academic year from FS is being used. the status_crosswalk is set to one year
+  only."</em> This second hardcode is upstream of the dashboard entirely (it's on
+  the actuals side) but gates on the same underlying concept — see "Deriving the
+  current Finalsite academic year" below.</li>
+</ul>
+<h3 id="why-the-scaffold-needs-to-be-swappable-not-just-replaced">Why the scaffold needs to be swappable, not just replaced</h3>
+<p>Early in a recruitment cycle, the target year has no PowerSchool enrollment data
+yet — a school recruiting for a brand-new grade, or a school that doesn't exist
+in PowerSchool yet, has nothing to derive a spine from. The manual sheet is the
+only source of truth at that point. Once actuals/school-structure exist in
+PowerSchool, the sheet becomes a pure manual-upkeep liability with no
+source-of-truth backing and no protection against drift (this is exactly the
+class of error that motivated this project — see the two-value mismatch fixed
+same-day in issue discussion).</p>
+<p>So the design needs <strong>one source of truth once PowerSchool has the data, falling
+back to the manual sheet only where PowerSchool doesn't have it yet</strong> — not a
+permanent either/or choice.</p>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Replace the scaffold's single hand-maintained source with a model that prefers
+  PowerSchool-native data and falls back to the sheet only for gaps.</li>
+<li>Make switching between "sheet only" / "PowerSchool only" / "blended" a
+  one-line change (a dbt var), not a code change.</li>
+<li>Eliminate both hardcoded <code>2026</code> occurrences by deriving "the current Finalsite
+  academic year" from a single source of truth.</li>
+<li>Reduce the analyst's annual scaffold-maintenance burden to only the rows
+  PowerSchool genuinely can't supply, with tooling to generate the boilerplate
+  part of that.</li>
+<li>Produce a living reference doc and a maintenance skill so a future engineer or
+  Ops user can operate this dashboard without reverse-engineering the SQL from
+  scratch.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>The goals sheet's target <em>values</em> and column contract
+  (<code>stg_google_sheets__finalsite__goals</code>) are unchanged — target numbers are
+  still 100% manually entered and this project doesn't touch how they're
+  computed. The goals-sheet gap-row generator (see "Documentation &amp; skill") only
+  assists with producing candidate row <em>keys</em> to reduce copy/paste effort; it
+  never supplies a value.</li>
+<li>Historical / multi-year scaffold reporting. As the data currently stands,
+  Finalsite's model has no straightforward path to historical spine data —
+  <strong>this is an open question, not solved here.</strong> It's flagged explicitly in the
+  reference doc (see "Open Questions" below) for follow-up discussion once the
+  doc-writing phase starts.</li>
+<li>Any change to <code>int_tableau__finalsite_student_scaffold</code>'s status/goal-type
+  logic, or to the Finalsite integration itself — beyond the one hardcoded year
+  fix noted above, which shares the same root cause as the scaffold's hardcode
+  and is fixed by the same mechanism.</li>
+</ul>
+<h2 id="current-scaffold-sheet-contract">Current scaffold sheet contract</h2>
+<div class="highlight"><pre><span></span><code>academic_year   int64
+region          string   -- e.g. "Newark", "Camden", "Miami", "Paterson"
+schoolid        int64    -- PowerSchool school_number
+school          string
+grade_level     int64    -- -1 = whole-school total row, else 0-12
+org             string   -- always "KTAF" (verified: constant network-wide)
+school_level    string   -- ES / MS / HS, derived from grade_level
+</code></pre></div>
+<p><strong>Important semantic note on <code>grade_level = -1</code></strong>: in this sheet's convention,
+<code>-1</code> means "this row summarizes the whole school, not one grade." That is a
+<strong>reporting convenience specific to this scaffold</strong> — it is not a PowerSchool
+concept. PowerSchool's own grade-level domain uses negative values for a
+different, real meaning (pre-registration / pre-K context), and the two must
+never be conflated. This directly shapes the seam model design below: the
+PowerSchool-side builder must never synthesize a <code>-1</code> row from PowerSchool data,
+regardless of what <code>low_grade</code>/<code>high_grade</code> happen to contain in any given year.
+(Verified today: every current <code>stg_powerschool__schools.low_grade</code> value is
+<code>&gt;= 0</code> — no live collision exists yet — but the design treats the exclusion as a
+permanent invariant, not a fact of today's data.)</p>
+<h2 id="new-seam-model-int_finalsite__enrollment_scaffold">New seam model: <code>int_finalsite__enrollment_scaffold</code></h2>
+<p>A new intermediate model at
+<code>models/finalsite/intermediate/int_finalsite__enrollment_scaffold.sql</code> (moved
+out of <code>models/google/sheets/</code> and into the existing <code>finalsite/</code> domain
+directory alongside <code>int_finalsite__enrollment_lifecycle</code> etc., since it's no
+longer purely sheet-derived) that emits the <strong>same contract</strong> as the sheet
+today, plus one new column:</p>
+<div class="highlight"><pre><span></span><code>academic_year, region, schoolid, school, grade_level, org, school_level,
+scaffold_source   string   -- 'powerschool' | 'gsheet', per-row lineage tag
+</code></pre></div>
+<p><code>scaffold_source</code> is a <strong>per-row</strong> tag, not a mode-level constant — in <code>blend</code>
+mode a given output row is tagged with whichever builder actually produced it,
+so a consumer (or a debugging session) can always tell whether a specific
+school/grade came from PowerSchool or from the manual sheet.</p>
+<p>Grain / uniqueness key: <code>(academic_year, region, schoolid, grade_level)</code> —
+required by this repo's convention that all intermediate models carry a
+uniqueness test.</p>
+<p>Keeping the contract identical means every downstream consumer only needs its
+<code>ref()</code> repointed — no join-key or column changes ripple through
+<code>int_google_sheets__finalsite__scaffold</code> or
+<code>rpt_tableau__fresh_dashboard_progress_to_goals</code>.</p>
+<h3 id="powerschool-side-builder">PowerSchool-side builder</h3>
+<p>Derives the spine from <code>stg_powerschool__schools</code>, <strong>not</strong> from enrollment
+actuals — a school's <code>low_grade</code>/<code>high_grade</code> grade span exists whether or not
+any student is currently enrolled in a given grade, which is exactly what's
+needed for a grade that's actively being recruited into. (Confirmed:
+<code>low_grade</code>/<code>high_grade</code> only reflects currently-taught grades — it is <strong>not</strong>
+updated ahead of a school's planned expansion into a new grade. So a school's
+first year offering a new grade still won't appear here; that case is covered by
+the sheet, per the blend logic below.)</p>
+<p><strong>Filter to <code>where state_excludefromreporting = 0</code> first.</strong>
+<code>stg_powerschool__schools</code> includes non-reporting/administrative rows — verified
+today: 11 of ~32 rows have <code>state_excludefromreporting = 1</code>, including the
+<code>999999</code> "Graduated Students" sentinel (a separately documented gotcha elsewhere
+in this repo) and other admin/summer-school entries. Without this filter, the
+builder would generate garbage scaffold rows for these. (<code>issummerschool</code> is
+redundant with this filter in today's data — every summer-school row is already
+<code>state_excludefromreporting = 1</code> — but nothing guarantees that stays true, so
+the filter is on <code>state_excludefromreporting</code> specifically, not assumed to also
+catch summer schools some other way.)</p>
+<p><strong>Also filter <code>where region != 'Miami'</code>, unconditionally — a deliberate,
+temporary carve-out, not a config toggle.</strong> <code>src/dbt/powerschool/CLAUDE.md</code>
+already documents that Miami's SIS moved to Focus (#4441) and it no longer
+consumes the PowerSchool package — so <code>stg_powerschool__schools</code>'s Miami rows
+are a frozen snapshot from before that migration, not a live source of truth.
+Verified against today's data: two Miami schools (Courage, Royalty) still have
+current, correctly-flagged PowerSchool rows, but three actively-recruited
+schools (Legacy ES, Legacy MS, MTH) don't exist in PowerSchool at all — they
+were never onboarded post-migration — while two more (Sunrise, Liberty) exist
+but are stale/retired (<code>state_excludefromreporting = 1</code>, absent from the current
+goals sheet; likely the pre-rename identities of Legacy ES/MS, though
+unconfirmed). Rather than special-case per-school, <strong>Miami is excluded from the
+PowerSchool builder entirely, for every school, regardless of the global
+<code>finalsite_scaffold_source</code> var</strong> — confirmed with the team: Focus isn't ready
+yet as a source, so Miami stays 100% sheet-sourced until a future project
+revisits this once it is. This is a hardcoded filter with a comment explaining
+why and pointing at #4441, not a new per-region config axis — deliberately not
+building region-level configurability for what's a one-time, temporary pause
+tied to a specific future migration, not a recurring operational need.</p>
+<p>Expand each remaining school's grade span into one row per grade
+(<code>generate_array(low_grade, high_grade)</code> + <code>unnest</code>), then attach:</p>
+<ul>
+<li><code>region</code> — <code>{{ extract_region("&lt;alias&gt;") }}</code> (existing macro,
+  <code>kipptaf/macros/utils.sql</code>) applied to <code>stg_powerschool__schools</code>:
+  <code>initcap(regexp_extract(_dbt_source_project, r'kipp(\w+)'))</code> turns
+  <code>kippnewark</code>/<code>kippcamden</code>/<code>kippmiami</code>/<code>kipppaterson</code> directly into
+  <code>Newark</code>/<code>Camden</code>/<code>Miami</code>/<code>Paterson</code> — matching the sheet's <code>region</code> column
+  values exactly, with no join required.</li>
+<li><code>org</code> — literal <code>'KTAF'</code> (verified: constant across every row of the current
+  sheet; no per-region mapping exists or is needed).</li>
+<li><code>school_level</code> — same grade-band <code>CASE</code> the current
+  <code>stg_google_sheets__finalsite__school_scaffold</code> model already uses (<code>&gt;=9</code> HS,
+  <code>&gt;=5</code> MS, <code>&gt;=0</code> ES), applied to the expanded <code>grade_level</code>.</li>
+<li><code>academic_year</code> — the derived current Finalsite academic year (see below), not
+  a historical year — <code>stg_powerschool__schools</code> is current-state only.</li>
+</ul>
+<p><strong>No <code>grade_level = -1</code> row is synthesized here.</strong> The PowerSchool builder emits
+only real per-grade rows within <code>[low_grade, high_grade]</code>. The whole-school <code>-1</code>
+summary row is, by design, always sourced from the sheet — see below.</p>
+<h3 id="sheet-side-builder">Sheet-side builder</h3>
+<p><code>stg_google_sheets__finalsite__school_scaffold</code>, unchanged in structure, but
+<strong>filtered to the current cycle</strong> —
+<code>where academic_year = &lt;current Finalsite academic year&gt;</code> (same derived value as
+everywhere else, via <code>int_finalsite__current_academic_year</code>) — and its
+<strong>required contents change</strong>: instead of holding a full spine, it now only needs
+to hold:</p>
+<ol>
+<li>A <code>grade_level = -1</code> (whole-school) row for <strong>every</strong> currently-existing
+   school, every cycle (PowerSchool never supplies this row, so it must always
+   come from the sheet).</li>
+<li>Rows for any genuinely new grade or school PowerSchool doesn't have yet (a
+   school not yet opened, or a grade a school hasn't turned on).</li>
+</ol>
+<p>This is a real reduction in manual upkeep: once a school/grade is live in
+PowerSchool, the analyst never re-types its per-grade rows — only the <code>-1</code> row
+(a fixed, small, and mechanically generatable list) and true net-new entries.
+See "Documentation &amp; skill" below for the tooling that generates the <code>-1</code>
+candidate list.</p>
+<p><strong>Miami is the exception to this reduction, not an example of it.</strong> Since the
+PowerSchool builder excludes Miami entirely (see above), Miami's sheet rows must
+continue to carry its <strong>full</strong> spine — every school, every grade, not just <code>-1</code>
+rows and net-new entries — for as long as the Miami carve-out is in effect. The
+<code>-1</code> candidate-row generator (see "Documentation &amp; skill") should scope itself
+to non-Miami regions accordingly, since Miami has no PowerSchool-derived rows to
+compare against in the first place.</p>
+<p><strong>Why the <code>academic_year</code> filter matters</strong>: without it, a stale row from a prior
+cycle (a school that's since closed, or a grade that's been dropped) would look
+identical to "PowerSchool doesn't have this yet" from blend's point of view, and
+get silently resurrected forever. Scoping the sheet builder to the current year
+alone eliminates that risk <strong>across cycles</strong> — last year's rows simply stop
+being read once the year rolls over, with no need to ever delete them. The one
+residual case this doesn't cover: a school/grade that closes <strong>mid-cycle</strong> (same
+<code>academic_year</code> as everything else that year) — its sheet row would still match
+the year filter and still get blended in. That's rare enough to be a
+documentation note in the skill, not a design requirement.</p>
+<h3 id="blend-mode-simplified-by-the-1-exclusion-and-by-the-miami-carve-out">Blend mode — simplified by the <code>-1</code> exclusion, and by the Miami carve-out</h3>
+<p>Because the PowerSchool builder never emits a <code>-1</code> row, blend's "sheet fills
+gaps absent from PowerSchool" rule already handles <code>-1</code> rows correctly with <strong>no
+special-casing</strong>: every <code>-1</code> row's key (<code>schoolid, grade_level=-1</code>) is, by
+construction, always absent from the PowerSchool builder's output, so it always
+comes from the sheet. The same single rule
+(<code>PowerSchool wins on any overlapping key; sheet fills the rest</code>) simultaneously
+covers both the <code>-1</code> rows and genuinely new grades/schools — no separate branch
+needed. The Miami carve-out generalizes the same way, again with no special
+handling in the blend rule itself: since the PowerSchool builder excludes Miami
+entirely, <em>every</em> Miami key is absent from its output, so blend naturally
+sources 100% of Miami from the sheet — the exact same mechanism that handles
+<code>-1</code> rows and genuinely-new grades, just applied to an entire region instead of
+one row at a time.</p>
+<h3 id="source-selection-control">Source-selection control</h3>
+<p>One dbt var, <code>finalsite_scaffold_source</code>, three legal values, default <code>blend</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gsheet</code></td>
+<td>Sheet builder only. Early-cycle / fallback if PowerSchool data looks wrong.</td>
+</tr>
+<tr>
+<td><code>powerschool</code></td>
+<td>PowerSchool builder only. Note: this mode alone can never produce <code>-1</code> rows — combine with sheet data downstream if used standalone.</td>
+</tr>
+<tr>
+<td><code>blend</code> (default)</td>
+<td>PowerSchool builder, <strong>plus</strong> sheet rows whose <code>(schoolid, grade_level)</code> key is absent from the PowerSchool builder's output. PowerSchool wins on any overlapping key.</td>
+</tr>
+</tbody>
+</table>
+<p>The var lives in <code>kipptaf/dbt_project.yml</code>. Switching modes is a one-line PR +
+rebuild. <code>blend</code> is the sensible default — most years, nobody needs to touch the
+var at all; it degrades gracefully as PowerSchool coverage improves through a
+cycle.</p>
+<h2 id="deriving-the-current-finalsite-academic-year">Deriving the current Finalsite academic year</h2>
+<p>The original design proposed a manually-set <code>fresh_recruitment_academic_year</code>
+var. <strong>That's replaced</strong> by deriving the value instead, based on a real
+constraint in how Finalsite data works:</p>
+<p>Finalsite can carry <strong>two concurrent academic years of live student data at
+once</strong> during a transition period — not every student rolls over to the new year
+at the same time, and the rollover cadence <strong>varies by region and cannot be
+standardized</strong>. So "which year has the most/newest raw data" is not a reliable
+signal for "which year is the currently valid one."</p>
+<p>What <em>is</em> reliable: <code>stg_google_sheets__finalsite__status_crosswalk</code> (the
+manually-maintained status-mapping config) holds config for <strong>exactly one
+academic year at a time</strong> by convention — this is exactly why
+<code>int_tableau__finalsite_student_scaffold</code> could get away with a hardcoded <code>2026</code>
+gated by "the status_crosswalk is set to one year only." Verified today: the
+table holds exactly one row-set, <code>file_year = 2026</code>.</p>
+<p><strong>New tiny model</strong>: <code>int_finalsite__current_academic_year</code> —
+<code>models/finalsite/intermediate/</code>, single row:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">max</span><span class="p">(</span><span class="n">file_year</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">academic_year</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_google_sheets__finalsite__status_crosswalk"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<p>Every model that previously hardcoded <code>2026</code> instead does
+<code>cross join {{ ref("int_finalsite__current_academic_year") }} as cy</code> and
+filters/derives against <code>cy.academic_year</code> (a <code>CROSS JOIN</code> on a single-row
+model, not a scalar subquery, per this repo's SQL conventions). This fixes
+<strong>both</strong> hardcode sites in one mechanism:</p>
+<ul>
+<li><code>int_tableau__finalsite_student_scaffold</code>'s <code>latest_status_calc</code> CTE.</li>
+<li><code>rpt_tableau__fresh_dashboard_progress_to_goals</code>'s two <code>data_stack_*</code> CTEs.</li>
+<li>The new seam model's PowerSchool-side builder also cross-joins this for its
+  <code>academic_year</code> column, so the whole stack shares one source of truth for "the
+  current cycle."</li>
+</ul>
+<p>No separate manually-set var remains for this purpose.</p>
+<p>A bare <code>select max(file_year)</code> always physically returns one row regardless of
+how many years are present upstream, so the "one year only" convention needs its
+test on the upstream side, not on <code>int_finalsite__current_academic_year</code> itself:
+add a test on <code>stg_google_sheets__finalsite__status_crosswalk</code> asserting
+<code>count(distinct file_year) = 1</code> — <strong>exactly one, not "at most one."</strong> An empty
+<code>status_crosswalk</code> (a fresh environment, or a gap between removing last year's
+config and adding this year's) would otherwise pass a <code>&lt;= 1</code> test silently while
+<code>max(file_year)</code> returns <code>NULL</code> — and every downstream
+<code>cross join ... where x = cy.academic_year</code> comparison against a <code>NULL</code>
+evaluates to unknown (not true), so the <em>entire</em> pipeline would silently return
+zero rows network-wide, with no error anywhere. Asserting <code>= 1</code> catches both
+directions: a genuine accumulation bug (someone forgetting to remove the prior
+year's config rows) and this empty-table case, instead of assuming the
+convention always holds. If a transition period ever does leave both the
+outgoing and incoming year's rows present simultaneously, <code>max(file_year)</code> would
+still degrade gracefully on its own (favors the newer year) — but the test
+should still fail loudly rather than rely on that.</p>
+<p><strong>Why fixing it once at <code>int_tableau__finalsite_student_scaffold</code> is sufficient
+for both <code>rpt_</code> views</strong>: <code>rpt_tableau__fresh_dashboard_aggregated</code> never
+references the goals model or hardcodes a year anywhere in its own SQL — it only
+reads <code>int_google_sheets__finalsite__scaffold</code> (an unfiltered join of scaffold
+to goals on <code>academic_year</code>, with no year restriction of its own) and
+<code>int_tableau__finalsite_student_scaffold</code>. So the <em>only</em> hardcoded-year
+dependency common to both <code>rpt_</code> views is
+<code>int_tableau__finalsite_student_scaffold</code> — fixing it there once means both
+views inherit the correct year transitively, with no separate fix needed in
+either <code>rpt_</code> model, and nothing about this touches goals data. Goals <em>values</em>
+(<code>goal_value</code>) still flow into <code>aggregated</code> via the scaffold-goals join, same as
+today — only "which year" is at stake here, and that never came from goals.</p>
+<h2 id="known-data-model-caveats-for-the-reference-doc-skill">Known data model caveats (for the reference doc &amp; skill)</h2>
+<p>These are permanent properties of how Finalsite works, not defects to fix — they
+explain real, recurring sources of count discrepancy between raw Finalsite
+numbers and the dashboard, and must be documented and referenced by the skill's
+troubleshooting section:</p>
+<ul>
+<li><strong>Concurrent academic years, non-standardized rollover.</strong> As above — two years
+  of live student data can coexist, and individual students/regions roll over on
+  their own uncoordinated timeline.</li>
+<li><strong>Status dates are mutable and student-scoped, not year-scoped.</strong> A status
+  date (<code>status_start_date</code> etc.) is tied to the student record, not to "the
+  currently valid academic year." These dates can be <strong>overwritten</strong> when
+  someone edits/clicks the status in the Finalsite UI — they are not an
+  immutable audit trail.</li>
+<li><strong><code>grouped_status_order</code> (the 8-stage funnel sequence) is a best-assumption
+  ordering, not an enforced one.</strong> <code>status_crosswalk_unpivot</code>'s
+  <code>grouped_status_order</code> encodes the <em>typical</em> Inquiries→...→Enrolled sequence,
+  but real students can skip steps or move backward through it. Anything built
+  assuming strict monotonic progression through statuses can be wrong for some
+  students.</li>
+<li><strong><code>detailed_status_ranking</code> (on the crosswalk sheet) is hand-duplicated into a
+  hardcoded <code>CASE</code> in code, and the two can silently drift out of sync.</strong> It's
+  used as a tie-breaker when two statuses share the same update date
+  (<code>latest_status_calc</code>'s <code>order by status_start_date desc, status_order desc</code>
+  in <code>int_tableau__finalsite_student_scaffold.sql</code>) — but that tie-break
+  actually reads <code>status_order</code>, a separate 1–24 <code>CASE</code> hardcoded in
+  <code>int_finalsite__status_report_unpivot.sql</code>, keyed on <code>fs_status_field</code>. It's
+  hardcoded (not joined to the sheet) specifically per this repo's convention
+  against staging-layer joins to Google Sheets sources. Verified today: the two
+  are numerically identical for every status, uniformly across both
+  <code>enrollment_type</code> values. But nothing enforces they <em>stay</em> identical — editing
+  the sheet's <code>detailed_status_ranking</code> (reordering, or adding a new status)
+  does <strong>not</strong> automatically update the hardcoded <code>CASE</code>, and there's no error
+  if they drift, only silently wrong tie-breaking. A new automated test guards
+  this — see "New test: status ranking sync check" below.</li>
+<li><strong>Same-day status ties can pick the wrong "latest status," and this is
+  permanent and unfixable at the data layer.</strong> The pipeline compares
+  <code>status_start_date</code> — a <strong>date</strong>, cast down from the underlying timestamp — so
+  two statuses set hours apart on the same calendar day still tie, and the
+  tiebreak (<code>status_order desc</code>) picks whichever has the <em>higher</em> rank number.
+  That assumption ("higher rank = correct winner") breaks for an exit/terminal
+  status vs. an in-progress one: e.g. <code>Parent Declined</code> (rank 15) vs.
+  <code>Enrollment In Progress</code> (rank 16) set the same day — <code>Enrollment In Progress</code>
+  wins the tie purely because 16 &gt; 15, even though the family actually declined
+  and the student isn't attending. Finalsite's data model has no richer signal
+  to fix this with (confirmed: "there is nothing we can do about it — the
+  statuses are flexible and the data Finalsite can provide is extremely
+  limited"), so this is a <strong>permanent, accepted limitation</strong>, not a bug this
+  project (or any future one) should try to engineer around at the data layer.</li>
+</ul>
+<p><strong>The established operational fix is the "Reset Protocol™"</strong> (the SRE/ School
+  Relations &amp; Enrollment team's own name for it):
+  1. Put the student in another status.
+  2. Wait a day.
+  3. Put them in the status you actually want them to show.</p>
+<p>(Waiting a day works because it breaks the date-tie — the new status now has a
+  strictly later <code>status_start_date</code> and wins outright, without depending on the
+  rank comparison at all.)</p>
+<p>Operational guidance for teams: <strong>to fix</strong>, school teams check the FRESH
+  Dashboard's Progress-to-Goals tab for students appearing on the dashboard but
+  not in <code>Enrolled</code> status, using the <strong>OPEN ROSTER</strong> button (top right of that
+  tab) to see every student's current status, and apply the Reset Protocol to
+  any that are wrong. <strong>To prevent</strong>, teams are reminded a student should not,
+  if at all possible, receive multiple status changes in Finalsite on the same
+  calendar day — if it does happen, a Reset Protocol is needed.</p>
+<p>This is the standard root cause to check, alongside the missing-mapping and
+  invalid/QA-flagged checks above, whenever a specific student's status on the
+  dashboard looks wrong (as opposed to a whole-category count being off, which
+  points more toward the first two checks).</p>
+<ul>
+<li><strong>Ingestion lag can make the dashboard temporarily disagree with what's
+  currently in Finalsite.</strong> <code>stg_finalsite__status_report</code> is ingested via a
+  Couchdrop SFTP file drop
+  (<code>build_sftp_file_asset</code>/<code>ssh_resource_key="ssh_couchdrop"</code>), which is
+  sensor/file-drop-triggered, not a fixed Dagster cron — so there's no precise
+  cutoff time to point to from this codebase; the actual export timing is
+  controlled by Finalsite itself (external, vendor-side). In practice this
+  means: a status cleanup done late in one team member's workday may not be
+  reflected in the file Finalsite exports until the <em>next</em> day's pull — e.g., a
+  Spain-based SRE team member doing status cleanup work has a workday that ends
+  in the middle of the US teams' night, so by the time his cleanup is done, the
+  dashboard may not reflect it until the following day. <strong>Unconfirmed whether
+  this specifically applies to Miami</strong> — flag as unverified in the reference doc
+  rather than asserting it network-wide.</li>
+<li><strong>Fake/test Finalsite student records not yet added to the exclusion sheet
+  inflate FRESH counts, and this isn't only an annual-rollover concern.</strong>
+  <code>stg_google_sheets__finalsite__exclude_ids</code> is already enforced upstream of
+  everything FRESH touches (the kipptaf-level <code>stg_finalsite__status_report</code>
+  union filters
+  <code>finalsite_enrollment_id not in (select finalsite_student_id from ...)</code>) — but
+  a test/fake student record can be created in Finalsite at <em>any</em> time (not just
+  at year rollover), and until someone adds its id to the exclude sheet, it's
+  counted as a real student. This is a standard check when a count looks
+  inflated rather than deflated (the opposite direction from the
+  missing-mapping/invalid-status causes above, which only ever <em>drop</em> students,
+  never add phantom ones).</li>
+</ul>
+<h3 id="new-test-status-ranking-sync-check">New test: status ranking sync check</h3>
+<p>A new singular test (<code>src/dbt/kipptaf/tests/</code>) guards the dual-maintenance risk
+above: for the current year's crosswalk config (scoped via
+<code>int_finalsite__current_academic_year</code>), compare
+<code>distinct fs_status_field, detailed_status_ranking</code> from
+<code>stg_google_sheets__finalsite__status_crosswalk</code> against a <strong>static list
+mirroring the <code>status_order</code> <code>CASE</code>'s declaration</strong> in
+<code>int_finalsite__status_report_unpivot.sql</code> — not a live query of that model's
+actual rows. Discovered during implementation: BigQuery's <code>UNPIVOT</code> only emits a
+row for a source column when it's non-NULL for that row, so a <code>fs_status_field</code>
+declared in the <code>CASE</code> but never actually populated in the data (e.g.
+<code>retained_date</code>, network-wide, as of this writing) never appears in the model's
+output — a live-query comparison produces a false mismatch against the
+fully-populated crosswalk sheet for any such field. The static list is immune to
+data occurrence, at the cost of needing a manual update (alongside the sheet) if
+the <code>CASE</code> itself ever changes. Any <code>fs_status_field</code> whose ranking differs
+between the sheet and the static list, or that's present in one but missing from
+the other, fails the test. This turns a previously invisible drift into a loud,
+actionable CI failure instead of a silent tie-breaking bug.</p>
+<h2 id="downstream-changes">Downstream changes</h2>
+<ul>
+<li><code>int_google_sheets__finalsite__scaffold</code> → rename to
+  <code>int_finalsite__goals_scaffold</code>, moved to <code>models/finalsite/intermediate/</code>
+  alongside the new seam model (it now joins the seam model to goals, not a
+  sheet directly); its join logic (year/region/schoolid/grade_level) is
+  unchanged.</li>
+<li><code>rpt_tableau__fresh_dashboard_progress_to_goals</code> → <code>scaffold</code> CTE repoints
+  from <code>stg_google_sheets__finalsite__school_scaffold</code> to
+  <code>int_finalsite__enrollment_scaffold</code>; both hardcoded <code>2026</code> occurrences
+  replaced per "Deriving the current Finalsite academic year" above.</li>
+<li><code>int_tableau__finalsite_student_scaffold</code> → its hardcoded <code>2026</code> in
+  <code>latest_status_calc</code> replaced the same way. (Only this one line changes; its
+  status/goal-type logic is otherwise untouched, per Non-goals.)</li>
+<li><code>rpt_tableau__fresh_dashboard_aggregated</code> → its
+  <code>ref("int_google_sheets__finalsite__scaffold")</code> call updates to
+  <code>ref("int_finalsite__goals_scaffold")</code> (the rename above); no logic change
+  otherwise.</li>
+<li><code>models/exposures/tableau.yml</code> → <code>fresh_dashboard</code> exposure's <code>depends_on</code>
+  list updated for the renamed/new model refs.</li>
+<li><code>models/google/sheets/sources-external.yml</code> → the <code>school_scaffold</code> source
+  stays (still read by the <code>gsheet</code> /<code>blend</code> builder); no removal.</li>
+<li>New: <code>int_finalsite__current_academic_year</code>
+  (<code>models/finalsite/intermediate/</code>).</li>
+</ul>
+<h2 id="documentation-skill">Documentation &amp; skill</h2>
+<p>Mirroring the <code>gradebook-audit</code> pattern established in this repo
+(<a href="https://github.com/TEAMSchools/teamster/blob/main/docs/reference/gradebook-audit-data-model.md">docs/reference/gradebook-audit-data-model.md</a>,
+<code>.claude/skills/gradebook-audit/</code>):</p>
+<ul>
+<li><strong><code>docs/reference/fresh-dashboard-data-model.md</code></strong> — living reference doc:
+  full lineage, model-by-model reference, the source-swap var mechanics, the
+  "Known data model caveats" section above, and an explicit "Open Questions"
+  section covering historical/multi-year reporting. Nav entry added to
+  <code>mkdocs.yml</code>.</li>
+<li><strong>Goal definitions</strong> — documented in <strong>both</strong> the reference doc and as
+  <code>description:</code> fields on the relevant columns in
+  <code>stg_google_sheets__finalsite__goals.yml</code> / the goals-pivot properties yml,
+  per this repo's convention that yml is the analyst-facing documentation
+  mechanism. Confirmed content:</li>
+</ul>
+<p>The <code>Enrollment</code> goal_type group is <strong>not</strong> computed via <code>status_crosswalk</code> at
+  all — these are plain numeric targets entered directly on the goals sheet, no
+  funnel logic involved:</p>
+<table>
+<thead>
+<tr>
+<th><code>goal_name</code></th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Seat Target</code></td>
+<td>Total seats/capacity the school is targeting for the year.</td>
+</tr>
+<tr>
+<td><code>FDOS Target</code></td>
+<td>Enrollment target as of First Day of School.</td>
+</tr>
+<tr>
+<td><code>New Student Target</code></td>
+<td>Target count of new (not returning) students to enroll.</td>
+</tr>
+<tr>
+<td><code>Budget Target</code></td>
+<td>The enrollment number the school's budget was built against.</td>
+</tr>
+<tr>
+<td><code>Re-Enroll Projection</code></td>
+<td>Projected count of currently-enrolled students expected to persist (return) — <strong>"persistence," not "retention"; retention refers to grade repetition in this org's vocabulary and is a distinct, unrelated concept.</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Everything else is a computed roll-up of the Finalsite recruitment funnel, via
+  <code>status_crosswalk</code>'s <code>status_group_value</code> mapping and
+  <code>grouped_status_timeframe</code> (<code>Ever</code> = cumulative, counts a student who ever
+  reached this status even if they later moved past or reversed; <code>Current</code> =
+  point-in-time, latest status only):</p>
+<table>
+<thead>
+<tr>
+<th><code>goal_name</code> (<code>goal_type</code>)</th>
+<th>Timeframe</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Inquiries</code></td>
+<td>Ever</td>
+<td>Family ever submitted an inquiry.</td>
+</tr>
+<tr>
+<td><code>App Target</code> (<code>Applications</code>)</td>
+<td>Ever</td>
+<td>Family ever completed/submitted an application.</td>
+</tr>
+<tr>
+<td><code>Offers Target</code> (<code>Offers</code>)</td>
+<td>Ever</td>
+<td>Student was ever offered a seat.</td>
+</tr>
+<tr>
+<td><code>Accepted</code></td>
+<td>Ever</td>
+<td>Family ever accepted an offered seat.</td>
+</tr>
+<tr>
+<td><code>Waitlisted</code></td>
+<td>Current</td>
+<td>Student's current status is waitlisted.</td>
+</tr>
+<tr>
+<td><code>Deferred</code></td>
+<td>Current</td>
+<td>Student's current status is deferred.</td>
+</tr>
+<tr>
+<td><code>Enrollment In Progress</code></td>
+<td>Current</td>
+<td>Student is currently mid-enrollment paperwork/process.</td>
+</tr>
+<tr>
+<td><code>Pending Offers</code> (+ <code>&lt;= 4 Days</code> / <code>&gt;= 5 &amp; &lt;= 10 Days</code> / <code>&gt; 10 Days</code>)</td>
+<td>Current</td>
+<td>Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up.</td>
+</tr>
+<tr>
+<td><code>Conversion</code> — <code>Accepted to Enrolled</code> / <code>Offers to Accepted</code> / <code>Offers to Enrolled</code></td>
+<td>Ever</td>
+<td>Funnel conversion-rate metrics between two funnel stages.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong><code>.claude/skills/fresh-dashboard/</code></strong> — a tiered skill:</li>
+<li>A plain-language section for non-engineer (Ops/Analyst) self-serve: explains
+    the data flow, walks through "why does this number look wrong" (referencing
+    the data model caveats above), points to the right sheet tab or model in
+    plain terms. Does not touch code.</li>
+<li>A technical section for an engineer touching this for the first time: full
+    lineage map, swap-var mechanics, rebuild/verify/refresh recipes, links to
+    the reference doc.</li>
+<li><strong>Annual rollover checklist</strong>, covering:<ul>
+<li>Reviewing/updating <code>stg_google_sheets__finalsite__exclude_ids</code> for that
+  cycle's Finalsite test/fake records (already enforced in code at the
+  kipptaf-level <code>stg_finalsite__status_report</code> union — this is a process
+  reminder, not a code gap).</li>
+<li>Adding that cycle's <code>status_crosswalk</code> config row(s).</li>
+<li>Adding the scaffold sheet's <code>-1</code> rows and any genuinely new grade/school
+  rows (see next bullet).</li>
+</ul>
+</li>
+<li><strong><code>-1</code> candidate-row generator</strong>: a documented helper query (run via the
+    skill, e.g. through the BigQuery MCP) that lists every currently-existing
+    school missing its <code>-1</code> whole-school row in the scaffold sheet, formatted
+    for copy/paste. The analyst pastes these in (plus any genuinely new
+    grade/school rows) and adjusts as needed; the engineer/AI side then
+    <strong>verifies the sheet change and confirms once it has propagated to prod</strong> —
+    the same rematerialize-then-verify workflow already established in this
+    project's own history (see the goals-sheet value-fix earlier in issue
+    discussion).</li>
+<li>
+<p><strong>Goals-sheet gap-row generator</strong> — same shape of helper (ad hoc query,
+    documented in the skill, not a persistent dbt model), extended to the goals
+    sheet. <code>status_crosswalk</code> has no grade-level dimension, so its only role
+    here is supplying the target <code>academic_year</code> (via
+    <code>int_finalsite__current_academic_year</code>) — it does not shape which goal types
+    apply. That comes from each school's/region's own existing pattern in the
+    goals sheet, verified against real data:</p>
+<ul>
+<li><strong><code>School</code> rows</strong> (<code>grade_level = -1</code>) — keyed by <code>schoolid</code>. Copy that
+  school's own existing <code>(goal_type, goal_name)</code> combo-set forward.
+  Verified: this set is uniform across almost every school, with one real
+  exception (Miami's MTH lacks the lottery-based categories — Accepted /
+  Offers / Pending Offers — at <code>School</code> granularity) that a per-school
+  copy-forward rule handles correctly without special-casing.</li>
+<li><strong><code>School/Grade Level</code> rows</strong> — keyed by <code>(schoolid, grade_level)</code>, same
+  copy-forward rule applied per grade in the new scaffold. <strong>Unverified</strong>:
+  whether the combo-set is uniform across every grade within a school, or
+  varies grade-to-grade — today's check only confirmed uniformity in
+  aggregate per <code>(school, granularity)</code>, not grade-by-grade. Verify during
+  implementation.</li>
+<li><strong><code>Region/Grade Level</code> rows</strong> (Inquiries, Applications, Deferred,
+  Waitlisted, etc.) — keyed by <code>(region, grade_level)</code>, independent of the
+  scaffold's <code>schoolid</code> dimension (no specific school), but <strong>not</strong>
+  independent of <code>grade_level</code> — verified against real data: every active
+  region carries one row per grade (0–12ish, varying slightly by region),
+  not a single collapsed region-wide row. Corrects an earlier pass at this
+  design, which mistakenly described it as "region alone."</li>
+<li><strong>Template source is each school's/region's most recent existing year in
+  the goals sheet</strong>, not necessarily "the current year" — this lets the same
+  generator serve both a full annual rollover (a brand new year with nothing
+  populated yet) and the incremental case (a new school/grade added
+  mid-cycle via blend), with identical logic: does this scaffold row have a
+  matching goal row yet? If not, project one from the most recent prior
+  pattern.</li>
+<li>A genuinely new school/grade has no prior-year precedent and cannot be
+  auto-generated — flagged for the analyst to choose goal types manually.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>status_crosswalk</code>'s own annual rollover stays a documented manual
+    process, not a generated one</strong> — there is no source of truth to derive its
+    content from (the Finalsite-status → category mapping is institutional
+    judgment, not computable), unlike the scaffold's <code>-1</code> rows or the goals
+    sheet's gap rows, which both have a real prior pattern to project forward.</p>
+</li>
+</ul>
+<p>Both are detailed further in the implementation plan, not this design doc.</p>
+<h2 id="verification">Verification</h2>
+<ul>
+<li>
+<p><strong><code>schoolid</code> domain alignment — run, findings below (was a pending item in an
+  earlier revision of this doc; now resolved).</strong> Compared
+  <code>stg_powerschool__schools.school_number</code> (filtered
+  <code>state_excludefromreporting = 0</code>) against
+  <code>int_people__location_crosswalk.location_powerschool_school_id</code> — the join
+  path Finalsite actuals already use to resolve <code>schoolid</code>
+  (<code>int_finalsite__status_report_unpivot</code>, via <code>assigned_school</code> →
+  <code>location_name</code>), independent of the new seam model:</p>
+</li>
+<li>
+<p>Every filtered PowerSchool school has a matching crosswalk entry — zero
+    mismatches in that direction, network-wide.</p>
+</li>
+<li>Several crosswalk entries have no matching filtered-PowerSchool row — but
+    every one of them resolves to either: (a) a retired/renamed school,
+    correctly excluded by <code>state_excludefromreporting = 1</code> and correctly absent
+    from the current goals sheet too (confirmed for both a Newark pair — "KIPP
+    Newark Community Prep" / "KIPP Truth Academy" — and a Miami pair — Sunrise /
+    Liberty Academy — so this is a general pattern across regions, not
+    Miami-specific), or (b) the Miami/Focus gap (Legacy ES, Legacy MS, MTH)
+    already covered by the Miami carve-out above, or (c) the <code>schoolid = 0</code> "no
+    school assigned" sentinel.</li>
+<li><strong>Net result: the <code>schoolid</code> domains fully align for every case that matters
+    to this design.</strong> No further reconciliation work is needed before cutover.</li>
+</ul>
+<h2 id="delivery">Delivery</h2>
+<p>This design covers one cohesive unit of work, but implementation may land as
+more than one PR (e.g. dbt refactor first, docs/skill second) — that sequencing
+is an implementation-plan decision, not a design-scope split.</p>
+<h2 id="open-questions">Open Questions</h2>
+<ul>
+<li><strong>Historical / multi-year scaffold reporting.</strong> As Finalsite's data model
+  currently stands, there's no straightforward way to represent historical
+  recruitment cycles in the scaffold — <code>stg_powerschool__schools</code> is
+  current-state only, and the sheet has never carried prior-year rows in
+  practice. This needs a dedicated discussion (with the user) during the
+  documentation-writing phase; it is explicitly <strong>not</strong> solved by this design.
+  The reference doc will carry this as a known limitation until resolved.</li>
+</ul>
+<h2 id="out-of-scope-recap">Out of Scope (recap)</h2>
+<ul>
+<li>Goals sheet target <em>values</em> (<code>stg_google_sheets__finalsite__goals</code>).</li>
+<li><code>int_tableau__finalsite_student_scaffold</code>'s status/goal-type logic (beyond the
+  one shared hardcoded-year fix) and the broader Finalsite integration.</li>
+<li>Historical/multi-year scaffold support (see Open Questions).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

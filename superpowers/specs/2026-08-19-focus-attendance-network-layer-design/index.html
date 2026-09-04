@@ -1,0 +1,2367 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Focus attendance in the kipptaf network layer: SIS-neutral attendance models - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#focus-attendance-in-the-kipptaf-network-layer-sis-neutral-attendance-models" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Focus attendance in the kipptaf network layer: SIS-neutral attendance models
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-corrections-to-the-issues-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two corrections to the issue's plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Two corrections to the issue&#39;s plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-issues-model-list-is-at-the-wrong-altitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The issue's model list is at the wrong altitude
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-1s-exclusion-rule-does-not-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1's exclusion rule does not transfer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-id-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The id boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-package-speaks-focus-the-network-layer-conforms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The package speaks Focus, the network layer conforms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#int_focus__attendance_daily" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_focus__attendance_daily
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="int_focus__attendance_daily">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#column-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Column contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-no-record-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The no-record encoding
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-kipptaf-conform-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The kipptaf conform layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The kipptaf conform layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dual-exposed-column-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dual-exposed column names
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deferred-tracked-elsewhere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred, tracked elsewhere
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deferred, tracked elsewhere">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#six-flags-land-null-for-miami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Six flags land null for Miami
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#focus-calendar-misconfiguration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Focus calendar misconfiguration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kipptaf-restructure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        kipptaf restructure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="kipptaf restructure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#consumer-repoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consumer repoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-join-keys-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two join keys change
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nj-parity-blocking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NJ parity, blocking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miami-presence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Miami presence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dbt-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dbt tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-and-issue-hygiene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph and issue hygiene
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ship-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ship sequence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Ship sequence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pr1-focus-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR1 — focus package
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr2-kipptaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR2 — kipptaf
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-08-19-focus-attendance-network-layer-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="focus-attendance-in-the-kipptaf-network-layer-sis-neutral-attendance-models">Focus attendance in the kipptaf network layer: SIS-neutral attendance models</h1>
+<p>Issue: <a href="https://github.com/TEAMSchools/teamster/issues/4924">#4924</a></p>
+<h2 id="problem">Problem</h2>
+<p>Miami has been in session since 2026-08-12 and contributes zero attendance rows
+to the kipptaf network layer. Focus holds the data, the Miami-side intermediates
+shipped in <a href="https://github.com/TEAMSchools/teamster/pull/4919">#4919</a>, and
+nothing at kipptaf level consumes them.</p>
+<p>Verified against prod on 2026-08-19:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Miami rows in <code>int_powerschool__ps_adaadm_daily_ctod</code></td>
+<td>stops at AY2025 (229,463 rows); 0 for AY2026</td>
+</tr>
+<tr>
+<td>Focus branch in <code>kipptaf/models/powerschool/</code></td>
+<td>none — <code>grep -rl focus</code> returns nothing</td>
+</tr>
+<tr>
+<td><code>int_focus__attendance_day</code> rows</td>
+<td>9,253, all AY2026</td>
+</tr>
+<tr>
+<td><code>int_focus__attendance_day</code> in <code>sources-kippmiami.yml</code></td>
+<td>absent, and no kipptaf wrapper</td>
+</tr>
+</tbody>
+</table>
+<p>Everything downstream reads empty for Miami: <code>fct_student_attendance_daily</code>,
+<code>fct_student_attendance_streaks</code>, <code>fct_student_attendance_interventions</code>,
+<code>dim_school_calendars</code>, and (transitively, through
+<code>int_powerschool__calendar_week</code>) <code>bridge_survey_expectations</code>. Miami ADA,
+chronic absenteeism, and topline Total Enrollment all understate the network.</p>
+<h2 id="two-corrections-to-the-issues-plan">Two corrections to the issue's plan</h2>
+<h3 id="the-issues-model-list-is-at-the-wrong-altitude">The issue's model list is at the wrong altitude</h3>
+<p><code>int_powerschool__ada</code> and <code>int_powerschool__attendance_streak</code> are computed in
+the <strong>district</strong> project, over the district's own
+<code>int_powerschool__ps_adaadm_daily_ctod</code>. kipptaf's wrapper of that model is a
+filtered subset of it — the inner joins to <code>int_students__terms</code> and
+<code>int_powerschool__calendar_week</code> drop 29% of rows:</p>
+<table>
+<thead>
+<tr>
+<th>Relation</th>
+<th>Newark rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kippnewark_powerschool.int_powerschool__ps_adaadm_daily_ctod</code></td>
+<td>13,990,042</td>
+</tr>
+<tr>
+<td><code>kipptaf_powerschool.int_powerschool__ps_adaadm_daily_ctod</code></td>
+<td>9,942,287</td>
+</tr>
+</tbody>
+</table>
+<p>Recomputing <code>streak_id</code> at network altitude reproduces 2,293,675 of 2,415,982
+hashes, so 5% would churn, and ADA denominators would move by the full 29%.
+Those two models therefore get their Focus branch in the <code>focus</code> package, at the
+same altitude PowerSchool derives them — not at kipptaf.</p>
+<h3 id="phase-1s-exclusion-rule-does-not-transfer">Phase 1's exclusion rule does not transfer</h3>
+<p><code>int_students__terms</code> drops Miami from the PowerSchool side wholesale
+(<code>where _dbt_source_project != 'kippmiami'</code>) because Focus is the system of
+record for terms in every year. Attendance is different: Focus starts at AY2026
+and the frozen archive holds Miami AY2020 through AY2025. A project-level
+exclusion would delete six years of Miami attendance history, contradicting the
+issue's own scope boundary.</p>
+<p>The union is <strong>year-scoped</strong> instead, and the boundary is <strong>derived from the
+years Focus actually covers</strong> rather than hardcoded. That is self-maintaining as
+Focus accumulates years, and it fails loudly rather than double-counting if
+Focus ever backfills a historical year.</p>
+<h2 id="architecture">Architecture</h2>
+<p>The <code>focus</code> package builds the Focus analogues at PowerSchool's own altitude.
+kipptaf does nothing but thin unions. The existing <code>int_powerschool__*</code> wrappers
+stay as pure PowerSchool unions.</p>
+<div class="highlight"><pre><span></span><code>focus package                       kipptaf sources          kipptaf SIS-neutral
+─────────────                       ───────────────          ───────────────────
+int_focus__attendance_daily    ──▶  sources-kippmiami   ──▶  int_students__attendance_daily
+int_focus__ada                 ──▶  sources-kippmiami   ──▶  int_students__ada
+int_focus__attendance_streak   ──▶  sources-kippmiami   ──▶  int_students__attendance_streak
+int_focus__calendar_week       ──▶  sources-kippmiami   ──▶  int_students__calendar_week
+int_focus__calendar_rollup     ──▶  sources-kippmiami   ──▶  int_students__calendar_rollup
+int_focus__calendar_day        ──▶  sources-kippmiami   ──▶  int_students__calendar_day
+</code></pre></div>
+<p>Why this altitude and not the alternatives:</p>
+<ul>
+<li>Deriving <code>ada</code> / <code>attendance_streak</code> / <code>calendar_week</code> at kipptaf over the
+  SIS-neutral union changes NJ, per the 29% finding above.</li>
+<li>Building the Focus branch in <code>kippmiami</code> rather than the <code>focus</code> package costs
+  nothing today (<code>focus</code> has exactly one consumer,
+  <code>grep -l 'local: ../focus' src/dbt/*/packages.yml</code>), but
+  <code>int_focus__student_enrollment</code> already carries a TODO about a second Focus
+  region onboarding, and district-local models do not travel when that happens.</li>
+</ul>
+<h3 id="the-id-boundary">The id boundary</h3>
+<p>The <code>focus</code> package <strong>cannot</strong> resolve the network school id. That hop runs
+through <code>stg_google_sheets__people__locations</code> on <code>focus_school_id</code> (the Florida
+code, e.g. <code>2332C</code>), and the locations sheet is a kipptaf model, unreachable
+from a package.</p>
+<p>So the package models emit Focus's internal <code>schoolid</code> (14, 15, 58, 68, 69) and
+the kipptaf union layer does the crosswalk, exactly as <code>int_students__terms</code>
+already does in its <code>focus_schools</code> CTE. Student ids need no crosswalk —
+<code>network_student_number</code> is a prefix strip that <code>int_focus__student_enrollment</code>
+performs in-package.</p>
+<p>The crosswalk is complete for every school that matters: 7 Miami rows in the
+locations sheet mapping <code>2008A</code>/<code>2008B</code>/<code>2008Z</code>/<code>2332A</code>/<code>2332B</code>/<code>2332C</code>/<code>2332D</code>
+to <code>powerschool_school_id</code> 30200801 through 30200807. The three
+non-instructional Focus schools (<code>Applicants</code>, <code>Virtual Franchise</code>,
+<code>ZZ Course History</code>) have no locations row and drop out on the join, which is
+the existing Phase 1 behavior.</p>
+<h2 id="the-package-speaks-focus-the-network-layer-conforms">The package speaks Focus, the network layer conforms</h2>
+<p>The <code>focus</code> package carries <strong>no PowerSchool knowledge at all</strong>. Its models use
+Focus's own vocabulary, and every translation into the network's
+PowerSchool-derived shape happens in the kipptaf blended-source layer, which is
+the layer whose job that is.</p>
+<p>An earlier revision of this spec did the opposite: it pushed <code>studentid</code>,
+<code>yearid</code>, the PowerSchool attendance-code vocabulary, and a set of constant-NULL
+PowerSchool columns (<code>fteid</code>, <code>attendance_conversion_id</code>, <code>ontrack</code>, <code>offtrack</code>,
+<code>student_track</code>, <code>track</code>) down into the Focus models so the downstream union
+would be a trivial <code>select *</code>. That was the wrong trade. It bought a cheap union
+at the cost of a source-system package that could not be read or reused without
+knowing PowerSchool, and it put conform logic in the one place that has no
+business knowing about the target shape.</p>
+<p>Naming follows Focus's own columns, which is also what <code>focus/CLAUDE.md</code>
+establishes for the package and what the sibling <code>int_focus__student_enrollment</code>
+already does. The rule is to stop renaming, not to invent:</p>
+<table>
+<thead>
+<tr>
+<th>Focus-native name</th>
+<th>Where the name comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>academic_year</code></td>
+<td><code>int_focus__student_enrollment</code></td>
+</tr>
+<tr>
+<td><code>startdate</code></td>
+<td><code>int_focus__student_enrollment</code></td>
+</tr>
+<tr>
+<td><code>schoolid</code></td>
+<td><code>int_focus__student_enrollment</code></td>
+</tr>
+<tr>
+<td><code>school_date</code></td>
+<td><code>stg_focus__attendance_calendar</code></td>
+</tr>
+<tr>
+<td><code>daily_code</code></td>
+<td><code>stg_focus__attendance_day</code></td>
+</tr>
+<tr>
+<td><code>state_value</code></td>
+<td><code>stg_focus__attendance_day</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="int_focus__attendance_daily"><code>int_focus__attendance_daily</code></h2>
+<p>The load-bearing new model. Grain: one row per enrolled student per in-session
+calendar day, built as enrollment crossed with in-session calendar days and
+left-joined to <code>int_focus__attendance_day</code>.</p>
+<p>The scaffold is necessary because a missing attendance record is not visible at
+<code>int_focus__attendance_day</code>'s own grain. Measured for AY2026: 9,287 scaffold
+rows against 9,253 attendance rows, joining to 9,163 matched, 124 scaffold days
+with no record, and 90 attendance rows outside any scaffold row. So Focus is
+already about 99% complete daily coverage — but the scaffold is what makes an
+un-recorded day representable at all.</p>
+<h3 id="column-contract">Column contract</h3>
+<p>Every column carries Focus data. Nothing is projected to satisfy a downstream
+union.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>student_number</code></td>
+<td>Network student number, unprefixed</td>
+</tr>
+<tr>
+<td><code>schoolid</code></td>
+<td>Focus internal school id; kipptaf crosswalks it</td>
+</tr>
+<tr>
+<td><code>academic_year</code></td>
+<td>Focus <code>syear</code> — 2026 means 2026-27</td>
+</tr>
+<tr>
+<td><code>startdate</code></td>
+<td>Start date of the enrollment stint the row belongs to</td>
+</tr>
+<tr>
+<td><code>school_date</code></td>
+<td>The in-session calendar date</td>
+</tr>
+<tr>
+<td><code>grade_level</code></td>
+<td>Grade level from the enrollment stint</td>
+</tr>
+<tr>
+<td><code>daily_code</code></td>
+<td>Focus's own code — <code>U</code>, <code>AE</code>, <code>AD</code>, or NULL. Never translated</td>
+</tr>
+<tr>
+<td><code>state_value</code></td>
+<td>Focus's present/absent classification — 1 present, 0 absent</td>
+</tr>
+<tr>
+<td><code>is_attendance_recorded</code></td>
+<td>Whether Focus recorded the day at all</td>
+</tr>
+</tbody>
+</table>
+<p>Deliberately absent, and why:</p>
+<ul>
+<li><code>studentid</code> — a PowerSchool internal id with no Focus analogue. It was
+  constant NULL.</li>
+<li><code>fteid</code>, <code>attendance_conversion_id</code> — PowerSchool attendance-conversion
+  machinery. Focus's own <code>fteid</code> is a student FLEID, an unrelated name
+  collision.</li>
+<li><code>ontrack</code>, <code>offtrack</code>, <code>student_track</code> — PowerSchool calendar-track machinery.
+  Miami's <code>track</code> is NULL network-wide anyway.</li>
+<li><code>yearid</code> — PowerSchool's internal year numbering (<code>academic_year - 1990</code>). The
+  kipptaf conform derives it.</li>
+<li><code>membershipvalue</code>, <code>potential_attendancevalue</code> — PowerSchool ADA machinery.
+  Every row of this model IS a membership day, so a constant-1 column carries
+  nothing.</li>
+<li><code>att_code</code>, <code>att_code_focus</code> — the conformed/raw pair only existed because the
+  model was translating. It emits <code>daily_code</code> and nothing else now.</li>
+</ul>
+<h3 id="the-no-record-encoding">The no-record encoding</h3>
+<p>A scaffold day with no attendance record leaves <code>daily_code</code> NULL and
+<code>is_attendance_recorded</code> false. <code>state_value</code> coalesces to 1, matching how
+PowerSchool resolves a day with no absence record to the <code>Present</code> conversion.</p>
+<p><code>is_attendance_recorded</code> is the one signal Focus has and PowerSchool cannot
+express: PowerSchool records only absences, so presence is implied and "was
+attendance taken" is unknowable there. The kipptaf union therefore leaves that
+column NULL on PowerSchool rows rather than true, so a Focus-versus-NJ
+comparison cannot read PowerSchool as fully compliant. Focus's own rate is
+material — 119 of 7,773 completed-day rows for AY2026, 1.5%.</p>
+<p>An earlier revision mapped no-record onto PowerSchool's <code>M</code> code on the
+reasoning that <code>M</code> means Missing Attendance and was therefore in-vocabulary.
+That was wrong: PowerSchool's <code>M</code> is a rare, explicitly entered code averaging
+0.741 <code>attendancevalue</code>, and <code>rpt_gsheets__absence_streak_roster</code> filters
+<code>att_code in ('A', 'AD', 'M')</code>, counting it as an absence. Mapping 1.13 million
+Focus present-by-default rows onto it would have published fake multi-month
+Miami absence streaks. Under the Focus-native design the question does not arise
+in this package at all — the code stays NULL and the conform layer decides what
+the network sees.</p>
+<h2 id="the-kipptaf-conform-layer">The kipptaf conform layer</h2>
+<p>The <code>focus_conformed</code> CTE inside each <code>int_students__*</code> model does the whole
+translation. It already had to crosswalk Focus's internal school id through
+<code>stg_google_sheets__people__locations</code>; it now also:</p>
+<ul>
+<li>derives <code>yearid</code> as <code>academic_year - 1990</code></li>
+<li>maps <code>daily_code</code> into the PowerSchool vocabulary: <code>U</code> becomes <code>A</code>, while <code>AE</code>
+  and <code>AD</code> already match and pass through. <code>U</code> must never pass through unmapped
+  — it means Unprepared in PowerSchool, an unrelated concept</li>
+<li>casts <code>state_value</code> to the <code>attendancevalue</code> FLOAT64 the network expects</li>
+<li>emits <code>membershipvalue</code> and <code>potential_attendancevalue</code> as 1, since every
+  Focus scaffold row is a membership day</li>
+<li>projects typed NULLs for <code>studentid</code>, <code>fteid</code>, <code>attendance_conversion_id</code>,
+  <code>ontrack</code>, <code>offtrack</code>, and <code>student_track</code>, which the union needs and Focus
+  cannot supply</li>
+</ul>
+<p>Putting these here rather than upstream means the PowerSchool-shaped vocabulary
+exists in exactly one layer, and it is the layer that already knows both shapes.</p>
+<h3 id="dual-exposed-column-names">Dual-exposed column names</h3>
+<p><code>int_students__*</code> models expose each measure twice: a system-agnostic name as
+the primary column, and the legacy PowerSchool-derived name as an alias beside
+it. The 37 existing consumer references keep working untouched, and new work can
+adopt the neutral names without a coordinated migration.</p>
+<p>The legacy aliases are transitional by construction and documented as such in
+each properties yml, so a later pass can retire them once no consumer reads
+them. Retiring them is explicitly out of scope here — this work is about getting
+Miami's attendance into the network layer, not about renaming the network layer.</p>
+<h2 id="deferred-tracked-elsewhere">Deferred, tracked elsewhere</h2>
+<h3 id="six-flags-land-null-for-miami">Six flags land null for Miami</h3>
+<p><code>is_tardy</code>, <code>is_ontime</code>, <code>is_oss</code>, <code>is_iss</code>, <code>is_suspended</code>, and
+<code>is_absent_non_susp</code> have no Focus day-grain source.</p>
+<p>Focus day grain carries no tardy code; tardies exist only at period grain (528
+AY2026 rows titled <code>Tardy</code>, state code <code>P</code>). Suspensions exist nowhere in Focus
+attendance at any grain.</p>
+<p>Null rather than zero, so Miami is excluded from network tardy and suspension
+metrics rather than diluting them with false zeros. Tracked in
+<a href="https://github.com/TEAMSchools/teamster/issues/4927">#4927</a>, marked in place
+with a <code>TODO(#4927)</code> comment at each null.</p>
+<h3 id="focus-calendar-misconfiguration">Focus calendar misconfiguration</h3>
+<p>Five of Miami's ten Focus schools carry a 212-day AY2026 attendance calendar
+instead of 182, including Labor Day, Thanksgiving, Christmas, New Year's Day,
+and all ten winter-break weekdays. All five have zero AY2026 enrollments. Every
+one of the ten calendars is flagged <code>default_calendar = Y</code>, so that flag cannot
+distinguish a real calendar from an unconfigured one.</p>
+<table>
+<thead>
+<tr>
+<th>Focus school</th>
+<th>Name</th>
+<th>Days</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>60</td>
+<td>Applicants</td>
+<td>212</td>
+</tr>
+<tr>
+<td>62</td>
+<td>Virtual Franchise (7023)</td>
+<td>212</td>
+</tr>
+<tr>
+<td>70</td>
+<td>ZZ Course History (9999)</td>
+<td>212</td>
+</tr>
+<tr>
+<td>71</td>
+<td>KIPP MIAMI SUNRISE ACADEMY (Closed)</td>
+<td>212</td>
+</tr>
+<tr>
+<td>72</td>
+<td>KIPP MIAMI-LIBERTY CITY (Closed)</td>
+<td>212</td>
+</tr>
+</tbody>
+</table>
+<p>This is a Focus configuration problem, not a modeling one, so it is <strong>not
+filtered in a model</strong>. It is handed to Ops as an
+<a href="https://app.asana.com/1/913513768672/project/1205971774138578/task/1217643843838185">Asana task</a>.</p>
+<p>Consequence accepted until Ops fixes it: the three junk schools have no
+locations-sheet row and drop out on their own, but the two closed schools map to
+live location keys, so the Focus branch of <code>dim_school_calendars</code> will report
+their holidays as in-session days. Both are closed with zero students, so no
+metric moves. A warn-severity test surfaces the rows rather than hiding them.</p>
+<h2 id="kipptaf-restructure">kipptaf restructure</h2>
+<p><code>int_powerschool__ps_adaadm_daily_ctod</code> becomes a <strong>thin union wrapper</strong> —
+<code>union_relations</code> plus <code>_dbt_source_project</code>, nothing else. Its roughly 200
+lines of derived flags, anchors, and running calcs move unchanged to
+<code>int_students__attendance_daily</code>.</p>
+<p>Leaving the calcs in place would force the Focus branch to duplicate them.
+Moving them gives one definition over the union. NJ is unaffected because every
+window partition in those calcs is already scoped by <code>_dbt_source_project</code>, so
+computing post-union is arithmetically identical to computing per-branch.</p>
+<p>Year-scoping reads <code>yearid</code> off the district rows, so the thin wrapper needs no
+terms join:</p>
+<div class="highlight"><pre><span></span><code><span class="n">focus_years</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">yearid</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__attendance_daily"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">),</span>
+
+<span class="n">powerschool_conformed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="o">*</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_powerschool__ps_adaadm_daily_ctod"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">yearid</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">yearid</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">focus_years</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="consumer-repoints">Consumer repoints</h3>
+<p>37 refs across 32 distinct files move:</p>
+<table>
+<thead>
+<tr>
+<th>From</th>
+<th>To</th>
+<th>Refs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_powerschool__ps_adaadm_daily_ctod</code></td>
+<td><code>int_students__attendance_daily</code></td>
+<td>11</td>
+</tr>
+<tr>
+<td><code>int_powerschool__calendar_week</code></td>
+<td><code>int_students__calendar_week</code></td>
+<td>17</td>
+</tr>
+<tr>
+<td><code>int_powerschool__calendar_rollup</code></td>
+<td><code>int_students__calendar_rollup</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>int_powerschool__attendance_streak</code></td>
+<td><code>int_students__attendance_streak</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_powerschool__ada</code></td>
+<td><code>int_students__ada</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__calendar_day</code></td>
+<td><code>int_students__calendar_day</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__attendance</code> and <code>_code</code></td>
+<td><code>int_students__attendance_daily</code></td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>Two files reference <code>int_powerschool__calendar_week</code> twice, and one of its
+consumers is <code>int_powerschool__ps_adaadm_daily_ctod</code> itself — that ref moves
+with the calcs into <code>int_students__attendance_daily</code> rather than being edited in
+place.</p>
+<p>Deliberately left alone: <code>rpt_tableau__powerschool_calendar_day</code>,
+<code>rpt_tableau__staff_attendance</code>, and <code>int_google_sheets__dibels_pm_expectations</code>
+keep reading <code>stg_powerschool__calendar_day</code>. The first is a PowerSchool extract
+by name and intent; staff attendance has no Focus analogue.</p>
+<h3 id="two-join-keys-change">Two join keys change</h3>
+<p><code>studentid</code> is null on all 10,047 Miami rows of
+<code>int_students__student_enrollment_union</code> — Phase 1 never populated it. Any join
+on <code>studentid</code> therefore excludes Miami by construction, which is a second,
+independent reason Miami reads empty today.</p>
+<p>Both affected joins move to <code>student_number</code>:</p>
+<ul>
+<li><code>fct_student_attendance_streaks</code> — <code>st.studentid = enr.studentid</code> becomes
+  <code>student_number</code>, including the <code>TODO(#4835)</code> dedupe partition</li>
+<li><code>rpt_tableau__attendance_chronic_absenteeism_log</code> — rewritten onto
+  <code>int_students__attendance_daily</code>, keeping <code>att_code like 'A%'</code> (correct for
+  Miami via the <code>U</code> mapping) and joining on <code>student_number</code></li>
+</ul>
+<p>The repoint is safe for NJ: <code>studentid</code> and <code>student_number</code> are strictly 1:1 in
+every NJ region, verified by identical distinct counts and pair counts — Newark
+18,148, Camden 5,510, Paterson 1,051. So the change can neither fan out nor drop
+a row.</p>
+<h2 id="validation">Validation</h2>
+<h3 id="nj-parity-blocking">NJ parity, blocking</h3>
+<p>For each new <code>int_students__*</code> model against its <code>int_powerschool__*</code>
+predecessor, NJ rows only:</p>
+<ul>
+<li><code>count(*)</code> per <code>_dbt_source_project</code></li>
+<li><code>count(distinct format('%T|%T|...', ...))</code> on the key columns</li>
+<li>for <code>attendance_daily</code>, also <code>sum(membershipvalue)</code>, <code>sum(attendancevalue)</code>,
+  and <code>sum(is_absent)</code> per project and academic year</li>
+</ul>
+<h3 id="miami-presence">Miami presence</h3>
+<ul>
+<li><code>int_students__attendance_daily</code> carries Miami rows from 2026-08-12 forward,
+  where there are 0 today</li>
+<li><code>fct_student_attendance_daily</code> reports Miami for AY2026 and Miami ADA is
+  non-null</li>
+<li>row count reconciles to roughly 1,559 enrolled students times elapsed
+  in-session days</li>
+</ul>
+<h3 id="dbt-tests">dbt tests</h3>
+<ul>
+<li><code>unique</code> and <code>not_null</code> on
+  <code>(student_number, _dbt_source_project, calendardate)</code> for
+  <code>int_students__attendance_daily</code>. This grain is real today: AY2025 has
+  1,886,156 rows and 1,886,156 distinct triples, which is what
+  <code>fct_student_attendance_daily</code>'s <code>student_attendance_daily_key</code> already
+  assumes</li>
+<li>warn: Focus scaffold days with no attendance record — 124 of 9,287 now, 1.3%</li>
+<li>warn: Focus attendance rows dropped by the scaffold — 90 now</li>
+<li>warn: Focus in-session days at a school with zero enrollment for that year.
+  This is the test that surfaces the Ops calendar item</li>
+</ul>
+<h3 id="graph-and-issue-hygiene">Graph and issue hygiene</h3>
+<ul>
+<li><code>dbt build --empty</code> across the descendant graph</li>
+<li>re-measure the <a href="https://github.com/TEAMSchools/teamster/issues/4803">#4803</a>
+  orphan count and record the new number there. Focus carries AY2026-27 forward
+  only, so this restores Miami's current year and does not re-key the AY2025
+  archive rows — expect that orphan count to move, not vanish</li>
+</ul>
+<h2 id="ship-sequence">Ship sequence</h2>
+<p>Two PRs, in order. The package model must materialize in prod before kipptaf
+reads it.</p>
+<h3 id="pr1-focus-package">PR1 — focus package</h3>
+<p>The six models plus properties and unit tests.</p>
+<p>Its only real validation is a local build:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_focus__attendance_daily+<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippmiami<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>dbt Cloud CI builds <code>kipptaf</code> alone, so a package-only PR selects zero modified
+models and its check goes green trivially, not as validation. Merge, then wait
+for Dagster to materialize all six in prod.</p>
+<h3 id="pr2-kipptaf">PR2 — kipptaf</h3>
+<p>Six source entries with Dagster asset keys, the six <code>int_students__*</code> models,
+the wrapper strip, 33 consumer repoints, and the two join-key changes.</p>
+<p>Before pushing, refresh the staging copies or CI reads a stale
+<code>zz_stg_kippmiami_focus</code> and fails deterministically:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>clone<span class="w"> </span>--select<span class="w"> </span>int_focus__attendance_daily<span class="w"> </span>int_focus__ada<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>int_focus__attendance_streak<span class="w"> </span>int_focus__calendar_week<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>int_focus__calendar_rollup<span class="w"> </span>int_focus__calendar_day<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging<span class="w"> </span>--state<span class="w"> </span>src/dbt/kippmiami/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippmiami
+</code></pre></div>
+<p>That command recreates shared <code>zz_stg_*</code> tables, so it needs direct user
+authorization and is run by the user, not by Claude.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>The AY2025 and earlier Miami archive rows are not re-keyed.
+  <a href="https://github.com/TEAMSchools/teamster/issues/4803">#4803</a> still needs a
+  separate answer for its historical leg.</li>
+<li>Miami tardy and suspension sourcing, tracked in
+  <a href="https://github.com/TEAMSchools/teamster/issues/4927">#4927</a>.</li>
+<li>The Focus calendar cleanup, handed to Ops.</li>
+<li><code>int_focus__attendance_period</code> gains no kipptaf consumer here. It is declared
+  as a source only if the tardy work in #4927 needs it.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

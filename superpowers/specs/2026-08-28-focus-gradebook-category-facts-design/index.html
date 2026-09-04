@@ -1,0 +1,2333 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Focus gradebook and category grades into the kipptaf grades facts - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#focus-gradebook-and-category-grades-into-the-kipptaf-grades-facts" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Focus gradebook and category grades into the kipptaf grades facts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#measurement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measurement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Measurement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-package-model-is-column-sufficient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The package model is column-sufficient
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#focus-category-titles-share-powerschools-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Focus category titles share PowerSchool's domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-grain-finding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The grain finding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-1-points-sentinel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The -1 points sentinel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#join-keys-verified" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Join keys verified
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-1-focus-package-properties-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model 1 — focus package, properties only
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-2-kipptaf-source-entries-and-wrappers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model 2 — kipptaf source entries and wrappers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#surrogate-keys-nj-hashes-stay-byte-identical" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Surrogate keys — NJ hashes stay byte-identical
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-3-int_students__gradebook_assignments_scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model 3 — int_students__gradebook_assignments_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-4-int_students__category_grades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model 4 — int_students__category_grades
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model 4 — int_students__category_grades">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dropped-section-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dropped-section correction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-5-repoint-both-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model 5 — repoint both facts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-weight-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full weight now
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directional-until-q1-closes-on-2026-10-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directional until Q1 closes on 2026-10-16
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overlapping-enrollment-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overlapping-enrollment tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overlapping-enrollment tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-focus-package-overlap-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New: focus package overlap test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moved-the-powerschool-overlap-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moved: the PowerSchool overlap test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-ups-found-while-measuring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-ups found while measuring
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-08-28-focus-gradebook-category-facts-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="focus-gradebook-and-category-grades-into-the-kipptaf-grades-facts">Focus gradebook and category grades into the kipptaf grades facts</h1>
+<p>Design for <a href="https://github.com/TEAMSchools/teamster/issues/5010">#5010</a>.
+Measured against prod on 2026-08-28.</p>
+<h2 id="problem">Problem</h2>
+<p><code>fct_grades_assignments</code> and <code>fct_grades_category</code> hold zero Miami rows for
+AY2026. Both inner-join a source that unions only the district PowerSchool
+packages, and Miami left that package at the Focus cutover, so its archive stops
+at AY2025. No join-key change can produce a row that the source does not hold.</p>
+<p>Focus holds the data in <code>int_focus__gradebook_grades</code>. It has no kipptaf
+wrapper, so nothing reaches the network layer.</p>
+<h2 id="measurement">Measurement</h2>
+<h3 id="the-package-model-is-column-sufficient">The package model is column-sufficient</h3>
+<p><code>int_focus__gradebook_grades</code> carries everything both facts need. Nothing here
+requires widening it or adding a package model.</p>
+<table>
+<thead>
+<tr>
+<th>Fact need</th>
+<th>Source</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Score and points</td>
+<td><code>points</code>, <code>assignment_points</code></td>
+<td>Present. <code>possible_points</code> is null on all 4,764 rows, so <code>max_points</code> reads <code>assignment_points</code>.</td>
+</tr>
+<tr>
+<td>Category and weight</td>
+<td><code>assignment_type_title</code>, <code>assignment_type_final_grade_percent</code></td>
+<td>Present. Titles map 1:1 onto PowerSchool's <code>storecode_type</code> domain.</td>
+</tr>
+<tr>
+<td>Course-period link</td>
+<td><code>course_period_id</code></td>
+<td>Joins <code>int_students__course_enrollments.sections_dcid</code> with 0 orphans on all 4,625 linkable rows.</td>
+</tr>
+<tr>
+<td><code>academic_year</code></td>
+<td>Not on the model</td>
+<td>Derived at kipptaf from <code>marking_period_id</code> to <code>stg_focus__marking_periods.syear</code>. 0 nulls on the 4,625.</td>
+</tr>
+<tr>
+<td>Due date</td>
+<td><code>due_date</code></td>
+<td>Present.</td>
+</tr>
+<tr>
+<td><code>is_missing</code>, <code>numeric_grade_earned</code></td>
+<td>No Focus analog</td>
+<td>Null, per the <code>int_students__final_grades</code> precedent.</td>
+</tr>
+</tbody>
+</table>
+<p>Per the column-set rule on
+<a href="https://github.com/TEAMSchools/teamster/issues/4985">#4985</a>, a change that adds
+no columns cannot trigger the
+<a href="https://github.com/TEAMSchools/teamster/issues/4290">#4290</a> deploy race. <strong>This
+is one PR.</strong></p>
+<h3 id="focus-category-titles-share-powerschools-domain">Focus category titles share PowerSchool's domain</h3>
+<table>
+<thead>
+<tr>
+<th>Focus <code>assignment_type_title</code></th>
+<th>Scores</th>
+<th>PowerSchool <code>storecode_type</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Formative</td>
+<td>2,614</td>
+<td><code>F</code></td>
+</tr>
+<tr>
+<td>Work Habits</td>
+<td>1,436</td>
+<td><code>W</code></td>
+</tr>
+<tr>
+<td>Homework</td>
+<td>618</td>
+<td><code>H</code></td>
+</tr>
+<tr>
+<td>Summative</td>
+<td>96</td>
+<td><code>S</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>int_powerschool__category_grades</code> for AY2026 emits <code>storecode_type</code> in <code>Q</code>,
+<code>H</code>, <code>W</code>, <code>F</code>, <code>S</code>. <code>fct_grades_category</code> is therefore the
+per-gradebook-category percent grade per quarter per section, not a
+quarter-versus-exam breakdown as its current description implies.</p>
+<h3 id="the-grain-finding">The grain finding</h3>
+<p><code>int_focus__gradebook_grades</code> holds 4,764 rows against 4,673 distinct
+<code>student_gradebook_grade_id</code>. 91 ids appear twice. All 91 are the same shape: a
+student scheduled into 2 course periods that share one assignment. 4 assignments
+produce all 91.</p>
+<p>The model declares <code>unique</code> at <code>severity: error</code> on
+<code>student_gradebook_grade_id</code>, so that test fails against these rows.</p>
+<p><strong>The rows are correct and the test is wrong.</strong> Evidence, in order:</p>
+<ol>
+<li>Focus's own ERD (<code>Focus DB Diagram.pdf</code>, page 18, authored by Focus,
+   2026-02-23) gives <code>gradebook_grades</code> as <code>PK id</code> plus FKs to <code>student_id</code>,
+   <code>assignment_id</code>, <code>standard_id</code>, <code>letter_grade</code>, <code>comment_codes</code>. There is no
+   <code>course_period_id</code> and no FK to <code>gradebook_assignments_join_course_periods</code>.
+   Focus's storage grain is student by assignment.</li>
+<li>Raw <code>dagster_kippmiami_dlt_focus.gradebook_grades</code> matches the ERD — the
+   staging model drops no relevant column, unlike the case in
+   <a href="https://github.com/TEAMSchools/teamster/issues/4925">#4925</a>.</li>
+<li>All 6 gradebook tables are already in <code>focus.yaml</code>. The 4 the ERD names that
+   we do not ingest carry no per-score section link: <code>gradebook_comment_codes</code>,
+   <code>gradebook_custom_grades</code>, <code>gradebook_template_categories</code>, and
+   <code>gradebook_grade_colors</code> (which has <code>course_period_id</code> but is a teacher's
+   per-section color config keyed on <code>teacher_id</code>).</li>
+<li>Reading <code>gradebook_grades.assignment_id</code> as the join table's <code>id</code> is refuted:
+   it matches on 4,625 of 4,673 rows, but <strong>0</strong> of those land on a course period
+   the student is scheduled into. The numeric overlap is coincidence between two
+   dense integer spaces.</li>
+<li>Focus's reporting grain is strictly per section.
+   <code>int_focus__report_card_grades</code> for AY2026 is 1,901 rows, unique on
+   <code>(student_id, course_period_id, marking_period_id)</code>, with 0 null course
+   periods and no cross-course aggregation.</li>
+<li>For the ambiguous scores, Focus posts a report card grade in <strong>both</strong>
+   sections, at a percent consistent with the shared scores. Example: grade id
+   <code>7025719</code>, marking period 7181, carries 2 scores totalling 20 of 20 in each
+   of Homeroom 2nd Grade (151013) and LANG ARTS GRADE 2 (151698), and Focus
+   reports 100 percent in both. A score on a multi-section assignment feeds
+   every section the student sits in.</li>
+</ol>
+<p>PowerSchool stores what Focus derives — <code>assignmentsectionid</code> is already per
+section, so a PowerSchool student in 2 sections of a shared assignment gets 2
+score rows. The fan is PowerSchool parity. <code>fct_grades_assignments</code> is a student
+by assignment by section fact in both branches.</p>
+<p>Using the report card as a tiebreaker was considered and rejected: it resolves
+only 29 of the 91 to a single section, and Q1 is in progress, so an unposted
+grade is indistinguishable from a section that will never receive one.</p>
+<h3 id="the-1-points-sentinel">The <code>-1</code> points sentinel</h3>
+<p>192 rows carry <code>points = -1</code>. 118 also carry letter grade <code>A</code> and 74 carry no
+letter grade. Every normally scored row (0 to 100) also carries a letter grade,
+so <code>-1</code> is not a "graded by letter" marker — it reads as not-yet-graded or
+excused. Treated as a numeric score it yields <code>score_percent = -10</code> and poisons
+every category average that contains it.</p>
+<h3 id="join-keys-verified">Join keys verified</h3>
+<p>The enrollment key swap is exactly 1:1 for all 3 NJ regions, so it moves no NJ
+row. Distinct counts of <code>(studentid, schoolid, yearid)</code> against
+<code>(student_number, schoolid, academic_year)</code> in
+<code>int_students__student_enrollment_union</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>PowerSchool key</th>
+<th>Network key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kippcamden</td>
+<td>23,862</td>
+<td>23,862</td>
+</tr>
+<tr>
+<td>kippnewark</td>
+<td>97,966</td>
+<td>97,966</td>
+</tr>
+<tr>
+<td>kipppaterson</td>
+<td>2,076</td>
+<td>2,076</td>
+</tr>
+</tbody>
+</table>
+<p><code>studentid</code> and <code>yearid</code> are null on all 1,763 Miami AY2026 rows;
+<code>student_number</code> and <code>academic_year</code> are null on none.</p>
+<p><code>cc_dateleft</code> is null on 18,582 of 19,398 Miami AY2026 course enrollments (95.8
+percent) and on 0 NJ rows, so the PowerSchool date-window join drops nearly
+every Miami row as written.</p>
+<p>All 19,398 Miami AY2026 course enrollments already resolve in
+<code>dim_student_section_enrollments</code>, so the FK relationships tests will pass.</p>
+<h2 id="design">Design</h2>
+<h3 id="model-1-focus-package-properties-only">Model 1 — <code>focus</code> package, properties only</h3>
+<p><code>src/dbt/focus/models/intermediate/properties/int_focus__gradebook_grades.yml</code>:</p>
+<ul>
+<li>Replace the <code>unique</code> test on <code>student_gradebook_grade_id</code> with
+  <code>dbt_utils.unique_combination_of_columns</code> on
+  <code>(student_gradebook_grade_id, course_period_id)</code>.</li>
+<li>Keep <code>not_null</code> on <code>student_gradebook_grade_id</code>.</li>
+<li>Rewrite the description to state the real grain — one row per score per
+  resolved course period — and record why the fan matches Focus's own
+  per-section report card rather than being a defect.</li>
+</ul>
+<p>No SQL change and no column change, so <code>dbt clone --target staging</code> seeds a
+schema-correct copy and the corrected test passes against the cloned prod rows.</p>
+<h3 id="model-2-kipptaf-source-entries-and-wrappers">Model 2 — kipptaf source entries and wrappers</h3>
+<p>Add to <code>src/dbt/kipptaf/models/focus/sources-kippmiami.yml</code>, each with the
+standard dagster <code>asset_key</code> meta block:</p>
+<ul>
+<li><code>int_focus__gradebook_grades</code></li>
+<li><code>stg_focus__gradebook_assignments_join_course_periods</code></li>
+</ul>
+<p>Add the matching <code>union_relations</code> passthrough wrappers under
+<code>src/dbt/kipptaf/models/focus/</code>. Both re-declare <code>config.meta.contains_pii</code>,
+which does not travel through <code>source()</code>.</p>
+<p>The second wrapper is what makes the surrogate key work. Its <code>id</code> is one row per
+assignment per course period — the exact semantics of PowerSchool's
+<code>assignmentsectionid</code>.</p>
+<h3 id="surrogate-keys-nj-hashes-stay-byte-identical">Surrogate keys — NJ hashes stay byte-identical</h3>
+<p><code>fct_grades_assignments.grades_assignment_key</code> keeps its 3 inputs unchanged. The
+conformed model fills them per branch with true analogs, so no NJ value moves.</p>
+<table>
+<thead>
+<tr>
+<th>Key input</th>
+<th>PowerSchool branch</th>
+<th>Focus branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assignmentsectionid</code></td>
+<td><code>assignmentsectionid</code></td>
+<td><code>gradebook_assignments_join_course_periods.id</code></td>
+</tr>
+<tr>
+<td><code>_dbt_source_project</code></td>
+<td>unchanged</td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>students_dcid</code></td>
+<td><code>students_dcid</code></td>
+<td><code>student_id</code>, Focus's internal student row id</td>
+</tr>
+</tbody>
+</table>
+<p>The fact reads <code>students_dcid</code> from the conformed scores model rather than from
+course enrollments. <code>int_powerschool__gradebook_assignments_scores</code> already
+carries it, so NJ values are unchanged.</p>
+<p><code>fct_grades_category.grades_category_key</code> needs no change — <code>cc_dcid</code> already
+resolves in both branches through <code>int_students__course_enrollments</code>.</p>
+<p>Neither key is referenced outside its own model and properties file — no Cube
+model, no downstream FK — so both are leaf primary keys.</p>
+<h3 id="model-3-int_students__gradebook_assignments_scores">Model 3 — <code>int_students__gradebook_assignments_scores</code></h3>
+<p>SIS-neutral, on the <code>int_students__final_grades</code> shape. Lives in
+<code>src/dbt/kipptaf/models/students/intermediate/</code>.</p>
+<p>PowerSchool branch reads <code>int_powerschool__gradebook_assignments_scores</code>, scoped
+by a <code>focus_academic_year_boundary</code> CTE with the same
+<code>coalesce(min(academic_year), 9999)</code> guard the sibling models use, so the frozen
+Miami AY2020 to AY2025 archive stays readable.</p>
+<p>Focus branch reads the 2 new wrappers, joined to
+<code>int_students__course_enrollments</code> for <code>cc_dcid</code>, <code>cc_schoolid</code> and <code>region</code>,
+and to <code>stg_focus__marking_periods</code> for <code>academic_year</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Conformed column</th>
+<th>Focus source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_points</code></td>
+<td><code>assignment_points</code></td>
+</tr>
+<tr>
+<td><code>points_earned</code></td>
+<td><code>points</code>, null when <code>points &lt; 0</code></td>
+</tr>
+<tr>
+<td><code>score_percent</code></td>
+<td><code>points / assignment_points * 100</code>, null when <code>points &lt; 0</code></td>
+</tr>
+<tr>
+<td><code>is_late</code></td>
+<td><code>late</code></td>
+</tr>
+<tr>
+<td><code>is_exempt</code></td>
+<td><code>exclude_from_average</code></td>
+</tr>
+<tr>
+<td><code>is_counted_in_final_grade</code></td>
+<td><code>not assignment_exclude_from_average</code></td>
+</tr>
+<tr>
+<td><code>is_expected</code></td>
+<td><code>not exclude_from_average and not assignment_exclude_from_average</code></td>
+</tr>
+<tr>
+<td><code>category_name</code></td>
+<td><code>assignment_type_title</code></td>
+</tr>
+<tr>
+<td><code>category_code</code></td>
+<td>mapped <code>storecode_type</code>, below</td>
+</tr>
+<tr>
+<td><code>duedate</code></td>
+<td><code>due_date</code></td>
+</tr>
+<tr>
+<td><code>assignment_name</code></td>
+<td><code>assignment_title</code></td>
+</tr>
+<tr>
+<td><code>is_missing</code></td>
+<td>null — no Focus analog</td>
+</tr>
+<tr>
+<td><code>numeric_grade_earned</code></td>
+<td>null — Focus scoring is points-based</td>
+</tr>
+</tbody>
+</table>
+<p>The gradebook-audit columns on the PowerSchool model
+(<code>assign_mh_hwf_score_less_5</code> and siblings) stay out of scope. This model serves
+the 2 facts; the audit cluster keeps reading
+<code>int_powerschool__gradebook_assignments_scores</code> unchanged.</p>
+<h3 id="model-4-int_students__category_grades">Model 4 — <code>int_students__category_grades</code></h3>
+<p>PowerSchool branch reads <code>int_powerschool__category_grades</code>, year-scoped the
+same way. Both branches filter <code>not is_dropped_section</code>.</p>
+<h4 id="the-dropped-section-correction">The dropped-section correction</h4>
+<p>Revised 2026-08-28. <code>fct_grades_category</code> has never filtered
+<code>is_dropped_section</code>, unlike <code>fct_grades_assignments</code>, which always has. When a
+student leaves a section PowerSchool writes a second <code>stg_powerschool__cc</code> row
+with a negated <code>sectionid</code>; <code>cc_abs_sectionid</code> is the absolute value, so the
+category join matches the dropped stint alongside the live one and the fact
+over-counts.</p>
+<p>Measured for AY2026:</p>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Category rows</th>
+<th>Fact today</th>
+<th>With the filter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kippnewark</td>
+<td>674,301</td>
+<td>677,721</td>
+<td><strong>674,261</strong></td>
+</tr>
+<tr>
+<td>kippcamden</td>
+<td>242,070</td>
+<td>244,410</td>
+<td><strong>242,070</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Camden becomes exactly 1:1, which is the proof the join is right once dropped
+stints are excluded. Newark lands 40 short of its category rows; those 40 match
+no live enrollment at all and are a separate pre-existing gap.</p>
+<p><strong>This is the one place New Jersey output moves</strong>, ratified 2026-08-28 as a
+correction rather than a regression. An earlier draft of this spec called for
+preserving the fan verbatim under the NJ-parity constraint, which would have
+carried a known over-count into a new model. Everywhere else NJ stays identical,
+and the PR body states this delta explicitly.</p>
+<p>Focus branch aggregates <code>int_students__gradebook_assignments_scores</code> — Focus
+rows only — over <code>(cc_dcid, category, marking_period)</code>, reusing the conform work
+rather than re-reading the wrapper.</p>
+<table>
+<thead>
+<tr>
+<th>Conformed column</th>
+<th>Focus derivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>storecode_type</code></td>
+<td>category title mapped to <code>F</code> / <code>H</code> / <code>W</code> / <code>S</code></td>
+</tr>
+<tr>
+<td><code>storecode_order</code></td>
+<td>quarter number from the marking period <code>short_name</code></td>
+</tr>
+<tr>
+<td><code>storecode</code></td>
+<td><code>storecode_type</code> concatenated with <code>storecode_order</code></td>
+</tr>
+<tr>
+<td><code>reporting_term</code></td>
+<td><code>RT</code> concatenated with <code>storecode_order</code></td>
+</tr>
+<tr>
+<td><code>quarter</code></td>
+<td>marking period <code>short_name</code></td>
+</tr>
+<tr>
+<td><code>percent_grade</code></td>
+<td><code>sum(points) / sum(assignment_points) * 100</code> over scored rows only</td>
+</tr>
+<tr>
+<td><code>is_current</code></td>
+<td>current date between the marking period start and end dates</td>
+</tr>
+<tr>
+<td><code>citizenship_grade</code></td>
+<td>null — no Focus analog</td>
+</tr>
+<tr>
+<td><code>percent_grade_y1_running</code></td>
+<td>null — Focus has no year-to-date rollup</td>
+</tr>
+</tbody>
+</table>
+<p>Only <code>H</code>, <code>W</code>, <code>F</code> and <code>S</code> are emitted. <code>Q</code> rows are the quarter-overall grade,
+which already reaches the marts through <code>int_students__final_grades</code> and
+<code>fct_grades_term</code>; duplicating it here would add a second source to the branch
+for a number that is already published.</p>
+<p>An unmapped category title falls back to the raw title rather than to null, so a
+new Focus category surfaces in the fact instead of vanishing from it.</p>
+<h3 id="model-5-repoint-both-facts">Model 5 — repoint both facts</h3>
+<p>Both read the conformed models and <code>int_students__course_enrollments</code>.</p>
+<p><code>fct_grades_assignments</code>:</p>
+<ul>
+<li>Source swaps to <code>int_students__gradebook_assignments_scores</code>.</li>
+<li>Course enrollments swap to <code>int_students__course_enrollments</code>.</li>
+<li>The enrollment join swaps <code>(cc_studentid, cc_academic_year - 1990)</code> for
+  <code>(students_student_number, cc_academic_year)</code>. The 1990 offset is a
+  PowerSchool convention with no Focus equivalent, and the swap is 1:1 for NJ.</li>
+<li><code>asg.duedate &lt; ce.cc_dateleft</code> becomes
+  <code>asg.duedate &lt; coalesce(ce.cc_dateleft, date '9999-12-31')</code>. Miami-only in
+  effect, since <code>cc_dateleft</code> is null on 0 NJ rows.</li>
+<li><code>students_dcid</code> for the key comes from the scores model, not from course
+  enrollments.</li>
+</ul>
+<p><code>fct_grades_category</code>:</p>
+<ul>
+<li>Source swaps to <code>int_students__category_grades</code>.</li>
+<li>Course enrollments swap to <code>int_students__course_enrollments</code>.</li>
+<li>The join swaps <code>(studentid, sectionid, yearid)</code> for
+  <code>(students_student_number, sections_dcid, cc_academic_year)</code>.
+  <code>cc_abs_sectionid</code> and <code>cc_yearid</code> are null on every Miami row.</li>
+</ul>
+<p>Both fact descriptions lose their "PowerSchool only, Miami is absent"
+paragraphs.</p>
+<h2 id="validation">Validation</h2>
+<p>The quarter is in progress. Miami Q1 runs 2026-08-12 to 2026-10-16, so the
+gradebook holds roughly 2 weeks of a 9-week term.</p>
+<h3 id="full-weight-now">Full weight now</h3>
+<ol>
+<li>Grain uniqueness on <code>int_students__gradebook_assignments_scores</code>,
+   <code>int_students__category_grades</code>, and both facts.</li>
+<li>Zero-orphan FK joins from both facts to <code>dim_student_section_enrollments</code> and
+   <code>dim_terms</code>.</li>
+<li>NJ parity, per model and per region, as <code>count(*)</code> plus
+   <code>count(distinct format("%T|%T", ...))</code> on the key columns, against prod --
+   except <code>fct_grades_category</code> and <code>int_students__category_grades</code>, where the
+   ratified dropped-section correction moves Newark to 674,261 and Camden to
+   242,070 for AY2026. Verify those against the filtered baseline, not against
+   today's fact.</li>
+<li><code>grades_assignment_key</code> byte-identical for all 3 NJ regions.</li>
+<li>Miami AY2026 rows present in both facts, verified by row count.</li>
+<li>The Miami archive still readable — AY2020 to AY2025 Miami row counts
+   unchanged in both facts.</li>
+<li><code>dbt build --empty</code> across the descendant graph.</li>
+<li>After the deploy, compare each rebuilt kipptaf wrapper's stored
+   <code>input_data_version</code> materialization tag against the upstream's current
+   <code>data_version</code> before trusting a green build.</li>
+</ol>
+<h3 id="directional-until-q1-closes-on-2026-10-16">Directional until Q1 closes on 2026-10-16</h3>
+<p>Any magnitude comparison of Miami against NJ — scores per student, category
+percent grade distributions, assignment counts per section. These mature as Q1
+fills. They are recorded in the PR body as directional, not as pass or fail
+criteria.</p>
+<h2 id="ci">CI</h2>
+<p><code>int_focus__gradebook_grades</code> changes only its properties file, and the 2 other
+package models are unmodified, so <code>dbt clone --target staging</code> seeds
+<code>zz_stg_kippmiami_focus</code> with schema-correct rows. Authorized 2026-08-28: clone,
+then <code>dbt build --select int_focus__gradebook_grades --target staging</code> so CI
+exercises the corrected test.</p>
+<h2 id="overlapping-enrollment-tests">Overlapping-enrollment tests</h2>
+<p>Revised 2026-08-28: both tests ship in this PR rather than a follow-up.</p>
+<p>Source-data-quality assertions belong in the source-system package, not the
+network layer. Both packages already hold that shape —
+<code>focus/tests/stg_focus__student_enrollment__one_primary_per_stint.sql</code> and
+<code>powerschool/tests/int_powerschool__student_enrollment_union_no_shared_stint_boundary.sql</code>,
+the latter shipping knowingly failing with a documented count. Neither package
+sets a <code>data_tests</code> severity, so both inherit the consuming district project's
+<code>+severity: warn</code>.</p>
+<h3 id="new-focus-package-overlap-test">New: <code>focus</code> package overlap test</h3>
+<p>A student's course periods for one course, in one class period, must not overlap
+by more than a shared boundary day once resolved through the marking period. The
+resolution matters: <code>int_focus__schedule.end_date</code> is null on 18,412 of 19,699
+rows because the term boundary lives on the course period's marking period, not
+the schedule row. Without it, the 188 semester-paired course periods (S1 ending
+2027-01-14, S2 starting 2027-01-15) read as concurrent and the test is 100
+percent false positives.</p>
+<p>Scoped to a shared <code>period_id</code>. Two course periods of one course in <em>different</em>
+class periods is the 776-group pattern awaiting an Ops answer; flagging it now
+would ship a test we would delete if Ops rules it valid.</p>
+<p>Measured 2026-08-28: <strong>2 failures</strong>, both the same student in 2 different
+courses at <code>period_id</code> 2373, where the outgoing section runs 2026-08-12 to
+2026-08-13 while the incoming one starts 2026-08-12 — a 2-day double-booking
+during a section change, not a boundary day.</p>
+<h3 id="moved-the-powerschool-overlap-test">Moved: the PowerSchool overlap test</h3>
+<p><code>kipptaf/tests/test_base_powerschool__course_enrollments_no_studyear_course_overlap.sql</code>
+moves to <code>powerschool/tests/</code>. At package level each project holds one district,
+so the <code>_dbt_source_relation</code> partition key drops — the package's own
+<code>base_powerschool__course_enrollments</code> already windows <code>is_dropped_course</code> on
+exactly <code>(cc_studyear, cc_course_number)</code>.</p>
+<p>The move also fixes a coverage hole this issue exposed. The kipptaf test reads
+<code>base_powerschool__course_enrollments</code>, which holds 0 Miami AY2026 rows, so it
+is structurally blind to Miami. It is also currently failing: <strong>15,306 rows
+across all 4 regions</strong>, at kipptaf's project-default warn severity.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>The gradebook-audit cluster. It keeps reading
+  <code>int_powerschool__gradebook_assignments_scores</code> unchanged.</li>
+<li><code>Q</code> rows in the Focus branch of <code>fct_grades_category</code>.</li>
+<li><code>student_standard_grades</code>, still empty upstream.</li>
+<li><code>fct_grades_gpa</code>, shipped separately under
+  <a href="https://github.com/TEAMSchools/teamster/issues/5021">#5021</a>.</li>
+<li>The <code>0</code>-prefixed duplicate Focus section set — 283 groups, concentrated at
+  KIPP Royalty Academy, where a section name appears twice with a <code>0</code> prefix at
+  a different <code>period_id</code>. An Ops question, not a code fix.</li>
+<li>Whether a student in 2 sections of one course at <em>different</em> class periods is
+  valid. 776 groups, 457 students, 25 courses. Also an Ops question.</li>
+</ul>
+<h2 id="follow-ups-found-while-measuring">Follow-ups found while measuring</h2>
+<ul>
+<li>The <code>DT</code> versus <code>DY</code> marking-period token, recorded as an open external
+  dependency on <a href="https://github.com/TEAMSchools/teamster/issues/4925">#4925</a> and
+  on #4997, is answered by the Focus Level 1 certification training document:
+  <code>DT</code> is the running gradebook grade, <code>DY</code> is yesterday's grade, and <code>E</code> is an
+  exam. Belongs on those issues, not here.</li>
+<li><code>fct_grades_category</code>'s description calls its grain "quarter grades vs exam
+  grades". The measured <code>storecode_type</code> domain is <code>Q</code>, <code>H</code>, <code>W</code>, <code>F</code>, <code>S</code> — the
+  gradebook categories. Corrected as part of this work.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2266 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>kipptaf Known Upstream Issues Migration Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#kipptaf-known-upstream-issues-migration-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              kipptaf Known Upstream Issues Migration Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spec-corrections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spec corrections
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spec corrections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-powerschool-package-staging-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: powerschool package staging facts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-kipptaf-powerschool-union-view-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: kipptaf powerschool union-view facts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-student-enrollment-union-graduate-placeholders" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: student enrollment union graduate placeholders
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-people-and-location-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: people and location models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-dim_terms-and-dim_staff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: dim_terms and dim_staff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-renlearn-and-adp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: renlearn and ADP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-rewrite-the-claudemd-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: rewrite the CLAUDE.md section
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-whole-branch-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: whole-branch verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-the-implementer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for the implementer
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-25-kipptaf-upstream-issues-migration.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="kipptaf-known-upstream-issues-migration-implementation-plan">kipptaf Known Upstream Issues Migration Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Move model and column semantics out of <code>src/dbt/kipptaf/CLAUDE.md</code>
+<code>## Known Upstream Issues</code> into the owning models' <code>properties.yml</code>
+descriptions, leaving only directives and cross-model policy resident.</p>
+<p><strong>Architecture:</strong> Each entry is split. The data fact goes to the model's
+<code>properties.yml</code> <code>description:</code>. The directive or prohibition stays in
+<code>src/dbt/kipptaf/CLAUDE.md</code> as a one-line entry naming the model. Facts about
+models that exist in both the <code>powerschool</code> package and at kipptaf are written
+to both, each describing what is true of that copy. CLAUDE.md is edited last so
+the residue is written against what actually landed.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery adapter), YAML properties files, <code>uv run dbt</code> for
+validation, <code>trunk</code> for lint.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Worktree: <code>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit</code>.
+  Branch: <code>cbini/docs/claude-md-audit</code>. All <code>git</code> calls use
+  <code>git -C /workspaces/teamster/.worktrees/cbini-docs-claude-md-audit</code>.</li>
+<li>Design authority:
+  <code>docs/superpowers/specs/2026-08-25-kipptaf-upstream-issues-migration-design.md</code>.
+  Where this plan and the spec disagree, this plan wins — see <em>Spec corrections</em>
+  below.</li>
+<li><strong>No description may contain a tracking-issue reference.</strong> <code>#3900</code>, <code>#3915</code>,
+  and <code>#4407</code> stay in CLAUDE.md with their directives.</li>
+<li><strong>No dbt test may be added, removed, or re-scoped by this plan.</strong></li>
+<li><strong>No model SQL may be edited by this plan.</strong></li>
+<li><strong>No column may be added to a contract-enforced model's yml.</strong> Enforced paths
+  at kipptaf: <code>marts</code>, <code>extracts</code>, <code>google/sheets/staging</code>, <code>people/staging</code>,
+  <code>schoolmint/grow/staging</code>, <code>adp/*/staging</code>, and others listed in
+  <code>src/dbt/kipptaf/dbt_project.yml</code>. NOT enforced: <code>powerschool/staging</code>,
+  <code>powerschool/intermediate</code>. Editing an existing column's <code>description:</code> is
+  always safe.</li>
+<li>YAML: an unquoted multi-line <code>description:</code> cannot start with a backtick or
+  contain a colon followed by a space. Match the block-scalar style the file
+  already uses. Lead with a word; use an em dash instead of a colon.</li>
+<li>Do not reorder <code>columns:</code> entries. Adding a description does not add a test,
+  so no column changes sort position. A reorder in a diff is a mistake.</li>
+</ul>
+<h2 id="spec-corrections">Spec corrections</h2>
+<p>The spec was written before the target files were inspected. Four of its
+assumptions are wrong, and all four reduce scope. This plan implements the
+corrected version.</p>
+<ol>
+<li><strong>Entry 12 (Grow <code>_dagster_partition_key</code>) needs no yml edit.</strong> Both
+   <code>stg_schoolmint_grow__measurements.yml</code> and
+   <code>stg_schoolmint_grow__rubrics__measurement_groups__measurements.yml</code> already
+   document the deviation in their model descriptions. <code>schoolmint/grow/staging</code>
+   is contract-enforced and <code>_dagster_partition_key</code> is absent from both column
+   lists, so there is no column-level home for it. This entry becomes a
+   CLAUDE.md deletion only.</li>
+<li><strong>Entry 2 (<code>campus_crosswalk</code>) is mostly already written.</strong> Its description
+   already names it sole owner of location-to-campus and already documents the
+   <code>rpt_illuminate__roles</code> inner join. Only the grain sentence is missing.</li>
+<li><strong>Entry 13 (<code>locations</code> column naming) is half already written.</strong>
+   <code>location_region</code> already carries its long-form-name description. Only <code>city</code>
+   needs extending.</li>
+<li><strong>The <code>entity</code> fragment of entry 14 cannot go on <code>dim_staff</code>.</strong> <code>marts</code> is
+   contract-enforced, so <code>dim_staff</code>'s 16 columns are its complete column set,
+   and <code>entity</code> is not among them — it is a column on <code>rpt_tableau__*</code> extracts.
+   That sentence stays in CLAUDE.md; only the grain fact moves.</li>
+</ol>
+<hr />
+<h3 id="task-1-powerschool-package-staging-facts">Task 1: powerschool package staging facts</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__students.yml</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__cc.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing.</li>
+<li>
+<p>Produces: the package-level wording that Task 2's kipptaf descriptions
+  complement. Task 2 describes the union view's filtering; this task describes
+  the raw defect.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Extend the <code>dcid</code> column description in
+      <code>stg_powerschool__students.yml</code></strong></p>
+</li>
+</ul>
+<p>Current text is <code>Unique identifier for this table. Indexed. Required.</code> Replace
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Unique identifier for this table. Indexed. Required. PowerSchool retains four</span>
+<span class="w">  </span><span class="no">placeholder rows per district carrying dcid -100, student_number 0, and</span>
+<span class="w">  </span><span class="no">enroll_status -100. They are not real students.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Extend the <code>enroll_status</code> column description in
+      <code>stg_powerschool__students.yml</code></strong></li>
+</ul>
+<p>Current text is <code>The enrollment status of the student.</code> Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">The enrollment status of the student. Values are -1 pre-registered, 0 active,</span>
+<span class="w">  </span><span class="no">1 inactive, 2 withdrawn, and 3 graduated. The value is student-level, not</span>
+<span class="w">  </span><span class="no">per-stint — every enrollment stint for a student carries the same value, and</span>
+<span class="w">  </span><span class="no">it reflects current status only, never status on a past date.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Extend the model description in <code>stg_powerschool__cc.yml</code></strong></li>
+</ul>
+<p>Current text is
+<code>This table maintains the student schedules. It contains information such as Section ID, Student ID, Term ID and Teacher ID.</code>
+Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">This table maintains the student schedules. It contains information such as</span>
+<span class="w">  </span><span class="no">Section ID, Student ID, Term ID and Teacher ID. Carries a frozen historical</span>
+<span class="w">  </span><span class="no">corpus of PowerSchool double-writes — duplicate rows for the same student,</span>
+<span class="w">  </span><span class="no">section, and dateleft combination. A warn-level uniqueness test on those three</span>
+<span class="w">  </span><span class="no">columns surfaces them.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the YAML parses and no node changed</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark
+</code></pre></div>
+<p>Expected: completes without error. <code>powerschool</code> is a package with no resolvable
+vars standalone, so it is parsed through a consuming district. A parse error
+naming either edited file means the YAML is malformed — fix and re-run before
+committing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__students.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__cc.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(dbt): document powerschool staging placeholder rows and double-writes"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-kipptaf-powerschool-union-view-facts">Task 2: kipptaf powerschool union-view facts</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__students.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__cc.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: Task 1's package wording. These descriptions state what the union
+  view does about the defect, not the defect itself.</li>
+<li>Produces: nothing later tasks depend on.</li>
+</ul>
+<p>Both files are thin — <code>stg_powerschool__students.yml</code> lists one column
+(<code>student_number</code>) and has no model description; <code>stg_powerschool__cc.yml</code> lists
+no columns and has no model description. <code>powerschool/staging</code> is NOT
+contract-enforced at kipptaf, so adding a column entry is safe here.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add a model description to <code>stg_powerschool__students.yml</code></strong></li>
+</ul>
+<p>Insert as a sibling of <code>name:</code>, above <code>columns:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Cross-district union of the district-level stg_powerschool__students models.</span>
+<span class="w">  </span><span class="no">Filters out PowerSchool's placeholder rows with a dcid &gt;= 1 predicate, so the</span>
+<span class="w">  </span><span class="no">four per-district placeholders present in the raw district tables do not</span>
+<span class="w">  </span><span class="no">appear here.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add an <code>enroll_status</code> column entry to
+      <code>stg_powerschool__students.yml</code></strong></li>
+</ul>
+<p>Append to the existing <code>columns:</code> list, after <code>student_number</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enroll_status</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Enrollment status of the student. Values are -1 pre-registered, 0 active, 1</span>
+<span class="w">    </span><span class="no">inactive, 2 withdrawn, and 3 graduated. Student-level, not per-stint, and</span>
+<span class="w">    </span><span class="no">current-only — it never reflects status on a past date.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add a model description to <code>stg_powerschool__cc.yml</code></strong></li>
+</ul>
+<p>Insert as a sibling of <code>name:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Cross-district union of the district-level stg_powerschool__cc models.</span>
+<span class="w">  </span><span class="no">Inherits the frozen PowerSchool double-write corpus described on the</span>
+<span class="w">  </span><span class="no">package-level model — duplicate rows for the same student, section, and</span>
+<span class="w">  </span><span class="no">dateleft combination.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the YAML parses</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: completes without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__students.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__cc.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(dbt): document kipptaf powerschool union view filtering"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-student-enrollment-union-graduate-placeholders">Task 3: student enrollment union graduate placeholders</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_enrollment_union.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_enrollment_union.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: the <code>enroll_status</code> value meanings written in Tasks 1 and 2. Do not
+  restate them here; reference the status by name.</li>
+<li>Produces: nothing later tasks depend on.</li>
+</ul>
+<p>The package file has no model description and no descriptions on <code>entrydate</code>,
+<code>exitdate</code>, or <code>enroll_status</code>. The kipptaf file already has a good model
+description and lists only two columns. Neither path is contract-enforced.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add a model description to the package file</strong></li>
+</ul>
+<p>Insert as a sibling of <code>name:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">One row per student-school enrollment event. Graduated students carry</span>
+<span class="w">  </span><span class="no">placeholder rows with null entry and exit dates, one row per academic year per</span>
+<span class="w">  </span><span class="no">student and district. Surrogate keys must include academic_year or those rows</span>
+<span class="w">  </span><span class="no">collide.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add descriptions to <code>entrydate</code> and <code>exitdate</code> in the package
+      file</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">entrydate</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Date the student entered the school for this stint. Null on graduate</span>
+<span class="w">    </span><span class="no">placeholder rows, which a date-range join silently drops.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exitdate</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Date the student left the school for this stint. Null on graduate</span>
+<span class="w">    </span><span class="no">placeholder rows, which a date-range join silently drops.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Extend the kipptaf model description</strong></li>
+</ul>
+<p>Append to the existing description, preserving its current text:</p>
+<div class="highlight"><pre><span></span><code>Graduated students carry placeholder rows with null entry and exit dates,
+one row per academic year per student and district. Retain them —
+downstream enrollment models and dim_student_enrollments are
+alumni-inclusive by design.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify both projects parse</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: both complete without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_enrollment_union.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_enrollment_union.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(dbt): document graduate placeholder rows on enrollment union"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-people-and-location-models">Task 4: people and location models</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__people__campus_crosswalk.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__people__locations.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/people/staging/properties/stg_people__employee_numbers.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: nothing later tasks depend on.</li>
+</ul>
+<p><code>google/sheets/staging</code> and <code>people/staging</code> are contract-enforced. Edit
+existing descriptions only — do not add column entries in those two files.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Extend the <code>int_people__location_crosswalk</code> model description</strong></li>
+</ul>
+<p>Append to the existing description, preserving its current text:</p>
+<div class="highlight"><pre><span></span><code>Despite the name, this is not a union model and carries no
+_dbt_source_relation column. To join it across regions, match the other
+side's _dbt_source_project against location_dagster_code_location.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Extend the <code>campus_crosswalk</code> model description</strong></li>
+</ul>
+<p>The description already covers sole ownership and the <code>rpt_illuminate__roles</code>
+inner join. Append only the grain sentence, preserving the existing text:</p>
+<div class="highlight"><pre><span></span><code>Grain is Location_Name alone. Name is the parent campus and repeats across
+sibling schools. The sheet carries no self-referential rows, so a campus
+record resolves to a null campus name by design.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Extend the <code>city</code> column description in
+      <code>stg_google_sheets__people__locations.yml</code></strong></li>
+</ul>
+<p>Current text is <code>City where the location is situated.</code> Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">City where the location is situated. Holds the short canonical region names —</span>
+<span class="w">  </span><span class="no">Newark, Camden, Miami, Paterson — so region lookups by short name use this</span>
+<span class="w">  </span><span class="no">column rather than location_region, which holds long-form legal-entity names.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add a model description to <code>stg_people__employee_numbers.yml</code></strong></li>
+</ul>
+<p>The file has no model description. Insert as a sibling of <code>name:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Assigns one employee number per ADP associate id, in first-appearance order. A</span>
+<span class="w">  </span><span class="no">lower number means the associate was seen in ADP earlier, NOT that they were</span>
+<span class="w">  </span><span class="no">hired earlier — worker_original_hire_date is editable. One person with</span>
+<span class="w">  </span><span class="no">duplicate ADP worker records receives multiple active employee numbers.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the project parses</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: completes without error. A contract error naming
+<code>stg_google_sheets__people__locations</code> or <code>stg_people__employee_numbers</code> means a
+column was added rather than edited — revert that edit.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__people__campus_crosswalk.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__people__locations.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/people/staging/properties/stg_people__employee_numbers.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(dbt): document location crosswalk grain and employee number ordering"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-dim_terms-and-dim_staff">Task 5: dim_terms and dim_staff</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_staff.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: nothing later tasks depend on.</li>
+</ul>
+<p><code>marts</code> is contract-enforced. Edit existing descriptions only. <code>dim_staff</code> has
+no <code>entity</code> column — do not add one, and do not move the <code>entity</code> sentence here.
+It stays in CLAUDE.md per <em>Spec corrections</em> item 4.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Extend the <code>type</code> column description in <code>dim_terms.yml</code></strong></li>
+</ul>
+<p>Current text is
+<code>Category of period (e.g., academic, PM, survey, assessment, fiscal).</code> Replace
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Category of period. KIPP-managed and sourced from</span>
+<span class="w">  </span><span class="no">stg_google_sheets__reporting__terms, not derived from PowerSchool. Values</span>
+<span class="w">  </span><span class="no">include RT for reporting term at quarter grain, ATT for attendance at semester</span>
+<span class="w">  </span><span class="no">or year grain, plus LIT, AR, REP, and SURVEY. Quarter attendance rows live</span>
+<span class="w">  </span><span class="no">under RT with term_name Q1 through Q4 — not under ATT, and not keyed by</span>
+<span class="w">  </span><span class="no">term_code RT1 through RT4.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Extend the <code>dim_staff</code> model description</strong></li>
+</ul>
+<p>Append to the existing description, preserving its current text:</p>
+<div class="highlight"><pre><span></span><code>This dimension is all-time staff, roughly 4,600 rows, not active-only. For
+an active-staff grain, spine on dim_staff_work_assignments where
+is_current, which already excludes terminated staff by termination date.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the project parses and contracts hold</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: completes without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/dimensions/properties/dim_staff.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(dbt): document dim_terms type values and dim_staff grain"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-renlearn-and-adp">Task 6: renlearn and ADP</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/renlearn/staging/properties/stg_renlearn__star.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/adp/workforce_now/api/staging/properties/stg_adp_workforce_now__workers.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: nothing later tasks depend on.</li>
+</ul>
+<p><code>stg_renlearn__star.yml</code> has no model description and 136 columns.
+<code>adp/workforce_now/api/staging</code> is contract-enforced — edit the existing model
+description only.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add a model description to <code>stg_renlearn__star.yml</code></strong></li>
+</ul>
+<p>Insert as a sibling of <code>name:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Consolidated STAR model and the single place STAR data is read or edited.</span>
+<span class="w">  </span><span class="no">Materialized as a table. Folds in the derived columns that previously lived in</span>
+<span class="w">  </span><span class="no">the retired rollup — academic_year, star subject and discipline,</span>
+<span class="w">  </span><span class="no">administration window mapped from Fall, Winter, and Spring to BOY, MOY, and</span>
+<span class="w">  </span><span class="no">EOY, benchmark integer flags, and the per-subject row numbers.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Extend the <code>stg_adp_workforce_now__workers</code> model description</strong></li>
+</ul>
+<p>Append to the existing description, preserving its current text:</p>
+<div class="highlight"><pre><span></span><code>There is no SCD2 tombstone for disappearance. A worker hard-deleted or
+merged in ADP vanishes from the daily snapshots without a terminated status
+row, so its final record stays open at 9999-12-31 with is_current_record
+true indefinitely. That ghost flows downstream into employee numbers, the
+staff roster, and the RapidIdentity login feed.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the project parses</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: completes without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/renlearn/staging/properties/stg_renlearn__star.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/adp/workforce_now/api/staging/properties/stg_adp_workforce_now__workers.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(dbt): document consolidated STAR model and ADP ghost records"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-7-rewrite-the-claudemd-section">Task 7: rewrite the CLAUDE.md section</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/CLAUDE.md</code> — the <code>## Known Upstream Issues</code> section</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: every description written in Tasks 1 through 6. Before writing,
+  re-read them so the residue does not restate a fact that now lives in a yml.</li>
+<li>Produces: the final resident text.</li>
+</ul>
+<p>The rewritten section keeps three things: the three cross-model policy entries
+verbatim, one-line directives naming the model for each split entry, and every
+tracking-issue reference.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm what actually landed</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>diff<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--stat<span class="w"> </span>HEAD~6..HEAD<span class="w"> </span>--<span class="w"> </span>src/dbt
+</code></pre></div>
+<p>Expected: the 14 properties.yml files from Tasks 1 through 6. If a file is
+missing, the residue for its entry must not claim the fact moved.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace the section body with the directives</strong></li>
+</ul>
+<p>Keep the <code>## Known Upstream Issues</code> heading. Keep entries 6, 8, and 9 — "Miami
+is the exception, deliberately", "Point-in-time enrollment headcount uses
+entry/exit dates", and "School calendars diverge at year-end" — byte for byte.
+Replace the other 14 entries with:</p>
+<div class="highlight"><pre><span></span><code>Model and column semantics for these live in each model's properties yml. What
+stays here is what to do and what not to do.
+
+<span class="k">-</span><span class="w"> </span><span class="gs">**`stg_powerschool__students`**</span> — never resolve identity or attribute facts
+  against <span class="sb">`enroll_status`</span> <span class="sb">`-1`</span> or <span class="sb">`1`</span>. Apply the <span class="sb">`dcid &gt;= 1`</span> placeholder filter
+  when reading a per-region staging table directly.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`int_powerschool__student_enrollment_union`**</span> — retain graduate placeholder
+  rows; derived enrollment models and <span class="sb">`dim_student_enrollments`</span> stay
+  alumni-inclusive. Include <span class="sb">`academic_year`</span> in surrogate key inputs.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`stg_powerschool__cc` double-writes**</span> — filter <span class="sb">`is_dropped_section`</span> first
+  when date-range joining <span class="sb">`base_powerschool__course_enrollments`</span>. Do NOT add
+  defensive dedupes (<span class="sb">`qualify row_number() = 1`</span> or <span class="sb">`dbt_utils.deduplicate()`</span>)
+  for the residual fan-out. Downgrade the affected mart PK uniqueness test to
+  <span class="sb">`severity: warn`</span> with a <span class="sb">`TODO(#3915)`</span> so it returns to error when source
+  cleanup completes. <span class="sb">`base_powerschool__student_enrollments`</span> date-range joins
+  currently need no tiebreaker. Tracked in
+  [<span class="nt">#3900</span>](<span class="na">https://github.com/TEAMSchools/teamster/issues/3900</span>); Ops cleanup in
+  [<span class="nt">#3915</span>](<span class="na">https://github.com/TEAMSchools/teamster/issues/3915</span>).
+<span class="k">-</span><span class="w"> </span><span class="gs">**`int_people__location_crosswalk`**</span> — consumers joining on an aliased name
+  (e.g. <span class="sb">`fct_staff_observations`</span> on <span class="sb">`gro.school_name`</span>) must use this model.
+  Canonical-grain consumers, meaning one row per logical school, use
+  <span class="sb">`stg_google_sheets__people__locations`</span>.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`stg_google_sheets__people__campus_crosswalk`**</span> — do not reintroduce a
+  <span class="sb">`Campus_Name`</span> scalar on the locations sheet.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`stg_google_sheets__people__locations`**</span> — to map <span class="sb">`_dbt_source_project`</span> to a
+  region, use <span class="sb">`dim_regions.dagster_code_location`</span>, not this model.
+<span class="k">-</span><span class="w"> </span><span class="gs">**SchoolMint Grow archived rows**</span> — <span class="sb">`stg_schoolmint_grow__measurements`</span> and
+  <span class="sb">`stg_schoolmint_grow__rubrics__measurement_groups__measurements`</span> deliberately
+  do not filter to non-archived. Don't re-add the filter to those two without
+  understanding the FK-coverage tradeoff.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`dim_staff`**</span> — do NOT filter
+  <span class="sb">`dim_work_assignment_status.status_name != 'Terminated'`</span> to get "active". That
+  field is misaligned with the roster's <span class="sb">`worker_status_code`</span> and over-drops
+  roughly 100 roster-active staff. The roster active-and-primary set (~1,526)
+  runs ~30 larger than the marts' current-primary set, from hire and termination
+  timing. On the <span class="sb">`rpt_tableau__*`</span> extracts, <span class="sb">`entity`</span> (KTAF vs Region) derives
+  from <span class="sb">`business_unit_name`</span> — <span class="sb">`KIPP TEAM and Family Schools Inc.`</span> is KTAF,
+  anything else is Region.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`stg_renlearn__star`**</span> — <span class="sb">`int_renlearn__star_rollup`</span> is disabled
+  (<span class="sb">`config: enabled: false`</span>); leave it. Edit and consume STAR at
+  <span class="sb">`stg_renlearn__star`</span>.
+<span class="k">-</span><span class="w"> </span><span class="gs">**`stg_adp_workforce_now__workers` ghosts**</span> — fix by rematerializing the ADP
+  <span class="sb">`workers`</span> partitions spanning the record's active dates; the re-pull drops the
+  ghost and downstream tables rebuild via automation. Detection check tracked in
+  [<span class="nt">#4407</span>](<span class="na">https://github.com/TEAMSchools/teamster/issues/4407</span>).
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify no fact was left duplicated</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'dcid = -100|9999-12-31|first-appearance|4,600|uniqueness grain|BOY'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/CLAUDE.md
+</code></pre></div>
+<p>Expected: no matches. Each of those strings is a data fact that now lives in a
+yml. A match means the residue restates a moved fact — delete that clause.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the section shrank as designed</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+awk<span class="w"> </span><span class="s1">'/^## Known Upstream Issues/,/^## Exposures/'</span><span class="w"> </span>src/dbt/kipptaf/CLAUDE.md<span class="w"> </span><span class="p">|</span><span class="w"> </span>wc<span class="w"> </span>-c
+</code></pre></div>
+<p>Expected: roughly 5,200 characters, down from 9,058 — about 2,100 for the three
+kept policy entries plus about 3,050 for the directive list. A number above
+7,000 means facts were kept that should have moved.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+~/.cache/trunk/launcher/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/dbt/kipptaf/CLAUDE.md<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: no markdownlint issues. MD060 table-padding findings are fixed by the
+pre-commit format hook and can be committed as-is.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/CLAUDE.md
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs(claude): reduce kipptaf upstream issues to directives"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-8-whole-branch-verification">Task 8: whole-branch verification</h3>
+<p><strong>Files:</strong> none modified.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: all prior tasks.</li>
+<li>
+<p>Produces: the evidence needed to open the PR.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm no test, SQL, or column-list changed</strong></p>
+</li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>diff<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>origin/main...HEAD<span class="w"> </span>--stat
+</code></pre></div>
+<p>Expected: only <code>.md</code> and <code>properties/*.yml</code> files. Any <code>.sql</code> file in the list
+violates a global constraint — stop and report.</p>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>diff<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>origin/main...HEAD<span class="w"> </span>--<span class="w"> </span><span class="s1">'*.yml'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'^[+-]\s*- (unique|not_null|relationships|accepted_values)'</span>
+</code></pre></div>
+<p>Expected: no output. Any match means a test was added or removed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm no description carries an issue reference</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit<span class="w"> </span>diff<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>origin/main...HEAD<span class="w"> </span>--<span class="w"> </span><span class="s1">'*.yml'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">'^\+.*#[0-9]{4}'</span>
+</code></pre></div>
+<p>Expected: no output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Full parse of both entry points</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark
+</code></pre></div>
+<p>Expected: both complete without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint every changed file</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-docs-claude-md-audit
+~/.cache/trunk/launcher/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--name-only<span class="w"> </span>origin/main...HEAD<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="o">{}</span><span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'test -f {} &amp;&amp; echo {}'</span><span class="k">)</span><span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: no issues. <code>yamllint</code> fires here and not at the pre-commit hook, so
+this step is the one that catches quoting and octal-value problems.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Report, do not push</strong></li>
+</ul>
+<p>Summarize what changed and hand the push to the user. Do not open a PR without
+being asked.</p>
+<p>State plainly in the summary that dbt Cloud CI will be a trivial no-op — a
+<code>description:</code> edit does not mark a model <code>state:modified</code> — so CI passing is
+<strong>not</strong> validation of this branch.</p>
+<h2 id="notes-for-the-implementer">Notes for the implementer</h2>
+<ul>
+<li><code>powerschool</code> is a package with no resolvable vars standalone. Parse and build
+  it through a consuming district project-dir, which is why Task 1 parses
+  <code>kippnewark</code>.</li>
+<li>If <code>dbt parse</code> fails with a missing <code>dbt_packages/</code> error, run
+  <code>uv run dbt deps --project-dir src/dbt/&lt;project&gt;</code> once. A fresh worktree has
+  no installed packages.</li>
+<li>Every description in this plan is written to avoid a leading backtick and a
+  colon-space, which is why identifiers appear unbackticked inside description
+  prose. That is deliberate — do not "fix" it by adding backticks.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

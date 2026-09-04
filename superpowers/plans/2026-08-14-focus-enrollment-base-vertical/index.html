@@ -1,0 +1,3344 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Focus Branch into the kipptaf Enrollment base_ Vertical Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#focus-branch-into-the-kipptaf-enrollment-base_-vertical-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Focus Branch into the kipptaf Enrollment base_ Vertical Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-stage-custom_818-on-stg_focus__students" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Stage custom_818 on stg_focus__students
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-decode-custom_818-in-int_focus__students__pivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Decode custom_818 in int_focus__students__pivot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-conform-homelessness-and-meal-eligibility-in-int_focus__students" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Conform homelessness and meal eligibility in int_focus__students
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-seed-staging-so-kipptaf-ci-sees-the-new-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Seed staging so kipptaf CI sees the new columns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-new-int_focus__advisory-at-kipptaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: New int_focus__advisory at kipptaf
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 5: New int_focus__advisory at kipptaf">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-focus-column-is-which-verified-do-not-substitute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which Focus column is which — verified, do not substitute
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-new-int_students__student_enrollments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: New int_students__student_enrollments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 6: New int_students__student_enrollments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-student-number-columns-use-the-right-one-per-join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two student-number columns — use the right one per join
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-identifier-spaces-not-two" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three identifier spaces, not two
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-reduce-base_powerschool__student_enrollments-to-a-passthrough" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Reduce base_powerschool__student_enrollments to a passthrough
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-8-validation-sweep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Validation sweep
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-9-ops-issues-push-and-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Ops issues, push, and PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-08-14-focus-enrollment-base-vertical.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="focus-branch-into-the-kipptaf-enrollment-base_-vertical-implementation-plan">Focus Branch into the kipptaf Enrollment <code>base_</code> Vertical Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Restore KIPP Miami to <code>base_powerschool__student_enrollments</code> and its
+15 consumer sites for AY2026, by building a Focus branch into a new SIS-neutral
+<code>int_students__student_enrollments</code> that <code>base_</code> becomes a passthrough over.</p>
+<p><strong>Architecture:</strong> Three <code>focus</code> package models gain the homelessness and meal
+custom-field conform. Three kipptaf models follow: a new <code>int_focus__advisory</code>,
+a new <code>int_students__student_enrollments</code> that unions the three NJ district
+<code>base_</code> models with a Focus-conformed block via <code>full union all corresponding</code>,
+and <code>base_powerschool__student_enrollments</code> reduced to <code>select * from</code> the new
+model. Single PR using the cross-project workflow.</p>
+<p><strong>Tech Stack:</strong> dbt 1.11 on BigQuery, <code>dbt_utils</code>, sqlfluff/markdownlint via
+trunk, <code>uv</code> for all Python and dbt invocation.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-08-14-focus-enrollment-base-vertical-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Worktree:</strong> all work happens in
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base</code>.
+  Every <code>git</code> call uses <code>git -C &lt;worktree&gt;</code>; every dbt call uses
+  <code>--project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>. Never
+  <code>uv --directory &lt;worktree&gt; run dbt</code>.</li>
+<li><strong>Branch:</strong> <code>cbini/feat/claude-focus-enrollment-base</code>, linked to issue #4868.</li>
+<li><strong>Python/dbt invocation:</strong> always <code>uv run</code>. Never bare <code>dbt</code> or <code>python</code>.</li>
+<li><strong>Focus package models are built through a consuming district</strong>, never
+  standalone:
+  <code>uv run dbt build --select &lt;model&gt; --project-dir &lt;worktree&gt;/src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev</code>.</li>
+<li><strong>Fresh worktree needs <code>dbt deps</code></strong> before the first build in each project
+  dir.</li>
+<li><strong><code>--state</code> must be absolute from a worktree:</strong>
+  <code>/workspaces/teamster/src/dbt/&lt;project&gt;/target/prod</code>.</li>
+<li><strong>Column vocabulary stays PowerSchool.</strong> No R1-R10 renames in this PR.</li>
+<li><strong>SQL conventions</strong> (<code>src/dbt/CLAUDE.md</code>): max 1 level of function nesting; no
+  subqueries against tables or CTEs; no <code>ORDER BY</code>; no <code>QUALIFY</code>; no
+  <code>GROUP BY ALL</code>; no lateral column aliases; no one-sided calculations in join
+  predicates; no row-level calculations in <code>WHERE</code>; trailing commas in <code>SELECT</code>;
+  single-quoted strings; 88-char lines. ST06 column order: plain refs grouped by
+  source table, then constants, then <code>cast()</code>, then simple functions, then
+  nested functions, then logicals, then <code>CASE</code>, then window functions.</li>
+<li><strong>Every new model needs</strong> a <code>description:</code> on the model and every column, plus
+  a uniqueness test. Staging models additionally need <code>config: severity: error</code>
+  on every test.</li>
+<li><strong>Generic tests require <code>arguments:</code> nesting</strong> (dbt 1.11+).</li>
+<li><strong>Do not run <code>trunk fmt</code> / <code>trunk check</code> manually</strong> except on <code>.md</code> files
+  before pushing — the pre-commit hook formats and the pre-push hook checks.</li>
+<li><strong>Never <code>git add -A</code> or <code>git add .</code></strong> — name files explicitly.</li>
+<li><strong>PII stays local.</strong> No student values in commits, PR bodies, or issues.</li>
+</ul>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<p><strong><code>focus</code> package</strong> — the custom-field conform lives here, not at kipptaf:</p>
+<ul>
+<li><code>src/dbt/focus/models/staging/stg_focus__students.sql</code> — add one column</li>
+<li><code>src/dbt/focus/models/staging/properties/stg_focus__students.yml</code> — contract
+  entry for it</li>
+<li><code>src/dbt/focus/models/intermediate/int_focus__students__pivot.sql</code> — decode
+  the new column</li>
+<li><code>src/dbt/focus/models/intermediate/properties/int_focus__students__pivot.yml</code></li>
+<li><code>src/dbt/focus/models/intermediate/int_focus__students.sql</code> — conform four
+  network columns</li>
+<li><code>src/dbt/focus/models/intermediate/properties/int_focus__students.yml</code></li>
+<li><code>src/dbt/focus/tests/unit/</code> — unit test for the conform CASE logic</li>
+</ul>
+<p><strong>kipptaf</strong>:</p>
+<ul>
+<li><code>src/dbt/kipptaf/models/focus/intermediate/int_focus__advisory.sql</code> — new</li>
+<li><code>src/dbt/kipptaf/models/focus/intermediate/properties/int_focus__advisory.yml</code>
+  — new</li>
+<li><code>src/dbt/kipptaf/models/focus/intermediate/int_focus__students.sql</code> — doc
+  comment only, to force <code>state:modified</code></li>
+<li><code>src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql</code>
+  — new, carries the body <code>base_</code> has today</li>
+<li><code>src/dbt/kipptaf/models/students/intermediate/properties/int_students__student_enrollments.yml</code>
+  — new, receives <code>base_</code>'s column docs and tests</li>
+<li><code>src/dbt/kipptaf/models/powerschool/base/base_powerschool__student_enrollments.sql</code>
+  — reduced to a passthrough</li>
+<li><code>src/dbt/kipptaf/models/powerschool/base/properties/base_powerschool__student_enrollments.yml</code>
+  — reduced to a model-level description</li>
+</ul>
+<hr />
+<h2 id="task-1-stage-custom_818-on-stg_focus__students">Task 1: Stage <code>custom_818</code> on <code>stg_focus__students</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/focus/models/staging/stg_focus__students.sql:40</code></li>
+<li>Modify: <code>src/dbt/focus/models/staging/properties/stg_focus__students.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: <code>stg_focus__students.homeless_unaccompanied_youth</code> (<code>NUMERIC</code>, the
+  raw Focus option id — same type as its <code>custom_820</code> sibling).</li>
+</ul>
+<p>Focus field <code>custom_818</code> is titled "Homeless Unaccompanied Youth". It is the
+only field distinguishing <code>homeless_code</code> Y2 (unaccompanied) from Y1 (with
+guardian). It lands in the dlt table but is not staged today.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm the raw column exists and its type</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">q = '''select column_name, data_type</span>
+<span class="s2">from \`teamster-332318.dagster_kippmiami_dlt_focus.INFORMATION_SCHEMA.COLUMNS\`</span>
+<span class="s2">where table_name = 'students' and column_name in ('custom_818','custom_820')'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: both rows returned, matching data types. Record the type — the
+properties YAML <code>data_type</code> must match it exactly.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the column to the staging model</strong></li>
+</ul>
+<p>In <code>src/dbt/focus/models/staging/stg_focus__students.sql</code>, immediately after the
+<code>custom_820</code> line (line 40), add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">custom_818</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_unaccompanied_youth</span><span class="p">,</span>
+</code></pre></div>
+<p>The surrounding lines for context — do not reorder them:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">custom_820</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_student_pk_12</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_818</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_unaccompanied_youth</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_863</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">idea_educational_environment</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the contract entry</strong></li>
+</ul>
+<p>In <code>src/dbt/focus/models/staging/properties/stg_focus__students.yml</code>, find the
+<code>homeless_student_pk_12</code> column entry and add a sibling immediately after it,
+using the <code>data_type</code> recorded in Step 1:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">homeless_unaccompanied_youth</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Focus select-field option id for Homeless Unaccompanied Youth. A five-option</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">field — Y for not in a parent's or guardian's custody, C and U for the</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">certified over-16 and under-16 variants of the same, N for homeless but</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">accompanied, Z for not homeless. Decoded to a label in</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">int_focus__students__pivot.</span>
+</code></pre></div>
+<p>Do not describe this field as a flag or as "set only when" anything. Four of its
+five codes describe states other than not-in-custody, and the interpretation
+that turns it into a network homeless code belongs to Task 3, not here.</p>
+<p>Match the <code>data_type</code> to Step 1's result. If Step 1 returned <code>NUMERIC</code>, use
+<code>numeric</code>; <code>numeric</code> and <code>float64</code> are distinct BigQuery types and a mismatch
+passes parse but fails the contract at build.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build the model to verify the contract</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>stg_focus__students<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS. A contract mismatch reports
+<code>This model has an enforced contract that failed</code>. A <code>dbt build</code> is required
+here — <code>dbt parse</code> and a prod <code>SELECT</code> both miss contract violations.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Confirm the column carries data</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kippmiami_focus'</span>
+<span class="s2">q = f'''select count(*) as n_rows,</span>
+<span class="s2">countif(homeless_unaccompanied_youth is not null) as n_populated</span>
+<span class="s2">from \`teamster-332318.{ds}.stg_focus__students\`'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: <code>n_rows</code> around 3,989 and <code>n_populated</code> = 1. One populated row is the
+correct current state, not a bug — see the spec's Ops follow-up.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/stg_focus__students.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/properties/stg_focus__students.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(focus): stage the homeless unaccompanied youth field</span>
+
+<span class="s2">custom_818 is the only Focus field separating an unaccompanied homeless</span>
+<span class="s2">student from one in a guardian's custody, which the network homeless_code</span>
+<span class="s2">domain distinguishes as Y2 versus Y1.</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-decode-custom_818-in-int_focus__students__pivot">Task 2: Decode <code>custom_818</code> in <code>int_focus__students__pivot</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/focus/models/intermediate/int_focus__students__pivot.sql</code></li>
+<li>Modify:
+  <code>src/dbt/focus/models/intermediate/properties/int_focus__students__pivot.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>stg_focus__students.homeless_unaccompanied_youth</code> from Task 1.</li>
+<li>Produces: <code>int_focus__students__pivot.homeless_unaccompanied_youth_label</code>
+  (<code>STRING</code>).</li>
+</ul>
+<p>The model casts each custom field to <code>STRING</code> in an <code>encoded</code> CTE keyed by the
+raw <code>custom_NNN</code> name, unpivots those into rows, joins the option labels, then
+pivots the labels back out under readable aliases.</p>
+<p><strong>There are THREE lists to edit, not two.</strong> The <code>encoded</code> CTE, the <code>unpivoted</code>
+CTE's <code>UNPIVOT (... for column_name in (...))</code> list, and the final
+<code>pivot (... for column_name in (...))</code> list. Omitting the field from the
+<code>encoded</code> or <code>unpivoted</code> list produces an always-null label column with no build
+error — a silent failure. Grep the file for <code>custom_820</code> and add a sibling entry
+at every one of the three sites it appears.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the field to the <code>encoded</code> CTE</strong></li>
+</ul>
+<p>In <code>int_focus__students__pivot.sql</code>, in the <code>encoded</code> CTE, immediately after the
+<code>custom_820</code> line (around line 19), add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">homeless_unaccompanied_youth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_818</span><span class="p">,</span>
+</code></pre></div>
+<p>Context — do not reorder:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">homeless_student_pk_12</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_820</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">homeless_unaccompanied_youth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_818</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">idea_educational_environment</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_863</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the pivot output alias</strong></li>
+</ul>
+<p>In the <code>pivot(... for column_name in (...))</code> list (around line 143), immediately
+after the <code>custom_820</code> entry, add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="s1">'custom_818'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_unaccompanied_youth_label</span><span class="p">,</span>
+</code></pre></div>
+<p>Context:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="s1">'custom_820'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_student_pk_12_label</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">'custom_818'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_unaccompanied_youth_label</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">'custom_863'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">idea_educational_environment_label</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Document the new column</strong></li>
+</ul>
+<p>In <code>properties/int_focus__students__pivot.yml</code>, after the
+<code>homeless_student_pk_12_label</code> entry, add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">homeless_unaccompanied_youth_label</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Decoded label for the homeless_unaccompanied_youth select field.</span>
+</code></pre></div>
+<p>Keep it neutral, matching the plain one-line style every sibling <code>*_label</code>
+column uses. Do not assert what the field means or how it maps to a network code
+— it has five options describing different states, and the mapping is Task 3's
+job.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build and verify the decode</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_focus__students__pivot<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS.</p>
+<p>Then confirm the label resolves:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kippmiami_focus'</span>
+<span class="s2">q = f'''select homeless_unaccompanied_youth_label as label, count(*) as n</span>
+<span class="s2">from \`teamster-332318.{ds}.int_focus__students__pivot\`</span>
+<span class="s2">group by 1'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: one non-null label with <code>n</code> = 1, plus a null row for everyone else.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/intermediate/int_focus__students__pivot.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/intermediate/properties/int_focus__students__pivot.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(focus): decode the homeless unaccompanied youth field</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-conform-homelessness-and-meal-eligibility-in-int_focus__students">Task 3: Conform homelessness and meal eligibility in <code>int_focus__students</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/focus/models/intermediate/int_focus__students.sql</code></li>
+<li>Modify: <code>src/dbt/focus/models/intermediate/properties/int_focus__students.yml</code></li>
+<li>Create: <code>src/dbt/focus/models/intermediate/unit_tests.yml</code> (or append if it
+  exists)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>int_focus__students__pivot.homeless_unaccompanied_youth_label</code> from
+  Task 2; the pre-existing <code>free_reduced_meals_program_label</code> and
+  <code>homeless_student_pk_12_label</code>.</li>
+<li>Produces on <code>int_focus__students</code>: <code>homeless_code</code> (<code>STRING</code>), <code>is_homeless</code>
+  (<code>BOOL</code>), <code>homeless_primary_nighttime_residence_code</code> (<code>INT64</code>), <code>lunchstatus</code>
+  (<code>STRING</code>).</li>
+</ul>
+<p>This model already conforms <code>spedlep</code>, <code>gifted_and_talented</code>, <code>lep_status</code>, and
+<code>ethnicity</code> from <code>*_label</code> columns. The four new columns follow that pattern
+exactly.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing unit test</strong></li>
+</ul>
+<p>Create or append to <code>src/dbt/focus/models/intermediate/unit_tests.yml</code>. Use
+<code>format: sql</code> inputs, not dict rows — Task 1 added a column to
+<code>stg_focus__students</code> in this same PR, and dict fixtures introspect the deferred
+old-schema relation and reject the new column.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_int_focus__students_homeless_and_meal_conform</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_focus__students</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('stg_focus__students')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select 1 as student_id, 793 as homeless_student_pk_12,</span>
+<span class="w">            </span><span class="no">427 as homeless_unaccompanied_youth,</span>
+<span class="w">            </span><span class="no">15 as free_reduced_meals_program</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 2, 789, 425, 24</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 3, 790, 426, 21</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 4, 794, cast(null as int64), 19</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 5, 791, 7261, 22</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref('int_focus__students__pivot')</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select 1 as student_id,</span>
+<span class="w">            </span><span class="no">'Student is not homeless-default [N]' as homeless_student_pk_12_label,</span>
+<span class="w">            </span><span class="no">'Z- Not homeless (or student eligible for homeless services) but does not meet the definition of an unaccompanied youth. ' as homeless_unaccompanied_youth_label,</span>
+<span class="w">            </span><span class="no">'CEP NOT Direct Cert [N]' as free_reduced_meals_program_label</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 2, 'Living in emergency or transitional shel [A]',</span>
+<span class="w">            </span><span class="no">'Y- Yes,who is not in the physical custody of parent or guardian [Y]',</span>
+<span class="w">            </span><span class="no">'The student is eligible for free meals [F]'</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 3, 'Sharing the housing of other persons [B]',</span>
+<span class="w">            </span><span class="no">'N- No, Is homeless but does not meet the definiton of unaccompanied youth [N]',</span>
+<span class="w">            </span><span class="no">'Eligible for Reduced Lunch [3]'</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 4, 'Student awaiting foster care [F]', cast(null as string),</span>
+<span class="w">            </span><span class="no">'Did Not Apply [0]'</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select 5, 'Living in cars, parks, temportary trailer parks or campgrounds, train stations, etc. [D]',</span>
+<span class="w">            </span><span class="no">'U - Student is a homeless child or youth (or student eligible for homeless services) under the age of 16 years who is not in the physical custody of a parent or guardian',</span>
+<span class="w">            </span><span class="no">'Eligible for Free Lunch with Direct Cert or extension of eligibility [D]'</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select 1 as student_id, 'N' as homeless_code, false as is_homeless,</span>
+<span class="w">          </span><span class="no">cast(null as int64) as homeless_primary_nighttime_residence_code,</span>
+<span class="w">          </span><span class="no">cast(null as string) as lunchstatus</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select 2, 'Y2', true, 1, 'F'</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select 3, 'Y1', true, 2, 'R'</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select 4, 'Y1', true, cast(null as int64), 'P'</span>
+<span class="w">        </span><span class="no">union all</span>
+<span class="w">        </span><span class="no">select 5, 'Y2', true, 3, 'F'</span>
+</code></pre></div>
+<p>The five cases cover: not homeless plus CEP; unaccompanied (<code>Y</code>) in a shelter
+plus free meals; homeless but explicitly NOT unaccompanied (<code>N</code>), doubled-up,
+reduced; awaiting foster care with no unaccompanied record at all,
+did-not-apply; and unaccompanied-under-16 (<code>U</code>), unsheltered, free with direct
+cert.</p>
+<p>Cases 3 and 5 are the ones that matter. <code>custom_818</code> is a five-option field, not
+a set/unset flag — a homeless student coded <code>N</code> is Y1, not Y2, so a null check
+would mislabel them. Codes <code>Y</code>, <code>C</code>, and <code>U</code> all mean unaccompanied.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the test to verify it fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>test_int_focus__students_homeless_and_meal_conform<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: FAIL with a column-not-found error naming <code>homeless_code</code> — the model
+does not produce these columns yet.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Project the labels into the <code>labeled</code> CTE</strong></li>
+</ul>
+<p>In <code>int_focus__students.sql</code>, in the <code>labeled</code> CTE's select list, after
+<code>p.gifted_eligibility_label,</code> add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">homeless_student_pk_12_label</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">homeless_unaccompanied_youth_label</span><span class="p">,</span>
+<span class="w">            </span><span class="n">p</span><span class="p">.</span><span class="n">free_reduced_meals_program_label</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the four conformed columns</strong></li>
+</ul>
+<p>In the final <code>select</code> of <code>int_focus__students.sql</code>, after the <code>lep_status</code> CASE
+block and before the <code>ethnicity</code> block, add:</p>
+<p>First derive both codes as named columns. The two fields do not share a label
+convention: every <code>custom_820</code> label carries a bracketed <code>[code]</code> suffix, but
+only two of <code>custom_818</code>'s five labels do — <code>Z</code>, <code>C</code>, and <code>U</code> have none. Both
+label sets do start with their code character, so the leading character is the
+reliable read for <code>custom_818</code>.</p>
+<p>Add a CTE between <code>raced</code> and the final select:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">coded</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">homeless_student_pk_12_label</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'\[(\w+)\]'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_c</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">left</span><span class="p">(</span><span class="n">homeless_unaccompanied_youth_label</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">unaccompanied_c</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">free_reduced_meals_program_label</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'\[(\w+)\]'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">meal_c</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">raced</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Then in the final select, add:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- FLDOE homeless codes describe the student's nighttime residence. Any</span>
+<span class="w">    </span><span class="c1">-- residence type means homeless; N is the not-homeless default. The network</span>
+<span class="w">    </span><span class="c1">-- domain splits homeless by custody instead, so the separate</span>
+<span class="w">    </span><span class="c1">-- unaccompanied-youth field decides Y2 versus Y1. That field is a</span>
+<span class="w">    </span><span class="c1">-- five-option select, not a flag -- Y, C and U all mean unaccompanied,</span>
+<span class="w">    </span><span class="c1">-- while N means homeless but accompanied and Z means not homeless, so a</span>
+<span class="w">    </span><span class="c1">-- null check would mislabel an accompanied homeless student as Y2.</span>
+<span class="w">    </span><span class="k">case</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">homeless_c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'N'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'N'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">homeless_c</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">unaccompanied_c</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Y'</span><span class="p">,</span><span class="w"> </span><span class="s1">'C'</span><span class="p">,</span><span class="w"> </span><span class="s1">'U'</span><span class="p">)</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'Y2'</span>
+<span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="s1">'Y1'</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_code</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">-- FLDOE residence types mapped to the network primary-nighttime-residence</span>
+<span class="w">    </span><span class="c1">-- domain. Awaiting foster care has no analogue and stays null, as does the</span>
+<span class="w">    </span><span class="c1">-- not-homeless default.</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="n">homeless_c</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'A'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'B'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'D'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'E'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="mi">4</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">homeless_primary_nighttime_residence_code</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">-- Florida's meal-eligibility element carries both per-student eligibility</span>
+<span class="w">    </span><span class="c1">-- and school-level program status. The eligibility codes map onto the</span>
+<span class="w">    </span><span class="c1">-- network F/R/P domain; CEP and Provision 2 describe the school's program</span>
+<span class="w">    </span><span class="c1">-- rather than the student, so they carry no per-student signal and stay</span>
+<span class="w">    </span><span class="c1">-- null. Code 2 is retired upstream (DO NOT USE AFTER 1516).</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="n">meal_c</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'F'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'F'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'D'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'F'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'C'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'F'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'9'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'F'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'3'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'R'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'E'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'R'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'R'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'R'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'1'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'P'</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="s1">'0'</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">'P'</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lunchstatus</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">coded</span>
+</code></pre></div>
+<p>The final select now reads <code>from coded</code>, not <code>from raced</code> — the <code>coded</code> CTE sits
+between them.</p>
+<p><code>is_homeless</code> reads <code>homeless_code</code>, and BigQuery rejects a select-list alias
+referenced by another item in the same select list, so it needs its own level.
+Turn the existing final <code>select</code> into a <code>conformed</code> CTE and add a new final
+select after it.</p>
+<p>The model's full CTE chain ends up as:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">labeled</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(...),</span><span class="w">          </span><span class="c1">-- unchanged, plus the three new label columns</span>
+<span class="w">    </span><span class="n">raced</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(...),</span><span class="w">            </span><span class="c1">-- unchanged</span>
+<span class="w">    </span><span class="n">coded</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(...</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">raced</span><span class="p">),</span><span class="w"> </span><span class="c1">-- new, from Step 4 above</span>
+<span class="w">    </span><span class="n">conformed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+<span class="w">            </span><span class="c1">-- the existing spedlep / gifted_and_talented / lep_status /</span>
+<span class="w">            </span><span class="c1">-- ethnicity blocks, plus homeless_code,</span>
+<span class="w">            </span><span class="c1">-- homeless_primary_nighttime_residence_code and lunchstatus</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">coded</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1">-- Matches the formula stg_powerschool__studentcorefields uses, so both SIS</span>
+<span class="w">    </span><span class="c1">-- branches agree on what is_homeless means.</span>
+<span class="w">    </span><span class="n">homeless_code</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'Y1'</span><span class="p">,</span><span class="w"> </span><span class="s1">'Y2'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_homeless</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">conformed</span>
+</code></pre></div>
+<p>Two edits to the existing file: the current final <code>select ... from raced</code>
+becomes <code>conformed as (select ... from coded)</code>, and the new two-line final
+select is appended.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the test to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>test_int_focus__students_homeless_and_meal_conform<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the whole directory's unit tests</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span><span class="s2">"test_type:unit"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS. Sibling models mock the same <code>ref()</code>s, so a column add to
+<code>stg_focus__students</code> can break their fixtures too. Fix any that fail by adding
+the new column to their <code>given</code> blocks.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Document the four columns</strong></li>
+</ul>
+<p>In <code>properties/int_focus__students.yml</code>, add entries. Columns carrying tests
+sort to the top of the <code>columns:</code> list.</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">homeless_code</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">N</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Y1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">Y2</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Network homelessness code. N when the student is recorded as not homeless,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Y2 when homeless and not in a parent or guardian's custody, Y1 when homeless</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">otherwise. Null when Focus records nothing.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_homeless</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">True when homeless_code is Y1 or Y2. Matches the formula the PowerSchool</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">staging models use so both SIS branches agree.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">homeless_primary_nighttime_residence_code</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Network primary-nighttime-residence code — 1 for shelters and transitional</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">housing, 2 for doubled-up, 3 for unsheltered, 4 for hotels or motels. Null</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">for students who are not homeless and for those awaiting foster care, which</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">has no network analogue.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lunchstatus</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Network meal-eligibility code — F for free, R for reduced, P for paid. Null</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">where Focus records a school-level program status such as CEP or USDA</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Provision 2, which says nothing about the individual student.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Build the model and check real values</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_focus__students<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippmiami/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS, including the <code>accepted_values</code> test.</p>
+<p>Then:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kippmiami_focus'</span>
+<span class="s2">q = f'''select homeless_code, is_homeless,</span>
+<span class="s2">homeless_primary_nighttime_residence_code as res, lunchstatus, count(*) as n</span>
+<span class="s2">from \`teamster-332318.{ds}.int_focus__students\` group by 1,2,3,4'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected today: one row with <code>homeless_code = 'N'</code>, <code>is_homeless = false</code>,
+<code>res = null</code>, <code>lunchstatus = null</code>, <code>n</code> around 3,865, plus a null-everything row
+around 124. Every student currently sits at the CEP and not-homeless defaults —
+that is the correct current state, and the mapping goes live unchanged when Ops
+populates real values.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/intermediate/int_focus__students.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/intermediate/properties/int_focus__students.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/intermediate/unit_tests.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(focus): conform homelessness and meal eligibility to the network domains</span>
+
+<span class="s2">Both fields are populated in Focus and decode through the pivot labels,</span>
+<span class="s2">so the archive's nulls for Miami were a gap in the conform, not missing</span>
+<span class="s2">data. Meal codes describing the school's CEP or Provision 2 program stay</span>
+<span class="s2">null because they carry no per-student eligibility.</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-seed-staging-so-kipptaf-ci-sees-the-new-columns">Task 4: Seed staging so kipptaf CI sees the new columns</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/focus/intermediate/int_focus__students.sql</code>
+  (comment only)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: the widened package <code>int_focus__students</code> from Task 3.</li>
+<li>Produces: <code>zz_stg_kippmiami_focus.int_focus__students</code> carrying the four new
+  columns, and a <code>state:modified</code> kipptaf wrapper.</li>
+</ul>
+<p>The kipptaf wrapper is an unmodified <code>union_relations</code> view, so dbt Cloud CI
+defers it to the Staging environment where the new columns do not exist, and
+every downstream model fails <code>Name homeless_code not found</code>. Two steps close
+that.</p>
+<blockquote>
+<p><strong>STOP — user authorization required.</strong> The build in Step 2 writes to the
+shared <code>zz_stg_kippmiami_focus</code> schema. Ask the user to authorize it in plain
+text before running, and do not proceed without an explicit yes.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Force the wrapper <code>state:modified</code></strong></li>
+</ul>
+<p>In <code>src/dbt/kipptaf/models/focus/intermediate/int_focus__students.sql</code>, add a
+comment above the <code>with</code>. A properties-YAML description change does NOT mark a
+model modified — it must be a <code>.sql</code> edit.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- The package model gained homeless_code, is_homeless,</span>
+<span class="c1">-- homeless_primary_nighttime_residence_code and lunchstatus (#4868). This</span>
+<span class="c1">-- comment forces state:modified so CI rebuilds the wrapper against the widened</span>
+<span class="c1">-- staging copy instead of deferring to the narrower Staging environment.</span>
+<span class="k">with</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build the widened model into shared staging</strong></li>
+</ul>
+<p>Run, only after the user authorizes:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_focus__students<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kippmiami<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging
+</code></pre></div>
+<p>Expected: PASS, writing <code>zz_stg_kippmiami_focus.int_focus__students</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the staging copy carries the new columns</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">q = '''select column_name</span>
+<span class="s2">from \`teamster-332318.zz_stg_kippmiami_focus.INFORMATION_SCHEMA.COLUMNS\`</span>
+<span class="s2">where table_name = 'int_focus__students'</span>
+<span class="s2">and column_name in ('homeless_code','is_homeless',</span>
+<span class="s2">'homeless_primary_nighttime_residence_code','lunchstatus')'''</span>
+<span class="s2">print(sorted(r['column_name'] for r in c.query(q)))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: all four names listed. Fewer than four means CI will fail — re-run
+Step 2 before continuing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/focus/intermediate/int_focus__students.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"chore(kipptaf): force the focus students wrapper to rebuild in CI</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-new-int_focus__advisory-at-kipptaf">Task 5: New <code>int_focus__advisory</code> at kipptaf</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/kipptaf/models/focus/intermediate/int_focus__advisory.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/focus/intermediate/properties/int_focus__advisory.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>int_focus__schedule</code> (<code>student_id</code>, <code>academic_year</code>, <code>schoolid</code>,
+  <code>course_title</code>, <code>course_period_short_name</code>, <code>teacher_id</code>, <code>course_period_id</code>)
+  and <code>int_focus__users</code> (<code>staff_id</code>, <code>first_name</code>, <code>last_name</code>), both already
+  wrapped at kipptaf.</li>
+<li>Produces: <code>int_focus__advisory</code> at grain
+  <code>(student_number, academic_year, schoolid)</code> with columns <code>student_number</code>
+  (<code>INT64</code>), <code>academic_year</code> (<code>INT64</code>), <code>schoolid</code> (<code>INT64</code>),
+  <code>advisory_section_number</code> (<code>STRING</code>), <code>advisory_name</code> (<code>STRING</code>),
+  <code>advisor_lastfirst</code> (<code>STRING</code>), <code>_dbt_source_project</code> (<code>STRING</code>).</li>
+</ul>
+<p>Analogue of <code>int_powerschool__advisory</code>, matched on course title rather than the
+<code>homeroom</code> flag — that flag is null on every row of both source models.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Miami advisory, the analogue of int_powerschool__advisory. Focus carries a</span>
+<span class="c1">-- homeroom boolean on both the schedule and the user, but it is null on every</span>
+<span class="c1">-- row, so the homeroom course is identified by its title instead.</span>
+<span class="c1">--</span>
+<span class="c1">-- Elementary only: 957 of 983 ES students carry a Homeroom course for AY2026,</span>
+<span class="c1">-- against 42 of 593 MS and 0 of 114 HS. int_focus__schedule also holds AY2026</span>
+<span class="c1">-- alone, so there is no advisory for prior years. Both gaps are Focus</span>
+<span class="c1">-- configuration, not modeling -- see #4868.</span>
+<span class="k">with</span>
+<span class="w">    </span><span class="n">homeroom_enrollments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">sch</span><span class="p">.</span><span class="n">student_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sch</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sch</span><span class="p">.</span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sch</span><span class="p">.</span><span class="n">course_period_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sch</span><span class="p">.</span><span class="n">course_period_short_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sch</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">usr</span><span class="p">.</span><span class="n">last_name</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">', '</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">usr</span><span class="p">.</span><span class="n">first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">advisor_lastfirst</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__schedule"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sch</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__users"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">usr</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">teacher_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usr</span><span class="p">.</span><span class="n">staff_id</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usr</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">sch</span><span class="p">.</span><span class="n">course_title</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">'Homeroom%'</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="c1">-- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below</span>
+<span class="w">    </span><span class="n">deduplicate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">deduplicate</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relation</span><span class="o">=</span><span class="ss">"homeroom_enrollments"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">partition_by</span><span class="o">=</span><span class="ss">"student_id, academic_year, schoolid"</span><span class="p">,</span>
+<span class="w">                </span><span class="n">order_by</span><span class="o">=</span><span class="ss">"course_period_id desc"</span><span class="p">,</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">advisor_lastfirst</span><span class="p">,</span>
+<span class="w">    </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">student_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">    </span><span class="n">course_period_short_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">advisory_section_number</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">course_period_short_name</span><span class="p">,</span><span class="w"> </span><span class="n">advisor_lastfirst</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">advisory_name</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">deduplicate</span>
+</code></pre></div>
+<p><code>student_id</code> on <code>int_focus__schedule</code> is the network student number, matching
+<code>int_focus__student_enrollments.network_student_number</code> — confirm this in Step 3
+before trusting the join in Task 6.</p>
+<h3 id="which-focus-column-is-which-verified-do-not-substitute">Which Focus column is which — verified, do not substitute</h3>
+<p><code>int_focus__schedule</code> carries four similarly-named columns. Only one is right
+for advisory:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Example value</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>course_period_short_name</code></td>
+<td><code>Gonzaga</code>, <code>FAMU</code>, <code>Spelman</code></td>
+<td><strong>this one</strong> — KIPP names homerooms after colleges</td>
+</tr>
+<tr>
+<td><code>course_period_title</code></td>
+<td><code>HR HR - Gonzaga - Gabriela Hector</code></td>
+<td>period code, college, teacher, concatenated</td>
+</tr>
+<tr>
+<td><code>course_short_name</code></td>
+<td><code>5022000R3</code></td>
+<td>FLDOE course code</td>
+</tr>
+<tr>
+<td><code>course_title</code></td>
+<td><code>Homeroom - 3rd Grade</code></td>
+<td>used only to identify homeroom rows</td>
+</tr>
+</tbody>
+</table>
+<p>The archive's Miami AY2025 values, for comparison:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th><code>advisory_section_number</code></th>
+<th><code>advisory_name</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ES</td>
+<td><code>2Spelman</code>, <code>4NYU</code>, <code>0BU</code>, <code>4Gonzaga</code></td>
+<td><code>Spelman</code>, <code>NYU</code>, <code>BU</code>, <code>Gonzaga</code></td>
+</tr>
+<tr>
+<td>MS</td>
+<td><code>304HR63</code>, <code>319HR52</code></td>
+<td><code>HR</code></td>
+</tr>
+</tbody>
+</table>
+<p>So <code>advisory_name</code> reproduces the archive exactly — the archive derived it by
+stripping the leading grade digit off the section number, and Focus stores that
+same college name directly.</p>
+<p><code>advisory_section_number</code> deliberately does NOT reproduce the archive. The
+archive prefixed the grade (<code>4Gonzaga</code>); Focus stores only <code>Gonzaga</code>, and the
+decision (2026-08-14) is to ship the bare college name rather than reconstruct
+the prefix. <strong>This is a user-facing change</strong>:
+<code>int_extracts__student_enrollments</code> renames this column to <code>team</code>, which reaches
+the Google Sheets extracts, so Miami ES <code>team</code> values change from <code>4Gonzaga</code> to
+<code>Gonzaga</code> at the cutover. Call it out in the PR body.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_focus__advisory</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">One homeroom assignment per Miami student per school year and school,</span>
+<span class="w">      </span><span class="no">conformed to the PowerSchool advisory column names. Focus identifies the</span>
+<span class="w">      </span><span class="no">homeroom by course title because its homeroom flag is unpopulated. Covers</span>
+<span class="w">      </span><span class="no">elementary students only and only the current academic year, because those</span>
+<span class="w">      </span><span class="no">are the only students and years with homeroom course periods scheduled.</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schoolid</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Network student number for the student in the homeroom.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Academic year of the homeroom enrollment.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schoolid</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus school id where the homeroom is scheduled.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">advisory_section_number</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Short name of the homeroom course period, the Focus analogue of the</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">PowerSchool section number.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">advisory_name</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Display name for the homeroom — the course period short name, falling</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">back to the teacher name when the short name is absent.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">advisor_lastfirst</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Homeroom teacher name in last-comma-first form. Null when the course</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">period carries no teacher.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_dbt_source_project</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">District code location the row came from.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify coverage</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_focus__advisory<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS, including the uniqueness test.</p>
+<p>Then confirm coverage matches the spec's numbers and that the join key is right:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kipptaf_focus'</span>
+<span class="s2">q = f'''select e.school_level, count(distinct e.student_number) as n_students,</span>
+<span class="s2">count(distinct a.student_number) as n_with_advisory</span>
+<span class="s2">from \`teamster-332318.kipptaf_focus.int_focus__student_enrollments\` as e</span>
+<span class="s2">left join \`teamster-332318.{ds}.int_focus__advisory\` as a</span>
+<span class="s2">  on e.student_number = a.student_number</span>
+<span class="s2">  and e.academic_year = a.academic_year</span>
+<span class="s2">where e.academic_year = 2026</span>
+<span class="s2">group by 1'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: ES around 983 students with around 957 advisories; MS around 593 with
+around 42; HS 114 with 0. A zero for ES means the join key is wrong — check
+whether <code>int_focus__schedule.student_id</code> is prefixed with 8400 and unprefix it
+if so.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/focus/intermediate/int_focus__advisory.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/focus/intermediate/properties/int_focus__advisory.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(kipptaf): add the Miami advisory model from Focus homeroom courses</span>
+
+<span class="s2">The Focus homeroom flag is null on every schedule and user row, so the</span>
+<span class="s2">homeroom is identified by course title. Elementary only, current year</span>
+<span class="s2">only -- both are Focus configuration gaps, not modeling ones.</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-6-new-int_students__student_enrollments">Task 6: New <code>int_students__student_enrollments</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/students/intermediate/properties/int_students__student_enrollments.yml</code></li>
+<li>Read for reference:
+  <code>src/dbt/kipptaf/models/powerschool/base/base_powerschool__student_enrollments.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: the three NJ district <code>base_powerschool__student_enrollments</code>
+  sources; <code>int_focus__student_enrollments</code>; <code>int_focus__students</code> (with Task
+  3's columns); <code>int_focus__advisory</code> from Task 5.</li>
+<li>Produces: <code>int_students__student_enrollments</code> with the same 137-column set
+  <code>base_powerschool__student_enrollments</code> emits today.</li>
+</ul>
+<p>This is the largest task. The model is today's <code>base_</code> body with two changes:
+the Miami relation leaves the union, and a Focus block joins by
+<code>full union all corresponding</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Copy the existing model body</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>cp<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf/models/powerschool/base/base_powerschool__student_enrollments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Drop the Miami relation from the union</strong></li>
+</ul>
+<p>In the new file, delete these four lines from the <code>union_relations</code> list:</p>
+<div class="highlight"><pre><span></span><code><span class="w">                    </span><span class="k">source</span><span class="p">(</span>
+<span class="w">                        </span><span class="ss">"kippmiami_powerschool"</span><span class="p">,</span>
+<span class="w">                        </span><span class="ss">"base_powerschool__student_enrollments"</span><span class="p">,</span>
+<span class="w">                    </span><span class="p">),</span>
+</code></pre></div>
+<p>Leave the three NJ <code>source(...)</code> entries in place.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the Focus grade-history CTE</strong></li>
+</ul>
+<p>Insert after the <code>union_relations</code> CTE and before <code>with_region</code>. <code>boy_status</code>
+and <code>is_retained_year</code> need the prior year's grade, computed over one row per
+student-year.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- One row per Miami student per year, carrying the prior year's grade so</span>
+<span class="w">    </span><span class="c1">-- boy_status and is_retained_year reproduce the PowerSchool derivation.</span>
+<span class="w">    </span><span class="c1">-- rn_year = 1 picks the primary stint, matching the year grain PowerSchool</span>
+<span class="w">    </span><span class="c1">-- computes these over.</span>
+<span class="w">    </span><span class="n">focus_year_grain</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">network_student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">grade_level</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">lag</span><span class="p">(</span><span class="n">grade_level</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">network_student_number</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="k">asc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_level_prev</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">lag</span><span class="p">(</span><span class="n">academic_year</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">network_student_number</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="k">asc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">academic_year_prev</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__student_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">rn_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the Focus conform CTE</strong></li>
+</ul>
+<p>Insert after <code>focus_year_grain</code>. Every column name and type must match its NJ
+counterpart — <code>full union all corresponding</code> matches by name and null-fills what
+is absent, but a type mismatch on a shared name is an error.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- Miami enrollment from Focus, conformed to the PowerSchool column names</span>
+<span class="w">    </span><span class="c1">-- and value domains so it merges into the NJ branch below by column name.</span>
+<span class="w">    </span><span class="c1">-- PowerSchool-only columns -- dcids, NJ state fields, exit_code_kf and</span>
+<span class="w">    </span><span class="c1">-- exit_code_ts -- null-fill automatically.</span>
+<span class="w">    </span><span class="c1">--</span>
+<span class="w">    </span><span class="c1">-- Not conformed, each because Focus has no source rather than because the</span>
+<span class="w">    </span><span class="c1">-- values look uniform: is_self_contained and is_out_of_district (no</span>
+<span class="w">    </span><span class="c1">-- special-programs equivalent), the exit codes (no KIPP Forward tracking),</span>
+<span class="w">    </span><span class="c1">-- and advisor_teachernumber (no network teacher number).</span>
+<span class="w">    </span><span class="n">focus_conformed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">region</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">exitdate</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">enroll_status</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">entrycode</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">exitcode</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">rn_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">year_in_school</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">year_in_network</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">is_enrolled_fdos</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">is_enrolled_oct01</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">is_enrolled_oct15</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">is_enrolled_mar15</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">dob</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="k">state</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">school_level</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">school_abbreviation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">reporting_schoolid</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">spedlep</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">lep_status</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">lunchstatus</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">homeless_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">is_homeless</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">gifted_and_talented</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">ethnicity</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">gender</span><span class="p">,</span>
+<span class="w">            </span><span class="n">stu</span><span class="p">.</span><span class="n">state_studentnumber</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">adv</span><span class="p">.</span><span class="n">advisory_section_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">adv</span><span class="p">.</span><span class="n">advisory_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">adv</span><span class="p">.</span><span class="n">advisor_lastfirst</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">ps_schoolid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">startdate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entrydate</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">student_first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">student_last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">student_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lastfirst</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">school</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">school</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">reporting_school_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">network_student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="p">(</span><span class="n">enr</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">13</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">grade_level</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cohort_primary</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">yg</span><span class="p">.</span><span class="n">grade_level_prev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">grade_level</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_retained_year</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__student_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enr</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__students"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">stu</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">network_student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stu</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stu</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">focus_year_grain</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">yg</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">network_student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">yg</span><span class="p">.</span><span class="n">network_student_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">yg</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_focus__advisory"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">adv</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">adv</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">adv</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">adv</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">adv</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Add the Focus window CTE</strong></li>
+</ul>
+<p>The remaining derivations are windows over the conformed rows. Insert after
+<code>focus_conformed</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- Window derivations over the conformed Focus rows, matching the ones the</span>
+<span class="w">    </span><span class="c1">-- district base_ model computes for the NJ branch.</span>
+<span class="w">    </span><span class="n">focus_windowed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="k">if</span><span class="p">(</span><span class="n">year_in_school</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">cohort_primary</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">))</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cohort_secondary</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="k">if</span><span class="p">(</span><span class="n">year_in_network</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">))</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entry_schoolid</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="k">if</span><span class="p">(</span><span class="n">year_in_network</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">))</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">entry_grade_level</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="n">is_retained_year</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_retained_ever</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">focus_conformed</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="c1">-- boy_status and cohort read cohort_secondary, so they follow the window</span>
+<span class="w">    </span><span class="c1">-- CTE rather than sharing its select list -- BigQuery rejects a lateral</span>
+<span class="w">    </span><span class="c1">-- alias reference.</span>
+<span class="w">    </span><span class="n">focus_final</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">99</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Graduated'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">year_in_network</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'New'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_level_prev</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'New'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">academic_year_prev</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Re-Enrolled'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_level_prev</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">grade_level</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Promoted'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_level_prev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grade_level</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Retained'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_level_prev</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">grade_level</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'Demoted'</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">boy_status</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_level</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">9</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="n">cohort_secondary</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="n">cohort_primary</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cohort</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">focus_windowed</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p><code>focus_conformed</code> must also project <code>yg.grade_level_prev</code> and
+<code>yg.academic_year_prev</code> for this CTE to read them — add both to its select list
+alongside <code>is_retained_year</code>.</p>
+<h3 id="two-student-number-columns-use-the-right-one-per-join">Two student-number columns — use the right one per join</h3>
+<p>Inside the Focus layer, <code>student_number</code> is the <strong>8400-prefixed Focus id</strong>
+(<code>8400305984</code>) and <code>network_student_number</code> is the network student number
+(<code>305984</code>). Both <code>int_focus__student_enrollments</code> and <code>int_focus__advisory</code>
+follow that convention, so:</p>
+<ul>
+<li>Join <code>int_focus__advisory</code> on <code>enr.student_number = adv.student_number</code> — both
+  prefixed. Joining on <code>network_student_number</code> matches zero rows.</li>
+<li>Join <code>int_focus__students</code> on
+  <code>enr.network_student_number = stu.student_number</code> — <code>int_focus__students</code>
+  already unprefixes, so its <code>student_number</code> IS the network number. This is the
+  opposite side of the same trap.</li>
+<li>Project <code>enr.network_student_number as student_number</code> for output, because the
+  network layer's <code>student_number</code> means the network number.</li>
+</ul>
+<p><code>cohort</code> omits the grade-99 arm because Focus carries no graduate placeholders,
+so <code>cohort_graduated</code> null-fills and the arm would always yield null.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Join the two branches</strong></li>
+</ul>
+<p>Change <code>with_region</code> to read from the NJ union plus the Focus branch. Replace:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">with_region</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- trunk-ignore(sqlfluff/AM04)</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'(kipp\w+)_'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'kipp(\w+)_'</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">union_relations</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">powerschool_conformed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- trunk-ignore(sqlfluff/AM04)</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'(kipp\w+)_'</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">'kipp(\w+)_'</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">union_relations</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">with_region</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">powerschool_conformed</span>
+
+<span class="w">        </span><span class="k">full</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">corresponding</span>
+
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="p">(</span><span class="n">academic_year_prev</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">focus_final</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>The <code>except</code> drops <code>academic_year_prev</code> ONLY. <code>grade_level_prev</code> looks like a
+lag helper but IS one of prod's 137 output columns — excepting it leaves Miami
+null where prod carries 5,980 values.</p>
+<h3 id="three-identifier-spaces-not-two">Three identifier spaces, not two</h3>
+<p>The student-number trap has a school-id twin. <code>int_focus__student_enrollments</code>
+carries BOTH <code>schoolid</code> (the Focus internal id — 15, 58, 68, 69) and
+<code>ps_schoolid</code> (the network PowerSchool id — 30200801 and up).
+<code>int_focus__advisory.schoolid</code> is the <strong>Focus internal</strong> id, since it comes from
+<code>int_focus__schedule</code>.</p>
+<p>So the advisory join reads <code>enr.schoolid</code>, not <code>enr.ps_schoolid</code>. Measured:
+<code>ps_schoolid</code> matches 0 rows, <code>schoolid</code> matches 908. Keep <code>schoolid</code> in the
+predicate rather than dropping it — 10 student-years carry two advisory rows and
+would fan out without it. Add <code>_dbt_source_project</code> to the predicate too, per
+the cross-region join rule.</p>
+<p>Meanwhile <code>focus_conformed</code> aliases <code>enr.ps_schoolid as schoolid</code> for OUTPUT,
+because the network layer's <code>schoolid</code> means the PowerSchool school number. The
+join reads the Focus id; the projection emits the network id, in the same CTE.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify the column set is unchanged</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_students__student_enrollments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS.</p>
+<p>Then compare against prod's column set:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kipptaf_students'</span>
+<span class="s2">q = f'''with n as (select column_name from</span>
+<span class="s2">\`teamster-332318.{ds}.INFORMATION_SCHEMA.COLUMNS\`</span>
+<span class="s2">where table_name = 'int_students__student_enrollments'),</span>
+<span class="s2">o as (select column_name from</span>
+<span class="s2">\`teamster-332318.kipptaf_powerschool.INFORMATION_SCHEMA.COLUMNS\`</span>
+<span class="s2">where table_name = 'base_powerschool__student_enrollments')</span>
+<span class="s2">select 'only_new' as side, column_name from n where column_name not in (select column_name from o)</span>
+<span class="s2">union all</span>
+<span class="s2">select 'only_old', column_name from o where column_name not in (select column_name from n)'''</span>
+<span class="s2">rows = list(c.query(q))</span>
+<span class="s2">print('differences:', len(rows))</span>
+<span class="s2">for r in rows: print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: <code>differences: 0</code>. Any <code>only_old</code> column is one the Focus branch
+introduced a name collision on or the union dropped — fix before continuing. Any
+<code>only_new</code> column means a helper leaked into the output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Write the properties YAML</strong></li>
+</ul>
+<p>Copy <code>base_</code>'s properties YAML wholesale, then change the model name:</p>
+<div class="highlight"><pre><span></span><code>cp<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf/models/powerschool/base/properties/base_powerschool__student_enrollments.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">   </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf/models/students/intermediate/properties/int_students__student_enrollments.yml
+</code></pre></div>
+<p>In the copy, change <code>- name: base_powerschool__student_enrollments</code> to
+<code>- name: int_students__student_enrollments</code>, and replace the model description
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">Complete enrollment history for every student, across both network SIS</span>
+<span class="w">  </span><span class="no">systems. The three New Jersey regions come from PowerSchool; Miami comes</span>
+<span class="w">  </span><span class="no">from Focus, conformed to the PowerSchool column names and value domains.</span>
+
+<span class="w">  </span><span class="no">Excludes no-show students, who share an entry and exit date, and students</span>
+<span class="w">  </span><span class="no">with an inactive enrollment status, which PowerSchool uses mainly for</span>
+<span class="w">  </span><span class="no">duplicate records.</span>
+
+<span class="w">  </span><span class="no">Also carries the demographic data and student identifiers the enrollment</span>
+<span class="w">  </span><span class="no">consumers read. Columns PowerSchool supplies and Focus does not are null</span>
+<span class="w">  </span><span class="no">for Miami — special-program placement, the KIPP Forward exit codes, and</span>
+<span class="w">  </span><span class="no">the advisor teacher number.</span>
+</code></pre></div>
+<p>Update the <code>homeless_code</code> column description, which currently ends "Null for
+Miami, which does not populate the field", to:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Homelessness code for the enrollment year — N for not homeless, Y1 for</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">homeless while in the physical custody of a parent or legal guardian, Y2 for</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">homeless and unaccompanied. For the New Jersey regions, read from</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`stg_powerschool__studentcorefields` for the current academic year and from</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`stg_powerschool__s_nj_ren_x` for closed years. For Miami, decoded from the</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Focus homelessness fields in `int_focus__students`.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Run the model's tests</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>int_students__student_enrollments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS. An <code>accepted_values</code> failure on <code>homeless_code</code> means the Task 3
+mapping produced a value outside N/Y1/Y2.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 10: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/int_students__student_enrollments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/students/intermediate/properties/int_students__student_enrollments.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(kipptaf): add the SIS-neutral enrollment model with a Focus branch</span>
+
+<span class="s2">Carries the body base_powerschool__student_enrollments has today, with</span>
+<span class="s2">the frozen Miami archive dropped from the union and a Focus-conformed</span>
+<span class="s2">block joined by full union all corresponding. Same 137-column output, so</span>
+<span class="s2">no downstream contract changes.</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-7-reduce-base_powerschool__student_enrollments-to-a-passthrough">Task 7: Reduce <code>base_powerschool__student_enrollments</code> to a passthrough</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/base/base_powerschool__student_enrollments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/powerschool/base/properties/base_powerschool__student_enrollments.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_students__student_enrollments</code> from Task 6.</li>
+<li>
+<p>Produces: the same 137 columns it produces today, for its 15 existing consumer
+  sites.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the model body</strong></p>
+</li>
+</ul>
+<p>Replace the entire contents of <code>base_powerschool__student_enrollments.sql</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Compatibility passthrough. The enrollment logic moved to</span>
+<span class="c1">-- int_students__student_enrollments, which carries both SIS branches; this</span>
+<span class="c1">-- model exists so the consumers listed in #3999 keep resolving while they</span>
+<span class="c1">-- migrate. Delete it once they have.</span>
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_students__student_enrollments"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Reduce the properties YAML</strong></li>
+</ul>
+<p>Replace the entire contents of the properties YAML with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">base_powerschool__student_enrollments</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Compatibility passthrough over int_students__student_enrollments, which</span>
+<span class="w">      </span><span class="no">holds the enrollment logic and the column documentation. Scheduled for</span>
+<span class="w">      </span><span class="no">removal once its remaining consumers migrate, tracked in #3999. Carries no</span>
+<span class="w">      </span><span class="no">tests of its own — they run on the model underneath, and repeating them</span>
+<span class="w">      </span><span class="no">here would rescan every column for no additional coverage.</span>
+</code></pre></div>
+<p>The tests and 137 column descriptions now live on
+<code>int_students__student_enrollments</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the passthrough is column-identical to prod</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>base_powerschool__student_enrollments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify every consumer still resolves</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>base_powerschool__student_enrollments+<span class="w"> </span>--empty<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS across the whole descendant graph. <code>--empty</code> proves column
+resolution, not values. A <code>Name &lt;col&gt; not found</code> here means the Task 6 column
+set drifted from prod's — return to Task 6 Step 7.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/base/base_powerschool__student_enrollments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/powerschool/base/properties/base_powerschool__student_enrollments.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"refactor(kipptaf): reduce the enrollment base model to a passthrough</span>
+
+<span class="s2">Its 15 consumer sites keep resolving unchanged while they migrate to</span>
+<span class="s2">int_students__student_enrollments under #3999. Tests and column docs</span>
+<span class="s2">moved to that model rather than being duplicated here.</span>
+
+<span class="s2">Refs #4868</span>
+<span class="s2">Refs #3999"</span>
+</code></pre></div>
+<hr />
+<h2 id="task-8-validation-sweep">Task 8: Validation sweep</h2>
+<p><strong>Files:</strong> none — this task produces evidence, not code.</p>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: the built <code>int_students__student_enrollments</code>.</li>
+<li>Produces: the numbers that go in the PR body.</li>
+</ul>
+<p>Every query runs against the local dev build. Write results to
+<code>.claude/scratch/</code>, not to any external surface — these touch student-level
+rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: NJ parity</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kipptaf_students'</span>
+<span class="s2">q = f'''select 'new' as side, count(*) as n_rows,</span>
+<span class="s2">count(distinct format('%T|%T|%T|%T', student_number, academic_year, entrydate,</span>
+<span class="s2">_dbt_source_project)) as n_keys</span>
+<span class="s2">from \`teamster-332318.{ds}.int_students__student_enrollments\`</span>
+<span class="s2">where _dbt_source_project != 'kippmiami'</span>
+<span class="s2">union all</span>
+<span class="s2">select 'prod', count(*),</span>
+<span class="s2">count(distinct format('%T|%T|%T|%T', student_number, academic_year, entrydate,</span>
+<span class="s2">_dbt_source_project))</span>
+<span class="s2">from \`teamster-332318.kipptaf_powerschool.base_powerschool__student_enrollments\`</span>
+<span class="s2">where _dbt_source_project != 'kippmiami' '''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: identical <code>n_rows</code> and <code>n_keys</code> on both sides. Any difference means
+dropping the Miami relation perturbed NJ, which it must not.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Miami AY2026 presence</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kipptaf_students'</span>
+<span class="s2">q = f'''select academic_year, school_level, count(*) as n_rows,</span>
+<span class="s2">count(distinct student_number) as n_students</span>
+<span class="s2">from \`teamster-332318.{ds}.int_students__student_enrollments\`</span>
+<span class="s2">where _dbt_source_project = 'kippmiami' and academic_year &gt;= 2025</span>
+<span class="s2">group by 1, 2'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: AY2026 present with roughly 1,585 rows, including roughly 114 HS — a
+level the archive never carried. Prod returns zero AY2026 Miami rows today.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Miami historical reconciliation, AY2018 to AY2025</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kipptaf_students'</span>
+<span class="s2">q = f'''with n as (select student_number, academic_year, cohort, boy_status,</span>
+<span class="s2">homeless_code, school_level</span>
+<span class="s2">from \`teamster-332318.{ds}.int_students__student_enrollments\`</span>
+<span class="s2">where _dbt_source_project = 'kippmiami' and academic_year between 2018 and 2025</span>
+<span class="s2">and rn_year = 1),</span>
+<span class="s2">o as (select student_number, academic_year, cohort, boy_status, homeless_code,</span>
+<span class="s2">school_level</span>
+<span class="s2">from \`teamster-332318.kippmiami_powerschool.base_powerschool__student_enrollments\`</span>
+<span class="s2">where academic_year between 2018 and 2025 and rn_year = 1)</span>
+<span class="s2">select</span>
+<span class="s2">count(*) as n_matched_keys,</span>
+<span class="s2">countif(n.cohort is distinct from o.cohort) as cohort_diff,</span>
+<span class="s2">countif(n.boy_status is distinct from o.boy_status) as boy_status_diff,</span>
+<span class="s2">countif(n.school_level is distinct from o.school_level) as school_level_diff</span>
+<span class="s2">from n inner join o using (student_number, academic_year)'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: <code>n_matched_keys</code> in the low thousands. <code>cohort_diff</code> and
+<code>school_level_diff</code> should be at or near zero. <code>boy_status_diff</code> will be
+non-zero where Focus and the archive disagree on a student's first year in
+network — investigate any count above a few percent before proceeding.
+<code>homeless_code</code> is deliberately excluded from the diff: the archive is null for
+Miami and Focus now returns <code>N</code>, so every row differs by design.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Advisory coverage</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">from google.cloud import bigquery</span>
+<span class="s2">import os</span>
+<span class="s2">c = bigquery.Client(project='teamster-332318')</span>
+<span class="s2">ds = 'zz_' + os.environ['USER'] + '_kipptaf_students'</span>
+<span class="s2">q = f'''select school_level, count(*) as n_rows,</span>
+<span class="s2">countif(advisory_name is not null) as n_advisory</span>
+<span class="s2">from \`teamster-332318.{ds}.int_students__student_enrollments\`</span>
+<span class="s2">where _dbt_source_project = 'kippmiami' and academic_year = 2026</span>
+<span class="s2">group by 1'''</span>
+<span class="s2">for r in c.query(q): print(dict(r))</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: ES around 957 populated; MS and HS at or near zero. Assert the ES
+count, not a network-wide rate — a network-wide non-null assertion fails by
+design.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Record the numbers</strong></li>
+</ul>
+<p>Write every result above to <code>.claude/scratch/4868-validation.md</code> for the PR
+body. Use counts and column names only — no student values.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint the changed SQL</strong></li>
+</ul>
+<p>Run from inside the worktree — a relative path from the main repo checks the
+wrong copies, and <code>--force</code> is required or committed files are skipped:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--name-only<span class="w"> </span>origin/main...HEAD<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'\.(sql|yml|md)$'</span><span class="k">)</span><span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: no <code>file:line</code> findings. If <code>.trunk/tools/trunk</code> does not exist, use
+<code>~/.cache/trunk/launcher/trunk</code>. Unformatted-file findings are fixed by the
+pre-commit hook; rule findings must be fixed by hand.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit any lint fixes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"style(dbt): satisfy sqlfluff on the enrollment models</span>
+
+<span class="s2">Refs #4868"</span>
+</code></pre></div>
+<p>Skip this step if Step 6 found nothing.</p>
+<hr />
+<h2 id="task-9-ops-issues-push-and-pr">Task 9: Ops issues, push, and PR</h2>
+<p><strong>Files:</strong> none.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>.claude/scratch/4868-validation.md</code> from Task 8.</li>
+<li>
+<p>Produces: two GitHub issues and one pull request.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: File the homeroom scheduling issue</strong></p>
+</li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with <code>method: create</code>, labels
+<code>["fix", "focus", "kippmiami", "ops-tracked"]</code>, title
+<code>fix(focus): homeroom course periods are only scheduled for Miami elementary</code>.
+Body states: the Focus <code>homeroom</code> flag is null on all 18,789 AY2026
+<code>int_focus__schedule</code> rows and all 2,183 <code>int_focus__users</code> rows; only ES has
+Homeroom-titled course periods, so <code>int_focus__advisory</code> resolves 957 of 1,690
+AY2026 students; the archive covered Miami ES and MS at roughly 99%, so MS
+advisory reporting is a live regression; either scheduling homeroom course
+periods for MS and HS or populating the <code>homeroom</code> flag fixes it with no code
+change. Reference <code>Refs #4868</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: File the homelessness field issue</strong></li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with <code>method: create</code>, labels
+<code>["fix", "focus", "kippmiami", "ops-tracked"]</code>, title
+<code>fix(focus): confirm the Miami homeless unaccompanied youth field is maintained</code>.
+Body states: <code>custom_820</code> labels <code>N</code> as a default and its options describe
+residence type rather than custody; <code>custom_818</code> Homeless Unaccompanied Youth is
+the only field separating the network <code>Y2</code> code from <code>Y1</code> and carries one
+populated row; ask the Miami team to confirm it is being maintained. Reference
+<code>Refs #4868</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify both issue bodies stored correctly</strong></li>
+</ul>
+<p>Run <code>gh api repos/TEAMSchools/teamster/issues/&lt;n&gt; --jq .body</code> for each and
+confirm the text is intact. The GitHub MCP write tools strip <code>&lt;...&gt;</code> tokens and
+entity-encode <code>&amp;</code> and <code>"</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Push</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-focus-enrollment-base<span class="w"> </span>push
+</code></pre></div>
+<p>Expected: the pre-push trunk hook passes. If it blocks, fix the findings and
+re-push rather than bypassing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Open the PR</strong></li>
+</ul>
+<p>Use <code>.github/pull_request_template.md</code> as the body. Include the Task 8 numbers,
+the ES-only advisory limitation, and the known effects: Miami historical
+enrollment dates shift for roughly 1,421 stints, and #4803 orphan counts rise
+while staying <code>severity: warn</code>. Reference <code>Closes #4868</code>, <code>Refs #4729</code>,
+<code>Refs #4811</code>, <code>Refs #3999</code>, plus the two Ops issue numbers.</p>
+<p>Do NOT <code>gh project item-add</code> the PR — it appears on the board via the issue
+references.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Watch CI</strong></li>
+</ul>
+<p>Both surfaces must be checked: dbt Cloud is a commit status, Trunk and CodeQL
+and <code>claude</code> are check runs.</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>checks<span class="w"> </span>&lt;n&gt;<span class="w"> </span>--json<span class="w"> </span>name,bucket,state
+</code></pre></div>
+<p>If dbt Cloud fails on <code>Name &lt;col&gt; not found</code> against <code>zz_stg_kippmiami_focus</code>,
+Task 4's staging seed did not take — re-run Task 4 Step 2 and trigger a fresh
+build, not <code>dbt retry</code>, which replays stale compiled SQL.</p>
+<p>After CI passes, fetch warnings with
+<code>mcp__dbt__get_job_run_error(run_id=&lt;ci_run&gt;, warning_only=true)</code> before calling
+it done.</p>
+<hr />
+<h2 id="self-review">Self-Review</h2>
+<p><strong>Spec coverage:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Spec item</th>
+<th>Task</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stg_focus__students</code> gains <code>custom_818</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code> decodes it</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Package <code>int_focus__students</code> conforms 4 columns</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Homelessness decode incl. Y1/Y2 split</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Meal eligibility decode</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Cross-project staging seed + <code>state:modified</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td>New <code>int_focus__advisory</code>, ES only</td>
+<td>5</td>
+</tr>
+<tr>
+<td>New <code>int_students__student_enrollments</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>cohort_primary</code> / <code>_secondary</code> / <code>cohort</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>boy_status</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>entry_schoolid</code> / <code>entry_grade_level</code> / <code>is_retained_ever</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td>Straight-projection columns</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Null-filled columns (automatic via corresponding)</td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>base_</code> becomes a passthrough</td>
+<td>7</td>
+</tr>
+<tr>
+<td>Tests and docs move off <code>base_</code></td>
+<td>6, 7</td>
+</tr>
+<tr>
+<td>NJ parity</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Miami historical reconciliation</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Miami AY2026 presence incl. HS</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Advisory coverage assertion</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Consumer resolution (<code>--empty</code>)</td>
+<td>7</td>
+</tr>
+<tr>
+<td>Uniqueness test</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Two Ops follow-ups</td>
+<td>9</td>
+</tr>
+</tbody>
+</table>
+<p><code>rpt_gsheets__student_contact_info</code> reporting Miami at AY2026 is covered
+transitively by Task 7 Step 4 plus Task 8 Step 2; it is a view over
+<code>int_extracts__student_enrollments</code>, so it carries Miami once the base model
+does.</p>
+<p><strong>Type consistency:</strong> <code>student_number</code> is <code>INT64</code> on both branches; <code>schoolid</code>,
+<code>cohort*</code>, <code>entry_*</code>, <code>reporting_schoolid</code> are <code>INT64</code>; <code>is_*</code> are <code>BOOL</code>;
+<code>homeless_code</code>, <code>lunchstatus</code>, <code>spedlep</code>, <code>advisory_*</code>, <code>school_*</code> are
+<code>STRING</code>; <code>lep_status</code> is <code>BOOL</code>; <code>entrydate</code> / <code>exitdate</code> / <code>dob</code> are <code>DATE</code>.
+Verified against <code>kippnewark_powerschool.base_powerschool__student_enrollments</code>.</p>
+<p><strong>Known gap:</strong> Task 6 Step 5 requires <code>focus_conformed</code> to project
+<code>grade_level_prev</code> and <code>academic_year_prev</code>, and Step 6 drops them with
+<code>except</code>. The implementer must add them in Step 4's select list — the step text
+says so explicitly, but it is the easiest thing in this plan to miss.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

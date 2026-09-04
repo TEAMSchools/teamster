@@ -1,0 +1,2940 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>NJ SLEDS Grade and Credit Backfill Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#nj-sleds-grade-and-credit-backfill-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              NJ SLEDS Grade and Credit Backfill Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-query-skeleton-band-classification-and-parity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Query skeleton, band classification, and parity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-stored-grade-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Stored-grade resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-live-grade-fallback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Live-grade fallback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-field-emission-and-formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Field emission and formatting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-prove-the-gate-fires" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Prove the gate fires
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-view-creation-export-and-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: View creation, export, and runbook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-30-nj-sleds-grade-credit-backfill.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="nj-sleds-grade-and-credit-backfill-implementation-plan">NJ SLEDS Grade and Credit Backfill Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Produce a submission-ready NJ SLEDS Student Course Roster CSV per
+region by filling <code>AlphaGradeEarned</code> and <code>CreditsEarned</code> from the warehouse,
+leaving every other column byte-identical to the native PowerSchool extract.</p>
+<p><strong>Architecture:</strong> A BigQuery view in the <code>cokafor</code> dataset joins the loaded
+extract to <code>kipptaf_powerschool.stg_powerschool__storedgrades</code> (stored <code>Y1</code>
+grades, primary) and <code>stg_powerschool__pgfinalgrades</code> (live grades, fills nulls
+only). A validation script asserts the handbook's rules and refuses export on
+any failure. An export script writes one CSV per region with every value as a
+string.</p>
+<p><strong>Tech Stack:</strong> BigQuery (Standard SQL), Python 3.13 via <code>uv</code>,
+<code>google-cloud-bigquery</code> with Application Default Credentials.</p>
+<p>Spec:
+<a href="../../specs/2026-07-30-nj-sleds-grade-credit-backfill-design/"><code>2026-07-30-nj-sleds-grade-credit-backfill-design.md</code></a>.
+Issue <a href="https://github.com/TEAMSchools/teamster/issues/4630">#4630</a>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<p>Every task's requirements implicitly include this section.</p>
+<ul>
+<li><strong>Only two fields may be written:</strong> <code>AlphaGradeEarned</code> and <code>CreditsEarned</code>.
+  Every other column passes through unchanged from the extract.</li>
+<li><strong>No row may be added, removed, filtered, or deduplicated.</strong> Row-count parity
+  per region is a hard gate: Newark 33,150, Camden 10,343. Row <strong>order</strong> is
+  explicitly not preserved: BigQuery's output order across a <code>union all</code> with
+  left joins is nondeterministic, and no ordinal column was captured at load, so
+  the native extract's order is not recoverable. Harmless for a keyed roster
+  upload, which matches rows on student and section identifiers, not position.</li>
+<li><strong>Every value in the view and the CSV is a <code>STRING</code>.</strong> No numeric coercion
+  anywhere in the export path. CDS codes must keep leading zeros (<code>07</code>, not
+  <code>7</code>).</li>
+<li><strong><code>CreditsEarned</code> format:</strong> exactly three decimals (<code>1.000</code>, <code>0.000</code>). The
+  handbook sets minimum length 5, so <code>1</code> is invalid. Range <code>0.000</code>–<code>35.000</code>, and
+  never greater than that row's <code>AvailableCredit</code>.</li>
+<li><strong><code>AlphaGradeEarned</code> domain</strong> (18 values, handbook page 35): <code>A</code> <code>A+</code> <code>A-</code> <code>B</code>
+  <code>B+</code> <code>B-</code> <code>C</code> <code>C+</code> <code>C-</code> <code>D</code> <code>D+</code> <code>D-</code> <code>E</code> <code>E+</code> <code>E-</code> <code>F</code> <code>F+</code> <code>F-</code>. Anything
+  else resolves to blank and is reported. Never emit <code>P</code> (illegal here) or <code>F*</code>
+  (a warehouse-internal marker).</li>
+<li><strong>Grade source precedence:</strong> stored grade always wins; live grades fill nulls
+  only.</li>
+<li><strong>Stored-grade scope:</strong> <code>academic_year = 2025</code> and <code>storecode = 'Y1'</code>.</li>
+<li><strong>Live-grade scope:</strong> <code>enddate</code> between <code>2025-07-01</code> and <code>2026-06-30</code>, taking
+  the greatest <code>enddate</code> per student-section.</li>
+<li><strong>Region scoping is structural.</strong> Each region branch reads only its own
+  extract base table and filters every shared CTE to its own
+  <code>_dbt_source_project</code> literal (<code>kippnewark</code> / <code>kippcamden</code>). Local identifiers
+  repeat across regions (33 shared student local IDs), so an unqualified join
+  manufactures false matches.</li>
+<li><strong>Grade bands.</strong> <code>HS</code> = <code>sced_level = 'secondary'</code> and <code>AvailableCredit</code>
+  greater than <code>0</code>. <code>MS</code> = prior-to-secondary whose <code>GradeSpan</code> <strong>first</strong> two
+  characters — the span's lower bound — are in
+  <code>('06','07','08','09','10','11','12')</code>. Everything else is <code>OUT</code> and receives
+  no grade. Test membership explicitly rather than with a range comparison: <code>KG</code>
+  sorts above <code>06</code> as a string, so <code>&gt;= '06'</code> would wrongly pull in every
+  kindergarten row.</li>
+<li><strong>Never guess.</strong> A conflict or a missing grade produces a blank plus a report
+  row, never an inferred value.</li>
+<li><strong>Python:</strong> always <code>uv run</code>. Never bare <code>python</code> / <code>python3</code>.</li>
+<li><strong>Worktree:</strong>
+  <code>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill</code>.
+  Use <code>git -C &lt;worktree&gt;</code> on every git call. Read/Edit/Write must target the
+  worktree path.</li>
+<li><strong>No <code>.sql</code> files.</strong> sqlfluff is enabled repo-wide and ignored only under
+  <code>src/teamster/**</code>; a standalone <code>.sql</code> under <code>docs/</code> is linted with the dbt
+  templater and fails outside a dbt project. SQL lives as a Python module
+  constant. Keep SQL lines at or under 88 characters so ruff does not flag them.</li>
+<li><strong>PII:</strong> the exported CSV carries names, dates of birth, and state IDs. It
+  stays local and goes only to the state-access uploader. Never commit it, and
+  never put row-level values in a commit message, issue, or PR.</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<p>All new files live under <code>docs/superpowers/nj-sleds-roster/submission/</code>,
+matching the precedent set by <code>docs/superpowers/nj-sleds-roster/setup/</code> on the
+runbook branch, which keeps every NJ SLEDS operational artifact together rather
+than adding a seasonal tool to the general-purpose <code>scripts/</code> catalog.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>submission_query.py</code></td>
+<td>The SQL as a module constant, plus the column list and the grade domain. No I/O.</td>
+</tr>
+<tr>
+<td><code>validate_submission.py</code></td>
+<td>Runs every handbook and parity check against the query. Exits non-zero on any failure.</td>
+</tr>
+<tr>
+<td><code>build_submission.py</code></td>
+<td>Creates or replaces the view, runs the validation gate, writes one CSV per region. Refuses to export if the gate fails.</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td>How to run the three-step cycle.</td>
+</tr>
+</tbody>
+</table>
+<p><code>validate_submission.py</code> is both the test harness and the permanent pre-upload
+gate. Each task adds its checks to it, so every task has a real red-green cycle.</p>
+<hr />
+<h3 id="task-1-query-skeleton-band-classification-and-parity">Task 1: Query skeleton, band classification, and parity</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>docs/superpowers/nj-sleds-roster/submission/submission_query.py</code></li>
+<li>Create: <code>docs/superpowers/nj-sleds-roster/submission/validate_submission.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: <code>submission_query.SUBMISSION_SQL</code> (a <code>str</code> holding a bare <code>SELECT</code>,
+  no trailing semicolon, wrappable as a subquery);
+  <code>submission_query.SUBMISSION_COLUMNS</code> (a <code>list[str]</code> of the 25 submission
+  column names in ordinal order); <code>submission_query.ALPHA_GRADE_DOMAIN</code> (a
+  <code>frozenset[str]</code> of the 18 legal letter grades);
+  <code>validate_submission.run_checks(client) -&gt; list[str]</code> returning a list of
+  failure messages (empty means pass).</li>
+</ul>
+<p>At the end of this task the query returns all 25 extract columns unchanged plus
+<code>region</code> and <code>grade_band</code>. No grades are resolved yet.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing checks</strong></li>
+</ul>
+<p>Create <code>validate_submission.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">"""Validation gate for the NJ SLEDS student course submission.</span>
+
+<span class="sd">Exits non-zero if any handbook or parity rule fails. Prints aggregate counts</span>
+<span class="sd">only - never row-level values, which are PII.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.cloud</span><span class="w"> </span><span class="kn">import</span> <span class="n">bigquery</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">submission_query</span><span class="w"> </span><span class="kn">import</span> <span class="n">SUBMISSION_SQL</span>
+
+<span class="n">PROJECT</span> <span class="o">=</span> <span class="s2">"teamster-332318"</span>
+
+<span class="n">EXPECTED_EXTRACT_ROWS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"newark"</span><span class="p">:</span> <span class="mi">33150</span><span class="p">,</span> <span class="s2">"camden"</span><span class="p">:</span> <span class="mi">10343</span><span class="p">}</span>
+<span class="n">EXPECTED_BAND_ROWS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s2">"newark"</span><span class="p">,</span> <span class="s2">"HS"</span><span class="p">):</span> <span class="mi">10695</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"newark"</span><span class="p">,</span> <span class="s2">"MS"</span><span class="p">):</span> <span class="mi">10746</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"newark"</span><span class="p">,</span> <span class="s2">"OUT"</span><span class="p">):</span> <span class="mi">11709</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"camden"</span><span class="p">,</span> <span class="s2">"HS"</span><span class="p">):</span> <span class="mi">3648</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"camden"</span><span class="p">,</span> <span class="s2">"MS"</span><span class="p">):</span> <span class="mi">3638</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"camden"</span><span class="p">,</span> <span class="s2">"OUT"</span><span class="p">):</span> <span class="mi">3057</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_row_parity</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Every extract row appears exactly once. No fan-out, no loss."""</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select region, count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    group by region</span>
+<span class="s2">    """</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="o">.</span><span class="n">region</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">n</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)}</span>
+    <span class="k">for</span> <span class="n">region</span><span class="p">,</span> <span class="n">expected</span> <span class="ow">in</span> <span class="n">EXPECTED_EXTRACT_ROWS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">got</span> <span class="o">=</span> <span class="n">actual</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">got</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"row parity </span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s2">: expected </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">got</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">failures</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_band_counts</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Band classification matches the spec exactly."""</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select region, grade_band, count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    group by region, grade_band</span>
+<span class="s2">    """</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="p">{(</span><span class="n">r</span><span class="o">.</span><span class="n">region</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">grade_band</span><span class="p">):</span> <span class="n">r</span><span class="o">.</span><span class="n">n</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">expected</span> <span class="ow">in</span> <span class="n">EXPECTED_BAND_ROWS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">got</span> <span class="o">=</span> <span class="n">actual</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">got</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"band count </span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">: expected </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">got</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">failures</span>
+
+
+<span class="n">CHECKS</span> <span class="o">=</span> <span class="p">[</span><span class="n">check_row_parity</span><span class="p">,</span> <span class="n">check_band_counts</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_checks</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">check</span> <span class="ow">in</span> <span class="n">CHECKS</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">check</span><span class="p">(</span><span class="n">client</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">failures</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">bigquery</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">PROJECT</span><span class="p">)</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="n">run_checks</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">failures</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"FAILED (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failures</span><span class="p">)</span><span class="si">}</span><span class="s2"> issue(s)):"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">failures</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  - </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PASSED (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">CHECKS</span><span class="p">)</span><span class="si">}</span><span class="s2"> check group(s))"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to confirm it fails</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: <code>ModuleNotFoundError: No module named 'submission_query'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the query skeleton</strong></li>
+</ul>
+<p>Create <code>submission_query.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">"""SQL and constants for the NJ SLEDS student course submission view.</span>
+
+<span class="sd">SUBMISSION_SQL is a bare SELECT with no trailing semicolon so it can be used</span>
+<span class="sd">as a subquery by the validator or wrapped in CREATE OR REPLACE VIEW by the</span>
+<span class="sd">builder.</span>
+<span class="sd">"""</span>
+
+<span class="n">SUBMISSION_COLUMNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"LocalIdentificationNumber"</span><span class="p">,</span>
+    <span class="s2">"StateIdentificationNumber"</span><span class="p">,</span>
+    <span class="s2">"FirstName"</span><span class="p">,</span>
+    <span class="s2">"LastName"</span><span class="p">,</span>
+    <span class="s2">"DateOfBirth"</span><span class="p">,</span>
+    <span class="s2">"CountyCodeAssigned"</span><span class="p">,</span>
+    <span class="s2">"DistrictCodeAssigned"</span><span class="p">,</span>
+    <span class="s2">"SchoolCodeAssigned"</span><span class="p">,</span>
+    <span class="s2">"SectionEntryDate"</span><span class="p">,</span>
+    <span class="s2">"SectionExitDate"</span><span class="p">,</span>
+    <span class="s2">"SubjectArea"</span><span class="p">,</span>
+    <span class="s2">"CourseIdentifier"</span><span class="p">,</span>
+    <span class="s2">"CourseLevel"</span><span class="p">,</span>
+    <span class="s2">"GradeSpan"</span><span class="p">,</span>
+    <span class="s2">"AvailableCredit"</span><span class="p">,</span>
+    <span class="s2">"CourseSequence"</span><span class="p">,</span>
+    <span class="s2">"LocalCourseTitle"</span><span class="p">,</span>
+    <span class="s2">"LocalCourseCode"</span><span class="p">,</span>
+    <span class="s2">"LocalSectionCode"</span><span class="p">,</span>
+    <span class="s2">"CreditsEarned"</span><span class="p">,</span>
+    <span class="s2">"NumericGradeEarned"</span><span class="p">,</span>
+    <span class="s2">"AlphaGradeEarned"</span><span class="p">,</span>
+    <span class="s2">"CompletionStatus"</span><span class="p">,</span>
+    <span class="s2">"CourseType"</span><span class="p">,</span>
+    <span class="s2">"DualInstitution"</span><span class="p">,</span>
+<span class="p">]</span>
+
+<span class="n">ALPHA_GRADE_DOMAIN</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"A+"</span><span class="p">,</span> <span class="s2">"A-"</span><span class="p">,</span>
+        <span class="s2">"B"</span><span class="p">,</span> <span class="s2">"B+"</span><span class="p">,</span> <span class="s2">"B-"</span><span class="p">,</span>
+        <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"C+"</span><span class="p">,</span> <span class="s2">"C-"</span><span class="p">,</span>
+        <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"D+"</span><span class="p">,</span> <span class="s2">"D-"</span><span class="p">,</span>
+        <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"E+"</span><span class="p">,</span> <span class="s2">"E-"</span><span class="p">,</span>
+        <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"F+"</span><span class="p">,</span> <span class="s2">"F-"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">SUBMISSION_SQL</span> <span class="o">=</span> <span class="s2">"""</span>
+<span class="s2">with</span>
+<span class="s2">    sced as (</span>
+<span class="s2">        select</span>
+<span class="s2">            subject_area,</span>
+<span class="s2">            course_identifier,</span>
+<span class="s2">            sced_level,</span>
+<span class="s2">        from `teamster-332318.cokafor.ref_sced_codes`</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    newark_joined as (</span>
+<span class="s2">        select</span>
+<span class="s2">            e.*,</span>
+
+<span class="s2">            sc.sced_level,</span>
+
+<span class="s2">            'newark' as region,</span>
+<span class="s2">        from `teamster-332318.cokafor.stg_student_extract_newark` as e</span>
+<span class="s2">        left join sced as sc</span>
+<span class="s2">            on e.SubjectArea = sc.subject_area</span>
+<span class="s2">            and e.CourseIdentifier = sc.course_identifier</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    camden_joined as (</span>
+<span class="s2">        select</span>
+<span class="s2">            e.*,</span>
+
+<span class="s2">            sc.sced_level,</span>
+
+<span class="s2">            'camden' as region,</span>
+<span class="s2">        from `teamster-332318.cokafor.stg_student_extract_camden` as e</span>
+<span class="s2">        left join sced as sc</span>
+<span class="s2">            on e.SubjectArea = sc.subject_area</span>
+<span class="s2">            and e.CourseIdentifier = sc.course_identifier</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    joined as (</span>
+<span class="s2">        select * from newark_joined</span>
+<span class="s2">        union all</span>
+<span class="s2">        select * from camden_joined</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    normalized as (</span>
+<span class="s2">        select</span>
+<span class="s2">            *,</span>
+
+<span class="s2">            nullif(GradeSpan, '') as grade_span_raw,</span>
+<span class="s2">            nullif(AvailableCredit, '') as available_credit_raw,</span>
+<span class="s2">        from joined</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    typed as (</span>
+<span class="s2">        select</span>
+<span class="s2">            *,</span>
+
+<span class="s2">            lpad(grade_span_raw, 4, '0') as grade_span_padded,</span>
+<span class="s2">            safe_cast(available_credit_raw as float64) as available_credit_num,</span>
+<span class="s2">        from normalized</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    banded as (</span>
+<span class="s2">        select</span>
+<span class="s2">            *,</span>
+
+<span class="s2">            substr(grade_span_padded, 1, 2) as grade_span_start,</span>
+<span class="s2">        from typed</span>
+<span class="s2">    ),</span>
+
+<span class="s2">    scoped as (</span>
+<span class="s2">        select</span>
+<span class="s2">            *,</span>
+
+<span class="s2">            case</span>
+<span class="s2">                when sced_level = 'secondary' and available_credit_num &gt; 0</span>
+<span class="s2">                then 'HS'</span>
+<span class="s2">                when</span>
+<span class="s2">                    grade_span_start</span>
+<span class="s2">                    in ('06', '07', '08', '09', '10', '11', '12')</span>
+<span class="s2">                then 'MS'</span>
+<span class="s2">                else 'OUT'</span>
+<span class="s2">            end as grade_band,</span>
+<span class="s2">        from banded</span>
+<span class="s2">    )</span>
+
+<span class="s2">select</span>
+<span class="s2">    LocalIdentificationNumber,</span>
+<span class="s2">    StateIdentificationNumber,</span>
+<span class="s2">    FirstName,</span>
+<span class="s2">    LastName,</span>
+<span class="s2">    DateOfBirth,</span>
+<span class="s2">    CountyCodeAssigned,</span>
+<span class="s2">    DistrictCodeAssigned,</span>
+<span class="s2">    SchoolCodeAssigned,</span>
+<span class="s2">    SectionEntryDate,</span>
+<span class="s2">    SectionExitDate,</span>
+<span class="s2">    SubjectArea,</span>
+<span class="s2">    CourseIdentifier,</span>
+<span class="s2">    CourseLevel,</span>
+<span class="s2">    GradeSpan,</span>
+<span class="s2">    AvailableCredit,</span>
+<span class="s2">    CourseSequence,</span>
+<span class="s2">    LocalCourseTitle,</span>
+<span class="s2">    LocalCourseCode,</span>
+<span class="s2">    LocalSectionCode,</span>
+<span class="s2">    CreditsEarned,</span>
+<span class="s2">    NumericGradeEarned,</span>
+<span class="s2">    AlphaGradeEarned,</span>
+<span class="s2">    CompletionStatus,</span>
+<span class="s2">    CourseType,</span>
+<span class="s2">    DualInstitution,</span>
+<span class="s2">    region,</span>
+<span class="s2">    grade_band,</span>
+<span class="s2">from scoped</span>
+<span class="s2">"""</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to confirm it passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: <code>PASSED (2 check group(s))</code>. If Camden <code>MS</code> is over by 219 and Camden
+<code>OUT</code> short by the same, the membership test is reading the span's <strong>upper</strong>
+bound (characters 3-4) instead of its lower bound (characters 1-2) — <code>0508</code> and
+<code>KG08</code> must land in <code>OUT</code>. If <code>OUT</code> is short by 1,675, <code>KG</code> is being ranked
+above <code>06</code> by a range comparison instead of the explicit membership list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s1">'feat(nj-sleds): submission query skeleton with band classification (Refs #4630)'</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-stored-grade-resolution">Task 2: Stored-grade resolution</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/submission_query.py</code></li>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/validate_submission.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>SUBMISSION_SQL</code>, <code>run_checks</code> from Task 1.</li>
+<li>
+<p>Produces: four new columns on the query — <code>stored_letter</code> (<code>STRING</code>),
+  <code>stored_earned_credit</code> (<code>FLOAT64</code>), <code>n_stored_letters</code> (<code>INT64</code>),
+  <code>n_stored_credits</code> (<code>INT64</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing checks</strong></p>
+</li>
+</ul>
+<p>Add to <code>validate_submission.py</code>, above the <code>CHECKS</code> list:</p>
+<div class="highlight"><pre><span></span><code><span class="n">EXPECTED_STORED_COVERAGE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s2">"newark"</span><span class="p">,</span> <span class="s2">"HS"</span><span class="p">):</span> <span class="mi">10675</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"newark"</span><span class="p">,</span> <span class="s2">"MS"</span><span class="p">):</span> <span class="mi">10682</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"camden"</span><span class="p">,</span> <span class="s2">"HS"</span><span class="p">):</span> <span class="mi">3616</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"camden"</span><span class="p">,</span> <span class="s2">"MS"</span><span class="p">):</span> <span class="mi">3633</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_stored_coverage</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Stored Y1 grades cover the in-scope bands at the measured rate.</span>
+
+<span class="sd">    Counts are a floor, not an equality: a re-pulled extract may match more</span>
+<span class="sd">    rows. A drop signals a broken join.</span>
+<span class="sd">    """</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select region, grade_band, countif(stored_letter is not null) as matched</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    group by region, grade_band</span>
+<span class="s2">    """</span>
+    <span class="n">actual</span> <span class="o">=</span> <span class="p">{(</span><span class="n">r</span><span class="o">.</span><span class="n">region</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">grade_band</span><span class="p">):</span> <span class="n">r</span><span class="o">.</span><span class="n">matched</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">floor</span> <span class="ow">in</span> <span class="n">EXPECTED_STORED_COVERAGE</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">got</span> <span class="o">=</span> <span class="n">actual</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">got</span> <span class="o">&lt;</span> <span class="n">floor</span><span class="p">:</span>
+            <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"stored coverage </span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">: expected at least "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">floor</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">got</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">failures</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_no_stored_conflicts</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""No student-section carries conflicting stored Y1 letters or credits.</span>
+
+<span class="sd">    Both dimensions matter: stored_letter and stored_earned_credit are</span>
+<span class="sd">    independent aggregates, so a conflict in either means the pair may not</span>
+<span class="sd">    come from the same source row.</span>
+<span class="sd">    """</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select</span>
+<span class="s2">        countif(n_stored_letters &gt; 1) as letter_conflicts,</span>
+<span class="s2">        countif(n_stored_credits &gt; 1) as credit_conflicts</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    """</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">letter_conflicts</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">letter_conflicts</span><span class="si">}</span><span class="s2"> row(s) have conflicting stored Y1 letters"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">credit_conflicts</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">credit_conflicts</span><span class="si">}</span><span class="s2"> row(s) have conflicting stored Y1 credits"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">failures</span>
+</code></pre></div>
+<p>Then extend the list:</p>
+<div class="highlight"><pre><span></span><code><span class="n">CHECKS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">check_row_parity</span><span class="p">,</span>
+    <span class="n">check_band_counts</span><span class="p">,</span>
+    <span class="n">check_stored_coverage</span><span class="p">,</span>
+    <span class="n">check_no_stored_conflicts</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to confirm it fails</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: FAIL with a BigQuery error naming <code>stored_letter</code> as unrecognized.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the stored-grade CTEs</strong></li>
+</ul>
+<p>In <code>submission_query.py</code>, insert after the <code>sced</code> CTE:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">stored_raw</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="p">,</span>
+<span class="w">            </span><span class="n">earnedcrhrs</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">studentid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">studentid_str</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">sectionid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sectionid_str</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__storedgrades</span><span class="o">`</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2025</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Y1'</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'kippnewark'</span><span class="p">,</span><span class="w"> </span><span class="s1">'kippcamden'</span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid_str</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sectionid_str</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">stored_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="n">earnedcrhrs</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">stored_earned_credit</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_stored_letters</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">earnedcrhrs</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_stored_credits</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">stored_raw</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid_str</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid_str</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number_str</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">studentid_str</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__students</span><span class="o">`</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'kippnewark'</span><span class="p">,</span><span class="w"> </span><span class="s1">'kippcamden'</span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace both region <code>_joined</code> CTEs with these. Each branch reads only its own
+extract base table and pins every shared CTE to its own <code>_dbt_source_project</code>
+literal — that is what makes region separation structural rather than a
+predicate someone has to remember.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">newark_joined</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">sced_level</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">stored_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">stored_earned_credit</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">n_stored_letters</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">n_stored_credits</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">'newark'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">cokafor</span><span class="p">.</span><span class="n">stg_student_extract_newark</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">sced</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">SubjectArea</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">subject_area</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">CourseIdentifier</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">course_identifier</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">st</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">LocalIdentificationNumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">student_number_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippnewark'</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sg</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">studentid_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">studentid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">LocalSectionCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">sectionid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippnewark'</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">camden_joined</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">sced_level</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">stored_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">stored_earned_credit</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">n_stored_letters</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sg</span><span class="p">.</span><span class="n">n_stored_credits</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">'camden'</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">cokafor</span><span class="p">.</span><span class="n">stg_student_extract_camden</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">sced</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sc</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">SubjectArea</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">subject_area</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">CourseIdentifier</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">course_identifier</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">st</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">LocalIdentificationNumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">student_number_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippcamden'</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sg</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">studentid_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">studentid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">LocalSectionCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">sectionid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sg</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippcamden'</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Add <code>stored_letter</code>, <code>stored_earned_credit</code>, <code>n_stored_letters</code>, and
+<code>n_stored_credits</code> to the final <code>SELECT</code> list, after <code>grade_band</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to confirm it passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: <code>PASSED (4 check group(s))</code>. If <code>check_row_parity</code> now fails with
+counts above 33,150 or 10,343, the join fanned out — confirm the <code>stored</code> CTE
+groups by all three keys and that every join predicate carries its
+<code>_dbt_source_project</code> literal.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s1">'feat(nj-sleds): resolve stored Y1 grades and earned credit (Refs #4630)'</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-live-grade-fallback">Task 3: Live-grade fallback</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/submission_query.py</code></li>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/validate_submission.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: Task 2's <code>stored_letter</code>, <code>n_stored_letters</code>.</li>
+<li>Produces: <code>live_letter</code> (<code>STRING</code>), <code>n_live_letters</code> (<code>INT64</code>).</li>
+</ul>
+<p><code>pgfinalgrades</code> has no <code>academic_year</code> column and holds history back to 2004, so
+it must be scoped by <code>enddate</code>. Its <code>Y1</code> term stopped being used in 2018; for SY
+2025-26 the terminal terms (<code>Q4</code>, <code>H4</code>, <code>S4</code>, <code>W4</code>) all end <code>2026-06-29</code>. Taking
+the greatest <code>enddate</code> per student-section therefore selects the terminal term
+whatever structure the section uses, without hardcoding a term code.</p>
+<p>Two terms can share that same maximum <code>enddate</code>, which is a fan-out risk. The
+<code>live</code> CTE aggregates per student-section and counts distinct letters so a
+conflict is reported rather than silently picked.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing checks</strong></li>
+</ul>
+<p>Add to <code>validate_submission.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_no_live_conflicts</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A conflicted live grade is never emitted as the resolved value.</span>
+
+<span class="sd">    Live reporting terms legitimately disagree on tens of thousands of rows -</span>
+<span class="sd">    several term types close on the same date. That is not an error, because</span>
+<span class="sd">    on any row with a stored grade the live value is never consulted. The</span>
+<span class="sd">    invariant that matters is narrower: when live terms disagree, the guard</span>
+<span class="sd">    must null the value rather than pick one, so grade_source can never be</span>
+<span class="sd">    'live' on a conflicted row.</span>
+<span class="sd">    """</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    where n_live_letters &gt; 1 and grade_source = 'live'</span>
+<span class="s2">    """</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">n</span>
+    <span class="k">if</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> row(s) emitted a conflicted live grade"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_live_fills_only_gaps</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Live grades never override a stored grade."""</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    where</span>
+<span class="s2">        stored_letter is not null</span>
+<span class="s2">        and live_letter is not null</span>
+<span class="s2">        and stored_letter != live_letter</span>
+<span class="s2">        and grade_source = 'live'</span>
+<span class="s2">    """</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">n</span>
+    <span class="k">if</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> row(s) took a live grade over a stored grade"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span>
+</code></pre></div>
+<p>Extend the list with <code>check_no_live_conflicts</code> and <code>check_live_fills_only_gaps</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to confirm it fails</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: FAIL with a BigQuery error naming <code>n_live_letters</code> as unrecognized.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the live-grade CTEs and the source marker</strong></li>
+</ul>
+<p>Insert after the <code>stored</code> CTE:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">live_raw</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enddate</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">studentid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">studentid_str</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">sectionid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sectionid_str</span><span class="p">,</span>
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="n">enddate</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">max_enddate</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__pgfinalgrades</span><span class="o">`</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">enddate</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="s1">'2025-07-01'</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="s1">'2026-06-30'</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'kippnewark'</span><span class="p">,</span><span class="w"> </span><span class="s1">'kippcamden'</span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">live</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">studentid_str</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sectionid_str</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">max</span><span class="p">(</span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">live_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="o">`</span><span class="n">grade</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_live_letters</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">live_raw</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">enddate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max_enddate</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span><span class="w"> </span><span class="n">studentid_str</span><span class="p">,</span><span class="w"> </span><span class="n">sectionid_str</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>In the <strong>Newark</strong> branch, add these two columns to the select list immediately
+after <code>sg.n_stored_letters,</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">lg</span><span class="p">.</span><span class="n">live_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">lg</span><span class="p">.</span><span class="n">n_live_letters</span><span class="p">,</span>
+</code></pre></div>
+<p>and this join immediately after the <code>stored</code> join:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">live</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lg</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">studentid_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lg</span><span class="p">.</span><span class="n">studentid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">LocalSectionCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lg</span><span class="p">.</span><span class="n">sectionid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">lg</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippnewark'</span>
+</code></pre></div>
+<p>In the <strong>Camden</strong> branch, add the same two columns in the same position:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="n">lg</span><span class="p">.</span><span class="n">live_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">lg</span><span class="p">.</span><span class="n">n_live_letters</span><span class="p">,</span>
+</code></pre></div>
+<p>and this join, pinned to Camden:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">live</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lg</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">st</span><span class="p">.</span><span class="n">studentid_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lg</span><span class="p">.</span><span class="n">studentid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">LocalSectionCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lg</span><span class="p">.</span><span class="n">sectionid_str</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">lg</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippcamden'</span>
+</code></pre></div>
+<p>Insert a CTE after <code>scoped</code> that resolves the candidate and records its origin:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">conflict_guarded</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">n_stored_letters</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="n">stored_letter</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">safe_stored</span><span class="p">,</span>
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">n_live_letters</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="n">live_letter</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">safe_live</span><span class="p">,</span>
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">n_stored_letters</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">n_stored_credits</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">                </span><span class="k">null</span><span class="p">,</span>
+<span class="w">                </span><span class="n">stored_earned_credit</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">safe_stored_credit</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">scoped</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">sourced</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">safe_stored</span><span class="p">,</span><span class="w"> </span><span class="n">safe_live</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">candidate_letter</span><span class="p">,</span>
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">safe_stored</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'stored'</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">safe_live</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">'live'</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="s1">'none'</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_source</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">conflict_guarded</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>Change the final <code>SELECT</code> to read <code>from sourced</code>, and add <code>live_letter</code>,
+<code>n_live_letters</code>, <code>candidate_letter</code>, and <code>grade_source</code> to its column list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to confirm it passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: <code>PASSED (6 check group(s))</code>. If <code>check_row_parity</code> fails high, the
+<code>live</code> CTE is not collapsing to one row per student-section — verify the
+<code>where enddate = max_enddate</code> filter sits in the <code>live</code> CTE, not <code>live_raw</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s1">'feat(nj-sleds): add live-grade fallback with conflict guard (Refs #4630)'</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-field-emission-and-formatting">Task 4: Field emission and formatting</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/submission_query.py</code></li>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/validate_submission.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Task 3's <code>candidate_letter</code>, <code>grade_source</code>; Task 2's
+  <code>stored_earned_credit</code>; Task 1's <code>grade_band</code>, <code>available_credit_num</code>.</li>
+<li>
+<p>Produces: the final <code>AlphaGradeEarned</code> and <code>CreditsEarned</code> columns, replacing
+  the extract's own (which are empty and <code>0.000</code> respectively).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing checks</strong></p>
+</li>
+</ul>
+<p>Add to <code>validate_submission.py</code>, importing the domain at the top
+(<code>from submission_query import ALPHA_GRADE_DOMAIN, SUBMISSION_SQL</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_alpha_grade_domain</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Every emitted letter grade is one of the 18 legal handbook values."""</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s2">'"</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ALPHA_GRADE_DOMAIN</span><span class="p">))</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    where AlphaGradeEarned is not null</span>
+<span class="s2">      and AlphaGradeEarned not in (</span><span class="si">{</span><span class="n">domain</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    """</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">n</span>
+    <span class="k">if</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> row(s) carry an out-of-domain AlphaGradeEarned"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_in_scope_rows_have_grades</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""No in-scope row is left without a letter grade."""</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select region, grade_band, count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    where grade_band in ('HS', 'MS') and AlphaGradeEarned is null</span>
+<span class="s2">    group by region, grade_band</span>
+<span class="s2">    """</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2"> in-scope row(s) in </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">region</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">grade_band</span><span class="si">}</span><span class="s2"> have no grade"</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_out_of_scope_rows_blank</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Out-of-scope rows carry no grade and no credit. Scope-boundary guard."""</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select count(*) as n</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    where grade_band = 'OUT'</span>
+<span class="s2">      and (AlphaGradeEarned is not null or CreditsEarned is not null)</span>
+<span class="s2">    """</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">n</span>
+    <span class="k">if</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> out-of-scope row(s) were given a grade or credit"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_credits_earned</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""CreditsEarned is present, 3-decimal, in range, and within available."""</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">    select</span>
+<span class="s2">        countif(grade_band = 'HS' and CreditsEarned is null) as missing,</span>
+<span class="s2">        countif(</span>
+<span class="s2">            CreditsEarned is not null</span>
+<span class="s2">            and not regexp_contains(CreditsEarned, r'^[0-9]+</span><span class="se">\\</span><span class="s2">.[0-9]</span><span class="se">{{</span><span class="s2">3</span><span class="se">}}</span><span class="s2">$')</span>
+<span class="s2">        ) as malformed,</span>
+<span class="s2">        countif(</span>
+<span class="s2">            CreditsEarned is not null</span>
+<span class="s2">            and safe_cast(CreditsEarned as float64) not between 0.0 and 35.0</span>
+<span class="s2">        ) as out_of_range,</span>
+<span class="s2">        countif(</span>
+<span class="s2">            CreditsEarned is not null</span>
+<span class="s2">            and safe_cast(CreditsEarned as float64)</span>
+<span class="s2">                &gt; safe_cast(nullif(AvailableCredit, '') as float64)</span>
+<span class="s2">        ) as over_available</span>
+<span class="s2">    from (</span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">    """</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">_rows</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">missing</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">missing</span><span class="si">}</span><span class="s2"> HS row(s) missing CreditsEarned"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">malformed</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">malformed</span><span class="si">}</span><span class="s2"> row(s) CreditsEarned not 3-decimal formatted"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">out_of_range</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">out_of_range</span><span class="si">}</span><span class="s2"> row(s) CreditsEarned outside 0.000-35.000"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">over_available</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">over_available</span><span class="si">}</span><span class="s2"> row(s) CreditsEarned exceeds AvailableCredit"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">failures</span>
+</code></pre></div>
+<p>Extend the list with all four.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it to confirm it fails</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: FAIL — <code>check_credits_earned</code> reports 14,343 HS rows malformed,
+because <code>CreditsEarned</code> is still the extract's <code>0.000</code>... which is in fact
+correctly formatted, so the concrete failure is
+<code>check_in_scope_rows_have_grades</code> reporting 28,727 rows with no grade.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the emission CTEs</strong></li>
+</ul>
+<p>Insert after <code>sourced</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">emitted_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="n">grade_band</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">'HS'</span><span class="p">,</span><span class="w"> </span><span class="s1">'MS'</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">candidate_letter</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                    </span><span class="s1">'A'</span><span class="p">,</span><span class="w"> </span><span class="s1">'A+'</span><span class="p">,</span><span class="w"> </span><span class="s1">'A-'</span><span class="p">,</span><span class="w"> </span><span class="s1">'B'</span><span class="p">,</span><span class="w"> </span><span class="s1">'B+'</span><span class="p">,</span><span class="w"> </span><span class="s1">'B-'</span><span class="p">,</span>
+<span class="w">                    </span><span class="s1">'C'</span><span class="p">,</span><span class="w"> </span><span class="s1">'C+'</span><span class="p">,</span><span class="w"> </span><span class="s1">'C-'</span><span class="p">,</span><span class="w"> </span><span class="s1">'D'</span><span class="p">,</span><span class="w"> </span><span class="s1">'D+'</span><span class="p">,</span><span class="w"> </span><span class="s1">'D-'</span><span class="p">,</span>
+<span class="w">                    </span><span class="s1">'E'</span><span class="p">,</span><span class="w"> </span><span class="s1">'E+'</span><span class="p">,</span><span class="w"> </span><span class="s1">'E-'</span><span class="p">,</span><span class="w"> </span><span class="s1">'F'</span><span class="p">,</span><span class="w"> </span><span class="s1">'F+'</span><span class="p">,</span><span class="w"> </span><span class="s1">'F-'</span>
+<span class="w">                </span><span class="p">),</span>
+<span class="w">                </span><span class="n">candidate_letter</span><span class="p">,</span>
+<span class="w">                </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">emitted_alpha_grade</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">sourced</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">emitted_credit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">grade_band</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">'HS'</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">safe_stored_credit</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%.3f'</span><span class="p">,</span><span class="w"> </span><span class="n">safe_stored_credit</span><span class="p">)</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">emitted_alpha_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="n">emitted_alpha_grade</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">'F%'</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">'0.000'</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">'%.3f'</span><span class="p">,</span><span class="w"> </span><span class="n">available_credit_num</span><span class="p">)</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">emitted_credits_earned</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">emitted_grade</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>In the final <code>SELECT</code>, replace the two pass-through columns:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">emitted_credits_earned</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">CreditsEarned</span><span class="p">,</span>
+</code></pre></div>
+<p>in position 20, and:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">emitted_alpha_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">AlphaGradeEarned</span><span class="p">,</span>
+</code></pre></div>
+<p>in position 22. Change <code>from sourced</code> to <code>from emitted_credit</code>. Keep the other
+23 submission columns exactly as they are, and keep the audit columns (<code>region</code>,
+<code>grade_band</code>, <code>grade_source</code>) at the end.</p>
+<p>Note the credit precedence: the stored earned-credit value wins whenever it
+exists, because it is PowerSchool's own record of credit awarded. The derived
+rule applies only to rows whose grade came from the live fallback and which have
+no earned-credit value — measured at exactly 2 rows. (52 is the count of
+secondary/HS gap rows overall; most of those have no grade in any source at all
+and never reach this rule.) Sourcing the fallback value from the row's own
+<code>AvailableCredit</code> makes the must-not-exceed constraint unviolatable.</p>
+<p>The credit path reads <code>safe_stored_credit</code>, not <code>stored_earned_credit</code>. That
+column is null whenever a student-section has conflicting stored letters <strong>or</strong>
+conflicting stored credit values, because <code>stored_letter</code> and
+<code>stored_earned_credit</code> are independent aggregates with no guaranteed row
+correspondence — on a conflicted student-section, the pair may come from
+different source rows. Guarding both dimensions keeps a conflicted row from
+emitting a credit alongside a blank grade.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run it to confirm it passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: <code>PASSED (10 check group(s))</code>.</p>
+<p><code>check_in_scope_rows_have_grades</code> <strong>will</strong> report a residue, and that is
+expected, not a defect. Measured against the strict band rule: 121 in-scope rows
+have no stored grade; roughly a dozen of those resolve from the live fallback,
+and the rest have no grade in either source — meaning PowerSchool holds none, so
+the native extract could not produce one either.</p>
+<p>Do not relax or waive the check, and do not invent values for those rows. They
+are a PowerSchool worklist: someone must post the missing grades or exclude
+those sections before upload. Report the residue as an aggregate count broken
+down by region and band, and hand it to the user with the final task report.</p>
+<p>This is the one check that is expected to fail on the current data, so
+<code>build_submission.py</code> in Task 6 will refuse to export until the source data is
+fixed. That is the gate working as designed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/submission_query.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s1">'feat(nj-sleds): emit AlphaGradeEarned and CreditsEarned (Refs #4630)'</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-prove-the-gate-fires">Task 5: Prove the gate fires</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>docs/superpowers/nj-sleds-roster/submission/validate_submission.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>run_checks</code> and all ten check groups.</li>
+<li>Produces: no new columns. Adds
+  <code>validate_submission.self_test(client) -&gt; list[str]</code>, reached only via the
+  <code>--self-test</code> flag.</li>
+</ul>
+<p>A gate that has never failed is not known to work. This task deliberately
+corrupts the query in memory and asserts that each check group catches it.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the self-test</strong></li>
+</ul>
+<p>Add to <code>validate_submission.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">First</span> <span class="n">give</span> <span class="n">every</span> <span class="n">check</span> <span class="n">function</span> <span class="n">an</span> <span class="n">optional</span> <span class="err">`</span><span class="n">sql</span><span class="err">`</span> <span class="n">keyword</span> <span class="n">argument</span> <span class="n">defaulting</span> <span class="n">to</span>
+<span class="err">`</span><span class="n">SUBMISSION_SQL</span><span class="err">`</span><span class="p">,</span> <span class="ow">and</span> <span class="n">have</span> <span class="n">each</span> <span class="n">one</span> <span class="n">interpolate</span> <span class="err">`</span><span class="n">sql</span><span class="err">`</span> <span class="n">rather</span> <span class="n">than</span>
+<span class="err">`</span><span class="n">SUBMISSION_SQL</span><span class="err">`</span> <span class="ow">in</span> <span class="n">its</span> <span class="n">query</span><span class="p">:</span>
+
+<span class="err">```</span><span class="n">python</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_alpha_grade_domain</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="o">=</span><span class="n">SUBMISSION_SQL</span><span class="p">):</span>
+</code></pre></div>
+<p><code>run_checks</code> still calls <code>check(client)</code>, so the real gate is byte-for-byte
+unchanged in behavior. This exists so the self-test can point the <strong>actual</strong>
+check at a mutated query.</p>
+<p>Then add the self-test, which calls those real functions:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">self_test</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Prove the real checks fire on injected defects. Mutates SQL in memory.</span>
+
+<span class="sd">    Each block calls the ACTUAL check function against the mutated SQL, so</span>
+<span class="sd">    widening a check's domain or weakening its predicate makes this</span>
+<span class="sd">    self-test fail. A self-test that re-implements the check's own predicate</span>
+<span class="sd">    would keep passing with the check's logic gutted, which is worse than no</span>
+<span class="sd">    self-test at all - it manufactures false confidence.</span>
+
+<span class="sd">    This does not prove every check still runs as part of the gate: it calls</span>
+<span class="sd">    two check functions directly by name, so it covers 2 of the 11 check</span>
+<span class="sd">    groups in CHECKS.</span>
+<span class="sd">    """</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># An out-of-domain grade must be caught by check_alpha_grade_domain.</span>
+    <span class="n">bad_domain</span> <span class="o">=</span> <span class="n">SUBMISSION_SQL</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="s2">"candidate_letter,</span><span class="se">\n</span><span class="s2">                cast(null as string)"</span><span class="p">,</span>
+        <span class="s2">"'F*',</span><span class="se">\n</span><span class="s2">                cast(null as string)"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">bad_domain</span> <span class="o">==</span> <span class="n">SUBMISSION_SQL</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"self-test could not inject a bad grade domain"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">check_alpha_grade_domain</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="o">=</span><span class="n">bad_domain</span><span class="p">):</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"check_alpha_grade_domain missed an 'F*' grade"</span><span class="p">)</span>
+
+    <span class="c1"># A 1-decimal credit must be caught by check_credits_earned.</span>
+    <span class="n">bad_format</span> <span class="o">=</span> <span class="n">SUBMISSION_SQL</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"format('</span><span class="si">%.3f</span><span class="s2">'"</span><span class="p">,</span> <span class="s2">"format('</span><span class="si">%.1f</span><span class="s2">'"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">bad_format</span> <span class="o">==</span> <span class="n">SUBMISSION_SQL</span><span class="p">:</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"self-test could not inject a bad credit format"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="s2">"3-decimal"</span> <span class="ow">in</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">check_credits_earned</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">sql</span><span class="o">=</span><span class="n">bad_format</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">failures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"check_credits_earned missed a 1-decimal credit"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">failures</span>
+</code></pre></div>
+<p>Note the asymmetry in the two assertions. <code>check_alpha_grade_domain</code> returns an
+empty list on clean data, so a plain truthiness test suffices.
+<code>check_credits_earned</code> already returns a <code>missing = 50</code> failure on clean data,
+so a truthiness test would pass even with the format clause broken — the
+self-test must look for the <strong>specific</strong> failure string.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Wire</span> <span class="n">it</span> <span class="n">into</span> <span class="err">`</span><span class="n">main</span><span class="err">`</span> <span class="n">behind</span> <span class="n">a</span> <span class="n">flag</span><span class="p">:</span>
+
+<span class="err">```</span><span class="n">python</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">bigquery</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">PROJECT</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"--self-test"</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="n">failures</span> <span class="o">=</span> <span class="n">self_test</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">failures</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SELF-TEST FAILED (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failures</span><span class="p">)</span><span class="si">}</span><span class="s2">):"</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">failures</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  - </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"SELF-TEST PASSED"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="n">run_checks</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+    <span class="o">...</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the self-test</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py<span class="w"> </span>--self-test
+</code></pre></div>
+<p>Expected: <code>SELF-TEST PASSED</code>. A "could not inject" failure means the string
+targets drifted from the query — update the replacement targets, do not delete
+the self-test.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm the real gate still passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+</code></pre></div>
+<p>Expected: <code>PASSED (10 check group(s))</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/validate_submission.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s1">'test(nj-sleds): prove the validation gate catches injected defects (Refs #4630)'</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-view-creation-export-and-runbook">Task 6: View creation, export, and runbook</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>docs/superpowers/nj-sleds-roster/submission/build_submission.py</code></li>
+<li>Create: <code>docs/superpowers/nj-sleds-roster/submission/README.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>submission_query.SUBMISSION_SQL</code>,
+  <code>submission_query.SUBMISSION_COLUMNS</code>, <code>validate_submission.run_checks</code>.</li>
+<li>
+<p>Produces: the view <code>cokafor.rpt_student_course_submission</code>, and one CSV per
+  region at a caller-supplied output directory.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the export script</strong></p>
+</li>
+</ul>
+<p>Create <code>build_submission.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">"""Create the NJ SLEDS submission view and export one CSV per region.</span>
+
+<span class="sd">Refuses to export if the validation gate reports any failure. Every value is</span>
+<span class="sd">written as the string the view produced - no numeric coercion, so 3-decimal</span>
+<span class="sd">credits and leading-zero CDS codes survive.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    uv run --with google-cloud-bigquery python build_submission.py OUTDIR</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.cloud</span><span class="w"> </span><span class="kn">import</span> <span class="n">bigquery</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">submission_query</span><span class="w"> </span><span class="kn">import</span> <span class="n">SUBMISSION_COLUMNS</span><span class="p">,</span> <span class="n">SUBMISSION_SQL</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">validate_submission</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_checks</span>
+
+<span class="n">PROJECT</span> <span class="o">=</span> <span class="s2">"teamster-332318"</span>
+<span class="n">VIEW</span> <span class="o">=</span> <span class="s2">"teamster-332318.cokafor.rpt_student_course_submission"</span>
+<span class="n">REGIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"newark"</span><span class="p">,</span> <span class="s2">"camden"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_view</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">"create or replace view `</span><span class="si">{</span><span class="n">VIEW</span><span class="si">}</span><span class="s2">` as </span><span class="si">{</span><span class="n">SUBMISSION_SQL</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"view created: </span><span class="si">{</span><span class="n">VIEW</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">export_region</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">region</span><span class="p">,</span> <span class="n">outdir</span><span class="p">):</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">`"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">SUBMISSION_COLUMNS</span><span class="p">)</span>
+    <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"select </span><span class="si">{</span><span class="n">cols</span><span class="si">}</span><span class="s2"> from `</span><span class="si">{</span><span class="n">VIEW</span><span class="si">}</span><span class="s2">` where region = '</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s2">'"</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">())</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"NJ_Student_Course_Submission_</span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s2">.csv"</span>
+    <span class="k">with</span> <span class="n">path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"w"</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">QUOTE_MINIMAL</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">SUBMISSION_COLUMNS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                <span class="p">[</span><span class="s2">""</span> <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">c</span><span class="p">])</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">SUBMISSION_COLUMNS</span><span class="p">]</span>
+            <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">region</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows -&gt; </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="vm">__doc__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">2</span>
+    <span class="n">outdir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">outdir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">client</span> <span class="o">=</span> <span class="n">bigquery</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">PROJECT</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"running validation gate..."</span><span class="p">)</span>
+    <span class="n">failures</span> <span class="o">=</span> <span class="n">run_checks</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">failures</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GATE FAILED (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">failures</span><span class="p">)</span><span class="si">}</span><span class="s2"> issue(s)) - refusing to export:"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">failures</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  - </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"gate passed"</span><span class="p">)</span>
+
+    <span class="n">create_view</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">export_region</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">outdir</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">REGIONS</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"exported </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> rows across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">REGIONS</span><span class="p">)</span><span class="si">}</span><span class="s2"> region(s)"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it against a local scratch directory</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill/docs/superpowers/nj-sleds-roster/submission
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>build_submission.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s1">'/workspaces/teamster/.claude/scratch/NJ SLEDS/submission-out'</span>
+</code></pre></div>
+<p>Expected: <code>gate passed</code>, then <code>newark: 33150 rows</code>, <code>camden: 10343 rows</code>,
+<code>exported 43493 rows across 2 region(s)</code>.</p>
+<p>The output directory is inside <code>.claude/scratch/</code>, which is gitignored — the
+CSVs are PII-bearing and must never be committed.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the written CSV formatting</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span><span class="s1">'/workspaces/teamster/.claude/scratch/NJ SLEDS/submission-out'</span>
+uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<span class="s2">import csv</span>
+<span class="s2">for region, expected in (('newark', 33150), ('camden', 10343)):</span>
+<span class="s2">    with open(f'NJ_Student_Course_Submission_{region}.csv', newline='') as fh:</span>
+<span class="s2">        rows = list(csv.DictReader(fh))</span>
+<span class="s2">    assert len(rows) == expected, (region, len(rows))</span>
+<span class="s2">    creds = {r['CreditsEarned'] for r in rows if r['CreditsEarned']}</span>
+<span class="s2">    assert all(len(c.split('.')[1]) == 3 for c in creds), sorted(creds)[:5]</span>
+<span class="s2">    counties = {r['CountyCodeAssigned'] for r in rows}</span>
+<span class="s2">    print(region, len(rows), 'counties', sorted(counties), 'ok')</span>
+<span class="s2">"</span>
+</code></pre></div>
+<p>Expected: row counts match, every non-blank <code>CreditsEarned</code> has three decimals,
+and Camden's counties include <code>07</code> with its leading zero intact (not <code>7</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the README</strong></li>
+</ul>
+<p>Create <code>README.md</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="gh"># NJ SLEDS Student Course Roster — grade and credit backfill</span>
+
+Fills <span class="sb">`AlphaGradeEarned`</span> and <span class="sb">`CreditsEarned`</span> on the loaded Student Course Roster
+extract and writes a submission-ready CSV per region. Every other column passes
+through byte-identical to the native PowerSchool extract.
+
+This is a named exception to the runbook's source-fix-only cleaning model — see
+the design spec for the rationale and its four narrowing constraints.
+
+<span class="gu">## Cycle</span>
+
+Run these three steps each time a fresh extract arrives.
+
+<span class="k">1.</span> Reload the extract base tables into <span class="sb">`cokafor`</span> (existing reload script).
+<span class="k">1.</span> Run the validation gate:
+
+<span class="sb">   ```bash</span>
+<span class="w">   </span>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>validate_submission.py
+<span class="sb">   ```</span>
+
+<span class="k">1.</span> Create the view and export:
+
+<span class="sb">   ```bash</span>
+<span class="w">   </span>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-cloud-bigquery<span class="w"> </span>python<span class="w"> </span>build_submission.py<span class="w"> </span>OUTDIR
+<span class="sb">   ```</span>
+
+<span class="sb">`build_submission.py`</span> runs the gate itself and refuses to export on any failure,
+so step 2 is only for iterating.
+
+<span class="gu">## Files</span>
+
+| File                     | Responsibility                                       |
+| ------------------------ | ---------------------------------------------------- |
+| <span class="sb">`submission_query.py`</span>    | The SQL, the 25-column order, the legal grade domain |
+| <span class="sb">`validate_submission.py`</span> | The pre-upload gate; <span class="sb">`--self-test`</span> proves it fires   |
+| <span class="sb">`build_submission.py`</span>    | Creates the view, gates, exports per-region CSV      |
+
+<span class="gu">## PII</span>
+
+The exported CSVs carry names, dates of birth, and state IDs. Write them to
+<span class="sb">`.claude/scratch/`</span> (gitignored), hand them only to the state-access uploader,
+and never commit them or paste row-level values anywhere external.
+
+<span class="gu">## Known blocker outside this scope</span>
+
+The CDS defect is still live: 20,652 of 43,493 rows carry a bad County or School
+code, including every Camden row. The fix is the one-pass School Setup change on
+3 Newark and 5 Camden schools. A clean grade backfill does not make the file
+submittable on its own.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/build_submission.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/README.md<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/build_submission.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/nj-sleds-roster/submission/README.md
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-backfill<span class="w"> </span>commit<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-m<span class="w"> </span><span class="s1">'feat(nj-sleds): submission view builder and CSV export (Refs #4630)'</span>
+</code></pre></div>
+<hr />
+<h2 id="post-implementation">Post-implementation</h2>
+<p>Once all six tasks pass, report to the user:</p>
+<ol>
+<li>The final gate output and the exported row counts.</li>
+<li>Any residue from <code>check_in_scope_rows_have_grades</code> — the rows that have no
+   grade from either source, as an aggregate count per region and band. These
+   need a human decision before upload.</li>
+<li>A reminder that the CDS blocker still gates submission.</li>
+</ol>
+<p>Then open a PR using <code>.github/pull_request_template.md</code>, with <code>Refs #4630</code> in
+the body. Aggregate counts only — no row-level values.</p>
+<p>Resolved during planning, and recorded here so the spec's open items can be
+closed: <code>pgfinalgrades</code> has no <code>academic_year</code> column and must be scoped by
+<code>enddate</code>; its <code>Y1</code> term is unused after 2018; and
+<code>base_powerschool__final_grades</code> cannot serve this submission because it filters
+to <code>current_academic_year</code>, which has already advanced to 2026.</p>
+<p>Still open from the spec and <strong>not</strong> addressed by this plan: verifying the
+exported CSV matches the native file's quoting, line endings, and encoding
+against what NJSLEDS accepts (the reload scripts read native files with
+<code>utf-8-sig</code>, implying a BOM); confirming Camden's expected school code; and
+diffing handbook v1.4 against the revision the runbook's check 9 encodes.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2501 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>i-Ready FY27 Export Renames Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#i-ready-fy27-export-renames-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              i-Ready FY27 Export Renames Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-the-subject-translation-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: The subject translation module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-era-aware-file-regex-in-the-asset-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Era-aware file regex in the asset builder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-sensor-translates-the-remote-token-back-to-a-partition-subject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Sensor translates the remote token back to a partition subject
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-declare-the-renamed-and-new-inform-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Declare the renamed and new Inform fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-wire-the-8-asset-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Wire the 8 asset definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-absorb-the-renamed-columns-in-dbt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Absorb the renamed columns in dbt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-09-01-iready-fy27-export-renames.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="i-ready-fy27-export-renames-implementation-plan">i-Ready FY27 Export Renames Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Restore FY2027 i-Ready ingestion in all regions by translating the
+partition subject to the vendor's renamed filename tokens at the SFTP boundary.</p>
+<p><strong>Architecture:</strong> The subject partition value stays <code>ela</code>. A new
+<code>libraries/iready/subjects.py</code> module holds a fixed fiscal-year boundary and a
+one-entry token map. The asset translates partition subject to filename token
+when composing its regex; the sensor translates back when building a partition
+key from a matched path. Everything else — partition space, GCS layout,
+downstream models — is unchanged.</p>
+<p><strong>Tech Stack:</strong> Dagster, dbt (BigQuery), pytest, <code>uv</code>.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-09-01-iready-fy27-export-renames-design.md</code></p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Work in the worktree
+  <code>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames</code>.
+  Use <code>git -C &lt;worktree&gt;</code> for every git call and
+  <code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/iready</code> for every dbt call.</li>
+<li>Always <code>uv run</code> — never bare <code>python</code>, <code>python3</code>, <code>pytest</code>, or <code>dbt</code>.</li>
+<li>Credentialed work (live SFTP, <code>materialize()</code>) runs under <code>uv run pytest</code>,
+  which bootstraps 1Password via <code>tests/conftest.py</code>. A plain
+  <code>uv run python script.py</code> gets no secrets.</li>
+<li><code>RENAME_ACADEMIC_YEAR = 2026</code> — the partition key of FY2027, the first year
+  the vendor used new export names.</li>
+<li><code>REMOTE_SUBJECT_TOKENS = {"ela": "reading"}</code> — partition subject to
+  current-era filename token.</li>
+<li>The dbt contract is enforced (<code>src/dbt/iready/dbt_project.yml:36-37</code>). Every
+  column reaching model output must be declared in the properties YAML.</li>
+<li>Never emit PII to any external surface. SFTP filenames, sizes, and column
+  names are not PII; data rows are.</li>
+<li>Do not run <code>trunk fmt</code> or <code>trunk check</code> manually except on markdown before
+  pushing — the pre-commit hook formats.</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/teamster/libraries/iready/subjects.py</code></td>
+<td><strong>Create.</strong> The era boundary and the token map. Single source of truth for both directions of translation.</td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/iready/assets.py</code></td>
+<td><strong>Modify.</strong> <code>build_iready_sftp_asset</code> accepts and forwards <code>legacy_remote_file_regex</code>.</td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/sftp/assets.py</code></td>
+<td><strong>Modify.</strong> Inside the existing <code>if group_name == "iready"</code> block only: pick the era's regex and translate the subject before composing.</td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/iready/sensors.py</code></td>
+<td><strong>Modify.</strong> Map the captured remote token back to the partition subject.</td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/iready/schema.py</code></td>
+<td><strong>Modify.</strong> 4 new fields on <code>DiagnosticResults</code>.</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippmiami/iready/assets.py</code></td>
+<td><strong>Modify.</strong> 4 current-era regexes plus 4 <code>legacy_remote_file_regex</code> values.</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippnewark/iready/assets.py</code></td>
+<td><strong>Modify.</strong> Same 8 values.</td>
+</tr>
+<tr>
+<td><code>src/dbt/iready/models/staging/stg_iready__diagnostic_results.sql</code></td>
+<td><strong>Modify.</strong> Coalesce 3 renamed columns; translate the raw subject token in the final select.</td>
+</tr>
+<tr>
+<td><code>src/dbt/iready/models/staging/properties/stg_iready__diagnostic_results.yml</code></td>
+<td><strong>Modify.</strong> Declare <code>tactile_graphics</code>.</td>
+</tr>
+<tr>
+<td><code>tests/libraries/test_iready_subjects.py</code></td>
+<td><strong>Create.</strong> Unit tests for the boundary and both translation directions.</td>
+</tr>
+<tr>
+<td><code>tests/libraries/test_iready_remote_file_regex.py</code></td>
+<td><strong>Create.</strong> The regression test for this outage: every asset's composed regex matches the real filename for its era.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="task-1-the-subject-translation-module">Task 1: The subject translation module</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/teamster/libraries/iready/subjects.py</code></li>
+<li>Test: <code>tests/libraries/test_iready_subjects.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing.</li>
+<li>
+<p>Produces: <code>RENAME_ACADEMIC_YEAR: int</code>,
+  <code>REMOTE_SUBJECT_TOKENS: dict[str, str]</code>,
+  <code>PARTITION_SUBJECTS_BY_REMOTE_TOKEN: dict[str, str]</code>,
+  <code>is_legacy_year(academic_year: str) -&gt; bool</code>,
+  <code>remote_subject_token(subject: str, academic_year: str) -&gt; str</code>,
+  <code>partition_subject(remote_token: str, academic_year: str) -&gt; str</code>. Tasks 2, 3
+  and 5 depend on these exact names.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test</strong></p>
+</li>
+</ul>
+<p>Create <code>tests/libraries/test_iready_subjects.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.iready.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">is_legacy_year</span><span class="p">,</span>
+    <span class="n">partition_subject</span><span class="p">,</span>
+    <span class="n">remote_subject_token</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span>
+    <span class="p">(</span><span class="s2">"academic_year"</span><span class="p">,</span> <span class="s2">"expected"</span><span class="p">),</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="s2">"2020"</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"2024"</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"2025"</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"2026"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"2027"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"Current_Year"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_is_legacy_year</span><span class="p">(</span><span class="n">academic_year</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">is_legacy_year</span><span class="p">(</span><span class="n">academic_year</span><span class="p">)</span> <span class="ow">is</span> <span class="n">expected</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span>
+    <span class="p">(</span><span class="s2">"subject"</span><span class="p">,</span> <span class="s2">"academic_year"</span><span class="p">,</span> <span class="s2">"expected"</span><span class="p">),</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"2025"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"2026"</span><span class="p">,</span> <span class="s2">"reading"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"Current_Year"</span><span class="p">,</span> <span class="s2">"reading"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"math"</span><span class="p">,</span> <span class="s2">"2025"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"math"</span><span class="p">,</span> <span class="s2">"2026"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_remote_subject_token</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">academic_year</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">remote_subject_token</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">academic_year</span><span class="o">=</span><span class="n">academic_year</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span>
+    <span class="p">(</span><span class="s2">"remote_token"</span><span class="p">,</span> <span class="s2">"academic_year"</span><span class="p">,</span> <span class="s2">"expected"</span><span class="p">),</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"2025"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"reading"</span><span class="p">,</span> <span class="s2">"Current_Year"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"reading"</span><span class="p">,</span> <span class="s2">"2026"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"math"</span><span class="p">,</span> <span class="s2">"Current_Year"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"Current_Year"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_partition_subject</span><span class="p">(</span><span class="n">remote_token</span><span class="p">,</span> <span class="n">academic_year</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">partition_subject</span><span class="p">(</span><span class="n">remote_token</span><span class="o">=</span><span class="n">remote_token</span><span class="p">,</span> <span class="n">academic_year</span><span class="o">=</span><span class="n">academic_year</span><span class="p">)</span> <span class="o">==</span> <span class="n">expected</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_round_trip_is_stable_for_current_era</span><span class="p">():</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">remote_subject_token</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="s2">"ela"</span><span class="p">,</span> <span class="n">academic_year</span><span class="o">=</span><span class="s2">"Current_Year"</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">partition_subject</span><span class="p">(</span><span class="n">remote_token</span><span class="o">=</span><span class="n">token</span><span class="p">,</span> <span class="n">academic_year</span><span class="o">=</span><span class="s2">"Current_Year"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"ela"</span>
+</code></pre></div>
+<p>Note the last <code>partition_subject</code> case: a stale <code>_ela_</code> file sitting in
+<code>Current_Year</code> must still map to partition <code>ela</code>, so it acts as a harmless
+trigger rather than an error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run test to verify it fails</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/libraries/test_iready_subjects.py -v</code></p>
+<p>Expected: FAIL with
+<code>ModuleNotFoundError: No module named 'teamster.libraries.iready.subjects'</code></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write minimal implementation</strong></li>
+</ul>
+<p>Create <code>src/teamster/libraries/iready/subjects.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">"""Translation between i-Ready partition subjects and vendor filename tokens.</span>
+
+<span class="sd">Curriculum Associates renamed the reading exports from `ela` to `reading` for</span>
+<span class="sd">FY2027. The partition subject stays `ela` in every fiscal year, because the GCS</span>
+<span class="sd">object path is derived from the partition key and `MultiPartitionsDefinition` is</span>
+<span class="sd">a cartesian product that cannot vary its subject list by year. So the rename is</span>
+<span class="sd">absorbed here, at the SFTP boundary, in both directions.</span>
+<span class="sd">"""</span>
+
+<span class="c1"># partition key of FY2027, the first year the vendor used the new export names</span>
+<span class="n">RENAME_ACADEMIC_YEAR</span> <span class="o">=</span> <span class="mi">2026</span>
+
+<span class="c1"># partition subject -&gt; filename token, for FY2027 and later</span>
+<span class="n">REMOTE_SUBJECT_TOKENS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ela"</span><span class="p">:</span> <span class="s2">"reading"</span><span class="p">}</span>
+
+<span class="n">PARTITION_SUBJECTS_BY_REMOTE_TOKEN</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">token</span><span class="p">:</span> <span class="n">subject</span> <span class="k">for</span> <span class="n">subject</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">REMOTE_SUBJECT_TOKENS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">is_legacy_year</span><span class="p">(</span><span class="n">academic_year</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""True when this partition's files still carry the pre-FY2027 names.</span>
+
+<span class="sd">    `Current_Year` is the vendor's folder for the newest fiscal year, so it is</span>
+<span class="sd">    never legacy.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">academic_year</span> <span class="o">==</span> <span class="s2">"Current_Year"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">academic_year</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">RENAME_ACADEMIC_YEAR</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">remote_subject_token</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">academic_year</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Partition subject -&gt; the token that appears in the filename."""</span>
+    <span class="k">if</span> <span class="n">is_legacy_year</span><span class="p">(</span><span class="n">academic_year</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">subject</span>
+
+    <span class="k">return</span> <span class="n">REMOTE_SUBJECT_TOKENS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">subject</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">partition_subject</span><span class="p">(</span><span class="n">remote_token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">academic_year</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Filename token -&gt; the partition subject it belongs to.</span>
+
+<span class="sd">    A stale pre-rename file left behind in `Current_Year` still maps to its</span>
+<span class="sd">    original partition, so it can trigger a run but never becomes the payload.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">is_legacy_year</span><span class="p">(</span><span class="n">academic_year</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">remote_token</span>
+
+    <span class="k">return</span> <span class="n">PARTITION_SUBJECTS_BY_REMOTE_TOKEN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">remote_token</span><span class="p">,</span> <span class="n">remote_token</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run test to verify it passes</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/libraries/test_iready_subjects.py -v</code></p>
+<p>Expected: PASS, 17 tests.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/iready/subjects.py<span class="w"> </span>tests/libraries/test_iready_subjects.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dagster): add i-Ready subject token translation</span>
+
+<span class="s2">Refs #4949"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-era-aware-file-regex-in-the-asset-builder">Task 2: Era-aware file regex in the asset builder</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/sftp/assets.py:95-139</code></li>
+<li>Modify: <code>src/teamster/libraries/iready/assets.py</code></li>
+<li>Test: <code>tests/libraries/test_iready_remote_file_regex.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>is_legacy_year</code>, <code>remote_subject_token</code> from Task 1.</li>
+<li>
+<p>Produces:
+  <code>build_sftp_file_asset(..., legacy_remote_file_regex: str | None = None)</code> and
+  <code>build_iready_sftp_asset(..., legacy_remote_file_regex: str | None = None)</code>.
+  Task 5 passes this parameter.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing test</strong></p>
+</li>
+</ul>
+<p>Create <code>tests/libraries/test_iready_remote_file_regex.py</code>. This is the
+regression test for the FY27 outage: it asserts the composed regex matches the
+real filename for each era, using filenames verified on the SFTP on 2026-09-01.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiPartitionKey</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.sftp.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">compose_regex</span>
+
+<span class="n">CURRENT_REGEXES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"personalized_instruction_summary"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"personalized_instruction_summary_(?P&lt;subject&gt;ela|math|reading)"</span>
+        <span class="sa">r</span><span class="s2">"_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="s2">"personalized_instruction_by_lesson"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"(personalized|iready)_instruction_by_lesson_"</span>
+        <span class="sa">r</span><span class="s2">"(?P&lt;subject&gt;ela|math|reading)(_CONFIDENTIAL)?\.csv"</span>
+    <span class="p">),</span>
+    <span class="s2">"instruction_by_lesson"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"iready_pro_instruction_by_lesson_(?P&lt;subject&gt;ela|math|reading)"</span>
+        <span class="sa">r</span><span class="s2">"_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="s2">"diagnostic_results"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"i-ready_inform_results_(?P&lt;subject&gt;ela|math|reading)"</span>
+        <span class="sa">r</span><span class="s2">"(_english)?_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">LEGACY_REGEXES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"personalized_instruction_summary"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"personalized_instruction_summary_(?P&lt;subject&gt;ela|math)_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="s2">"personalized_instruction_by_lesson"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"(personalized|iready)_instruction_by_lesson_"</span>
+        <span class="sa">r</span><span class="s2">"(?P&lt;subject&gt;ela|math)(_CONFIDENTIAL)?\.csv"</span>
+    <span class="p">),</span>
+    <span class="s2">"instruction_by_lesson"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"iready_pro_instruction_by_lesson_(?P&lt;subject&gt;ela|math)_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="s2">"diagnostic_results"</span><span class="p">:</span> <span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"diagnostic_results_(?P&lt;subject&gt;ela|math)(_CONFIDENTIAL)?\.csv"</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># filenames verified on the i-Ready SFTP on 2026-09-01</span>
+<span class="n">CURRENT_FILENAMES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s2">"personalized_instruction_summary"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"personalized_instruction_summary_reading_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"personalized_instruction_summary"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"personalized_instruction_summary_math_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"personalized_instruction_by_lesson"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"iready_instruction_by_lesson_reading_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"personalized_instruction_by_lesson"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"iready_instruction_by_lesson_math_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"instruction_by_lesson"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"iready_pro_instruction_by_lesson_reading_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"instruction_by_lesson"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"iready_pro_instruction_by_lesson_math_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"diagnostic_results"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"i-ready_inform_results_reading_english_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"diagnostic_results"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">):</span> <span class="s2">"i-ready_inform_results_math_CONFIDENTIAL.csv"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">LEGACY_FILENAMES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s2">"personalized_instruction_summary"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"personalized_instruction_summary_ela_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"personalized_instruction_summary"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">):</span> <span class="p">(</span>
+        <span class="s2">"personalized_instruction_summary_math_CONFIDENTIAL.csv"</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"diagnostic_results"</span><span class="p">,</span> <span class="s2">"ela"</span><span class="p">):</span> <span class="s2">"diagnostic_results_ela_CONFIDENTIAL.csv"</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"diagnostic_results"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">):</span> <span class="s2">"diagnostic_results_math_CONFIDENTIAL.csv"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># stale pre-rename files the vendor left in Current_Year on 2026-07-18</span>
+<span class="n">STALE_CURRENT_YEAR_FILENAMES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"diagnostic_results_ela_CONFIDENTIAL.csv"</span><span class="p">,</span>
+    <span class="s2">"diagnostic_results_math_CONFIDENTIAL.csv"</span><span class="p">,</span>
+    <span class="s2">"personalized_instruction_summary_ela_CONFIDENTIAL.csv"</span><span class="p">,</span>
+    <span class="s2">"iready_pro_instruction_by_lesson_ela_CONFIDENTIAL.csv"</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_composed</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">academic_year</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.iready.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">remote_subject_token</span>
+
+    <span class="k">return</span> <span class="n">compose_regex</span><span class="p">(</span>
+        <span class="n">regexp</span><span class="o">=</span><span class="n">regex</span><span class="p">,</span>
+        <span class="n">partition_key</span><span class="o">=</span><span class="n">MultiPartitionKey</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"academic_year"</span><span class="p">:</span> <span class="n">academic_year</span><span class="p">,</span>
+                <span class="s2">"subject"</span><span class="p">:</span> <span class="n">remote_subject_token</span><span class="p">(</span>
+                    <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">academic_year</span><span class="o">=</span><span class="n">academic_year</span>
+                <span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">((</span><span class="s2">"asset_name"</span><span class="p">,</span> <span class="s2">"subject"</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">CURRENT_FILENAMES</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_current_era_regex_matches_live_filename</span><span class="p">(</span><span class="n">asset_name</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+    <span class="n">composed</span> <span class="o">=</span> <span class="n">_composed</span><span class="p">(</span><span class="n">CURRENT_REGEXES</span><span class="p">[</span><span class="n">asset_name</span><span class="p">],</span> <span class="n">subject</span><span class="p">,</span> <span class="s2">"Current_Year"</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">composed</span><span class="p">,</span> <span class="n">CURRENT_FILENAMES</span><span class="p">[(</span><span class="n">asset_name</span><span class="p">,</span> <span class="n">subject</span><span class="p">)])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">((</span><span class="s2">"asset_name"</span><span class="p">,</span> <span class="s2">"subject"</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">LEGACY_FILENAMES</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_legacy_era_regex_matches_archive_filename</span><span class="p">(</span><span class="n">asset_name</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+    <span class="n">composed</span> <span class="o">=</span> <span class="n">_composed</span><span class="p">(</span><span class="n">LEGACY_REGEXES</span><span class="p">[</span><span class="n">asset_name</span><span class="p">],</span> <span class="n">subject</span><span class="p">,</span> <span class="s2">"2025"</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">composed</span><span class="p">,</span> <span class="n">LEGACY_FILENAMES</span><span class="p">[(</span><span class="n">asset_name</span><span class="p">,</span> <span class="n">subject</span><span class="p">)])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">"stale_filename"</span><span class="p">,</span> <span class="n">STALE_CURRENT_YEAR_FILENAMES</span><span class="p">)</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">"subject"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_current_era_regex_never_matches_a_stale_file</span><span class="p">(</span><span class="n">stale_filename</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The July 2026 leftovers must be unmatchable in the current era.</span>
+
+<span class="sd">    This is the bug: a stale FY26 file matching a FY27 partition is how 3,933</span>
+<span class="sd">    rows of last year's data ended up labelled as this year's.</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">regex</span> <span class="ow">in</span> <span class="n">CURRENT_REGEXES</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">composed</span> <span class="o">=</span> <span class="n">_composed</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="s2">"Current_Year"</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">composed</span><span class="p">,</span> <span class="n">stale_filename</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run test to verify it fails</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/libraries/test_iready_remote_file_regex.py -v</code></p>
+<p>Expected: FAIL. The <code>test_current_era_regex_matches_live_filename</code> cases for
+<code>subject="ela"</code> fail, because nothing yet translates <code>ela</code> to <code>reading</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the parameter to the iready builder</strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/iready/assets.py</code>, add the parameter and forward it.
+The full file after the change:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiPartitionsDefinition</span><span class="p">,</span> <span class="n">StaticPartitionsDefinition</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.sftp.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_sftp_file_asset</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_iready_sftp_asset</span><span class="p">(</span>
+    <span class="n">asset_key</span><span class="p">,</span>
+    <span class="n">region_subfolder</span><span class="p">,</span>
+    <span class="n">remote_file_regex</span><span class="p">,</span>
+    <span class="n">avro_schema</span><span class="p">,</span>
+    <span class="n">start_fiscal_year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">end_fiscal_year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">legacy_remote_file_regex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">op_tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">partition_keys</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_fiscal_year</span><span class="p">,</span> <span class="n">end_fiscal_year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">build_sftp_file_asset</span><span class="p">(</span>
+        <span class="n">asset_key</span><span class="o">=</span><span class="n">asset_key</span><span class="p">,</span>
+        <span class="n">remote_dir_regex</span><span class="o">=</span><span class="sa">rf</span><span class="s2">"/exports/</span><span class="si">{</span><span class="n">region_subfolder</span><span class="si">}</span><span class="s2">/(?P&lt;academic_year&gt;\w+)"</span><span class="p">,</span>
+        <span class="n">remote_file_regex</span><span class="o">=</span><span class="n">remote_file_regex</span><span class="p">,</span>
+        <span class="n">legacy_remote_file_regex</span><span class="o">=</span><span class="n">legacy_remote_file_regex</span><span class="p">,</span>
+        <span class="n">ssh_resource_key</span><span class="o">=</span><span class="s2">"ssh_iready"</span><span class="p">,</span>
+        <span class="n">group_name</span><span class="o">=</span><span class="s2">"iready"</span><span class="p">,</span>
+        <span class="n">avro_schema</span><span class="o">=</span><span class="n">avro_schema</span><span class="p">,</span>
+        <span class="n">slugify_replacements</span><span class="o">=</span><span class="p">[[</span><span class="s2">"%"</span><span class="p">,</span> <span class="s2">"percent"</span><span class="p">]],</span>
+        <span class="n">op_tags</span><span class="o">=</span><span class="n">op_tags</span><span class="p">,</span>
+        <span class="n">partitions_def</span><span class="o">=</span><span class="n">MultiPartitionsDefinition</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"subject"</span><span class="p">:</span> <span class="n">StaticPartitionsDefinition</span><span class="p">([</span><span class="s2">"ela"</span><span class="p">,</span> <span class="s2">"math"</span><span class="p">]),</span>
+                <span class="s2">"academic_year"</span><span class="p">:</span> <span class="n">StaticPartitionsDefinition</span><span class="p">(</span><span class="n">partition_keys</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the parameter to the shared builder signature</strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/sftp/assets.py</code>, add <code>legacy_remote_file_regex</code> to
+<code>build_sftp_file_asset</code>'s signature, immediately after <code>remote_file_regex</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_sftp_file_asset</span><span class="p">(</span>
+    <span class="n">asset_key</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">remote_dir_regex</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">remote_file_regex</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ssh_resource_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">avro_schema</span><span class="p">,</span>
+    <span class="n">legacy_remote_file_regex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">partitions_def</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</code></pre></div>
+<p>Leave the rest of the signature untouched.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Import the translation helpers</strong></li>
+</ul>
+<p>Add to the imports at the top of <code>src/teamster/libraries/sftp/assets.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.iready.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_legacy_year</span><span class="p">,</span> <span class="n">remote_subject_token</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Compose the era's regex inside the iready block</strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/sftp/assets.py</code>, the <code>if group_name == "iready":</code>
+block currently computes only <code>remote_dir_regex_composed</code>, and
+<code>remote_file_regex_composed</code> is computed once afterwards for every source
+system. Replace the whole <code>if group_name == "iready": ... else: ...</code> block plus
+the <code>remote_file_regex_composed</code> assignment that follows it with:</p>
+<div class="highlight"><pre><span></span><code>        <span class="k">if</span> <span class="n">group_name</span> <span class="o">==</span> <span class="s2">"iready"</span><span class="p">:</span>
+            <span class="n">partition_key</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">inst</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="n">partition_key</span><span class="p">,</span> <span class="n">ttype</span><span class="o">=</span><span class="n">MultiPartitionKey</span><span class="p">)</span>
+
+            <span class="n">academic_year_key</span><span class="p">,</span> <span class="n">subject_key</span> <span class="o">=</span> <span class="n">partition_key</span><span class="o">.</span><span class="n">keys_by_dimension</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+
+            <span class="n">multi_partitions_def</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">inst</span><span class="p">(</span>
+                <span class="n">obj</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">assets_def</span><span class="o">.</span><span class="n">partitions_def</span><span class="p">,</span> <span class="n">ttype</span><span class="o">=</span><span class="n">MultiPartitionsDefinition</span>
+            <span class="p">)</span>
+
+            <span class="n">academic_year_last_partition_key</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">multi_partitions_def</span><span class="o">.</span><span class="n">get_partitions_def_for_dimension</span><span class="p">(</span><span class="s2">"academic_year"</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">get_last_partition_key</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">academic_year_key</span> <span class="o">==</span> <span class="n">academic_year_last_partition_key</span><span class="p">:</span>
+                <span class="n">academic_year_dir</span> <span class="o">=</span> <span class="s2">"Current_Year"</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">academic_year_dir</span> <span class="o">=</span> <span class="n">academic_year_key</span>
+
+            <span class="n">remote_dir_regex_composed</span> <span class="o">=</span> <span class="n">compose_regex</span><span class="p">(</span>
+                <span class="n">regexp</span><span class="o">=</span><span class="n">remote_dir_regex</span><span class="p">,</span>
+                <span class="n">partition_key</span><span class="o">=</span><span class="n">MultiPartitionKey</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s2">"academic_year"</span><span class="p">:</span> <span class="n">academic_year_dir</span><span class="p">,</span> <span class="s2">"subject"</span><span class="p">:</span> <span class="n">subject_key</span><span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="c1"># The filename era is a FIXED fiscal year, not "is this the newest</span>
+            <span class="c1"># partition". Next July, FY27 rolls into a 2026/ archive that</span>
+            <span class="c1"># carries the NEW names, so keying off the Current_Year branch</span>
+            <span class="c1"># above would wrongly translate it back to `ela`.</span>
+            <span class="k">if</span> <span class="n">is_legacy_year</span><span class="p">(</span><span class="n">academic_year_key</span><span class="p">):</span>
+                <span class="n">remote_file_regex_era</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">legacy_remote_file_regex</span>
+                    <span class="k">if</span> <span class="n">legacy_remote_file_regex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">else</span> <span class="n">remote_file_regex</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">remote_file_regex_era</span> <span class="o">=</span> <span class="n">remote_file_regex</span>
+
+            <span class="n">remote_file_regex_composed</span> <span class="o">=</span> <span class="n">compose_regex</span><span class="p">(</span>
+                <span class="n">regexp</span><span class="o">=</span><span class="n">remote_file_regex_era</span><span class="p">,</span>
+                <span class="n">partition_key</span><span class="o">=</span><span class="n">MultiPartitionKey</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">"academic_year"</span><span class="p">:</span> <span class="n">academic_year_key</span><span class="p">,</span>
+                        <span class="s2">"subject"</span><span class="p">:</span> <span class="n">remote_subject_token</span><span class="p">(</span>
+                            <span class="n">subject</span><span class="o">=</span><span class="n">subject_key</span><span class="p">,</span> <span class="n">academic_year</span><span class="o">=</span><span class="n">academic_year_key</span>
+                        <span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">remote_dir_regex_composed</span> <span class="o">=</span> <span class="n">compose_regex</span><span class="p">(</span>
+                <span class="n">regexp</span><span class="o">=</span><span class="n">remote_dir_regex</span><span class="p">,</span> <span class="n">partition_key</span><span class="o">=</span><span class="n">partition_key</span>
+            <span class="p">)</span>
+
+            <span class="n">remote_file_regex_composed</span> <span class="o">=</span> <span class="n">compose_regex</span><span class="p">(</span>
+                <span class="n">regexp</span><span class="o">=</span><span class="n">remote_file_regex</span><span class="p">,</span> <span class="n">partition_key</span><span class="o">=</span><span class="n">partition_key</span>
+            <span class="p">)</span>
+</code></pre></div>
+<p>Note that <code>academic_year_dir</code> collapses the two near-identical <code>compose_regex</code>
+calls the original had, so the directory behavior is unchanged.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Run tests to verify they pass</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/libraries/test_iready_remote_file_regex.py tests/libraries/test_iready_subjects.py -v</code></p>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Verify no other source system regressed</strong></li>
+</ul>
+<p>The <code>else</code> branch must behave exactly as before for every non-i-Ready SFTP
+asset.</p>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/test_dagster_definitions.py -v</code></p>
+<p>Expected: PASS. This loads every code location for real via
+<code>dagster definitions validate</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/sftp/assets.py<span class="w"> </span>src/teamster/libraries/iready/assets.py<span class="w"> </span>tests/libraries/test_iready_remote_file_regex.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dagster): compose i-Ready file regex per filename era</span>
+
+<span class="s2">Refs #4949"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-sensor-translates-the-remote-token-back-to-a-partition-subject">Task 3: Sensor translates the remote token back to a partition subject</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/iready/sensors.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>partition_subject</code> from Task 1.</li>
+<li>
+<p>Produces: no new signatures. The sensor's <code>MultiPartitionKey</code> subject values
+  remain drawn from <code>["ela", "math"]</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the import</strong></p>
+</li>
+</ul>
+<p>In <code>src/teamster/libraries/iready/sensors.py</code>, add to the imports:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.iready.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">partition_subject</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Translate when building the partition key</strong></li>
+</ul>
+<p>The sensor currently reads <code>group_dict["subject"]</code> straight into the partition
+key. Replace this block:</p>
+<div class="highlight"><pre><span></span><code>                <span class="k">if</span> <span class="n">group_dict</span><span class="p">[</span><span class="s2">"academic_year"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"Current_Year"</span><span class="p">:</span>
+                    <span class="n">partition_key</span> <span class="o">=</span> <span class="n">MultiPartitionKey</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">"academic_year"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_fiscal_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="s2">"subject"</span><span class="p">:</span> <span class="n">group_dict</span><span class="p">[</span><span class="s2">"subject"</span><span class="p">],</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">partition_key</span> <span class="o">=</span> <span class="n">MultiPartitionKey</span><span class="p">(</span><span class="n">group_dict</span><span class="p">)</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code>                <span class="c1"># The regex alternation carries the vendor's current token</span>
+                <span class="c1"># (`reading`); the partition space does not. Translate back</span>
+                <span class="c1"># before building the key, or the RunRequest names a partition</span>
+                <span class="c1"># that does not exist.</span>
+                <span class="n">subject_key</span> <span class="o">=</span> <span class="n">partition_subject</span><span class="p">(</span>
+                    <span class="n">remote_token</span><span class="o">=</span><span class="n">group_dict</span><span class="p">[</span><span class="s2">"subject"</span><span class="p">],</span>
+                    <span class="n">academic_year</span><span class="o">=</span><span class="n">group_dict</span><span class="p">[</span><span class="s2">"academic_year"</span><span class="p">],</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">group_dict</span><span class="p">[</span><span class="s2">"academic_year"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"Current_Year"</span><span class="p">:</span>
+                    <span class="n">partition_key</span> <span class="o">=</span> <span class="n">MultiPartitionKey</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">"academic_year"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_fiscal_year</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="s2">"subject"</span><span class="p">:</span> <span class="n">subject_key</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">partition_key</span> <span class="o">=</span> <span class="n">MultiPartitionKey</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">"academic_year"</span><span class="p">:</span> <span class="n">group_dict</span><span class="p">[</span><span class="s2">"academic_year"</span><span class="p">],</span>
+                            <span class="s2">"subject"</span><span class="p">:</span> <span class="n">subject_key</span><span class="p">,</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify the code locations still load</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/test_dagster_definitions.py -v</code></p>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/iready/sensors.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dagster): map i-Ready remote subject token to partition subject</span>
+
+<span class="s2">Refs #4949"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-declare-the-renamed-and-new-inform-fields">Task 4: Declare the renamed and new Inform fields</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/iready/schema.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: nothing.</li>
+<li>Produces: 4 new optional string fields on <code>DiagnosticResults</code>:
+  <code>assessment_gain</code>, <code>baseline_assessment_y_n</code>,
+  <code>most_recent_assessment_ytd_y_n</code>, <code>tactile_graphics</code>.</li>
+</ul>
+<p>Context: the model is already a superset carrying both
+<code>most_recent_diagnostic_y_n</code> and <code>most_recent_diagnostic_ytd_y_n</code> from a prior
+vendor rename. These 4 names were derived by running the real ingest slugifier
+over the live headers, not guessed:</p>
+<div class="highlight"><pre><span></span><code>'Baseline Assessment (Y/N)'        -&gt; baseline_assessment_y_n
+'Most Recent Assessment YTD (Y/N)' -&gt; most_recent_assessment_ytd_y_n
+'Assessment Gain'                  -&gt; assessment_gain
+'Tactile Graphics'                 -&gt; tactile_graphics
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the fields</strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/iready/schema.py</code>, add these 4 lines to the
+<code>DiagnosticResults</code> class, keeping the class's existing alphabetical ordering:</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">assessment_gain</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">baseline_assessment_y_n</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">most_recent_assessment_ytd_y_n</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">tactile_graphics</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<p>Do <strong>not</strong> add an <code>assessment_language</code> field. The prior spec and #4949 both
+claim <code>Diagnostic Language</code> was renamed to <code>Assessment Language</code>; neither column
+exists in either file in either region, verified 2026-09-01.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the avro schema still generates</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/test_dagster_definitions.py -v</code></p>
+<p>Expected: PASS. The schema is generated at module import by
+<code>py_avro_schema.generate</code>, so a malformed model fails the location load.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/iready/schema.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(dagster): declare i-Ready Inform renamed and new fields</span>
+
+<span class="s2">Refs #4949"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-wire-the-8-asset-definitions">Task 5: Wire the 8 asset definitions</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/iready/assets.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/iready/assets.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: <code>build_iready_sftp_asset(..., legacy_remote_file_regex=...)</code> from
+  Task 2; the schema fields from Task 4.</li>
+<li>Produces: nothing consumed by later tasks.</li>
+</ul>
+<p>Both files get identical regex values. Only <code>region_subfolder</code>, the
+<code>start_fiscal_year</code> values, and the Newark <code>op_tags</code> differ, and none of those
+change.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Set the regexes in kippmiami</strong></li>
+</ul>
+<p>In <code>src/teamster/code_locations/kippmiami/iready/assets.py</code>, replace the
+<code>remote_file_regex</code> value of each of the 4 assets and add
+<code>legacy_remote_file_regex</code> to each. The 4 pairs:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># personalized_instruction_summary</span>
+    <span class="n">remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"personalized_instruction_summary_(?P&lt;subject&gt;ela|math|reading)"</span>
+        <span class="sa">r</span><span class="s2">"_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="n">legacy_remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"personalized_instruction_summary_(?P&lt;subject&gt;ela|math)_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+
+<span class="c1"># diagnostic_results</span>
+    <span class="n">remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"i-ready_inform_results_(?P&lt;subject&gt;ela|math|reading)"</span>
+        <span class="sa">r</span><span class="s2">"(_english)?_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="n">legacy_remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"diagnostic_results_(?P&lt;subject&gt;ela|math)(_CONFIDENTIAL)?\.csv"</span>
+    <span class="p">),</span>
+
+<span class="c1"># instruction_by_lesson  (asset key personalized_instruction_by_lesson)</span>
+    <span class="n">remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"(personalized|iready)_instruction_by_lesson_"</span>
+        <span class="sa">r</span><span class="s2">"(?P&lt;subject&gt;ela|math|reading)(_CONFIDENTIAL)?\.csv"</span>
+    <span class="p">),</span>
+    <span class="n">legacy_remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"(personalized|iready)_instruction_by_lesson_"</span>
+        <span class="sa">r</span><span class="s2">"(?P&lt;subject&gt;ela|math)(_CONFIDENTIAL)?\.csv"</span>
+    <span class="p">),</span>
+
+<span class="c1"># instruction_by_lesson_pro  (asset key instruction_by_lesson)</span>
+    <span class="n">remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"iready_pro_instruction_by_lesson_(?P&lt;subject&gt;ela|math|reading)"</span>
+        <span class="sa">r</span><span class="s2">"_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+    <span class="n">legacy_remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s2">"iready_pro_instruction_by_lesson_(?P&lt;subject&gt;ela|math)_CONFIDENTIAL\.csv"</span>
+    <span class="p">),</span>
+</code></pre></div>
+<p>Every <code>legacy_remote_file_regex</code> value above is the file's current
+<code>remote_file_regex</code>, unchanged. The <code>reading</code> alternative in each current-era
+regex exists for the sensor, which matches uncomposed; the asset never sees it,
+because <code>regex_pattern_replace</code> substitutes the whole named group.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Set the same 8 values in kippnewark</strong></li>
+</ul>
+<p>Apply the identical 4 pairs to
+<code>src/teamster/code_locations/kippnewark/iready/assets.py</code>. Do not change
+<code>region_subfolder</code>, <code>start_fiscal_year</code>, <code>end_fiscal_year</code>, or the
+<code>personalized_instruction_summary</code> <code>op_tags</code> block.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify both code locations load</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/test_dagster_definitions.py -v</code></p>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the sensor matches live FY27 files</strong></li>
+</ul>
+<p>This hits the real SFTP and needs the 1Password bootstrap, so it must run under
+pytest.</p>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run pytest tests/sensors/sftp/test_sensors_sftp_iready.py -v -s</code></p>
+<p>Expected: PASS. In the captured log output, confirm run requests appear for
+partition <code>2026|ela</code> — that is a <code>_reading_</code> file correctly mapping back to the
+<code>ela</code> partition. If <code>test_iready_sftp_sensor_kippnewark</code> fails on its hardcoded
+cursor values, raise them past 2026-09-01 and note the change in the commit.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kippmiami/iready/assets.py<span class="w"> </span>src/teamster/code_locations/kippnewark/iready/assets.py<span class="w"> </span>tests/sensors/sftp/test_sensors_sftp_iready.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(dagster): match FY2027 i-Ready export filenames</span>
+
+<span class="s2">Refs #4949"</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-absorb-the-renamed-columns-in-dbt">Task 6: Absorb the renamed columns in dbt</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/iready/models/staging/stg_iready__diagnostic_results.sql</code></li>
+<li>Modify:
+  <code>src/dbt/iready/models/staging/properties/stg_iready__diagnostic_results.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: the 4 schema fields from Task 4, which reach BigQuery as columns on
+  <code>src_iready__diagnostic_results</code>.</li>
+<li>Produces: nothing consumed by later tasks.</li>
+</ul>
+<p>The contract is enforced, so every column reaching output must be declared. The
+3 redundant <code>assessment_*</code> columns are coalesced into their legacy-named
+counterparts and excluded; only <code>tactile_graphics</code> is newly declared.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Exclude the redundant new columns and coalesce the gain</strong></li>
+</ul>
+<p>In the first CTE of
+<code>src/dbt/iready/models/staging/stg_iready__diagnostic_results.sql</code>, add these 3
+entries to the <code>* except (...)</code> list, keeping its alphabetical ordering:</p>
+<div class="highlight"><pre><span></span><code><span class="w">                </span><span class="n">assessment_gain</span><span class="p">,</span>
+<span class="w">                </span><span class="n">baseline_assessment_y_n</span><span class="p">,</span>
+<span class="w">                </span><span class="n">most_recent_assessment_ytd_y_n</span><span class="p">,</span>
+</code></pre></div>
+<p>Also add <code>baseline_diagnostic_y_n</code> to that same <code>except</code> list — it currently
+flows through <code>*</code> untouched and must be excluded so it can be re-emitted as a
+coalesce.</p>
+<p>Then change the existing <code>diagnostic_gain</code> cast (currently
+<code>cast(cast(diagnostic_gain as numeric) as int) as diagnostic_gain,</code>) to:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">cast</span><span class="p">(</span>
+<span class="w">                </span><span class="k">cast</span><span class="p">(</span><span class="k">coalesce</span><span class="p">(</span><span class="n">diagnostic_gain</span><span class="p">,</span><span class="w"> </span><span class="n">assessment_gain</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">numeric</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">int</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">diagnostic_gain</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Coalesce the two Y/N columns</strong></li>
+</ul>
+<p>The model already coalesces one pair of vendor-renamed columns, at
+<code>coalesce(most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n) as most_recent_diagnostic_ytd_y_n,</code>.
+Extend that expression and add one beside it, so the block reads:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">most_recent_diagnostic_y_n</span><span class="p">,</span>
+<span class="w">                </span><span class="n">most_recent_diagnostic_ytd_y_n</span><span class="p">,</span>
+<span class="w">                </span><span class="n">most_recent_assessment_ytd_y_n</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">most_recent_diagnostic_ytd_y_n</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">baseline_diagnostic_y_n</span><span class="p">,</span><span class="w"> </span><span class="n">baseline_assessment_y_n</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">baseline_diagnostic_y_n</span><span class="p">,</span>
+</code></pre></div>
+<p>Legacy names come first in every coalesce so history wins where both are
+present.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Translate the raw subject token in the final select</strong></li>
+</ul>
+<p>The final select currently reads:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">overall_scale_score</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">typical_growth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">overall_scale_score_plus_typical_growth</span><span class="p">,</span>
+<span class="w">    </span><span class="n">overall_scale_score</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">stretch_growth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">overall_scale_score_plus_stretch_growth</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">calcs</span>
+</code></pre></div>
+<p>Replace it with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="p">(</span><span class="n">_dagster_partition_subject</span><span class="p">),</span>
+
+<span class="w">    </span><span class="c1">-- The partition subject stays `ela` in Dagster because the GCS object path</span>
+<span class="w">    </span><span class="c1">-- is derived from it. The warehouse reports the vendor's current name. This</span>
+<span class="w">    </span><span class="c1">-- must stay in the final select: the HS growth-measure CASE expressions in</span>
+<span class="w">    </span><span class="c1">-- `hs_goals` compare against the raw `ela` token.</span>
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">_dagster_partition_subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'ela'</span><span class="p">,</span><span class="w"> </span><span class="s1">'reading'</span><span class="p">,</span><span class="w"> </span><span class="n">_dagster_partition_subject</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dagster_partition_subject</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">overall_scale_score</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">typical_growth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">overall_scale_score_plus_typical_growth</span><span class="p">,</span>
+<span class="w">    </span><span class="n">overall_scale_score</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">stretch_growth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">overall_scale_score_plus_stretch_growth</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">calcs</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Declare the new column in the contract</strong></li>
+</ul>
+<p>In
+<code>src/dbt/iready/models/staging/properties/stg_iready__diagnostic_results.yml</code>,
+add beside the other string columns:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tactile_graphics</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build the model and its children</strong></li>
+</ul>
+<p>Run:
+<code>cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; uv run dbt build --select stg_iready__diagnostic_results+ --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames/src/dbt/iready</code></p>
+<p>Expected: PASS. A contract violation here means a column reached output without
+a YAML declaration — compare the error's column list against Step 1's <code>except</code>
+list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Confirm the token translated and the subject column did not</strong></li>
+</ul>
+<p>Run this against the built model, either through the BigQuery MCP or <code>dbt show</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">_dagster_partition_subject</span><span class="p">,</span>
+<span class="w">    </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">discipline</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"stg_iready__diagnostic_results"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</code></pre></div>
+<p>Expected: <code>_dagster_partition_subject</code> shows only <code>reading</code> and <code>math</code>;
+<code>subject</code> still shows <code>Reading</code> and <code>Math</code>; <code>discipline</code> still shows <code>ELA</code> and
+<code>Math</code>. If <code>discipline</code> shows anything else, Step 3 landed in the wrong CTE.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint the SQL before committing</strong></li>
+</ul>
+<p><code>sqlfluff</code> runs at pre-push and CI, not at pre-commit, so a lint-clean commit
+can still fail CI.</p>
+<p>Run:
+`cd /workspaces/teamster/.worktrees/cbini/fix/claude-iready-fy27-export-renames &amp;&amp; /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/iready/models/staging/stg_iready__diagnostic_results.sql src/dbt/iready/models/staging/properties/stg_iready__diagnostic_results.yml </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
