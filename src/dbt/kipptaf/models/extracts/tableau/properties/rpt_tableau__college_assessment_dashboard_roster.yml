@@ -92,8 +92,24 @@ models:
       - name: act_count_lifetime
         data_type: int64
       - name: ccr_course
+        description: >-
+          Name of the course standing in for the student's College and Career
+          Readiness (CCR) schedule. Falls back through `ccr_course_source` when
+          the student has no active CCR course.
         data_type: string
       - name: ccr_teacher_name
         data_type: string
       - name: ccr_section
+        description: >-
+          Section identifier for `ccr_course`. Reads the period expression on a
+          CCR or Advisory row, and the section number (for example `9M311`) on a
+          homeroom row, whose period expression is always `HR(A)` or `HR(R)` and
+          carries no information.
+        data_type: string
+      - name: ccr_course_source
+        description: >-
+          Which tier supplied `ccr_course`: `CCR` for an active College and
+          Career course, `Advisory` for KIPP Newark Lab's `SEM22106G1`,
+          `Homeroom` for the universal backstop, `No Data` when the student has
+          no active course enrollment at all.
         data_type: string

@@ -111,7 +111,9 @@ models:
       - name: student_number
         data_type: int64
         description: |-
-          Student Number assigned by the school. Indexed.
+          Student Number assigned by the school. Indexed. For Miami, the
+          8400-prefixed Focus student id; the bare pre-migration number is no
+          longer a join key.
         config:
           meta:
             source_system: PowerSchool
@@ -237,7 +239,9 @@ models:
             contains_pii: true
       - name: middle_name
         data_type: string
-        description: Student's middle name.
+        description:
+          Student's middle name. PowerSchool for NJ regions; Focus students for
+          Miami.
         config:
           meta:
             source_system: PowerSchool
@@ -325,9 +329,10 @@ models:
             contains_pii: true
       - name: fedethnicity
         data_type: int64
-        description:
-          'Numerical answer to the question "Is the student Hispanic or Latino?"
-          Valid values :'
+        description: >-
+          Numerical answer to the question "Is the student Hispanic or Latino?"
+          1 = yes, 0 = no. PowerSchool for NJ regions; for Miami, derived from
+          the Focus "Ethnicity Hispanic or Latino" select option label.
         config:
           meta:
             source_system: PowerSchool
@@ -509,6 +514,7 @@ models:
             source_system: PowerSchool
             source_model: stg_people__student_logins
             source_column: username
+            contains_pii: true
       - name: student_web_password
         data_type: string
         description:
@@ -525,8 +531,17 @@ models:
       - name: student_email_google
         data_type: string
         description: Conditional on email, google_email, region.
+        config:
+          meta:
+            contains_pii: true
       - name: fleid
         data_type: string
+        description:
+          Florida Education Identifier, from Focus florida_education_identifier.
+          Miami only; the PowerSchool u_studentsuserfields copy is retired.
+        config:
+          meta:
+            contains_pii: true
       - name: newark_enrollment_number
         data_type: string
       - name: infosnap_id
@@ -592,9 +607,9 @@ models:
         data_type: boolean
         description:
           For the New Jersey regions, first non-null of `pid_504_tf`, `is_504`.
-          Always null for Miami -- both coalesce inputs resolve through
-          `students_dcid`, which Focus never populates, so Miami has no 504
-          source at all. Null means unknown 504 status, not the absence of a
+          For Miami, `int_focus__students.is_504`, read from the Focus "Section
+          504 Eligible" field (custom_621), which is unset for nearly every
+          student today. Null means unknown 504 status, not the absence of a
           plan.
       - name: is_fldoe_fte_2
         data_type: boolean

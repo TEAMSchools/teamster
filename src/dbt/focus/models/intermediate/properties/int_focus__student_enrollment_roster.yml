@@ -85,11 +85,9 @@ models:
             contains_pii: true
       - name: network_student_number
         description: >-
-          Canonical network student number — the Focus student id with the
-          leading 8400 Miami-Dade district prefix stripped, read from
-          int_focus__students rather than re-derived here. Both forms are
-          exposed because student_number holds the prefixed id and account
-          provisioning (stg_people__student_logins) joins on that form.
+          Canonical network student number for Miami: the 8400-prefixed Focus
+          student id, read from int_focus__students. Equal to student_number;
+          kept so existing consumers keep resolving.
         config:
           meta:
             contains_pii: true
