@@ -81,9 +81,18 @@ with
             is_homeless,
             lep_status,
             lunchstatus,
+            middle_name,
             spedlep,
             state_studentnumber,
             student_number,
+
+            florida_education_identifier as fleid,
+
+            -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. Focus
+            -- stores the answer as a select option; the label is the stable key.
+            case
+                ethnicity_hispanic_or_latino_label when 'Yes' then 1 when 'No' then 0
+            end as fedethnicity,
 
             if(
                 idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),
@@ -126,6 +135,13 @@ with
             stu.ethnicity,
             stu.gender,
             stu.state_studentnumber,
+            stu.middle_name,
+            stu.fedethnicity,
+            stu.fleid,
+
+            -- Focus's 8400-prefixed student id; stg_people__student_logins keys
+            -- Miami rows on it, not on the network student_number.
+            enr.student_number as focus_student_id,
 
             adv.advisory_section_number,
             adv.advisory_name,
@@ -298,7 +314,9 @@ select
         prevstudentid,
         homeless_code,
         homeless_primary_nighttime_residence_code,
-        gifted_and_talented
+        gifted_and_talented,
+        fleid,
+        focus_student_id
     ),
 
     -- same value as _dbt_source_project, named for the Dagster code location;
@@ -311,7 +329,9 @@ select
     ar.student_number as pearson_local_student_identifier,
 
     /* regional differences */
-    suf.fleid,
+    -- suf carries the PowerSchool-era value; ar.fleid is Focus's
+    -- florida_education_identifier (Miami only). They never overlap.
+    coalesce(suf.fleid, ar.fleid) as fleid,
     suf.newark_enrollment_number,
     suf.infosnap_id,
     suf.infosnap_opt_in,
@@ -518,7 +538,7 @@ left join
     and ar._dbt_source_project = njr._dbt_source_project
 left join
     {{ ref("stg_people__student_logins") }} as sl
-    on ar.student_number = sl.student_number
+    on coalesce(ar.focus_student_id, ar.student_number) = sl.student_number
 left join
     {{ ref("int_people__staff_roster") }} as sr
     on ar.advisor_teachernumber = sr.powerschool_teacher_number

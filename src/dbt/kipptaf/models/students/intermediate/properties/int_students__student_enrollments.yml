@@ -237,7 +237,9 @@ models:
             contains_pii: true
       - name: middle_name
         data_type: string
-        description: Student's middle name.
+        description:
+          Student's middle name. PowerSchool for NJ regions; Focus students for
+          Miami.
         config:
           meta:
             source_system: PowerSchool
@@ -325,9 +327,10 @@ models:
             contains_pii: true
       - name: fedethnicity
         data_type: int64
-        description:
-          'Numerical answer to the question "Is the student Hispanic or Latino?"
-          Valid values :'
+        description: >-
+          Numerical answer to the question "Is the student Hispanic or Latino?"
+          1 = yes, 0 = no. PowerSchool for NJ regions; for Miami, derived from
+          the Focus "Ethnicity Hispanic or Latino" select option label.
         config:
           meta:
             source_system: PowerSchool
@@ -503,7 +506,8 @@ models:
           The generated username for the student, derived from their name and
           birth date. Serves as the student user ID for logging in to
           PowerSchool Parent, and is the local part of their Google Workspace
-          address. Populated for every region.
+          address. Populated for every region. Miami logins are keyed on the
+          8400-prefixed Focus student id, so the join uses that id for Miami.
         config:
           meta:
             source_system: PowerSchool
@@ -527,6 +531,9 @@ models:
         description: Conditional on email, google_email, region.
       - name: fleid
         data_type: string
+        description:
+          Florida Education Identifier. PowerSchool u_studentsuserfields for the
+          frozen archive years; Focus florida_education_identifier for Miami.
       - name: newark_enrollment_number
         data_type: string
       - name: infosnap_id
