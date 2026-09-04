@@ -5,6 +5,13 @@ models:
       placeholder rows with null entry and exit dates, one row per academic year
       per student and district. Surrogate keys must include academic_year or
       those rows collide.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - entrydate
     columns:
       - name: studentid
         data_type: int64

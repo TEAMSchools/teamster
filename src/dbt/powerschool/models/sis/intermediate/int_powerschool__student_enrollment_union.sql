@@ -242,32 +242,46 @@ with
                 partition by studentid, rn_year order by yearid asc, exitdate asc
             ) as year_in_network,
         from window_calcs
+    ),
+
+    final as (
+        select
+            * except (rn_undergrad, year_in_school, year_in_network),
+
+            if(grade_level != 99, rn_undergrad, null) as rn_undergrad,
+            if(rn_year = 1, year_in_school, null) as year_in_school,
+            if(rn_year = 1, year_in_network, null) as year_in_network,
+            if(exitcode = 'G1', cohort_primary, null) as cohort_graduated,
+            if(exitdate is not null, true, false) as is_enrolled_y1,
+
+            if(
+                date(academic_year, 10, 1) between entrydate and exitdate, true, false
+            ) as is_enrolled_oct01,
+            if(
+                date(academic_year, 10, 15) between entrydate and exitdate, true, false
+            ) as is_enrolled_oct15,
+            if(
+                date(academic_year + 1, 3, 15) between entrydate and exitdate,
+                true,
+                false
+            ) as is_enrolled_mar15,
+
+            case
+                when yearid = yearid_prev
+                then false
+                when grade_level != 99 and grade_level <= grade_level_prev
+                then true
+                else false
+            end as is_retained_year,
+        from window_calcs_2
     )
 
-select
-    * except (rn_undergrad, year_in_school, year_in_network),
-
-    if(grade_level != 99, rn_undergrad, null) as rn_undergrad,
-    if(rn_year = 1, year_in_school, null) as year_in_school,
-    if(rn_year = 1, year_in_network, null) as year_in_network,
-    if(exitcode = 'G1', cohort_primary, null) as cohort_graduated,
-    if(exitdate is not null, true, false) as is_enrolled_y1,
-
-    if(
-        date(academic_year, 10, 1) between entrydate and exitdate, true, false
-    ) as is_enrolled_oct01,
-    if(
-        date(academic_year, 10, 15) between entrydate and exitdate, true, false
-    ) as is_enrolled_oct15,
-    if(
-        date(academic_year + 1, 3, 15) between entrydate and exitdate, true, false
-    ) as is_enrolled_mar15,
-
-    case
-        when yearid = yearid_prev
-        then false
-        when grade_level != 99 and grade_level <= grade_level_prev
-        then true
-        else false
-    end as is_retained_year,
-from window_calcs_2
+    -- TODO(#4835): remove once Ops cleans up the PowerSchool stints that put two
+    -- enrollments on one entrydate.
+    {{
+        dbt_utils.deduplicate(
+            relation="final",
+            partition_by="student_number, academic_year, entrydate",
+            order_by="rn_year asc",
+        )
+    }}
