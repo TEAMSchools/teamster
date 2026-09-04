@@ -61,9 +61,10 @@ with
         select
             *,
 
-            cast(
-                regexp_replace(cast(student_id as string), r'^8400', '') as int64
-            ) as student_number,
+            -- The Focus student_id (8400-prefixed) is the Miami student number.
+            -- The bare pre-migration number lives on powerschool_id for
+            -- returning students and is no longer a join key.
+            student_id as student_number,
 
             date(birthdate) as dob,
 

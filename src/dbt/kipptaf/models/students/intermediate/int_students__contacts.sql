@@ -33,19 +33,10 @@ with
     ),
 
     -- Miami Focus branch, replacing the branch that read the frozen
-    -- pre-migration `kippmiami_powerschool` snapshot. Focus stores the KIPP
-    -- student number 8400-prefixed in `local_student_id`, so `student_number`
-    -- is derived by stripping that prefix rather than crosswalked. The network
-    -- has always keyed Miami students on the unprefixed number, and
-    -- `dim_students.student_key` hashes it. Strip on the literal prefix rather
-    -- than positionally: 1 id carries no 8400 at all, and dropping its first 4
-    -- characters yields a number matching no student, which silently loses that
-    -- student's contacts. Deriving also beats joining
-    -- `int_finalsite__contact_id_attributes` on `focus_student_id_prefixed`.
-    -- Its `powerschool_student_number` agrees with the stripped value wherever
-    -- it is populated, but it is null for every Focus-native student, who has
-    -- no pre-migration PowerSchool record, so that join would silently drop
-    -- most of Miami.
+    -- pre-migration `kippmiami_powerschool` snapshot. The 8400-prefixed Focus
+    -- id in `local_student_id` is the Miami student number, so it is cast
+    -- rather than crosswalked: `int_finalsite__contact_id_attributes` is null
+    -- for every Focus-native student and would silently drop most of Miami.
     focus_base as (
         select
             student_id,
@@ -73,9 +64,7 @@ with
             -- branches union-compatible.
             cast(null as string) as phone_untyped,
 
-            safe_cast(
-                regexp_replace(local_student_id, r'^8400', '') as int64
-            ) as student_number,
+            safe_cast(local_student_id as int64) as student_number,
         from {{ ref("int_focus__student_contacts") }}
     ),
 

@@ -205,10 +205,10 @@ unit_tests:
   - name: test_focus_slotting_contact_1_and_emergency_ranks
     description: >-
       Pins the Focus branch slotting. student_number is the Focus
-      local_student_id with its 8400 prefix stripped. contact_1 is the
-      sort_order 1 link. emergency_N ranks every emergency-flagged link by
-      sort_order INCLUDING the sort_order 1 link, so the primary contact
-      deliberately occupies both contact_1 and emergency_1. A link that is not
+      local_student_id, 8400 prefix included. contact_1 is the sort_order 1
+      link. emergency_N ranks every emergency-flagged link by sort_order
+      INCLUDING the sort_order 1 link, so the primary contact deliberately
+      occupies both contact_1 and emergency_1. A link that is not
       emergency-flagged and is not sort_order 1 produces no row at all.
     model: int_students__contacts
     given:
@@ -284,7 +284,7 @@ unit_tests:
     expect:
       rows:
         - {
-            student_number: 123456,
+            student_number: 8400123456,
             _dbt_source_project: kippmiami,
             contact_slot: contact_1,
             relationship: Mother,
@@ -292,7 +292,7 @@ unit_tests:
             is_custodial: true,
           }
         - {
-            student_number: 123456,
+            student_number: 8400123456,
             _dbt_source_project: kippmiami,
             contact_slot: emergency_1,
             relationship: Mother,
@@ -300,7 +300,7 @@ unit_tests:
             is_custodial: true,
           }
         - {
-            student_number: 123456,
+            student_number: 8400123456,
             _dbt_source_project: kippmiami,
             contact_slot: emergency_2,
             relationship: Father,

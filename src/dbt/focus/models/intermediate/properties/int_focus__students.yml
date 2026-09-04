@@ -50,9 +50,9 @@ models:
           USDA Provision 2, which says nothing about the individual student.
       - name: student_number
         description: >-
-          Canonical network student number — student_id with the leading 8400
-          Miami-Dade district prefix stripped. An id not carrying that prefix
-          passes through unchanged rather than being guessed at.
+          Canonical network student number for Miami: the Focus student_id,
+          which carries the 8400 Miami-Dade district prefix. The bare
+          pre-migration number is on powerschool_id for returning students.
         config:
           meta:
             contains_pii: true

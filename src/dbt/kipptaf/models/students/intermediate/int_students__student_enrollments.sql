@@ -141,12 +141,6 @@ with
             stu.fleid,
             stu.is_504,
 
-            -- Focus's 8400-prefixed student id, the canonical Miami student
-            -- number in Focus-keyed systems (student logins, parts of iReady).
-            -- student_number stays the bare network number, which Illuminate,
-            -- kippadb and the assessment feeds key on.
-            enr.student_number as focus_student_id,
-
             adv.advisory_section_number,
             adv.advisory_name,
             adv.advisor_lastfirst,
@@ -160,6 +154,7 @@ with
             enr.student_last_name as last_name,
             enr.student_name as lastfirst,
             enr.school as school_name,
+            -- The 8400-prefixed Focus id is the Miami student number.
             enr.network_student_number as student_number,
 
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
@@ -391,7 +386,6 @@ with
             cast(null as int64) as homeless_primary_nighttime_residence_code,
             cast(null as string) as gifted_and_talented,
             cast(null as string) as fleid,
-            cast(null as int64) as focus_student_id,
             cast(null as bool) as is_504,
         from powerschool_conformed
 
@@ -483,7 +477,6 @@ with
             homeless_primary_nighttime_residence_code,
             gifted_and_talented,
             fleid,
-            focus_student_id,
             is_504,
         from focus_final
     )
@@ -718,8 +711,7 @@ left join
     and ar._dbt_source_project = njr._dbt_source_project
 left join
     {{ ref("stg_people__student_logins") }} as sl
-    on if(ar.region = 'Miami', ar.focus_student_id, ar.student_number)
-    = sl.student_number
+    on ar.student_number = sl.student_number
 left join
     {{ ref("int_people__staff_roster") }} as sr
     on ar.advisor_teachernumber = sr.powerschool_teacher_number

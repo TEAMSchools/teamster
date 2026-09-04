@@ -111,7 +111,9 @@ models:
       - name: student_number
         data_type: int64
         description: |-
-          Student Number assigned by the school. Indexed.
+          Student Number assigned by the school. Indexed. For Miami, the
+          8400-prefixed Focus student id; the bare pre-migration number is no
+          longer a join key.
         config:
           meta:
             source_system: PowerSchool
@@ -506,8 +508,7 @@ models:
           The generated username for the student, derived from their name and
           birth date. Serves as the student user ID for logging in to
           PowerSchool Parent, and is the local part of their Google Workspace
-          address. Populated for every region. Miami logins are keyed on the
-          8400-prefixed Focus student id, so the join uses that id for Miami.
+          address. Populated for every region.
         config:
           meta:
             source_system: PowerSchool
@@ -529,19 +530,6 @@ models:
       - name: student_email_google
         data_type: string
         description: Conditional on email, google_email, region.
-      - name: focus_student_id
-        data_type: int64
-        description: >-
-          Focus's 8400-prefixed student id, the canonical Miami student number
-          in Focus-keyed systems (student logins, parts of iReady). Null for NJ
-          regions. student_number holds the bare network number for every
-          region.
-        config:
-          meta:
-            source_system: Focus
-            source_model: int_focus__student_enrollment_roster
-            source_column: student_number
-            contains_pii: true
       - name: fleid
         data_type: string
         description:
