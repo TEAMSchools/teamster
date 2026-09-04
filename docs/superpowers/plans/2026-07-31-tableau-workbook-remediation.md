@@ -1217,6 +1217,36 @@ to do — but do not go looking for it, and do not count it as a restorable
 archive. Its pre-migration calculation is recoverable only from a Server
 revision history that no longer has a workbook to hang off.
 
+### Gap 9 — SchoolMint Grow, audited 2026-09-04
+
+Read out of the `.twbx`. The baseline is **correct**: all three datasources
+carry the canonical `Permissions` (1,170 chars, byte-identical) attached
+**datasource-wide**, with canonical entity, location and role gates.
+
+| Finding                                                                                                                | Status                                           |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `Permissions Group Filter (MG)` — dead, 7,245 chars, unconditional KTAF, 39-branch location gate, 10 banned strings    | **Fixed** — deleted and republished 2026-09-04   |
+| Cross-region norming does not work: the `Permissions - Norming*` variants are sheet-local under a datasource-wide gate | **Open** — needs a decision, see below           |
+| 15 by-name `USERNAME()` grant clauses, 5 identities, 12 of them in live fields                                         | **Open**                                         |
+| `Permissions  - Norming - Individual Data` is live and carries unconditional KTAF, a 37-branch gate, 11 banned strings | **Open** — contained by the AND, not a live leak |
+| `Permissions - PulseChecker` lives here, not on Survey Dashboard as _Per-workbook sections_ says                       | **Doc fix** — Survey Dashboard has no such field |
+
+**Cross-region norming is the one with consequences.** Tier 4's note above says
+the `Permissions - Norming*` blocks are the ungated variant "because
+cross-region norming is intentional". They are attached sheet-local on 10
+`norming_*` sheets, and the canonical `Permissions` is attached datasource-wide
+on the same datasource. Tableau ANDs, so effective access is the intersection
+and the ungated clause collapses back onto canonical Tier 4/5 — both
+region-scoped. An MDSO cannot norm across regions; an AP sees only their own
+school's teachers.
+
+Step 2's warning describes this exact mechanism but only as a safety property,
+that a stale sheet-local field cannot widen access. It also nullifies a
+deliberate widening, which is Step 6's "seeing **less** than expected is a
+broken gate". Settle whether cross-region norming is still required before
+touching it; if it is, the fix is a separate datasource carrying only the
+norming gate, the way the Stipend workbook handles its HR download sheets.
+
 Three cleanups with no live leak: two dead permission fields, SchoolMint Grow's
 three legacy sheet-local fields (contained today only because a datasource-wide
 gate ANDs over them), and 16 by-name `USERNAME()` grants across five fields.

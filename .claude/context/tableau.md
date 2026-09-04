@@ -1,9 +1,12 @@
 # Tableau MCP gotchas
 
-**Read-only server.** Every tool is a `get-`/`list-`/`query-`/`search-`. There
-is no publish, no workbook edit, no group mutation. Anything that changes
-Tableau Server is user-side work in Desktop or the Server admin UI — do not look
-for a tool that does it.
+**The MCP is read-only.** Every tool is a `get-`/`list-`/`query-`/`search-`.
+There is no publish, no workbook edit, no group mutation — do not look for an
+MCP tool that does it.
+
+That is a limit of the MCP, not of this Codespace. Workbook content **can** be
+edited and republished here with `tableauserverclient`; see _Publishing back_
+below. Group membership and Server admin remain user-side.
 
 **No tool returns calculated-field formulas.** `get-workbook` and
 `list-workbooks` return workbook, view, and datasource metadata — never the calc
@@ -65,7 +68,36 @@ match the literal form or you will count 51 grants where there are none.
 
 **Publishing back is destructive and outward-facing** —
 `workbooks.publish(..., mode=Overwrite)` replaces a live Production workbook.
-Never run it without the user naming the workbook and the change.
+Never run it without the user naming the workbook and the change. Dry-run into
+`TEMP-CB` (`ddc817c2-6bc7-4bca-8be9-e385f95b9ebc`, owned by the same account as
+the gated workbooks) with `PublishMode.CreateNew` first.
+
+**A publish drops four pieces of server-side state that are NOT in the `.twb`.**
+Restore every one or the overwrite silently degrades the workbook. Verified
+end-to-end on SchoolMint Grow 2026-09-04:
+
+| Dropped                          | Restore with                                          |
+| -------------------------------- | ----------------------------------------------------- |
+| Desktop's published-sheet choice | `item.hidden_views = [...]` **at publish time**       |
+| Workbook owner                   | `wb.owner_id = ...` then `workbooks.update(wb)`       |
+| Workbook tags                    | `wb.tags = {...}` then `workbooks.update(wb)`         |
+| Per-view tags                    | `v.tags = {...}` then `views.update(v)`, one per view |
+
+`hidden_views` is the load-bearing one. Which sheets Desktop published lives on
+the server, not in the file, so a REST publish exposes every sheet the `.twb`
+marks visible — on Grow that was 4 extra views including two dashboards built on
+legacy gates. Read the live view list first and pass the difference.
+
+Tags matter because `entra-ready` is the permissions inventory: an overwrite
+without the restore drops the workbook out of it with no error.
+
+Extract refresh schedules and workbook permissions are **not** affected —
+Production is `LockedToProject`, so permission rules are inherited and survived
+intact (6 before, 6 after). An in-place Overwrite keeps the same LUID and
+`content_url`, so bookmarks and embeds survive; assert both after publishing,
+because a name mismatch silently creates a NEW workbook instead. Rollback is the
+prior revision (25 retained on Grow) — record the latest revision number before
+publishing.
 
 **`get-workbook` DOES give the workbook-to-table mapping.** Its
 `upstreamDatasources` array returns each datasource's `name`, `luid`, and
