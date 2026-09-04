@@ -35,6 +35,7 @@ select
                     "t.start_date",
                     "t.region",
                     "t.school_id",
+                    "t.grade_band",
                 ]
             )
         }},
@@ -112,6 +113,7 @@ select
                     "t.start_date",
                     "t.region",
                     "t.school_id",
+                    "t.grade_band",
                 ]
             )
         }},

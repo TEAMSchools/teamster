@@ -1,0 +1,179 @@
+models:
+  - name: int_amplify__mclass__pm_student_summary_aimline
+    description:
+      Grades 3-8 DIBELS progress monitoring, enriched with Amplify aimline goals
+      and status. Coalesces `stg_amplify__mclass__sftp__pm_student_summary` (the
+      base PM file, K-2's source) with
+      `stg_amplify__mclass__sftp__pm_student_summary_aimline` (the file carrying
+      aimline data) on probe identity, since Amplify has moved the
+      aimline_status / aimline_value_by_date fields between these two files
+      mid-year before, with no advance notice, and gave no commitment on whether
+      it happens again. One row per student, measure, and probe attempt within a
+      PM period; grades below 3 are excluded, since K-2 keeps its own in-house
+      PM goals process on `int_amplify__mclass__pm_student_summary` instead of
+      Amplify aimline.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - pm_period
+              - measure
+              - probe_number
+              - device_date
+              - assessment_grade
+    columns:
+      - name: surrogate_key
+        data_type: string
+        description:
+          Hash of student_primary_id, school_year, pm_period, measure,
+          probe_number, device_date, and assessment_grade.
+        data_tests:
+          - unique
+      - name: student_primary_id
+        data_type: int64
+        description: Student primary identifier (student number).
+        data_tests:
+          - not_null
+      - name: measure
+        data_type: string
+        description:
+          Expanded measure name with abbreviation (e.g., 'Reading Fluency
+          (ORF)'). First non-null of the aimline file's and the base PM file's
+          value for this probe.
+        data_tests:
+          - not_null
+      - name: pm_period
+        data_type: string
+        description: Progress monitoring season (e.g., 'BOY->MOY').
+        data_tests:
+          - not_null
+      - name: assessment_grade_int
+        data_type: int64
+        description:
+          Assessment grade as integer. Filtered to 3 and above; K-2 is carried
+          on int_amplify__mclass__pm_student_summary instead.
+        data_tests:
+          - not_null
+      - name: goal
+        data_type: numeric
+        description:
+          End-of-period aimline goal score. Only ever populated by the aimline
+          file today — the base PM file has never carried this field — but not
+          coalesced, since a coalesce needs a second populated source to be
+          meaningful.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: goal
+      - name: aimline_status
+        data_type: string
+        description:
+          Student status relative to the aimline goal (e.g., 'Below', 'At or
+          Above'). First non-null of the aimline file's and the base PM file's
+          value for this probe, since Amplify has carried this field on either
+          file at different points without notice.
+      - name: aimline_value_by_date
+        data_type: numeric
+        description:
+          Expected aimline score for the assessment date. First non-null of the
+          aimline file's and the base PM file's value for this probe, for the
+          same reason as aimline_status.
+      - name: school_year
+        data_type: string
+        description: School year range (e.g., '2025-2026').
+      - name: school_name
+        data_type: string
+        description: School name as provided in the vendor file.
+      - name: academic_year
+        data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+      - name: device_date
+        data_type: date
+        description:
+          Date the assessment was administered on the device. First non-null of
+          device_date, sync_date, resolved upstream in staging.
+      - name: sync_date
+        data_type: date
+        description: Date the assessment data was synced.
+      - name: measure_name_code
+        data_type: string
+        description:
+          Short measure abbreviation extracted from the expanded measure name
+          parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)').
+      - name: measure_name
+        data_type: string
+        description:
+          Full measure name derived from measure_name_code (e.g., 'Oral Reading
+          Fluency').
+      - name: probe_number
+        data_type: int64
+        description: Probe sequence number within the PM period.
+      - name: total_number_of_probes
+        data_type: int64
+        description: Total number of probes expected in the PM period.
+      - name: measure_standard_score
+        data_type: numeric
+        description: Raw assessment score, cast from the source score column.
+      - name: assessment_grade
+        data_type: string
+        description: Grade level of the assessment administered.
+      - name: enrollment_grade
+        data_type: string
+        description: Student enrollment grade level.
+      - name: enrollment_grade_int
+        data_type: int64
+        description: Enrollment grade as integer.
+      - name: enrollment_teacher_name
+        data_type: string
+        description: Enrollment teacher name(s), pipe-delimited when multiple.
+      - name: enrollment_teacher_staff_id
+        data_type: string
+        description:
+          Enrollment teacher staff ID(s), pipe-delimited when multiple.
+      - name: assessing_teacher_name
+        data_type: string
+        description: Name of the teacher who administered the assessment.
+      - name: assessing_teacher_staff_id
+        data_type: string
+        description: Staff ID of the assessing teacher.
+      - name: special_education
+        data_type: string
+        description: Special education status.
+      - name: disability
+        data_type: string
+        description: Disability indicator.
+      - name: iep_status
+        data_type: string
+        description: Individualized Education Program status.
+      - name: section_504
+        data_type: string
+        description: Section 504 plan indicator.
+      - name: _dagster_partition_key
+        data_type: string
+        description: Dagster partition key (school year).
+      - name: source_file_name
+        data_type: string
+        description: Name of the SFTP source CSV file.
+      - name: region
+        data_type: string
+        description:
+          Region resolved from school_name via the location crosswalk (long-
+          form entity name, e.g. 'TEAM Academy Charter School').
+      - name: school
+        data_type: string
+        description: School abbreviation from the location crosswalk.
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school ID from the location crosswalk.
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Dagster code location for the student's school, from the location
+          crosswalk.
