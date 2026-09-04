@@ -1,5 +1,7 @@
 with
     deduplicate as (
+        -- TODO(#4835): remove once Ops cleans up the PowerSchool stints that put
+        -- two enrollments on one entrydate.
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_powerschool__student_enrollment_union"),
