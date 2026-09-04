@@ -11,9 +11,8 @@ models:
       int_students__attendance_streak apply. Focus is the enrollment source of
       record for Miami and re-dated the archive's stints, so Miami archive rows
       take entrydate from the Focus stint that contains the day and fall back to
-      the archive date when none does (#5114; measured on #4803). Six flags are
-      null for Focus-sourced Miami rows because Focus has no day-grain source
-      for them — see #4927.
+      the archive date when none does. Six flags are null for Focus-sourced
+      Miami rows because Focus has no day-grain source for them — see #4927.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -67,8 +66,8 @@ models:
         description: >-
           Enrollment stint start date the row belongs to. On Miami archive rows
           this is the Focus stint's start date, not PowerSchool's, so the row
-          keys to dim_student_enrollments (#5114). Legacy alias, transitional —
-          see enrollment_start_date.
+          keys to dim_student_enrollments. Legacy alias, transitional — see
+          enrollment_start_date.
       - name: fteid
         description: >-
           PowerSchool internal FTE id. Null for every Focus-sourced row — Focus

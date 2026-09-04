@@ -84,6 +84,25 @@ data_tests:
           ref:
             name: stg_focus__student_enrollment
             package: focus
+  - name: int_focus__student_enrollment_roster__no_overlapping_stints
+    description: >-
+      A student holds one enrollment stint at a time. Focus accepts a second
+      open stint at another school without closing the first, and every model
+      that scaffolds days from the roster then carries that student twice per
+      day: int_focus__attendance_daily and its consumers, and the kipptaf grain
+      test on int_students__attendance_daily, which dedupes the Focus branch
+      while this warning is live. Strict on the boundary, so a stint that starts
+      on the day another ends passes as a sequential transfer. Failing with 1
+      pair as of 2026-09-04, one AY2026 student open at 2 schools from
+      2026-09-04. Runs at the consuming district project's default warn
+      severity. Any returned row is a failure, and the fix is in Focus: close
+      the stale stint.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_focus__student_enrollment_roster
+            package: focus
   - name: int_focus__schedule__no_overlapping_course_periods
     description: >-
       A student must not sit in two course periods of the same course, in the

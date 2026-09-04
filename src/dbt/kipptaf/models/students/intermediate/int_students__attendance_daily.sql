@@ -125,15 +125,14 @@ with
     -- The whole Focus-to-network translation lives here. See "The conform
     -- contract" above. A `select *` will NOT work: the Focus model shares no
     -- column names with the PowerSchool branch any more.
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     focus_conformed as (
         select
             ad.student_number,
             ad.grade_level,
             ad.is_attendance_recorded,
-
-            -- See powerschool_conformed's is_focus_source for why this is an
-            -- explicit flag rather than a studentid-null proxy.
-            true as is_focus_source,
+            ad.startdate as entrydate,
+            ad.school_date as calendardate,
 
             -- Carried through explicitly. Every downstream join keys on
             -- `_dbt_source_project`, and `student_enrollment_key` hashes it,
@@ -147,16 +146,9 @@ with
 
             fs.schoolid,
 
-            ad.academic_year - 1990 as yearid,
-            ad.startdate as entrydate,
-            ad.school_date as calendardate,
-
-            -- U means an unexcused absence in Focus and "Unprepared" in
-            -- PowerSchool, so it MUST be remapped. AE and AD already mean the
-            -- same thing in both systems and pass through. A present or
-            -- unrecorded day leaves daily_code null, which is exactly how
-            -- PowerSchool encodes it.
-            if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
+            -- See powerschool_conformed's is_focus_source for why this is an
+            -- explicit flag rather than a studentid-null proxy.
+            true as is_focus_source,
 
             cast(ad.state_value as float64) as attendancevalue,
 
@@ -175,6 +167,15 @@ with
             cast(null as int64) as ontrack,
             cast(null as int64) as offtrack,
             cast(null as string) as student_track,
+
+            ad.academic_year - 1990 as yearid,
+
+            -- U means an unexcused absence in Focus and "Unprepared" in
+            -- PowerSchool, so it MUST be remapped. AE and AD already mean the
+            -- same thing in both systems and pass through. A present or
+            -- unrecorded day leaves daily_code null, which is exactly how
+            -- PowerSchool encodes it.
+            if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
         cross join cutover as c
@@ -182,6 +183,24 @@ with
         -- AY2025 rows land beside PowerSchool's real rows for the same Miami
         -- school-days and break this model's own grain test.
         where ad.academic_year >= c.focus_start_academic_year
+    ),
+
+    -- Focus accepts two open stints for one student at two schools, and
+    -- int_focus__attendance_daily scaffolds every in-session day once per
+    -- stint. Keep the day the register was actually taken on, then the
+    -- arriving stint, which is how the transfer-day rule already assigns a
+    -- shared boundary day. The root signal is the focus package test
+    -- int_focus__student_enrollment_roster__no_overlapping_stints, which
+    -- warns on each such pair so Ops can close the stale stint.
+    -- TODO: remove once Focus stops accepting overlapping open stints.
+    focus_deduped as (
+        {{
+            dbt_utils.deduplicate(
+                relation="focus_conformed",
+                partition_by="student_number, calendardate",
+                order_by="is_attendance_recorded desc, entrydate desc",
+            )
+        }}
     ),
 
     -- `full union all corresponding` matches columns by NAME. A plain
@@ -194,7 +213,7 @@ with
         full union all corresponding
 
         select *,
-        from focus_conformed
+        from focus_deduped
     ),
 
     calcs as (
