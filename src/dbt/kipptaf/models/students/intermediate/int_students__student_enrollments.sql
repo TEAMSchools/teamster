@@ -72,6 +72,7 @@ with
         select
             _dbt_source_project,
             ethnicity,
+            fedethnicity,
             gender,
             gifted_and_talented,
             homeless_code,
@@ -88,12 +89,6 @@ with
             student_number,
 
             florida_education_identifier as fleid,
-
-            -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. Focus
-            -- stores the answer as a select option; the label is the stable key.
-            case
-                ethnicity_hispanic_or_latino_label when 'Yes' then 1 when 'No' then 0
-            end as fedethnicity,
 
             if(
                 idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),

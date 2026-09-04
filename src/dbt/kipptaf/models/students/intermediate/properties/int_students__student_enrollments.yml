@@ -514,6 +514,7 @@ models:
             source_system: PowerSchool
             source_model: stg_people__student_logins
             source_column: username
+            contains_pii: true
       - name: student_web_password
         data_type: string
         description:
@@ -530,11 +531,17 @@ models:
       - name: student_email_google
         data_type: string
         description: Conditional on email, google_email, region.
+        config:
+          meta:
+            contains_pii: true
       - name: fleid
         data_type: string
         description:
           Florida Education Identifier, from Focus florida_education_identifier.
           Miami only; the PowerSchool u_studentsuserfields copy is retired.
+        config:
+          meta:
+            contains_pii: true
       - name: newark_enrollment_number
         data_type: string
       - name: infosnap_id

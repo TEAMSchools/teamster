@@ -74,6 +74,12 @@ with
 
             if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
 
+            -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. The
+            -- label is the stable key for this select option.
+            case
+                ethnicity_hispanic_or_latino_label when 'Yes' then 1 when 'No' then 0
+            end as fedethnicity,
+
             -- Y and N both assert a 504 plan (N is 504-eligible but not IDEA);
             -- I and Z are explicit negatives; unset stays null, not false.
             case

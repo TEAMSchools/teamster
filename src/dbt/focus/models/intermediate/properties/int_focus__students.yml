@@ -79,6 +79,10 @@ models:
           IEP classification in the network domain. 'SPED' where an ESE FEFP
           code is present, else null — a missing funding code does not assert
           that the student has no IEP.
+      - name: fedethnicity
+        description: >-
+          Hispanic/Latino flag in the PowerSchool domain: 1 for the "Yes"
+          option, 0 for "No", null where unset.
       - name: is_504
         description: >-
           Section 504 status from custom_621. True for codes Y and N (both
