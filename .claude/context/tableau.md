@@ -103,13 +103,36 @@ days. Nothing in the workbook metadata shows it — `populate_connections` still
 reports `embed_password=True` and the right service-account username, because
 that field records intent, not a live token.
 
-`workbooks.publish()` takes a `connections` sequence of `ConnectionItem`, and
-`workbooks.update_connection(workbook_item, connection_item)` exists (populate
-connections first). **Neither is verified to restore BigQuery OAuth** — the
-`update_connection` docstring covers server address, port, username and
-password, and says nothing about OAuth tokens. So until someone tests it, treat
-the reliable fix as re-embedding from Desktop (republish with _Embed password_
-checked) or on Server via the workbook's Data Connections page.
+**Do not try to carry the credentials through `publish(connections=...)` — it
+cannot work here, tested 2026-09-04.** These connections report
+`auth_type='auth-oauth-service-account'` and `server_address=''`, and there are
+two independent blockers:
+
+| Attempt                                            | Result                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `ConnectionItem` with the real `server_address=''` | `ValueError: Connection must have a server address`                            |
+| `embed_password=True`, no password                 | serialises, but emits **no** `connectionCredentials` element — carries nothing |
+| a working payload                                  | requires `password=` holding the service-account key                           |
+
+The first blocker is the fatal one, and having the key does not lift it. A
+BigQuery `<connection>` has **no `server` attribute at all** — its identity is
+`CATALOG='teamster-332318'` plus `schema` — so there is no server address to
+pass, and inventing one overwrites nothing useful while satisfying a required
+field with a fiction. `publish(connections=...)` simply does not apply to this
+connector.
+
+So a publish to these workbooks **must be followed by re-embedding the
+credential by hand** — Desktop republish with _Embed password_ checked, or the
+workbook's Data Connections page on Server.
+
+**The durable fix is visible in the connection attributes.** Each carries
+`workgroup-auth-mode='prompt'`, which is exactly why the credential lives on the
+workbook and dies with a publish, alongside `server-oauth='server-custom'` — a
+custom BigQuery OAuth client that already exists at server level. Pointing these
+connections at a server- or site-level saved credential instead of prompting
+would leave a publish nothing to strip, across all 11 gated workbooks. That is a
+Tableau admin plus Desktop change, and it is worth doing before many more
+publishes rather than re-embedding by hand every time.
 
 **Therefore: after any publish to these workbooks, trigger a refresh and confirm
 it succeeds before calling the job done.** Checking metadata is not enough; that

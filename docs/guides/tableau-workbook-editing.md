@@ -245,16 +245,30 @@ degrades:
     `embed_password=True` with the correct service-account username, because that
     field records intent rather than a live token.
 
-    `workbooks.publish()` accepts a `connections` sequence of `ConnectionItem`,
-    and `workbooks.update_connection(workbook_item, connection_item)` exists
-    (populate connections first). **Neither is verified to restore BigQuery
-    OAuth** — `update_connection`'s docstring covers server address, port,
-    username and password, and is silent on OAuth tokens. Until that is tested,
-    the reliable fix is re-embedding from Desktop (republish with _Embed
+    **`publish(connections=...)` cannot carry them for BigQuery** — tested
+    2026-09-04, and having the service-account key does not help. A BigQuery
+    `<connection>` has no `server` attribute at all (its identity is
+    `CATALOG='teamster-332318'` plus `schema`), the REST API reports
+    `server_address=''`, and TSC raises
+    `ValueError: Connection must have a server address` before it will serialise
+    one. Passing `embed_password=True` without a password serialises but emits no
+    `connectionCredentials` element, so it carries nothing.
+
+    The reliable fix is re-embedding from Desktop (republish with _Embed
     password_ checked) or on Server via the workbook's Data Connections page.
 
     **After any publish, trigger a refresh and confirm it succeeds.** Metadata
     verification is not sufficient — that is exactly the check that missed this.
+
+!!! tip "The durable fix is in the connection attributes"
+
+    Each BigQuery connection carries `workgroup-auth-mode='prompt'`, which is why
+    the credential lives on the workbook and dies with a publish, alongside
+    `server-oauth='server-custom'` — a custom OAuth client that already exists at
+    server level. Pointing these connections at a server- or site-level saved
+    credential instead of prompting leaves a publish nothing to strip, across all
+    11 gated workbooks. It is a Tableau admin plus Desktop change, and it is worth
+    doing before many more publishes rather than re-embedding by hand every time.
 
 **`hidden_views` is the one that bites.** Which sheets Desktop chose to publish
 is server-side state absent from the file, so a REST publish exposes every sheet
