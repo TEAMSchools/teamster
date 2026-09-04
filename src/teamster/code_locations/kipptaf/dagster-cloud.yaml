@@ -125,6 +125,16 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: workspace-id
+              - name: BRANCHINGMINDS_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-branchingminds-sftp
+                    key: password
+              - name: BRANCHINGMINDS_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-branchingminds-sftp
+                    key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -305,6 +315,11 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-sftp
                     key: ip
+              - name: BRANCHINGMINDS_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-branchingminds-sftp
+                    key: host
               - name: CLEVER_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -518,6 +533,16 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: workspace-id
+              - name: BRANCHINGMINDS_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-branchingminds-sftp
+                    key: password
+              - name: BRANCHINGMINDS_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-branchingminds-sftp
+                    key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -683,6 +708,11 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-sftp
                     key: ip
+              - name: BRANCHINGMINDS_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-branchingminds-sftp
+                    key: host
               - name: CLEVER_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
