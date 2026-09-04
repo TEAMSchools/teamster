@@ -10,6 +10,11 @@ models:
       in a high school grade this academic year whose graduation year is later
       than this one. A student who transferred out mid-year drops off, along
       with the scores they earned while enrolled.
+
+
+      The CCR course, teacher and section are grouped rather than aggregated, as
+      are the three lifetime SAT highs. Independent `max()` calls over them
+      could pair one row's course with another row's teacher.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -87,18 +92,21 @@ models:
       - name: ccr_course
         data_type: string
         description: >-
-          College and Career course the student is enrolled in, or No Data when
-          they hold no such section this year.
+          Course standing in for the student's College and Career Readiness
+          schedule. Falls back to KIPP Newark Lab's Advisory course, then
+          homeroom, when the student has no active College and Career section —
+          from SY26-27 the regions schedule those for grades 11 and 12 only. `No
+          Data` means no active course enrollment at all.
       - name: ccr_teacher_name
         data_type: string
-        description: >-
-          Teacher of the College and Career course, or No Data when the student
-          holds no such section this year.
+        description: Teacher of record for `ccr_course`, last name first.
       - name: ccr_section
         data_type: string
         description: >-
-          Section of the College and Career course, or No Data when the student
-          holds no such section this year.
+          Section identifier for `ccr_course`. Reads the period expression on a
+          College and Career or Advisory row, and the section number (for
+          example `9M311`) on a homeroom row, whose period expression is always
+          `HR(A)` or `HR(R)` and carries no information.
       - name: "`SAT Composite Superscore`"
         data_type: numeric
         description: >-
