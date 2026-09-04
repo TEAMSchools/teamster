@@ -31,131 +31,17 @@ datasources, and only for fields/parameters (name, dataType, description, role)
 tool reaches them at all. `query-datasource`'s inline `calculation` field is
 therefore no back door either.
 
-**To read or write calc text, go around the MCP — this works from the Codespace
-and is verified.** Do not tell the user calc auditing needs Desktop.
+**Reading and writing calc text is possible from the Codespace, but the recipe
+does not live here.** `tableauserverclient` is already a project dependency and
+the same PAT the MCP uses is in 1Password, so a workbook can be downloaded,
+parsed, edited and republished. That path has real traps — a publish drops five
+pieces of server-side state including the embedded connection credentials, and
+the credential failure is silent until the next extract refresh.
 
-`tableauserverclient` is already a project dependency, and the same PAT the MCP
-uses is at `op://Data Team/Tableau Server PAT - Dagster` (`hostname`, `site id`,
-`username`, `credential`). Run it under pytest so the `tests/conftest.py`
-fixture is available, per `tests/CLAUDE.md`:
-
-```python
-import tableauserverclient as tsc
-
-auth = tsc.PersonalAccessTokenAuth(pat_name, pat_value, site_id=site)
-srv = tsc.Server(host, use_server_version=True)
-srv.auth.sign_in(auth)
-srv.workbooks.download(wb_id, filepath=dest, include_extract=False)
-```
-
-**Do not pass `http_options={"verify": False}`.** `tableau.kipp.org` presents a
-valid GoDaddy-issued `*.kipp.org` certificate that validates against the default
-trust store — verified 2026-09-04 — so disabling verification only exposes the
-PAT for no reason. The `http://SAC-RPT-01/` URLs in MCP responses are the
-server's internal name, not the endpoint to call.
-
-`include_extract=False` keeps a gated workbook to tens of KB and still carries
-every calculation. The `.twbx` is a zip; the `.twb` inside is the XML, and the
-gates are readable with `zipfile` plus `ElementTree` (or `tableaudocumentapi`,
-`uv run --with tableaudocumentapi`, whose `Field.calculation` has a working
-`@calculation.setter` that round-trips through `Workbook.save_as`). Verified
-2026-09-04 on Manager Survey Rollup: 481 `ISMEMBEROF` occurrences, all five
-gates, and the worksheet-to-datasource bindings that reveal whether a stale
-datasource is actually read.
-
-Two cautions. In `Permissions` the helper gates appear as internal ids
-(`[Calculation_2368471220768063489]`), not captions, so resolve them via each
-`<column>`'s `caption` attribute. And a gate's `USERNAME() = [field]` clauses
-are correct Tier 1 — only `USERNAME() = '<literal>'` is a by-name grant, so
-match the literal form or you will count 51 grants where there are none.
-
-**Publishing back is destructive and outward-facing** —
-`workbooks.publish(..., mode=Overwrite)` replaces a live Production workbook.
-Never run it without the user naming the workbook and the change. Dry-run into
-`TEMP-CB` (`ddc817c2-6bc7-4bca-8be9-e385f95b9ebc`, owned by the same account as
-the gated workbooks) with `PublishMode.CreateNew` first.
-
-**A publish drops five pieces of server-side state that are NOT in the `.twb`.**
-Restore every one or the overwrite silently degrades the workbook. Learned on
-SchoolMint Grow 2026-09-04, the fifth one the hard way:
-
-| Dropped                          | Restore with                                          |
-| -------------------------------- | ----------------------------------------------------- |
-| **Embedded connection creds**    | **see below — this one breaks the extract refresh**   |
-| Desktop's published-sheet choice | `item.hidden_views = [...]` **at publish time**       |
-| Workbook owner                   | `wb.owner_id = ...` then `workbooks.update(wb)`       |
-| Workbook tags                    | `wb.tags = {...}` then `workbooks.update(wb)`         |
-| Per-view tags                    | `v.tags = {...}` then `views.update(v)`, one per view |
-
-**Embedded credentials are the dangerous one, because the failure is silent and
-delayed.** A publish that omits them leaves a workbook that looks perfectly
-healthy — every view renders, because the datasources are embedded `.hyper`
-extracts and nothing needs to authenticate to read them. The first thing that
-needs credentials is the next **extract refresh**, which fails hours later with:
-
-```text
-Tableau needs an unexpired OAuth refresh token to connect to the data.
-```
-
-That is what a publish of `SchoolMint Grow Dashboard` at 17:08:58 did on
-2026-09-04: refresh failed at 18:33:07 having succeeded for the previous 30
-days. Nothing in the workbook metadata shows it — `populate_connections` still
-reports `embed_password=True` and the right service-account username, because
-that field records intent, not a live token.
-
-**Do not try to carry the credentials through `publish(connections=...)` — it
-cannot work here, tested 2026-09-04.** These connections report
-`auth_type='auth-oauth-service-account'` and `server_address=''`, and there are
-two independent blockers:
-
-| Attempt                                            | Result                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `ConnectionItem` with the real `server_address=''` | `ValueError: Connection must have a server address`                            |
-| `embed_password=True`, no password                 | serialises, but emits **no** `connectionCredentials` element — carries nothing |
-| a working payload                                  | requires `password=` holding the service-account key                           |
-
-The first blocker is the fatal one, and having the key does not lift it. A
-BigQuery `<connection>` has **no `server` attribute at all** — its identity is
-`CATALOG='teamster-332318'` plus `schema` — so there is no server address to
-pass, and inventing one overwrites nothing useful while satisfying a required
-field with a fiction. `publish(connections=...)` simply does not apply to this
-connector.
-
-So a publish to these workbooks **must be followed by re-embedding the
-credential by hand** — Desktop republish with _Embed password_ checked, or the
-workbook's Data Connections page on Server. **Then trigger a refresh and confirm
-it succeeds.** This manual step is the accepted recipe for now; the time saved
-by editing calcs programmatically is worth it.
-
-**The durable fix is visible in the connection attributes**, and is tracked in
-[#5157](https://github.com/TEAMSchools/teamster/issues/5157). Each carries
-`workgroup-auth-mode='prompt'`, which is exactly why the credential lives on the
-workbook and dies with a publish, alongside `server-oauth='server-custom'` — a
-custom BigQuery OAuth client that already exists at server level. Pointing these
-connections at a server- or site-level saved credential instead of prompting
-would leave a publish nothing to strip, across all 11 gated workbooks. That is a
-Tableau admin plus Desktop change, and it is worth doing before many more
-publishes rather than re-embedding by hand every time.
-
-**Therefore: after any publish to these workbooks, trigger a refresh and confirm
-it succeeds before calling the job done.** Checking metadata is not enough; that
-is precisely the check that missed this.
-
-`hidden_views` is the load-bearing one. Which sheets Desktop published lives on
-the server, not in the file, so a REST publish exposes every sheet the `.twb`
-marks visible — on Grow that was 4 extra views including two dashboards built on
-legacy gates. Read the live view list first and pass the difference.
-
-Tags matter because `entra-ready` is the permissions inventory: an overwrite
-without the restore drops the workbook out of it with no error.
-
-Extract refresh schedules and workbook permissions are **not** affected —
-Production is `LockedToProject`, so permission rules are inherited and survived
-intact (6 before, 6 after). An in-place Overwrite keeps the same LUID and
-`content_url`, so bookmarks and embeds survive; assert both after publishing,
-because a name mismatch silently creates a NEW workbook instead. Rollback is the
-prior revision (25 retained on Grow) — record the latest revision number before
-publishing.
+Do not attempt a publish from memory. Read
+`docs/guides/tableau-workbook-editing.md` first; it carries the worked code, the
+five parsing traps, and the post-publish restore steps. Tracked in
+[#5157](https://github.com/TEAMSchools/teamster/issues/5157).
 
 **`get-workbook` DOES give the workbook-to-table mapping.** Its
 `upstreamDatasources` array returns each datasource's `name`, `luid`, and
