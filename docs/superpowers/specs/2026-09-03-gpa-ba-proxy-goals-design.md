@@ -76,6 +76,41 @@ already use. The goal differs by grade; the offset does not.
 They carry their own `metric` value rather than sharing
 `cumulative_gpa_unweighted`.
 
+#### The goal values, and why grade 9 must not be "corrected"
+
+Confirmed with the design owner 2026-09-03, network rung, AY2026:
+
+| Grade | GPA goal | Enrollment goal | Difference |
+| ----- | -------- | --------------- | ---------- |
+| 9     | 69%      | **85%**         | **+16**    |
+| 10    | 64%      | 79%             | +15        |
+| 11    | 60%      | 75%             | +15        |
+
+Grade 9 is deliberately +16, not +15. **This has been confirmed and is not a
+typo.** Anyone reading this table will notice that 79 is 64 + 15 and 75 is 60 +
+15, conclude that 85 should be 84, and be wrong. Do not change it, and do not
+let a reviewer talk you into changing it.
+
+It matters because it is the only thing making the two goals independent. Where
+the enrollment goal is exactly `goal + 15`, the comparison
+`actual + 15 >= goal + 15` reduces to `actual >= goal` — the same test as the
+GPA goal, stated on a different scale. Grades 10 and 11 are exactly that: the
+gap to each goal is identical to the tenth of a point.
+
+Grade 9 is the exception, and it opens a one-point band where the two goals
+disagree:
+
+- the GPA goal is met once the rate reaches **69%**
+- the enrollment goal is met once the rate reaches **70%** (85 − 15)
+
+So a grade-9 cohort between 69.0% and 70.0% at 3.0 or higher **meets its GPA
+goal and misses its enrollment goal**. That is a real state a school can be in,
+and a dashboard showing both goals will eventually show it. The AY2026 network
+rate is 68.6%, immediately below that band.
+
+Whatever the view does, it must not present that as a contradiction. It is two
+targets of different difficulty, and grade 9's is the harder of the two.
+
 **Why a distinct metric is required, not stylistic.**
 `int_gpa__student_goal_definitions` is grained
 `(academic_year, student_number, metric)` and carries a
@@ -167,9 +202,13 @@ These need answers before implementation, not during.
 1. **The metric's exact name.** `cumulative_gpa_unweighted_ba_proxy` is the
    proposal. Ops types this into a sheet, so it should be something they will
    enter consistently.
-2. **The enrollment goal for each grade band and organisational level.** The 50%
-   in the example is illustrative. The real numbers are needed for all four
-   grades, at network, region and school level, for the academic years in scope.
+2. **Grade 12, and the region and school rungs.** The network goals for grades
+   9, 10 and 11 are confirmed above. Two gaps remain. Grade 12 has a GPA goal of
+   56% but no enrollment goal yet — the +15 pattern would put it at 71%, but
+   grade 9 proves the pattern is not a rule, so it has to be stated rather than
+   inferred. And the cumulative GPA goals exist at all three rungs, so the
+   enrollment goals need either their own region and school values or an
+   explicit decision that this goal is network-only.
 3. **Who adds the sheet column.** The offset column is a Google Sheet edit
    before it is a dbt change. If Ops adds it, the sheet and the staging contract
    must land together or the build breaks on a missing column.
@@ -196,12 +235,36 @@ These need answers before implementation, not during.
 
 Measured 2026-09-03, AY2026, network rung, `cumulative_gpa_unweighted`:
 
-| Grade | GPA goal | Actual | Actual + 15 |
-| ----- | -------- | ------ | ----------- |
-| 9     | 69%      | 68.6%  | 83.6%       |
-| 10    | 64%      | 57.4%  | 72.4%       |
-| 11    | 60%      | 48.2%  | 63.2%       |
-| 12    | 56%      | 45.9%  | 60.9%       |
+| Grade | GPA goal | Enrollment goal | Actual | Actual + 15 | Meets GPA | Meets enrollment |
+| ----- | -------- | --------------- | ------ | ----------- | --------- | ---------------- |
+| 9     | 69%      | 85%             | 68.6%  | 83.6%       | no        | no               |
+| 10    | 64%      | 79%             | 57.4%  | 72.4%       | no        | no               |
+| 11    | 60%      | 75%             | 48.2%  | 63.2%       | no        | no               |
+| 12    | 56%      | not set         | 45.9%  | 60.9%       | no        | —                |
+
+School rung, AY2026, grades with at least 10 students measured. The enrollment
+goal does discriminate — it is not a rubber stamp that everyone passes:
+
+| School | Grade | At 3.0+ | +15   | Goal | Meets |
+| ------ | ----- | ------- | ----- | ---- | ----- |
+| NCA    | 9     | 74.3%   | 89.3% | 85%  | yes   |
+| KHS    | 9     | 64.7%   | 79.7% | 85%  | no    |
+| NLH    | 9     | 64.7%   | 79.7% | 85%  | no    |
+| NCA    | 10    | 70.8%   | 85.8% | 79%  | yes   |
+| KHS    | 10    | 48.6%   | 63.6% | 79%  | no    |
+| NLH    | 10    | 47.4%   | 62.4% | 79%  | no    |
+| NCA    | 11    | 52.8%   | 67.8% | 75%  | no    |
+| KHS    | 11    | 48.0%   | 63.0% | 75%  | no    |
+| NLH    | 11    | 43.6%   | 58.6% | 75%  | no    |
+
+Note these school-rung figures are compared against the **network** goal, since
+school-rung enrollment goals do not exist yet. They will change if the school
+rung gets its own values.
+
+**Rounding is load-bearing at these margins.** Grade 9 network sits 1.4 points
+under its enrollment goal and 0.4 under its GPA goal. Pin the rounding in
+Tableau explicitly rather than taking the default; a school half a point from a
+target should not pass or fail on a display setting.
 
 Goals exist only for AY2025 and AY2026, while `rpt_tableau__gpa_cumulative_year`
 spans 2004 through 2026. Every high school row before AY2025 has no goal at all,
