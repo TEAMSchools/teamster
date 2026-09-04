@@ -109,12 +109,14 @@ with
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
         from powerschool_renumbered as ps
         cross join cutover as c
+        -- Inclusive on both ends: the roster's exitdate is the stint's last
+        -- day, and it trims each stint to the day before the next starts, so
+        -- one day matches at most one stint.
         left join
             focus_stints as fs
             on ps.student_number = fs.student_number
             and ps.yearid = fs.yearid
-            and ps.calendardate >= fs.entrydate
-            and ps.calendardate < fs.exitdate
+            and ps.calendardate between fs.entrydate and fs.exitdate
         where
             not (
                 ps._dbt_source_project = 'kippmiami'
@@ -125,7 +127,6 @@ with
     -- The whole Focus-to-network translation lives here. See "The conform
     -- contract" above. A `select *` will NOT work: the Focus model shares no
     -- column names with the PowerSchool branch any more.
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     focus_conformed as (
         select
             ad.student_number,
@@ -185,24 +186,6 @@ with
         where ad.academic_year >= c.focus_start_academic_year
     ),
 
-    -- Focus accepts two open stints for one student at two schools, and
-    -- int_focus__attendance_daily scaffolds every in-session day once per
-    -- stint. Keep the day the register was actually taken on, then the
-    -- arriving stint, which is how the transfer-day rule already assigns a
-    -- shared boundary day. The root signal is the focus package test
-    -- int_focus__student_enrollment_roster__no_overlapping_stints, which
-    -- warns on each such pair so Ops can close the stale stint.
-    -- TODO: remove once Focus stops accepting overlapping open stints.
-    focus_deduped as (
-        {{
-            dbt_utils.deduplicate(
-                relation="focus_conformed",
-                partition_by="student_number, calendardate",
-                order_by="is_attendance_recorded desc, entrydate desc",
-            )
-        }}
-    ),
-
     -- `full union all corresponding` matches columns by NAME. A plain
     -- `union all` matches by POSITION, and the two CTEs above list schoolid
     -- in different positions, which would silently misalign columns.
@@ -213,7 +196,7 @@ with
         full union all corresponding
 
         select *,
-        from focus_deduped
+        from focus_conformed
     ),
 
     calcs as (
