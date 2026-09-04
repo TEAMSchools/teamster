@@ -233,7 +233,11 @@ models:
         data_type: string
       - name: student_primary_id
         data_type: int64
-        description: Student primary identifier (student number).
+        description: >-
+          Network student number. Miami rows through SY2025 carry the bare
+          pre-Focus number in the source; they are brought onto the
+          8400-prefixed Focus student number here, after the crosswalk resolves
+          the region.
         config:
           meta:
             source_system: Amplify

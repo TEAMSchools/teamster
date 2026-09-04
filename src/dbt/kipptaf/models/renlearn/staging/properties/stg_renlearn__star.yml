@@ -271,8 +271,13 @@ models:
         data_type: int64
       - name: student_display_id
         data_type: int64
+        description: >-
+          Network student number. Miami rows through SY2025 carry the bare
+          pre-Focus number in the source; they are brought onto the
+          8400-prefixed Focus student number here.
       - name: student_identifier
         data_type: int64
+        description: Same value as student_display_id in every row.
       - name: student_sourced_id
         data_type: int64
       - name: student_user_id
