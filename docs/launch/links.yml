@@ -1,0 +1,507 @@
+# Data launch page — tool catalog
+#
+# Source of truth for the staff-facing launch page: a static page published to
+# GitHub Pages and built from this file. Design spec in GitHub #4762.
+#
+# ONLY `status: verified` ENTRIES PUBLISH. An entry left at `needs-review` is
+# excluded from the build, so setting `verified` is not a quality note — it is
+# what puts the tool in front of staff.
+#
+# THIS FILE IS A STARTING POINT, NOT A FINISHED CATALOG. It was scraped from
+# the existing Google Site, so every entry started at `status: needs-review`
+# until a human confirms it against the live tool. See README.md in this
+# directory for what reviewing an entry means.
+#
+# `audiences` controls which role views a tool appears in. It is NOT an
+# access control — the All view always renders every entry, and access is
+# enforced by the destination system.
+
+- id: attendance_dashboard
+  name: Attendance Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/AttendanceDashboard/Trends?:embed=y
+  description:
+    Monitor ADA, Chronic Absenteeism, completion status of Chronic Absenteeism
+    interventions, and Daily Attendance Calls
+  audiences: [leaders, ops, region]
+  system: tableau
+  group: attendance
+  status: verified
+
+- id: certification_dashboard
+  name: Certification Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/NJCertificationDashboardSchoolsView/CertificationDashboard?:embed=y
+  description:
+    Certification status and individual teacher steps for certification, effort
+    logging, and Praxis intensive attendance.
+  audiences: [leaders, region]
+  system: tableau
+  group: performance
+  status: verified
+
+- id: coaching_conversation_tool
+  name: Coaching Conversation Tool
+  url: https://tableau.kipp.org/t/KIPPNJ/views/CoachingConversationTool/CoachingConversationTool?:embed=y
+  description:
+    View performance management results for yourself and those you coach from
+    2018 to present.
+  audiences: [leaders, teachers]
+  system: tableau
+  group: performance
+  status: verified
+
+- id: college_admission_readiness_assessment_tracker
+  name: College Admission Readiness Assessment Tracker (CARAT)
+  url: https://tableau.kipp.org/t/KIPPNJ/views/CollegeAdmissionReadinessAssessmentsTrackerCARAT/LandingPage?:embed=y
+  description:
+    "Tracking of any assessment that helps our students go to and through
+    college: ACT, SAT, PSAT 10, PSAT/NMSQT, PSAT 8/9, Dual Enrollment, and AP."
+  audiences: [region, leaders, teachers]
+  system: tableau
+  group: college
+  status: verified
+
+- id: content_team
+  name: Content Team (MIA)
+  url: https://tableau.kipp.org/t/KIPPNJ/views/ContentTeamDashboard/Home?:embed=y
+  description:
+    Information from CTM Rubric and O3s for Instructional Leads in Miami.
+  audiences: [leaders]
+  system: tableau
+  group: performance
+  status: needs-review
+
+- id: data_quality_dashboard
+  name: Data Quality Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/DataQualityDashboard/Home?:embed=y
+  description:
+    Audits that alert on missing student information and assessment scores.
+  audiences: [ops, teachers]
+  system: tableau
+  group: operations
+  status: verified
+
+- id: ddi_suite
+  name: DDI Suite
+  url: https://tableau.kipp.org/t/KIPPNJ/views/DDISuite/LandingPage?:embed=y
+  description:
+    Data-Driven Instruction metrics. Week-over-week assessment, standard, and
+    QBL mastery.
+  audiences: [leaders, region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: fast_and_iready_data_tool
+  name: FAST & iReady Data Tool (MIA)
+  url: https://tableau.kipp.org/t/KIPPNJ/views/KIPPMiamiFASTi-ReadyAnalysis_16759101332760/LandingPage?:embed=y&:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link
+  description:
+    View Florida Assessment of Student Thinking (FAST) results. Covers FAST,
+    i-Ready, STAR, and florida DOE growth metrics.
+  audiences: [leaders, region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: finance_and_accounting_tools
+  name: Finance & Accounting Tools
+  url: https://tableau.kipp.org/t/KIPPNJ/views/FinanceAccountingToolsResources/TeacherSalariesbyYearDash?:embed=y
+  description:
+    Staff salary, benefits, and roster counts by year. Limited access.
+  audiences: [region]
+  system: tableau
+  group: staff
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/16753644522391#h_01H2QN8AEA0WXWYWJJBTVXF78H
+  status: verified
+
+- id: fresh_dashboard
+  name: FRESH Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/FRESHDashboard/LandingPage?%3Aembed=y#1
+  description: Track the SRE team's efforts for recruitment and registration.
+  audiences: [ops]
+  system: tableau
+  group: staff
+  status: verified
+
+- id: gpa_roster_camden
+  name: "GPA Roster: Camden"
+  url: https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0
+  description:
+    Provides term GPA, Y1 GPA, and cumulative GPA (unweighted, weighted, and
+    projected), along with basic identification information for students in the
+    Camden region for grade levels 5 through 12.
+  audiences: [region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [camden]
+  status: verified
+
+- id: gpa_roster_miami
+  name: "GPA Roster: Miami"
+  url: https://docs.google.com/spreadsheets/d/1HsxearGC74LDySGx0QOZFkkH_HbsxmwzZ57Wi4vaZLg/edit?gid=0#gid=0
+  description:
+    Provides term GPA and Y1 GPA, along with basic identification information
+    for students in the Miami region for grade levels 5 through 12.
+  audiences: [region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [miami]
+  status: verified
+
+- id: gpa_roster_newark
+  name: "GPA Roster: Newark"
+  url: https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0
+  description:
+    Provides term GPA, Y1 GPA, and cumulative GPA (unweighted, weighted, and
+    projected), along with basic identification information for students in the
+    Newark region for grade levels 5 through 12.
+  audiences: [region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [newark]
+  status: verified
+
+- id: academic_gradebook_health_suite
+  name: Academic & Gradebook Health Suite
+  url: https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome?:embed=y
+  description:
+    Academic health across schools — GPA against goal, cumulative GPA, and
+    student course grades.
+  audiences: [region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: grow_dashboard
+  name: Grow Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/SchoolMintGrowDashboard_17226096936880/Home?:embed=y
+  description:
+    Completion tracking, ratings, and comments for teacher performance
+    management (ETR and Self & Others), Grow classroom walkthroughs, O3s,
+    Microgoals, and Look-Fors.
+  audiences: [leaders, region]
+  system: tableau
+  group: performance
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/360008681374-Performance-Management-Teacher-Goals-Coaching-Excellent-Teaching-Rubric-ETR-Observations-SchoolMint-Grow
+  status: verified
+
+- id: high_school_early_warning
+  name: High School Early Warning
+  url: https://tableau.kipp.org/t/KIPPNJ/views/HighSchoolEarlyWarningDashboard/HSEarlyWarningDashboard-LandingPage?:embed=y
+  description: High school at-risk data and graduation eligibility.
+  audiences: [leaders, teachers]
+  system: tableau
+  group: college
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/13464666347031--User-Guide-High-School-Early-Warning-Dashboard
+  status: verified
+
+- id: i_ready_apm_tool
+  name: i-Ready APM Tool
+  url: https://tableau.kipp.org/t/KIPPNJ/views/APMDashboard/i-Ready?%3Aembed=y&%3AshowAppBanner=false&%3Adisplay_count=n&%3AshowVizHome=n&%3Aorigin=viz_share_link
+  description:
+    i-Ready lesson data per week by school and i-Ready diagnostic data with
+    student state assessment scores
+  audiences: [leaders, region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: kipp_forward_data_suite
+  name: KIPP Forward Data Suite
+  url: https://tableau.kipp.org/t/KIPPNJ/views/KIPPForwardDataSuite_16988639234650/SplashPage?:embed=y
+  description:
+    Metrics on match, persistence, college success, career launch,
+    re-enrollment, Maher Fund Aid Report, and School Performance Index SPI).
+  audiences: [region]
+  system: tableau
+  group: college
+  status: verified
+
+- id: leader_pm_dashboard
+  name: Leader PM Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/LeadershipDevelopment_17017220456180/CompletionTracking?:embed=y
+  description:
+    Completion tracking and side-by-side self and manager reflections for those
+    in Leader Performance Management.
+  audiences: [leaders, ops, region]
+  system: tableau
+  group: performance
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/19465485148183
+  status: verified
+
+- id: leader_pm_app
+  name: Leader PM App
+  description: Enter self and manager reflections and goals.
+  url: https://www.appsheet.com/start/861f035c-b076-4d1e-9a68-e36fcafe8184
+  audiences: []
+  # TODO(audiences): listed on the Support page, not on any role page, so there
+  # TODO(audiences): is no signal about who this is for. Assign roles.
+  # TODO(verify): AppSheet app. Confirm its access setting requires sign-in AND
+  # TODO(verify): check the sharing on the Sheet backing it. See README.
+  system: appsheet
+  group: performance
+  status: needs-review
+
+- id: lit_dashboard
+  name: LIT Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/LiteracyDashboard/LITDashboard-LandingPage?:embed=y
+  description:
+    DIBELS 8 benchmark and progress monitoring performance, growth, and sight
+    words, with fidelity tracking.
+  audiences: [leaders, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: manager_survey_report
+  name: Manager Survey Report
+  url: https://tableau.kipp.org/t/KIPPNJ/views/ManagerSurveyReports/ManagerReport?:embed=y
+  description: View twice-yearly feedback from your direct reports.
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  group: surveys
+  status: verified
+
+- id: okrts_dashboard
+  name: OKRTS Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/OKRTSDashboard_17247098359700/LandingPage?:embed=y
+  description:
+    Our Kids Run To School (OKRTS). Monitor suspensions, referrals, home
+    instruction requests, and DeansList behavior entry, as well as Promise Team
+    metrics.
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  group: attendance
+  status: verified
+
+- id: operations_systems
+  name: Operations Systems
+  url: https://tableau.kipp.org/t/KIPPNJ/views/OperationsSystems/Walkthroughs?:embed=y
+  description:
+    Operations Walkthroughs, plus Operations Teammate Performance Management
+    results and roll-ups.
+  audiences: [ops]
+  system: tableau
+  group: performance
+  status: verified
+
+- id: ops_dashboard
+  name: Ops Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/OpsDashboard/EnrollmentDashboard?:embed=y
+  description: Student enrollment, demographics, SPED, and attrition metrics.
+  audiences: [leaders, ops, region]
+  system: tableau
+  group: operations
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/360035994714
+  status: verified
+
+- id: promotional_status_dashboard
+  name: Promotional Status Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/PromotionalStatusDashboard/Roll-Up?:embed=y
+  description:
+    Roll-up and roster of individual student promotional status by quarter.
+  audiences: [region]
+  system: tableau
+  group: college
+  status: verified
+
+- id: recruitment_dashboard
+  name: Recruitment Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/RecruitmentDashboard_17213358840600/Home?:embed=y
+  description:
+    Seat Tracker reporting view, hiring statuses over time, interview/demo
+    tracking, candidate quality, and sourcing metrics.
+  audiences: [leaders, ops, region]
+  system: tableau
+  group: staff
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/19856763832855--User-Guide-Seat-Tracker-App-and-Reporting
+  status: verified
+
+- id: seat_tracker
+  name: Seat Tracker
+  url: https://www.appsheet.com/start/da7c51f8-1985-4c8d-b786-2aaf816ae1d2
+  description: Work with the recruitment team on staffing.
+  audiences: []
+  # TODO(audiences): listed on the Support page, not on any role page, so there
+  # TODO(audiences): is no signal about who this is for. Assign roles.
+  # TODO(verify): AppSheet app. Confirm its access setting requires sign-in AND
+  # TODO(verify): check the sharing on the Sheet backing it. See README.
+  system: appsheet
+  group: staff
+  status: needs-review
+
+- id: staff_attrition_dashboard
+  name: Staff Attrition Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/AttritionDashboard/AttritionDashboard?:embed=y
+  description:
+    Track retention rates for staff by year, location, job title, and more.
+  audiences: [region]
+  system: tableau
+  group: staff
+  status: verified
+
+- id: staff_demographic_explorer
+  name: Staff Demographic Explorer
+  url: https://tableau.kipp.org/t/KIPPNJ/views/StaffDemographicExplorer/StaffDemographicsExplorer?:embed=y
+  description:
+    View information provided by staff about race, ethnicity, and other
+    identities by job group, titles, and more.
+  audiences: [region]
+  system: tableau
+  group: staff
+  status: verified
+
+- id: staff_recent_job_and_salary_changes
+  name: Staff Recent Job & Salary Changes
+  url: https://tableau.kipp.org/t/KIPPNJ/views/RecentJobSalaryChanges/JobDeptLocFlags?:embed=y
+  description: Audit view for staff changes. Limited access.
+  audiences: [region]
+  system: tableau
+  group: staff
+  status: needs-review
+
+- id: staff_roster
+  name: Staff Roster
+  url: https://tableau.kipp.org/t/KIPPNJ/views/StaffRoster/StaffRosterdisabled?:embed=y&:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link
+  description:
+    Roster of all staff for quick lookup of information, location, job title,
+    and more.
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  group: staff
+  status: verified
+
+- id: state_testing_analysis_tool
+  name: State Testing Analysis Tool
+  url: https://tableau.kipp.org/t/KIPPNJ/views/StateTestingAnalysisToolSTAT_17001442186870/StateTestingAnalysisToolSTAT-LandingPage?%3Aembed=y&%3AshowAppBanner=false&%3Adisplay_count=n&%3AshowVizHome=n&%3Aorigin=viz_share_link#4
+  description: Current and historical state testing reports for NJ and FL.
+  audiences: [leaders, region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: stipend_and_bonus_dashboard
+  name: Stipend and Bonus Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/StipendandBonusDashboard_17278875605220/Home?%3Aembed=y#2
+  description:
+    Live data from the Stipend and Bonus app on stipends entered by quarter and
+    approval status.
+  audiences: [ops, region]
+  system: tableau
+  group: staff
+  guide: https://teamschools.zendesk.com/hc/en-us/articles/18404769341463--User-Guide-Stipend-and-Bonus-App
+  status: verified
+
+- id: stipend_app
+  name: Stipend App
+  url: https://www.appsheet.com/start/f396eae8-7840-4648-b77e-1179506dae89
+  description: Submit stipends and bonuses for staff.
+  audiences: []
+  # TODO(audiences): listed on the Support page, not on any role page, so there
+  # TODO(audiences): is no signal about who this is for. Assign roles.
+  # TODO(verify): AppSheet app. Confirm its access setting requires sign-in AND
+  # TODO(verify): check the sharing on the Sheet backing it. See README.
+  system: appsheet
+  group: staff
+  status: needs-review
+
+# Student Contact Info Feeds — one per region. NOT linked from the Google Site;
+# added directly. These carry student and guardian contact information, making
+# them the most sensitive entries in this catalog.
+#
+# Sharing confirmed by the data team: each feed is shared to its region's
+# group, with CMO staff holding access to all four. No link sharing. Note that
+# an automated permissions read returns only the file owner here — the Drive
+# API does not enumerate full permissions for a caller who does not administer
+# the file, so an empty group list from tooling is inconclusive, not a finding.
+
+- id: student_contact_info_feed_camden
+  name: Student Contact Info Feed - KIPP Camden
+  description: Student and guardian contact information for KIPP Camden.
+  url: https://docs.google.com/spreadsheets/d/1uHO67F5VNQltCTt3J1bB1ze6Hfp1QiE2O5HzJeQI97Y
+  audiences: [leaders, ops, region, teachers]
+  system: google-sheet
+  group: operations
+  regions: [camden]
+  status: verified
+
+- id: student_contact_info_feed_miami
+  name: Student Contact Info Feed - KIPP Miami
+  description: Student and guardian contact information for KIPP Miami.
+  url: https://docs.google.com/spreadsheets/d/1bhSA4rG1zgg6PBxlBaje0COyU4L5lvozXMvpGjw0Mlw
+  audiences: [leaders, ops, region, teachers]
+  system: google-sheet
+  group: operations
+  regions: [miami]
+  status: verified
+
+- id: student_contact_info_feed_newark
+  name: Student Contact Info Feed - KIPP Newark
+  description: Student and guardian contact information for KIPP Newark.
+  url: https://docs.google.com/spreadsheets/d/18X4M7nQ25xRy_8ieZryrsaaljsWG3Es1jY8yzzmBPDQ
+  audiences: [leaders, ops, region, teachers]
+  system: google-sheet
+  group: operations
+  regions: [newark]
+  status: verified
+
+- id: student_contact_info_feed_paterson
+  name: Student Contact Info Feed - KIPP Paterson
+  description: Student and guardian contact information for KIPP Paterson.
+  url: https://docs.google.com/spreadsheets/d/13ld6WVnOoFLxYXN_HQ837j_ha8Hgr14AtWNZmhjCno0
+  audiences: [leaders, ops, region, teachers]
+  system: google-sheet
+  group: operations
+  regions: [paterson]
+  status: verified
+
+- id: survey_dashboard
+  name: Survey Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/SurveyDashboard_17078426466440/Home?:embed=y
+  description:
+    Completion status (all) and results (Intent to Return and Support) for
+    KTAF-administered surveys.
+  audiences: [leaders, ops, region]
+  system: tableau
+  group: surveys
+  status: verified
+
+- id: survey_hq
+  name: Survey HQ
+  url: https://tableau.kipp.org/t/KIPPNJ/views/PersonalizedSurveyLinks/SurveyHQ?:embed=y
+  description:
+    Your personalized links for the School Community Diagnostic, Staff
+    Demographic information, Intent to Return, Manager, and Support surveys
+    (does not include Gallup and TNTP Insight).
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  group: surveys
+  status: verified
+
+- id: teacher_development_dashboard
+  name: Teacher Development Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/TeacherDevelopmentDashboard_16994705799120/HeatMap?:embed=y
+  description:
+    Information on observations conducted by the Teacher Development Team for
+    TiRs and New Leads in their programs.
+  audiences: [leaders, region]
+  system: tableau
+  group: performance
+  status: verified
+
+- id: testing_accommodations
+  name: Testing Accommodations
+  url: https://tableau.kipp.org/t/KIPPNJ/views/StateTestingAccommodationsTracker/StateTestingAccommodationsTracker?:embed=y
+  description: Access accommodation requests for state testing.
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  group: academics
+  status: verified
+
+- id: zendesk_dashboard
+  name: Zendesk Dashboard
+  url: https://tableau.kipp.org/t/KIPPNJ/views/ZendeskReporting/Launch?:embed=y
+  description: Support ticket metrics by department, agent, and category.
+  audiences: [ops, region]
+  system: tableau
+  group: operations
+  status: verified

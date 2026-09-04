@@ -13,6 +13,55 @@ models:
       course-enrollment-grain source.
     config:
       materialized: table
+      meta:
+        dagster:
+          # 4x/day instead of eager. Rebuilds 44.3 times a day at 1.209 GiB a
+          # build, 53.6 GiB/day, on top of the churn it drives in its
+          # PowerSchool ancestors.
+          #
+          # Eager looks unavoidable from the DAG shape:
+          # base_powerschool__course_enrollments is a bare select * over this
+          # model, which puts it upstream of 184 models and 60 exposures,
+          # including the hourly ops_dashboard. Reachability is not dependency.
+          # There are only 2 routes to the intraday exposures. Route 1 runs
+          # through int_extracts__student_enrollments, which projects exactly 1
+          # spine-derived column -- is_sipps, an existence flag for course
+          # SEM01099G1 -- and rpt_tableau__ops_dashboard and
+          # rpt_tableau__attendance_dashboard both reference is_sipps zero
+          # times and carry no select * or dbt_utils.star, so neither depends
+          # on this model. Route 2 is rpt_tableau__assessment_dashboard refing
+          # the spine directly, and that one is a real dependency.
+          #
+          # So every genuine consumer is a batch exposure, not the hourly one:
+          # ddi_suite (0 1, 0 16 Fri, 0 18), literacy_dashboard (0 5), and
+          # apm_dashboard (0 6). Each tick precedes its consumer --
+          # 00:00 for ddi's 01:00, 04:00 for literacy's 05:00 and apm's 06:00,
+          # 15:00 for ddi's Friday 16:00, 17:00 for ddi's 18:00. This model
+          # and int_powerschool__course_enrollments_union, which shares the
+          # tick, cost about 9.4 GiB/day together against 81.1 today.
+          #
+          # Not a view, and the gap versus a view is enormous here. This model
+          # is read about 853 times a day, and its 3 window functions over a
+          # full union all corresponding block column pruning, so a view read
+          # recomputes the whole model no matter how few columns the reader
+          # selects -- the shape #5035 measured on
+          # int_assessments__all_college_assessments, where 1 column cost
+          # 1.388 GiB against a 1.390 GiB build. At 1.209 GiB a recompute that
+          # is roughly 980 GiB/day, against 53.6 eager today and 9.4 here.
+          # Same call as #4821, which moved
+          # fct_assessment_scores_enrollment_scoped the other way for the same
+          # reason.
+          #
+          # Accepted trade-off: dim_student_section_enrollments is a view over
+          # this model, and Cube reads it live -- cube-cloud@ ran 288 jobs in
+          # 14 days against it, with no refresh_key and no pre-aggregation. So
+          # the Cube class-roster, attendance, and assessment views go from
+          # roughly eager freshness to these 4 ticks, and a mid-morning
+          # schedule change is not visible until 15:00. Weighed and accepted
+          # rather than adding school-day ticks. Revisit if roster staleness
+          # draws a complaint. Refs #5082
+          automation_condition:
+            cron_schedule: 0 0,4,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -20,6 +69,38 @@ models:
               - cc_dcid
               - _dbt_source_project
     columns:
+      - name: exit_date
+        description: >-
+          When this section enrollment ends, whether or not the student left
+          early. Non-null on every row in both SIS branches, so a consumer
+          bounding an enrollment window reads this rather than `cc_dateleft`.
+          Named for `dim_student_section_enrollments.exit_date`, which is this
+          value and until #5043 aliased `cc_dateleft` itself.
+
+          The two SIS record it differently and neither is wrong. PowerSchool
+          has no separate departure date, so `cc_dateleft` is already this
+          concept -- the actual leave date when the student left, the term end
+          plus a day while the enrollment is open. Focus keeps the two apart, so
+          this resolves to the schedule `end_date` when the student left and
+          `marking_period_end_date` otherwise.
+
+          Added on #5043. Before it, consumers compared `cc_dateleft` directly
+          and every Focus row with an open enrollment -- 95.8% of Miami AY2026
+          -- made the comparison unknown and dropped out.
+        data_type: date
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: cc_dateleft
+        description: >-
+          The date the student left the section, where the SIS records one. For
+          PowerSchool this doubles as the scheduled end, because PowerSchool
+          conflates the two. For Miami it is the Focus schedule `end_date`,
+          which is null while the enrollment is open -- the normal state, true
+          of 95.8% of Miami AY2026 rows. Read `exit_date` instead of coalescing
+          this one; #5043 added it for exactly that purpose.
+        data_type: date
       - name: cc_dcid
         description: >-
           Course enrollment identifier. For Miami, the Focus
@@ -56,14 +137,6 @@ models:
           date rather than a join date -- so a future-term row carries a future
           date. Established on #5002; the measurement lives on
           `int_focus__schedule`.
-        data_type: date
-      - name: cc_dateleft
-        description: >-
-          For PowerSchool, the date the student left the section. For Miami, the
-          Focus schedule `end_date`, which is null while the row is open -- the
-          normal state, true of 96.8% of Miami AY2026 rows. Downstream joins
-          must coalesce it to an open-ended sentinel rather than compare it
-          directly.
         data_type: date
       - name: is_homeroom
         description: >-

@@ -296,6 +296,10 @@ select
 
     if(co.unweighted_ada <= 0.90, true, false) as is_chronically_absent,
 
+    if(
+        co.unweighted_ada <= 0.90, 'Chronic Absence', 'Not Chronic Absence'
+    ) as chronic_absence_status,
+
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
     if(tr.student_school_id is not null, true, false) as is_tier3_4,

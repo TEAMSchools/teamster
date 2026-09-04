@@ -1,0 +1,177 @@
+models:
+  - name: int_students__gradebook_assignments_scores
+    description: >-
+      SIS-neutral assignment-score spine. Each row is one student's score on one
+      gradebook assignment. Unions
+      `int_powerschool__gradebook_assignments_scores` (the three PowerSchool
+      districts — Newark, Camden, Paterson) with Miami's Focus gradebook grades,
+      conformed inline to the PowerSchool column vocabulary. Miami's PowerSchool
+      gradebook archive is excluded in every year — Focus is Miami's sole
+      gradebook source, and the Focus branch carries every year Focus has data
+      for.
+
+
+      `assignmentsectionid` is PowerSchool's one-row-per-assignment-per-section
+      key; on the Focus branch it is Focus's assignment-to-course-period join
+      row id (`int_focus__gradebook_grades.assignment_course_period_id`,
+      resolved by the focus package), the closest Focus analog at the same
+      grain. `students_dcid` is PowerSchool's internal student id; on the Focus
+      branch it is Focus's internal student row id
+      (`gradebook_grades.student_id`) — join to other Focus-branch data by this
+      column, and to PowerSchool-branch enrollment data by `student_number`,
+      which both branches carry.
+
+
+      Focus scores of `-1` are a not-yet-graded / excused sentinel, not a value
+      — `points_earned` and `assign_final_score_percent` are null wherever Focus
+      posts a negative points value, so a category average never averages in a
+      sentinel.
+
+
+      Focus's `due_date` is stored as a UTC timestamp representing a local
+      (America/New_York) day boundary — 03:59:59Z is 23:59:59 the previous day
+      locally — so the Focus branch's `duedate` casts through `local_timezone`
+      rather than taking a bare `date()`.
+
+
+      Null on the Focus branch: `is_missing` (Focus has no missing flag on a
+      gradebook score) and `numeric_grade_earned` (Focus scores are
+      points-based; there is no PERCENT / GRADESCALE score type). Null on the
+      PowerSchool branch: `marking_period_id` (PowerSchool dates assignments
+      rather than storing them by term).
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 1x/day instead of eager. Rebuilds 45.3 times a day at 1.458 GiB a
+          # build, 66.1 GiB/day. Eager buys freshness nothing reads: the only
+          # downstream mart is fct_grades_assignments, which appears in no cube
+          # file and no extract. The cube_semantic_layer exposure does list it,
+          # but no file under src/cube/model/ reads it, so that entry
+          # overstates consumption.
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here is a SIS-cutover tripwire: this model unions a
+          # PowerSchool branch and a Focus branch split by a year floor from
+          # int_students__sis_cutover, and a floor that drifts makes one Miami
+          # academic year emit from both. This model inherits the split from
+          # its parents rather than declaring it, so the test guards a join
+          # fan-out rather than the seam itself -- still a live guard on the
+          # boundary the SIS migration is actively moving. As a view it would
+          # fire only on code change, because the data-change condition
+          # re-materializes tables only. A daily tick keeps it firing.
+          #
+          # 0 4 matches the gradebook_and_gpa_dashboard batch these marts feed.
+          # All 4 leaves (category_grades, gradebook_assignments_scores, gpa,
+          # final_grades) share the tick, so ~any_deps_in_progress serializes
+          # the pass -- they are direct parent-child. The group costs about
+          # 8.7 GiB/day against 228.1 today. Refs #5082
+          automation_condition:
+            cron_schedule: 0 4 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assignmentsectionid
+              - students_dcid
+              - _dbt_source_project
+    columns:
+      - name: _dbt_source_project
+        description: District code location, passed through from each branch.
+        data_type: string
+      - name: assignmentsectionid
+        description: >-
+          PowerSchool's one-row-per-assignment-per-section id. On the Focus
+          branch, the assignment-to-course-period join row id
+          (`int_focus__gradebook_grades.assignment_course_period_id`, resolved
+          by the focus package), the closest Focus analog at the same grain.
+        data_type: int64
+      - name: sectionsdcid
+        description: >-
+          PowerSchool course-section id. On the Focus branch, the Focus
+          course_period_id.
+        data_type: int64
+      - name: students_dcid
+        description: >-
+          PowerSchool internal student id. On the Focus branch, Focus's internal
+          student row id (`gradebook_grades.student_id`), not a PowerSchool id.
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: student_number
+        description: >-
+          Network student number. The student key both branches carry; join to
+          enrollment data on this column, not on `students_dcid`.
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: School year in start-year form.
+        data_type: int64
+      - name: marking_period_id
+        description: >-
+          Focus marking period id. Null on the PowerSchool branch — PowerSchool
+          dates assignments rather than storing them by term.
+        data_type: int64
+      - name: duedate
+        description: >-
+          Assignment due date. On the Focus branch, cast from `due_date` through
+          `local_timezone` — Focus stores the local day boundary as a UTC
+          timestamp, so a bare date cast would shift every Miami due date
+          forward one day.
+        data_type: date
+      - name: assignment_name
+        description: Assignment title.
+        data_type: string
+      - name: category_name
+        description: >-
+          Assignment category/type name. On the Focus branch, the raw assignment
+          type title (e.g. Formative, Homework, Work Habits, Summative).
+        data_type: string
+      - name: category_code
+        description: >-
+          Assignment category code, sharing PowerSchool's storecode_type domain.
+          On the Focus branch, mapped from the assignment type title (Formative
+          -> F, Homework -> H, Work Habits -> W, Summative -> S); an unmapped
+          title falls through to itself.
+        data_type: string
+      - name: points_earned
+        description: >-
+          Points earned on the assignment. On the Focus branch, null when
+          Focus's stored points value is negative (the -1 not-yet-graded /
+          excused sentinel).
+        data_type: float64
+      - name: numeric_grade_earned
+        description: >-
+          Non-points numeric grade (PERCENT / GRADESCALE score types). Null on
+          every Focus row — Focus scores are points-based only.
+        data_type: float64
+      - name: totalpointvalue
+        description: Total points possible on the assignment.
+        data_type: float64
+      - name: assign_final_score_percent
+        description: >-
+          Score as a percent of points possible. On the Focus branch, null when
+          Focus's stored points value is negative (the -1 sentinel).
+        data_type: float64
+      - name: is_missing
+        description: >-
+          1 when the assignment is flagged missing. Null on every Focus row —
+          Focus records no missing flag on a gradebook score.
+        data_type: int64
+      - name: is_late
+        description: 1 when the assignment was submitted late.
+        data_type: int64
+      - name: is_exempt
+        description: 1 when the score is excluded from the average.
+        data_type: int64
+      - name: is_expected
+        description: >-
+          True when the score both counts toward the final grade and is not
+          exempt from the average.
+        data_type: bool
+      - name: iscountedinfinalgrade
+        description: 1 when the assignment counts toward the final grade.
+        data_type: int64
