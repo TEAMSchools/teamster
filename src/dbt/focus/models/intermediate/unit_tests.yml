@@ -23,6 +23,8 @@ unit_tests:
           union all
           select 5, 791, 7261, 22, cast(null as timestamp), cast(null as numeric),
             cast(null as int64)
+      - input: ref('int_focus__custom_field_log__unpivot')
+        rows: []
       - input: ref('int_focus__students__pivot')
         format: sql
         rows: |
