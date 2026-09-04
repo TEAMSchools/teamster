@@ -54,6 +54,7 @@ nav:
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
       - Claude + Cube Connector: guides/claude-cube-connector.md
+      - Editing Tableau Workbooks: guides/tableau-workbook-editing.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
