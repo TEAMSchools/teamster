@@ -75,16 +75,45 @@ Never run it without the user naming the workbook and the change. Dry-run into
 `TEMP-CB` (`ddc817c2-6bc7-4bca-8be9-e385f95b9ebc`, owned by the same account as
 the gated workbooks) with `PublishMode.CreateNew` first.
 
-**A publish drops four pieces of server-side state that are NOT in the `.twb`.**
-Restore every one or the overwrite silently degrades the workbook. Verified
-end-to-end on SchoolMint Grow 2026-09-04:
+**A publish drops five pieces of server-side state that are NOT in the `.twb`.**
+Restore every one or the overwrite silently degrades the workbook. Learned on
+SchoolMint Grow 2026-09-04, the fifth one the hard way:
 
 | Dropped                          | Restore with                                          |
 | -------------------------------- | ----------------------------------------------------- |
+| **Embedded connection creds**    | **see below — this one breaks the extract refresh**   |
 | Desktop's published-sheet choice | `item.hidden_views = [...]` **at publish time**       |
 | Workbook owner                   | `wb.owner_id = ...` then `workbooks.update(wb)`       |
 | Workbook tags                    | `wb.tags = {...}` then `workbooks.update(wb)`         |
 | Per-view tags                    | `v.tags = {...}` then `views.update(v)`, one per view |
+
+**Embedded credentials are the dangerous one, because the failure is silent and
+delayed.** A publish that omits them leaves a workbook that looks perfectly
+healthy — every view renders, because the datasources are embedded `.hyper`
+extracts and nothing needs to authenticate to read them. The first thing that
+needs credentials is the next **extract refresh**, which fails hours later with:
+
+```text
+Tableau needs an unexpired OAuth refresh token to connect to the data.
+```
+
+That is what a publish of `SchoolMint Grow Dashboard` at 17:08:58 did on
+2026-09-04: refresh failed at 18:33:07 having succeeded for the previous 30
+days. Nothing in the workbook metadata shows it — `populate_connections` still
+reports `embed_password=True` and the right service-account username, because
+that field records intent, not a live token.
+
+`workbooks.publish()` takes a `connections` sequence of `ConnectionItem`, and
+`workbooks.update_connection(workbook_item, connection_item)` exists (populate
+connections first). **Neither is verified to restore BigQuery OAuth** — the
+`update_connection` docstring covers server address, port, username and
+password, and says nothing about OAuth tokens. So until someone tests it, treat
+the reliable fix as re-embedding from Desktop (republish with _Embed password_
+checked) or on Server via the workbook's Data Connections page.
+
+**Therefore: after any publish to these workbooks, trigger a refresh and confirm
+it succeeds before calling the job done.** Checking metadata is not enough; that
+is precisely the check that missed this.
 
 `hidden_views` is the load-bearing one. Which sheets Desktop published lives on
 the server, not in the file, so a REST publish exposes every sheet the `.twb`

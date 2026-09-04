@@ -17,10 +17,15 @@ carries the paste-ready text of every gate.
     loads automatically: `.claude/context/tableau.md` carries the condensed
     version and is injected on the first Tableau MCP call.
 
-Proven end to end on 2026-09-04 against `tableau.kipp.org` / site `KIPPNJ`:
-audited the RLS calculations in all 11 permission-gated workbooks, then deleted
-a dead calculated field from `SchoolMint Grow Dashboard` and republished
-Production with every attribute verified intact.
+Exercised on 2026-09-04 against `tableau.kipp.org` / site `KIPPNJ`: audited the
+RLS calculations in all 11 permission-gated workbooks, then deleted a dead
+calculated field from `SchoolMint Grow Dashboard` and republished Production.
+
+That publish also **broke the workbook's next extract refresh**, because it
+dropped the embedded connection credentials and the verification checked only
+metadata. Both facts are in this page: the recipe works, and the credentials
+step is the one that is easy to miss and expensive to miss. Read _A publish
+drops five pieces of server-side state_ before publishing anything.
 
 ---
 
@@ -212,17 +217,44 @@ near the server.
 as the gated workbooks. Publish there with `PublishMode.CreateNew` under a
 clearly temporary name, open it, confirm it renders, then do the real one.
 
-### A publish drops four pieces of server-side state
+### A publish drops five pieces of server-side state
 
 None of these live in the `.twb`. Restore every one, or the workbook silently
 degrades:
 
-| Dropped                          | Restore with                                          |
-| -------------------------------- | ----------------------------------------------------- |
-| Desktop's published-sheet choice | `item.hidden_views = [...]` **at publish time**       |
-| Workbook owner                   | `wb.owner_id = ...` then `workbooks.update(wb)`       |
-| Workbook tags                    | `wb.tags = {...}` then `workbooks.update(wb)`         |
-| Per-view tags                    | `v.tags = {...}` then `views.update(v)`, one per view |
+| Dropped                          | Restore with                                       |
+| -------------------------------- | -------------------------------------------------- |
+| **Embedded connection creds**    | **see the warning below — breaks extract refresh** |
+| Desktop's published-sheet choice | `item.hidden_views = [...]` **at publish time**    |
+| Workbook owner                   | `wb.owner_id = ...` then `workbooks.update(wb)`    |
+| Workbook tags                    | `wb.tags = {...}` then `workbooks.update(wb)`      |
+| Per-view tags                    | `v.tags = {...}` then `views.update(v)`, per view  |
+
+!!! danger "Embedded credentials fail silently, hours later"
+
+    A publish that omits embedded connection credentials leaves a workbook that
+    looks perfectly healthy. Every view renders, because the datasources are
+    embedded `.hyper` extracts and reading them authenticates against nothing.
+    The first thing that needs credentials is the next **extract refresh**, which
+    fails with `Tableau needs an unexpired OAuth refresh token to connect to the
+    data.`
+
+    This happened to `SchoolMint Grow Dashboard` on 2026-09-04: published at
+    17:08:58, refresh failed at 18:33:07 after 30 days of clean refreshes. No
+    metadata check catches it — `populate_connections` still reports
+    `embed_password=True` with the correct service-account username, because that
+    field records intent rather than a live token.
+
+    `workbooks.publish()` accepts a `connections` sequence of `ConnectionItem`,
+    and `workbooks.update_connection(workbook_item, connection_item)` exists
+    (populate connections first). **Neither is verified to restore BigQuery
+    OAuth** — `update_connection`'s docstring covers server address, port,
+    username and password, and is silent on OAuth tokens. Until that is tested,
+    the reliable fix is re-embedding from Desktop (republish with _Embed
+    password_ checked) or on Server via the workbook's Data Connections page.
+
+    **After any publish, trigger a refresh and confirm it succeeds.** Metadata
+    verification is not sufficient — that is exactly the check that missed this.
 
 **`hidden_views` is the one that bites.** Which sheets Desktop chose to publish
 is server-side state absent from the file, so a REST publish exposes every sheet
@@ -267,7 +299,8 @@ restoring rather than assuming the revision is self-contained.
 
 1. Download with `include_extract=False`; find and read the target calculation.
 1. Record pre-state: id, name, project, owner, `show_tabs`, `content_url`,
-   workbook tags, per-view tags, permission-rule count, latest revision.
+   workbook tags, per-view tags, permission-rule count, latest revision, **and
+   `populate_connections` output for every connection**.
 1. Download again with `include_extract=True`.
 1. Edit the `.twb` text with targeted surgery, then assert: the target is gone
    or changed, **zero lines added** if you only meant to delete, every other
@@ -277,7 +310,11 @@ restoring rather than assuming the revision is self-contained.
 1. Publish `Overwrite` to Production with `hidden_views`; assert id and
    `content_url` are unchanged.
 1. Restore owner, workbook tags, and per-view tags.
-1. Re-download and diff every recorded attribute against pre-state.
+1. Re-embed the connection credentials, then re-download and diff every recorded
+   attribute against pre-state.
+1. **Trigger an extract refresh and confirm it finishes `Success`.** This is the
+   only step that proves the credentials survived, and it is the one the
+   2026-09-04 publish skipped.
 
 ## Before you publish
 
