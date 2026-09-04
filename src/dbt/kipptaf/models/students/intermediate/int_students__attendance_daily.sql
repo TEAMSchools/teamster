@@ -13,12 +13,22 @@ with
     -- One row. See int_students__sis_cutover for why the boundary is a floor
     -- derived from recorded attendance rather than from Focus row presence:
     -- int_focus__attendance_daily scaffolds a present-by-default row back to
-    -- AY2020, so scoping on the years it contains would fill Miami's AY2020
-    -- through AY2025 gap with fabricated perfect attendance. Since #4803 that
-    -- gap is real and intended -- Miami has no attendance in this model before
-    -- AY2026 -- which the scaffold would silently paper over.
+    -- AY2020, so scoping on the years it contains would replace six years of
+    -- real PowerSchool attendance with fabricated perfect attendance.
     cutover as (
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
+    ),
+
+    -- Focus re-dated Miami's enrollment stints (a returning student's stint
+    -- starts on the real first day of school, where PowerSchool used a July 1
+    -- rollover), and entrydate feeds student_enrollment_key, so the frozen
+    -- archive's Miami rows are re-keyed to the Focus stint that contains the
+    -- day (#4803, #5114). Only Miami stints: NJ attendance already agrees with
+    -- its enrollment source.
+    focus_stints as (
+        select student_number, entrydate, exitdate, academic_year - 1990 as yearid,
+        from {{ ref("int_students__student_enrollment_union") }}
+        where _dbt_source_project = 'kippmiami'
     ),
 
     -- The per-district ctod source carries 561 duplicate (studentid,
@@ -54,15 +64,29 @@ with
         }}
     ),
 
-    -- Project-scoped, the way int_students__terms is: the frozen Miami
-    -- PowerSchool archive is excluded outright rather than year-scoped,
-    -- because Focus re-dated Miami's enrollment stints and the archive's rows
-    -- no longer join to dim_student_enrollments. See #4803 for the
-    -- measurements and the rejected re-key alternative; the model description
-    -- carries what the marts lose.
+    -- Miami's student_number is the 8400-prefixed Focus id since #5148, and the
+    -- frozen archive carries the bare PowerSchool number. Same arithmetic as
+    -- #5149 applies to pre-Focus vendor rows; int_focus__students.powerschool_id
+    -- confirms the offset for every archive student.
+    powerschool_renumbered as (
+        select
+            * except (student_number),
+
+            if(
+                _dbt_source_project = 'kippmiami',
+                student_number + 8400000000,
+                student_number
+            ) as student_number,
+        from powerschool_deduped
+    ),
+
+    -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
+    -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
+    -- outright (the way int_students__terms does) would delete six years of
+    -- history.
     powerschool_conformed as (
         select
-            powerschool_deduped.*,
+            ps.* except (entrydate),
 
             -- PowerSchool has no analog to Focus's "register never taken"
             -- signal. Every PowerSchool row IS a recorded attendance row,
@@ -79,8 +103,23 @@ with
             -- compatibility scaffolding (studentid included) eventually
             -- leaving this model.
             false as is_focus_source,
-        from powerschool_deduped
-        where powerschool_deduped._dbt_source_project != 'kippmiami'
+
+            -- Archive date when no Focus stint contains the day (51 AY2025 rows
+            -- per #4803); those rows already resolve on the archive date.
+            coalesce(fs.entrydate, ps.entrydate) as entrydate,
+        from powerschool_renumbered as ps
+        cross join cutover as c
+        left join
+            focus_stints as fs
+            on ps.student_number = fs.student_number
+            and ps.yearid = fs.yearid
+            and ps.calendardate >= fs.entrydate
+            and ps.calendardate < fs.exitdate
+        where
+            not (
+                ps._dbt_source_project = 'kippmiami'
+                and ps.yearid >= c.focus_start_academic_year - 1990
+            )
     ),
 
     -- The whole Focus-to-network translation lives here. See "The conform
@@ -139,16 +178,9 @@ with
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
         cross join cutover as c
-        -- Required, and since #4803 the ONLY thing holding Miami's pre-AY2026
-        -- rows out. The grain test used to catch a missing filter here,
-        -- because these rows collided with PowerSchool's real Miami rows on
-        -- the same school-days; dropping that archive removed the collision,
-        -- so the test now passes without this predicate. What remains is
-        -- worse because it is silent: int_focus__attendance_daily scaffolds a
-        -- present-by-default row (is_attendance_recorded = false) back to
-        -- AY2020, so relaxing this filter fills Miami's AY2020 through AY2025
-        -- gap with fabricated perfect attendance instead of leaving it empty.
-        -- Do not relax it.
+        -- Required, not belt-and-braces. Without it Focus's AY2020 through
+        -- AY2025 rows land beside PowerSchool's real rows for the same Miami
+        -- school-days and break this model's own grain test.
         where ad.academic_year >= c.focus_start_academic_year
     ),
 
