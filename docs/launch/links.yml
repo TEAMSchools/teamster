@@ -273,17 +273,6 @@
   group: attendance
   status: verified
 
-- id: operations_systems
-  name: Operations Systems
-  url: https://tableau.kipp.org/t/KIPPNJ/views/OperationsSystems/Walkthroughs?:embed=y
-  description:
-    Operations Walkthroughs, plus Operations Teammate Performance Management
-    results and roll-ups.
-  audiences: [ops]
-  system: tableau
-  group: performance
-  status: verified
-
 - id: ops_dashboard
   name: Ops Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/OpsDashboard/EnrollmentDashboard?:embed=y
