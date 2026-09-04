@@ -497,7 +497,6 @@ select
         homeless_code,
         homeless_primary_nighttime_residence_code,
         gifted_and_talented,
-        fleid,
         is_504
     ),
 
@@ -511,9 +510,8 @@ select
     ar.student_number as pearson_local_student_identifier,
 
     /* regional differences */
-    -- suf carries the PowerSchool-era value; ar.fleid is Focus's
-    -- florida_education_identifier (Miami only). They never overlap.
-    coalesce(suf.fleid, ar.fleid) as fleid,
+    -- fleid comes only from Focus (florida_education_identifier), via ar.*;
+    -- the PowerSchool u_studentsuserfields copy is retired.
     suf.newark_enrollment_number,
     suf.infosnap_id,
     suf.infosnap_opt_in,

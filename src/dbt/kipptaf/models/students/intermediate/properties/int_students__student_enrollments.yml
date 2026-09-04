@@ -545,8 +545,8 @@ models:
       - name: fleid
         data_type: string
         description:
-          Florida Education Identifier. PowerSchool u_studentsuserfields for the
-          frozen archive years; Focus florida_education_identifier for Miami.
+          Florida Education Identifier, from Focus florida_education_identifier.
+          Miami only; the PowerSchool u_studentsuserfields copy is retired.
       - name: newark_enrollment_number
         data_type: string
       - name: infosnap_id
