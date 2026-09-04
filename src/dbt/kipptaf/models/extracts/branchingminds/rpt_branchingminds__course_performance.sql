@@ -1,26 +1,18 @@
-with
-    -- grain projection: student_number is functionally determined by
-    -- studentid within a region, so DISTINCT here is a projection, not a
-    -- dedupe mask
-    enrollments as (
-        select distinct studentid, student_number, _dbt_source_project,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
-        where academic_year = {{ var("current_academic_year") }}
-    )
-
+-- trunk-ignore(sqlfluff/ST06): column order fixed by the Branching Minds template
 select
-    cast({{ var("current_academic_year") }} + 1 as string) as school_year_id,
-
     concat(sg._dbt_source_project, '-', cast(sg.dcid as string)) as record_id,
-    cast(enr.student_number as string) as student_id,
+    cast(s.student_number as string) as student_id,
     concat(sg._dbt_source_project, '-', sg.course_number) as course_id,
+    cast(sg.academic_year + 1 as string) as school_year_id,
     cast(sg.percent as string) as `grade`,
 from {{ ref("stg_powerschool__storedgrades") }} as sg
 inner join
-    enrollments as enr
-    on sg.studentid = enr.studentid
-    and sg._dbt_source_project = enr._dbt_source_project
+    {{ ref("stg_powerschool__students") }} as s
+    on sg.studentid = s.id
+    and sg._dbt_source_project = s._dbt_source_project
 where
     sg._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
-    and sg.termid >= 3600
+    and sg.academic_year = {{ var("current_academic_year") }}
     and sg.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+    -- grade is required by the vendor; a stored grade with no percent is unusable
+    and sg.percent is not null

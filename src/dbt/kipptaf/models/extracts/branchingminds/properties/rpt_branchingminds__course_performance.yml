@@ -5,8 +5,9 @@ models:
       Camden, and Paterson, built for the Branching Minds daily SFTP feed.
       Sourced from PowerSchool's stored (posted) grades rather than the live
       gradebook, so a grade only appears here once a quarter is finalized --
-      expect this to be empty early in a quarter. Scoped to the current academic
-      year only.
+      expect this to be empty early in a quarter. Stored grades with no percent
+      are dropped, since the vendor requires a grade. Scoped to the current
+      academic year only.
     columns:
       - name: record_id
         data_type: string
@@ -29,8 +30,8 @@ models:
       - name: course_id
         data_type: string
         description: >-
-          PowerSchool course number, prefixed by district since course numbers
-          repeat across districts.
+          PowerSchool course number prefixed by district, matching
+          rpt_branchingminds__course_info.course_id.
       - name: school_year_id
         data_type: string
         description: >-

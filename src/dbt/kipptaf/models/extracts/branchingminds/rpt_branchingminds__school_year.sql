@@ -5,6 +5,7 @@ with
             dd.academic_year,
 
             count(if(dsc.is_in_session, 1, null)) as instruction_days,
+            min(if(dsc.is_in_session, dsc.date_key, null)) as start_date,
             max(if(dsc.is_in_session, dsc.date_key, null)) as end_date,
         from {{ ref("dim_school_calendars") }} as dsc
         inner join {{ ref("dim_dates") }} as dd on dsc.date_key = dd.date_key
@@ -17,12 +18,13 @@ with
             dl.region_key,
             scd.academic_year,
 
-            max(scd.end_date) as end_date,
-
             -- approximation: schools within a region don't all share one
             -- calendar (diverges most at year-end); this averages across
             -- schools in the region rather than reporting per-school
-            round(avg(scd.instruction_days)) as instruction_days,
+            cast(round(avg(scd.instruction_days)) as int64) as instruction_days,
+
+            min(scd.start_date) as calendar_start_date,
+            max(scd.end_date) as end_date,
         from school_calendar_days as scd
         inner join
             {{ ref("dim_locations") }} as dl on scd.location_key = dl.location_key
@@ -31,29 +33,15 @@ with
     )
 
 select
+    cast(rsy.academic_year + 1 as string) as school_year_id,
+    {{ branchingminds_district_id("dr.name") }} as district_id,
+    concat(rsy.academic_year, '-', rsy.academic_year + 1) as `name`,
+    coalesce(
+        {{ branchingminds_first_day_override("dr.name", "rsy.academic_year") }},
+        rsy.calendar_start_date
+    ) as start_date,
     rsy.end_date,
     rsy.instruction_days,
-
-    cast(rsy.academic_year + 1 as string) as school_year_id,
-    concat(rsy.academic_year, '-', rsy.academic_year + 1) as `name`,
-
-    -- KTAF-assigned BRM district codes (not a state/vendor-issued id)
-    case
-        dr.name
-        when 'Newark'
-        then '7325'
-        when 'Camden'
-        then '1799'
-        when 'Paterson'
-        then '7899'
-    end as district_id,
-
-    -- official first day of school per district -- overrides the
-    -- calendar's is_in_session flag, which marks 8/19-8/23 as in-session
-    -- for Newark/Paterson too even though their real first day was 8/24
-    case
-        dr.name when 'Camden' then date '2026-08-19' else date '2026-08-24'
-    end as start_date,
 from region_school_years as rsy
 inner join {{ ref("dim_regions") }} as dr on rsy.region_key = dr.region_key
 where dr.name in ('Newark', 'Camden', 'Paterson')

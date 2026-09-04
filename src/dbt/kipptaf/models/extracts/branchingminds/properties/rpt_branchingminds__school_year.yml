@@ -2,12 +2,12 @@ models:
   - name: rpt_branchingminds__school_year
     description: >
       One row per KTAF district per academic year, built for the Branching Minds
-      daily SFTP feed. Start date is a hardcoded override for each district's
-      official first day of school, since the school calendar's in-session flag
-      marks a handful of early dates as in-session for some districts that
-      predate their real opening. End date and instructional day count are
-      averaged across every school in the district. Scoped to Newark, Camden,
-      and Paterson for the current academic year only.
+      daily SFTP feed. Start date is the district's official first day of school
+      where that differs from the school calendar (SY26-27 only), otherwise the
+      earliest in-session calendar date across the district's schools. End date
+      is the latest in-session date and instruction days the average count
+      across schools, since schools within a district don't share one calendar.
+      Scoped to Newark, Camden, and Paterson for the current academic year only.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -36,22 +36,26 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: start_date
+        data_type: date
+        description: >-
+          First day of school for the district. A per-year official override
+          where the calendar disagrees, otherwise the earliest in-session date
+          across the district's schools.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: name
         quote: true
         data_type: string
         description: Human-readable school year label, e.g. 2026-2027.
-      - name: start_date
-        data_type: date
-        description: >-
-          Official first day of school for the district, hardcoded per district
-          rather than derived from the school calendar.
       - name: end_date
         data_type: date
         description: >-
-          Latest in-session calendar date across the district's schools,
-          averaged to a single value at district grain.
+          Latest in-session calendar date across the district's schools.
       - name: instruction_days
-        data_type: float64
+        data_type: int64
         description: >-
           Average count of in-session calendar days across the district's
-          schools for the year.
+          schools for the year, rounded to a whole day.
