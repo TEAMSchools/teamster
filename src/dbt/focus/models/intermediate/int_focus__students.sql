@@ -16,6 +16,8 @@ with
             p.label_residence_county as residence_county_label,
             p.label_language as language_label,
             p.label_ese_fefp_code as ese_fefp_code_label,
+            p.code_section_504_eligible as section_504_eligible_code,
+            p.label_section_504_eligible as section_504_eligible_label,
             p.label_english_language_learner_pk_12
             as english_language_learner_pk_12_label,
             p.label_gifted_eligibility as gifted_eligibility_label,
@@ -59,9 +61,10 @@ with
         select
             *,
 
-            cast(
-                regexp_replace(cast(student_id as string), r'^8400', '') as int64
-            ) as student_number,
+            -- The Focus student_id (8400-prefixed) is the Miami student number.
+            -- The bare pre-migration number lives on powerschool_id for
+            -- returning students and is no longer a join key.
+            student_id as student_number,
 
             date(birthdate) as dob,
 
@@ -70,6 +73,21 @@ with
             lpad(cast(disis_id as string), 7, '0') as state_studentnumber,
 
             if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
+
+            -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. The
+            -- label is the stable key for this select option.
+            case
+                ethnicity_hispanic_or_latino_label when 'Yes' then 1 when 'No' then 0
+            end as fedethnicity,
+
+            -- Y and N both assert a 504 plan (N is 504-eligible but not IDEA);
+            -- I and Z are explicit negatives; unset stays null, not false.
+            case
+                when section_504_eligible_code in ('Y', 'N')
+                then true
+                when section_504_eligible_code in ('I', 'Z')
+                then false
+            end as is_504,
 
             case
                 when gifted_eligibility_label like 'Student was determined eligible%'

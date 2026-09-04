@@ -629,21 +629,6 @@ data_tests:
           ref:
             name: rpt_parentsquare__students
 
-  - name: test_focus_unprefix_rule_holds
-    description: >-
-      Focus records the pre-migration student number on returning students, so
-      it is an independent check on the unprefix rule: stripping the 8400 prefix
-      must land on the same value Focus already stored. Warn rather than error,
-      because the one known anomalous id (a 10-digit value carrying no 8400
-      prefix) passes through deliberately and is an Ops correction in Focus, not
-      a modeling defect.
-    config:
-      severity: warn
-      meta:
-        dagster:
-          ref:
-            name: int_students__students
-
   - name: int_students__calendar_day__zero_enrollment_in_session_days
     description: >-
       Focus in-session days at a school that enrolled nobody that year. Five
