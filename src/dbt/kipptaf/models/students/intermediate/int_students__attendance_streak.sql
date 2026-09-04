@@ -19,15 +19,15 @@ with
             )
     ),
 
-    -- int_focus__attendance_streak splits the district's overloaded att_code
-    -- into streak_type plus streak_value: a 'daily_code' family (the actual
-    -- Focus attendance code, null on a present day) and a 'state_value' family
-    -- (the stringified present/absent value). int_powerschool__attendance_streak
-    -- unions the same two families (a code streak plus an attendancevalue
-    -- streak), so both Focus families are kept, unfiltered, to reassemble the
-    -- same district shape. Reassemble the code family's district labeling: a
-    -- present streak has a null streak_value because daily_code is null on a
-    -- present day, and PowerSchool labels that same streak 'P'.
+    -- `int_focus__attendance_streak` splits the district's overloaded
+    -- `att_code` into `streak_type` plus `streak_value`. The 'daily_code'
+    -- family carries the actual Focus attendance code, which is null on a
+    -- present day. The 'state_value' family carries the stringified
+    -- present/absent value. `int_powerschool__attendance_streak` unions the
+    -- same 2 families, so both Focus families stay unfiltered here to
+    -- reassemble the same district shape. Reassemble the code family's district
+    -- labeling too: a present streak has a null `streak_value` because
+    -- `daily_code` is null on a present day, and PowerSchool labels it 'P'.
     focus_conformed as (
         select
             fa.student_number,

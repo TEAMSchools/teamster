@@ -214,6 +214,7 @@ with
             c.contact_actual_college_graduation_date,
             c.contact_actual_hs_graduation_date,
             c.contact_advising_provider,
+            c.contact_college_counselor_id,
             c.contact_college_graduated_from,
             c.contact_college_match_display_gpa,
             c.contact_current_college_cumulative_gpa,
@@ -270,6 +271,7 @@ with
             c.record_type_last_modified_by_id,
             c.record_type_namespace_prefix,
             c.contact_postsec_advisor_name,
+            c.contact_college_counselor_name,
             c.years_out_of_hs,
 
             os.id as overgrad_students_id,

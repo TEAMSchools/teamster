@@ -1,12 +1,13 @@
 with
     recent_leave as (
-        -- Joins PMS terms only, and AY2026 has no PMS PM1 term row (AY2024 and
-        -- AY2025 did), so this yields PM2/PM3 rows only. The pm_round_eligible
-        -- leave guard is therefore inert for PM1 until Ops re-adds that row.
-        -- grain projection: every selected column is functionally determined by
-        -- (employee_number, academic_year, code) -- recent_leave is a constant,
-        -- so multiple matching roster-history rows collapse to one
-        -- byte-identical tuple. Not a mask for upstream duplicates.
+        -- grain projection, not dup-masking: every selected column is
+        -- determined by (`employee_number`, `academic_year`, `code`), and
+        -- `recent_leave` is a constant, so multiple matching roster-history rows
+        -- collapse to 1 byte-identical tuple.
+        -- Joins PMS terms only, and AY2026 has no PMS PM1 term row where AY2024
+        -- and AY2025 had one, so this yields PM2 and PM3 rows only. The
+        -- `pm_round_eligible` leave guard stays inert for PM1 until Ops re-adds
+        -- that row.
         select distinct
             srh.employee_number, t.academic_year, t.code, true as recent_leave,
         from {{ ref("int_people__staff_roster_history") }} as srh

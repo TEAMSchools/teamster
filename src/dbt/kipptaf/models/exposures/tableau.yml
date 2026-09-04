@@ -263,6 +263,7 @@ exposures:
       - ref("rpt_tableau__okrts_behavior")
       - ref("rpt_tableau__okrts_referrals")
       - ref("rpt_tableau__suspension_over_time")
+      - ref("rpt_tableau__home_instruction")
     config:
       meta:
         dagster:
@@ -351,6 +352,24 @@ exposures:
                 - 0 12 * * *
                 - 30 14 * * *
                 - 15 16 * * *
+  - name: academic_gradebook_health_suite
+    label: Academic & Gradebook Health Suite
+    type: dashboard
+    owner:
+      name: Data Team - awalters
+    depends_on:
+      - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__student_course_grades")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: b3c14d67-3130-46ac-82a0-0637a5cc2da5
+              cron_schedule: 0 4 * * *
   - name: gradebook_and_gpa_dashboard
     label: Gradebook and GPA Dashboard
     type: dashboard
@@ -536,6 +555,11 @@ exposures:
             metadata:
               id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
               cron_schedule: 0 6 * * *
+  # Archive only. Leadership Development moved to Lattice on 2026-07-30 and the
+  # upstream dbt models are disabled. This workbook never had a Dagster
+  # cron_schedule, so Dagster never refreshed it -- any remaining extract
+  # refresh is a Tableau-side schedule and has to be removed in Tableau.
+  # Refs #4627
   - name: leadership_development
     label: Leadership Development
     type: dashboard
@@ -544,6 +568,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__leadership_development")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
@@ -791,8 +816,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("rpt_tableau__gpa_cumulative_year")
-      - ref("rpt_tableau__gpa_goals")
+      - ref("rpt_tableau__gpa_goal_progress")
     # TODO(#4619): update to the published Cumulative GPA Monitor workbook URL
     url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/TBD
     config:

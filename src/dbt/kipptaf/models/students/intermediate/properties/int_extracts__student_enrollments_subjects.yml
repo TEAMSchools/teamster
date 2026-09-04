@@ -1,5 +1,10 @@
 models:
   - name: int_extracts__student_enrollments_subjects
+    description: >-
+      Network-wide subject scaffold, Miami included. Miami held 3,520 AY2026
+      rows in prod as of 2026-08-27. Carries the same enrollment flags as
+      `int_extracts__student_enrollments`, with the same Miami caveats. Ratified
+      on #4996.
     config:
       schema: extracts
       materialized: table

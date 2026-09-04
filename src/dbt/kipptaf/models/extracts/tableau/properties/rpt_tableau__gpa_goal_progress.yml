@@ -1,0 +1,268 @@
+models:
+  - name: rpt_tableau__gpa_goal_progress
+    description: >-
+      The Cumulative GPA Monitor's single data source. Passes through every
+      column of rpt_tableau__gpa_cumulative_year unchanged and adds the GPA goal
+      that applies to each student, at the network, region, and school rung.
+      Exists as a separate model rather than columns on the extract because two
+      published dashboards read the extract through a Tableau relationship that
+      declares it unique, and it is a view, so a fan-out there would ship
+      silently. Fold this model into the extract once that change can be made
+      behind its own controls, then disable this one. Every passthrough column
+      is listed explicitly because the repo forbids `select *` in a final rpt_
+      select — so a column added to rpt_tableau__gpa_cumulative_year does NOT
+      appear here automatically and must be added to this model's select list
+      and to this contract by hand.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: studentid
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: academic_year
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: schoolid
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: grade_level
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_projected
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: earned_credits_cum
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: potential_gpa_credits_cum
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: student_number
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: student_name
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: academic_year_display
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: region
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: school_level
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: school
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: enroll_status
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: cohort
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: graduation_year
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: gender
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: ethnicity
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: advisory
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: year_in_school
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: year_in_network
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: rn_undergrad
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_pathways
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_retained_year
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_retained_ever
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: student_slideback
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: lunch_status
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: lep_status
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: gifted_and_talented
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: iep_status
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_504
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: salesforce_id
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: ktc_cohort
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_counseling_services
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_student_athlete
+        data_type: int64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: ada
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: ada_above_or_at_80
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: hos
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: school_leader
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: school_leader_tableau_username
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: cumulative_y1_gpa_unweighted_as_of_today
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: gpa_needed_for_cumulative_3_0
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_cumulative_3_0_attainable
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: potential_gpa_credits_current_year
+        data_type: float64
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_latest_graded_year
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: is_on_cusp_3_0
+        data_type: boolean
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: gpa_band_label
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: gpa_band_as_of_today_label
+        data_type: string
+        description:
+          Passthrough from `rpt_tableau__gpa_cumulative_year`, unchanged.
+      - name: gpa_goal_threshold
+        data_type: numeric
+        description: >-
+          Cumulative unweighted GPA the student must reach to count toward their
+          grade's goal, from the network-rung goal. NULL when no goal applies to
+          the row: any grade below 9, and every academic year before 2025, since
+          the goals sheet only carries 2025 onward. The dashboard compares with
+          `>=`; see gpa_goal_proportion_org.
+      - name: gpa_goal_proportion_org
+        data_type: numeric
+        description: >-
+          Target share of students network-wide expected to reach the threshold,
+          as a proportion. NULL exactly when gpa_goal_threshold is NULL — a
+          grade below 9, or an academic year the goals sheet does not cover
+          (anything before 2025). This is the column to test when you want to
+          know whether a row has a goal at all. The goal is stated as a share
+          reaching the threshold, so the comparison is `>=`; the underlying
+          `direction` is not carried on this model, and a change to it upstream
+          would not be reflected here.
+      - name: gpa_goal_proportion_region
+        data_type: numeric
+        description: >-
+          Target share for the student's region, as a proportion. NULL when the
+          region has no region-rung goal for that grade and year, which does NOT
+          mean the row has no goal — the network target in
+          gpa_goal_proportion_org still applies. Every region this model covers
+          has region-rung goals today, so in practice this is non-NULL wherever
+          gpa_goal_proportion_org is. Test gpa_goal_proportion_org, not this
+          column, to find rows with goals.
+      - name: gpa_goal_proportion_school
+        data_type: numeric
+        description: >-
+          Target share for the student's school, as a proportion. NULL when the
+          school has no school-rung goal for that grade and year, on the same
+          basis as gpa_goal_proportion_region — a NULL here does not mean the
+          row has no goal.

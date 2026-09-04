@@ -27,6 +27,17 @@ with
         }}
     ),
 
+    -- The roster has first_day_of_school but no year-end date.
+    -- int_students__calendar_week remaps Focus's internal school id to the
+    -- network school number, which is the id ps_schoolid carries; school
+    -- numbers are network-unique, so no region filter is needed here.
+    focus_school_year_end as (
+        select
+            academic_year, schoolid, max(last_day_school_year) as last_day_school_year,
+        from {{ ref("int_students__calendar_week") }}
+        group by academic_year, schoolid
+    ),
+
     -- One row per Miami student per year, carrying the prior year's grade so
     -- boy_status and is_retained_year reproduce the PowerSchool derivation.
     -- rn_year = 1 picks the primary stint, matching the year grain PowerSchool
@@ -44,8 +55,42 @@ with
             lag(academic_year) over (
                 partition by network_student_number order by academic_year asc
             ) as academic_year_prev,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where rn_year = 1
+    ),
+
+    -- Focus's stand-in for PowerSchool's "Out of District" special-program
+    -- row (#5041). custom_863, the IDEA educational environment, is the only
+    -- Focus field recording a placement at another institution, and its age
+    -- 6-21 options are exactly PowerSchool's out-of-district set. Florida's
+    -- age 3-5 options are excluded: Miami enrolls no pre-K, so classifying
+    -- them would assert a rule nothing has reviewed --
+    -- test_focus__idea_educational_environment_classified warns if one lands.
+    -- Derived in its own CTE because BigQuery has no lateral column aliases,
+    -- so the four columns below cannot share an alias computed beside them.
+    focus_students as (
+        select
+            _dbt_source_project,
+            ethnicity,
+            gender,
+            gifted_and_talented,
+            homeless_code,
+            homeless_primary_nighttime_residence_code,
+            idea_educational_environment,
+            idea_educational_environment_label,
+            is_homeless,
+            lep_status,
+            lunchstatus,
+            spedlep,
+            state_studentnumber,
+            student_number,
+
+            if(
+                idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),
+                true,
+                false
+            ) as is_out_of_district,
+        from {{ ref("int_focus__students") }}
     ),
 
     focus_conformed as (
@@ -69,9 +114,7 @@ with
             enr.is_enrolled_mar15,
             enr.dob,
             enr.state,
-            enr.school_level,
             enr.school_abbreviation,
-            enr.reporting_schoolid,
 
             stu.spedlep,
             stu.lep_status,
@@ -97,15 +140,56 @@ with
             enr.student_last_name as last_name,
             enr.student_name as lastfirst,
             enr.school as school_name,
-            enr.school as reporting_school_name,
             enr.network_student_number as student_number,
 
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
 
             if(yg.grade_level_prev = enr.grade_level, true, false) as is_retained_year,
-        from {{ ref("int_focus__student_enrollments") }} as enr
+
+            -- #4996. PowerSchool's own expressions, reproduced rather than
+            -- simplified: exitdate is never null here because the roster
+            -- coalesces it, so is_enrolled_y1 is always true today, and a
+            -- `true` literal would silently diverge if that ever changes.
+            if(enr.exitdate is not null, true, false) as is_enrolled_y1,
+
+            case
+                when enr.exitdate >= sye.last_day_school_year
+                then true
+                when
+                    current_date('{{ var("local_timezone") }}')
+                    between enr.startdate and enr.exitdate
+                then true
+                else false
+            end as is_enrolled_recent,
+
+            -- #4996, #5041. PowerSchool drives these four columns off one
+            -- "Out of District" specprog row, so Focus branches all four on
+            -- the same custom_863 match. reporting_schoolid takes the Focus
+            -- option id, the analogue of PowerSchool's specprog programid --
+            -- a hospital or a center school has no Florida school number. The
+            -- if() form is null-safe on both counts: a roster row with no
+            -- matching student, and a student with no custom_863 value, both
+            -- fall to the in-district branch. Every Miami row is Z or null
+            -- today, so all four still resolve to the in-district values.
+            -- is_self_contained has no such source and stays null (#4968).
+            if(stu.is_out_of_district, true, false) as is_out_of_district,
+
+            if(
+                stu.is_out_of_district,
+                stu.idea_educational_environment,
+                enr.reporting_schoolid
+            ) as reporting_schoolid,
+
+            if(
+                stu.is_out_of_district,
+                stu.idea_educational_environment_label,
+                enr.school
+            ) as reporting_school_name,
+
+            if(stu.is_out_of_district, 'OD', enr.school_level) as school_level,
+        from {{ ref("int_focus__student_enrollment_roster") }} as enr
         left join
-            {{ ref("int_focus__students") }} as stu
+            focus_students as stu
             on enr.network_student_number = stu.student_number
             and enr._dbt_source_project = stu._dbt_source_project
         left join
@@ -118,11 +202,25 @@ with
             and enr.academic_year = adv.academic_year
             and enr.schoolid = adv.schoolid
             and enr._dbt_source_project = adv._dbt_source_project
+        left join
+            focus_school_year_end as sye
+            on enr.academic_year = sye.academic_year
+            and enr.ps_schoolid = sye.schoolid
     ),
 
     focus_windowed as (
         select
-            *,
+            * except (is_enrolled_y1, is_enrolled_recent),
+
+            -- Year grain, matching PowerSchool's max() over
+            -- (studentid, yearid): any qualifying stint counts.
+            max(is_enrolled_y1) over (
+                partition by student_number, academic_year
+            ) as is_enrolled_y1,
+
+            max(is_enrolled_recent) over (
+                partition by student_number, academic_year
+            ) as is_enrolled_recent,
 
             max(if(year_in_school = 1, cohort_primary, null)) over (
                 partition by student_number, schoolid
@@ -173,7 +271,6 @@ with
     ),
 
     powerschool_conformed as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 
@@ -288,9 +385,10 @@ select
     address is now the login generator's google_email like every other region,
     so the username and password behind it come from the same place. Leaving the
     password null failed every Paterson row of the Google Directory user sync
-    (#4756). The Miami/Paterson SPED exceptions below are NOT stale: neither
-    region has rows in the edplan njsmart union, so they must keep reading
-    ar.spedlep or their IEP data drops to null. */
+    (#4756). The Miami SPED exception below is NOT stale: Miami has no rows in
+    the edplan njsmart union, so it must keep reading ar.spedlep or its IEP data
+    drops to null. Paterson used to share that exception and no longer does --
+    it now pulls EdPlan like Newark and Camden. */
     sl.username as student_web_id,
     sl.default_password as student_web_password,
 
@@ -303,7 +401,7 @@ select
     ) as is_fldoe_fte_all,
 
     if(
-        ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.special_education_code
+        ar.region = 'Miami', ar.spedlep, sped.special_education_code
     ) as special_education_code,
 
     if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
@@ -333,9 +431,7 @@ select
         njr.homelessprimarynighttimeres
     ) as homeless_primary_nighttime_residence_code,
 
-    coalesce(
-        if(ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.spedlep), 'No IEP'
-    ) as spedlep,
+    coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
 
     case
         when ar.region = 'Miami'

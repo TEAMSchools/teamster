@@ -280,6 +280,16 @@ locations:
                   secretKeyRef:
                     name: op-zendesk-api
                     key: token
+              - name: ZENDESK_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-oauth-dagster
+                    key: username
+              - name: ZENDESK_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-oauth-dagster
+                    key: credential
               - name: TABLEAU_TOKEN_NAME
                 valueFrom:
                   secretKeyRef:
@@ -648,6 +658,16 @@ locations:
                   secretKeyRef:
                     name: op-zendesk-api
                     key: token
+              - name: ZENDESK_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-oauth-dagster
+                    key: username
+              - name: ZENDESK_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-oauth-dagster
+                    key: credential
               - name: TABLEAU_TOKEN_NAME
                 valueFrom:
                   secretKeyRef:

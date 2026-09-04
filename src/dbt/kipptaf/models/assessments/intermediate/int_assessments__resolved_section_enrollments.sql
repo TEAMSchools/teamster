@@ -233,13 +233,13 @@ with
         from dibels_scores
     ),
 
-    -- course_subject is the section subject the resolver matches against. For
-    -- internal scores subject_area already equals the inventory's
-    -- illuminate_subject_area; for state scores the state->course mapping is
-    -- already applied upstream (illuminate_subject), so this is a passthrough.
-    -- Derived as a named column (not inline in a join) per src/dbt/CLAUDE.md.
-    -- score_grain_key is the stable per-score handle used for the tier-2
-    -- anti-join (internal grain: canonical; state grain: year/period/subject).
+    -- `course_subject` is the section subject the resolver matches against. For
+    -- internal scores, `subject_area` already equals the inventory's
+    -- `illuminate_subject_area`. For state scores, the state-to-course mapping
+    -- is already applied upstream as `illuminate_subject`, so this is a
+    -- passthrough. `score_grain_key` is the stable per-score handle the tier-2
+    -- anti-join uses: internal grain is canonical, state grain is
+    -- year/period/subject.
     scores_mapped as (
         select
             *,
@@ -297,8 +297,7 @@ with
             and ce.cc_dcid is not null
     ),
 
-    -- grain projection: every selected column is functionally determined
-    -- by the partition key; not a mask for upstream duplicates
+    -- grain projection, not dup-masking
     resolved_subject_keys as (select distinct score_grain_key, from candidates_subject),
 
     scores_unresolved as (

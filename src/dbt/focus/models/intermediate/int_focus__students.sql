@@ -3,21 +3,27 @@ with
         select
             s.*,
 
-            p.ethnicity_hispanic_or_latino_label,
-            p.race_white_label,
-            p.race_black_or_african_american_label,
-            p.race_asian_label,
-            p.sex_label,
-            p.race_american_indian_or_alaska_native_label,
-            p.race_native_hawaiian_or_other_pacific_islander_label,
-            p.residence_county_label,
-            p.language_label,
-            p.ese_fefp_code_label,
-            p.english_language_learner_pk_12_label,
-            p.gifted_eligibility_label,
-            p.homeless_student_pk_12_label,
-            p.homeless_unaccompanied_youth_label,
-            p.free_reduced_meals_program_label,
+            p.label_ethnicity_hispanic_or_latino as ethnicity_hispanic_or_latino_label,
+            p.label_race_white as race_white_label,
+            p.label_race_black_or_african_american
+            as race_black_or_african_american_label,
+            p.label_race_asian as race_asian_label,
+            p.label_sex as sex_label,
+            p.label_race_american_indian_or_alaska_native
+            as race_american_indian_or_alaska_native_label,
+            p.label_race_native_hawaiian_or_other_pacific_islander
+            as race_native_hawaiian_or_other_pacific_islander_label,
+            p.label_residence_county as residence_county_label,
+            p.label_language as language_label,
+            p.label_ese_fefp_code as ese_fefp_code_label,
+            p.label_english_language_learner_pk_12
+            as english_language_learner_pk_12_label,
+            p.label_gifted_eligibility as gifted_eligibility_label,
+            p.label_homeless_student_pk_12 as homeless_student_pk_12_label,
+            p.label_homeless_unaccompanied_youth as homeless_unaccompanied_youth_label,
+            p.label_free_reduced_meals_program as free_reduced_meals_program_label,
+            p.code_idea_educational_environment as idea_educational_environment_code,
+            p.label_idea_educational_environment as idea_educational_environment_label,
         from {{ ref("stg_focus__students") }} as s
         left join
             {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
@@ -89,12 +95,12 @@ with
             end as lep_status,
 
             -- FLDOE homeless codes describe the student's nighttime residence. Any
-            -- residence type means homeless; N is the not-homeless default. The network
-            -- domain splits homeless by custody instead, so the separate
+            -- residence type means homeless, and N is the not-homeless default. The
+            -- network domain splits homeless by custody instead, so the separate
             -- unaccompanied-youth field decides Y2 versus Y1. That field is a
-            -- five-option select, not a flag -- Y, C and U all mean unaccompanied,
-            -- while N means homeless but accompanied and Z means not homeless, so a
-            -- null check would mislabel an accompanied homeless student as Y2.
+            -- 5-option select, not a flag: Y, C and U all mean unaccompanied, N
+            -- means homeless but accompanied, and Z means not homeless. A null check
+            -- would therefore mislabel an accompanied homeless student as Y2.
             case
                 when homeless_c = 'N'
                 then 'N'

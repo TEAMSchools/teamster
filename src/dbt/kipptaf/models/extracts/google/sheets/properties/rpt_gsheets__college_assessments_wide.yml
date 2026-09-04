@@ -1,5 +1,9 @@
 models:
   - name: rpt_gsheets__college_assessments_wide
+    description: >-
+      **Excludes Miami by design.** Same population as
+      `rpt_gsheets__college_assessments_long`: SAT and ACT results for testing
+      grades, which Miami does not have yet. Ratified on #4996.
     config:
       contract:
         enforced: true
@@ -42,8 +46,20 @@ models:
         data_type: string
       - name: ccr_teacher_name
         data_type: string
+        description: >-
+          Teacher of record for the course standing in for the student's College
+          and Career Readiness schedule. Falls back to KIPP Newark Lab's
+          Advisory course, then homeroom, when the student has no active College
+          and Career section — from SY26-27 the regions schedule those for
+          grades 11 and 12 only. `No Data` means no active course enrollment at
+          all.
       - name: ccr_section
         data_type: string
+        description: >-
+          Section identifier for that course. Reads the period expression on a
+          College and Career or Advisory row, and the section number (for
+          example `9M311`) on a homeroom row, whose period expression is always
+          `HR(A)` or `HR(R)` and carries no information.
       - name: psat89_count_lifetime
         data_type: int64
       - name: psatnmsqt_count_lifetime

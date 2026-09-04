@@ -7,6 +7,10 @@ models:
       as report-card-eligible via AppSheet. The avg_pct_correct is the rounded
       mean of all Illuminate overall scores for that student, subject, and term.
     data_tests:
+      # These 4 columns are the group by of assessment_response_avg, so the row
+      # grain is already guaranteed. What this test actually catches is the
+      # int_illuminate__performance_band_sets join fanning out, which happens
+      # when one avg_pct_correct falls inside two bands of the same set.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

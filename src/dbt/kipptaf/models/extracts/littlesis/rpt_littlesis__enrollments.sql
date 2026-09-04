@@ -71,18 +71,6 @@ with
         where academic_year = {{ var("current_academic_year") }}
     ),
 
-    /*
-       Full-year course periods carry Focus's marking_period_id = 0 sentinel,
-       which int_focus__schedule normalizes to null. Little SIS gets the
-       school's year-level marking period for those instead of a null term, so
-       every row carries a term the way the PowerSchool branch does.
-    */
-    focus_year_terms as (
-        select syear, school_id, marking_period_id,
-        from {{ ref("stg_focus__marking_periods") }}
-        where type = 'year'
-    ),
-
     focus_users as (
         select
             staff_id,
@@ -110,7 +98,7 @@ with
             -- lives in school_periods, which is not exposed at kipptaf yet
             cast(null as string) as `period`,
 
-            coalesce(sch.marking_period_id, fyt.marking_period_id) as term_id,
+            sch.marking_period_id as term_id,
 
             concat(
                 sch.course_title,
@@ -127,10 +115,6 @@ with
         inner join
             {{ ref("int_people__staff_roster") }} as scw
             on fu.employee_number = scw.employee_number
-        left join
-            focus_year_terms as fyt
-            on sch.academic_year = fyt.syear
-            and sch.schoolid = fyt.school_id
     )
 
 select

@@ -58,7 +58,7 @@ jobs:
       # output.result='skip' which is used to skip other steps in this workflow.
       - name: Pre-run checks
         id: prerun
-        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
 
   build:
     needs:
@@ -195,7 +195,7 @@ jobs:
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
       - name: Validate configuration
         id: ci-validate
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
         if: needs.prerun.outputs.result != 'skip'
         with:
           command: |
@@ -205,7 +205,7 @@ jobs:
       # the build session
       - name: Initialize build session
         id: ci-init
-        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
         if: needs.prerun.outputs.result != 'skip'
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
@@ -216,7 +216,7 @@ jobs:
 
       - name: Update build session with image tag
         id: ci-set-build-output
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
         if: needs.prerun.outputs.result != 'skip'
         with:
           command: |
@@ -225,7 +225,7 @@ jobs:
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
         id: ci-deploy
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
         if: needs.prerun.outputs.result != 'skip'
         with:
           command: ci deploy
@@ -234,7 +234,7 @@ jobs:
       # and failure
       - name: Update PR comment for branch deployments
         id: ci-notify
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
         if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}
@@ -242,7 +242,7 @@ jobs:
       # Generate a summary that shows up on the Workflow Summary page
       - name: Generate a summary
         id: ci-summary
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@274b4e58f7bf5340955bce7526e7529d0870a914 # v1.13.18
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
         if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY

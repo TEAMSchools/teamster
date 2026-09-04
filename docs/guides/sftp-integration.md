@@ -132,17 +132,30 @@ Stage the external table and build the staging model in your personal dev schema
 (`zz_<user>_*`). This is for local iteration — verifying type casts, column
 definitions, and test results.
 
-`dbt-sxs.py` has two independent flags:
+Stage with the **dbt: Stage External Sources** VS Code task (Terminal > Run
+Task). It prompts for project, target, and source selector. `scripts/CLAUDE.md`
+documents it in full.
 
-- `--test` — points the external table at the `teamster-test` GCS bucket (use
-  when prod data doesn't exist yet)
-- `--target` — controls the BigQuery schema: `dev` (default, personal
-  `zz_<user>_*`) or `staging` (shared `z_dev_*` used by CI)
+The task always points the external table at the project's PRODUCTION GCS
+bucket. Step 6 wrote your sample to `teamster-test`, so for a source whose
+production data does not exist yet, run the operation directly and override
+`cloud_storage_uri_base` to the test bucket:
 
 ```bash
-uv run scripts/dbt-sxs.py <district_project> --test --select <source_name>.<asset_name>
+uv run dbt run-operation stage_external_sources \
+  --project-dir src/dbt/<district_project> \
+  --target dev \
+  --vars '{"ext_full_refresh": "true", "cloud_storage_uri_base": "gs://teamster-test/dagster/<district_project>"}' \
+  --args 'select: <source_name>.<asset_name>'
+
 uv run dbt build -s <model_name> --project-dir src/dbt/<district_project>
 ```
+
+The path under the bucket is unchanged — the avro IO manager's `test=True` only
+swaps the bucket and adds a local JSON copy, not the blob path.
+
+`--target` controls the BigQuery schema: `dev` (personal `zz_<user>_*`) or
+`staging` (shared, read by CI).
 
 Review the output — check for contract violations, test failures, and data
 quality warnings. Run this for each district project.
@@ -156,12 +169,20 @@ exist there before kipptaf CI can build.
 Re-run the stage and build with `--target staging`:
 
 ```bash
-uv run scripts/dbt-sxs.py <district_project> --test --target staging --select <source_name>.<asset_name>
+uv run dbt run-operation stage_external_sources \
+  --project-dir src/dbt/<district_project> \
+  --target staging \
+  --vars '{"ext_full_refresh": "true", "cloud_storage_uri_base": "gs://teamster-test/dagster/<district_project>"}' \
+  --args 'select: <source_name>.<asset_name>'
+
 uv run dbt build -s <model_name> --project-dir src/dbt/<district_project> --target staging
 ```
 
-!!! note Once the asset is materialized in production, drop `--test` so the
-external table points at the production GCS bucket instead of `teamster-test`.
+!!! note Once the asset is materialized in production, re-stage without the
+`cloud_storage_uri_base` override — the **dbt: Stage External Sources** task at
+`--target staging` does exactly that — so the external table points at the
+production bucket instead of `teamster-test`. Skip it and CI keeps reading your
+test sample indefinitely.
 
 ## Summary
 

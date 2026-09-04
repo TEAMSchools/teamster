@@ -145,7 +145,11 @@ with
             {{ ref("int_students__student_core_fields") }} as scf
             on e.student_number = scf.student_number
             and e._dbt_source_project = scf._dbt_source_project
-        where e._dbt_source_project in ('kipppaterson', 'kippmiami')
+        -- Miami only. Every NJ region, Paterson included, gets its IEP
+        -- legs from the edplan union in nj_leg above; listing a region
+        -- here as well would emit two rows per stint and collide on
+        -- student_iep_status_key.
+        where e._dbt_source_project = 'kippmiami'
     ),
 
     unioned as (

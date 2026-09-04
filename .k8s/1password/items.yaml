@@ -274,6 +274,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-zendesk-oauth-dagster
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Zendesk OAuth - Dagster
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-deanslist-api-kippnewark
   namespace: dagster-cloud
 spec:
@@ -382,6 +390,14 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Amplify SFTP - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-edplan-sftp-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/edplan SFTP - Paterson
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem

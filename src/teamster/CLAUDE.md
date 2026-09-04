@@ -71,14 +71,14 @@ at construction and crashes module-load resource wiring when the var is unset
 
 Libraries fall into four patterns based on how they ingest data:
 
-| Pattern            | Libraries                                                                                  | How it works                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| **SFTP file drop** | collegeboard, edplan, fldoe, iready, nsc, pearson, performance_management, renlearn, titan | `build_sftp_*_asset()` from `libraries/sftp/` + Avro schemas    |
-| **REST API**       | coupa, deanslist, knowbe4, level_data, overgrad, smartrecruiters                           | Custom `build_*_asset()` factory + resource class               |
-| **Framework**      | dbt, dlt, google, airbyte, fivetran                                                        | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
-| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (dlt + SFTP + API; ODBC archived)      | Multiple factories per product line                             |
+| Pattern            | Libraries                                                                                           | How it works                                                    |
+| ------------------ | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **SFTP file drop** | cambium, collegeboard, edplan, fldoe, iready, nsc, pearson, performance_management, renlearn, titan | `build_sftp_*_asset()` from `libraries/sftp/` + Avro schemas    |
+| **REST API**       | coupa, deanslist, knowbe4, level_data, overgrad, smartrecruiters                                    | Custom `build_*_asset()` factory + resource class               |
+| **Framework**      | dbt, dlt, google, airbyte, fivetran                                                                 | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
+| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (dlt + SFTP + API; ODBC archived)               | Multiple factories per product line                             |
 
-Schema-only libraries (collegeboard, dayforce, fldoe, nsc, pearson,
+Schema-only libraries (cambium, collegeboard, dayforce, fldoe, nsc, pearson,
 performance_management) contain only Avro schemas — the asset is built in the
 code location using the generic SFTP factory.
 
