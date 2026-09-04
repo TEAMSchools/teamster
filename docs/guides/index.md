@@ -53,3 +53,4 @@ Cloud:
 | [Claude Code & Superpowers](superpowers.md)                 | Using Claude Code's structured workflows for features, fixes, and refactors                                   |
 | [Cube](cube.md)                                             | Setting up Cube Cloud and running Cube locally                                                                |
 | [Tableau Permissions (People Data)](tableau-permissions.md) | Row-level security on the people-data dashboards — who sees what, which group to ask for, and how it is built |
+| [Editing Tableau Workbooks](tableau-workbook-editing.md)    | Reading and changing calculated fields from a Codespace, and republishing without degrading the workbook      |

@@ -6,7 +6,10 @@ MCP tool that does it.
 
 That is a limit of the MCP, not of this Codespace. Workbook content **can** be
 edited and republished here with `tableauserverclient`; see _Publishing back_
-below. Group membership and Server admin remain user-side.
+below, and
+[the workbook-editing guide](../../docs/guides/tableau-workbook-editing.md) for
+the full recipe with worked code. Group membership and Server admin remain
+user-side.
 
 **No tool returns calculated-field formulas.** `get-workbook` and
 `list-workbooks` return workbook, view, and datasource metadata — never the calc
