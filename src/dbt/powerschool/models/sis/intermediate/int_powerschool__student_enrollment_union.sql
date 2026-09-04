@@ -206,20 +206,23 @@ with
             ) as grade_level_prev,
 
             row_number() over (
-                partition by studentid order by yearid desc, exitdate desc
+                partition by studentid
+                order by yearid desc, exitdate desc, reenrollments_dcid asc
             ) as rn_all,
 
             row_number() over (
-                partition by studentid, yearid order by yearid desc, exitdate desc
+                partition by studentid, yearid
+                order by yearid desc, exitdate desc, reenrollments_dcid asc
             ) as rn_year,
 
             row_number() over (
-                partition by studentid, schoolid order by yearid desc, exitdate desc
+                partition by studentid, schoolid
+                order by yearid desc, exitdate desc, reenrollments_dcid asc
             ) as rn_school,
 
             row_number() over (
                 partition by studentid, if(grade_level = 99, true, false)
-                order by yearid desc, exitdate desc
+                order by yearid desc, exitdate desc, reenrollments_dcid asc
             ) as rn_undergrad,
         from enr_union
     ),
