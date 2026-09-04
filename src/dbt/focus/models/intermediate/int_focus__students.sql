@@ -1,29 +1,18 @@
 with
-    -- One row per ESE Exceptionalities log entry (custom_890). Focus's own
-    -- "ESE Primary Computed" field derives from this log, not from the ESE
-    -- FEFP funding code, so IEP status reads it too: placed (P or T), not
-    -- dismissed, and not gifted (L) -- Florida gifted students hold an EP,
-    -- not an IEP. The Primary checkbox is not required; it marks which
-    -- exceptionality leads, not whether a plan exists.
+    -- One row per ESE Exceptionalities log entry. Unlike Focus's own
+    -- "ESE Primary Computed" query, the Primary checkbox (log_field4) is not
+    -- required: it marks which exceptionality leads, not whether a plan exists.
     ese_entries as (
         select
             student_id,
             log_entry_id,
 
             max(
-                if(
-                    slot_column_name = 'log_field3',
-                    regexp_extract(value_label, r'^(\w+)\s*-'),
-                    null
-                )
+                if(slot_column_name = 'log_field3', value_code, null)
             ) as exceptionality_code,
 
             max(
-                if(
-                    slot_column_name = 'log_field5',
-                    regexp_extract(value_label, r'^(\w+)\s*-'),
-                    null
-                )
+                if(slot_column_name = 'log_field5', value_code, null)
             ) as placement_code,
 
             max(if(slot_column_name = 'log_field12', value, null)) as dismissal_date,

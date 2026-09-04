@@ -429,3 +429,78 @@ unit_tests:
           marking_period_id: 501
           marking_period_type: quarter
           marking_period_start_date: 2026-08-10
+
+  - name: test_int_focus__students_iep_from_ese_log
+    description: >-
+      has_iep and spedlep follow the ESE Exceptionalities log. Student 1 has a
+      placed disability entry (IEP). Student 2's placed entry carries a
+      dismissal date (excluded). Student 3's only placed entry is gifted, code L
+      (excluded -- an EP, not an IEP). Student 4 has no entry. The Primary
+      checkbox is absent on every row and must not be required.
+    model: int_focus__students
+    given:
+      - input: ref('stg_focus__students')
+        rows:
+          - { student_id: 1 }
+          - { student_id: 2 }
+          - { student_id: 3 }
+          - { student_id: 4 }
+      - input: ref('int_focus__students__pivot')
+        rows: []
+      - input: ref('int_focus__custom_field_log__unpivot')
+        rows:
+          - {
+              student_id: 1,
+              log_entry_id: 10,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field3,
+              value_code: K,
+            }
+          - {
+              student_id: 1,
+              log_entry_id: 10,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field5,
+              value_code: P,
+            }
+          - {
+              student_id: 2,
+              log_entry_id: 20,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field3,
+              value_code: F,
+            }
+          - {
+              student_id: 2,
+              log_entry_id: 20,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field5,
+              value_code: P,
+            }
+          - {
+              student_id: 2,
+              log_entry_id: 20,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field12,
+              value: "2025-06-01",
+            }
+          - {
+              student_id: 3,
+              log_entry_id: 30,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field3,
+              value_code: L,
+            }
+          - {
+              student_id: 3,
+              log_entry_id: 30,
+              field_title: ESE Exceptionalities,
+              slot_column_name: log_field5,
+              value_code: P,
+            }
+    expect:
+      rows:
+        - { student_id: 1, has_iep: true, spedlep: SPED }
+        - { student_id: 2, has_iep: false, spedlep: null }
+        - { student_id: 3, has_iep: false, spedlep: null }
+        - { student_id: 4, has_iep: false, spedlep: null }
