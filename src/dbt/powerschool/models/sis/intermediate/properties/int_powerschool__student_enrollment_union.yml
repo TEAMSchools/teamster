@@ -4,7 +4,11 @@ models:
       One row per student-school enrollment event. Graduated students carry
       placeholder rows with null entry and exit dates, one row per academic year
       per student and district. Surrogate keys must include academic_year or
-      those rows collide.
+      those rows collide. One row per (student_number, academic_year,
+      entrydate): PowerSchool data entry occasionally puts two stints on one
+      entrydate, and the dedupe keeps the rn_year = 1 stint so downstream
+      rn_year = 1 filters see the row that survived. Permanent guard, not a
+      cleanup workaround.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

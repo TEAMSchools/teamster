@@ -279,8 +279,8 @@ with
         from window_calcs_2
     )
 
-    -- TODO(#4835): remove once Ops cleans up the PowerSchool stints that put two
-    -- enrollments on one entrydate.
+    -- keep one stint per entrydate; PowerSchool data entry occasionally creates two
+    -- and downstream rn_year = 1 filters assume this row survived
     {{
         dbt_utils.deduplicate(
             relation="final",
