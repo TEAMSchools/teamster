@@ -763,3 +763,22 @@ data_tests:
         dagster:
           ref:
             name: stg_cambium__njgpa
+
+  - name: rpt_schoolmint_grow__users__locations_resolve_to_grow_school
+    description: >-
+      Every active, non-Paterson staff member's
+      home_work_location_reporting_name must resolve to a Grow school by exact
+      name. rpt_schoolmint_grow__users' roster CTE inner-joins on that exact
+      match, so a school renamed in the Grow UI silently drops all of its staff
+      from the extract -- and because the school PUT in grow_user_sync REPLACES
+      observationGroups, admins and assistantAdmins wholesale, those staff are
+      then stripped from all three lists in Grow with no error. This is what
+      previously happened to `KIPP Miami - Poinciana Campus` before the Grow
+      school was renamed to match and a crosswalk alias was added; nothing
+      caught it at the time.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_schoolmint_grow__users

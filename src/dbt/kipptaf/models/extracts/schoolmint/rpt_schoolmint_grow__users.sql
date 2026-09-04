@@ -1,18 +1,75 @@
 with
+    /*
+        New Teacher Network Coordinators come from the ADP membership feed, not
+        from a job function -- an NTNC is a classroom teacher or assistant
+        school leader who also coordinates new teachers at their own campus.
+
+        Read is_current here rather than int_people__staff_roster.memberships:
+        that string is bucketed by fiscal year, and the prior cohort's
+        expiration date of 2026-07-01 lands on day one of the next academic
+        year, so the roster string carries last year's coordinators alongside
+        this year's -- 46 people instead of 29.
+    */
+    new_teacher_network_coordinators as (
+        select distinct associate_id,
+        from {{ ref("stg_adp_workforce_now__employee_memberships") }}
+        where membership_description = 'New Teacher Network Coordinator' and is_current
+    ),
+
     staff as (
         select
-            *,
+            sr.*,
 
             /*
-                job_function (ADP codes TEACH / TIR) is not set on newly created
-                work assignments, so fall back to the job title until it fills in
+                job_function is the only tier input. A null job_function is an
+                ADP data defect and is deliberately not patched over here --
+                see docs/superpowers/specs/2026-08-28-grow-region-scoped-admin-design.md
             */
             coalesce(
-                job_function in ('Teacher', 'Teacher in Residence'),
-                job_title like '%Teacher%' or job_title like '%Learning%'
+                job_function in ('Teacher', 'Teacher in Residence'), false
             ) as is_teacher,
-        from {{ ref("int_people__staff_roster") }}
-        where home_work_location_dagster_code_location != 'kipppaterson'
+
+            /*
+                ADP records some Associate Directors at staff level, which
+                understates them. This is the one deliberate title exception.
+            */
+            if(
+                job_function = 'KTAF or Regional Staff'
+                and contains_substr(job_title, 'Associate Director'),
+                'KTAF or Regional Director',
+                job_function
+            ) as tier,
+
+            home_department_name in (
+                'Teaching and Learning',
+                'School Support',
+                'Teacher Development',
+                'New Teacher Development',
+                'Special Education',
+                'School Leadership',
+                'Leadership Development',
+                'KIPP Forward',
+                'Special Projects',
+                'Executive'
+            ) as passes_department_gate,
+
+            ntnc.associate_id is not null as is_new_teacher_network_coordinator,
+        from {{ ref("int_people__staff_roster") }} as sr
+        left join
+            new_teacher_network_coordinators as ntnc on sr.worker_id = ntnc.associate_id
+        where sr.home_work_location_dagster_code_location != 'kipppaterson'
+    ),
+
+    grow_schools as (
+        select
+            sch.school_id,
+            sch.name as school_name,
+            lc.location_dagster_code_location as region,
+        from {{ ref("stg_schoolmint_grow__schools") }} as sch
+        left join
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on sch.name = lc.location_name
+        where sch.archived_at is null
     ),
 
     instructional_managers as (
@@ -21,9 +78,11 @@ with
         join staff as srm on sr.reports_to_employee_number = srm.employee_number
         where
             sr.assignment_status in ('Active', 'Leave')
-            and sr.is_teacher
-            or srm.home_department_name
-            in ('School Support', 'Student Support', 'KIPP Forward')
+            and (
+                sr.is_teacher
+                or srm.home_department_name
+                in ('School Support', 'Student Support', 'KIPP Forward')
+            )
     ),
 
     people as (
@@ -33,6 +92,8 @@ with
             sr.reports_to_employee_number as manager_internal_id,
             sr.home_work_location_reporting_name as school_name,
             sr.home_department_name as course_name,
+            sr.tier,
+            sr.home_work_location_dagster_code_location as region,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,
 
@@ -44,65 +105,52 @@ with
                 cast(sr.primary_grade_level_taught as string)
             ) as grade_abbreviation,
 
-            coalesce(
-                case
-                    /* network admins */
-                    when sr.home_department_name = 'Executive'
-                    then ['Sub Admin']
-                    when sr.job_title = 'Head of Schools'
-                    then ['Regional Admin']
-                    when
-                        sr.home_department_name in (
-                            'Teaching and Learning',
-                            'School Support',
-                            'New Teacher Development',
-                            'Special Projects'
-                        )
-                        and (
-                            contains_substr(sr.job_title, 'Chief')
-                            or contains_substr(sr.job_title, 'Leader')
-                            or contains_substr(sr.job_title, 'Director')
-                        )
-                    then ['Sub Admin']
-                    when sr.job_title = 'Achievement Director'
-                    then ['Sub Admin']
-                    when
-                        sr.home_department_name = 'Special Education'
-                        and contains_substr(sr.job_title, 'Director')
-                    then ['Sub Admin']
-                    when sr.home_department_name = 'Human Resources'
-                    then ['Sub Admin']
-                    /* school admins */
-                    when sr.job_title = 'School Leader'
-                    then ['School Admin']
-                    when
-                        sr.home_department_name = 'School Leadership'
-                        and (
-                            contains_substr(sr.job_title, 'Assistant School Leader')
-                            or contains_substr(sr.job_title, 'Dean')
-                            or sr.job_title = 'School Leader in Residence'
-                        )
-                    then ['School Assistant Admin']
-                end,
-                /* basic roles: Coach and Teacher are independent; a user can be both */
-                array(
-                    select rn
-                    from
-                        unnest(
-                            [
-                                if(
-                                    sr.employee_number in (
-                                        select reports_to_employee_number
-                                        from instructional_managers
-                                    ),
-                                    'Coach',
-                                    null
+            /*
+                Every predicate is independent and contributes at most one role.
+                Nothing suppresses anything else, which is what lets an admin
+                who manages teachers keep Coach.
+
+                Chief Level and the three Director tiers both resolve to
+                Regional Admin here; they differ only in school scope, which
+                sub-project 2 supplies.
+            */
+            array(
+                select rn
+                from
+                    unnest(
+                        [
+                            case
+                                when
+                                    sr.tier in (
+                                        'Chief Level',
+                                        'EDs, HOSs, MDOs',
+                                        'KTAF or Regional Managing Director',
+                                        'KTAF or Regional Director'
+                                    )
+                                    and sr.passes_department_gate
+                                then 'Regional Admin'
+                                when sr.tier = 'School Leader'
+                                then 'School Admin'
+                                when sr.tier in ('Assistant School Leaders', 'Deans')
+                                then 'School Assistant Admin'
+                            end,
+                            if(
+                                sr.employee_number in (
+                                    select reports_to_employee_number
+                                    from instructional_managers
                                 ),
-                                if(sr.is_teacher, 'Teacher', null)
-                            ]
-                        ) as rn
-                    where rn is not null
-                )
+                                'Coach',
+                                null
+                            ),
+                            if(
+                                sr.is_new_teacher_network_coordinator,
+                                'Regional Observer',
+                                null
+                            ),
+                            if(sr.is_teacher, 'Teacher', null)
+                        ]
+                    ) as rn
+                where rn is not null
             ) as role_names,
         from staff as sr
         where
@@ -117,12 +165,45 @@ with
     people_roles as (
         select
             p.user_internal_id,
-            array_agg(rn order by r.role_id) as role_names,
-            array_agg(r.role_id order by r.role_id) as role_ids,
+            ifnull(array_agg(rn ignore nulls order by r.role_id), []) as role_names,
+            ifnull(
+                array_agg(r.role_id ignore nulls order by r.role_id), []
+            ) as role_ids,
         from people as p
-        cross join unnest(p.role_names) as rn
-        inner join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
+        left join unnest(p.role_names) as rn
+        left join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
         group by p.user_internal_id
+    ),
+
+    regional_scope as (
+        select user_internal_id, array_agg(school_id order by school_id) as school_ids,
+        from
+            (
+                /*
+                    Regional Admin: Chief Level sees every active school, the
+                    other Director tiers see their own region.
+                */
+                select p.user_internal_id, gs.school_id,
+                from people as p
+                inner join
+                    grow_schools as gs
+                    on (p.tier = 'Chief Level' or p.region = gs.region)
+                where 'Regional Admin' in unnest(p.role_names)
+
+                union distinct
+
+                /*
+                    Regional Observer: an NTNC coordinates the new teachers at
+                    their own campus, so the scope is that one school, not the
+                    region. A coordinator who is also a Regional Admin keeps
+                    both, which is what the union resolves.
+                */
+                select p.user_internal_id, gs.school_id,
+                from people as p
+                inner join grow_schools as gs on p.school_name = gs.school_name
+                where 'Regional Observer' in unnest(p.role_names)
+            )
+        group by user_internal_id
     ),
 
     roster as (
@@ -136,6 +217,29 @@ with
             pra.role_ids,
 
             sch.school_id,
+
+            /*
+                Chief Level sees every active school; the other Regional
+                Admin tiers see their own region; a Regional Observer sees
+                only their own school. Everyone else gets an empty array.
+                [Training School] has no crosswalk region, so it appears
+                only in the all-schools case.
+            */
+            ifnull(rs.school_ids, []) as regional_admin_school_ids,
+
+            /*
+                Regional Observer is deliberately absent: readonly blocks
+                configuration changes, and grow_user_sync also refuses to let
+                a readonly user anchor an observation group, so marking a
+                coordinator readonly would stop them observing.
+            */
+            if('Regional Admin' in unnest(pra.role_names), 1, 0) as readonly,
+
+            array(
+                select s._id from unnest(u.regional_admin_schools) as s order by s._id
+            ) as regional_admin_school_ids_ws,
+
+            if(u.read_only, 1, 0) as readonly_ws,
 
             u.user_id,
             u.archived_at,
@@ -158,20 +262,63 @@ with
 
             if(u.inactive, 1, 0) as inactive_ws,
 
+            /*
+                Observee and observer are independent. An admin who coaches is
+                both; Regional Admin is an observer only, because a regional
+                leader is not observed inside a school's Teachers group. A
+                Regional Observer is usually a teacher too, so an NTNC comes
+                out as both.
+            */
             case
                 when
                     exists (
-                        select 1 from unnest(p.role_names) as rn where rn like '%Admin%'
+                        select 1
+                        from unnest(pra.role_names) as rn
+                        where
+                            rn in ('Teacher', 'School Admin', 'School Assistant Admin')
+                    )
+                    and exists (
+                        select 1
+                        from unnest(pra.role_names) as rn
+                        where
+                            rn in (
+                                'Regional Admin',
+                                'Regional Observer',
+                                'School Admin',
+                                'School Assistant Admin',
+                                'Coach'
+                            )
+                    )
+                then 'observees;observers'
+                when
+                    exists (
+                        select 1
+                        from unnest(pra.role_names) as rn
+                        where
+                            rn in (
+                                'Regional Admin',
+                                'Regional Observer',
+                                'School Admin',
+                                'School Assistant Admin',
+                                'Coach'
+                            )
                     )
                 then 'observers'
-                when 'Coach' in unnest(p.role_names)
-                then 'observees;observers'
-                else 'observees'
+                when
+                    exists (
+                        select 1
+                        from unnest(pra.role_names) as rn
+                        where
+                            rn in ('Teacher', 'School Admin', 'School Assistant Admin')
+                    )
+                then 'observees'
+                else ''
             end as group_type,
         from people as p
         inner join people_roles as pra on p.user_internal_id = pra.user_internal_id
         inner join
             {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
+        left join regional_scope as rs on p.user_internal_id = rs.user_internal_id
         left join
             {{ ref("stg_schoolmint_grow__users") }} as u
             on p.user_internal_id = u.internal_id_int
@@ -193,6 +340,12 @@ with
             *,
             array_to_string(role_ids, ',') as role_ids_hash,
             array_to_string(role_ids_ws, ',') as role_ids_ws_hash,
+            array_to_string(
+                regional_admin_school_ids, ','
+            ) as regional_admin_school_ids_hash,
+            array_to_string(
+                regional_admin_school_ids_ws, ','
+            ) as regional_admin_school_ids_ws_hash,
         from roster
     ),
 
@@ -205,6 +358,8 @@ with
             role_names,
             school_id,
             role_ids,
+            regional_admin_school_ids,
+            readonly,
             user_id,
             archived_at,
             user_email_ws,
@@ -218,6 +373,8 @@ with
             grade_id,
             role_ids_ws,
             inactive_ws,
+            regional_admin_school_ids_ws,
+            readonly_ws,
             group_type,
 
             {{
@@ -227,6 +384,8 @@ with
                         "course_id",
                         "grade_id",
                         "inactive",
+                        "readonly",
+                        "regional_admin_school_ids_hash",
                         "role_ids_hash",
                         "school_id",
                         "user_email",
@@ -242,6 +401,8 @@ with
                         "course_id_ws",
                         "grade_id_ws",
                         "inactive_ws",
+                        "readonly_ws",
+                        "regional_admin_school_ids_ws_hash",
                         "role_ids_ws_hash",
                         "school_id_ws",
                         "user_email_ws",
@@ -260,6 +421,8 @@ select
     role_names,
     school_id,
     role_ids,
+    regional_admin_school_ids,
+    readonly,
     user_id,
     archived_at,
     user_email_ws,
@@ -273,14 +436,22 @@ select
     grade_id,
     role_ids_ws,
     inactive_ws,
+    regional_admin_school_ids_ws,
+    readonly_ws,
     group_type,
     surrogate_key_source,
     surrogate_key_destination,
 from surrogate_keys
 where
-    /* create */
-    (inactive = 0 and user_id is null)
-    /* archive */
-    or (inactive = 1 and user_id is not null and archived_at is null)
-    /* update/reactivate */
-    or inactive = 0
+    /*
+        Only emit a row the sync can act on. A user with no roles and no Grow
+        account has nothing to create, update, or archive -- emitting them
+        would make the create branch open an empty account.
+    */
+    (array_length(role_ids) > 0 or user_id is not null)
+    and (
+        /* create, update, or reactivate */
+        inactive = 0
+        /* archive */
+        or (inactive = 1 and user_id is not null and archived_at is null)
+    )
