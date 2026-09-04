@@ -18,9 +18,8 @@ models:
     columns:
       - name: student_number
         description: >-
-          Network student number, unprefixed. Focus's own student_id carries an
-          8400 prefix (Miami-Dade's FLDOE district number) which is stripped
-          upstream.
+          Network student number for Miami: the Focus student_id, which carries
+          the 8400 Miami-Dade district prefix.
         config:
           meta:
             contains_pii: true

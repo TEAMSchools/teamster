@@ -9,9 +9,8 @@ with
             s.student_id as student_number,
             s.dob,
 
-            -- int_focus__students already strips the 8400 Miami-Dade district
-            -- prefix and casts birthdate to a date, so both are read from there
-            -- rather than re-derived here.
+            -- Same value as student_number since the 8400-prefixed Focus id
+            -- became the Miami student number; kept so consumers keep resolving.
             s.student_number as network_student_number,
 
             e.id as student_enrollment_id,
