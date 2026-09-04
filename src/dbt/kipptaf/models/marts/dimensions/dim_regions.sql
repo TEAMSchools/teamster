@@ -55,4 +55,16 @@ select
     end as dagster_code_location,
 
     case business_unit_code when 'KIPP_MIAMI' then 'FL' else 'NJ' end as state,
+
+    -- KTAF-assigned Branching Minds district codes, not a state or vendor id.
+    -- Miami and TAF are not on Branching Minds.
+    case
+        business_unit_code
+        when 'TEAM'
+        then '7325'
+        when 'KCNA'
+        then '1799'
+        when 'KPAT'
+        then '7899'
+    end as branchingminds_district_id,
 from bu_xref

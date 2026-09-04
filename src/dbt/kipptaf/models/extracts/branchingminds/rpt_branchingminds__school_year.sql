@@ -32,16 +32,26 @@ with
         group by dl.region_key, scd.academic_year
     )
 
+-- trunk-ignore(sqlfluff/ST06): column order fixed by the Branching Minds template
 select
     cast(rsy.academic_year + 1 as string) as school_year_id,
-    {{ branchingminds_district_id("dr.name") }} as district_id,
+    dr.branchingminds_district_id as district_id,
     concat(rsy.academic_year, '-', rsy.academic_year + 1) as `name`,
+
+    -- SY26-27 official first day overrides the calendar, which marks 8/19-8/23
+    -- in-session for Newark/Paterson too though they opened 8/24 (Camden 8/19).
+    -- Any other year falls through to the calendar's first in-session day.
     coalesce(
-        {{ branchingminds_first_day_override("dr.name", "rsy.academic_year") }},
+        case
+            when rsy.academic_year = 2026 and dr.name = 'Camden'
+            then date '2026-08-19'
+            when rsy.academic_year = 2026
+            then date '2026-08-24'
+        end,
         rsy.calendar_start_date
     ) as start_date,
     rsy.end_date,
     rsy.instruction_days,
 from region_school_years as rsy
 inner join {{ ref("dim_regions") }} as dr on rsy.region_key = dr.region_key
-where dr.name in ('Newark', 'Camden', 'Paterson')
+where dr.branchingminds_district_id is not null
