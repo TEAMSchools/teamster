@@ -404,7 +404,7 @@
 # the file, so an empty group list from tooling is inconclusive, not a finding.
 
 - id: student_contact_info_feed_camden
-  name: Student Contact Info Feed - KIPP Camden
+  name: Student Contact Info Feed (SCIF) - KIPP Camden
   description: Student and guardian contact information for KIPP Camden.
   url: https://docs.google.com/spreadsheets/d/1uHO67F5VNQltCTt3J1bB1ze6Hfp1QiE2O5HzJeQI97Y
   audiences: [leaders, ops, region, teachers]
@@ -414,7 +414,7 @@
   status: verified
 
 - id: student_contact_info_feed_miami
-  name: Student Contact Info Feed - KIPP Miami
+  name: Student Contact Info Feed (SCIF) - KIPP Miami
   description: Student and guardian contact information for KIPP Miami.
   url: https://docs.google.com/spreadsheets/d/1bhSA4rG1zgg6PBxlBaje0COyU4L5lvozXMvpGjw0Mlw
   audiences: [leaders, ops, region, teachers]
@@ -424,7 +424,7 @@
   status: verified
 
 - id: student_contact_info_feed_newark
-  name: Student Contact Info Feed - KIPP Newark
+  name: Student Contact Info Feed (SCIF) - KIPP Newark
   description: Student and guardian contact information for KIPP Newark.
   url: https://docs.google.com/spreadsheets/d/18X4M7nQ25xRy_8ieZryrsaaljsWG3Es1jY8yzzmBPDQ
   audiences: [leaders, ops, region, teachers]
@@ -434,7 +434,7 @@
   status: verified
 
 - id: student_contact_info_feed_paterson
-  name: Student Contact Info Feed - KIPP Paterson
+  name: Student Contact Info Feed (SCIF) - KIPP Paterson
   description: Student and guardian contact information for KIPP Paterson.
   url: https://docs.google.com/spreadsheets/d/13ld6WVnOoFLxYXN_HQ837j_ha8Hgr14AtWNZmhjCno0
   audiences: [leaders, ops, region, teachers]
