@@ -25,11 +25,16 @@ The GPA goal is a **share of students**. The enrollment goal is a **projected
 enrollment rate**. Both would sit in the `goal` column as a number between 0 and
 100, look identical, and mean different things.
 
-The 15 applies to the **actual only**, never to both sides.
-`actual + 15 >= goal`. It is a unit conversion between the two scales, not a
-presentation offset. An offset applied to both sides would leave the gap
-unchanged and be purely cosmetic; this one narrows the gap by 15 points, which
-is the point of it.
+The 15 is applied to the **actual** before comparison: `actual + 15 >= goal`. It
+is a unit conversion between the two scales, not a presentation offset.
+
+It does **not** follow that the enrollment goal is a harder or easier target
+than the GPA goal. The confirmed values show it is very nearly the same target
+stated differently — grades 10 and 11 have enrollment goals that are exactly
+their GPA goal plus 15, so the comparison reduces to `actual >= goal` and the
+gap to each goal is identical. Only grade 9, at plus 16, makes the two goals
+genuinely independent. That detail is what decides the whole design, and it is
+worked through under "The goal values" below.
 
 ### Adding rows without the offset publishes wrong answers
 
