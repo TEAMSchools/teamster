@@ -5,6 +5,7 @@ select
     dd.date_key as `date`,
 
     cast(i.incident_id as string) as incident_id,
+
     cast(loc.powerschool_school_id as string) as school_id,
 from {{ ref("int_deanslist__incidents") }} as i
 inner join

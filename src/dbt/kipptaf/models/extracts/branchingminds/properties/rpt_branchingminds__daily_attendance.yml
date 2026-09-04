@@ -6,9 +6,7 @@ models:
       category collapses in-school and out-of-school suspension into Absent,
       since Branching Minds' excused/unexcused absence distinction isn't modeled
       anywhere upstream. Drops days where the source recorded no attendance
-      (NULL attendance_value). Excludes any day before each district's first day
-      of school, using the same official-override-then-calendar rule as
-      rpt_branchingminds__school_year. Scoped to the current academic year only.
+      (NULL attendance_value). Scoped to the current academic year only.
     columns:
       - name: event_id
         data_type: string

@@ -6,8 +6,9 @@ with
             _dbt_source_project,
 
             cast(dcid as string) as dcid,
-            cast(academic_year + 1 as string) as school_year_id,
             cast(percent as string) as `grade`,
+
+            cast(academic_year + 1 as string) as school_year_id,
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             _dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')

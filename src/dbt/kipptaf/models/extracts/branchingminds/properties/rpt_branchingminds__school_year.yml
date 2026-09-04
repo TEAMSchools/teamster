@@ -2,12 +2,11 @@ models:
   - name: rpt_branchingminds__school_year
     description: >
       One row per KTAF district per academic year, built for the Branching Minds
-      daily SFTP feed. Start date is the district's official first day of school
-      where that differs from the school calendar (SY26-27 only), otherwise the
-      earliest in-session calendar date across the district's schools. End date
-      is the latest in-session date and instruction days the average count
-      across schools, since schools within a district don't share one calendar.
-      Scoped to Newark, Camden, and Paterson for the current academic year only.
+      daily SFTP feed. Start and end dates are the earliest and latest
+      in-session calendar dates across the district's schools; instruction days
+      is the average count across schools, since schools within a district don't
+      share one calendar. Scoped to Newark, Camden, and Paterson for the current
+      academic year only.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -38,9 +37,7 @@ models:
       - name: start_date
         data_type: date
         description: >-
-          First day of school for the district. A per-year official override
-          where the calendar disagrees, otherwise the earliest in-session date
-          across the district's schools.
+          Earliest in-session calendar date across the district's schools.
         data_tests:
           - not_null:
               config:
