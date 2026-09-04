@@ -22,8 +22,7 @@ models:
       - name: district_id
         data_type: string
         description: >-
-          KTAF-assigned district code for the Branching Minds feed, not a state
-          or vendor-issued identifier.
+          NJ DOE county-district code, from dim_regions.state_district_id.
         data_tests:
           - not_null:
               config:

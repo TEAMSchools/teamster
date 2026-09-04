@@ -56,8 +56,8 @@ select
 
     case business_unit_code when 'KIPP_MIAMI' then 'FL' else 'NJ' end as state,
 
-    -- KTAF-assigned Branching Minds district codes, not a state or vendor id.
-    -- Miami and TAF are not on Branching Minds.
+    -- NJ DOE county-district code. Miami's Florida district number is not
+    -- needed yet; TAF is not a school district.
     case
         business_unit_code
         when 'TEAM'
@@ -66,5 +66,5 @@ select
         then '1799'
         when 'KPAT'
         then '7899'
-    end as branchingminds_district_id,
+    end as state_district_id,
 from bu_xref

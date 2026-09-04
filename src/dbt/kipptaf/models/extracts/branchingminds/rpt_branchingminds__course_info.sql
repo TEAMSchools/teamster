@@ -1,15 +1,26 @@
--- grain projection: every selected column is functionally determined by
--- (course_number, region); not a dedupe mask
--- trunk-ignore(sqlfluff/ST06): column order fixed by the Branching Minds template
-select distinct
-    concat(cs._dbt_source_project, '-', cs.sections_course_number) as course_id,
-    dr.branchingminds_district_id as district_id,
-    cs.courses_course_name as `name`,
-    cs.courses_sched_fullcatalogdescription as description,
-from {{ ref("int_students__course_sections") }} as cs
+with
+    -- grain projection from section to (region, course_number), not dup-masking:
+    -- a course with real enrollment this year has one or more sections
+    active_courses as (
+        select distinct _dbt_source_project, sections_course_number,
+        from {{ ref("int_students__course_sections") }}
+        where
+            terms_academic_year = {{ var("current_academic_year") }}
+            and sections_no_of_students > 0
+    )
+
+select
+    c.course_name as `name`,
+    c.sched_fullcatalogdescription as description,
+
+    dr.state_district_id as district_id,
+
+    concat(c._dbt_source_project, '-', c.course_number) as course_id,
+from {{ ref("stg_powerschool__courses") }} as c
 inner join
-    {{ ref("dim_regions") }} as dr on cs._dbt_source_project = dr.dagster_code_location
-where
-    dr.branchingminds_district_id is not null
-    and cs.terms_academic_year = {{ var("current_academic_year") }}
-    and cs.sections_no_of_students > 0
+    active_courses as ac
+    on c.course_number = ac.sections_course_number
+    and c._dbt_source_project = ac._dbt_source_project
+inner join
+    {{ ref("dim_regions") }} as dr on c._dbt_source_project = dr.dagster_code_location
+where dr.name in ('Newark', 'Camden', 'Paterson')

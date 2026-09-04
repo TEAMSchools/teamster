@@ -1,9 +1,11 @@
 select
-    cast(i.incident_id as string) as incident_id,
-    cast(loc.powerschool_school_id as string) as school_id,
     i.category as `type`,
     i.location,
+
     dd.date_key as `date`,
+
+    cast(i.incident_id as string) as incident_id,
+    cast(loc.powerschool_school_id as string) as school_id,
 from {{ ref("int_deanslist__incidents") }} as i
 inner join
     {{ ref("stg_google_sheets__people__locations") }} as loc

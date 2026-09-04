@@ -1,7 +1,9 @@
--- trunk-ignore(sqlfluff/ST06): column order fixed by the Branching Minds template
 select
     fsad.student_attendance_daily_key as event_id,
+    fsad.date_key as `date`,
+
     sy.school_year_id,
+
     cast(ds.lea_student_identifier as string) as student_id,
 
     -- no excused/unexcused split exists anywhere upstream -- only
@@ -15,7 +17,6 @@ select
         then 'Tardy'
         else 'Absent'
     end as record_category,
-    fsad.date_key as `date`,
 from {{ ref("fct_student_attendance_daily") }} as fsad
 inner join
     {{ ref("dim_student_enrollments") }} as dse
@@ -28,7 +29,7 @@ inner join {{ ref("dim_dates") }} as dd on fsad.date_key = dd.date_key
 -- first day of school; attendance before that day is not sent
 inner join
     {{ ref("rpt_branchingminds__school_year") }} as sy
-    on dr.branchingminds_district_id = sy.district_id
+    on dr.state_district_id = sy.district_id
     and fsad.date_key >= sy.start_date
 where
     dd.is_current_academic_year

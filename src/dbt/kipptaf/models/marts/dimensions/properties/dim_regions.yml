@@ -50,13 +50,13 @@ models:
         description: >-
           IANA timezone identifier.
 
-      - name: branchingminds_district_id
+      - name: state_district_id
         data_type: string
         description: >-
-          KTAF-assigned district code used in the Branching Minds SFTP feeds
-          (Newark 7325, Camden 1799, Paterson 7899). Not a state or
-          vendor-issued id. NULL for Miami and TAF, which are not on Branching
-          Minds.
+          State-issued district identifier: the NJ DOE county-district code
+          (Newark 7325, Camden 1799, Paterson 7899). NULL for Miami, whose
+          Florida district number is not populated, and for TAF, which is not a
+          district.
 
       - name: legal_entity
         data_type: string
