@@ -1,4 +1,35 @@
 with
+    -- One row per ESE Exceptionalities log entry. Unlike Focus's own
+    -- "ESE Primary Computed" query, the Primary checkbox (log_field4) is not
+    -- required: it marks which exceptionality leads, not whether a plan exists.
+    ese_entries as (
+        select
+            student_id,
+            log_entry_id,
+
+            max(
+                if(slot_column_name = 'log_field3', value_code, null)
+            ) as exceptionality_code,
+
+            max(
+                if(slot_column_name = 'log_field5', value_code, null)
+            ) as placement_code,
+
+            max(if(slot_column_name = 'log_field12', value, null)) as dismissal_date,
+        from {{ ref("int_focus__custom_field_log__unpivot") }}
+        where field_title = 'ESE Exceptionalities'
+        group by student_id, log_entry_id
+    ),
+
+    ese_students as (
+        select distinct student_id,
+        from ese_entries
+        where
+            placement_code in ('P', 'T')
+            and dismissal_date is null
+            and exceptionality_code != 'L'
+    ),
+
     labeled as (
         select
             s.*,
@@ -26,9 +57,12 @@ with
             p.label_free_reduced_meals_program as free_reduced_meals_program_label,
             p.code_idea_educational_environment as idea_educational_environment_code,
             p.label_idea_educational_environment as idea_educational_environment_label,
+
+            ese.student_id is not null as has_iep,
         from {{ ref("stg_focus__students") }} as s
         left join
             {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
+        left join ese_students as ese on s.student_id = ese.student_id
     ),
 
     raced as (
@@ -72,7 +106,7 @@ with
 
             lpad(cast(disis_id as string), 7, '0') as state_studentnumber,
 
-            if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
+            if(has_iep, 'SPED', null) as spedlep,
 
             -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. The
             -- label is the stable key for this select option.

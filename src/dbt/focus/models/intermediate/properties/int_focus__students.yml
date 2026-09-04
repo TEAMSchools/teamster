@@ -74,11 +74,18 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: has_iep
+        description: >-
+          True when the student has an ESE Exceptionalities log entry that is
+          placed (P or T), not dismissed, and not gifted (L). The log is the
+          determination record Focus's own "ESE Primary Computed" field reads;
+          the ESE FEFP funding code is a downstream consequence and is not
+          consulted.
       - name: spedlep
         description: >-
-          IEP classification in the network domain. 'SPED' where an ESE FEFP
-          code is present, else null — a missing funding code does not assert
-          that the student has no IEP.
+          IEP classification in the network domain. 'SPED' where has_iep, else
+          null — a missing log entry does not assert that the student has no
+          IEP.
       - name: fedethnicity
         description: >-
           Hispanic/Latino flag in the PowerSchool domain: 1 for the "Yes"
