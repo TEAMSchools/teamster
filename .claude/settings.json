@@ -164,7 +164,7 @@
       "Read(/env/**)"
     ]
   },
-  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
+  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt", "github", "tableau"],
   "hooks": {
     "SessionStart": [
       {
