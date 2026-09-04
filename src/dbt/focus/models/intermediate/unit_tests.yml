@@ -199,6 +199,93 @@ unit_tests:
           startdate: 2026-08-12
           student_enrollment_id: 30
 
+  - name: test_int_focus__student_enrollment_roster_trims_stint_to_next_start
+    model: int_focus__student_enrollment_roster
+    description: >-
+      A stint ends the day before the student's next stint starts. Stint 40 is
+      left open in Focus (null end_date, so June 30 by default) while stint 41
+      starts 2026-08-12 inside it: 40 trims to 2026-08-11. Stint 41 ends
+      2026-08-14, the day stint 42 starts, the way Focus dates a transfer: 41
+      trims to 2026-08-13. Stint 42 is the last and stays open to June 30. A
+      second student with one open stint proves a stint with no successor is
+      untouched.
+    given:
+      - input: ref('int_focus__students')
+        format: sql
+        rows: |
+          select 4 as student_id, 4 as student_number, 'D' as first_name,
+            'Four' as last_name,
+            cast(null as string) as florida_education_identifier,
+            cast(null as string) as student_e_mail_address,
+            cast(null as date) as dob
+          union all
+          select 5, 5, 'E', 'Five', cast(null as string), cast(null as string),
+            cast(null as date)
+      - input: ref('int_focus__student_enrollment')
+        format: sql
+        rows: |
+          select
+            *,
+            cast(null as string) as prior_district_label,
+            cast(null as string) as prior_state_label,
+            cast(null as string) as prior_country_label,
+            cast(null as string) as educational_choice_label,
+            cast(null as string) as student_offender_transfer_label,
+          from (
+          select 40 as id, 4 as student_id, 2026 as syear,
+            100 as school_id, cast(null as int64) as grade_id,
+            cast(null as int64) as enrollment_code,
+            cast(null as int64) as drop_code,
+            date '2026-08-10' as start_date, cast(null as date) as end_date,
+            cast(null as string) as second_school,
+            timestamp '2026-07-01 00:00:00' as created_at
+          union all
+          select 41, 4, 2026, 200, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-12', date '2026-08-14', cast(null as string),
+            timestamp '2026-08-12 00:00:00'
+          union all
+          select 42, 4, 2026, 300, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-14', cast(null as date), cast(null as string),
+            timestamp '2026-08-14 00:00:00'
+          union all
+          select 50, 5, 2026, 100, cast(null as int64),
+            cast(null as int64), cast(null as int64),
+            date '2026-08-10', cast(null as date), cast(null as string),
+            timestamp '2026-07-01 00:00:00'
+          )
+      # empty: left-joined, contributes nothing to the trim under test
+      - input: ref('int_focus__schools')
+        rows: []
+      # empty: left-joined, contributes nothing to the trim under test
+      - input: ref('stg_focus__school_gradelevels')
+        rows: []
+      # empty: left-joined, contributes nothing to the trim under test
+      - input: ref('stg_focus__student_enrollment_codes')
+        rows: []
+      # empty: left-joined, contributes nothing to the trim under test
+      - input: ref('int_focus__school_year_first_day')
+        rows: []
+    expect:
+      rows:
+        - student_number: 4
+          student_enrollment_id: 40
+          startdate: 2026-08-10
+          exitdate: 2026-08-11
+        - student_number: 4
+          student_enrollment_id: 41
+          startdate: 2026-08-12
+          exitdate: 2026-08-13
+        - student_number: 4
+          student_enrollment_id: 42
+          startdate: 2026-08-14
+          exitdate: 2027-06-30
+        - student_number: 5
+          student_enrollment_id: 50
+          startdate: 2026-08-10
+          exitdate: 2027-06-30
+
   - name: test_int_focus__attendance_daily_code_mapping_and_scaffold
     model: int_focus__attendance_daily
     description: >-
@@ -263,22 +350,21 @@ unit_tests:
   - name: test_int_focus__attendance_daily_transfer_day_and_single_day_stint
     model: int_focus__attendance_daily
     description: >-
-      Pins down the stint_starts/enrollments trim. Student 501 transfers from
-      school 58 to school 59 on 2026-08-12 (stint A's exitdate equals stint B's
-      startdate) -- the shared day must appear exactly once, attributed to the
-      ARRIVING school 59, not the departing school 58. Student 502 is a
-      single-day stint (startdate = exitdate = 2026-08-13) -- without the
-      e.startdate <> s.startdate guard it would self-match in stint_starts and
-      lose its only day. Student 503 is a normal multi-day stint whose exitdate
-      (2026-08-14) is an in-session day no other stint starts on -- it must NOT
-      be trimmed.
+      Pins down the inclusive membership range. Student 501 transfers from
+      school 58 to school 59 on 2026-08-12; the roster has already trimmed stint
+      A to end 2026-08-11, so the transfer day appears exactly once, at the
+      ARRIVING school 59, and this model must not trim again. Student 502 is a
+      single-day stint (startdate = exitdate = 2026-08-13) and keeps its only
+      day. Student 503 is a normal multi-day stint whose exitdate (2026-08-14)
+      is an in-session day the student attended -- it must NOT be dropped by a
+      half-open range.
     given:
       - input: ref('int_focus__student_enrollment_roster')
         format: sql
         rows: |
           select 85001 as student_number, 501 as network_student_number,
             2026 as academic_year, 58 as schoolid,
-            date '2026-08-10' as startdate, date '2026-08-12' as exitdate,
+            date '2026-08-10' as startdate, date '2026-08-11' as exitdate,
             5 as grade_level
           union all
           select 85001, 501, 2026, 59, date '2026-08-12', date '2026-08-14', 5
