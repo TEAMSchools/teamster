@@ -748,3 +748,23 @@ data_tests:
         dagster:
           ref:
             name: stg_cambium__njgpa
+
+  - name: test_state_assessment_joins_resolve_miami
+    description: >-
+      Fails when either state-assessment model holds zero Miami rows. The
+      dashboard's FLDOE union leg once emitted `null as localstudentidentifier`
+      while its attaching join inner-joins on that column, and the comps model
+      joined `e.state_studentnumber` to `a.student_id`, which Focus leaves null
+      on every Miami row. Both discarded every Florida score and returned no
+      Miami data in any academic year while every test stayed green -- the
+      breakage produced no error, only absent rows. This asserts presence rather
+      than a count, because Miami's volume moves with enrollment and with which
+      FAST windows have landed, so a floor would drift stale or fire on
+      legitimate change, while zero is always wrong. It stays year-agnostic on
+      purpose.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__state_assessments_dashboard

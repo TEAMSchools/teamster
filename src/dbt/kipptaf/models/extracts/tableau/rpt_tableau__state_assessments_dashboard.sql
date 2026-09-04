@@ -174,9 +174,9 @@ with
         select
             _dbt_source_project,
             academic_year,
-
-            null as localstudentidentifier,
-
+            -- network student_number, matching e.pearson_local_student_identifier
+            -- (misnamed: not Pearson-specific), so the attaching join works (#5042)
+            student_number as localstudentidentifier,
             student_id as state_id,
             assessment_name,
             discipline,
@@ -370,138 +370,6 @@ left join
     on a.academic_year = (sf2.academic_year - 1)
     and a.discipline = sf2.discipline
     and a.localstudentidentifier = sf2.pearson_local_student_identifier
-    and a._dbt_source_project = sf2._dbt_source_project
-    and sf2.rn_year = 1
-
-union all
-
-select
-    e.academic_year,
-    e.academic_year_display,
-    e.region,
-    e.state,
-    e.schoolid,
-    e.school,
-    e.school_name,
-    e.school_level,
-    e.student_number,
-    e.state_studentnumber,
-    e.student_first_name,
-    e.student_middle_name,
-    e.student_last_name,
-    e.student_name,
-    e.grade_level,
-    e.cohort,
-    e.enroll_status,
-    e.gender,
-    e.lunch_status,
-    e.gifted_and_talented,
-    e.ms_attended,
-    e.advisory,
-    e.year_in_network,
-
-    a.race_ethnicity,
-    a.lep_status,
-    a.is_504,
-    a.iep_status,
-    e.dob,
-
-    a.assessment_name,
-    a.discipline,
-    a.`subject`,
-    a.test_code,
-    a.test_grade,
-    a.`admin`,
-    a.season,
-    a.score,
-    a.performance_band,
-    a.performance_band_level,
-    a.performance_band_group_label,
-    a.aligned_performance_band_group,
-    a.is_proficient,
-    a.results_type,
-
-    c.city_percent_proficient as proficiency_city,
-    c.state_percent_proficient as proficiency_state,
-    c.neighborhood_schools_percent_proficient as proficiency_neighborhood_schools,
-
-    c.city_total_students as total_students_city,
-    c.state_total_students as total_students_state,
-    c.neighborhood_schools_total_students as total_students_neighborhood_schools,
-
-    g.grade_level as assessment_grade_level,
-    g.grade_goal,
-    g.school_goal,
-    g.region_goal,
-    g.organization_goal,
-    g.assessment_band_goal,
-
-    sf.nj_student_tier,
-    sf.is_tutoring as tutoring_nj,
-
-    sf2.iready_proficiency_eoy,
-
-    m.teachernumber,
-    m.teacher_name,
-    m.course_number,
-    m.course_name,
-    m.school_current,
-    m.teachernumber_current,
-    m.teacher_name_current,
-
-    case
-        when
-            (e.grade_level >= 9 and a.test_code = 'ALG01')
-            or a.test_code
-            in ('ALG02', 'GEO01', 'MATGP', 'ELA09', 'ELA10', 'ELA11', 'ELAGP', 'SCI11')
-        then 'HS'
-        else '3-8'
-    end as grade_band,
-
-    max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
-
-from assessment_scores as a
-inner join
-    {{ ref("int_extracts__student_enrollments") }} as e
-    on a.academic_year = e.academic_year
-    and a.state_id = e.state_studentnumber
-    and a._dbt_source_project = e._dbt_source_project
-    and a.results_type = 'Actual'
-    and e.region = 'Miami'
-    and e.rn_year = 1
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
-    and e.grade_level > 2
-left join
-    state_comps as c
-    on a.academic_year = c.academic_year
-    and a.assessment_name = c.assessment_name
-    and a.test_code = c.aligned_test_code
-    and e.school_level = c.school_level
-    and a.season = c.season
-    and e.region = c.region
-left join
-    {{ ref("int_assessments__academic_goals") }} as g
-    on e.academic_year = g.academic_year
-    and e.schoolid = g.school_id
-    and a.test_code = g.state_assessment_code
-left join
-    schedules as m
-    on a.academic_year = m.cc_academic_year
-    and a.discipline = m.discipline
-    and a._dbt_source_project = m._dbt_source_project
-    and e.student_number = m.students_student_number
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on a.academic_year = sf.academic_year
-    and a.discipline = sf.discipline
-    and a.state_id = sf.state_studentnumber
-    and a._dbt_source_project = sf._dbt_source_project
-    and sf.rn_year = 1
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
-    on a.academic_year = sf2.academic_year - 1
-    and a.discipline = sf2.discipline
-    and a.state_id = sf2.state_studentnumber
     and a._dbt_source_project = sf2._dbt_source_project
     and sf2.rn_year = 1
 

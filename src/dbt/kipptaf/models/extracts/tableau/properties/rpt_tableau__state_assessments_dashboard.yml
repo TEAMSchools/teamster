@@ -6,13 +6,13 @@ models:
       comparison proficiency rates from city, state, and neighborhood school
       benchmarks. One row per student per assessment per academic year.
 
-      Network-wide, Miami included — this model carries FLDOE FAST results and a
-      Miami-only Civics rule, so Miami is plainly intended. **It returned no
-      Miami rows in prod as of 2026-08-27.** The grain is an inner join from
-      Pearson scores to enrollments on `pearson_local_student_identifier`, which
-      is a New Jersey key, so the FLDOE leg never reaches the output. That is a
-      separate join defect, not a scope decision, and not fixed by #5038.
-      Ratified on #4996.
+      Network-wide, Miami included. Every leg of the score union carries
+      `localstudentidentifier` -- the network student number -- and attaches to
+      enrollments on `pearson_local_student_identifier`, which is that same
+      number despite its name. FLDOE rows take it from
+      `int_fldoe__all_assessments.student_number`, resolved upstream from
+      `fleid`. Scope ratified on #4996; the FLDOE leg emitted a hardcoded null
+      until #5042, so the model held no Miami rows before that fix.
     columns:
       - name: academic_year
         data_type: int64
