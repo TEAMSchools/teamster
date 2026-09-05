@@ -258,20 +258,6 @@ unit_tests:
           union all
           select 2027, 'ELA', 'NJGPA', 'ELAGP', 'S', 450, 'NJGPA-A'
 
-      - input: ref('stg_google_sheets__student_graduation_path_combos')
-        format: sql
-        rows: |
-          select
-            cast(null as int64) as grade_level,
-            cast(null as bool) as has_fafsa,
-            cast(null as bool) as njgpa_season_11th,
-            cast(null as bool) as fafsa_season_12th,
-            cast(null as bool) as attempted_njgpa_ela,
-            cast(null as bool) as attempted_njgpa_math,
-            cast(null as bool) as met_ela,
-            cast(null as bool) as met_math,
-            cast(null as string) as grad_eligibility
-          limit 0
       - input: ref('int_powerschool__state_assessments_transfer_scores')
         format: sql
         rows: |

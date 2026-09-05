@@ -417,10 +417,25 @@ with
             and l.discipline = u.discipline
         left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
+    ),
+
+    eligibility as (
+        select
+            r.*,
+
+            (r.met_ela and r.attempted_njgpa_ela) as counts_ela,
+            (r.met_math and r.attempted_njgpa_math) as counts_math,
+
+            (r.grade_level = 12 and r.fafsa_season_12th) as fafsa_required,
+
+            (
+                not r.attempted_njgpa_ela and not r.attempted_njgpa_math
+            ) as attempted_nothing,
+        from roster as r
     )
 
 select
-    r.*,
+    r.* except (counts_ela, counts_math, fafsa_required, attempted_nothing),
 
     /* negative value means short; positive value means above min required */
     if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
@@ -464,29 +479,34 @@ select
         else 'R'
     end as final_grad_path_code,
 
-    coalesce(
-        case
-            when r.grade_level <= 10
-            then 'Grad Eligible'
-            when r.grade_level >= 11
-            then g.grad_eligibility
-        end,
-        'New category. Need new logic.'
-    ) as grad_eligibility,
+    case
+        when r.grade_level <= 10
+        then 'Grad Eligible'
+        when r.counts_ela and r.counts_math and r.fafsa_required and not r.has_fafsa
+        then 'No FAFSA'
+        when r.counts_ela and r.counts_math
+        then 'Grad Eligible'
+        when r.counts_ela and r.fafsa_required and not r.has_fafsa
+        then 'ELA Only / No FAFSA'
+        when r.counts_ela
+        then 'ELA Only'
+        when r.counts_math and r.fafsa_required and not r.has_fafsa
+        then 'Math Only / No FAFSA'
+        when r.counts_math
+        then 'Math Only'
+        when r.has_fafsa and r.fafsa_required
+        then 'FAFSA Only'
+        when
+            r.grade_level = 11
+            and not r.njgpa_season_11th
+            and (not r.fafsa_season_12th or r.attempted_nothing)
+        then 'Grad Eligible'
+        else 'Not Grad Eligible'
+    end as grad_eligibility,
 
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
 
-from roster as r
-left join
-    {{ ref("stg_google_sheets__student_graduation_path_combos") }} as g
-    on r.grade_level = g.grade_level
-    and r.has_fafsa = g.has_fafsa
-    and r.njgpa_season_11th = g.njgpa_season_11th
-    and r.fafsa_season_12th = g.fafsa_season_12th
-    and r.attempted_njgpa_ela = g.attempted_njgpa_ela
-    and r.attempted_njgpa_math = g.attempted_njgpa_math
-    and r.met_ela = g.met_ela
-    and r.met_math = g.met_math
+from eligibility as r
 where r.enroll_status = 0
