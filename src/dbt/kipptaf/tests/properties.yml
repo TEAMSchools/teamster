@@ -770,16 +770,18 @@ data_tests:
 
   - name: int_students__graduation_path_codes__scores_have_cutoffs
     description: >-
-      Every enrolled student holding an NJGPA score needs a cut score row for
-      that cohort, discipline, score type and assessment version. Without one
-      the pathway join finds nothing, the student falls through to
-      final_grad_path_code of R, and R is indistinguishable from genuinely
-      meeting no pathway. NJDOE publishes cut scores per graduating class only
-      after the administration is scored, so a gap here is expected between the
-      administration and the broadcast, and a retained or accelerated student
-      can sit a version their own cohort has no row for. Warn rather than error
-      for that reason -- the value is the named list of who is unscoreable, not
-      a blocked build.
+      Every student who sat the NJGPA needs a cut score row that accepts their
+      score. This finds students the model records as having attempted the
+      assessment for a discipline but whose NJGPA rows all carry a null scale
+      score, meaning no cut score row matched on their cohort, score type and
+      assessment version. Those students fall through to a final_grad_path_code
+      of R, which is indistinguishable from genuinely meeting no pathway. DLM,
+      portfolio, no-pathway and incomplete-credit students are excluded because
+      they are coded straight from PowerSchool and never reach the cut score
+      join at all. NJDOE publishes cut scores per graduating class only after
+      the administration is scored, and a retained or accelerated student can
+      sit a version their own cohort has no row for, so warn rather than error
+      -- the value is the named list of who is unscoreable, not a blocked build.
     config:
       severity: warn
       meta:
