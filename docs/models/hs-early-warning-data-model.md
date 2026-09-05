@@ -9,21 +9,29 @@ Exposure: `high_school_early_warning_dashboard` in
 `src/dbt/kipptaf/models/exposures/tableau.yml`. Tableau LSID
 `6333e047-e7a9-4d8f-a740-3df30f179d11`, refreshed by Dagster at `0 6 * * *`.
 
-!!! question "One open question"
+!!! note "Where the business rules live"
 
-    Marked **OPEN** below — which of the two community service hour measures is
-    authoritative, and what the requirement actually is. It is a business
-    question rather than a code question.
+    Every threshold on this dashboard is a Tableau calculation, not dbt logic.
+    They are written out below because they are otherwise invisible to anyone
+    without workbook access, and they were recovered by reading the calculations
+    and checking them against the extracts.
 
 ## Dashboard tabs
 
-| Tab                        | Purpose                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------- |
-| On-Track 9th Grade         | Ninth grade on-track status                                                              |
-| Early Warning              | Grades, GPA and discipline flags                                                         |
-| Graduation Eligibility     | Progress toward the state assessment, an approved alternative, or an alternative pathway |
-| Graduation Planner Tracker | Not built                                                                                |
-| Athletic Eligibility       | Not built. Spec exists, driven by ADA, GPA and credits per quarter                       |
+| Tab                    | Purpose                                  | Views to date |
+| ---------------------- | ---------------------------------------- | ------------- |
+| Landing Page           | Entry point                              | 387           |
+| On Track 9th           | Ninth grade promotion status by school   | 516           |
+| Early Warning          | Five per-student risk flags              | 1,876         |
+| Graduation Eligibility | Progress toward a graduation pathway     | 1,452         |
+| Community Service      | Progress toward the 50 hour service goal | 242           |
+
+Confirmed against the Tableau server rather than the older design doc, which
+also listed a Graduation Planner Tracker and an Athletic Eligibility tab.
+Neither exists; an athletic eligibility spec was written but never built.
+
+The workbook has exactly three embedded datasources, one per `rpt_` model below,
+so every threshold on it is a Tableau calculation over those three extracts.
 
 ## The three feeds
 
@@ -72,9 +80,36 @@ What it carries, per row:
     `rpt_tableau__gradebook_dashboard` carries the same mislabel in two places. It
     is deprecated and was deliberately left alone.
 
-**The thresholds are not in dbt.** This extract carries raw measures only.
-Nothing here decides that a student is "at risk" — whatever turns an ADA or a
-GPA into a warning lives in the Tableau workbook.
+### The five early warning flags
+
+This extract carries raw measures; every flag is a Tableau calculation.
+Percentages are as of Q1 across all schools, and the last column says whether
+the rule was reproduced from the extract.
+
+| Flag                   | Rule                                                                                          | Checked              |
+| ---------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
+| On track for promotion | `earned_credits_cum_projected` at or above **25 / 50 / 85 / 120** for grades 9 / 10 / 11 / 12 | From the calculation |
+| Chronically absent     | `ada` below **90%**                                                                           | 53.8% against 54.2%  |
+| Below 2.0 GPA          | `cumulative_y1_gpa_projected` below **2.0**                                                   | 10.4%, exact         |
+| Core Fs                | any Y1 grade of F in credit type **MATH, ENG, SCI or SOC**                                    | 75.2% against 75.3%  |
+| Over age               | derived from `dob` against grade level                                                        | **Not reproduced**   |
+
+The GPA flag reads the **projected** cumulative Y1 GPA. Using `gpa_y1` instead
+gives 8.9% rather than the 10.4% the dashboard shows.
+
+The over-age rule resisted reproduction: age beyond grade plus six flags 5.4% of
+students and grade plus seven flags 0.5%, against the 2.3% shown, so the real
+rule is date-precise in a way the extract alone does not reveal.
+
+!!! warning "The On Track headline depends on a parameter"
+
+    `On Track Indicator` is a switch, not a rule. It resolves to `On Track - All`,
+    `On Track - Credits` or `On Track - Core Fs` depending on the viewer's
+    parameter selection.
+
+    Credits alone is the loosest. At Newark Collegiate it puts 214 ninth graders
+    on track where Overall puts 153. Anyone quoting an on-track percentage needs
+    to say which setting produced it.
 
 ## Community service
 
@@ -92,9 +127,22 @@ Two different measures of hours travel together, from two different places:
 | `cs_hours`                         | Parsed out of the DeansList behavior name | Per entry              |
 | `grade_9_hours` … `grade_12_hours` | DeansList student custom fields           | Per student, per grade |
 
-**OPEN** — which of those is authoritative, and what is the requirement? The
-per-grade custom fields suggest a per-grade target, but the entry log is the
-only thing with dates on it.
+**Both are used, and the requirement is 50 cumulative hours.** Tableau adds
+them:
+
+```text
+Total (Prev Years)             = {FIXED [Student Number] : MAX(g9 + g10 + g11 + g12)}
+LOD Student Hours Current Year = {FIXED [Student Number] : SUM([Cs Hours])}
+LOD Total All Years            = current year + previous years
+```
+
+Grad Goal Met is that total at or above **50**. Checked against the workbook
+filtered to Newark Collegiate, where 50 reproduces both grade 11 at 23 students
+and grade 12 at 38 exactly, and no other threshold does.
+
+The custom fields are last year and earlier; the behavior log is this year.
+Early in the year the total is almost entirely prior years, which makes
+`cs_hours` look irrelevant if you only inspect current data — it is not.
 
 !!! warning "Hours are parsed out of a text label"
 
