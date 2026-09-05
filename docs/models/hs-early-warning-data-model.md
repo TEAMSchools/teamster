@@ -329,7 +329,8 @@ Two models, split by grain:
   cleared it. One row per student, subject, score type, assessment version and
   sitting. Nothing is filtered out, so the dashboard can show near misses.
 - `int_students__graduation_path_codes` rolls that up into a per-student
-  standing and produces `final_grad_path_code` and `grad_eligibility`.
+  standing and produces `final_grad_path_code`, its display label
+  `final_grad_path_name`, and `grad_eligibility`.
 
 `grad_eligibility` is derived, not looked up. It used to come from a
 hand-maintained sheet joined on eight boolean columns, which is now retired.

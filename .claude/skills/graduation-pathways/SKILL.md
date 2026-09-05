@@ -112,8 +112,8 @@ starts at it.
 `stg_google_sheets__student_graduation_path_cutoffs` reads a Google Sheet tab,
 keyed on `cohort` + `discipline` + `score_type` + `assessment_version`.
 `pathway_option` stays `NJGPA` for **both** versions — that is deliberate, and
-it is what keeps the `unpivot_calcs` pivot list and the `final_grad_path_code`
-case untouched when a new version appears.
+it is what keeps the `calcs` roll-up in `int_students__graduation_path_codes`
+and the `final_grad_path_code` case untouched when a new version appears.
 
 Two coordination rules:
 
@@ -339,23 +339,35 @@ failure on the dashboard, so a missing row is a silent wrong answer, not a gap.
 
 ## pathway codes
 
-| Code | Meaning                   | Source                           |
-| ---- | ------------------------- | -------------------------------- |
-| `S`  | State assessment          | NJGPA or NJGPA-A at or above cut |
-| `E`  | ACT                       | cut score sheet                  |
-| `D`  | SAT                       | cut score sheet                  |
-| `J`  | PSAT10                    | cut score sheet                  |
-| `K`  | PSAT/NMSQT                | cut score sheet                  |
-| `M`  | IEP                       | `ps_grad_path_code`              |
-| `N`  | Portfolio appeal          | `ps_grad_path_code`              |
-| `O`  | Attempted, passed nothing | `ps_grad_path_code`              |
-| `P`  | Incomplete credits        | `ps_grad_path_code`              |
-| `R`  | Nothing met               | computed fallback                |
+| Code | Meaning                   | Label               | Source                           |
+| ---- | ------------------------- | ------------------- | -------------------------------- |
+| `S`  | State assessment          | NJGPA               | NJGPA or NJGPA-A at or above cut |
+| `E`  | ACT                       | ACT                 | cut score sheet                  |
+| `D`  | SAT                       | SAT                 | cut score sheet                  |
+| `J`  | PSAT10                    | PSAT10              | cut score sheet                  |
+| `K`  | PSAT/NMSQT                | PSAT NMSQT          | cut score sheet                  |
+| `M`  | IEP                       | DLM                 | `ps_grad_path_code`              |
+| `N`  | Portfolio appeal          | Portfolio           | `ps_grad_path_code`              |
+| `O`  | Attempted, passed nothing | Met No Requirements | `ps_grad_path_code`              |
+| `P`  | Incomplete credits        | Incomplete Credits  | `ps_grad_path_code`              |
+| `R`  | Nothing met               | Default             | computed fallback                |
+
+The Label column is `final_grad_path_name`, decoded in
+`int_students__graduation_path_codes`. It used to be a calculated field in the
+Tableau workbook; it was moved into the model so every consumer reads one
+definition. A new code letter therefore needs a branch in TWO places -- that
+decode and the `pathway_option` decode in
+`int_students__graduation_pathway_scores` -- and
+`int_students__graduation_path_codes__labels_agree` fails the build if the two
+disagree.
 
 Codes `M`, `N`, `O`, `P` come straight from PowerSchool and bypass the cut score
-join entirely — the second `UNION ALL` branch of `lookup_table` handles them
-with a hardcoded `cutoff` of 0. Grades 10 and below pass `ps_grad_path_code`
-through unchanged.
+join entirely — the second branch of the `matched` union in
+`int_students__graduation_pathway_scores` handles them, with a null `cutoff` and
+a `scale_score` of 0. The zero is not a score: the graduation requirements
+extract filters on `scale_score is not null`, so these students would drop off
+the dashboard without it. Grades 10 and below pass `ps_grad_path_code` through
+unchanged.
 
 The state assessment wins when met: `met_njgpa` is tested first, so a student
 who cleared NJGPA reports `S` even if they also cleared SAT.
