@@ -13,6 +13,8 @@ with
 select
     *,
 
+    'NJGPA' as assessment_version,
+
     if(
         `subject` = 'English Language Arts/Literacy', 'English Language Arts', `subject`
     ) as subject_area,

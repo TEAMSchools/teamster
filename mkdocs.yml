@@ -71,6 +71,7 @@ nav:
       - FRESH Dashboard Data Model: models/fresh-dashboard-data-model.md
       - CARAT Dashboard Data Model: models/carat-dashboard-data-model.md
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
+      - HS Early Warning Data Model: models/hs-early-warning-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

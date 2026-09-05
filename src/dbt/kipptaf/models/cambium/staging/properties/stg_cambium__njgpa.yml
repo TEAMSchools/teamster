@@ -100,6 +100,16 @@ models:
       - name: assessment_name
         data_type: string
         description: Constant 'NJGPA'.
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Constant 'NJGPA-A', marking every row here as the adaptive form of the
+          assessment. Cambium replaced Pearson at the spring 2026
+          administration, and the adaptive form uses a different score scale, so
+          graduation pathway cut scores are keyed to this value rather than to
+          the student's cohort. Both vendors report the same assessment_name and
+          the same testcode, so this literal is the only thing distinguishing
+          the two scales downstream.
       - name: subject_area
         data_type: string
         description: >-

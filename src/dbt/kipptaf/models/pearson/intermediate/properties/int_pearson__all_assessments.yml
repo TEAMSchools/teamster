@@ -15,6 +15,26 @@ models:
             combination_of_columns:
               - studenttestuuid
     columns:
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Which version of the assessment produced the row, set as a literal by
+          each vendor's staging model. NJGPA splits into NJGPA for the retired
+          Pearson form and NJGPA-A for the Cambium adaptive form, which use
+          different score scales and therefore different cut scores. Every other
+          assessment repeats assessment_name, having only one version.
+          Graduation pathway cut scores join on this value, so a score is only
+          ever compared against the threshold set for its own scale.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [PARCC, NJSLA, NJSLA Science, NJGPA, NJGPA-A]
+              config:
+                severity: error
+
       - name: _dbt_source_relation
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.

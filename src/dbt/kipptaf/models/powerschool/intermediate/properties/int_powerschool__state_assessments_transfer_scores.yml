@@ -1,0 +1,111 @@
+models:
+  - name: int_powerschool__state_assessments_transfer_scores
+    description: >-
+      NJGPA scores for transfer students, entered by hand in PowerSchool rather
+      than arriving in a vendor file. School staff enter them under District
+      Management, Tests, Standardized Tests, on the holder named
+      'NJGPA/NJGPA-A'. Both the retired NJGPA and the adaptive NJGPA-A live on
+      that one holder, told apart by the score field name — 'ELAGP' and 'MATGP'
+      for the retired form, 'ELAGP-A' and 'MATGP-A' for the adaptive form. The
+      model normalizes the score field back to 'ELAGP' or 'MATGP' and reports
+      the version separately, so a score is compared against the cut score for
+      its own scale. Only Newark and Camden have the holder configured; a region
+      gains rows here once its own PowerSchool instance has it.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studenttestid
+              - score_name
+          config:
+            severity: error
+    columns:
+      - name: testcode
+        data_type: string
+        description: >-
+          Score field name with the adaptive suffix removed, so both forms
+          report 'ELAGP' or 'MATGP'. Joins to score_type on the graduation
+          pathway cut score sheet. A score field added under a name outside this
+          set fails the accepted_values test rather than silently producing a
+          null discipline and dropping out of the pathway calculation.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [ELAGP, MATGP]
+              config:
+                severity: error
+
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District code location, passed through from the upstream union. Needed
+          to disambiguate studentid, which is only unique within a single
+          PowerSchool instance.
+
+      - name: test_name
+        data_type: string
+        description: >-
+          Name of the PowerSchool standardized test holder. 'NJGPA/NJGPA-A'
+          after the holder was renamed to cover both forms, and 'NJGPA' in an
+          instance not yet renamed. The model matches both, because a holder
+          named anything else is silently excluded and produces no rows at all.
+
+      - name: studenttestid
+        data_type: int64
+        description: >-
+          PowerSchool identifier for the student's test administration. Included
+          so the grain survives a student sitting the assessment more than once.
+
+      - name: studentid
+        data_type: int64
+        description: >-
+          PowerSchool student identifier, unique only within its own instance.
+
+      - name: assessment_grade_level
+        data_type: int64
+        description: Grade level recorded on the test administration.
+
+      - name: testscalescore
+        data_type: int64
+        description: >-
+          Scale score as entered, never a raw score. The two forms use different
+          and non-overlapping scales, so the value is only meaningful alongside
+          assessment_version.
+
+      - name: testperformancelevel
+        data_type: string
+        description: Performance level as entered, when the entry includes one.
+
+      - name: score_name
+        data_type: string
+        description: >-
+          Score field name exactly as configured in PowerSchool, before the
+          adaptive suffix is stripped. Kept for tracing a row back to the entry
+          screen.
+
+      - name: assessment_name
+        data_type: string
+        description: >-
+          Constant 'NJGPA'. Matches pathway_option on the graduation pathway cut
+          score sheet, which stays 'NJGPA' for both forms.
+
+      - name: assessment_version
+        data_type: string
+        description: >-
+          'NJGPA-A' when the score field name ends in the adaptive suffix,
+          otherwise 'NJGPA'. Graduation pathway cut scores join on this value.
+
+      - name: discipline
+        data_type: string
+        description: ELA or Math, derived from the normalized testcode.
+
+      - name: subject
+        data_type: string
+        description: >-
+          Full subject name, derived from the normalized testcode, matching the
+          shape the vendor feeds use.

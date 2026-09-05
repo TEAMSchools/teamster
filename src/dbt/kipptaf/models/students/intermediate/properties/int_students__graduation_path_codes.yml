@@ -168,3 +168,213 @@ models:
             source_column: test_type
       - name: rn_discipline_distict
         data_type: int64
+
+unit_tests:
+  - name: test_njgpa_cut_score_boundaries_per_assessment_version
+    description: >-
+      Pins the cut score boundary for each NJGPA version, and pins that a score
+      is only ever compared against the cut score for its own version. NJGPA-A
+      is graduation ready at 450 and the retired NJGPA at 725, on scales that do
+      not overlap, and both arrive with the same assessment_name and the same
+      testcode. The class of 2027 therefore carries a cut score row for each
+      version, so every student here produces two rows -- one that matches their
+      score and one that matches nothing. A student holding scores on both
+      scales meets the pathway when either version clears its own cut score. A
+      retired-scale score of 700 must not clear 450, which is the regression
+      this test exists to catch.
+    model: int_students__graduation_path_codes
+    given:
+      - input: ref('int_extracts__student_enrollments_subjects')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            1 as students_dcid,
+            1 as studentid,
+            1 as student_number,
+            '1' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            12 as grade_level,
+            0 as enroll_status,
+            2027 as cohort,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            true as met_fafsa_requirement,
+            cast(null as string) as ps_grad_path_code,
+            1 as rn_undergrad,
+            'Newark' as region
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 2, 2, 2, '2', null,
+            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 3, 3, 3, '3', null,
+            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 4, 4, 4, '4', null,
+            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+          union all
+          select 'kippnewark_powerschool', 'kippnewark', 5, 5, 5, '5', null,
+            12, 0, 2027, 'ELA', 'ENG', true, null, 1, 'Newark'
+
+      - input: ref('int_pearson__all_assessments')
+        format: sql
+        rows: |
+          select
+            1 as localstudentidentifier,
+            'ELA' as discipline,
+            cast(450 as numeric) as testscalescore,
+            'ELAGP' as testcode,
+            'NJGPA' as assessment_name,
+            'NJGPA-A' as assessment_version,
+            cast(1 as numeric) as testscorecomplete
+          union all
+          select 2, 'ELA', cast(449 as numeric), 'ELAGP', 'NJGPA', 'NJGPA-A',
+            cast(1 as numeric)
+          union all
+          select 3, 'ELA', cast(725 as numeric), 'ELAGP', 'NJGPA', 'NJGPA',
+            cast(1 as numeric)
+          union all
+          select 4, 'ELA', cast(724 as numeric), 'ELAGP', 'NJGPA', 'NJGPA',
+            cast(1 as numeric)
+          union all
+          select 5, 'ELA', cast(700 as numeric), 'ELAGP', 'NJGPA', 'NJGPA',
+            cast(1 as numeric)
+          union all
+          select 5, 'ELA', cast(500 as numeric), 'ELAGP', 'NJGPA', 'NJGPA-A',
+            cast(1 as numeric)
+
+      - input: ref('stg_google_sheets__student_graduation_path_cutoffs')
+        format: sql
+        rows: |
+          select
+            2027 as cohort,
+            'ELA' as discipline,
+            'NJGPA' as pathway_option,
+            'ELAGP' as score_type,
+            'S' as pathway_code,
+            725 as cutoff,
+            'NJGPA' as assessment_version
+          union all
+          select 2027, 'ELA', 'NJGPA', 'ELAGP', 'S', 450, 'NJGPA-A'
+
+      - input: ref('stg_google_sheets__student_graduation_path_combos')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as grade_level,
+            cast(null as bool) as has_fafsa,
+            cast(null as bool) as njgpa_season_11th,
+            cast(null as bool) as fafsa_season_12th,
+            cast(null as bool) as attempted_njgpa_ela,
+            cast(null as bool) as attempted_njgpa_math,
+            cast(null as bool) as met_ela,
+            cast(null as bool) as met_math,
+            cast(null as string) as grad_eligibility
+          limit 0
+      - input: ref('int_powerschool__state_assessments_transfer_scores')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as studentid,
+            cast(null as string) as discipline,
+            cast(null as float64) as testscalescore,
+            cast(null as string) as testcode,
+            cast(null as string) as assessment_name,
+            cast(null as string) as assessment_version
+          limit 0
+
+      - input: ref('int_assessments__college_assessment')
+        format: sql
+        rows: |
+          select
+            cast(null as int64) as student_number,
+            cast(null as numeric) as scale_score,
+            cast(null as string) as score_type,
+            cast(null as string) as subject_area,
+            cast(null as string) as scope,
+            cast(null as string) as course_discipline
+          limit 0
+
+    expect:
+      rows:
+        - {
+            student_number: 1,
+            cutoff: 450,
+            scale_score: 450,
+            met_pathway_cutoff: true,
+            met_njgpa: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 1,
+            cutoff: 725,
+            scale_score: null,
+            met_pathway_cutoff: false,
+            met_njgpa: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 2,
+            cutoff: 450,
+            scale_score: 449,
+            met_pathway_cutoff: false,
+            met_njgpa: false,
+            final_grad_path_code: R,
+          }
+        - {
+            student_number: 2,
+            cutoff: 725,
+            scale_score: null,
+            met_pathway_cutoff: false,
+            met_njgpa: false,
+            final_grad_path_code: R,
+          }
+        - {
+            student_number: 3,
+            cutoff: 450,
+            scale_score: null,
+            met_pathway_cutoff: false,
+            met_njgpa: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 3,
+            cutoff: 725,
+            scale_score: 725,
+            met_pathway_cutoff: true,
+            met_njgpa: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 4,
+            cutoff: 450,
+            scale_score: null,
+            met_pathway_cutoff: false,
+            met_njgpa: false,
+            final_grad_path_code: R,
+          }
+        - {
+            student_number: 4,
+            cutoff: 725,
+            scale_score: 724,
+            met_pathway_cutoff: false,
+            met_njgpa: false,
+            final_grad_path_code: R,
+          }
+        - {
+            student_number: 5,
+            cutoff: 450,
+            scale_score: 500,
+            met_pathway_cutoff: true,
+            met_njgpa: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 5,
+            cutoff: 725,
+            scale_score: 700,
+            met_pathway_cutoff: false,
+            met_njgpa: true,
+            final_grad_path_code: S,
+          }
