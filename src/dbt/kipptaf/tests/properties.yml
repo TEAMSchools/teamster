@@ -806,3 +806,21 @@ data_tests:
         dagster:
           ref:
             name: int_students__student_enrollments
+
+  - name: int_students__graduation_pathway_scores__best_score_ranked_first
+    description: >-
+      Within a student and score type, the row ranked first must be a passing
+      score whenever the student has one. Consumers filter on rn_highest of 1 to
+      get a single row per score type, so a passing score ranked behind a
+      failing one disappears from the dashboard and the student reads as having
+      missed. The two NJGPA versions share a score type but not a score scale,
+      so ranking on the raw score would put a failing 700 on the retired scale
+      above a passing 500 on the adaptive one. Ranking on whether the score
+      passed, and then on how far it cleared its own cut score, is comparable
+      across both.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_pathway_scores

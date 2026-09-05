@@ -166,8 +166,11 @@ models:
       - name: rn_highest
         data_type: int64
         description: >-
-          Ranks a student's sittings of the same score type, highest score
-          first. Consumers wanting one row per score type filter on 1.
+          Ranks a student's sittings of the same score type, best result first.
+          Ordered by whether the score passed and then by how far it cleared its
+          own cut score, not by the raw score -- the two NJGPA versions share a
+          score type but not a scale. Consumers wanting one row per score type
+          filter on 1.
 
 unit_tests:
   - name: test_njgpa_cut_score_boundaries_per_assessment_version

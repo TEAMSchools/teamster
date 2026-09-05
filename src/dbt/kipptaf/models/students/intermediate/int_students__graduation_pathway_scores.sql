@@ -255,16 +255,27 @@ with
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
+    ),
+
+    scored as (
+        select
+            *,
+
+            /* negative value means short; positive means above min required */
+            if(scale_score is not null, scale_score - cutoff, null) as points_short,
+        from matched
     )
 
 select
     *,
 
-    /* negative value means short; positive value means above min required */
-    if(scale_score is not null, scale_score - cutoff, null) as points_short,
-
+    /* Ranked by whether the score passed and then by how far it cleared its own
+       cut score, NOT by the raw score. The two NJGPA versions share a score_type
+       but not a scale, so a failing 700 on the retired scale would otherwise
+       outrank a passing 500 on the adaptive one. */
     row_number() over (
-        partition by student_number, score_type order by scale_score desc
+        partition by student_number, score_type
+        order by met_pathway_cutoff desc, points_short desc
     ) as rn_highest,
 
-from matched
+from scored
