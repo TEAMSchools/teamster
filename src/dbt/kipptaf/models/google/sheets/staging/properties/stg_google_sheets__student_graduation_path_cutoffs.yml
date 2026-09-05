@@ -12,14 +12,14 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - Cohort
-              - Discipline
-              - Score_Type
-              - Assessment_Version
+              - cohort
+              - discipline
+              - score_type
+              - assessment_version
           config:
             severity: error
     columns:
-      - name: Cohort
+      - name: cohort
         data_type: int64
         description: >-
           Graduating class the cut score applies to, matched against a student's
@@ -31,7 +31,7 @@ models:
               config:
                 severity: error
 
-      - name: Pathway
+      - name: pathway
         data_type: string
         description: >-
           Broad pathway family the option belongs to, either State Assessment or
@@ -47,7 +47,7 @@ models:
               config:
                 severity: error
 
-      - name: Pathway_Option
+      - name: pathway_option
         data_type: string
         description: >-
           Assessment the student may use to meet the pathway. Both NJGPA
@@ -63,13 +63,13 @@ models:
               config:
                 severity: error
 
-      - name: Assessment_Version
+      - name: assessment_version
         data_type: string
         description: >-
           Version of the assessment the cut score belongs to. NJGPA rows carry
           NJGPA for the retired Pearson form and NJGPA-A for the Cambium
           adaptive form, which use different score scales and therefore
-          different cut scores. Every other row repeats Pathway_Option, since
+          different cut scores. Every other row repeats pathway_option, since
           those assessments have only one version. Scores join on this value so
           that a score is only ever compared against the threshold set for its
           own scale.
@@ -83,7 +83,7 @@ models:
               config:
                 severity: error
 
-      - name: Discipline
+      - name: discipline
         data_type: string
         description: Subject the cut score applies to.
         data_tests:
@@ -96,19 +96,19 @@ models:
               config:
                 severity: error
 
-      - name: Score_Type
+      - name: score_type
         data_type: string
         description: >-
           Specific score within the assessment that the cut score is measured
           against, matching the score type reported by the source system. The
           two NJGPA versions report the same codes, ELAGP and MATGP, which is
-          why Assessment_Version is needed to tell their cut scores apart.
+          why assessment_version is needed to tell their cut scores apart.
         data_tests:
           - not_null:
               config:
                 severity: error
 
-      - name: Pathway_Code
+      - name: pathway_code
         data_type: string
         description: >-
           Letter New Jersey uses to report which pathway the student met,
@@ -124,7 +124,7 @@ models:
               config:
                 severity: error
 
-      - name: Cutoff
+      - name: cutoff
         data_type: int64
         description: >-
           Lowest score that meets the pathway for this cohort, discipline, score

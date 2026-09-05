@@ -57,8 +57,8 @@ with
             x.testscalescore as scale_score,
             x.testcode as score_type,
             x.testcode as subject_area,
-            x.test_name as pathway_option,
-            x.test_name as assessment_version,
+            x.assessment_name as pathway_option,
+            x.assessment_version,
             x.discipline,
 
         from students as s
