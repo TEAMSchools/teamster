@@ -43,7 +43,17 @@ so every threshold on it is a Tableau calculation over those three extracts.
 
 Miami is out of scope throughout. NJ graduation pathways do not apply in
 Florida, and `int_students__graduation_path_codes` filters
-`where e.region != 'Miami'`.
+`where e.region != 'Miami'`. Miami also only opened a high school this year, so
+there is no history to report on either way.
+
+The two graduation feeds are scoped differently on purpose, which looks like an
+inconsistency and is not. `rpt_tableau__graduation_requirements` filters cohort
+to a window of `current_academic_year - 1` through `current_academic_year + 5`
+and excludes Miami; `rpt_tableau__hs_early_warning_dashboard` does neither. The
+window is there because the graduation view deliberately reaches beyond the
+graduating class -- 11th graders are in scope, since they sit the NJGPA -- so it
+spans several cohorts rather than one. The early warning view has no cohort
+concern at all; it reports on whoever is enrolled now.
 
 ## Course performance and discipline
 
@@ -406,3 +416,57 @@ User guide, which **must be updated whenever transfer-score entry changes**:
     `ELAGP` / `MATGP` / `ELAGP-A` / `MATGP-A` produces a testcode that matches no
     cut score row; the `accepted_values` test on `testcode` turns that into a
     build failure rather than a silently dropped score.
+
+## Start-of-year procedure
+
+The dbt layer rolls over on its own. All three feeds filter on
+`var("current_academic_year")`, which is set per project in `dbt_project.yml`
+and rolls each July, so no SQL changes when the year advances.
+
+Four things need a human. Two of them have no owner and no schedule, which is
+recorded here as fact rather than dressed up as a process.
+
+### Step 1 — Cut scores, whenever NJDOE publishes
+
+The Academics team shares the NJDOE cut-off documentation; the data team applies
+it to `stg_google_sheets__student_graduation_path_cutoffs`. The runbook is in
+the `graduation-pathways` skill.
+
+This is not an annual task. NJDOE publishes per graduating class, and only after
+that class has sat and been scored, so rows arrive when they arrive.
+
+**Do not add a cut score row for a cohort whose threshold NJDOE has not
+published.** A guessed threshold silently marks students as having met or missed
+a pathway nobody has defined, and `final_grad_path_code` goes to the state. A
+cohort with no rows is expected, not a gap to close -- as of September 2026 that
+is the classes of 2028, 2029 and 2030.
+
+The enforcement is the `scores_have_cutoffs` test, which warns and names the
+students who cannot be scored rather than letting them fall through to a default
+`R`. Hand that list to the HS team; in September 2026 it went to Casey and
+Walters.
+
+### Step 2 — Community service custom fields
+
+Jabari does this in DeansList, when he remembers or when someone asks. There is
+no trigger and no schedule.
+
+The symptom of it not having happened is a prior year's hours disappearing from
+the dashboard -- see the warning under Community service. There is nothing in
+dbt to fix when that happens, so asking Jabari IS the procedure.
+
+### Step 3 — Reporting terms
+
+Anyone on the data team, whenever they have time. No owner, no trigger.
+
+`stg_google_sheets__reporting__terms` needs rows of type `RT` for the new
+academic year for all three NJ high schools. AY2026-27 is in place. The join in
+`rpt_tableau__hs_early_warning_dashboard` is an INNER join, so a school missing
+its `RT` rows silently disappears from the extract rather than raising anything.
+
+### Step 4 — Check nothing else needs it
+
+Unknown, and never confirmed. The three inputs above are the ones that have been
+traced; nobody has verified the list is complete. Treat this as an open question
+rather than a clean bill of health, and add to it when the next rollover turns
+something up.
