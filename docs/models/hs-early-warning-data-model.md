@@ -68,6 +68,62 @@ For the working rules, cut score maintenance, and the failure modes, use the
   adjusted cohort graduation rate but means a retained or accelerated student
   sits the assessment with a different class than their cohort.
 
+### Which pathway code a student gets
+
+Produces `final_grad_path_code`, the letter written back to the state. FAFSA
+plays no part in it — a student with no FAFSA who passed the NJGPA still gets
+`S`.
+
+```mermaid
+flowchart TD
+    start([Student, one subject]) --> g10{Grade 10 or below?}
+    g10 -->|yes| keep[Carry ps_grad_path_code through]
+    g10 -->|no| mnop{ps_grad_path_code is M, N, O or P?}
+    mnop -->|yes| keep2[Keep the code PowerSchool holds]
+    mnop -->|no| att{Sat the NJGPA?}
+    att -->|no| r[Code R]
+    att -->|yes| njgpa{Met NJGPA?}
+    njgpa -->|yes| s[Code S]
+    njgpa -->|no| act{Met ACT?}
+    act -->|yes| e[Code E]
+    act -->|no| sat{Met SAT?}
+    sat -->|yes| d[Code D]
+    sat -->|no| p10{Met PSAT10?}
+    p10 -->|yes| j[Code J]
+    p10 -->|no| pnm{Met PSAT NMSQT?}
+    pnm -->|yes| k[Code K]
+    pnm -->|no| r
+```
+
+There is no retry loop in the model. A student re-sitting an assessment simply
+has a new score the next time it builds, and the chain runs again from the top.
+
+### Which eligibility label a student gets
+
+Produces `grad_eligibility`, which is what the dashboard shows. This is where
+FAFSA enters. "FAFSA required" means grade 12 and on or after the January
+deadline of their senior year; FAFSA never gates an 11th grader.
+
+```mermaid
+flowchart TD
+    start([Student]) --> g10{Grade 10 or below?}
+    g10 -->|yes| ge[Grad Eligible]
+    g10 -->|no| counts[A subject counts only if the student sat the NJGPA in it]
+    counts --> both{Both subjects count?}
+    both -->|yes| f1{FAFSA required and missing?}
+    f1 -->|no| ge
+    f1 -->|yes| nf[No FAFSA]
+    both -->|no| one{One subject counts?}
+    one -->|yes| f2{FAFSA required and missing?}
+    f2 -->|no| only[ELA Only or Math Only]
+    f2 -->|yes| onlynf[ELA Only / No FAFSA or Math Only / No FAFSA]
+    one -->|no| hasf{Has FAFSA and FAFSA is required?}
+    hasf -->|yes| fo[FAFSA Only]
+    hasf -->|no| g11{Grade 11, no NJGPA records, before results land?}
+    g11 -->|yes| ge
+    g11 -->|no| nge[Not Grad Eligible]
+```
+
 ### How the model is put together
 
 Two models, split by grain:

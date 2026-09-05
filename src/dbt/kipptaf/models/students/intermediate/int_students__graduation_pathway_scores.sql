@@ -63,6 +63,7 @@ with
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
             on s.studentid = x.studentid
+            and s._dbt_source_project = x._dbt_source_project
             and s.discipline = x.discipline
 
         union all
@@ -115,9 +116,9 @@ with
         select
             student_number,
 
-            max(ela) as attempted_njgpa_ela,
-            max(math) as attempted_njgpa_math,
-        from scores pivot (max(score_type) for discipline in ('ELA', 'Math'))
+            logical_or(discipline = 'ELA') as attempted_njgpa_ela,
+            logical_or(discipline = 'Math') as attempted_njgpa_math,
+        from scores
         where pathway_option = 'NJGPA'
         group by student_number
     ),
@@ -150,13 +151,10 @@ with
             p.scale_score,
             p.subject_area,
 
-            if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
+            p.scale_score >= c.cutoff as met_pathway_cutoff,
 
-            if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
-
-            if(
-                nj.attempted_njgpa_math is not null, true, false
-            ) as attempted_njgpa_math,
+            coalesce(nj.attempted_njgpa_ela, false) as attempted_njgpa_ela,
+            coalesce(nj.attempted_njgpa_math, false) as attempted_njgpa_math,
 
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
@@ -174,7 +172,7 @@ with
             s.ps_grad_path_code is null
             or s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
 
-        union all
+        union all corresponding
 
         /* students whose pathway powerschool already decided. They never reach a
            cut score, but they still need one row per discipline so the dashboard
@@ -231,9 +229,12 @@ with
 
             s.ps_grad_path_code as pathway_code,
 
-            0 as cutoff,
-            s.ps_grad_path_code as assessment_version,
+            cast(null as int64) as cutoff,
+            cast(null as string) as assessment_version,
 
+            /* not a real score. Kept as zero rather than null because the
+               graduation requirements extract filters on scale_score is not
+               null, and these students must stay on the dashboard. */
             0 as scale_score,
             s.discipline as subject_area,
 
@@ -242,15 +243,13 @@ with
             case
                 when s.ps_grad_path_code = 'M'
                 then s.pre_attempted_njgpa_subject
-                when nj.attempted_njgpa_ela is not null
-                then true
+                else coalesce(nj.attempted_njgpa_ela, false)
             end as attempted_njgpa_ela,
 
             case
                 when s.ps_grad_path_code = 'M'
                 then s.pre_attempted_njgpa_subject
-                when nj.attempted_njgpa_math is not null
-                then true
+                else coalesce(nj.attempted_njgpa_math, false)
             end as attempted_njgpa_math,
 
         from students as s

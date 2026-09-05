@@ -114,21 +114,31 @@ models:
         data_type: int64
         description: >-
           Lowest score that satisfies this pathway for the student's cohort,
-          subject and assessment version. Zero where PowerSchool already
-          decided.
+          subject and assessment version. Null where PowerSchool already decided
+          the pathway, since no cut score applies.
       - name: assessment_version
         data_type: string
         description: >-
           Which version of the assessment the score and cut score belong to. The
           retired NJGPA and the adaptive NJGPA-A use different scales, so a
           score is only ever compared against the cut score set for its own
-          scale.
+          scale. Null where PowerSchool already decided the pathway, since no
+          assessment is involved.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [NJGPA, NJGPA-A, ACT, SAT, PSAT10, PSAT NMSQT]
+              config:
+                severity: error
       - name: scale_score
         data_type: numeric
         description: >-
           Score the student earned. Null where the student has no score for this
           pathway, which is the usual case, since every student is paired with
-          every pathway their cohort has a cut score for.
+          every pathway their cohort has a cut score for. Zero, not null, where
+          PowerSchool already decided the pathway -- the graduation requirements
+          extract filters on this column being non-null, and those students have
+          to stay on the dashboard.
       - name: subject_area
         data_type: string
         description:
@@ -136,8 +146,9 @@ models:
       - name: met_pathway_cutoff
         data_type: boolean
         description: >-
-          Whether this score reached its cut score. False rather than null when
-          there is no score, so it can be aggregated directly.
+          Whether this score reached its cut score. Null where the student has
+          no score for this pathway, so a missing score is never mistaken for a
+          score that fell short.
       - name: attempted_njgpa_ela
         data_type: boolean
         description: >-
@@ -250,6 +261,7 @@ unit_tests:
         rows: |
           select
             cast(null as int64) as studentid,
+            cast(null as string) as _dbt_source_project,
             cast(null as string) as discipline,
             cast(null as float64) as testscalescore,
             cast(null as string) as testcode,
@@ -282,7 +294,7 @@ unit_tests:
             assessment_version: NJGPA,
             cutoff: 725,
             scale_score: null,
-            met_pathway_cutoff: false,
+            met_pathway_cutoff: null,
           }
         - {
             student_number: 2,
@@ -296,14 +308,14 @@ unit_tests:
             assessment_version: NJGPA,
             cutoff: 725,
             scale_score: null,
-            met_pathway_cutoff: false,
+            met_pathway_cutoff: null,
           }
         - {
             student_number: 3,
             assessment_version: NJGPA-A,
             cutoff: 450,
             scale_score: null,
-            met_pathway_cutoff: false,
+            met_pathway_cutoff: null,
           }
         - {
             student_number: 3,
@@ -317,7 +329,7 @@ unit_tests:
             assessment_version: NJGPA-A,
             cutoff: 450,
             scale_score: null,
-            met_pathway_cutoff: false,
+            met_pathway_cutoff: null,
           }
         - {
             student_number: 4,
