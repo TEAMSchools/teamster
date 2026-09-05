@@ -73,9 +73,9 @@ models:
       - name: testscalescore
         data_type: int64
         description: >-
-          Scale score as entered. The retired form runs 650 to 850 and the
-          adaptive form runs roughly 300 to 562, so the value is only meaningful
-          alongside assessment_version.
+          Scale score as entered, never a raw score. The two forms use different
+          and non-overlapping scales, so the value is only meaningful alongside
+          assessment_version.
 
       - name: testperformancelevel
         data_type: string

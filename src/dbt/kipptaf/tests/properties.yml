@@ -753,14 +753,14 @@ data_tests:
     description: >-
       A graduation pathway cut score must be reachable on the scale of the
       scores it is compared against. NJDOE replaced the NJGPA with the adaptive
-      NJGPA-A at the spring 2026 administration, moving the scale from 650-850
-      to 300-562 and the cut from 725 to 450. Until the cut score sheet gained
-      an assessment_version column, every adaptive score was compared against
-      725 and read as not met, and the only symptom was a graduating class that
-      appeared to fail. This fires when no student in a group of at least 20
-      scored rows can reach the cut score, which is what a cut score keyed to
-      the wrong scale looks like. The floor of 20 keeps a genuinely hard cut
-      score with few takers from tripping it.
+      NJGPA-A at the spring 2026 administration, moving to a lower,
+      non-overlapping scale and the cut from 725 to 450. Until the cut score
+      sheet gained an assessment_version column, every adaptive score was
+      compared against 725 and read as not met, and the only symptom was a
+      graduating class that appeared to fail. This fires when no student in a
+      group of at least 20 scored rows can reach the cut score, which is what a
+      cut score keyed to the wrong scale looks like. The floor of 20 keeps a
+      genuinely hard cut score with few takers from tripping it.
     config:
       severity: error
       meta:

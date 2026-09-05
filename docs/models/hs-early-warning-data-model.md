@@ -40,10 +40,12 @@ For the working rules, cut score maintenance, and the failure modes, use the
 `graduation-pathways` skill. The essentials:
 
 - NJGPA is **dual-vendor**. `stg_pearson__njgpa` carries the retired form on a
-  650-850 scale with a cut of 725, through the Fall 2025 administration.
-  `stg_cambium__njgpa` carries the adaptive **NJGPA-A** on a 300-562 scale with
-  a cut of 450, from Spring 2026 onward. Both report the same `assessment_name`
-  and the same `testcode`.
+  cut of 725 and scores observed from 650 to 850, through the Fall 2025
+  administration. `stg_cambium__njgpa` carries the adaptive **NJGPA-A** with a
+  cut of 450 and scores observed from 300 to 562, from Spring 2026 onward. Those
+  ranges are what our rows contain, not published scale bounds -- NJDOE
+  publishes only the cut score, per graduating class. Both report the same
+  `assessment_name` and the same `testcode`.
 - `assessment_version` is what tells them apart, set as a literal in each
   vendor's staging model and carried up through `int_pearson__all_assessments`.
 - Cut scores live in a hand-maintained Google Sheet

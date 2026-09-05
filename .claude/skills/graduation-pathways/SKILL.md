@@ -25,7 +25,10 @@ description: >-
   — the cut score contract and its key.
 - The NJDOE broadcast for the cohort in question. NJDOE publishes graduation
   requirements per graduating class, not per year, and the cut scores land only
-  after the administration is scored.
+  after the administration is scored. Requirements index --
+  <https://www.nj.gov/education/assessment/requirements/>, which links a page
+  per graduating class. Test blueprints --
+  <https://www.nj.gov/education/assessment/adaptive/gpablueprints.shtml>.
 
 **This model writes to the state.** `final_grad_path_code` flows through
 `rpt_powerschool__autocomm_students` into the PowerSchool fields
@@ -45,10 +48,19 @@ This is the trap. NJGPA is dual-vendor and both vendors report the **same**
 `assessment_name` (`NJGPA`) and the **same** `testcode` (`ELAGP` / `MATGP`).
 Only the staging relation and the score scale differ.
 
-| Staging model        | Test              | Scale   | Cut | Administrations          |
-| -------------------- | ----------------- | ------- | --- | ------------------------ |
-| `stg_pearson__njgpa` | NJGPA, retired    | 650-850 | 725 | Spring 2021 to Fall 2025 |
-| `stg_cambium__njgpa` | NJGPA-A, adaptive | 300-562 | 450 | Spring 2026 onward       |
+| Staging model        | Test              | Observed scores | Cut | Administrations          |
+| -------------------- | ----------------- | --------------- | --- | ------------------------ |
+| `stg_pearson__njgpa` | NJGPA, retired    | 650-850         | 725 | Spring 2021 to Fall 2025 |
+| `stg_cambium__njgpa` | NJGPA-A, adaptive | 300-562         | 450 | Spring 2026 onward       |
+
+The ranges above are the min and max **observed in our own rows**, not published
+scale bounds. NJDOE does not publish the scale range on either the
+[requirements page](https://www.nj.gov/education/assessment/requirements/) or
+the
+[blueprints](https://www.nj.gov/education/assessment/adaptive/gpablueprints.shtml)
+-- only the cut score, in the per-class broadcast. Treat the cut as
+authoritative and the range as a sanity check that may widen as more scores
+arrive.
 
 `assessment_version` tells them apart. It is set as a **literal** in each
 vendor's staging model, never inferred — `'NJGPA'` in the Pearson models,
@@ -181,8 +193,8 @@ scores by `testperformancelevel`: level 1's max should sit one point below the
 published cut, and level 2's min should equal it. If they disagree, stop and
 raise it — either the file or the broadcast reading is wrong.
 
-Also confirm the scale. A cut of 450 against scores running 650-850 means you
-are about to key a new-scale cut onto old-scale rows.
+Also sanity-check the scale. A cut of 450 against scores running 650-850 means
+you are about to key a new-scale cut onto old-scale rows.
 
 ### Step 4 — Generate the full replacement rows
 
