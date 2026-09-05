@@ -5,6 +5,7 @@ with
             discipline,
             grade_level,
             grad_eligibility,
+            njgpa_season_11th,
 
             met_ela and attempted_njgpa_ela as counts_ela,
             met_math and attempted_njgpa_math as counts_math,
@@ -27,7 +28,9 @@ with
                 when grad_eligibility in ('Grad Eligible', 'No FAFSA')
                 then
                     not (counts_ela and counts_math)
-                    and not (grade_level = 11 and attempted_nothing)
+                    and not (
+                        grade_level = 11 and attempted_nothing and not njgpa_season_11th
+                    )
                 when grad_eligibility like 'ELA Only%'
                 then not counts_ela or counts_math
                 when grad_eligibility like 'Math Only%'

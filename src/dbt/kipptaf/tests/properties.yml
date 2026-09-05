@@ -768,6 +768,24 @@ data_tests:
           ref:
             name: int_students__graduation_path_codes
 
+  - name: int_students__graduation_pathway_scores__one_cutoff_per_score_type
+    description: >-
+      A student must face exactly one cut score for a given subject, score type
+      and assessment version. The model's own uniqueness test cannot catch a
+      breach of this: its key ends in rn_highest, which is a row_number over a
+      subset of that key and so is unique whatever the data does. The cut score
+      sheet's uniqueness test does not catch it either, because the sheet is
+      keyed on cohort, discipline, score type and version while the join also
+      matches pathway_option -- two sheet rows differing only in pathway_option
+      pass that test and fan a student out here, silently doubling the grain the
+      way it doubled when the second NJGPA row was first added.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_pathway_scores
+
   - name: int_students__graduation_path_codes__labels_agree
     description: >-
       A student coded straight from PowerSchool carries their pathway label in

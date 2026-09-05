@@ -3,7 +3,7 @@ with
         /* one row per student per discipline. A pathway is met when any score
            for it cleared its cut score. */
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             discipline,
             ps_grad_path_code,
@@ -35,7 +35,7 @@ with
         from {{ ref("int_students__graduation_pathway_scores") }}
         where scale_score is not null
         group by
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             discipline,
             ps_grad_path_code,
@@ -102,6 +102,7 @@ with
             calcs as u
             on s.student_number = u.student_number
             and s.discipline = u.discipline
+            and s._dbt_source_project = u._dbt_source_project
         left join met_subject as m on s.student_number = m.student_number
     ),
 

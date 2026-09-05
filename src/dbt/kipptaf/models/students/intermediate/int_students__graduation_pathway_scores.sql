@@ -172,6 +172,10 @@ with
             s.ps_grad_path_code is null
             or s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
 
+        -- Both branches list every column. UNION ALL CORRESPONDING matches by
+        -- name and errors when the two lists differ, so a column added to one
+        -- branch has to be written down in the other instead of being padded
+        -- silently (the FULL form does that, and hid the nulls #5148 fixes).
         union all corresponding
 
         /* students whose pathway powerschool already decided. They never reach a

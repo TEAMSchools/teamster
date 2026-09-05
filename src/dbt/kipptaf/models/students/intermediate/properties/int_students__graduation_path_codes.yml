@@ -41,8 +41,10 @@ models:
         description: District code location derived from `_dbt_source_relation`.
       - name: students_dcid
         data_type: int64
-      - name: studentsid
+      - name: studentid
         data_type: int64
+        description: >-
+          PowerSchool student identifier, unique only within its own instance.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
@@ -85,6 +87,8 @@ models:
       - name: ps_grad_path_code
         data_type: string
       - name: has_fafsa
+        data_type: boolean
+        description: Whether the student has met the FAFSA requirement.
       - name: njgpa_season_11th
         data_type: boolean
         description: >-
@@ -176,10 +180,12 @@ models:
                   - FAFSA Only
                   - ELA Only / No FAFSA
                   - Math Only / No FAFSA
-        description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. First non-null of
-          grad_eligibility, grade_level.
+        description: >-
+          Where the student stands against the graduation requirement overall,
+          which is what the dashboard shows. Derived from whether each subject
+          counts, whether FAFSA is required yet, and the 11th grade grace period
+          -- not looked up. Grades 10 and below are always Grad Eligible, since
+          no requirement has come due.
       - name: test_type
         data_type: string
         description:
@@ -190,8 +196,11 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__test
             source_column: test_type
-      - name: rn_discipline_distict
+      - name: rn_discipline_distinct
         data_type: int64
+        description: >-
+          Ranks a student's rows within a subject so a consumer wanting one row
+          per subject can filter on 1.
 
 unit_tests:
   - name: test_met_njgpa_when_either_version_passed
