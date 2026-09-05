@@ -251,8 +251,10 @@ The state assessment wins when met: `met_njgpa` is tested first, so a student
 who cleared NJGPA reports `S` even if they also cleared SAT.
 
 NJDOE's alternative menu also includes four Accuplacer options (WritePlacer 5,
-WritePlacer ESL 4, Elementary Algebra 49, Next-Generation QAS 250). We ingest no
-Accuplacer scores and have no pathway code letters for them, so they are absent
-from the sheet. Adding cut score rows without the code letters and a
-`final_grad_path_code` branch would be decorative — a passing score would still
-report `R`.
+WritePlacer ESL 4, Elementary Algebra 49, Next-Generation QAS 250). **KTAF does
+not use Accuplacer and does not intend to.** Do not add cut score rows for them.
+We ingest no Accuplacer scores, we hold no NJDOE pathway code letter for them,
+and `final_grad_path_code` has no branch to emit one — so a row would be
+decorative and a guessed code letter would go to the state. If a student ever
+does present an Accuplacer score, the scores_have_cutoffs test names them rather
+than silently coding them R.
