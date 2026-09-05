@@ -45,6 +45,7 @@ select
     _dbt_source_relation,
     _dbt_source_project,
     test_name,
+    studenttestid,
     studentid,
     assessment_grade_level,
     testscalescore,
