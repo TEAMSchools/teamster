@@ -238,10 +238,25 @@ flowchart TD
 There is no retry loop in the model. A student re-sitting an assessment simply
 has a new score the next time it builds, and the chain runs again from the top.
 
-The landing page charts exactly this column, relabelled. Its legend reads NJGPA,
-SAT, PSAT NMSQT, PSAT10, DLM, Portfolio, Default and No Data, which are codes
-`S`, `D`, `K`, `J`, `M`, `N`, `R` and no row. ACT (`E`) has a legend entry that
-never appears because no student has ever met that pathway here.
+The landing page charts exactly this column, under the display labels in
+`final_grad_path_name`:
+
+| Code | Label      | Code | Label               |
+| ---- | ---------- | ---- | ------------------- |
+| `S`  | NJGPA      | `M`  | DLM                 |
+| `E`  | ACT        | `N`  | Portfolio           |
+| `D`  | SAT        | `O`  | Met No Requirements |
+| `J`  | PSAT10     | `P`  | Incomplete Credits  |
+| `K`  | PSAT NMSQT | `R`  | Default             |
+
+The label is decoded in `int_students__graduation_path_codes` rather than in the
+workbook, so the dashboard and any other consumer read the same string.
+`No Data` on the dashboard is not a label -- it is a student with no row at all.
+`E`, `O` and `P` are mapped but have never appeared in our data.
+
+Note that `test_type` labels code `O` as `No Pathway` while
+`final_grad_path_name` labels it `Met No Requirements`. Nothing hits it today,
+but the two should be reconciled before anything does.
 
 That makes the landing page the fastest check on this model's health. NJGPA is
 the pathway nearly every student is supposed to meet, so the `S` band should be

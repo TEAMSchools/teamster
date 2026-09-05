@@ -127,6 +127,24 @@ with
                 if(r.met_psat_nmsqt, 'K', null)
             ) as best_alternative_code,
         from roster as r
+    ),
+
+    coded as (
+        select
+            r.*,
+
+            case
+                when r.grade_level <= 10
+                then r.ps_grad_path_code
+                when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
+                then r.ps_grad_path_code
+                when r.met_njgpa
+                then 'S'
+                when r.njgpa_attempt
+                then coalesce(r.best_alternative_code, 'R')
+                else 'R'
+            end as final_grad_path_code,
+        from eligibility as r
     )
 
 select
@@ -149,16 +167,28 @@ select
     end as test_type,
 
     case
-        when r.grade_level <= 10
-        then r.ps_grad_path_code
-        when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
-        then r.ps_grad_path_code
-        when r.met_njgpa
-        then 'S'
-        when r.njgpa_attempt
-        then coalesce(r.best_alternative_code, 'R')
-        else 'R'
-    end as final_grad_path_code,
+        r.final_grad_path_code
+        when 'D'
+        then 'SAT'
+        when 'E'
+        then 'ACT'
+        when 'J'
+        then 'PSAT10'
+        when 'K'
+        then 'PSAT NMSQT'
+        when 'M'
+        then 'DLM'
+        when 'N'
+        then 'Portfolio'
+        when 'O'
+        then 'Met No Requirements'
+        when 'P'
+        then 'Incomplete Credits'
+        when 'R'
+        then 'Default'
+        when 'S'
+        then 'NJGPA'
+    end as final_grad_path_name,
 
     case
         when r.grade_level <= 10
@@ -190,5 +220,5 @@ select
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
 
-from eligibility as r
+from coded as r
 where r.enroll_status = 0
