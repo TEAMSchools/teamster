@@ -10,6 +10,18 @@ with
         }}
     ),
 
+    sourced as (
+        select
+            * except (student_id),
+
+            {{
+                focus_student_number(
+                    "student_id", "academic_year_int", extract_source_project()
+                )
+            }} as student_id,
+        from union_relations
+    ),
+
     transformations as (
         select
             dr.* except (_dbt_source_relation),
@@ -35,7 +47,7 @@ with
                 when 'kippmiami'
                 then 'FL'
             end as state_assessment_type,
-        from union_relations as dr
+        from sourced as dr
         left join
             {{ ref("int_people__location_crosswalk") }} as lc
             on dr.school = lc.location_name
