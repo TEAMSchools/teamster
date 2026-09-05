@@ -147,6 +147,22 @@ Three rules drive it:
    The grace period is only for 11th graders with no records yet, and it ends
    once results land in late June.
 
+### Picking a student's best score
+
+A student can hold scores on both NJGPA versions — eight do today, and two of
+them failed the retired test by a few points and then passed the adaptive one.
+The two scales are not comparable, so `rn_highest` ranks by **whether the score
+passed, then by how far it cleared its own cut score**, not by the raw score.
+
+This matters because consumers filter `rn_highest = 1` to get one row per score
+type. Ranking on the raw score would put a failing 700 on the retired scale
+above a passing 500 on the adaptive one, and the dashboard would show the
+failure while hiding the pass. A test asserts a passing score is never ranked
+behind a failing one.
+
+The roll-up is separate and already handles this: `met_njgpa` is a maximum
+across both versions, so passing either one counts.
+
 ### Portfolio appeals
 
 A portfolio appeal is pathway code `N`, granted by NJDOE and imported into each

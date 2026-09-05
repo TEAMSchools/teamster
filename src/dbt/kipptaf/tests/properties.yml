@@ -824,3 +824,52 @@ data_tests:
         dagster:
           ref:
             name: int_students__graduation_pathway_scores
+
+  - name: int_students__graduation_pathway_scores__points_short_agrees_with_met
+    description: >-
+      met_pathway_cutoff and points_short describe the same fact from two
+      angles, so they must never disagree. A score that cleared its cut score
+      has points_short of zero or more, and one that fell short has a negative
+      value. When the two disagree there is no way to tell from the dashboard
+      which of them is lying. Scoped to rows that actually made a comparison,
+      since students whose pathway PowerSchool already decided have neither a
+      cut score nor a margin.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_pathway_scores
+
+  - name: int_students__graduation_path_codes__code_agrees_with_met_flags
+    description: >-
+      The pathway code reported to the state must match the flags it was derived
+      from. Code S requires met_njgpa. Each alternative code requires its own
+      flag AND requires that every higher-priority pathway was not met, because
+      New Jersey prefers the state assessment first and then ACT, SAT, PSAT10
+      and PSAT/NMSQT in that order. This is the guard on the precedence logic
+      itself -- a mistake there produces a plausible-looking code rather than an
+      error, and it is written back to the state.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
+  - name: int_students__graduation_path_codes__eligibility_agrees_with_subjects
+    description: >-
+      The eligibility label must match the subjects the student actually met. A
+      subject only counts when the student also sat the NJGPA in it, so met_ela
+      alone is not enough. Grad Eligible and No FAFSA require both subjects,
+      unless the student is an 11th grader who has attempted nothing and is
+      still inside the grace period. ELA Only requires exactly ELA, Math Only
+      exactly mathematics, and FAFSA Only or Not Grad Eligible require neither.
+      This guards the derivation that replaced the hand-maintained combinations
+      sheet.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes

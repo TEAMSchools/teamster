@@ -45,6 +45,19 @@ Treat every change here as production-affecting.
 Miami is excluded by design (`where e.region != 'Miami'`). NJ pathways do not
 apply in Florida.
 
+## Ask the source, not the model
+
+To answer "does X exist in the data", query the staging models the scores come
+from, never `int_students__graduation_pathway_scores`. That model only contains
+rows where a matching cut score row exists, so a version whose cohort has no cut
+score row is structurally invisible in it.
+
+This is not hypothetical. Asking that model whether any student holds both NJGPA
+versions returned none. Asking `stg_pearson__njgpa` and `stg_cambium__njgpa`
+directly returned eight. The same shape of mistake -- checking the derived thing
+instead of the raw thing -- is why the original cut score defect went unnoticed
+for months.
+
 ---
 
 ## Two vendors, two score scales, one testcode
@@ -73,6 +86,19 @@ vendor's staging model, never inferred — `'NJGPA'` in the Pearson models,
 `stg_pearson__parcc` / `_njsla` / `_njsla_science` so no relation null-fills the
 column. `int_pearson__all_assessments` names it in the `union_relations`
 `include` list and passes it through.
+
+**Students hold scores on both versions, and the number will grow.** Eight do
+today, and two of them failed the retired test by a handful of points and then
+passed the adaptive one. Any logic that picks "the" state assessment score for a
+student has to handle that pair, and cannot compare the two raw scores -- 700 on
+the retired scale is a fail and 500 on the adaptive scale is a pass.
+
+That is why `rn_highest` in `int_students__graduation_pathway_scores` orders by
+`met_pathway_cutoff` and then `points_short`, **not** by `scale_score`.
+Consumers filter it to 1 to get one row per score type, so ranking on the raw
+score would put the failing 700 first and hide the passing 500. Points short is
+measured against each score's own cut score, so it is comparable across scales.
+Do not "simplify" that ordering back to the raw score.
 
 Never key a cut score on cohort alone, and never infer the version from a score
 value or a date. Confirm both scales independently from the data with

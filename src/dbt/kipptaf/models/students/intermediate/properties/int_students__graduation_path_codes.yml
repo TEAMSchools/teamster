@@ -179,3 +179,71 @@ models:
             source_column: test_type
       - name: rn_discipline_distict
         data_type: int64
+
+unit_tests:
+  - name: test_met_njgpa_when_either_version_passed
+    description: >-
+      A student who failed one version of the NJGPA and passed the other has met
+      the state assessment pathway. Both versions share a pathway_option of
+      NJGPA, so the roll-up takes the best result across them rather than the
+      most recent or the highest raw score. Eight students hold scores on both
+      versions today and two of them have exactly this shape -- they missed the
+      retired cut score by a few points and then passed the adaptive test. Pins
+      that they come out with met_njgpa true and a final code of S.
+    model: int_students__graduation_path_codes
+    given:
+      - input: ref('int_students__graduation_pathway_scores')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            1 as students_dcid,
+            1 as studentid,
+            1 as student_number,
+            '1' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            12 as grade_level,
+            0 as enroll_status,
+            2027 as cohort,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            cast(null as string) as ps_grad_path_code,
+            true as has_fafsa,
+            false as njgpa_season_11th,
+            false as fafsa_season_12th,
+            'NJGPA' as pathway_option,
+            'ELAGP' as score_type,
+            'S' as pathway_code,
+            725 as cutoff,
+            'NJGPA' as assessment_version,
+            cast(700 as numeric) as scale_score,
+            'ELAGP' as subject_area,
+            false as met_pathway_cutoff,
+            true as attempted_njgpa_ela,
+            false as attempted_njgpa_math,
+            cast(-25 as numeric) as points_short,
+            2 as rn_highest
+          union all
+          select
+            'kippnewark_powerschool', 'kippnewark', 1, 1, 1, '1', null,
+            12, 0, 2027, 'ELA', 'ENG', null, true, false, false,
+            'NJGPA', 'ELAGP', 'S', 450, 'NJGPA-A',
+            cast(500 as numeric), 'ELAGP', true, true, false,
+            cast(50 as numeric), 1
+    expect:
+      rows:
+        - {
+            student_number: 1,
+            assessment_version: NJGPA,
+            met_njgpa: true,
+            met_ela: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 1,
+            assessment_version: NJGPA-A,
+            met_njgpa: true,
+            met_ela: true,
+            final_grad_path_code: S,
+          }
