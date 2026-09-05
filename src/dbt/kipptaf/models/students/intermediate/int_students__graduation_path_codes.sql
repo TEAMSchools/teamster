@@ -177,10 +177,11 @@ select
         then 'Math Only'
         when r.has_fafsa and r.fafsa_required
         then 'FAFSA Only'
-        when
-            r.grade_level = 11
-            and not r.njgpa_season_11th
-            and (not r.fafsa_season_12th or r.attempted_nothing)
+        /* An 11th grader holding NJGPA records already is treated like a 12th
+           grader, minus the FAFSA requirement -- testing ahead of their peers
+           usually means they are behind on credits and belong in 12th grade.
+           The grace below is only for those with no records yet. */
+        when r.grade_level = 11 and r.attempted_nothing and not r.njgpa_season_11th
         then 'Grad Eligible'
         else 'Not Grad Eligible'
     end as grad_eligibility,
