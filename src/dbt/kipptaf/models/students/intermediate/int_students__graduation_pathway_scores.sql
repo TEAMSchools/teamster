@@ -202,7 +202,7 @@ with
                 when 'N'
                 then 'Portfolio'
                 when 'O'
-                then 'No Pathway'
+                then 'Met No Requirements'
                 when 'P'
                 then 'Incomplete Credits'
             end as pathway_option,

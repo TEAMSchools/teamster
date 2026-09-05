@@ -768,6 +768,25 @@ data_tests:
           ref:
             name: int_students__graduation_path_codes
 
+  - name: int_students__graduation_path_codes__labels_agree
+    description: >-
+      A student coded straight from PowerSchool carries their pathway label in
+      two columns -- test_type, which describes the row, and
+      final_grad_path_name, which describes the determination. Both are decoded
+      from the same PowerSchool code but in different models, so the two label
+      lists can drift apart and put one dashboard in contradiction with itself.
+      Code O already did this once, reading `No Pathway` in dbt and `Met No
+      Requirements` in the workbook calculation the label was lifted from. DLM
+      and portfolio students give this live coverage; codes O and P have never
+      appeared in our data, so drift there would otherwise surface only when the
+      first student hits one.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
   - name: int_students__graduation_path_codes__scores_have_cutoffs
     description: >-
       Every student who sat the NJGPA needs a cut score row that accepts their

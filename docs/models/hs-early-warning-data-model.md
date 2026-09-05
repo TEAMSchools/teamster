@@ -254,9 +254,13 @@ workbook, so the dashboard and any other consumer read the same string.
 `No Data` on the dashboard is not a label -- it is a student with no row at all.
 `E`, `O` and `P` are mapped but have never appeared in our data.
 
-Note that `test_type` labels code `O` as `No Pathway` while
-`final_grad_path_name` labels it `Met No Requirements`. Nothing hits it today,
-but the two should be reconciled before anything does.
+For a student coded straight from PowerSchool, the same label is produced twice
+in two different models -- once as `pathway_option` in
+`int_students__graduation_pathway_scores`, which `test_type` passes through, and
+once here. The lists have to stay identical, so
+`int_students__graduation_path_codes__labels_agree` fails the build if they
+drift. Code `O` had already drifted before that test existed, reading
+`No Pathway` in dbt and `Met No Requirements` in the workbook.
 
 That makes the landing page the fastest check on this model's health. NJGPA is
 the pathway nearly every student is supposed to meet, so the `S` band should be
