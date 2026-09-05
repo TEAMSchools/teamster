@@ -84,6 +84,13 @@ SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
 
+SSH_RESOURCE_BRANCHINGMINDS = SSHResource(
+    remote_host=EnvVar("BRANCHINGMINDS_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("BRANCHINGMINDS_SFTP_USERNAME"),
+    password=EnvVar("BRANCHINGMINDS_SFTP_PASSWORD"),
+)
+
 SSH_RESOURCE_CLEVER = SSHResource(
     remote_host=EnvVar("CLEVER_SFTP_HOST"),
     remote_port=22,

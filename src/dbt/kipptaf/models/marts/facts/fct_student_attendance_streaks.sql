@@ -20,13 +20,8 @@ with
     -- streak -- still fans out and still fails the PK test, which is correct.
     -- Deduped here rather than in the union: the union should faithfully
     -- represent its source rows, which other consumers may legitimately need.
-    --
-    -- Known current failure: the PK test below currently fails on one Miami
-    -- AY2021 enrollment record whose stint fully contains another stint for
-    -- the same student and year (nested containment, not a partial overlap).
-    -- This is a Focus source-data defect being corrected at source, not
-    -- collapsed here -- do not add a dedupe/filter/severity change for it. A
-    -- genuine partial overlap would still fail this test today, by design.
+    -- Focus stints cannot overlap here: int_focus__student_enrollment_roster
+    -- trims each stint to the day before the next one starts.
     enrollments as (
         {{
             dbt_utils.deduplicate(

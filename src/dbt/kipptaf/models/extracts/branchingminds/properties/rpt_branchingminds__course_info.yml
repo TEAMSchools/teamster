@@ -1,0 +1,38 @@
+models:
+  - name: rpt_branchingminds__course_info
+    description: >
+      One row per active course offering per district for Newark, Camden, and
+      Paterson, built for the Branching Minds daily SFTP feed. Scoped to courses
+      with at least one section carrying real enrollment in the current academic
+      year, rather than the entire historical PowerSchool catalog.
+    columns:
+      - name: course_id
+        data_type: string
+        description: >-
+          PowerSchool course number prefixed by district (e.g.
+          kippnewark-MATH101), since course numbers repeat across districts.
+          Same form as rpt_branchingminds__course_performance.course_id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        data_type: string
+        description: >-
+          NJ DOE county-district code, from dim_regions.state_district_id.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: name
+        quote: true
+        data_type: string
+        description: Course name from the PowerSchool catalog.
+      - name: description
+        data_type: string
+        description: >-
+          Course catalog description from PowerSchool. Populated for a small
+          minority of courses since the source field is rarely filled in.
