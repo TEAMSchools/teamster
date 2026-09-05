@@ -23,6 +23,16 @@ models:
             group_by: student_number
             distinct_field: grad_eligibility
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Not structurally unique the way the same key is on
+            int_students__graduation_pathway_scores. rn_highest is passed
+            through here rather than regenerated, so a duplicate is reachable if
+            calcs ever yields more than one row per source project, student and
+            discipline -- which needs ps_grad_path_code or the attempted flags
+            to disagree across a student's own rows. Today's grain makes that
+            constant per student and discipline, so the test is not known to be
+            reachable; it is a guard against the joins below drifting, not a
+            demonstrated risk.
           arguments:
             combination_of_columns:
               - _dbt_source_project

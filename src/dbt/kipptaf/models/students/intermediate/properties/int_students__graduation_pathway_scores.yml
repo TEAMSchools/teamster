@@ -15,6 +15,15 @@ models:
       materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Structurally unique rather than data-dependent, and kept because
+            every intermediate must carry a uniqueness test. The key ends in
+            rn_highest, a row_number over a subset of that same key, so it
+            cannot fail whatever the data does. Dropping rn_highest is not the
+            fix -- a student may sit the same test more than once, so the
+            shorter key has legitimate duplicates. The test that can actually
+            fail on a fanned-out cut score join is
+            int_students__graduation_pathway_scores__one_cutoff_per_score_type.
           arguments:
             combination_of_columns:
               - _dbt_source_project
