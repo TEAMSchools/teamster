@@ -748,3 +748,59 @@ data_tests:
         dagster:
           ref:
             name: stg_cambium__njgpa
+
+  - name: int_students__graduation_path_codes__cutoff_within_score_scale
+    description: >-
+      A graduation pathway cut score must be reachable on the scale of the
+      scores it is compared against. NJDOE replaced the NJGPA with the adaptive
+      NJGPA-A at the spring 2026 administration, moving the scale from 650-850
+      to 300-562 and the cut from 725 to 450. Until the cut score sheet gained
+      an assessment_version column, every adaptive score was compared against
+      725 and read as not met, and the only symptom was a graduating class that
+      appeared to fail. This fires when no student in a group of at least 20
+      scored rows can reach the cut score, which is what a cut score keyed to
+      the wrong scale looks like. The floor of 20 keeps a genuinely hard cut
+      score with few takers from tripping it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
+  - name: int_students__graduation_path_codes__scores_have_cutoffs
+    description: >-
+      Every enrolled student holding an NJGPA score needs a cut score row for
+      that cohort, discipline, score type and assessment version. Without one
+      the pathway join finds nothing, the student falls through to
+      final_grad_path_code of R, and R is indistinguishable from genuinely
+      meeting no pathway. NJDOE publishes cut scores per graduating class only
+      after the administration is scored, so a gap here is expected between the
+      administration and the broadcast, and a retained or accelerated student
+      can sit a version their own cohort has no row for. Warn rather than error
+      for that reason -- the value is the named list of who is unscoreable, not
+      a blocked build.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__student_graduation_path_cutoffs
+
+  - name: int_students__student_enrollments__cohort_not_ahead_of_entry
+    description: >-
+      A high school student should never be ahead of the cohort they entered
+      with. For grade 9 and up, cohort freezes at the student's first year in
+      the school, which is correct for New Jersey's 4-year adjusted cohort
+      graduation rate. Falling behind that cohort is ordinary retention and is
+      not a defect, so only the other direction is tested -- a student whose
+      grade level implies an earlier graduating class than their recorded
+      cohort. That means a skipped grade or a missing enrollment year, and it
+      misstates the graduating class in state reporting. Warn because the fix is
+      a records correction in PowerSchool rather than a code change.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__student_enrollments
