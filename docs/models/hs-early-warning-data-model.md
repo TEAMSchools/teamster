@@ -20,7 +20,7 @@ Exposure: `high_school_early_warning_dashboard` in
 
 | Tab                    | Purpose                                  | Views to date |
 | ---------------------- | ---------------------------------------- | ------------- |
-| Landing Page           | Entry point                              | 387           |
+| Landing Page           | Pathway mix by subject and NJGPA attempt | 387           |
 | On Track 9th           | Ninth grade promotion status by school   | 516           |
 | Early Warning          | Five per-student risk flags              | 1,876         |
 | Graduation Eligibility | Progress toward a graduation pathway     | 1,452         |
@@ -238,6 +238,19 @@ flowchart TD
 There is no retry loop in the model. A student re-sitting an assessment simply
 has a new score the next time it builds, and the chain runs again from the top.
 
+The landing page charts exactly this column, relabelled. Its legend reads NJGPA,
+SAT, PSAT NMSQT, PSAT10, DLM, Portfolio, Default and No Data, which are codes
+`S`, `D`, `K`, `J`, `M`, `N`, `R` and no row. ACT (`E`) has a legend entry that
+never appears because no student has ever met that pathway here.
+
+That makes the landing page the fastest check on this model's health. NJGPA is
+the pathway nearly every student is supposed to meet, so the `S` band should be
+the largest one. When it is a sliver and `Default` is enormous, scores are not
+reaching their cut scores -- which is what a cut score sheet missing a cohort or
+an `assessment_version` looks like from the outside. Before the adaptive cut
+scores landed, the whole network showed 2 students on `S` and 217 on `D`, and
+that shape on the landing page is what to look for if it happens again.
+
 ### Which eligibility label a student gets
 
 Produces `grad_eligibility`, which is what the dashboard shows. This is where
@@ -263,6 +276,30 @@ flowchart TD
     g11 -->|yes| ge
     g11 -->|no| nge[Not Grad Eligible]
 ```
+
+Every `M` and `N` on the dashboard is `ps_grad_path_code` carried straight
+through -- the model never assigns them. It does guarantee those students a row
+per subject even though they have no score, because the extract filters on
+`scale_score is not null` and they would otherwise vanish from the dashboard
+entirely rather than show as IEP or portfolio.
+
+The FAFSA branches produce nothing between July and December. `fafsa_required`
+is grade 12 AND on or after the January deadline, so for half the year every
+FAFSA label is unreachable by construction. Finding zero of them in a summer
+build is correct, not a bug.
+
+#### The eligibility combinations sheet, retired
+
+This label used to come from a hand-maintained Google Sheet that enumerated
+every combination of the boolean inputs and named the label for each. Any
+combination nobody had thought to add fell through to the literal string
+`New category. Need new logic.`, which rendered on the dashboard as its own
+colour and meant a student's status was simply unknown until someone edited the
+sheet. It was showing on 4 students at the point the sheet was retired.
+
+The `CASE` above replaces it. There is no combination it cannot label, so that
+category no longer exists and the sheet is gone. If a new rule arrives from the
+state, it is a branch in the model, not a row in a spreadsheet.
 
 ### How the model is put together
 
