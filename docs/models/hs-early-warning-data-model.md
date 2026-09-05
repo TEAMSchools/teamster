@@ -9,11 +9,11 @@ Exposure: `high_school_early_warning_dashboard` in
 `src/dbt/kipptaf/models/exposures/tableau.yml`. Tableau LSID
 `6333e047-e7a9-4d8f-a740-3df30f179d11`, refreshed by Dagster at `0 6 * * *`.
 
-!!! note "This doc is partial"
+!!! question "One open question"
 
-    The graduation pathway section below is complete. The community service and
-    course-performance feeds are named here for lineage but not yet documented.
-    Add them rather than starting a separate page.
+    Marked **OPEN** below — which of the two community service hour measures is
+    authoritative, and what the requirement actually is. It is a business
+    question rather than a code question.
 
 ## Dashboard tabs
 
@@ -36,6 +36,91 @@ Exposure: `high_school_early_warning_dashboard` in
 Miami is out of scope throughout. NJ graduation pathways do not apply in
 Florida, and `int_students__graduation_path_codes` filters
 `where e.region != 'Miami'`.
+
+## Course performance and discipline
+
+`rpt_tableau__hs_early_warning_dashboard` is the widest of the three feeds. One
+row per **student, reporting term and course**, currently around 52,000 rows
+over 1,851 students.
+
+Scope: the current academic year, high schools only, one enrollment row per
+student (`rn_year = 1`), recently enrolled. Reporting terms come from the terms
+sheet with `type = 'RT'`, excluding Summer School and Y1.
+
+What it carries, per row:
+
+- **Attendance** — `ada`, from the enrollment extract.
+- **Grades** — the term and Y1 percent and letter grade, adjusted, plus the
+  course, credit type and teacher. Grades excluded from GPA are dropped.
+- **GPA** — cumulative Y1, projected Y1, and the term GPA.
+- **Credits** — earned cumulative, projected, and potential.
+- **Discipline** — suspension count and total days for the year, aggregated from
+  DeansList incident penalties where the penalty is a suspension.
+
+!!! note "`need_65` was renamed to `need_60`"
+
+    The extract used to alias `gr.need_60` to `need_65`. The calculation was
+    always the 0.600 one — the percentage a student needs on remaining work to
+    finish the year at 60 — and only the label was wrong.
+
+    60 is correct, because it is the lowest passing grade on both scales the high
+    schools actually use: `KIPP NJ 2019 (5-12) Unweighted`, where D- starts at 60,
+    and `NCA 2011`, where D starts at 60. The `A, B, C, D` scale does put D at 65,
+    but no high school grade rows use it — check which scale is in play before
+    reasoning about a cutoff.
+
+    `rpt_tableau__gradebook_dashboard` carries the same mislabel in two places. It
+    is deprecated and was deliberately left alone.
+
+**The thresholds are not in dbt.** This extract carries raw measures only.
+Nothing here decides that a student is "at risk" — whatever turns an ADA or a
+GPA into a warning lives in the Tableau workbook.
+
+## Community service
+
+`rpt_tableau__community_service` tracks service hours toward graduation. One row
+per student per DeansList community service entry, with students who have logged
+nothing appearing once with nulls.
+
+Scope: the current academic year, grade 9 and up, actively enrolled. Service
+entries are matched to the enrollment stint they fall inside.
+
+Two different measures of hours travel together, from two different places:
+
+| Column                             | Source                                    | Grain                  |
+| ---------------------------------- | ----------------------------------------- | ---------------------- |
+| `cs_hours`                         | Parsed out of the DeansList behavior name | Per entry              |
+| `grade_9_hours` … `grade_12_hours` | DeansList student custom fields           | Per student, per grade |
+
+**OPEN** — which of those is authoritative, and what is the requirement? The
+per-grade custom fields suggest a per-grade target, but the entry log is the
+only thing with dates on it.
+
+!!! warning "Hours are parsed out of a text label"
+
+    `cs_hours` comes from stripping the last five characters off the behavior
+    name and casting what remains. It works on today's three values — `1 hour`,
+    `5 hours`, `10 hours` — but only by luck: five characters happens to remove
+    `" hour"` from one and `"hours"` from the others.
+
+    A new label like `Half hour` or `Community Service - 5 hours` parses to null
+    and the `coalesce` turns it into **0**. A student's hours quietly go missing
+    and nothing fails. Anyone adding a behavior name in DeansList needs to match
+    the existing pattern.
+
+Repeated rows for the same student, date and behavior are **expected**, not a
+join fan-out — a student can log the same activity more than once in a day, and
+the source holds thousands of such pairs.
+
+!!! warning "If last year's hours stop showing, ask Jabari"
+
+    Community service depends on a step somebody performs in DeansList, and the
+    specific action is not recorded anywhere. The symptom to watch for is a prior
+    year's hours disappearing from the dashboard.
+
+    If that happens, flag Jabari before investigating the models — this is not a
+    pipeline failure and there is nothing in dbt to fix. Whoever learns what the
+    step actually is should write it down here.
 
 ## Graduation pathways
 
