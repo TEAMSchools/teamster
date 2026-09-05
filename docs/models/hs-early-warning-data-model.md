@@ -94,8 +94,15 @@ the rule was reproduced from the extract.
 | Core Fs                | any Y1 grade of F in credit type **MATH, ENG, SCI or SOC**                                    | 75.2% against 75.3%  |
 | Over age               | derived from `dob` against grade level                                                        | **Not reproduced**   |
 
-The GPA flag reads the **projected** cumulative Y1 GPA. Using `gpa_y1` instead
-gives 8.9% rather than the 10.4% the dashboard shows.
+**Both the GPA and the credits flags read projected values on purpose.** A
+first-year 9th grader has no real Y1 GPA until the year ends, so scoring them on
+`gpa_y1` would either exclude them or mark them at zero for most of the year —
+which is exactly when an early warning is worth having. The projection carries
+them until a real Y1 figure exists.
+
+So do not "correct" these to the earned or actual columns. Swapping
+`cumulative_y1_gpa_projected` for `gpa_y1` gives 8.9% rather than the 10.4% the
+dashboard shows, and it breaks the flag hardest for the students it exists for.
 
 The over-age rule resisted reproduction: age beyond grade plus six flags 5.4% of
 students and grade plus seven flags 0.5%, against the 2.3% shown, so the real
