@@ -15,6 +15,16 @@ Exposure: `high_school_early_warning_dashboard` in
     course-performance feeds are named here for lineage but not yet documented.
     Add them rather than starting a separate page.
 
+## Dashboard tabs
+
+| Tab                        | Purpose                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| On-Track 9th Grade         | Ninth grade on-track status                                                              |
+| Early Warning              | Grades, GPA and discipline flags                                                         |
+| Graduation Eligibility     | Progress toward the state assessment, an approved alternative, or an alternative pathway |
+| Graduation Planner Tracker | Not built                                                                                |
+| Athletic Eligibility       | Not built. Spec exists, driven by ADA, GPA and credits per quarter                       |
+
 ## The three feeds
 
 | Feed                                      | Answers                                   | Upstreams                                                                                                                                                                 |
@@ -34,7 +44,10 @@ letter New Jersey uses to report which pathway a student met. It is not only a
 dashboard input: it also flows through `rpt_powerschool__autocomm_students` into
 the PowerSchool fields `s_nj_stu_x__graduation_pathway_ela` and
 `s_nj_stu_x__graduation_pathway_math`, dropped daily for AutoComm import. **A
-wrong code here becomes a wrong state submission.**
+wrong code here becomes a wrong state submission.** The same fields are the
+model's own input, read back through `stg_powerschool__s_nj_stu_x` as
+`ps_grad_path_code`, so a code PowerSchool already holds is never overridden.
+The write-back is no longer restricted to 12th grade.
 
 For the working rules, cut score maintenance, and the failure modes, use the
 `graduation-pathways` skill. The essentials:
@@ -54,6 +67,37 @@ For the working rules, cut score maintenance, and the failure modes, use the
 - `cohort` is frozen at high school entry, which is correct for NJ's 4-year
   adjusted cohort graduation rate but means a retained or accelerated student
   sits the assessment with a different class than their cohort.
+
+### How the model is put together
+
+Two models, split by grain:
+
+- `int_students__graduation_pathway_scores` pairs every student with every
+  pathway their cohort has a cut score for, and decides whether their score
+  cleared it. One row per student, subject, score type, assessment version and
+  sitting. Nothing is filtered out, so the dashboard can show near misses.
+- `int_students__graduation_path_codes` rolls that up into a per-student
+  standing and produces `final_grad_path_code` and `grad_eligibility`.
+
+`grad_eligibility` is derived, not looked up. It used to come from a
+hand-maintained sheet joined on eight boolean columns, which is now retired.
+Three rules drive it:
+
+1. A subject only counts if the student sat the NJGPA in it.
+2. FAFSA is required to graduate, but is not counted against a student until the
+   January deadline of their senior year, and never gates an 11th grader.
+3. An 11th grader holding NJGPA records is treated as a 12th grader, minus
+   FAFSA. Testing ahead of their peers usually means they are behind on credits.
+   The grace period is only for 11th graders with no records yet, and it ends
+   once results land in late June.
+
+### Portfolio appeals
+
+A portfolio appeal is pathway code `N`, granted by NJDOE and imported into each
+region's PowerSchool by hand from PDFs the C3 team sends. There is no pipeline;
+the model only reads the resulting `ps_grad_path_code`. The full procedure,
+including the Excel workbook that must never be opened in Google Sheets, is in
+the `graduation-pathways` skill.
 
 ### Transfer scores are entered by hand in PowerSchool
 

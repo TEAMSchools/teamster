@@ -19,8 +19,13 @@ description: >-
 - Reference doc:
   [`docs/models/hs-early-warning-data-model.md`](../../../docs/models/hs-early-warning-data-model.md)
   — the dashboard these codes feed, and the PowerSchool setup each region needs.
+- `src/dbt/kipptaf/models/students/intermediate/int_students__graduation_pathway_scores.sql`
+  — pairs every student with every pathway their cohort has a cut score for, and
+  decides whether their score cleared it. One row per student, subject, score
+  type, assessment version and sitting.
 - `src/dbt/kipptaf/models/students/intermediate/int_students__graduation_path_codes.sql`
-  — computes `final_grad_path_code`. Every rule below lands here.
+  — rolls that up into a per-student standing, and computes
+  `final_grad_path_code` and `grad_eligibility`.
 - `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__student_graduation_path_cutoffs.yml`
   — the cut score contract and its key.
 - The NJDOE broadcast for the cohort in question. NJDOE publishes graduation
@@ -122,6 +127,27 @@ the network.
 
 ---
 
+## Graduation eligibility is derived, not maintained
+
+`grad_eligibility` used to come from a hand-maintained sheet joined on eight
+boolean columns. That sheet is retired (`enabled: false`) and the label is now
+computed in `int_students__graduation_path_codes`. Do not reinstate it.
+
+Three rules drive the label, and only the first is obvious from the column
+names:
+
+1. **A subject only counts if the student sat the NJGPA in it.** `met_ela` with
+   `attempted_njgpa_ela` false contributes nothing.
+2. **FAFSA is required to graduate**, but it is not counted against a student
+   until the January deadline of their senior year. It is tracked before then.
+   FAFSA never gates an 11th grader.
+3. **An 11th grader holding NJGPA records is treated as a 12th grader**, minus
+   FAFSA. Testing ahead of their peers usually means they are behind on credits.
+   The grace period belongs only to 11th graders with no records yet, and it
+   ends once results land in late June.
+
+---
+
 ## Transfer scores are entered by hand in PowerSchool
 
 Users enter them at **PS instance > District Management > Tests > Standardized
@@ -159,6 +185,52 @@ standardized test named `NJGPA/NJGPA-A`, type State, with all four score fields
 above. Until then Paterson simply contributes no rows, which is correct and not
 a defect — but a Paterson transfer score entered before the holder exists cannot
 be captured at all.
+
+---
+
+## RUNBOOK: portfolio appeals from NJDOE
+
+A portfolio appeal is pathway code `N`. NJDOE grants them and sends PDFs, which
+have to be converted and imported into each region's PowerSchool by hand. There
+is no pipeline for this and the model only ever reads the resulting
+`ps_grad_path_code`.
+
+Working folder, which holds every file below —
+<https://drive.google.com/drive/folders/1BakRrY_7tlJ0H6ctsjk8F12VpWWXQGLU>
+
+| Artifact                                            | Where it comes from             |
+| --------------------------------------------------- | ------------------------------- |
+| Two appeal PDFs, one per region                     | The C3 team, usually over Slack |
+| Portfolio Converter, an Excel workbook              | The folder above                |
+| NJ Portfolio Appeal Upload Template, a Google Sheet | The folder above                |
+
+Steps:
+
+1. Put both PDFs in the folder, named `Newark` and `Camden`. Replace any
+   existing files, and delete last year's TSVs so they cannot be imported by
+   mistake.
+2. Open the Portfolio Converter **from the desktop Excel app, never from Google
+   Sheets or a browser** — opening it in Sheets breaks its PowerQuery
+   connection. Then Data, Refresh All, to refresh both worksheets.
+3. In the upload template, refresh the Student Numbers tab. It also refreshes
+   itself on the first of each month.
+4. Copy each region's table from the workbook into its Paste Source tab. Copy
+   only three columns; column D pulls the student number by formula.
+5. Check all four region-and-subject tabs. Row counts should match the workbook,
+   student numbers should line up with the state student identifiers, and
+   formulas may need extending.
+6. Click EXPORT TSV FILES on the Newark Math tab. Four TSVs appear in the folder
+   after about a minute.
+7. In each region's PowerSchool, Data and Reporting, Imports, Quick Import.
+   Choose the **Students** table, **LF** as the end-of-line marker, and the
+   matching TSV. Confirm the column names, tick to exclude the first row, and
+   choose the update-the-student's-record option.
+8. PowerSchool lists the students it changed. Anything in red is an error;
+   Walters owns resolving those.
+
+**Switch PowerSchool instances between the Newark and Camden files.** Importing
+a region's file into the other instance is the failure mode this procedure is
+most prone to.
 
 ---
 
@@ -241,18 +313,18 @@ failure on the dashboard, so a missing row is a silent wrong answer, not a gap.
 
 ## pathway codes
 
-| Code | Meaning            | Source                           |
-| ---- | ------------------ | -------------------------------- |
-| `S`  | State assessment   | NJGPA or NJGPA-A at or above cut |
-| `E`  | ACT                | cut score sheet                  |
-| `D`  | SAT                | cut score sheet                  |
-| `J`  | PSAT10             | cut score sheet                  |
-| `K`  | PSAT/NMSQT         | cut score sheet                  |
-| `M`  | DLM                | `ps_grad_path_code`              |
-| `N`  | Portfolio appeal   | `ps_grad_path_code`              |
-| `O`  | No pathway         | `ps_grad_path_code`              |
-| `P`  | Incomplete credits | `ps_grad_path_code`              |
-| `R`  | Nothing met        | computed fallback                |
+| Code | Meaning                   | Source                           |
+| ---- | ------------------------- | -------------------------------- |
+| `S`  | State assessment          | NJGPA or NJGPA-A at or above cut |
+| `E`  | ACT                       | cut score sheet                  |
+| `D`  | SAT                       | cut score sheet                  |
+| `J`  | PSAT10                    | cut score sheet                  |
+| `K`  | PSAT/NMSQT                | cut score sheet                  |
+| `M`  | IEP                       | `ps_grad_path_code`              |
+| `N`  | Portfolio appeal          | `ps_grad_path_code`              |
+| `O`  | Attempted, passed nothing | `ps_grad_path_code`              |
+| `P`  | Incomplete credits        | `ps_grad_path_code`              |
+| `R`  | Nothing met               | computed fallback                |
 
 Codes `M`, `N`, `O`, `P` come straight from PowerSchool and bypass the cut score
 join entirely — the second `UNION ALL` branch of `lookup_table` handles them
