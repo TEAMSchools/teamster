@@ -947,6 +947,32 @@ Generated 878 rows for Newark/Paterson/Camden; verified byte-for-byte against
 the live sheet after pasting (one cosmetic mismatch caught and cleared: Sheets
 normalizes `false` to `FALSE` on paste -- not a data problem).
 
+### Explain a gap before reporting it
+
+Missing DIBELS data usually has a boring, checkable cause, and this model has
+the calendar that explains most of them. **Before presenting an absence as a
+finding, a limitation, or a constraint on someone's plan, spend the one query it
+takes to find out why.** Both of these were stated to the user as facts to work
+around, and both dissolved on a single lookup:
+
+- "Miami has no AY2026 BOY scores yet, so its calculations cannot be verified."
+  `reporting__terms` says Miami's BOY window is 9/8 to 9/25 and the date was
+  9/6. It had not opened. The other three regions opened in mid-August, which is
+  why only they had scores. Nothing to plan around -- it resolved that week.
+- "`grade_band` also holds `ES` and `MS`, so how should the CTE treat them?"
+  Those rows are AY2010-2022 and expected assessments starts at AY2023, so they
+  can never reach the model on the year join. The question was moot.
+
+The checks worth reaching for first, in order: is the window open yet
+(`reporting__terms` dates against `current_date`), is the year switched off
+(`assessment_include`), does the region run that measure at that grade at all
+(the T&L doc), and does the year even overlap the other side of the join.
+
+`rpt_gsheets__dibels_pm_goal_setting` returning zero rows is the same class of
+thing -- it filters `academic_year = current_academic_year`, so it is empty
+whenever the new year's PM calendar has not been entered. Empty is the expected
+state mid-rollover, not a defect.
+
 ### Verifying a year that is not in prod yet -- go to the source
 
 When you need to check something about an academic year whose rows are not in
