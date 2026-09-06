@@ -938,6 +938,22 @@ it with:
 uv run dbt parse --target prod --project-dir src/dbt/kipptaf --target-path target/prod
 ```
 
+**Deferred cleanup — rename the shadowed `focus_student_id` alias.** Do this at
+the AY2027-2028 rollover, not before; it was raised on #5168 and explicitly
+deferred as not worth its own PR. Both
+`int_tableau__finalsite_student_scaffold.sql` and
+`rpt_tableau__fresh_dashboard_qc.sql` open a `finalsite_contact_ids` CTE with
+`cast(focus_student_id_prefixed as int) as focus_student_id`. That alias shadows
+a real, differently-valued column on `int_finalsite__contact_id_attributes` —
+the genuinely unprefixed `focus_student_id` — so a reader diffing either CTE
+against its upstream model can take the prefixed value for the bare one. The
+prefixed value IS the student number (`concat('8400', focus_student_id)`), and
+the better-named precedent is `stg_people__student_logins.sql`, which calls it
+`student_number` and reserves `student_number_bare` for the unprefixed id.
+**Rename in BOTH models in one change** — doing one leaves the pair divergent,
+which is worse for the reader than the shared bad name. It is a CTE-internal
+alias in both places, so nothing outside those two models sees it.
+
 **When to make the change:** whenever SRE says the recruitment cycle has rolled
 over — not on a fixed schedule. There is no "revert" step the way
 gradebook-audit's summer toggle has; this is a one-directional bump forward each

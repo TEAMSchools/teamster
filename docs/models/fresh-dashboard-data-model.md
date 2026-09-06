@@ -904,6 +904,15 @@ whole pipeline at the new cycle, and several models `inner join` against sheets
 scoped to that year. Flipping the var before those sheets carry the new year's
 rows does not error — it silently returns zero rows.
 
+One cleanup is parked against this rollover rather than done on its own.
+`int_tableau__finalsite_student_scaffold` and `rpt_tableau__fresh_dashboard_qc`
+both alias `cast(focus_student_id_prefixed as int)` to `focus_student_id`, which
+is the name of a different, genuinely unprefixed column on
+`int_finalsite__contact_id_attributes`. The value is correct and nothing is
+broken; the name misleads. Rename it in both models together at the AY2027-2028
+rollover — renaming one alone leaves the two CTEs divergent, which reads worse
+than the shared bad name. Raised on #5168 and deferred there.
+
 ### Steps, in order
 
 | #   | Step                                                              | Owner           |
