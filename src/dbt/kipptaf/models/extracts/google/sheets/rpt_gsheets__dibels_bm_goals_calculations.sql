@@ -143,11 +143,14 @@ with
         select
             *,
 
+            -- T&L planning pads, K-8. BOY is double padded: this +5 and the
+            -- 1.5x gap multiplier below. From SY26-27 MOY is single padded --
+            -- it keeps the multiplier and drops this one.
             ceiling(n_admin_season_school_gl_all * grade_goal)
-            + 5 as n_admin_season_school_gl_at_above_expected,
+            + if(period = 'BOY', 5, 0) as n_admin_season_school_gl_at_above_expected,
 
             ceiling(n_admin_season_region_gl_all * grade_goal)
-            + 5 as n_admin_season_region_gl_at_above_expected,
+            + if(period = 'BOY', 5, 0) as n_admin_season_region_gl_at_above_expected,
 
         from group_rows
     )
