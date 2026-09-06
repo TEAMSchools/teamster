@@ -994,11 +994,27 @@ regression, not a cleanup — the same trap that produced a wrong doc claim abou
 `is_grade_level_mismatch` / `is_school_mismatch`, which DO collapse NULL to
 `false` because they are wrapped.
 
-**The worklist has four flags, not five.** `is_same_day_status_tie` was deleted
-at the AY2026 review and replaced by the pending-status set inside
-`is_enroll_status_mismatch`. The same-day tie still happens in the data and the
-Reset Protocol is still the fix — it just no longer gets its own worklist row,
-so don't re-add the flag when someone reports a wrong `latest_status`.
+**The worklist has five flags, and `is_same_day_status_tie` is not one of
+them.** It was deleted at the AY2026 review and replaced by the pending-status
+set inside `is_enroll_status_mismatch`. The same-day tie still happens in the
+data and the Reset Protocol is still the fix — it just no longer gets its own
+worklist row, so don't re-add the flag when someone reports a wrong
+`latest_status`. The fifth flag is `is_missing_finalsite_record`, added in
+#5167, which is a different thing entirely.
+
+**`is_missing_finalsite_record` is the only flag sourced from the SIS side.** It
+fires when a student is currently enrolled in
+`int_extracts__student_enrollments` but no Finalsite record exists for them
+under any cycle, and it is `UNION ALL`ed onto the worklist rather than unpivoted
+— a student Finalsite never knew about cannot appear in a Finalsite-sourced
+roster. Miami reaches it through `int_finalsite__contact_id_attributes`, because
+Miami rows carry no `infosnap_id`. Do NOT "fix" the unscoped anti-join by adding
+a `finalsite_recruitment_year` filter: that was measured and rejected, because
+it also flags students whose Finalsite record merely sits in an adjacent cycle
+or has no status dates to unpivot. Those rows are also the students who are
+missing from the Progress to Goals count, so this flag is what a "PowerSchool
+says N, the dashboard says N-1" question should be answered with now, instead of
+tracing one student by hand.
 
 **`is_enroll_status_mismatch` has TWO directions in the docs, not three.** The
 "left" and "not finished enrolling" statuses were presented separately until the
