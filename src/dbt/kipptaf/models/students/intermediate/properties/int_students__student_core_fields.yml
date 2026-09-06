@@ -21,11 +21,10 @@ models:
     columns:
       - name: spedlep
         description: >-
-          IEP classification. For Miami, read from Focus's ESE FEFP code -- the
-          only ESE field Focus stores. Any code means the student receives ESE
-          services; its absence does not mean the student has no IEP, so it
-          reads null rather than 'No IEP'. Names 162 students against the frozen
-          archive's 419, a gap for Ops to close in Focus.
+          IEP classification. For Miami, read from the Focus ESE
+          Exceptionalities log via int_focus__students.spedlep: a placed,
+          undismissed, non-gifted entry. Its absence does not mean the student
+          has no IEP, so it reads null rather than 'No IEP'.
         data_tests:
           - not_null:
               config:

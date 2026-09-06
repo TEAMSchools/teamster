@@ -10,8 +10,8 @@ def build_zendesk_resource() -> ZendeskResource:
         {
             "zendesk": ZendeskResource(
                 subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
-                email=EnvVar("ZENDESK_EMAIL"),
-                token=EnvVar("ZENDESK_TOKEN"),
+                client_id=EnvVar("ZENDESK_CLIENT_ID"),
+                client_secret=EnvVar("ZENDESK_CLIENT_SECRET"),
             )
         }
     ) as resources:

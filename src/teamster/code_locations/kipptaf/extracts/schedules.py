@@ -2,6 +2,7 @@ from dagster import ScheduleDefinition
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.extracts.jobs import (
+    branchingminds_extract_asset_job,
     clever_extract_asset_job,
     coupa_extract_asset_job,
     deanslist_annual_extract_asset_job,
@@ -11,6 +12,12 @@ from teamster.code_locations.kipptaf.extracts.jobs import (
     illuminate_extract_asset_job,
     lattice_extract_asset_job,
     littlesis_extract_asset_job,
+)
+
+branchingminds_extract_assets_schedule = ScheduleDefinition(
+    job=branchingminds_extract_asset_job,
+    cron_schedule="0 3 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 clever_extract_assets_schedule = ScheduleDefinition(
@@ -68,6 +75,7 @@ littlesis_extract_assets_schedule = ScheduleDefinition(
 )
 
 schedules = [
+    branchingminds_extract_assets_schedule,
     clever_extract_assets_schedule,
     coupa_extract_assets_schedule,
     deanslist_annual_extract_asset_job_schedule,

@@ -147,8 +147,7 @@ models:
       - name: students_student_number
         description: >-
           Canonical network student number. For Miami, from
-          `int_focus__students.student_number`, which already has the 8400
-          Miami-Dade district prefix stripped.
+          `int_focus__students.student_number`, the 8400-prefixed Focus id.
         data_type: int64
         config:
           meta:

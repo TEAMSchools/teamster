@@ -50,6 +50,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-branchingminds-sftp
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Branching Minds SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-clever-sftp
   namespace: dagster-cloud
 spec:
@@ -270,6 +278,14 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Zendesk API
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-zendesk-oauth-dagster
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Zendesk OAuth - Dagster
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
