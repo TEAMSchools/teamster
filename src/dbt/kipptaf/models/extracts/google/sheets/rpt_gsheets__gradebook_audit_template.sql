@@ -63,9 +63,13 @@ select
     week_start_monday,
     school_week_end_date as week_end_friday,
     notes,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_w as `W`,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_h as `H`,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_f as `F`,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_s as `S`,
 
     {{ var("current_academic_year") }} as academic_year,  /* summer toggle: see skill */
