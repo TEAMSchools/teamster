@@ -1,14 +1,14 @@
 """Duplicate an existing `reporting__terms` grade-band's `LIT` rows under new
 `Grade Band` values, for years where every band tested on the same calendar.
 
-**`PLIT` is K-2-only in the target SY26-27 model — never duplicate it for
-another band.** `PLIT` feeds the in-house, collective-average PM goal
-calculation (school-day counting for the daily-growth-rate math), which only
-K-2 keeps; grades 3-8 move to Amplify aimline, which supplies per-student
-goals directly and has no use for `PLIT`. This script only ever reads and
-writes `LIT`-coded rows (see the `PLIT%` exclusion below) — if a future band
-genuinely needs `PLIT`, that is a K-2-band-only case, not something this
-script should do generically.
+**Which code family to copy is now a choice, not a fixed rule** -- pass
+`--codes`. `PLIT` feeds the in-house, collective-average PM goal calculation
+(school-day counting for the daily-growth-rate math). It was K-2-only while
+grades 3-8 were moving to Amplify aimline, which supplies per-student goals
+directly. Academics has since asked for the internal method across K-8 as
+well, so 3-8 needs its own `PLIT` rows. `--codes lit` stays the default so
+existing invocations are unchanged; `--codes plit` copies only `PLIT` rows,
+`--codes both` copies everything.
 
 SY25-26 (academic_year=2025) has `LIT` rows carrying `Grade Band = "0,1,2"`
 alongside K-2's `PLIT` rows. Grades 3-8 need their own `Grade Band`-tagged
@@ -71,6 +71,12 @@ def main() -> None:
         "--band", action="append", required=True, help="GRADE_BAND:CODE_PREFIX"
     )
     parser.add_argument(
+        "--codes",
+        choices=["lit", "plit", "both"],
+        default="lit",
+        help="which code family to duplicate (default: lit)",
+    )
+    parser.add_argument(
         "--region-override",
         action="append",
         default=[],
@@ -105,13 +111,17 @@ def main() -> None:
         if len(r) > GRADE_BAND_COL
         and r[GRADE_BAND_COL] == args.source_grade_band
         and r[academic_year_col] == args.academic_year
-        and not r[CODE_COL].startswith("PLIT")
+        and (
+            args.codes == "both"
+            or r[CODE_COL].startswith("PLIT") == (args.codes == "plit")
+        )
     ]
 
     if not source_rows:
         raise SystemExit(
             f"No rows found for academic_year={args.academic_year} "
-            f"grade_band={args.source_grade_band} -- check the filters."
+            f"grade_band={args.source_grade_band} codes={args.codes} "
+            "-- check the filters."
         )
 
     out_rows = []

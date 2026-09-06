@@ -283,13 +283,15 @@ rounds-1-4-but-goal-only-2-and-4 example above is the K-2 in-house
 collective-average pipeline specifically — confirmed against real AY2025 data
 (Camden/Newark/Paterson grade K, `PSF`, `BOY→MOY`: rounds 1-3
 `pm_goal_include = null`, round 4 not tested but still scaffolded,
-`pm_goal_include = false`). **Grades 3-8 never get this treatment** — aimline
-supplies a goal per measure per round as actually tested, so there is no
-trajectory to keep continuous; `pm_goal_include` is simply `null` on every 3-8
-row, and no row exists for an untested grade/measure/round at all. Same K-2-only
-split as `PLIT`, same underlying reason. Separately, `pm_goal_criteria = 'AND'`
-for every row this year, every grade — T&L confirmed all K-8 rounds require
-every tested standard, not a mix of AND/OR.
+`pm_goal_include = false`). **The scaffold belongs to the internal model, not to
+a grade band.** Academics now runs the internal method across K-8, so every
+internal grade is scaffolded. The aimline model never scaffolds any grade —
+Amplify supplies a goal per measure per round as actually tested, so there is no
+trajectory to keep continuous; `pm_goal_include` is `null` on every aimline row,
+and no row exists for an untested grade/measure/round at all. Through SY25-26
+the scaffold was K-2-only, because 3-8 was the only band on aimline. Separately,
+`pm_goal_criteria = 'AND'` for every row this year, every grade — T&L confirmed
+all K-8 rounds require every tested standard, not a mix of AND/OR.
 
 !!! note "AY 2026–2027: two new sheet-authored columns" The source sheet gained
 two columns ahead of the SY26-27 rollover, both inserted next to `subject_area`:
@@ -441,20 +443,29 @@ cohorts genuinely diverge would need this table split by cohort too. See
 
 **Progress Monitoring**:
 
-| Period       | Scope                                                                      |
-| ------------ | -------------------------------------------------------------------------- |
-| AY 2024–2025 | Camden and Newark only; K–2 only                                           |
-| AY 2025–2026 | K–8 for both NJ and FL; Paterson included for the first time               |
-| AY 2026–2027 | K–8 all regions; PM source migrates to aimline; model updated, not removed |
+| Period       | Scope                                                        |
+| ------------ | ------------------------------------------------------------ |
+| AY 2024–2025 | Camden and Newark only; K–2 only                             |
+| AY 2025–2026 | K–8 for both NJ and FL; Paterson included for the first time |
+| AY 2026–2027 | K–8 all regions; internal and aimline PM run in parallel     |
 
 #### AY 2026–2027 changes
 
+Aimline is **not** a cutover. Academics asked for both PM data models for the
+year — the internal method applied to K-8, and aimline applied to K-8 — so the
+two run side by side and are mixed downstream, rather than one replacing the
+other.
+
+`int_google_sheets__dibels_expected_assessments` stacks them behind a
+`data_model` column (`internal` / `aimline`), each branch reading its own Google
+Sheets range: the 16-column Expected Assessments range for internal, the
+18-column by-levels range for aimline. `data_model` is part of the grain, so a
+consumer joining without filtering it matches every score twice.
+
 `int_amplify__all_assessments` retains both BM and PM branches — it is the
 single safe read point for all valid assessment scores and must stay that way.
-The PM branch will be updated to pull from a new aimline-based PM intermediate
-instead of `int_amplify__mclass__pm_student_summary`. The DDS branch stays
-indefinitely to preserve SY24 7–8 grade benchmark history. The
-`int_google_sheets__dibels_expected_assessments` inner join and all computed
+The DDS branch stays indefinitely to preserve SY24 7–8 grade benchmark history.
+The `int_google_sheets__dibels_expected_assessments` inner join and all computed
 fields remain unchanged for the BM branch.
 
 !!! note "Deprecation approach" Per team convention, deprecated models in this
@@ -751,9 +762,12 @@ exclude PD days either), and one open edge case: the season boundary (`BOY→MOY
 into `MOY→EOY`) shows an unexplained 1-day overlap in real data that isn't
 replicated in new rows.
 
-**`PLIT` is not deprecated in AY 2026–2027 — it is K-2's mechanism, expanded.**
-K-2 keeps the in-house, collective-average PM goal pipeline (aimline only covers
-grades 3-8), so `pm_round_days` / `pm_days` still apply there. As of AY
+**`PLIT` is not deprecated in AY 2026–2027 — it is the internal model's
+mechanism, and it now covers K-8.** `PLIT` feeds the in-house,
+collective-average PM goal pipeline, so wherever the internal method runs,
+`pm_round_days` / `pm_days` apply. Because academics runs internal across K-8
+for AY 2026–2027, grades 3-8 need their own `PLIT` rows for the first time —
+through SY25-26 `PLIT` was K-2-only, since 3-8 was on aimline alone. As of AY
 2025-2026, `PLIT` rows also carry a `Grade Band` value (e.g. `0,1,2`) that
 `stg_google_sheets__dibels_expected_assessments`' PM rows unnest against to
 generate one row per grade. Grades 3-8 are getting the same `Grade Band`
@@ -1073,18 +1087,20 @@ the year it is attempted. Plan for this dependency when scheduling the rollover.
 sheets, the PM data model will produce no rows for the new year — no error, just
 missing data.
 
-### Step 2b — Add `PLIT` rows for K-2 only (if the aimline model holds)
+### Step 2b — Add `PLIT` rows for every band the internal model covers
 
-Under the aimline design, K-2 and grades 3-8 need different PM rollover
-treatment in `stg_google_sheets__reporting__terms`:
+`PLIT` rows are what the in-house PM goal calculation counts school days against
+(the collective-average growth-rate math — see _Assessment calendar_ above).
+Roll them over alongside the `LIT` rows from Step 2, using the boundary rule
+documented there, **for every grade band running the internal method**.
 
-- **K-2 keeps the in-house PM goal calculation**, which requires `PLIT` rows
-  (the school-day counting that feeds the collective-average growth-rate math —
-  see _Assessment calendar_ above). Roll these over every year for K-2 alongside
-  the `LIT` rows from Step 2, using the boundary rule documented there.
-- **Grades 3-8 use Amplify's aimline-provided goal-setting calculation**
-  directly and do **not** need `PLIT` rows at all — only `LIT` rows for round
-  dates.
+For AY 2026–2027 that is K-8, so grades 3-8 need `PLIT` rows too. Through
+SY25-26 only K-2 did, because 3-8 was on aimline, which supplies goals per
+student and needs no day count. A band running aimline alone needs only `LIT`
+rows for round dates.
+
+`duplicate_reporting_terms_grade_band.py --codes plit` copies an existing band's
+`PLIT` rows to other bands, which works while every band shares a calendar.
 
 `PLIT` date-range generation is now documented, derived, and scripted — see
 _Assessment calendar_ above and the `dibels-dashboard` skill's "`PLIT` boundary

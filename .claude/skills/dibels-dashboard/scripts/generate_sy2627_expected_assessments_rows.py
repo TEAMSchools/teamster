@@ -501,9 +501,24 @@ def main() -> None:
             " output."
         ),
     )
+    parser.add_argument(
+        "--no-scaffold",
+        action="store_true",
+        help=(
+            "no grade gets the pm_goal_include scaffold -- every grade follows"
+            " the aimline pattern (rows only for rounds the doc lists, blank"
+            " pm_goal_include). Use for the aimline model, which supplies goals"
+            " per student and needs no trajectory continuity."
+        ),
+    )
     args = parser.parse_args()
 
-    scaffold_grades = set(range(0, 9)) if args.single_rows else K2_GRADES
+    if args.no_scaffold:
+        scaffold_grades: set[int] = set()
+    elif args.single_rows:
+        scaffold_grades = set(range(0, 9))
+    else:
+        scaffold_grades = K2_GRADES
 
     selected = [r.strip() for r in args.regions.split(",") if r.strip()]
     unknown = [r for r in selected if r not in REGION_ROUNDS]

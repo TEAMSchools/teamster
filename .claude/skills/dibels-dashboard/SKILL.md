@@ -947,6 +947,84 @@ Generated 878 rows for Newark/Paterson/Camden; verified byte-for-byte against
 the live sheet after pasting (one cosmetic mismatch caught and cleared: Sheets
 normalizes `false` to `FALSE` on paste -- not a data problem).
 
+### Verifying a year that is not in prod yet -- go to the source
+
+When you need to check something about an academic year whose rows are not in
+prod (or not pasted into the sheet yet), **verify against the document the rows
+came from, not against rows you generated**. Your own generated output is a
+transcription; checking it against itself proves nothing about the source.
+
+The T&L PM rounds document is that source:
+<https://docs.google.com/document/d/12ZDlAJY_IgSS4yElBAFWouJ6_M8982j1Fb1B93-INjU>
+
+It is a Google Doc, not a Sheet, so
+`mcp__claude_ai_Google_Drive__read_file_content` returns the whole thing with
+its region headings intact (`# Newark & Paterson`, `# Camden`, `# Miami`) --
+provenance comes for free, unlike the multi-tab Sheet problem described in
+`.claude/context/claude_ai_Google_Drive.md`. It reads as the USER's identity, so
+it works even when the doc is not shared with the ADC service account.
+
+Worked example. Asked whether SY26-27 would repeat SY25-26's null
+`benchmark_goal` rows (Miami testing Word Reading at grades 4-5, above its 0-3
+goal range, and Reading Accuracy at grade 0, below its 1-8 range), checking the
+generated rows said no. Confirming against the doc is what made that answer
+trustworthy: Miami's SY26-27 set has no Word Reading at any grade, and Kinder
+gets PSF and NWF only. The single Word Reading combo in SY26-27 is Newark and
+Paterson's Kinder at rounds 7-8, which `dibels_goals_long` does cover.
+
+`stg_google_sheets__dibels_goals_long` carries no `academic_year` -- goals are
+year-agnostic, so its coverage table serves every year at once. A year "clears"
+by having its measure/grade/season combos land inside that one table.
+
+**That table is University of Oregon's, not ours, and it has not changed
+since 2020.** Verified against UO's own PDF, which states
+`Goals Updated: July 2020` and `Reformatted: October 2025`:
+<https://dibels.uoregon.edu/sites/default/files/2026-06/dibels-benchmark-goals-all-grades.pdf>
+Do not read the `2026-06` in that path as a new edition -- it is the CMS upload
+folder for the 2025 reformat, and the goal values are still 2020's. The PDF also
+confirms the coverage boundaries are the assessment's design rather than a
+transcription gap: Word Reading appears only in the Grades K-3 section with no
+Grades 4-8 table at all, ORF Accuracy leaves the three Kinder columns blank, and
+Maze leaves Kinder and First blank. `stg_google_sheets__dibels_goals_long`
+matches that exactly -- WRF 0-3, ORF-Accuracy 1-8, Maze 2-8 -- so treat the
+sheet as a faithful copy rather than something to extend. So a missing goal is
+never a KTAF data-entry gap to fill -- UO defines no goal where the measure is
+not designed to be administered at that grade (Word Reading is a K-3 measure;
+Reading Accuracy needs oral reading, so not kindergarten). A null
+`benchmark_goal` downstream therefore means **a measure was assigned outside its
+valid grade range** on the Expected Assessments sheet. Raise it with academics
+as a testing-assignment error; do not propose adding rows to the goals table,
+and do not treat the null as noise -- it makes the at-or-above-benchmark
+comparison unevaluable, which is exactly the test that separates On Track &
+Meeting Aimline from Meeting Aimline, Off Track.
+
+### The two chains stack in one model, behind `data_model`
+
+`int_google_sheets__dibels_expected_assessments` reads BOTH staging models and
+unions them, tagging each branch with `data_model` (`internal` / `aimline`).
+`measure_standard_level` is null-filled on the internal branch, whose 16-column
+source has no cohort.
+
+`data_model` is part of the grain and partitions `min_pm_round` /
+`max_pm_round`. Every downstream consumer inner-joins this model as a membership
+gate, so **a consumer that does not filter `data_model` matches every score
+twice**.
+
+The model also opens with a `terms` CTE that explodes `reporting__terms` on
+`grade_band` into one row per grade level, so a grade joins its own band's
+window. A Benchmark row has no band, so its `grade_level` is null and the join
+lets any grade match -- the grade is inherited from the expected-assessments
+side. Before this, the join had no grade predicate at all, which fanned AY2025
+PM out 3x (2,370 rows against 790 real ones) and let a grade pick up a band's
+dates that did not include it.
+
+**Which years and grades are live is a sheet decision, not a SQL one.**
+`assessment_include` is the off switch: null means live, non-null means
+excluded, and consumers express that as `assessment_include is null`. Do not add
+year filters to the model -- flip `assessment_include` instead. Currently off:
+all AY2024 PM rows on both tabs, and 99 AY2023 Benchmark rows (upper grades did
+not sit Benchmark that year).
+
 ### Generating rows for both models
 
 Both models come out of the same transcribed T&L round data in
@@ -968,6 +1046,12 @@ uv run python3 \
 grade 0-8, and drops columns 6 and 7 (`assessment_type`,
 `measure_standard_level`) so the output matches the 16-column V1 order.
 
+`--no-scaffold` empties the scaffold set instead, so every grade takes the
+aimline pattern -- rows only for rounds the doc lists, blank `pm_goal_include`.
+Use it with the default 18-column output for aimline-across-K-8. On the SY27 doc
+it yields 1,170 rows (758 NJ + 412 Miami) against the default's 1,294; the
+124-row difference is exactly the K-2 scaffold-fill rows.
+
 **Generating single rows from the doc is not lossy; collapsing existing split
 rows would be.** The round data carries ONE measure list per grade/round plus a
 cohort tag -- never per-cohort measure lists -- so single-row mode just omits
@@ -987,10 +1071,27 @@ for every round of a season for any measure tested at least once that season,
 with `pm_goal_include = false` on the untested rounds. Measured on the sheet:
 AY2025 3-8 has 504 rows at `false`; AY2026 3-8 in the combo model has 0.
 
-**`reporting__terms` needs no change for either model.** `PLIT` was already
-K-2-only in AY2025 across all four regions (verified: `0,1,2` carries `PLIT`
-rows, `3,4` and `5,6,7,8` carry zero). Both models read the same terms, so the
-internal model covering K-8 does not imply PLIT rows for 3-8.
+**`reporting__terms` DOES need `PLIT` rows for 3-8 now.** An earlier version of
+this section said it did not, reasoning that `PLIT` was K-2-only in AY2025
+across all four regions (true: `0,1,2` carries `PLIT` rows, `3,4` and `5,6,7,8`
+carry zero). That reasoning was wrong. `PLIT` is not a K-2 property -- it is
+what the internal method counts school days against, and it was K-2-only only
+because K-2 was the only band on the internal method. Now that academics runs
+internal across K-8, every band needs `PLIT`.
+
+`duplicate_reporting_terms_grade_band.py --codes plit` copies one band's `PLIT`
+rows to others. That is only correct while the bands share a calendar, which
+they do today -- every band's `LIT` round covers the same dates, so the derived
+`PLIT` windows coincide.
+
+Watch the interaction with `int_google_sheets__dibels_pm_expectations`: its day
+count groups on `(region, year, season, round)` with **no `grade_band`**, and
+its `regexp_extract(code, r'LIT(\d+)')` is unanchored, so `PLIT1` reads as round
+1 and its window is counted alongside `LIT1`'s. Measured on Newark AY2026: the
+`LIT` window is 5 in-session days and `PLIT` adds 23/9/13/12. Since all bands
+share one group, adding 3-8 `PLIT` rows is a no-op there **only** while their
+dates match K-2's. If a band's `PLIT` dates ever diverge, the group unions both
+windows and every band's count shifts.
 
 **`pm_goal_criteria` stays `AND`** on every row of both models -- a T&L
 requirement for the year, not an aimline artifact.
