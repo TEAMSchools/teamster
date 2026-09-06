@@ -62,8 +62,11 @@ ACADEMIC_YEAR = "2026"
 FISCAL_YEAR = "2027"
 PS_YEAR_ID = "36"
 
-# Grade bands, and whether each carries PLIT rows. PLIT is K-2-only.
-BANDS = [("0,1,2", True), ("3,4", False), ("5,6,7,8", False)]
+# Grade bands, and whether each carries PLIT rows.
+# The doc groups Miami K / 1-3 / 4-5 / 6-8. Every Miami round shares the same
+# dates across bands, so the split only decides which grades a PLIT row
+# covers -- and the internal method now covers K-8, so every band carries it.
+BANDS = [("0", True), ("1,2,3", True), ("4,5", True), ("6,7,8", True)]
 
 # (round_number, start, end) -- T&L SY27 doc, Miami tab.
 ROUNDS = [

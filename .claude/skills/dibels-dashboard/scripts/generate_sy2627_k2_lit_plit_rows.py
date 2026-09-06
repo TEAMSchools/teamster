@@ -1,4 +1,4 @@
-"""Generate SY26-27 K-2 `LIT`/`PLIT` rows for `reporting__terms`, NJ regions
+"""Generate SY26-27 `LIT`/`PLIT` rows for `reporting__terms`, NJ regions
 only (Camden, Newark, Paterson) -- Miami excluded, see module docstring below.
 
 `LIT` round dates are transcribed directly from the confirmed T&L PM rounds
@@ -51,7 +51,7 @@ from google.cloud import bigquery
 
 ACADEMIC_YEAR = "2026"
 FISCAL_YEAR = "2027"
-GRADE_BAND = "0,1,2"
+DEFAULT_BANDS = ["0,1,2", "3,4", "5,6,7,8"]
 PS_YEAR_ID = "36"
 
 # (region, [(round_number, start, end), ...])
@@ -145,7 +145,17 @@ def last_in_session_before(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
+    parser.add_argument(
+        "--band",
+        action="append",
+        help=(
+            "grade band to emit, repeatable. Defaults to every K-8 band."
+            " PLIT is emitted for each -- the internal method counts school days"
+            " against it and now covers K-8, so every band needs it."
+        ),
+    )
     args = parser.parse_args()
+    bands = args.band or DEFAULT_BANDS
 
     client = bigquery.Client(project="teamster-332318")
 
@@ -166,40 +176,41 @@ def main() -> None:
                 plit_start = first_in_session_after(in_session, prev_round_end)
             plit_end = last_in_session_before(in_session, d(r_start))
 
-            out_rows.append(
-                [
-                    "LIT",
-                    f"PLIT{round_number}",
-                    season,
-                    plit_start.isoformat(),
-                    plit_end.isoformat(),
-                    ACADEMIC_YEAR,
-                    FISCAL_YEAR,
-                    PS_YEAR_ID,
-                    "",
-                    "",
-                    region,
-                    GRADE_BAND,
-                    "",
-                ]
-            )
-            out_rows.append(
-                [
-                    "LIT",
-                    f"LIT{round_number}",
-                    season,
-                    r_start,
-                    r_end,
-                    ACADEMIC_YEAR,
-                    FISCAL_YEAR,
-                    PS_YEAR_ID,
-                    "",
-                    "",
-                    region,
-                    GRADE_BAND,
-                    "",
-                ]
-            )
+            for grade_band in bands:
+                out_rows.append(
+                    [
+                        "LIT",
+                        f"PLIT{round_number}",
+                        season,
+                        plit_start.isoformat(),
+                        plit_end.isoformat(),
+                        ACADEMIC_YEAR,
+                        FISCAL_YEAR,
+                        PS_YEAR_ID,
+                        "",
+                        "",
+                        region,
+                        grade_band,
+                        "",
+                    ]
+                )
+                out_rows.append(
+                    [
+                        "LIT",
+                        f"LIT{round_number}",
+                        season,
+                        r_start,
+                        r_end,
+                        ACADEMIC_YEAR,
+                        FISCAL_YEAR,
+                        PS_YEAR_ID,
+                        "",
+                        "",
+                        region,
+                        grade_band,
+                        "",
+                    ]
+                )
             prev_round_end = d(r_end)
 
     with open(args.out, "w") as f:
