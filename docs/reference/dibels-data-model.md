@@ -462,6 +462,16 @@ Sheets range: the 16-column Expected Assessments range for internal, the
 18-column by-levels range for aimline. `data_model` is part of the grain, so a
 consumer joining without filtering it matches every score twice.
 
+The stack goes no further. Each method filters to its own branch immediately
+below that model and then runs on its own models, because the calculations have
+little in common — internal spreads a cohort's required growth across a round
+from school-day counts, aimline compares a per-student aimline value supplied by
+Amplify. `int_google_sheets__dibels_pm_expectations` is the internal path: it
+filters `data_model = 'internal'`, projects neither `data_model` nor
+`measure_standard_level`, and so keeps the column set it had before the split.
+Its consumers, including `rpt_gsheets__dibels_pm_goal_setting`, need no filter
+of their own and required no change.
+
 `int_amplify__all_assessments` retains both BM and PM branches — it is the
 single safe read point for all valid assessment scores and must stay that way.
 The DDS branch stays indefinitely to preserve SY24 7–8 grade benchmark history.

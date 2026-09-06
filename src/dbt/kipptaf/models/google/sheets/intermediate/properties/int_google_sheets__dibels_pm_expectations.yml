@@ -6,13 +6,13 @@ models:
       trajectory starts from. One row per measure a student in a given region,
       grade and round is expected to be progress-monitored on.
 
-      Serves both PM data models, told apart by data_model. The internal model
-      uses pm_round_days and pm_days to spread growth across a round, plus
-      benchmark_goal as the target. The aimline model gets its per-student goal
-      from Amplify, so it needs no day count, but it does need benchmark_goal --
-      meeting the aimline while still short of the benchmark goal is a different
-      category from meeting both -- and it needs the window, since a student not
-      tested inside it counts as not tested.
+      Internal model only -- it reads the internal branch of
+      int_google_sheets__dibels_expected_assessments and nothing else. The
+      internal method spreads a cohort's required growth across a round using
+      pm_round_days and pm_days, against benchmark_goal as the target. The
+      aimline method compares a per-student aimline instead and needs no day
+      count, so it gets its own models rather than sharing this one behind a
+      discriminator.
 
       pm_round_days counts the round's LIT testing window plus its PLIT
       instructional window. PLIT supplies most of the count, which is why the
@@ -26,36 +26,13 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - data_model
               - academic_year
               - region
               - grade
               - admin_season
               - code
               - expected_measure_standard
-              - measure_standard_level
     columns:
-      - name: data_model
-        data_type: string
-        description: >
-          Which PM data model the row belongs to -- internal or aimline. Part of
-          the grain; a consumer that does not filter it matches each score under
-          both models.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - internal
-                  - aimline
-      - name: measure_standard_level
-        data_type: string
-        description: >
-          Cohort the row applies to -- Below or Well Below -- and part of the
-          grain. Null on every internal row, whose source has no cohort split.
-          On aimline rows it decides which measures a student is held to, so the
-          below-aimline-on-one-or-more-measures test is evaluated against the
-          right measure set.
       - name: academic_year
         data_type: int64
         description: >
@@ -121,8 +98,7 @@ models:
         description: >
           False marks a scaffold-fill row -- a measure tested at least once this
           season but not this round, kept so the trajectory stays continuous.
-          Null means the measure is tested this round. Always null on aimline
-          rows.
+          Null means the measure is tested this round.
       - name: pm_goal_criteria
         data_type: string
         description: >

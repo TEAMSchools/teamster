@@ -63,7 +63,6 @@ with
     )
 
 select
-    e.data_model,
     e.academic_year,
     e.region,
     e.grade,
@@ -75,7 +74,6 @@ select
     e.expected_measure_name_code,
     e.expected_measure_name,
     e.expected_measure_standard,
-    e.measure_standard_level,
     e.pm_goal_include,
     e.pm_goal_criteria,
 
@@ -103,6 +101,10 @@ left join
     and e.admin_season = g.matching_pm_season
 where
     e.assessment_type = 'PM'
+    -- internal only. The aimline calculation needs no day count and compares a
+    -- per-student aimline rather than a cohort trajectory, so it gets its own
+    -- models rather than sharing this one behind a discriminator.
+    and e.data_model = 'internal'
     -- the window comes from upstream, which resolves it per grade against the
     -- row's own band. Re-joining reporting__terms here would match every band.
     -- A null window means no term row covers this grade, which is what the

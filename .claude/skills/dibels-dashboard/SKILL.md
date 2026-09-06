@@ -1006,9 +1006,23 @@ unions them, tagging each branch with `data_model` (`internal` / `aimline`).
 source has no cohort.
 
 `data_model` is part of the grain and partitions `min_pm_round` /
-`max_pm_round`. Every downstream consumer inner-joins this model as a membership
-gate, so **a consumer that does not filter `data_model` matches every score
-twice**.
+`max_pm_round`. Consumers inner-join this model as a membership gate, so **a
+consumer that does not filter `data_model` matches every score twice**.
+
+**The stack stops here.** Each calculation path filters to its own branch at the
+first model below this one and never carries `data_model` further, because the
+two methods share almost nothing: internal spreads a cohort's required growth
+across a round using school-day counts, aimline compares a per-student aimline
+value that Amplify supplies. `int_google_sheets__dibels_pm_expectations` is the
+internal path -- it filters `data_model = 'internal'` and projects neither
+`data_model` nor `measure_standard_level`, so its consumers need no filter of
+their own and its column set is unchanged from before the split. The aimline
+path gets its own models rather than sharing that one behind a discriminator.
+
+That is why `rpt_gsheets__dibels_pm_goal_setting` needed no edit for the
+two-model work. It joins `pm_expectations`, which is internal by construction.
+Had the discriminator been carried through, every goal in it would have been
+calculated three times -- measured at 1,650 rows against a real grain of 550.
 
 The model also opens with a `terms` CTE that explodes `reporting__terms` on
 `grade_band` into one row per grade level, so a grade joins its own band's
