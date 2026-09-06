@@ -7,7 +7,7 @@ with
         from {{ ref("int_students__school_directory") }}
         -- Finalsite rows are next year's recruiting, not a year students
         -- attended, so there is no calendar to count days in.
-        where school_source != 'finalsite'
+        where school_source != 'finalsite' and school_level_alt != 'HS'
     ),
 
     pm_rounds as (
@@ -17,7 +17,12 @@ with
             t.academic_year,
             t.name as term_name,
 
-            safe_cast(regexp_extract(t.code, r'LIT(\d+)') as int) as round_number,
+            -- P?LIT, anchored: a round's day count is its LIT testing window
+            -- PLUS its PLIT instructional window, and PLIT supplies most of it.
+            -- Anchoring keeps that deliberate instead of relying on LIT
+            -- matching inside PLIT, which any future code containing LIT would
+            -- also do.
+            safe_cast(regexp_extract(t.code, r'^P?LIT(\d+)$') as int) as round_number,
 
             count(distinct c.date_value) as pm_round_days,
 
@@ -58,6 +63,7 @@ with
     )
 
 select
+    e.data_model,
     e.academic_year,
     e.region,
     e.grade,
@@ -69,12 +75,13 @@ select
     e.expected_measure_name_code,
     e.expected_measure_name,
     e.expected_measure_standard,
+    e.measure_standard_level,
     e.pm_goal_include,
     e.pm_goal_criteria,
 
-    t.code,
-    t.start_date,
-    t.end_date,
+    e.test_code as code,
+    e.start_date,
+    e.end_date,
 
     d.pm_round_days,
     d.pm_days,
@@ -83,24 +90,21 @@ select
     g.grade_level_standard as benchmark_goal,
 
 from {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
-inner join
-    {{ ref("stg_google_sheets__reporting__terms") }} as t
-    on e.academic_year = t.academic_year
-    and e.region = t.region
-    and e.admin_season = t.name
-    and e.test_code = t.code
-    and e.assessment_type = 'PM'
-    and t.type = 'LIT'
 left join
     pm_rounds_agg as d
-    on t.academic_year = d.academic_year
-    and t.region = d.region
-    and t.name = d.term_name
+    on e.academic_year = d.academic_year
+    and e.region = d.region
+    and e.admin_season = d.term_name
     and e.round_number = d.round_number
 left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
-{# TODO: update to current_school_year var #}
-where e.academic_year >= 2025
+where
+    e.assessment_type = 'PM'
+    -- the window comes from upstream, which resolves it per grade against the
+    -- row's own band. Re-joining reporting__terms here would match every band.
+    -- A null window means no term row covers this grade, which is what the
+    -- inner join to terms used to drop.
+    and e.start_date is not null
