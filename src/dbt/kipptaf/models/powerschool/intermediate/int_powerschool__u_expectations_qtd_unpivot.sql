@@ -14,7 +14,7 @@ with
         from {{ ref("int_students__calendar_week") }}
         where
             -- summer toggle: see skill
-            academic_year = {{ var("current_academic_year") - 1 }}
+            academic_year = {{ var("current_academic_year") }}
             and week_start_monday
             < date_trunc(current_date('{{ var("local_timezone") }}'), isoweek)
     ),
@@ -65,7 +65,7 @@ select
     assignment_category_code,
     expectation,
 
-    {{ var("current_academic_year") - 1 }} as academic_year,  /* summer toggle: see skill */
+    {{ var("current_academic_year") }} as academic_year,  /* summer toggle: see skill */
 
     concat(assignment_category_code, right(`quarter`, 1)) as assignment_category_term,
 

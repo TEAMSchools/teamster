@@ -128,7 +128,8 @@ with
             and r.duedate between s.quarter_start_date and s.quarter_end_date
             and r.scoretype in ('POINTS', 'PERCENT')
         where
-            s.academic_year = {{ var("current_academic_year") - 1 }}  /* summer toggle: see skill */
+            /* summer toggle: see skill */
+            s.academic_year = {{ var("current_academic_year") }}
             and s.school_level_alt != 'ES'
             and s._dbt_source_project != 'kippmiami'
             and s.exclude_from_gpa = 0
