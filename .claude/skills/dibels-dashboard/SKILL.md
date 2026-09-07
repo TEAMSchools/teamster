@@ -165,6 +165,46 @@ for nr in ss.get("namedRanges", []):
     print(nr["name"], "->", titles.get(nr["range"].get("sheetId")), nr["range"])
 ```
 
+### Never edit `sources-external.yml` with a forward-scanning regex
+
+The file holds ~100 source blocks at identical indentation, and **not every one
+has a `columns:` block** -- several rely on BigQuery autodetect. So a pattern
+like "find this source name, then find the next `columns:`" walks straight past
+its own block into a later source and replaces the wrong list, with no error.
+That is exactly how `src_google_sheets__gpa_goals` lost its `org_level`,
+`schoolid`, `metric`, `threshold`, `direction` and `goal` columns during the
+bm_goals cutover -- they were overwritten with bm_goals' 43. Caught only by
+reading the diff afterwards.
+
+Edit one source by **bounding the block first**: find its
+`      - name: <source>` line, find the next line starting `      - name: src_`,
+and operate only between them. That is what `.claude/scratch/wire_source.py`
+does -- it moves `sheet_range`, replaces or inserts the `columns:` list, and
+asserts it found exactly one `sheet_range` and at most one `columns:` inside the
+block.
+
+Then **audit every removed line** before trusting it:
+
+```bash
+git diff <the yml> | grep '^-' | grep -v '^---' | sort | uniq -c
+```
+
+For a `sheet_range` move plus a column widen, the only removals should be the
+old `sheet_range` line(s). Anything else is collateral.
+
+Two follow-on gotchas from the same cutover:
+
+- An all-blank column autodetects as **STRING**, and a trailing all-blank column
+  is **dropped entirely**. Migrating a widened sheet whose new columns are empty
+  (IEP/MLL placeholders) therefore fails a `select *` contract on type
+  mismatches and missing columns until the source declares `columns:`
+  explicitly. Declaring them is the fix, not casting downstream.
+- Re-stage after any range move:
+  `stage_external_sources --target dev --vars '{ext_full_refresh: true}'` for
+  local work, and the same with `--target staging` before pushing, or dbt Cloud
+  CI fails "table not found" on the `zz_stg_` external. The staging run needs
+  the user -- it drops and recreates a shared table.
+
 ## New staging schema: `stg_google_sheets__dibels_foundation_goals`
 
 Source: named range `src_google_sheets__dibels__foundation_goals` (double
