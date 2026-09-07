@@ -26,9 +26,12 @@ with
             gpa.yearid,
             gpa.gpa_y1,
             gpa.gpa_y1_unweighted,
-            gpa.n_failing_y1,
 
             lb.days_prior,
+
+            /* the snapshot carries n_failing_y1 = 0 on versions with no gpa_y1,
+               which reads as "failing nothing" rather than "not yet graded" */
+            if(gpa.gpa_y1 is not null, gpa.n_failing_y1, null) as n_failing_y1,
         from {{ ref("snapshot_powerschool__gpa_term") }} as gpa
         inner join
             lookbacks as lb
