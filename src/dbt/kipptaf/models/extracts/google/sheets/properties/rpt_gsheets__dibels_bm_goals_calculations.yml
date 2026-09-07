@@ -39,3 +39,137 @@ models:
         data_type: float64
       - name: n_admin_season_region_gl_at_above_gap
         data_type: float64
+      - name: grade_goal_iep
+        data_type: float64
+        description: >
+          Foundation At/Above goal rate for students with an IEP. Populations
+          overlap -- a student counted here is also counted in the unsuffixed
+          All columns.
+      - name: grade_range_goal_iep
+        data_type: float64
+        description: >
+          Foundation grade-range goal for students with an IEP. Populations
+          overlap -- a student counted here is also counted in the unsuffixed
+          All columns.
+      - name: n_admin_season_school_gl_all_iep
+        data_type: int64
+        description: >
+          Students at the school in this grade and period who are students with
+          an IEP. Populations overlap -- a student counted here is also counted
+          in the unsuffixed All columns.
+      - name: n_admin_season_school_gl_at_above_iep
+        data_type: int64
+        description: >
+          Of those, how many scored At/Above. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_region_gl_all_iep
+        data_type: int64
+        description: >
+          Same denominator at region level. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_region_gl_at_above_iep
+        data_type: int64
+        description: >
+          Same At/Above count at region level. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_school_gl_at_above_expected_iep
+        data_type: float64
+        description: >
+          Expected At/Above count for students with an IEP, padded per period.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_region_gl_at_above_expected_iep
+        data_type: float64
+        description: >
+          Same expectation at region level. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_school_gl_bl_wb_iep
+        data_type: int64
+        description: >
+          Below/Well Below count for students with an IEP at the school.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_region_gl_bl_wb_iep
+        data_type: int64
+        description: >
+          Below/Well Below count for students with an IEP at region level.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_school_gl_at_above_gap_iep
+        data_type: float64
+        description: >
+          Students to move for students with an IEP, 1.5x the raw gap.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_region_gl_at_above_gap_iep
+        data_type: float64
+        description: >
+          Same gap at region level. Populations overlap -- a student counted
+          here is also counted in the unsuffixed All columns.
+      - name: grade_goal_mll
+        data_type: float64
+        description: >
+          Foundation At/Above goal rate for multilingual learners. Populations
+          overlap -- a student counted here is also counted in the unsuffixed
+          All columns.
+      - name: grade_range_goal_mll
+        data_type: float64
+        description: >
+          Foundation grade-range goal for multilingual learners. Populations
+          overlap -- a student counted here is also counted in the unsuffixed
+          All columns.
+      - name: n_admin_season_school_gl_all_mll
+        data_type: int64
+        description: >
+          Students at the school in this grade and period who are multilingual
+          learners. Populations overlap -- a student counted here is also
+          counted in the unsuffixed All columns.
+      - name: n_admin_season_school_gl_at_above_mll
+        data_type: int64
+        description: >
+          Of those, how many scored At/Above. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_region_gl_all_mll
+        data_type: int64
+        description: >
+          Same denominator at region level. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_region_gl_at_above_mll
+        data_type: int64
+        description: >
+          Same At/Above count at region level. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_school_gl_at_above_expected_mll
+        data_type: float64
+        description: >
+          Expected At/Above count for multilingual learners, padded per period.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_region_gl_at_above_expected_mll
+        data_type: float64
+        description: >
+          Same expectation at region level. Populations overlap -- a student
+          counted here is also counted in the unsuffixed All columns.
+      - name: n_admin_season_school_gl_bl_wb_mll
+        data_type: int64
+        description: >
+          Below/Well Below count for multilingual learners at the school.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_region_gl_bl_wb_mll
+        data_type: int64
+        description: >
+          Below/Well Below count for multilingual learners at region level.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_school_gl_at_above_gap_mll
+        data_type: float64
+        description: >
+          Students to move for multilingual learners, 1.5x the raw gap.
+          Populations overlap -- a student counted here is also counted in the
+          unsuffixed All columns.
+      - name: n_admin_season_region_gl_at_above_gap_mll
+        data_type: float64
+        description: >
+          Same gap at region level. Populations overlap -- a student counted
+          here is also counted in the unsuffixed All columns.
