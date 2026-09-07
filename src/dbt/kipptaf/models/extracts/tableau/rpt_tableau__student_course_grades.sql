@@ -863,9 +863,10 @@ with
     ),
 
     course_priority as (
-        /* Ungraded courses are filtered out rather than sorted last so they
-           receive no rank at all; the left join below then leaves the rank
-           null. */
+        /* No (x is null) asc guard, unlike category_ranked above — the
+           filter removes nulls before the window runs, so an ungraded course
+           takes no rank and the left join at the foot of the model is what
+           nulls the column. */
         select
             _dbt_source_project,
             studentid,
