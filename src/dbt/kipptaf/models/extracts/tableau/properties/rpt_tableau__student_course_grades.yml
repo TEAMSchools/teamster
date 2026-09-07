@@ -548,6 +548,30 @@ models:
           no letter ladder. The second case does NOT require need_60 to be null
           — a student at 95 percent has a perfectly good need_60 and still gets
           a null need_next, because there is nothing above an A to need.
+      - name: office_hours_priority_rank
+        data_type: int64
+        description: >-
+          Rank of this course among the student's courses for the same term, 1
+          being the lowest percent grade. Intended for an intervention or
+          office-hours list that caps how many teachers one student is sent to:
+          filter to rank <= N.
+
+          Null whenever quarter_course_percent_grade is null. Ungraded courses
+          are excluded from the ranking rather than sorted last, so a course
+          with nothing posted yet can never look like a student's most urgent
+          one.
+
+          Unique within the partition rather than tie-preserving. Two courses on
+          the same percent take consecutive ranks, broken by course_number so
+          the pick is reproducible across rebuilds. A tie-preserving rank would
+          let a "top 4" filter return five or more courses, which would change
+          how many sessions a student is sent to for a reason invisible to
+          whoever reads the list.
+
+          Partitioned on the term, so a Y1 row ranks the student's year-to-date
+          course grades and a quarter row ranks that quarter's. That follows
+          quarter_course_percent_grade, whose own meaning already changes with
+          the row's term.
       - name: category_name_code
         data_type: string
         description: Gradebook category code (e.g. F/S/W; NULL on Y1 rows).
