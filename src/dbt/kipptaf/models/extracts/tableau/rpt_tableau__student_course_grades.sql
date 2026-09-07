@@ -194,7 +194,6 @@ with
             term.semester,
 
             gtq.gpa_semester,
-            gtq.total_credit_hours_y1 as gpa_total_credit_hours,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -241,6 +240,12 @@ with
             if(
                 term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
             ) as gpa_n_failing_y1,
+
+            if(
+                term.quarter = 'Y1',
+                gty.total_credit_hours_y1,
+                gtq.total_credit_hours_y1
+            ) as gpa_total_credit_hours,
 
             /* KIPP GPA Band, the KIPP Foundation five-band unweighted scale
                documented in models/students/CLAUDE.md. Band 5 is open-ended
