@@ -468,21 +468,35 @@ year — the internal method applied to K-8, and aimline applied to K-8 — so t
 two run side by side and are mixed downstream, rather than one replacing the
 other.
 
-`int_google_sheets__dibels_expected_assessments` stacks them behind a
-`data_model` column (`internal` / `aimline`), each branch reading its own Google
-Sheets range: the 16-column Expected Assessments range for internal, the
-18-column by-levels range for aimline. `data_model` is part of the grain, so a
-consumer joining without filtering it matches every score twice.
+**The two chains are separate end to end — they share no model.** Each reads its
+own Google Sheets range through its own gate:
 
-The stack goes no further. Each method filters to its own branch immediately
-below that model and then runs on its own models, because the calculations have
-little in common — internal spreads a cohort's required growth across a round
-from school-day counts, aimline compares a per-student aimline value supplied by
-Amplify. `int_google_sheets__dibels_pm_expectations` is the internal path: it
-filters `data_model = 'internal'`, projects neither `data_model` nor
-`measure_standard_level`, and so keeps the column set it had before the split.
-Its consumers, including `rpt_gsheets__dibels_pm_goal_setting`, need no filter
-of their own and required no change.
+| Chain                | Range                          | Gate                                                       | PM expectations                                     |
+| -------------------- | ------------------------------ | ---------------------------------------------------------- | --------------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`           | `int_google_sheets__dibels_pm_expectations`         |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels_expected_assessments_by_levels` | `int_google_sheets__dibels_pm_expectations_aimline` |
+
+An intermediate design unioned both ranges into one gate behind a `data_model`
+discriminator (`internal` / `aimline` / `Benchmark`). It was abandoned. The
+discriminator carried exactly the hazard it was meant to manage — a consumer
+that forgot to filter it matched every score twice — and it changed the internal
+gate's column set for no benefit to the internal chain. Splitting at the source
+removes the column and the hazard together, and leaves the internal gate
+byte-identical to what its consumers already expected. If you find a
+`data_model` reference in an older note, it describes a design that never
+shipped.
+
+The calculations have little in common, which is why nothing is shared: internal
+spreads a cohort's required growth across a round from school-day counts,
+aimline compares a per-student aimline value supplied by Amplify.
+`rpt_gsheets__dibels_pm_goal_setting` therefore needed no change at all — it
+joins `pm_expectations`, which is internal by construction.
+
+**Benchmark lives on the internal chain only.** The by-levels range carries no
+Benchmark rows and never will. Benchmark tests every student against one set of
+expectations, so it has no cohort split — and while it was briefly emitted from
+both ranges, it doubled every dashboard Benchmark row and inflated participation
+expected counts from 4-8 to 8-16, with CI catching none of it.
 
 `int_amplify__all_assessments` retains both BM and PM branches — it is the
 single safe read point for all valid assessment scores and must stay that way.
@@ -693,17 +707,33 @@ Academics runs both methods across K-8, so `pm_round_days`, `pm_days`,
 internal method covers, which is all of them. `PLIT` is not K-2-scoped and never
 became so.
 
-The model filters `data_model = 'internal'` and nothing else changed about its
-column set, so `rpt_gsheets__dibels_pm_goal_setting` needed no edit.
+The model reads the 16-column chain and nothing else — no discriminator, no
+cohort column, the same column set it always had — so
+`rpt_gsheets__dibels_pm_goal_setting` needed no edit.
+
+#### The aimline chain: `int_google_sheets__dibels_expected_assessments_by_levels`
+
+Aimline's gate over the 18-column by-levels range, the sibling of
+`int_google_sheets__dibels_expected_assessments`. PM only; the by-levels range
+carries no Benchmark rows.
+
+It differs from the internal gate in two ways beyond the source. First,
+`measure_standard_level` is in the grain **and** in the `min_pm_round` /
+`max_pm_round` partition — when a round is expected of one cohort and not the
+other, the two cohorts' round ranges differ, and a shared partition would give
+both the wider range. Second, its terms unnest is a `cross join`, not a
+`left join`: every row in this source is a PM round and every PM terms row
+carries a grade band, so there is no null-band Benchmark row to preserve.
 
 #### `int_google_sheets__dibels_pm_expectations_aimline`
 
-The aimline method gets its own model rather than a branch inside the internal
-one. The two share almost nothing: the internal method spreads a cohort's
-required growth across a round using school-day counts, so it needs
-`pm_round_days`, `pm_days` and the whole calendar-counting apparatus. Amplify
-supplies an aimline goal per student, so none of that applies — the sibling
-carries no day counts, no school directory and no calendar dependency.
+Reads the by-levels gate. A separate model from the internal `pm_expectations`,
+not a branch inside it: the internal method spreads a cohort's required growth
+across a round using school-day counts, so it needs `pm_round_days`, `pm_days`
+and the whole calendar-counting apparatus. Amplify supplies an aimline goal per
+student, so none of that applies — this model carries no day counts, no school
+directory and no calendar dependency, and confirmed with academics that aimline
+needs no day count at all.
 
 What it does carry, and why:
 

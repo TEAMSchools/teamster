@@ -1237,31 +1237,40 @@ measured -- re-derive it before repeating it.
 Worth raising with academics: the by-levels sheet as it stands does not express
 the differentiated testing the aimline model was built to support.
 
-### The two chains stack in one model, behind `data_model`
+### The two chains share no model -- split at the source, not behind a flag
 
-`int_google_sheets__dibels_expected_assessments` reads BOTH staging models and
-unions them, tagging each branch with `data_model` (`internal` / `aimline`).
-`measure_standard_level` is null-filled on the internal branch, whose 16-column
-source has no cohort.
+| Chain                | Range                          | Gate                                                       | PM expectations                                     |
+| -------------------- | ------------------------------ | ---------------------------------------------------------- | --------------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`           | `int_google_sheets__dibels_pm_expectations`         |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels_expected_assessments_by_levels` | `int_google_sheets__dibels_pm_expectations_aimline` |
 
-`data_model` is part of the grain and partitions `min_pm_round` /
-`max_pm_round`. Consumers inner-join this model as a membership gate, so **a
-consumer that does not filter `data_model` matches every score twice**.
+**Do not reach for a discriminator here.** It was tried: one gate unioning both
+ranges, tagged `data_model` (`internal` / `aimline` / `Benchmark`), in the grain
+and in the `min_pm_round` / `max_pm_round` partition. It was abandoned, and the
+reasons generalize:
 
-**The stack stops here.** Each calculation path filters to its own branch at the
-first model below this one and never carries `data_model` further, because the
-two methods share almost nothing: internal spreads a cohort's required growth
-across a round using school-day counts, aimline compares a per-student aimline
-value that Amplify supplies. `int_google_sheets__dibels_pm_expectations` is the
-internal path -- it filters `data_model = 'internal'` and projects neither
-`data_model` nor `measure_standard_level`, so its consumers need no filter of
-their own and its column set is unchanged from before the split. The aimline
-path gets its own models rather than sharing that one behind a discriminator.
+- The flag carried the exact hazard it was supposed to manage. Every consumer
+  inner-joins the gate as a membership test, so one that forgot to filter
+  `data_model` matched every score twice. Measured on
+  `rpt_gsheets__dibels_pm_goal_setting`: 1,650 rows against a real grain of 550.
+- It changed the internal gate's column set for no benefit to the internal
+  chain, which is the one with a prod contract and live consumers.
+- Benchmark had to be assigned to a branch anyway, and emitting it from both
+  doubled every dashboard Benchmark row and inflated participation expected
+  counts from 4-8 to 8-16. CI caught none of it.
 
-That is why `rpt_gsheets__dibels_pm_goal_setting` needed no edit for the
-two-model work. It joins `pm_expectations`, which is internal by construction.
-Had the discriminator been carried through, every goal in it would have been
-calculated three times -- measured at 1,650 rows against a real grain of 550.
+Splitting at the source removes the column and the hazard together, leaves the
+internal gate byte-identical to what its consumers expected, and made
+`rpt_gsheets__dibels_pm_goal_setting` a no-change model. The user's framing was
+_"i legit think we should just split things between internal and aimline"_ --
+and that applies to the gate, not only to the PM expectations below it.
+
+The aimline gate differs from the internal one in two ways beyond the source:
+`measure_standard_level` is in the grain **and** in the min/max round partition
+(a shared partition would give both cohorts the wider range once a round is
+expected of only one), and its terms unnest is a `cross join` rather than a
+`left join`, because every row in that source is a PM round and every PM terms
+row carries a band -- there is no null-band Benchmark row to preserve.
 
 The model also opens with a `terms` CTE that explodes `reporting__terms` on
 `grade_band` into one row per grade level, so a grade joins its own band's
