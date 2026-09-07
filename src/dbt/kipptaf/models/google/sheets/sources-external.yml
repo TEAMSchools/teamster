@@ -340,9 +340,9 @@ sources:
           - name: n_admin_season_region_gl_at_above
             data_type: int64
           - name: n_admin_season_school_gl_at_above_expected
-            data_type: float64
+            data_type: int64
           - name: n_admin_season_region_gl_at_above_expected
-            data_type: float64
+            data_type: int64
           - name: grade_goal_iep
             data_type: float64
           - name: grade_range_goal_iep
@@ -356,9 +356,9 @@ sources:
           - name: n_admin_season_region_gl_at_above_iep
             data_type: int64
           - name: n_admin_season_school_gl_at_above_expected_iep
-            data_type: float64
+            data_type: int64
           - name: n_admin_season_region_gl_at_above_expected_iep
-            data_type: float64
+            data_type: int64
           - name: grade_goal_mll
             data_type: float64
           - name: grade_range_goal_mll
@@ -372,9 +372,9 @@ sources:
           - name: n_admin_season_region_gl_at_above_mll
             data_type: int64
           - name: n_admin_season_school_gl_at_above_expected_mll
-            data_type: float64
+            data_type: int64
           - name: n_admin_season_region_gl_at_above_expected_mll
-            data_type: float64
+            data_type: int64
           - name: n_admin_season_school_gl_bl_wb
             data_type: int64
           - name: n_admin_season_school_gl_bl_wb_iep
