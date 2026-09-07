@@ -5,17 +5,23 @@ models:
       in which window -- the membership gate every downstream DIBELS model
       inner-joins to decide whether a score counts.
 
-      Two data models run in parallel and are stacked here, told apart by
-      data_model. The internal branch reads the 16-column Expected Assessments
-      range and carries no cohort. The aimline branch reads the 18-column
-      by-levels range, which splits each row into a Below and a Well Below copy.
-      Consumers pick a branch; they are not meant to be read together, because a
-      consumer that joins both matches each score twice.
+      This is the internal method's chain, and Benchmark's. It reads the
+      16-column Expected Assessments range only. The aimline method reads the
+      18-column by-levels range through
+      int_google_sheets__dibels_expected_assessments_by_levels -- a separate
+      model, not a branch here. The two methods were briefly unioned behind a
+      data_model discriminator; splitting them at the source is simpler, keeps
+      this model's column set identical to what its consumers already expect,
+      and removes the every-consumer-must-filter-data_model trap.
 
-      Both branches join the same reporting terms CTE, which explodes grade_band
-      into one row per grade level so a grade picks up its own band's window
-      rather than whichever band the join happened to reach first. A Benchmark
-      window carries no band and applies to every grade.
+      Benchmark lives here and only here. It tests every student against one set
+      of expectations, so it has no cohort split and no per-method variant --
+      **Benchmark will never be by levels.**
+
+      The reporting terms CTE explodes grade_band into one row per grade level
+      so a grade picks up its own band's window rather than whichever band the
+      join happened to reach first. A Benchmark window carries no band and
+      applies to every grade.
 
       Rows are switched off with assessment_include rather than filtered in SQL,
       so which years and grades are live is a sheet decision. A non-null
@@ -25,33 +31,13 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - data_model
               - academic_year
               - region
               - grade
               - admin_season
               - test_code
               - measure_standard
-              - measure_standard_level
     columns:
-      - name: data_model
-        description: >
-          Which PM method the row belongs to -- internal or aimline -- or
-          Benchmark, which is neither. **Benchmark will never be by levels.** It
-          tests every student against one set of expectations, so it has no
-          cohort split and no per-method variant, and it lives in the 16-column
-          source only. A Benchmark consumer therefore needs no data_model filter
-          because there is exactly one set; PM consumers must filter to a
-          method. Also partitions min_pm_round and max_pm_round so the two
-          methods' round ranges never mix.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  - internal
-                  - aimline
-                  - Benchmark
       - name: academic_year
         description: >
           Academic year as the starting calendar year -- 2025 is SY25-26.
@@ -60,37 +46,27 @@ models:
       - name: grade
         description:
           Grade level the expectation applies to, with kindergarten as 0.
-      - name: measure_standard_level
-        description: >
-          Cohort the row applies to -- Below or Well Below. Populated only on
-          the aimline branch; the internal branch's 16-column source predates
-          the cohort split and tests one measure set for everyone, so it is null
-          there. Part of the grain -- without it the aimline branch's two cohort
-          copies collide.
       - name: assessment_include
         description: >
           The off switch. Null means the row is live; false means it is
           excluded, and every downstream consumer expresses that as
           assessment_include is null. Used to retire a year or a grade band
-          without deleting sheet rows -- AY2024 PM is off on both branches, and
-          99 AY2023 Benchmark rows are off because upper grades did not sit the
-          assessment that year.
+          without deleting sheet rows -- AY2024 PM is off, and 99 AY2023
+          Benchmark rows are off because upper grades did not sit the assessment
+          that year.
       - name: pm_goal_include
         description: >
           Gates whether a PM row's goal is displayed. False marks a
           scaffold-fill row -- a measure tested at least once that season but
           not in this round, kept so the goal trajectory stays continuous. Null
-          means the measure is tested this round. The internal model scaffolds;
-          the aimline model has no use for it, because Amplify supplies a
-          per-student goal directly.
+          means the measure is tested this round.
       - name: pm_goal_criteria
         description: >
           Whether a student must meet all tested standards in a round or any of
           them. AND network-wide for SY26-27.
       - name: assessment_type
         description: >
-          Benchmark or PM. Derived from admin_season in the internal branch's
-          staging model; authored on the sheet in the aimline branch's.
+          Benchmark or PM. Derived from admin_season in the staging model.
       - name: test_type
         description: Assessment family the row belongs to, from the sheet.
       - name: discipline
@@ -150,8 +126,8 @@ models:
         description: Last day of the window, from the terms CTE.
       - name: min_pm_round
         description: >
-          Lowest round number in the row's season, per data model, year, region,
-          season and grade. Marks where a season's trajectory starts.
+          Lowest round number in the row's season, per year, region, season and
+          grade. Marks where a season's trajectory starts.
       - name: max_pm_round
         description: >
           Highest round number in the row's season, on the same partition as

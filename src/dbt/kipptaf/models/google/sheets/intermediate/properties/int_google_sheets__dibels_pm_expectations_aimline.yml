@@ -5,13 +5,18 @@ models:
       given region, grade, round and cohort is expected to be progress-monitored
       on, with the round's window and the Benchmark goal.
 
-      The aimline sibling of int_google_sheets__dibels_pm_expectations, and
-      deliberately a separate model rather than a branch inside it. The two
-      methods share almost nothing: the internal one spreads a cohort's required
-      growth across a round using school-day counts, so it needs pm_round_days,
-      pm_days and the whole calendar-counting apparatus. Amplify supplies an
-      aimline goal per student, so none of that applies here and this model
-      carries no day counts, no school directory and no calendar dependency.
+      The aimline sibling of int_google_sheets__dibels_pm_expectations, and a
+      separate model rather than a branch inside it. It reads
+      int_google_sheets__dibels_expected_assessments_by_levels -- the aimline
+      method's own gate over the by-levels range -- so the two chains never
+      share a model and neither needs a discriminator to tell them apart.
+
+      The two methods share almost nothing: the internal one spreads a cohort's
+      required growth across a round using school-day counts, so it needs
+      pm_round_days, pm_days and the whole calendar-counting apparatus. Amplify
+      supplies an aimline goal per student, so none of that applies here and
+      this model carries no day counts, no school directory and no calendar
+      dependency.
 
       What it does carry, and why. measure_standard_level is part of the grain
       because the source declares an expectation per cohort, and the two cohorts

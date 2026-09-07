@@ -15,128 +15,52 @@ with
         -- null yields no rows, which would drop the row entirely
         left join unnest(split(grade_band, ',')) as band_grade
         where type = 'LIT'
-    ),
-
-    expected as (
-        select
-            academic_year,
-            region,
-            grade,
-            test_type,
-            discipline,
-            subject_area,
-            measure_standard,
-            test_code,
-            admin_season,
-            month_round,
-            illuminate_subject,
-            iready_subject,
-            ps_credit_type,
-            assessment_include,
-            pm_goal_include,
-            pm_goal_criteria,
-            assessment_type,
-            matching_pm_season,
-            expected_measure_name_code,
-            expected_measure_name,
-            expected_measure_standard,
-            grade_level_text,
-            round_number,
-
-            -- data_model names the PM method, and Benchmark is not one --
-            -- it tests every student against one set of expectations. Tagging
-            -- it on both branches is deliberate: Benchmark should live in only
-            -- one source, so if it reappears in the other the two rows collide
-            -- on the grain and the uniqueness test fails instead of silently
-            -- doubling every Benchmark row downstream.
-            if(assessment_type = 'Benchmark', 'Benchmark', 'internal') as data_model,
-
-            -- the 16-column source predates the cohort split and tests one
-            -- measure set for everyone
-            cast(null as string) as measure_standard_level,
-
-        from {{ ref("stg_google_sheets__dibels_expected_assessments") }}
-
-        union all
-
-        select
-            academic_year,
-            region,
-            grade,
-            test_type,
-            discipline,
-            subject_area,
-            measure_standard,
-            test_code,
-            admin_season,
-            month_round,
-            illuminate_subject,
-            iready_subject,
-            ps_credit_type,
-            assessment_include,
-            pm_goal_include,
-            pm_goal_criteria,
-            assessment_type,
-            matching_pm_season,
-            expected_measure_name_code,
-            expected_measure_name,
-            expected_measure_standard,
-            grade_level_text,
-            round_number,
-
-            if(assessment_type = 'Benchmark', 'Benchmark', 'aimline') as data_model,
-
-            measure_standard_level,
-
-        from {{ ref("stg_google_sheets__dibels_expected_assessments_by_levels") }}
     )
 
 select
-    e.data_model,
-    e.academic_year,
-    e.region,
-    e.grade,
-    e.test_type,
-    e.discipline,
-    e.subject_area,
-    e.measure_standard,
-    e.measure_standard_level,
-    e.test_code,
-    e.admin_season,
-    e.month_round,
-    e.illuminate_subject,
-    e.iready_subject,
-    e.ps_credit_type,
-    e.assessment_include,
-    e.pm_goal_include,
-    e.pm_goal_criteria,
-    e.assessment_type,
-    e.matching_pm_season,
-    e.expected_measure_name_code,
-    e.expected_measure_name,
-    e.expected_measure_standard,
-    e.grade_level_text,
-    e.round_number,
+    m.academic_year,
+    m.region,
+    m.grade,
+    m.test_type,
+    m.discipline,
+    m.subject_area,
+    m.measure_standard,
+    m.test_code,
+    m.admin_season,
+    m.month_round,
+    m.illuminate_subject,
+    m.iready_subject,
+    m.ps_credit_type,
+    m.assessment_include,
+    m.pm_goal_include,
+    m.pm_goal_criteria,
+    m.assessment_type,
+    m.matching_pm_season,
+    m.expected_measure_name_code,
+    m.expected_measure_name,
+    m.expected_measure_standard,
+    m.grade_level_text,
+    m.round_number,
 
     t.start_date,
     t.end_date,
 
-    min(e.round_number) over (
-        partition by e.data_model, e.academic_year, e.region, e.admin_season, e.grade
-        order by e.round_number
+    min(m.round_number) over (
+        partition by m.academic_year, m.region, m.admin_season, m.grade
+        order by m.round_number
     ) as min_pm_round,
 
-    max(e.round_number) over (
-        partition by e.data_model, e.academic_year, e.region, e.admin_season, e.grade
-        order by e.round_number desc
+    max(m.round_number) over (
+        partition by m.academic_year, m.region, m.admin_season, m.grade
+        order by m.round_number desc
     ) as max_pm_round,
 
-from expected as e
+from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as m
 left join
     terms as t
-    on e.academic_year = t.academic_year
-    and e.region = t.region
-    and e.admin_season = t.name
-    and e.test_code = t.code
+    on m.academic_year = t.academic_year
+    and m.region = t.region
+    and m.admin_season = t.name
+    and m.test_code = t.code
     -- a null grade_level is a Benchmark window, which applies to every grade
-    and (e.grade = t.grade_level or t.grade_level is null)
+    and (m.grade = t.grade_level or t.grade_level is null)
