@@ -1131,8 +1131,22 @@ Meeting Aimline from Meeting Aimline, Off Track.
 ### Benchmark is not per data model -- it must be single-sourced
 
 `data_model` distinguishes the two **PM** methods. Benchmark has no such split:
-it tests every student against one set of expectations, so its rows should carry
-`data_model = 'Benchmark'` and be emitted from **one** branch only.
+it tests every student against one set of expectations, so its rows carry
+`data_model = 'Benchmark'` and are emitted from **one** branch only.
+
+**Benchmark will never be by levels.** That is a standing rule from academics,
+not a description of today's data -- Benchmark has no Below / Well Below cohort
+because it is what assigns students to those cohorts in the first place. So the
+by-levels range holds PM rows only, and Benchmark belongs in the 16-column
+source. Do not add Benchmark rows to the by-levels tab, and do not "restore"
+them if a future paste drops them.
+
+The `if(assessment_type = 'Benchmark', 'Benchmark', <branch>)` sits on BOTH
+branches even though the aimline side can no longer fire it. That is the
+invariant expressed as code: if Benchmark ever does reappear in by-levels, the
+two rows collide on the grain and the uniqueness test fails, rather than
+silently doubling. Filtering Benchmark out of the aimline branch instead would
+drop it quietly, which is worse.
 
 Getting this wrong is silent. When the stack first landed, Benchmark rows were
 emitted from both branches at identical counts (576 and 576 for AY2026), and
