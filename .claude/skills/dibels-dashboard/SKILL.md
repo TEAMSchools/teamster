@@ -706,19 +706,31 @@ wrong; they're the full K-8 scaffold for two entire prior years):
   scaffold starts at AY2025. A rebuild that shows 0 AY2024 PM rows for either
   region is correct, not a bug.
 
-### `reporting__terms` grade bands -- `PLIT` is K-2-only, never copy it to 3-8
+### `reporting__terms` grade bands -- `PLIT` covers EVERY band, K-8
 
 `reporting__terms` PM rows can carry a `Grade Band` value (e.g. `0,1,2`) on top
-of the `LIT`/`PLIT` scheme above, letting K-2, grades 3-4, and grades 5-8 each
-get their own rows under the same round codes. **`PLIT` itself stays K-2-only in
-the SY26-27 target model.** It exists to feed the in-house, collective-average
-PM goal calculation (school-day counting for the daily-growth-rate math) -- K-2
-keeps that whole pipeline, but grades 3-8 move to Amplify aimline, which
-supplies per-student goals directly and has no use for `PLIT`. When generating
-grade-band rows for 3-4 or 5-8, duplicate only the `LIT` rows -- never `PLIT`.
-`scripts/duplicate_reporting_terms_grade_band.py` enforces this (excludes
-`PLIT%` codes from what it duplicates); don't build a generator that skips that
-filter.
+of the `LIT`/`PLIT` scheme above, letting each band get its own rows under the
+same round codes.
+
+**This section used to say `PLIT` was K-2-only. That was wrong, and it was wrong
+in the direction that silently produces no data.** The reasoning behind it was
+sound but its premise expired: `PLIT` feeds the in-house collective-average goal
+calculation (school-day counting for the daily-growth-rate math), and while 3-8
+was on aimline alone, 3-8 needed no `PLIT`. Academics now runs the internal
+method across K-8, so **every** band needs `PLIT` rows -- a band without them
+gets a null `pm_round_days` and drops out of the goal calculation with no error.
+The user's correction was blunt and worth remembering: _"yes, we need plit rows
+for 3-8 now for reporting terms."_
+
+`scripts/duplicate_reporting_terms_grade_band.py` takes
+`--codes {lit,plit,both}` for this reason. It used to hardcode the `PLIT%`
+exclusion; the flag exists because the exclusion became the wrong default, not
+because it was optional.
+
+**Miami does not use the NJ bands.** Miami splits K / 1-3 / 4,5 / 6-8 per T&L's
+document, not K-2 / 3,4 / 5,6,7,8. Read the bands off the doc per region, every
+year -- and note that any override justification of the form "this band skips
+`PLIT`" is void now that every band gets it.
 
 `dim_terms.term_key` was widened to include `grade_band` (#3834) specifically
 because this scenario broke `unique_dim_terms_term_key` -- two rows sharing a
@@ -1014,28 +1026,40 @@ PM rows use `LIT1` through `LIT11` only -- so the `test_code = code` join to
 any model filtered `code like 'PLIT%'`, omitting the row would have silently
 dropped round 3 rather than reassigning its days.
 
-### `pm_goal_include` scaffolding -- K-2 only, same pattern as `PLIT`
+### `pm_goal_include` scaffolding -- internal-only, and aimline must FILTER it
 
-Confirmed with the user against real AY2025 data before building SY26-27 rows: a
-measure that's tested in SOME rounds of a season but not all still needs a row
-for EVERY round of that season, for K-2 only -- the in-house collective-average
-goal calculation needs trajectory continuity across the whole season, even for
-rounds where that specific measure wasn't administered. `assessment_include`
-stays `null` on those rows (they're not excluded from the scaffold);
-`pm_goal_include` is `false` on the rounds where the measure wasn't tested that
-round, `null` (active) where it was.
+Confirmed with the user against real AY2025 data: a measure tested in SOME
+rounds of a season but not all still needs a row for EVERY round of that season
+-- the in-house collective-average goal calculation needs trajectory continuity
+across the whole season, even for rounds where that specific measure wasn't
+administered. `assessment_include` stays `null` on those rows (they're not
+excluded from the scaffold); `pm_goal_include` is `false` on the rounds where
+the measure wasn't tested that round, `null` (active) where it was.
 
 Verified example: Camden/Newark/Paterson grade 0 (K), `PSF`, `BOY->MOY`, AY2025
 -- rounds 1-3 have `assessment_include = null`, `pm_goal_include = null`; round
 4 (PSF not tested that round) still has a row, `assessment_include = null`,
 `pm_goal_include = false`.
 
-**Grades 3-8 do NOT get this treatment.** Aimline supplies a goal per measure
-per round as actually tested -- there's no collective-average trajectory to keep
-continuous, so `pm_goal_include` is simply `null` on every 3-8 row, and no row
-exists for a grade/measure/round combination the T&L doc doesn't list. Same
-K-2-only split as `PLIT`, for the same underlying reason (the in-house goal-calc
-pipeline vs. aimline).
+The scaffold belongs to the **internal method**, not to a grade band. Academics
+runs internal across K-8, so every internal grade is scaffolded. Through SY25-26
+it looked K-2-only because 3-8 was the only band on aimline.
+
+**Aimline needs no scaffold, but the by-levels sheet contains one -- so filter,
+don't assume.** This is a trap worth stating flatly, because it cost a bug: it
+is true that aimline has no trajectory to keep continuous, and therefore true
+that it has no _use_ for scaffold rows. It does NOT follow that aimline rows
+carry `pm_goal_include = null`. The SY25-26 by-levels rows were generated by
+duplicating the 16-column sheet's PM rows per cohort, so they carry the internal
+scaffold verbatim -- measured at 321 of 790 rows per cohort, roughly one in
+five. An aimline model that drops the column on the reasoning "it's structurally
+null here" emits every scaffold row as a real expectation. Write
+`and e.pm_goal_include is null` in the model's `where`; the column stays
+unprojected, which is what "no need for `pm_goal_include` on aimline" actually
+means.
+
+The same applies to `assessment_include`: the by-levels sheet carries the same
+201 soft-deleted AY2025 rows. Whichever model reads it must filter them.
 
 `pm_goal_criteria = 'AND'` for every row, every grade, this year -- T&L
 confirmed all K-8 rounds require meeting every tested standard, not a mix of
@@ -1194,13 +1218,24 @@ for rounds they were never in.
 | Internal PM | region / grade / season / round. Below and Well Below are tracked **together** -- they are expected to test the same measures in the same round. |
 | Aimline PM  | region / grade / season / round / **`measure_standard_level`** / measure standard.                                                               |
 
-The aimline row is the one that changes behaviour. Its expected set is per
-cohort, because a round can test Well Below only -- of 771 AY2026
-`(region, grade, round, measure)` combos, 248 are Well-Below-only. A Below
-student in one of those rounds was never expected to test, so counting them
-against a cohort-blind expected set marks them non-participating for a round
-they were correctly absent from. The cohort has to be in the partition **and**
-matched to the student's own level.
+The aimline row is the one that changes behaviour, in principle: its expected
+set is per cohort, so if a round tests Well Below only, a Below student was
+never expected to test and counting them against a cohort-blind expected set
+marks them non-participating for a round they were correctly absent from. The
+cohort has to be in the partition **and** matched to the student's own level.
+
+**In today's data it changes nothing, and you should say so rather than quote a
+figure.** Measured on the live by-levels sheet: 790 AY2025
+`(region, grade, season, round, measure)` combinations, every one present for
+both cohorts -- zero cohort-only rows in either direction. The sheet was built
+by duplicating the 16-column PM rows per cohort, so it is symmetric by
+construction. Build the cohort into the grain anyway, so a future split needs no
+restructuring, but do not claim an asymmetry exists. If a prior version of this
+skill or a model description cites a Well-Below-only row count, it was not
+measured -- re-derive it before repeating it.
+
+Worth raising with academics: the by-levels sheet as it stands does not express
+the differentiated testing the aimline model was built to support.
 
 ### The two chains stack in one model, behind `data_model`
 
@@ -1235,6 +1270,43 @@ lets any grade match -- the grade is inherited from the expected-assessments
 side. Before this, the join had no grade predicate at all, which fanned AY2025
 PM out 3x (2,370 rows against 790 real ones) and let a grade pick up a band's
 dates that did not include it.
+
+### Do not hoist a downstream filter into the shared gate
+
+Tempting and wrong: `assessment_include is null` is repeated at four consumers
+(`int_students__dibels_participation_roster`, three sites in
+`int_amplify__all_assessments`, `rpt_tableau__dibels_dashboard`), so putting it
+once in `int_google_sheets__dibels_expected_assessments` looks like a cleanup.
+Two things break.
+
+1. **`min_pm_round` / `max_pm_round` change silently.** `WHERE` is evaluated
+   before window functions, so filtering in the same `SELECT` that computes them
+   makes the season's first and last round exclude cancelled rounds. Measured on
+   AY2025: 675 rows shifted on `min_pm_round`, 1,386 on `max_pm_round`. Whether
+   a cancelled round should still bound the season is a real question for
+   academics -- it is not a question to answer as a side effect of deduplicating
+   a filter.
+2. **`pm_expectations` stops matching prod.** It does not project
+   `assessment_include`, so its consumers cannot filter and prod's dashboard PM
+   branch has always included cancelled rounds. Dropping them upstream changes
+   PM participation counts network-wide.
+
+The gate's own properties yml already documents the contract -- _"Rows are
+switched off with `assessment_include` rather than filtered in SQL... downstream
+models express that as `assessment_include is null`"_ -- so a filter in the gate
+SQL contradicts the model's own description. Leave it to consumers. The aimline
+model is a consumer and applies it itself.
+
+### "It should match prod" means diff every column, not the row count
+
+When the user says a model should match prod, a row-count and key-set comparison
+is not enough -- and on a model whose prod copy is fanned out, the counts cannot
+match by construction anyway. Compare `distinct` full rows, then join on the key
+and `countif(p.col is distinct from d.col)` per column. On the internal
+`pm_expectations` port that check passed on `round_number`, `month_round`,
+`start_date`, `end_date`, `pm_round_days`, `pm_days`, `pm_goal_include` and
+`benchmark_goal`, and isolated the entire delta to two window columns -- which
+is what identified the cause in one query instead of a model-by-model hunt.
 
 **Which years and grades are live is a sheet decision, not a SQL one.**
 `assessment_include` is the off switch: null means live, non-null means

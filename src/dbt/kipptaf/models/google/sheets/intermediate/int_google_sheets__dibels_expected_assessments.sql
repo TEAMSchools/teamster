@@ -140,6 +140,3 @@ left join
     and e.test_code = t.code
     -- a null grade_level is a Benchmark window, which applies to every grade
     and (e.grade = t.grade_level or t.grade_level is null)
--- the sheet's soft delete. Still projected above so the downstream predicates
--- that pre-date this filter stay valid; they are no-ops now.
-where e.assessment_include is null
