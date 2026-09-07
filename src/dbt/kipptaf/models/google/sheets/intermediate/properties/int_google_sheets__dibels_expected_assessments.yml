@@ -36,10 +36,13 @@ models:
     columns:
       - name: data_model
         description: >
-          Which PM data model produced the row -- internal or aimline. Part of
-          the grain, so a consumer must filter to one branch. Also partitions
-          min_pm_round and max_pm_round, so the two models' round ranges never
-          mix.
+          Which PM method the row belongs to -- internal or aimline -- or
+          Benchmark, which is neither. Benchmark tests every student against one
+          set of expectations, so it is not split by method and lives in the
+          16-column source only; a Benchmark consumer needs no data_model filter
+          because there is exactly one set. PM consumers must filter to a
+          method. Also partitions min_pm_round and max_pm_round so the two
+          methods' round ranges never mix.
         data_tests:
           - not_null
           - accepted_values:
@@ -47,6 +50,7 @@ models:
                 values:
                   - internal
                   - aimline
+                  - Benchmark
       - name: academic_year
         description: >
           Academic year as the starting calendar year -- 2025 is SY25-26.

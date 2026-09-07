@@ -43,7 +43,13 @@ with
             grade_level_text,
             round_number,
 
-            'internal' as data_model,
+            -- data_model names the PM method, and Benchmark is not one --
+            -- it tests every student against one set of expectations. Tagging
+            -- it on both branches is deliberate: Benchmark should live in only
+            -- one source, so if it reappears in the other the two rows collide
+            -- on the grain and the uniqueness test fails instead of silently
+            -- doubling every Benchmark row downstream.
+            if(assessment_type = 'Benchmark', 'Benchmark', 'internal') as data_model,
 
             -- the 16-column source predates the cohort split and tests one
             -- measure set for everyone
@@ -78,7 +84,7 @@ with
             grade_level_text,
             round_number,
 
-            'aimline' as data_model,
+            if(assessment_type = 'Benchmark', 'Benchmark', 'aimline') as data_model,
 
             measure_standard_level,
 

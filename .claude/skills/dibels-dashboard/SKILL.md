@@ -204,6 +204,14 @@ Two follow-on gotchas from the same cutover:
   local work, and the same with `--target staging` before pushing, or dbt Cloud
   CI fails "table not found" on the `zz_stg_` external. The staging run needs
   the user -- it drops and recreates a shared table.
+- **Stage last.** Any edit to a source's `columns:` invalidates an external that
+  is already staged, and `stage_external_sources` SKIPS an existing table unless
+  `ext_full_refresh: true`. So the order is: settle the declaration, stage dev,
+  stage staging, push. Staging mid-way costs a CI round -- it did here, twice:
+  first a contract mismatch where the source declared `float64` from the rpt_
+  model's `ceiling()` output while the consumer's contract said `int64` (counts
+  are integral, so `int64` was right), then the mirror image once the yml was
+  fixed but the staged external still carried the old type.
 
 ## New staging schema: `stg_google_sheets__dibels_foundation_goals`
 
@@ -383,6 +391,62 @@ and a real `BOOL` expression in a sibling branch fails with
 bare `null` as `INT64` by default. Fix:
 `cast(null as bool) as is_above_average_growth` in the branch that doesn't
 compute it.
+
+## Always hand over the WHOLE sheet, never a patch
+
+The Expected Assessments tabs run to thousands of rows -- V1 is 3,681, the
+by-levels range 3,588. **Never ask the user to find and replace a subset**: no
+"delete the 442 Benchmark rows where region is Miami and paste these", no
+"insert these 216 rows after the AY2025 block". Filtering a long sheet by hand
+to delete some rows and paste others is slow, unverifiable, and one mis-set
+filter away from destroying rows nobody notices are gone. It has already cost
+one near-miss this project, when a delete removed 12 `type = 'LIT'` Benchmark
+rows for the current year and only a BigQuery time-travel read got them back.
+
+So every script that modifies an existing tab **emits the full tab, corrected
+rows in place**, and the handover is "select all, paste over". That makes the
+operation idempotent, reviewable as a row count, and impossible to half-apply.
+`fix_v1_expected_assessments_month_round.py` is the model: it walks all 3,681
+rows in original order, rewrites only the `Month/Round` cell on Benchmark rows
+whose value disagrees with `reporting__terms`, passes every PM row and every
+already-correct row through untouched, and prints a per-key summary of what it
+changed so the diff is auditable before pasting.
+
+**The line is whether existing rows change, not how many rows there are.**
+
+| Kind of change                                | Handover                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| Modifies or removes existing rows             | Whole tab, corrected in place. "Select all, paste over."                          |
+| Only adds rows for a new year, season or band | The new rows alone. Appending needs no filtering, so it carries none of the risk. |
+
+Where each script sits today, so a successor does not have to read them all:
+
+- Whole-tab, already compliant -- `fix_v1_expected_assessments_month_round.py`,
+  `backfill_expected_assessments_derived_columns.py`,
+  `duplicate_expected_assessments_measure_standard_level.py`.
+- Append-only, correctly partial --
+  `generate_sy2627_expected_assessments_rows.py`,
+  `generate_sy2627_k2_lit_plit_rows.py`,
+  `generate_sy2627_miami_lit_plit_rows.py`,
+  `duplicate_reporting_terms_grade_band.py`,
+  `roll_forward_expected_assessments_season.py`.
+
+If a new script needs to change rows that already exist, it belongs in the first
+group. Do not add one to the second group that also edits in place.
+
+Corollaries:
+
+- Print what changed, grouped and counted --
+  `2024 Miami MOY January -> December (46 rows)`. A row count alone does not
+  prove the right cells moved.
+- Verify after the paste by rebuilding the `stg_` model and re-querying, not by
+  eyeballing the sheet. Google Sheets externals read live, but the `stg_` table
+  is frozen at its last build.
+- If a script cannot express the change as a whole-tab rewrite, that is a signal
+  the change is not well enough understood yet -- work it out before handing a
+  person a filter to apply.
+- The same applies to `reporting__terms`: hand over the complete replacement
+  rather than a delete-these-then-add-those instruction.
 
 ## Procedure: generate goal rows from T&L's sheet
 
@@ -1063,6 +1127,66 @@ as a testing-assignment error; do not propose adding rows to the goals table,
 and do not treat the null as noise -- it makes the at-or-above-benchmark
 comparison unevaluable, which is exactly the test that separates On Track &
 Meeting Aimline from Meeting Aimline, Off Track.
+
+### Benchmark is not per data model -- it must be single-sourced
+
+`data_model` distinguishes the two **PM** methods. Benchmark has no such split:
+it tests every student against one set of expectations, so its rows should carry
+`data_model = 'Benchmark'` and be emitted from **one** branch only.
+
+Getting this wrong is silent. When the stack first landed, Benchmark rows were
+emitted from both branches at identical counts (576 and 576 for AY2026), and
+three things broke without any test or contract failing:
+
+- `rpt_tableau__dibels_dashboard`'s Benchmark branch inner-joins the gate on
+  `assessment_type = 'Benchmark'` with **no `data_model` predicate**, so every
+  Benchmark row doubled.
+- `int_students__dibels_participation_roster` computes
+  `count(*) over (partition by academic_year, region, grade, admin_season, round_number)`
+  as `expected_row_count`, counting both branches. Measured: prod runs 4-8
+  expected rows per group, the stacked version 8-16. That halves every
+  benchmark-completion percentage.
+- The grain test on the intermediate still passed, because `data_model` is part
+  of its key. A duplicate across branches is a legitimate row by that
+  definition.
+
+**The two branches' Benchmark rows are not interchangeable.** They agree on
+dates, criteria, rounds, credit type and subjects, and differ on exactly one
+column: `month_round`, on ~96 rows a year. The by-levels range carries the
+corrected values and V1 carries the stale network-wide labels, because the
+`month_round` fix was only ever run against the new tab. Miami AY2026 is the
+clearest case -- BOY starts 2026-09-08, and V1 says `August` while by-levels
+says `September`; EOY starts 2027-04-26, V1 says `May`, by-levels says `April`.
+
+So either source Benchmark from the by-levels branch, or fix V1's `month_round`
+first. Fixing V1 is preferable -- then the branches agree and the constraint
+disappears -- but note that neither existing script targets it:
+`fix_expected_assessments_benchmark_month_round.py` is superseded and indexes a
+17-column layout, `backfill_expected_assessments_derived_columns.py` indexes 18,
+and V1 is 16. The rule is small enough to re-derive: `month_round` is the month
+of that Benchmark round's `Start Date` in `reporting__terms`, keyed on
+`(academic_year, region, admin_season)`.
+
+### The participation roster spans three expectation models
+
+`int_students__dibels_participation_roster` answers "was this student expected
+to test, and did they" -- and that question now has three different shapes. Its
+`expected_row_count` partition has to match the model, or students get penalised
+for rounds they were never in.
+
+| Model       | Expected-count grain                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Benchmark   | region / grade / season. Steady year over year.                                                                                                  |
+| Internal PM | region / grade / season / round. Below and Well Below are tracked **together** -- they are expected to test the same measures in the same round. |
+| Aimline PM  | region / grade / season / round / **`measure_standard_level`** / measure standard.                                                               |
+
+The aimline row is the one that changes behaviour. Its expected set is per
+cohort, because a round can test Well Below only -- of 771 AY2026
+`(region, grade, round, measure)` combos, 248 are Well-Below-only. A Below
+student in one of those rounds was never expected to test, so counting them
+against a cohort-blind expected set marks them non-participating for a round
+they were correctly absent from. The cohort has to be in the partition **and**
+matched to the student's own level.
 
 ### The two chains stack in one model, behind `data_model`
 
