@@ -392,7 +392,7 @@ edits so a colour regression cannot hide behind a text or layout change.
 - Consumes: `server/prod-base3.twb` from Task 0.
 - Produces: `server/cum-1-colour.twb`, consumed by Task 3.
 
-- [ ] **Step 1: Write the failing assertion**
+- [x] **Step 1: Write the failing assertion**
 
 Write `.claude/scratch/gpa-overnight/assert_cum_colour.py`:
 
@@ -436,7 +436,7 @@ if __name__ == "__main__":
     main(sys.argv[1])
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run:
 `cd /workspaces/teamster/.claude/scratch/gpa-overnight && uv run python assert_cum_colour.py server/prod-base3.twb`
@@ -444,7 +444,7 @@ Run:
 Expected: FAIL, reporting `At or above goal: #2f5fc4 != #12a47c` and
 `Below goal: #d8342f != #b3161c`.
 
-- [ ] **Step 3: Write the edit**
+- [x] **Step 3: Write the edit**
 
 Write `.claude/scratch/gpa-overnight/task_cum_colour.py`:
 
@@ -495,7 +495,7 @@ if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
 ```
 
-- [ ] **Step 4: Run the edit, then the assertion and the checker**
+- [x] **Step 4: Run the edit, then the assertion and the checker**
 
 ```bash
 cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
@@ -507,7 +507,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
 Expected: the edit prints both swaps, the assertion prints `OK`, the checker is
 clean.
 
-- [ ] **Step 5: Confirm the Academic Health twin is untouched**
+- [x] **Step 5: Confirm the Academic Health twin is untouched**
 
 Run:
 
@@ -523,10 +523,32 @@ PY
 
 Expected: `At or above goal` still `#2f5fc4`, `Below goal` still `#d8342f`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Tick the boxes, then commit the plan with message
 `docs(tableau): record the Cumulative goal colour repoint`.
+
+**Result:**
+
+Goal colours repointed on `Calculation_7236501339153214575` only.
+
+The change is 4 lines: `<map to='#2f5fc4'>` → `<map to='#12a47c'>` and
+`<map to='#d8342f'>` → `<map to='#b3161c'>`. Character count identical at
+1,925,760, CRLF count identical at 27,729, `check_twb.py --ref` CLEAN.
+
+`assert_cum_colour.py` exits 1 with 4 failures on `prod-base3.twb` and exits 0
+on `cum-1-colour.twb`, so it discriminates rather than passing vacuously.
+
+The Academic Health Home twin `Calculation_4005670422418128910` still reads
+`#2f5fc4` / `#d8342f`, confirmed against the output file.
+
+Review found the encoding is defined once at datasource level and referenced by
+all three sheets, so a single substitution is structurally sufficient — not a
+missed-occurrence bug.
+
+Deferred to Task 6: rendered-colour evidence. `check_twb.py` is a checklist
+built from prior failures, not a schema validator, so the pixel assertion in
+Task 6 step 3 is what actually proves the colours reach the screen.
 
 ---
 
