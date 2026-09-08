@@ -30,7 +30,7 @@ data_tests:
       stints, but the source defect is only visible here. The existing
       `(studentid, entrydate)` and `(studentid, exitdate)` uniqueness tests miss
       overlaps whose dates differ. Runs at the consuming district's default warn
-      severity. Failing with 22 stints as of 2026-09-08 (kippnewark 2,
+      severity. Failing with 21 stints as of 2026-09-08 (kippnewark 1,
       kippcamden 3, kipppaterson 17), none of which reach an in-session calendar
       day, so the clip changes 0 rows today. The 2026-08-20 Newark incident
       (#5160) produced 558 duplicate student-days before Ops corrected the
