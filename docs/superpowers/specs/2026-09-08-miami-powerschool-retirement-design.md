@@ -133,15 +133,15 @@ staying in place; no model in this spec produces those numbers.
 The 59 Miami exclusion sites in 43 models split 3 ways:
 
 1. Sites whose column comes from a dropped union: delete. The union no longer
-   carries Miami, so the predicate is dead. Of the 12 `exclude_frozen` calls, 3
+   carries Miami, so the predicate is dead. Of the 12 `exclude_frozen` calls, 4
    are in this group: `rpt_clever__schools` line 25, `rpt_clever__staff` line
-   59, and `rpt_clever__enrollments` line 32, all on `stg_powerschool__schools`
-   or `stg_powerschool__students`.
+   59, `rpt_clever__sections` line 39, and `rpt_clever__enrollments` line 32,
+   all on `stg_powerschool__schools` or `stg_powerschool__students`.
 1. Sites whose column comes from a kept union (`cc`, `course_enrollments`,
    `storedgrades`, `final_grades`, `sections`) or from the staff roster's code
    location: convert each literal to `exclude_frozen(column)`. The policy then
-   lives in one macro. The other 9 `exclude_frozen` calls are already in this
-   shape and stay.
+   lives in one macro. The other 8 `exclude_frozen` calls are already in this
+   shape and stay, including `rpt_clever__enrollments` line 17 on `cc`.
 1. NJ-only business rules (`rpt_gsheets__nj_state_test_roster`,
    `rpt_gsheets__njsmart_transfer_unverified`,
    `rpt_tableau__nj_school_register`, `dim_student_ell_status`, `dim_students`
