@@ -26,16 +26,17 @@ disambiguated before attributing root cause, because they imply different fixes.
    the failure window (`mcp__gke__query_logs`, reason includes Preempted,
    Evicted, OOMKilling, Killing).
 5. Classify by GKE event type:
-   - **Preempted** "by pod `<uuid>`": priority preemption by run/step pods. In
-     this codebase, code server pods run at priority 0 and run/step pods run at
-     priority 1000 (`dagster-run` PriorityClass in
-     `.k8s/dagster/values-override.yaml`) BY DESIGN — preempting code servers to
-     free capacity for runs is intentional. Routine preemption is expected, not
-     an escalation. Only escalate if: (a) preemption rate is
-     sustained >>1/location/hour, (b) no correlation with run/step pod
-     scheduling, or (c) code server pods are being preempted while run/step pods
-     are idle. Check for hourly pattern (>50% in first 5 min of hour =
-     schedule-triggered bursts). PDB is bypassed for priority preemption.
+   - **Preempted** "by pod `<uuid>`": priority preemption. Since 2026-09-08 code
+     server pods and run/step pods both run at priority 0 (the `dagster-run`
+     PriorityClass was removed in #5187), so a run pod can no longer preempt a
+     code server. A code server `Preempted` event now means a GKE
+     system-critical pod (priority 2,000,000,000) landed on its node, or the
+     priority gap was reintroduced — check `.k8s/dagster/values-override.yaml`.
+     Escalate if: (a) preemption rate is sustained >>1/location/hour, (b) the
+     preempting pod is a `dagster-run-` or `dagster-step-` pod, or (c) code
+     server pods are being preempted while run/step pods are idle. Check for
+     hourly pattern (>50% in first 5 min of hour = schedule-triggered bursts).
+     PDB is bypassed for priority preemption.
    - **Evicted** "low on resource: memory": node memory pressure. Monitor.
    - **OOMKilling**: container OOM (pod survives, container restarts).
      Investigate memory requests.

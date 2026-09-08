@@ -7,7 +7,10 @@ models:
       keeps only the rows where a flag is true -- so a student appears once for
       each thing needing a fix, up to four times, and not at all when clean.
       Each row pairs the Finalsite values with the SIS values they were compared
-      against so the fix is actionable without a second lookup. See
+      against so the fix is actionable without a second lookup. A fifth flag,
+      is_missing_finalsite_record, is unioned on from the SIS side rather than
+      unpivoted, because a student the SIS knows and Finalsite does not cannot
+      appear in a Finalsite-sourced roster at all. See
       docs/models/fresh-dashboard-data-model.md.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -15,6 +18,7 @@ models:
             combination_of_columns:
               - enrollment_academic_year
               - finalsite_id
+              - powerschool_student_number
               - flag_name
           config:
             severity: error
@@ -23,14 +27,21 @@ models:
         data_type: string
         description: >
           Which problem fired -- is_enroll_status_mismatch,
-          is_grade_level_mismatch, is_school_mismatch, or is_missing_sis_record.
-          The first three are computed on
-          int_tableau__finalsite_student_scaffold; is_missing_sis_record is
-          derived here, and fires when Finalsite says a student is Enrolled but
-          no SIS enrollment record matched at all -- distinct from
+          is_grade_level_mismatch, is_school_mismatch, is_missing_sis_record, or
+          is_missing_finalsite_record. The first three are computed on
+          int_tableau__finalsite_student_scaffold; the last two are derived
+          here. is_missing_sis_record fires when Finalsite says a student is
+          Enrolled but no SIS enrollment record matched at all -- distinct from
           is_enroll_status_mismatch, which compares a status against a record
-          that does exist. The two need different fixes: create or link the
-          record, versus correct a status.
+          that does exist. The two need different fixes -- create or link the
+          record, versus correct a status. is_missing_finalsite_record is the
+          mirror image, and fires when a student is currently enrolled in the
+          SIS but no Finalsite record exists for them under any cycle. Its rows
+          are the ones missing from the Progress to Goals student count, since
+          that view counts Finalsite records rather than SIS enrollments. The
+          anti-join is deliberately unscoped by year -- a record filed under an
+          adjacent cycle, or one with no status dates to unpivot, means
+          Finalsite does know the student and is not this problem.
       - name: flag_value
         data_type: bool
         description: >
@@ -55,17 +66,26 @@ models:
         description: >
           PowerSchool-space school id the student is assigned to in Finalsite. 0
           when Finalsite has no school assigned. Compare against sis_schoolid.
+          On is_missing_finalsite_record rows there is no Finalsite record to
+          read, so this carries the SIS school id and always equals
+          sis_schoolid.
       - name: school
         data_type: string
         description: >
           Short school abbreviation for schoolid, or "No School Assigned" when
-          Finalsite has none.
+          Finalsite has none. On is_missing_finalsite_record rows it is the SIS
+          school abbreviation, so the worklist stays filterable by school for
+          every flag.
       - name: finalsite_id
         data_type: string
         description: >
-          Finalsite enrollment id. Together with enrollment_academic_year and
-          flag_name this is the grain of the worklist, and it is the id SRE uses
-          to find the record in Finalsite.
+          Finalsite enrollment id, and the id SRE uses to find the record in
+          Finalsite. Null on is_missing_finalsite_record rows, which is the
+          finding itself -- there is no record to point at, so SRE works from
+          last_name and powerschool_student_number instead. Because of those
+          nulls the grain is enrollment_academic_year plus flag_name plus
+          whichever of finalsite_id and powerschool_student_number is populated,
+          and the uniqueness test lists all four columns.
         config:
           meta:
             contains_pii: true
@@ -73,7 +93,9 @@ models:
         data_type: int64
         description: >
           Student number as reported by Finalsite. Null for applicants with no
-          SIS identity yet, which is expected on is_missing_sis_record rows.
+          SIS identity yet, which is expected on is_missing_sis_record rows. On
+          is_missing_finalsite_record rows it comes from the SIS instead and is
+          always populated, so it carries the grain where finalsite_id is null.
         config:
           meta:
             contains_pii: true
@@ -94,7 +116,9 @@ models:
         data_type: int64
         description: >
           Grade level as reported by Finalsite (PK = -1, K = 0, 1-12 as
-          themselves). Compare against sis_grade_level.
+          themselves). Compare against sis_grade_level. On
+          is_missing_finalsite_record rows it carries the SIS grade level and
+          always equals sis_grade_level.
       - name: self_contained
         data_type: string
         description: >
@@ -111,7 +135,10 @@ models:
         description: >
           The student's most recent Finalsite status for this cycle. This is
           what the expected enrollment status is derived from, so it is usually
-          the field to check first when a flag looks wrong.
+          the field to check first when a flag looks wrong. Null on
+          is_missing_finalsite_record rows, along with enrollment_type,
+          self_contained and finalsite_expected_enroll_status -- all four read
+          only from Finalsite, and those rows have no Finalsite record.
       - name: sis_enroll_status
         data_type: int64
         description: >
@@ -130,7 +157,14 @@ models:
         description: School id from the matched SIS enrollment record.
       - name: sis_school
         data_type: string
-        description: School name from the matched SIS enrollment record.
+        description: >
+          School from the matched SIS enrollment record. Beware an upstream
+          inconsistency this column inherits -- on the four unpivoted flags it
+          reads whatever int_tableau__finalsite_student_scaffold matched, which
+          is an abbreviation for New Jersey but Focus's full school name for
+          Miami. On is_missing_finalsite_record rows it is the abbreviation in
+          every region, because those rows read
+          int_extracts__student_enrollments directly.
       - name: finalsite_expected_enroll_status
         data_type: int64
         description: >
