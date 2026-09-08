@@ -53,9 +53,9 @@ role. Missing any one of them means no access by that route.
     qualification, and it is scoped to the same rows a school leader or director
     of school operations at those schools would see.
 
-    This is the exception, not a new pattern. It exists because the remit spans
-    both Paterson schools rather than sitting at one of them. Everyone else
-    still goes through routes 1 to 5.
+    It works this way because the remit spans both Paterson schools rather than
+    sitting at one of them. It is the only group scoped like this; everyone else
+    goes through routes 1 to 5.
 
 !!! note "Route 3 does not currently reach Paterson"
 
@@ -346,21 +346,6 @@ follow from the function you sit in.
 `KNJ-SG-Tableau All Recruiting`, `KNJ-SG-Tableau All T&L`, `KNJ-SG-Tableau TC`,
 `KNJ-SG-Tableau All New Teacher Development`, `Leadership Development`,
 `Group Staff TEAM Council`, `TS-DL-Teaching And Learning`.
-
-!!! warning "HR's blanket access moved to Employee Relations on 2026-09-08"
-
-    `KNJ-SG-Tableau All HR` no longer appears in any permission calculation.
-    `Group Staff Employee Relations` took its place everywhere it was used.
-
-    The two groups are **not** the same people. `All HR` had 14 members;
-    `Group Staff Employee Relations` has 5, and only 4 of those were in `All HR`.
-    Ten people who previously saw everything on these dashboards now see only
-    what their own role gives them. If you have lost access you expect to have,
-    this is the likely reason — ask to be added to
-    `Group Staff Employee Relations`, and note it is not granted on request from
-    an individual.
-
-    `All HR` still exists and is still populated. It simply grants nothing here.
 
 !!! note "Not every workbook grants every group"
 
