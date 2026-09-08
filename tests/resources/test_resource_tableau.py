@@ -10,7 +10,10 @@ from tableauserverclient.server.endpoint.exceptions import (
 )
 from tenacity import wait_none
 
-from teamster.libraries.tableau.resources import TableauServerResource
+from teamster.libraries.tableau.resources import (
+    StaleSessionError,
+    TableauServerResource,
+)
 
 
 def get_tableau_resource():
@@ -264,3 +267,32 @@ def test_sign_in_re_signs_in_when_fresh_session_is_rejected(
     tableau._sign_in()
 
     assert calls == {"sign_in": 2, "probe": 2}
+
+
+def test_sign_in_exhausts_on_persistent_stale_session(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A probe that stays rejected is retried to the cap, then re-raised.
+
+    Mirrors the persistent-connection-error test: ``StaleSessionError`` must
+    surface after 5 fresh sign-ins rather than retry unbounded or be swallowed.
+    """
+    monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"sign_in": 0, "probe": 0}
+
+    def sign_in_fn(_auth) -> None:
+        calls["sign_in"] += 1
+
+    def probe_fn(_user_id):
+        calls["probe"] += 1
+        raise FailedSignInError(
+            "401002", "Unauthorized Access", "Invalid authentication", "url"
+        )
+
+    tableau = _build_offline_resource(sign_in_fn, probe_fn)
+
+    with pytest.raises(StaleSessionError):
+        tableau._sign_in()
+
+    assert calls == {"sign_in": 5, "probe": 5}
