@@ -4,7 +4,9 @@ description: >-
   Use when any question or task touches the gradebook audit data model or its
   lineage. Triggers: explaining the model, listing refs/lineage/sources for the
   gradebook audit dashboard, adding/removing a flag, adding a region, debugging
-  a flag that isn't firing, or working on rpt_tableau__gradebook_audit or
+  a flag that isn't firing, rolling the assignment expectations over to a new
+  year (turning T&L's expectations sheet into U_EXPECTATIONS count rows to
+  upload to PowerSchool), or working on rpt_tableau__gradebook_audit or
   rpt_gsheets__gradebook_audit_student_flags and their upstream models.
 ---
 
@@ -298,6 +300,57 @@ correctly.
 
 ---
 
+## Procedure: Roll the assignment expectations over to a new year
+
+**Trigger phrases:** "we have to add gradebook audit count rows to PowerSchool",
+"we need to roll over to the new year for the PS plugin", "T&L sent the new
+year's gradebook expectations sheet", "the audit is still reporting against last
+year's expectations"
+
+This is the **academics/T&L-owned** annual update, not a dbt change — no model
+edit ships as part of it. The work is turning T&L's planning sheet into
+`U_EXPECTATIONS` upload CSVs and catching the mapping errors that would
+otherwise misreport the whole network without failing. Step 1 of the
+[reference doc's start-of-year procedure](../../../docs/models/gradebook-audit-data-model.md)
+carries the full rationale; the mechanics:
+
+1. **Get the sheet and the calendar side by side.** T&L's sheet is private, so
+   have the user share it with the Codespace, then read it with ADC — ADC has
+   Drive scope, the BigQuery MCP service account does not. Pull the target
+   year's grid from `int_students__calendar_week` for
+   `school_level in ('MS','HS')` and `_dbt_source_project != 'kippmiami'`.
+1. **Never trust the sheet's week numbers.** They run across the year rather
+   than within the quarter, they count no-school weeks that
+   `week_number_quarter` does not, and one tab often serves regions whose school
+   years start on different dates. Map every row by the **Monday of its ISO
+   week**, then compute `week_number` as that Monday's offset from each region's
+   own week 1. Don't map on the printed date range either — a Monday-holiday
+   week prints its first in-session day, not its Monday.
+1. **Emit one CSV per PowerSchool instance.** `U_EXPECTATIONS` has no region
+   column, so Camden, Newark and Paterson upload separately, and Newark MS + HS
+   share one file. Columns: `school_level`, `quarter`, `week_number`, `cnt_w`,
+   `cnt_h`, `cnt_f`, `cnt_s`, `notes`.
+1. **Fill every blank, per column, scoped to the quarter** — sheet value, else
+   carry forward the last non-null value in that quarter, else zero. A blank
+   reaching `U_EXPECTATIONS` means "no expectation", and
+   `int_powerschool__u_expectations_qtd_unpivot`'s
+   `where expectation is not null` plus `current_week`'s collapse to a single
+   week turn an all-blank week into a blank dashboard for that entire week. This
+   is what makes a quarter's all-dashes revisions week repeat the prior week's
+   counts, and a missing first week of school read as zeroes.
+1. **Check all four quarters before the user deletes the old rows.** T&L
+   frequently has only the current quarter ready. The gap is invisible until the
+   first Monday of the next quarter, and then the dashboard blanks for every
+   region at once.
+1. **Hand the upload to the user.** The data team cannot write to PowerSchool —
+   the delete-and-load happens in the plugin. Verify afterwards with the query
+   in the reference doc's Step 1: zero null counts, week counts matching
+   `int_students__calendar_week`, four rows per `region × school_level` out of
+   `int_powerschool__u_expectations_qtd_unpivot`, and the four-row
+   `category_summary` floor intact.
+
+---
+
 ## Procedure: Work on the gradebook audit dashboard after academic year rollover
 
 **Trigger phrases:** "we have swapped academic years on the database and I need
@@ -309,7 +362,8 @@ views this summer"
 **Scope — this is the data-team dbt toggle only.** Updating the assignment
 _expectations_ for the new year is a separate task owned by the academics team,
 done in PowerSchool via the `U_EXPECTATIONS` plugin — not a dbt change. For
-that, see "Start-of-year procedure" (Step 1) in the
+that, see _Procedure: Roll the assignment expectations over to a new year_ above
+and Step 1 of the start-of-year procedure in the
 [reference doc](../../../docs/models/gradebook-audit-data-model.md), which
 carries the plugin repo link and ownership. The steps below cover only the
 dbt-side year / grade-source toggle.
