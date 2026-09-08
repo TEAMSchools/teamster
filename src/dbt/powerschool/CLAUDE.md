@@ -13,7 +13,7 @@ models/
     base/        # base models (light renaming, no logic)
     staging/
       dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
-      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; no district builds it)
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; kippmiami enables it for one-off archive rebuilds (#5012))
       sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```

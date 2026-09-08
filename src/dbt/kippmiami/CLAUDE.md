@@ -12,10 +12,17 @@ models/
     staging/
 ```
 
-PowerSchool (pre-Focus SIS) is retired. The frozen `kippmiami_powerschool`
-BigQuery dataset (source, not a dbt package) now feeds
-`int_fldoe__all_assessments` directly; `powerschool` is no longer in
-`packages.yml`.
+PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is an archive
+rebuilt once from the frozen `src_powerschool__*` externals (final ODBC pull
+2026-07-01) by re-including the `powerschool` package with the ODBC staging
+variant and 15 post-hooks in `dbt_project.yml`: `stg_powerschool__students` gets
+the 8400 Focus prefix on `student_number`, and the 14 staging models with
+`yearid` drop rows past AY2025 (`yearid > 35`). The package is removed again
+after the prod build (#5012); the hook YAML in that PR is the rebuild recipe.
+While the package is included, the `fldoe` source `kippmiami_powerschool`
+carries no `meta.dagster.asset_key` (the package model owns that key); PR 1b
+restores it. kipptaf reads the dataset as a BQ-native source. Do not drop the
+dataset or the GCS files.
 
 ## Source Packages
 
