@@ -50,27 +50,34 @@ description:
   to stop the 38-59 weekly autoscaler relocations, reverted the same day
   (#4921). Because it blocks only autoscaler eviction and NOT scheduler
   preemption, pinning a priority-0 pod removes the graceful way to free its node
-  and leaves only the violent one: capacity fragments, then run pods
-  (priority 1000) preempt code servers to obtain it — and every preemption
+  and leaves only the violent one: capacity fragments, then run pods (then
+  priority 1000) preempt code servers to obtain it — and every preemption
   recreates the Service with a fresh ClusterIP, which is the churn the
   annotation was meant to reduce. Measured at matched load (~32 run/step pods
   per 15 min): with it, 18-20 agent gRPC errors and 8-9 `Preempted` per 15 min;
   without it, 0 and 0 across 12 hours including the nightly wave. **General
   rule: pinning a low-priority pod against the autoscaler converts graceful
   relocation into preemption.** The agent and run pods keep the annotation —
-  nothing outranks them the way run pods outrank code servers. Absence is
-  asserted in `tests/test_k8s_config.py`.
+  nothing outranks them the way run pods used to outrank code servers. Absence
+  is asserted in `tests/test_k8s_config.py`.
 - **Judge a scheduling change only against matched run-pod load.** Code-server
   churn tracks run-pod volume, so a quiet window reads as success and a busy one
   as regression. Count `Scheduled` events on `dagster-run-` / `dagster-step-`
   pods for the same window and discard readings below ~25 per 15 min. Two zero
   readings during the #4921 investigation were load artifacts, not fixes.
-- **PriorityClass `dagster-run`** (value 1000) on run/step pods makes kubelet
-  evict code server pods (default priority 0) first during node memory pressure.
-- **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
-  run/step pods, preventing mutual preemption. Does not protect against OOM
-  kills of the pod itself — only eviction ordering. Code servers tolerate
-  eviction: they are stateless and PDB-protected (`maxUnavailable: 1`).
+- **Run/step pods and code servers both run at priority 0** (no PriorityClass).
+  Run pods carried `dagster-run` (1000) until 2026-09-08. A run pod preempted
+  the kippcamden code server while the agent re-uploaded its metadata; the
+  single gRPC UNAVAILABLE wrote `ERROR` to the control plane and the location
+  stayed down for four days (#5187). Equal priority means a run pod that fits
+  nowhere waits for NAP instead of preempting. A `Preempted` event on a code
+  server now points at a GKE system-critical pod, not a run pod.
+- **PriorityClass `dagster-agent`** (value 1000) on agent pods — above run/step
+  and code server pods, so nothing in the namespace preempts the agent. The
+  agent pins to amd64 and the others to arm64, so it never preempts them either.
+  Does not protect against OOM kills of the pod itself — only eviction ordering.
+  Code servers tolerate eviction: they are stateless and PDB-protected
+  (`maxUnavailable: 1`).
 - **PDB for code servers** uses `maxUnavailable: 1`. Do not switch to
   `minAvailable: 1` — GKE Recommender flags single-replica + `minAvailable: 1`
   as blocking voluntary evictions (node maintenance). The known
@@ -80,7 +87,7 @@ description:
 - **PDBs do NOT block spot reclaim** — spot reclaim is involuntary.
 - **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
   `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
-  (priority 1000) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,
+  (priority 0) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,
   metrics-agent, etc. on a node. Unpreventable at our layer. Observable
   signature in pod events: "Preempted in order to admit critical pod". Mitigated
   by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
@@ -99,11 +106,12 @@ description:
   query — check the auto-retry; if it succeeded, this was infra disruption, no
   fix needed.
 - **`required` antiAffinity authorizes scheduler preemption** of the target pods
-  when no other node fits. `runK8sConfig.affinity.podAntiAffinity` is `required`
-  against code-server labels, with run pods at priority 1000 vs code-server 0 —
-  so the scheduler CAN evict code servers at schedule time, not just kubelet at
-  eviction time. Do not describe this anti-affinity as "isolating" code servers
-  from runs or "preventing co-location."
+  when no other node fits, but only of pods at LOWER priority. While run pods
+  sat at 1000 and code servers at 0, `runK8sConfig.affinity.podAntiAffinity` let
+  the scheduler evict code servers at schedule time. With both at 0 the
+  anti-affinity is a pure placement constraint: a run pod that fits nowhere goes
+  `Pending` until NAP adds a node. Any change that reintroduces a priority gap
+  reopens the preemption path.
 - `ttlSecondsAfterFinished` is etcd/apiserver hygiene only — terminated
   containers already released cgroup RSS, so TTL does NOT free node memory. Do
   not propose it as a lever for node memory pressure or eviction issues.
