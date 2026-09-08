@@ -680,6 +680,15 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__spenrollments
+      - name: int_powerschool__state_assessments_transfer_scores
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__state_assessments_transfer_scores
       - name: int_powerschool__student_enrollment_union
         config:
           meta:

@@ -95,3 +95,23 @@ models:
           Earliest online unit start date across all attempted units, or the
           paper attempt create date when no online unit datetimes are present.
           Null when no unit datetime or paper date is available.
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Literal 'NJGPA', marking every row here as the retired Pearson form of
+          the assessment. int_pearson__all_assessments carries the value up so
+          graduation pathway cut scores can be keyed to the score scale the row
+          was produced on, rather than to the student's cohort.
+      - name: subject_area
+        data_type: string
+        description:
+          Normalized from `subject` ('English Language Arts/Literacy' → 'English
+          Language Arts').
+      - name: administration_period
+        data_type: string
+        description: Normalized from `period` ('FallBlock' → 'Fall').
+      - name: module_code
+        data_type: string
+        description:
+          Normalized from `testcode` (SC05/SC08/SC11 remapped to
+          SCI05/SCI08/SCI11).
