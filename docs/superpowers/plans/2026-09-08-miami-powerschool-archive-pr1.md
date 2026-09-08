@@ -165,7 +165,7 @@ grep -c "_dbt_source" src/dbt/powerschool/models/sis/intermediate/int_powerschoo
 
 `cp` each kipptaf `properties/<model>.yml` to the package properties dir.
 `int_powerschool__state_assessments_transfer_scores` has no kipptaf properties
-file; create one that lists its 7 output columns with `data_type` (`test_name`
+file; create one that lists its 8 output columns with `data_type` (`test_name`
 string, `studentid` int64, `assessment_grade_level` int64, `testscalescore`
 float64, `testperformancelevel` string, `testcode` string, `discipline` string,
 `subject` string). Confirm types against the kipptaf prod table:
