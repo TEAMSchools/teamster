@@ -78,7 +78,8 @@ from {{ ref("int_powerschool__ps_enrollment_all") }} as ev
 inner join
     {{ ref("stg_powerschool__calendar_day") }} as cd
     on ev.schoolid = cd.schoolid
-    and cd.date_value between ev.entrydate and date_sub(ev.exitdate, interval 1 day)
+    and ev.entrydate <= cd.date_value
+    and ev.exitdate_clipped > cd.date_value
 inner join
     {{ ref("stg_powerschool__bell_schedule") }} as bs on cd.bell_schedule_id = bs.id
 where cd.insession = 1
