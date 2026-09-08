@@ -6,14 +6,11 @@ models:
       calendar over the half-open `[entrydate, exitdate_clipped)`. The clipped
       exit comes from int_powerschool__ps_enrollment_all, which cuts a stint off
       where the next stint at the same school begins, so overlapping stints
-      cannot emit 2 rows for one student-day here. The `(studentid,
-      calendardate)` grain test guards that.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - studentid
-              - calendardate
+      cannot emit 2 rows for one student-day here. The grain is guarded
+      upstream, where a defect would originate: the overlap test on
+      int_powerschool__ps_enrollment_all, the `(schoolid, date_value)`
+      uniqueness test on stg_powerschool__calendar_day, and the `id` uniqueness
+      test on stg_powerschool__bell_schedule.
     columns:
       - name: studentid
         data_type: int64
