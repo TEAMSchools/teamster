@@ -51,7 +51,7 @@ description:
   (#4921). Because it blocks only autoscaler eviction and NOT scheduler
   preemption, pinning a priority-0 pod removes the graceful way to free its node
   and leaves only the violent one: capacity fragments, then run pods (then
-  priority 1000) preempt code servers to obtain it — and every preemption
+  priority 1000) preempted code servers to obtain it — and every preemption
   recreates the Service with a fresh ClusterIP, which is the churn the
   annotation was meant to reduce. Measured at matched load (~32 run/step pods
   per 15 min): with it, 18-20 agent gRPC errors and 8-9 `Preempted` per 15 min;

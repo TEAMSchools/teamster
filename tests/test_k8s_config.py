@@ -144,14 +144,16 @@ def test_run_pods_and_code_servers_share_default_priority():
     The location stayed down for four days (#5187). Equal priority makes a run
     pod that fits nowhere wait for a new node instead.
     """
-    workspace = _helm_values()["workspace"]
+    values = _helm_values()
 
     for key in ("serverK8sConfig", "runK8sConfig"):
-        assert "priorityClassName" not in workspace[key].get("podSpecConfig", {})
+        assert "priorityClassName" not in values["workspace"][key].get(
+            "podSpecConfig", {}
+        )
 
     priority_classes = {
         m["metadata"]["name"]
-        for m in _helm_values()["extraManifests"]
+        for m in values["extraManifests"]
         if m["kind"] == "PriorityClass"
     }
 
