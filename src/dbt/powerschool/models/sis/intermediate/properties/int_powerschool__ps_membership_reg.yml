@@ -1,5 +1,20 @@
 models:
   - name: int_powerschool__ps_membership_reg
+    description: >-
+      One row per student per in-session calendar day, from each enrollment
+      stint in int_powerschool__ps_enrollment_all joined to the school's
+      calendar over the half-open `[entrydate, exitdate)`. Two stints that
+      overlap at the same school would emit 2 rows for every shared day, so the
+      model dedupes on `(studentid, calendardate)` and keeps the stint with the
+      later `entrydate`. The dedupe is a permanent guard so one bad stint pair
+      does not double-count attendance network-wide; the source defect surfaces
+      in `test_int_powerschool__ps_enrollment_all__no_overlapping_stints`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - calendardate
     columns:
       - name: studentid
         data_type: int64
