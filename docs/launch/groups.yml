@@ -31,6 +31,7 @@ families:
       - "GPA Roster: Camden"
       - "GPA Roster: Miami"
       - "GPA Roster: Newark"
+      - "GPA Roster: Paterson"
   - id: student_contact_info_feed
     name: Student Contact Info Feed (SCIF)
     description: Student and guardian contact information. Pick your region.
