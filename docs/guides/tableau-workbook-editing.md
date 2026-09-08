@@ -27,11 +27,11 @@ metadata. Both facts are in this page: the recipe works, and the credentials
 step is the one that is easy to miss and expensive to miss. Read _A publish
 drops five pieces of server-side state_ before publishing anything.
 
-Exercised again on 2026-09-08 across nine of those workbooks — a group swap in
-17 calculated fields plus a new grant in 15 — which is where the credential step
-stopped being manual. `update_connection` after the publish embeds the service
-account and holds; see _Re-embedding the credential_. The claim this page
-previously made, that only Desktop could do it, was wrong.
+Exercised again on 2026-09-08, editing calculated fields across nine of those
+workbooks and republishing each. That run is where the credential step stopped
+being manual: `update_connection` after the publish embeds the service account
+and holds. See _Re-embedding the credential_ — the claim this page previously
+made, that only Desktop could do it, was wrong.
 
 ---
 
