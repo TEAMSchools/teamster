@@ -133,13 +133,31 @@ def test_run_pod_isolation_from_code_servers_stays_required():
     assert {"app.kubernetes.io/name": "dagster-cloud-agent"} in selectors
 
 
-def test_code_servers_keep_default_priority():
-    """Code servers stay at priority 0 by decision: promoting them above
-    dagster-run would make run pods queue instead.
-    """
-    server_config = _helm_values()["workspace"]["serverK8sConfig"]
+def test_run_pods_and_code_servers_share_default_priority():
+    """Run/step pods and code servers both stay at priority 0 so neither can
+    preempt the other.
 
-    assert "priorityClassName" not in server_config.get("podSpecConfig", {})
+    Run pods carried a `dagster-run` PriorityClass (1000) until 2026-09-08. A run
+    pod preempted the kippcamden code server while the agent was uploading its
+    metadata; the one gRPC UNAVAILABLE wrote ERROR to the control plane, and the
+    agent never retries a location the control plane already marks as errored.
+    The location stayed down for four days (#5187). Equal priority makes a run
+    pod that fits nowhere wait for a new node instead.
+    """
+    values = _helm_values()
+
+    for key in ("serverK8sConfig", "runK8sConfig"):
+        assert "priorityClassName" not in values["workspace"][key].get(
+            "podSpecConfig", {}
+        )
+
+    priority_classes = {
+        m["metadata"]["name"]
+        for m in values["extraManifests"]
+        if m["kind"] == "PriorityClass"
+    }
+
+    assert priority_classes == {"dagster-agent"}
 
 
 def test_code_servers_are_not_pinned_against_the_autoscaler():
@@ -156,8 +174,10 @@ def test_code_servers_are_not_pinned_against_the_autoscaler():
 
     assert "cluster-autoscaler.kubernetes.io/safe-to-evict" not in annotations
 
-    # the agent and run pods DO carry it, and should keep it -- they are not
-    # preemptible by run pods the way priority-0 code servers are
+    # the agent and run pods DO carry it, and should keep it -- the agent
+    # outranks everything else in the namespace, and run pods are alone on
+    # arm64 nodes with code servers at the same priority, so neither can be
+    # preempted the way code servers were when run pods sat at 1000
     agent_annotations = _helm_values()["dagsterCloudAgent"]["annotations"]
 
     assert (

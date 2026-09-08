@@ -5,7 +5,6 @@ with
             _dbt_source_project,
             region,
             academic_year,
-            exitdate,
             enroll_status,
             entrycode,
             exitcode,
@@ -25,6 +24,11 @@ with
             student_last_name as last_name,
 
             network_student_number as student_number,
+
+            -- The roster's exitdate is the stint's inclusive last day and
+            -- PowerSchool's is the day after it. Conform to PowerSchool here so
+            -- every consumer's half-open date-range join holds network-wide.
+            date_add(exitdate, interval 1 day) as exitdate,
         from {{ ref("int_focus__student_enrollment_roster") }}
     ),
 

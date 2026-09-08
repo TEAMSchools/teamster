@@ -744,17 +744,33 @@ through untouched.
 
 ### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
 
-`is_enroll_status_mismatch` is one of the worklist's four flags. Three of them —
+`is_enroll_status_mismatch` is one of the worklist's five flags. Three of them —
 this one, `is_grade_level_mismatch` and `is_school_mismatch` — are computed in
-`int_tableau__finalsite_student_scaffold`; `is_missing_sis_record` is derived in
-`rpt_tableau__fresh_dashboard_qc` itself. `rpt_tableau__fresh_dashboard_qc` is
-the SRE-facing surface for all four: it takes the roster at
-`grouped_status_timeframe = 'Current'`, `UNPIVOT`s the flags into
-`(flag_name, flag_value)`, and keeps only the rows where a flag actually fired
-(`where flag_value`). So it is a **worklist, not a report** — one row per
-student per problem, and an empty result is the good outcome.
+`int_tableau__finalsite_student_scaffold`; `is_missing_sis_record` and
+`is_missing_finalsite_record` are derived in `rpt_tableau__fresh_dashboard_qc`
+itself. `rpt_tableau__fresh_dashboard_qc` is the SRE-facing surface for all
+five: it takes the roster at `grouped_status_timeframe = 'Current'`, `UNPIVOT`s
+the first four flags into `(flag_name, flag_value)`, keeps only the rows where a
+flag actually fired (`where flag_value`), then `UNION ALL`s the
+`is_missing_finalsite_record` rows on. So it is a **worklist, not a report** —
+one row per student per problem, and an empty result is the good outcome.
 
-#### The four flags, in plain language
+**`is_missing_finalsite_record` is unioned on, not unpivoted, and that is
+structural.** Every other flag describes a Finalsite record, so it can be
+computed on a Finalsite-sourced roster. This one describes a student Finalsite
+has never heard of, and no such student can appear in that roster at all — the
+model therefore reads `int_extracts__student_enrollments` directly, resolves
+each student's Finalsite identity (`infosnap_id`, falling back to
+`int_finalsite__contact_id_attributes` for Miami, whose rows carry no
+`infosnap_id`), and anti-joins against `stg_finalsite__status_report`. The
+anti-join is deliberately unscoped by year: a record filed under an adjacent
+cycle, or one with no status dates for `int_finalsite__status_report_unpivot` to
+unpivot, still means Finalsite knows the student. Scoping it to
+`finalsite_recruitment_year` instead was measured and rejected — it took
+Newark's count from 2 to 8, and all 6 additions were records that exist but sit
+in the 2025 or 2027 cycle, which is a different and murkier problem.
+
+#### The five flags, in plain language
 
 For explaining the worklist to a non-technical audience. Each row is one student
 with one problem; a student with several problems appears once per problem, and
@@ -763,12 +779,13 @@ a student with none does not appear at all.
 Listed in the triage order SRE reviews them in, most urgent first — which is not
 the order the flags are declared in the SQL.
 
-| #   | flag                        | what it means                                                                                                                                                                                                                                                                                                                    | how it gets fixed                                                                                                          |
-| --- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                                                       | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
-| 2   | `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                                               | Confirm the true school, then fix whichever system is wrong.                                                               |
-| 3   | `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled — Finalsite says enrolled while the SIS says withdrawn or graduated, or Finalsite says the student left or has not finished enrolling while the SIS still has them active. Documented below as two directions, one per comparison the check actually makes. | Decide which system is right, then correct the other one.                                                                  |
-| 4   | `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                                          | Confirm the true grade, then fix whichever system is wrong.                                                                |
+| #   | flag                          | what it means                                                                                                                                                                                                                                                                                                                    | how it gets fixed                                                                                                          |
+| --- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `is_missing_sis_record`       | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                                                       | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
+| 2   | `is_school_mismatch`          | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                                               | Confirm the true school, then fix whichever system is wrong.                                                               |
+| 3   | `is_enroll_status_mismatch`   | Finalsite and the SIS disagree about whether the student is enrolled — Finalsite says enrolled while the SIS says withdrawn or graduated, or Finalsite says the student left or has not finished enrolling while the SIS still has them active. Documented below as two directions, one per comparison the check actually makes. | Decide which system is right, then correct the other one.                                                                  |
+| 4   | `is_grade_level_mismatch`     | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                                          | Confirm the true grade, then fix whichever system is wrong.                                                                |
+| 5   | `is_missing_finalsite_record` | The student is enrolled in the SIS right now, but Finalsite has no record for them at all. These are the students who make the dashboard's count come out lower than the SIS's.                                                                                                                                                  | Someone has to create or restore the Finalsite record. Until they do, the student stays invisible on Progress to Goals.    |
 
 #### Which Finalsite statuses drive these checks
 
@@ -850,10 +867,18 @@ resolve these, then update this section and the flag definitions to match.
 
 Two properties worth knowing before reading it:
 
-- **`is_missing_sis_record` is derived in this model, not upstream.** The other
-  three come through from `int_tableau__finalsite_student_scaffold`; this one is
-  computed here as
-  `finalsite_expected_enroll_status = 0 and enroll_status is null`.
+- **Two flags are derived in this model, not upstream.** The three comparison
+  flags come through from `int_tableau__finalsite_student_scaffold`;
+  `is_missing_sis_record` is computed here as
+  `finalsite_expected_enroll_status = 0 and enroll_status is null`, and
+  `is_missing_finalsite_record` is computed here from the SIS side.
+- **The two absence flags are mirror images, and neither subsumes the other.**
+  `is_missing_sis_record` starts from a Finalsite record and finds no SIS
+  enrollment; `is_missing_finalsite_record` starts from an SIS enrollment and
+  finds no Finalsite record. They cannot both fire for one student, because
+  neither student exists on the other flag's side. Only
+  `is_missing_finalsite_record` rows are invisible in Progress to Goals, since
+  that view counts Finalsite records.
 - **The two comparison flags read `false`, not `true`, when the SIS side is
   missing — and `false`, not NULL.** `is_grade_level_mismatch` and
   `is_school_mismatch` wrap their `!=` in `if(<cmp>, true, false)`. The bare
@@ -878,6 +903,15 @@ The order matters. `finalsite_recruitment_year` is the switch that repoints the
 whole pipeline at the new cycle, and several models `inner join` against sheets
 scoped to that year. Flipping the var before those sheets carry the new year's
 rows does not error — it silently returns zero rows.
+
+One cleanup is parked against this rollover rather than done on its own.
+`int_tableau__finalsite_student_scaffold` and `rpt_tableau__fresh_dashboard_qc`
+both alias `cast(focus_student_id_prefixed as int)` to `focus_student_id`, which
+is the name of a different, genuinely unprefixed column on
+`int_finalsite__contact_id_attributes`. The value is correct and nothing is
+broken; the name misleads. Rename it in both models together at the AY2027-2028
+rollover — renaming one alone leaves the two CTEs divergent, which reads worse
+than the shared bad name. Raised on #5168 and deferred there.
 
 ### Steps, in order
 

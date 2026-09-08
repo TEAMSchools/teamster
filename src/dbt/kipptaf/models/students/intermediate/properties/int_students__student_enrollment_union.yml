@@ -42,10 +42,8 @@ models:
     columns:
       - name: student_number
         description: >-
-          Canonical network student number. For Miami, recovered by stripping
-          the leading 8400 Miami-Dade district prefix from the Focus id -- the
-          upstream Focus column of this name holds the prefixed form, so joining
-          on it by name returns zero matches with no error.
+          Canonical network student number. For Miami, the 8400-prefixed Focus
+          student id.
       - name: entrydate
         description: >-
           First day of the enrollment stint. For Miami, taken from the Focus

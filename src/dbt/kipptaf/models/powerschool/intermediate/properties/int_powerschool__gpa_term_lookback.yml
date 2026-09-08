@@ -10,7 +10,10 @@ models:
       close a row when it disappears from the source, so a withdrawn student's
       lookbacks return last-known values — consumers must scope by enrollment.
       Rows whose source relation is not a production district dataset are
-      excluded — the prod snapshot carries frozen dev-relation ghost rows.
+      excluded — the prod snapshot carries frozen dev-relation ghost rows. The
+      failing-count lookbacks are null wherever the version in effect carries no
+      Y1 GPA, because the snapshot writes a zero count for a student with no
+      graded courses, which would otherwise read as failing nothing.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -80,19 +83,22 @@ models:
         description:
           Count of failing Y1 grades in effect at the end of the day 7 days
           before the current day; null when that day predates the year's first
-          snapshot version.
+          snapshot version, and null when the version in effect carries no Y1
+          GPA.
       - name: n_failing_y1_2_week_prior
         data_type: int64
         description:
           Count of failing Y1 grades in effect at the end of the day 14 days
           before the current day; null when that day predates the year's first
-          snapshot version.
+          snapshot version, and null when the version in effect carries no Y1
+          GPA.
       - name: n_failing_y1_4_week_prior
         data_type: int64
         description:
           Count of failing Y1 grades in effect at the end of the day 28 days
           before the current day; null when that day predates the year's first
-          snapshot version.
+          snapshot version, and null when the version in effect carries no Y1
+          GPA.
 
 unit_tests:
   - name: unit_gpa_term_lookback_as_of_boundaries
@@ -101,7 +107,9 @@ unit_tests:
       changes between lookbacks surface distinct values per horizon, an
       intra-day change on a lookback day resolves to the end-of-day version,
       boundaries predating the first snapshot version return null, and
-      prior-year rows are excluded entirely.
+      prior-year rows are excluded entirely. A final student pins the
+      failing-count guard — the version spanning the 2- and 4-week boundaries
+      carries no Y1 GPA and a zero failing count, which must read null.
     model: int_powerschool__gpa_term_lookback
     overrides:
       vars:
@@ -248,6 +256,40 @@ unit_tests:
                   'America/New_York'
               ),
               timestamp('9999-12-31')
+          union all
+          /* student 6: the version in effect at the 2- and 4-week boundaries
+             carries no gpa_y1 but a zero n_failing_y1 — the failing count must
+             read null there, not zero, and must survive at the 1-week boundary */
+          select
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
+              6,
+              101,
+              35,
+              cast(null as float64),
+              cast(null as float64),
+              0,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 40 day),
+                  'America/New_York'
+              ),
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 10 day),
+                  'America/New_York'
+              )
+          union all
+          select
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
+              6,
+              101,
+              35,
+              cast(3.4 as float64),
+              cast(3.3 as float64),
+              1,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 10 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
     expect:
       rows:
         - {
@@ -292,6 +334,21 @@ unit_tests:
             gpa_y1_unweighted_2_week_prior: null,
             gpa_y1_unweighted_4_week_prior: null,
             n_failing_y1_1_week_prior: 4,
+            n_failing_y1_2_week_prior: null,
+            n_failing_y1_4_week_prior: null,
+          }
+        - {
+            _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
+            studentid: 6,
+            schoolid: 101,
+            yearid: 35,
+            gpa_y1_1_week_prior: 3.4,
+            gpa_y1_2_week_prior: null,
+            gpa_y1_4_week_prior: null,
+            gpa_y1_unweighted_1_week_prior: 3.3,
+            gpa_y1_unweighted_2_week_prior: null,
+            gpa_y1_unweighted_4_week_prior: null,
+            n_failing_y1_1_week_prior: 1,
             n_failing_y1_2_week_prior: null,
             n_failing_y1_4_week_prior: null,
           }

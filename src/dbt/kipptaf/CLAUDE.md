@@ -281,12 +281,11 @@ anywhere.
 **Miami is present across history on `fct_student_days`.** Its rows come from
 `int_extracts__student_enrollments` × `int_students__calendar_day`, and both
 retain Miami — the calendar keeps the frozen PowerSchool archive for the years
-Focus does not cover. Miami _attendance_ before AY2026 is still absent (#4803
-dropped that archive, and every Tableau attendance surface has the same gap), so
-those rows carry null attendance. Every rate already excludes null attendance
-from both numerator and denominator (#4744), so the gap cannot move a network
-rate — and Focus historical attendance, if it is ever modelled, fills in with no
-change to these models. Paterson `attendance_value` is unreliable (upstream PS
+Focus does not cover. Miami _attendance_ for those years comes from that same
+archive, re-keyed onto Focus enrollment stints (#5114), so pre-AY2026 figures
+are four regions. Every rate excludes null attendance from both numerator and
+denominator (#4744), so a day nobody measured sits outside the population as
+well as the rate. Paterson `attendance_value` is unreliable (upstream PS
 conversion-items gap, #4193) but `membership_value` is clean, so enrollment
 counts include Paterson correctly.
 

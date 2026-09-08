@@ -5,6 +5,9 @@ with
     -- union_relations resolves its column list at compile time from the
     -- relation's INFORMATION_SCHEMA, so the stale prod view kept enumerating
     -- columns the upstream had already dropped and stopped parsing entirely.
+    -- The district roster trims each stint to the day before the student's
+    -- next stint starts, so exitdate here is the inclusive last day and stints
+    -- never overlap.
     union_relations as (
         {{
             dbt_utils.union_relations(

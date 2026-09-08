@@ -86,12 +86,25 @@ specifics live there.
 
 ## Subagents
 
-Dispatch rules, model tiers, and Workflow cleanup inject from
+Decide these two things before every `Agent` call, including the first:
+
+- Dispatch or stay inline. Dispatch when the task writes a lot, would flood your
+  context with reading, can run in parallel, or needs a fresh reviewer.
+  Otherwise do it inline: a small edit with the files already loaded is cheaper
+  on the main model than a cold subagent on a cheaper one.
+- Which `model`. Pass the cheapest one you expect to finish on the first try.
+  Omit it (inherit) for judgment calls and reviews you will act on.
+
+Price ratios, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
 accept a subagent's self-report without the checks there.
 
 ## Pull requests and CI
 
+- On a feature branch, commit, push, and open the PR yourself once the work is
+  verified. The _Never_ block covers `main` only: a feature-branch push and
+  `create_pull_request` run on the same credentials as every other `git` and
+  `gh` call in the session, so never hand them to the user as needing theirs.
 - Squash merge. PR body from `.github/pull_request_template.md`.
 - Issue refs (`Refs #N`, `Closes #N`) in the body put the PR on project boards.
   Never `gh project item-add` a PR.

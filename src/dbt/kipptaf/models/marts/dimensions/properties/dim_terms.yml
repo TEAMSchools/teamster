@@ -18,9 +18,12 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
+          # warn, not error: dim_terms is a view, so this only re-runs on a SQL
+          # edit. The grain check that fires on sheet edits lives on
+          # stg_google_sheets__reporting__terms.
           - unique:
               config:
-                severity: error
+                severity: warn
 
       - name: location_key
         data_type: string
