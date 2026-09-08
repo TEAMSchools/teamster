@@ -30,6 +30,19 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: florida_education_identifier
+        description: >-
+          Florida Education Identifier (FLEID), passed through from
+          stg_focus__students. One student should carry one FLEID; the unique
+          test warns while Focus holds duplicate student records for one FLEID.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - unique:
+              config:
+                where: florida_education_identifier is not null
+                severity: warn
       - name: is_homeless
         data_type: boolean
         description:
@@ -119,19 +132,6 @@ models:
           int_focus__students__pivot. Supplies reporting_school_name for a Miami
           out-of-district placement, the way PowerSchool supplies the special
           program's name.
-      - name: florida_education_identifier
-        description: >-
-          Florida Education Identifier (FLEID), from custom_200000224. One
-          student should carry one FLEID; the unique test warns while Focus
-          holds duplicate student records for the same FLEID (#3887).
-        config:
-          meta:
-            contains_pii: true
-        data_tests:
-          - unique:
-              config:
-                where: florida_education_identifier is not null
-                severity: warn
       - name: race_count
         description: Number of race flags set on the student.
       - name: ethnicity
