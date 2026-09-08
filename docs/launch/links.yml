@@ -145,7 +145,7 @@
   system: google-sheet
   group: academics
   regions: [miami]
-  status: verified
+  status: needs-review
 
 - id: gpa_roster_newark
   name: "GPA Roster: Newark"

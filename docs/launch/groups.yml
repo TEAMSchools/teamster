@@ -25,7 +25,9 @@ groups:
 families:
   - id: gpa_roster
     name: GPA Roster
-    description: Course grades and GPA by student. One sheet per region.
+    description:
+      Course grades and GPA by student. One sheet per region. (No Miami for now
+      — Miami's gradebook runs on Focus and its GPA data isn't available yet.)
     group: academics
     members:
       - "GPA Roster: Camden"
