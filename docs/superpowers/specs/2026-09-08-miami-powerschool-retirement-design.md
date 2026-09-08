@@ -55,12 +55,17 @@ Move 8 models from `src/dbt/kipptaf/models/powerschool/intermediate/` to
 | `int_powerschool__s_nj_stu_x_unpivot`                | 33    | `stg_powerschool__s_nj_stu_x`                                                                                                       |
 | `int_powerschool__state_assessments_transfer_scores` | 35    | the 4 test tables                                                                                                                   |
 
-Every input exists in the package already, and none calls a kipptaf macro. All 8
-reference `_dbt_source_project` or `_dbt_source_relation`, columns the kipptaf
-union adds. Inside one region project those are constant, so the moved copy
-drops the `_dbt_source_*` join predicates and output columns, and the kipptaf
-wrapper's `union_relations` plus `extract_source_project()` restore them.
-Consumers see the same columns.
+Every input exists in the package already. Two columns the kipptaf staging
+wrappers add are derived in the package copies instead: `int_powerschool__log`
+inlines the fiscal-year expression for `academic_year`, and
+`int_powerschool__gpprogress_grades` derives `is_transfer_grade` as `schoolname`
+not matching `stg_powerschool__schools.name` (a grade earned outside the
+district; kipptaf's location-crosswalk flag agrees on all but 3 rows per NJ
+region). All 8 reference `_dbt_source_project` or `_dbt_source_relation`,
+columns the kipptaf union adds. Inside one region project those are constant, so
+the moved copy drops the `_dbt_source_*` join predicates and output columns, and
+the kipptaf wrapper's `union_relations` plus `extract_source_project()` restore
+them. Consumers see the same columns.
 
 Every region that includes the package builds them (NJ as tables, per each
 project's `+materialized: table` on the package). Per

@@ -1,0 +1,31 @@
+models:
+  - name: int_powerschool__state_assessments_transfer_scores
+    description:
+      NJGPA transfer-score records joined from test, studenttest,
+      studenttestscore, and testscore, mapped to the ELA/Math graduation pathway
+      discipline and subject.
+    columns:
+      - name: test_name
+        data_type: string
+        description: Name of the test record (always NJGPA for this model).
+      - name: studentid
+        data_type: int64
+        description: PowerSchool student ID.
+      - name: assessment_grade_level
+        data_type: int64
+        description: Grade level the student tested at.
+      - name: testscalescore
+        data_type: float64
+        description: Numeric scale score for the test.
+      - name: testperformancelevel
+        data_type: string
+        description: Alpha performance level for the test.
+      - name: testcode
+        data_type: string
+        description: Test score code (for example ELAGP or MATGP).
+      - name: discipline
+        data_type: string
+        description: Discipline mapped from testcode (ELA or Math).
+      - name: subject
+        data_type: string
+        description: Subject name mapped from testcode.
