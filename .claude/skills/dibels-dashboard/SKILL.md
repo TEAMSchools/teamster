@@ -1239,10 +1239,10 @@ the differentiated testing the aimline model was built to support.
 
 ### The two chains share no model -- split at the source, not behind a flag
 
-| Chain                | Range                          | Gate                                                        | PM expectations                                      |
-| -------------------- | ------------------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
-| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations`          |
-| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | `int_google_sheets__dibels__pm_expectations_aimline` |
+| Chain                | Range                          | Gate                                                        | PM expectations                             |
+| -------------------- | ------------------------------ | ----------------------------------------------------------- | ------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations` |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | none — the gate is the whole chain          |
 
 **Do not reach for a discriminator here.** It was tried: one gate unioning both
 ranges, tagged `data_model` (`internal` / `aimline` / `Benchmark`), in the grain

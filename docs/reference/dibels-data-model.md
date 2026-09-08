@@ -471,10 +471,10 @@ other.
 **The two chains are separate end to end — they share no model.** Each reads its
 own Google Sheets range through its own gate:
 
-| Chain                | Range                          | Gate                                                        | PM expectations                                      |
-| -------------------- | ------------------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
-| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations`          |
-| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | `int_google_sheets__dibels__pm_expectations_aimline` |
+| Chain                | Range                          | Gate                                                        | PM expectations                             |
+| -------------------- | ------------------------------ | ----------------------------------------------------------- | ------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations` |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | none — the gate is the whole chain          |
 
 An intermediate design unioned both ranges into one gate behind a `data_model`
 discriminator (`internal` / `aimline` / `Benchmark`). It was abandoned. The
@@ -725,36 +725,38 @@ both the wider range. Second, its terms unnest is a `cross join`, not a
 `left join`: every row in this source is a PM round and every PM terms row
 carries a grade band, so there is no null-band Benchmark row to preserve.
 
-#### `int_google_sheets__dibels__pm_expectations_aimline`
+The aimline chain stops at the gate. It has **no `pm_expectations` sibling**,
+because there is nothing for one to add. The internal method needs a second
+model to spread a cohort's required growth across a round from school-day counts
+— `pm_round_days`, `pm_days`, the school directory and the calendar. Amplify
+supplies an aimline goal per student, so none of that applies, and academics
+confirmed aimline needs no day count at all. Once the `dibels_goals_long` join
+moved up into the gate, a downstream `pm_expectations_aimline` was a filtered
+projection of its parent and nothing more; it was written, then deleted before
+it shipped.
 
-Reads the by-levels gate. A separate model from the internal `pm_expectations`,
-not a branch inside it: the internal method spreads a cohort's required growth
-across a round using school-day counts, so it needs `pm_round_days`, `pm_days`
-and the whole calendar-counting apparatus. Amplify supplies an aimline goal per
-student, so none of that applies — this model carries no day counts, no school
-directory and no calendar dependency, and confirmed with academics that aimline
-needs no day count at all.
-
-What it does carry, and why:
+What the gate carries for aimline's benefit, and why:
 
 - **`measure_standard_level`** is in the grain. The source declares an
-  expectation per cohort and the two cohorts are allowed to differ, so a
-  consumer must match a student to their own cohort or a `Below Benchmark`
-  student is counted as failing to participate in a round they were correctly
-  absent from. In SY25-26 the two cohorts do not actually differ anywhere in the
-  sheet (see the by-levels caveat above), so the column discriminates nothing
-  yet — it is there so that the day academics splits a round, nothing downstream
-  needs restructuring.
-- **`benchmark_goal`** is still needed even though Amplify supplies the goal.
-  The aimline answers "is the student on pace"; the Benchmark goal answers "are
-  they at grade level yet". The two together are what separate _On Track and
-  Meeting Aimline_ from _Meeting Aimline, Off-Track_.
+  expectation per cohort and the two are allowed to differ, so a consumer must
+  match a student to their own cohort or a `Below Benchmark` student is counted
+  as failing to participate in a round they were correctly absent from. In
+  SY25-26 the cohorts do not differ anywhere in the sheet (see the by-levels
+  caveat above), so the column discriminates nothing yet — it is there so the
+  day academics splits a round, nothing downstream needs restructuring.
+- **`benchmark_goal`** is needed even though Amplify supplies the goal. The
+  aimline answers "is the student on pace"; the Benchmark goal answers "are they
+  at grade level yet". The two together are what separate _On Track and Meeting
+  Aimline_ from _Meeting Aimline, Off-Track_.
 - **The window** is needed because a score outside it is what makes a student
   Not Tested.
-- **`pm_goal_include` is filtered, not projected.** Aimline has no trajectory,
-  so it has no use for the scaffold rows the column marks — but the by-levels
-  sheet contains them anyway, so the filter is load-bearing. See the
-  `pm_goal_include` note in the Configuration section.
+- **`assessment_include` and `pm_goal_include` pass through unfiltered**, as on
+  the internal gate — consumers filter. `pm_goal_include` in particular is
+  load-bearing for aimline: it marks the internal method's scaffold rows, and
+  the by-levels sheet carries them because its rows were duplicated from the
+  internal sheet. An aimline consumer must filter `pm_goal_include is null`
+  rather than assume the column is already null. See the `pm_goal_include` note
+  in the Configuration section.
 
 ### PM goal pipeline: `rpt_gsheets__dibels_pm_goal_setting` → `stg_google_sheets__dibels_pm_goals`
 
