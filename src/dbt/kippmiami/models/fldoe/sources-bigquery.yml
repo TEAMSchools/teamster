@@ -18,21 +18,15 @@ sources:
       Focus-based FLEID lookup replaces it.
     schema: kippmiami_powerschool
     tables:
+      # asset_key meta dropped while the powerschool package is included
+      # (#5012); PR 1b restores it
       - name: stg_powerschool__students
         config:
           meta:
             dagster:
               group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__students
       - name: stg_powerschool__u_studentsuserfields
         config:
           meta:
             dagster:
               group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__u_studentsuserfields
