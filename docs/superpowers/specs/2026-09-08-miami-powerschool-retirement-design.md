@@ -19,17 +19,73 @@ The prefix and the bound get baked into the archive tables themselves. The
 with the ODBC staging variant enabled, `+materialized: table`, and 15 post-hooks
 that renumber and bound the staging tables before any intermediate reads them.
 The archive rebuilds in place into `kippmiami_powerschool`. A follow-up PR
-removes the package again; the tables stay. The shared package is not edited.
+removes the package again; the tables stay.
 
-kipptaf's 45 PowerSchool union models keep reading that dataset; 13 drop the
-Miami relation, and the Miami-only steps in kipptaf are deleted. The re-key
-stays in kipptaf because it needs the Focus roster. No new folder, dataset,
-source, or package change.
+The shared package gains 8 models and nothing else: every kipptaf PowerSchool
+model computed exclusively on PowerSchool data moves down, so each region builds
+it and kipptaf unions it like the rest. Rule: a model moves when all its inputs
+are PowerSchool models the package already has. It stays when it blends another
+source, reads a kipptaf snapshot, or is an extract.
+
+kipptaf's 45 PowerSchool union models keep reading that dataset (53 after the 8
+new wrappers); 13 drop the Miami relation, and the Miami-only steps in kipptaf
+are deleted. After that, every kipptaf model that touches Miami PowerSchool rows
+blends sources: the union wrappers, the `int_students__*` cutover models, and
+the extracts. The re-key stays in kipptaf because it joins the Focus roster. No
+new folder, dataset, or source.
 
 Compute is not the reason. Jobs touching `kippmiami_powerschool` billed 3.3 TiB
 in the last 7 days, but Miami is 8.4% of the union bytes. The reason is that the
 Miami archive policy is applied once, in the archive, instead of in copied
 kipptaf predicates.
+
+## Package changes (PR 1)
+
+Move 8 models from `src/dbt/kipptaf/models/powerschool/intermediate/` to
+`src/dbt/powerschool/models/sis/intermediate/`, with their properties files:
+
+| Model                                                | Lines | Reads                                                                                                                               |
+| ---------------------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `int_powerschool__final_grades_rollup`               | 31    | `base_powerschool__final_grades`                                                                                                    |
+| `int_powerschool__gpa_term_current`                  | 28    | `int_powerschool__gpa_term`                                                                                                         |
+| `int_powerschool__gpa_term_pivot`                    | 49    | `int_powerschool__gpa_term`                                                                                                         |
+| `int_powerschool__gpnode`                            | 32    | `stg_powerschool__gpnode`                                                                                                           |
+| `int_powerschool__gpprogress_grades`                 | 173   | `int_powerschool__gpnode`, `base_powerschool__final_grades`, `stg_powerschool__gpprogresssubject*`, `stg_powerschool__storedgrades` |
+| `int_powerschool__log`                               | 17    | `stg_powerschool__gen`, `stg_powerschool__log`                                                                                      |
+| `int_powerschool__s_nj_stu_x_unpivot`                | 33    | `stg_powerschool__s_nj_stu_x`                                                                                                       |
+| `int_powerschool__state_assessments_transfer_scores` | 35    | the 4 test tables                                                                                                                   |
+
+Every input exists in the package already, and none calls a kipptaf macro. All 8
+reference `_dbt_source_project` or `_dbt_source_relation`, columns the kipptaf
+union adds. Inside one region project those are constant, so the moved copy
+drops the `_dbt_source_*` join predicates and output columns, and the kipptaf
+wrapper's `union_relations` plus `extract_source_project()` restore them.
+Consumers see the same columns.
+
+Every region that includes the package builds them (NJ as tables, per each
+project's `+materialized: table` on the package). Per
+`.claude/rules/dbt-models.md`, a moved model inherits the destination's config;
+check the package's `sis.intermediate` block adds nothing the kipptaf copies did
+not have.
+
+Stays in kipptaf, with the reason:
+
+- `int_powerschool__gpa_term_lookback` reads the kipptaf snapshot
+  `snapshot_powerschool__gpa_term`.
+- `base_powerschool__course_enrollments`, `base_powerschool__sections`,
+  `base_powerschool__student_enrollments` wrap `int_students__*`, a Focus blend.
+- `int_powerschool__gradebook_assignments_scores` and
+  `int_powerschool__gradebook_assignment_scores_rollup` read
+  `base_powerschool__course_enrollments`.
+- `int_powerschool__ada_term` and `int_powerschool__ada_term_pivot` read
+  `int_students__attendance_daily`.
+- `int_powerschool__u_expectations_qtd_unpivot` reads
+  `int_students__calendar_week`.
+- `int_powerschool__gradebook_assignments`, `int_powerschool__category_grades`,
+  and the NJ-only `stg_powerschool__*` wrappers are already unions.
+- `rpt_*` extracts that read only PowerSchool models (`rpt_clever__schools`,
+  `rpt_illuminate__courses`, and so on) are kipptaf outputs; regional projects
+  wrap `kipptaf_extracts`, not the reverse.
 
 ## kippmiami project changes (PR 1)
 
@@ -124,6 +180,12 @@ a future rebuild is a re-include.
   which #4775 made the sole Miami source.
 - 32 unions: unchanged. They keep `source("kippmiami_powerschool", X)` and now
   receive bounded, renumbered rows.
+- 8 new unions: the 8 moved models become `union_relations` wrappers over the
+  package models, with a table entry in each `sources-kipp*.yml`. The Miami
+  relation is included where the model is retained (`final_grades_rollup`,
+  `gpa_term_current`, `gpa_term_pivot`) and omitted where it is dropped or
+  NJ-only (`log`, `state_assessments_transfer_scores`, `gpnode`,
+  `gpprogress_grades`, `s_nj_stu_x_unpivot`). Consumers keep their `ref()`.
 - Delete the Miami-only steps the archive now carries:
   - `focus_student_number` calls in `int_powerschool__ada`,
     `int_powerschool__attendance_streak`, and
@@ -168,48 +230,44 @@ Every other PowerSchool consumer reads only the 32 retained relations. For them
 PR 2 is a pure refactor: identical Miami rows before and after. That is the
 acceptance test, not a verdict.
 
-## Filters (PR 2 and PR 3)
+## Filters: deferred to #5193
 
-The 59 Miami exclusion literals and 12 `exclude_frozen` calls split by why they
-exist:
+The 59 Miami exclusion literals, the 12 `exclude_frozen` calls, the
+`frozen_powerschool_code_locations` var, and `rpt_tableau__crdc_roster`'s regexp
+filter are triaged in #5193, after the archive rebuild lands. This spec leaves
+every one of them in place. Two facts from this brainstorm carry over:
 
-1. Literals on readers of a dropped relation: delete. Dead predicate.
-1. Literals and calls on readers of a retained relation that also have a year
-   predicate reaching the archive rows: delete. The archive has no AY2026 rows.
-1. Literals and calls on current-state readers of `students`, `schools`, `cc`,
-   or `sections` with no year predicate (`rpt_clever__*`, `rpt_illuminate__*`,
-   `rpt_parentsquare__*`, `int_students__schools`, `int_students__students`):
-   keep, converted to `exclude_frozen`. The archive `students` table still says
-   `enroll_status = 0` for the 3,946 students who were enrolled on 2026-07-01,
-   so a current-roster extract needs the gate.
-1. NJ-only business rules (`rpt_gsheets__nj_state_test_roster`,
-   `rpt_gsheets__njsmart_transfer_unverified`,
-   `rpt_tableau__nj_school_register`, `dim_student_ell_status`, `dim_students`
-   on `s_nj_stu_x`): keep as written.
+- 5 of the 12 calls gate the staff roster's code location, not a PowerSchool
+  table. They keep Miami staff out of Clever and are unaffected by the archive.
+- The archive `students` table carries 1,114 rows at `enroll_status = 0` with
+  `exitdate = 2026-06-30`, because PowerSchool was retired before the status
+  rolled. A post-hook setting them to exited would make 4 of the 12 calls
+  redundant. It is not needed for this spec and moves to #5193; a later fix is
+  one `update` on the archive table, no rebuild.
 
-`frozen_powerschool_code_locations` and `exclude_frozen` stay for group 3. The
-issue's criterion that both are deleted is withdrawn (posted on #5012
-2026-09-08). Group 3 membership is measured per consumer during PR 2, not
-assumed.
-
-`rpt_tableau__crdc_roster` lines 181 and 247 become
-`exclude_frozen("_dbt_source_project")`.
+The issue's criterion that the var and macro are deleted is withdrawn from #5012
+(posted 2026-09-08) and reopened as an option on #5193.
 
 ## Delivery
 
-1. PR 1, `kippmiami`: package include, hooks, materialization config. No
-   blockers. dbt Cloud CI builds kipptaf only, so this PR's CI proves nothing
-   about the build; verification happens after the prod materialization.
-1. Materialize in prod from the Dagster UI. Run the PR 1 verification.
+1. PR 1, `powerschool` and `kippmiami`: the 8 moved models, the package include,
+   hooks, materialization config. The kipptaf copies of the 8 models stay until
+   PR 2, so kipptaf is untouched here. No blockers. dbt Cloud CI builds kipptaf
+   only, so this PR's CI proves nothing about the build; NJ parity for the 8
+   moved models is checked locally with `--target staging` against the kipptaf
+   copies before merge.
+1. Materialize in prod. NJ regions pick up the 8 new models on their next
+   upstream update (eager table condition). Miami: Dagster UI,
+   `kippmiami_dbt_assets`, group `powerschool`. Run the PR 1 verification.
 1. PR 1b, `kippmiami`: remove the include and config blocks. Fold into PR 2 only
    if the same person ships both the same day; otherwise separate, so the
    archive's provenance is one clean merge.
-1. PR 2, `kipptaf`: everything under "kipptaf changes", filter groups 1 and 2,
-   the 3 repoints. Depends on step 2. Also touches `int_students__ada` and
+1. PR 2, `kipptaf`: everything under "kipptaf changes" and the 3 repoints.
+   Depends on step 2 for all 4 regions. Also touches `int_students__ada` and
    `int_students__attendance_streak`, which PR #5188 (#5160) edits: merge #5188
    first and delete its renumber here, or close #5188 as superseded because the
    archive renumbers those tables. Decide before opening PR 2.
-1. PR 3, `kipptaf`: filter group 3 conversions and `rpt_tableau__crdc_roster`.
+1. #5193 picks up the filters.
 
 ## Verification
 
@@ -227,7 +285,9 @@ rows there and `stg_powerschool__cc` carries 0);
 `countif(student_number < 8400000000)` is 0 on `stg_powerschool__students`,
 `int_powerschool__ada`, `int_powerschool__attendance_streak`, and
 `int_powerschool__ps_adaadm_daily_ctod` (today all 3,946 students and 7,930 ADA
-rows are bare). NJ is untouched by PR 1, so no NJ check is needed there.
+rows are bare). For the 8 moved models, each NJ region's package output is
+row-identical to the kipptaf copy filtered to that region, on `count(*)` plus a
+distinct count of the key columns.
 
 PR 2, per PowerSchool consumer (145 models), before and after in dev, deferred
 to prod:
@@ -252,7 +312,8 @@ sequencing dependency, for PR 2.
 
 ## Out of scope
 
-- Editing the shared `powerschool` package.
+- Every Miami exclusion filter, `exclude_frozen`, its var, and the
+  `enroll_status` hook: #5193.
 - Dropping the `kippmiami_powerschool` dataset or the GCS files under it. They
   are the archive's ground truth.
 - Moving archive grades or attendance into Focus. Focus holds no real pre-AY2026
