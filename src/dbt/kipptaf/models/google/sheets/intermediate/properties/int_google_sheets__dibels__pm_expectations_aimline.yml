@@ -1,5 +1,5 @@
 models:
-  - name: int_google_sheets__dibels_pm_expectations_aimline
+  - name: int_google_sheets__dibels__pm_expectations_aimline
     description: >
       The aimline method's PM expectations -- which measures a student in a
       given region, grade, round and cohort is expected to be progress-monitored
@@ -7,7 +7,7 @@ models:
 
       The aimline sibling of int_google_sheets__dibels_pm_expectations, and a
       separate model rather than a branch inside it. It reads
-      int_google_sheets__dibels_expected_assessments_by_levels -- the aimline
+      int_google_sheets__dibels__expected_assessments_by_levels -- the aimline
       method's own gate over the by-levels range -- so the two chains never
       share a model and neither needs a discriminator to tell them apart.
 

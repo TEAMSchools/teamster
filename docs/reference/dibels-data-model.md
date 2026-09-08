@@ -327,7 +327,7 @@ two columns ahead of the SY26-27 rollover, both inserted next to `subject_area`:
     method. The wider tab ("Expected Assessments", named range
     `src_google_sheets__dibels__expected_assessments_by_levels`, double
     underscore) backs
-    `stg_google_sheets__dibels_expected_assessments_by_levels` and feeds
+    `stg_google_sheets__dibels__expected_assessments_by_levels` and feeds
     aimline. Benchmark rows were stripped from the by-levels range — Benchmark
     will never be by levels, and emitting it from both sheets doubled every
     Benchmark row downstream.
@@ -471,10 +471,10 @@ other.
 **The two chains are separate end to end — they share no model.** Each reads its
 own Google Sheets range through its own gate:
 
-| Chain                | Range                          | Gate                                                       | PM expectations                                     |
-| -------------------- | ------------------------------ | ---------------------------------------------------------- | --------------------------------------------------- |
-| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`           | `int_google_sheets__dibels_pm_expectations`         |
-| Aimline              | 18-column by-levels            | `int_google_sheets__dibels_expected_assessments_by_levels` | `int_google_sheets__dibels_pm_expectations_aimline` |
+| Chain                | Range                          | Gate                                                        | PM expectations                                      |
+| -------------------- | ------------------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations`          |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | `int_google_sheets__dibels__pm_expectations_aimline` |
 
 An intermediate design unioned both ranges into one gate behind a `data_model`
 discriminator (`internal` / `aimline` / `Benchmark`). It was abandoned. The
@@ -711,7 +711,7 @@ The model reads the 16-column chain and nothing else — no discriminator, no
 cohort column, the same column set it always had — so
 `rpt_gsheets__dibels_pm_goal_setting` needed no edit.
 
-#### The aimline chain: `int_google_sheets__dibels_expected_assessments_by_levels`
+#### The aimline chain: `int_google_sheets__dibels__expected_assessments_by_levels`
 
 Aimline's gate over the 18-column by-levels range, the sibling of
 `int_google_sheets__dibels_expected_assessments`. PM only; the by-levels range
@@ -725,7 +725,7 @@ both the wider range. Second, its terms unnest is a `cross join`, not a
 `left join`: every row in this source is a PM round and every PM terms row
 carries a grade band, so there is no null-band Benchmark row to preserve.
 
-#### `int_google_sheets__dibels_pm_expectations_aimline`
+#### `int_google_sheets__dibels__pm_expectations_aimline`
 
 Reads the by-levels gate. A separate model from the internal `pm_expectations`,
 not a branch inside it: the internal method spreads a cohort's required growth

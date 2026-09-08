@@ -8,7 +8,7 @@ models:
       This is the internal method's chain, and Benchmark's. It reads the
       16-column Expected Assessments range only. The aimline method reads the
       18-column by-levels range through
-      int_google_sheets__dibels_expected_assessments_by_levels -- a separate
+      int_google_sheets__dibels__expected_assessments_by_levels -- a separate
       model, not a branch here. The two methods were briefly unioned behind a
       data_model discriminator; splitting them at the source is simpler, keeps
       this model's column set identical to what its consumers already expect,

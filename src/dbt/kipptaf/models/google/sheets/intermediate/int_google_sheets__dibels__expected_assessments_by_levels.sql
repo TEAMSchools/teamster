@@ -59,7 +59,7 @@ select
         order by e.round_number desc
     ) as max_pm_round,
 
-from {{ ref("stg_google_sheets__dibels_expected_assessments_by_levels") }} as e
+from {{ ref("stg_google_sheets__dibels__expected_assessments_by_levels") }} as e
 left join
     terms as t
     on e.academic_year = t.academic_year
@@ -71,4 +71,4 @@ left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
-    and e.admin_season = g.matching_pm_season
+    and e.matching_bm_season = g.admin_season

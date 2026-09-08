@@ -750,7 +750,7 @@ one is a contingency -- do not "consolidate" them.
 | Tab                      | "Expected Assessments V1" (sheetId `1270280562`)                     | the by-levels range on the same spreadsheet                 |
 | Shape                    | 16 columns, PascalCase headers                                       | 18 columns, snake_case headers                              |
 | dbt source               | `src_google_sheets__dibels__expected_assessments`                    | `src_google_sheets__dibels__expected_assessments_by_levels` |
-| Staging model            | `stg_google_sheets__dibels_expected_assessments`                     | `stg_google_sheets__dibels_expected_assessments_by_levels`  |
+| Staging model            | `stg_google_sheets__dibels_expected_assessments`                     | `stg_google_sheets__dibels__expected_assessments_by_levels` |
 | `assessment_type`        | derived from `admin_season` in staging SQL                           | sheet-authored                                              |
 | `measure_standard_level` | absent -- rows carry no cohort                                       | present -- `Below` / `Well Below`                           |
 | Generator flag           | `--single-rows`                                                      | (default)                                                   |
@@ -824,7 +824,7 @@ The two chains classify Benchmark vs PM differently, and that is deliberate:
   `if(...)` line alone** -- an earlier revision of this skill told you to drop
   it once `sheet_range` moved to the 18-column range; that move was reverted
   when academics asked for both models.
-- **Combo chain** (`stg_google_sheets__dibels_expected_assessments_by_levels`)
+- **Combo chain** (`stg_google_sheets__dibels__expected_assessments_by_levels`)
   reads it from the sheet, next to `subject_area`, so the classification is
   explicit rather than inferred downstream by a rule only the SQL knows. That
   staging model has no `assessment_type` derivation at all.
@@ -1239,10 +1239,10 @@ the differentiated testing the aimline model was built to support.
 
 ### The two chains share no model -- split at the source, not behind a flag
 
-| Chain                | Range                          | Gate                                                       | PM expectations                                     |
-| -------------------- | ------------------------------ | ---------------------------------------------------------- | --------------------------------------------------- |
-| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`           | `int_google_sheets__dibels_pm_expectations`         |
-| Aimline              | 18-column by-levels            | `int_google_sheets__dibels_expected_assessments_by_levels` | `int_google_sheets__dibels_pm_expectations_aimline` |
+| Chain                | Range                          | Gate                                                        | PM expectations                                      |
+| -------------------- | ------------------------------ | ----------------------------------------------------------- | ---------------------------------------------------- |
+| Internal + Benchmark | 16-column Expected Assessments | `int_google_sheets__dibels_expected_assessments`            | `int_google_sheets__dibels_pm_expectations`          |
+| Aimline              | 18-column by-levels            | `int_google_sheets__dibels__expected_assessments_by_levels` | `int_google_sheets__dibels__pm_expectations_aimline` |
 
 **Do not reach for a discriminator here.** It was tried: one gate unioning both
 ranges, tagged `data_model` (`internal` / `aimline` / `Benchmark`), in the grain

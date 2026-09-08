@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__dibels_expected_assessments_by_levels
+  - name: stg_google_sheets__dibels__expected_assessments_by_levels
     description: >
       The 18-column by-levels Expected Assessments range, cleaned -- which
       DIBELS measures each region expects to progress-monitor, per grade, round
@@ -140,16 +140,11 @@ models:
       - name: matching_bm_season
         data_type: string
         description: >
-          The Benchmark season a PM round sits behind -- BOY for a BOY->MOY
-          round, MOY for a MOY->EOY round. It names the benchmark administration
-          whose composite decides which cohort a student belongs to for that
-          season, so a consumer knows to read a BOY composite against a BOY->MOY
-          round.
-
-          It runs the opposite way to dibels_goals_long.matching_pm_season,
-          which maps a Benchmark season to the PM season it is the target of.
-          That one answers "which season is growing toward this benchmark"; this
-          one answers "which benchmark did this season start from".
+          The Benchmark season a PM round grows toward -- MOY for a BOY->MOY
+          round, EOY for a MOY->EOY round. Derived here so the downstream join
+          to dibels_goals_long keys on this model's own column rather than on
+          goals_long's matching_pm_season, which encodes the same relation from
+          the other side.
       - name: expected_measure_name_code
         data_type: string
         description: >

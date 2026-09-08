@@ -19,7 +19,7 @@ select
     g.admin_season as benchmark_season,
     g.grade_level_standard as benchmark_goal,
 
-from {{ ref("int_google_sheets__dibels_expected_assessments_by_levels") }} as e
+from {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }} as e
 left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard

@@ -1,5 +1,5 @@
 models:
-  - name: int_google_sheets__dibels_expected_assessments_by_levels
+  - name: int_google_sheets__dibels__expected_assessments_by_levels
     description: >
       Which DIBELS measures each region expects to progress-monitor, per grade,
       round and student cohort, with the round's date window and the Benchmark
@@ -148,21 +148,17 @@ models:
           PowerSchool credit type the measure maps to, from the sheet.
       - name: matching_bm_season
         description: >
-          The Benchmark season a PM round sits behind -- BOY for a BOY->MOY
-          round, MOY for a MOY->EOY round. It names the benchmark administration
-          whose composite decides which cohort a student belongs to for that
-          season, so a consumer knows to read a BOY composite against a BOY->MOY
-          round.
+          The Benchmark season a PM round grows toward -- MOY for a BOY->MOY
+          round, EOY for a MOY->EOY round. This is the key the join to
+          dibels_goals_long runs on, matched against that table's own
+          admin_season.
 
-          Read it alongside benchmark_season below, and do not confuse the two.
-          matching_bm_season is where the season STARTS. benchmark_season is
-          where it AIMS. On a BOY->MOY row they read BOY and MOY respectively,
-          which is correct in both cases.
-
-          It is also the opposite direction to the internal chain's
-          matching_pm_season, which maps a Benchmark season to the PM season it
-          is the target of. That is the one place where the two chains
-          deliberately do not share a column name.
+          It is the aimline chain's replacement for the internal chain's
+          matching_pm_season, which encodes the same relation from the other
+          side -- goals_long's MOY row carries BOY->MOY, because BOY->MOY is the
+          season growing toward it. Deriving the season on this side keeps the
+          join reading in one direction, which is why the two chains
+          deliberately do not share a name here.
       - name: expected_measure_name_code
         description: Measure code parsed from measure_standard, such as ORF.
       - name: expected_measure_name
@@ -177,9 +173,13 @@ models:
         description: Grade level as text, with 0 rendered as K.
       - name: benchmark_season
         description: >
-          Benchmark season the goal was taken from -- MOY for a BOY->MOY round,
-          EOY for a MOY->EOY round. The season the round AIMS at, which is why
-          it differs from matching_bm_season on every row.
+          Benchmark season the goal was actually taken from, read back off
+          dibels_goals_long. Now that the join keys on matching_bm_season it
+          always equals that column when a goal was found, and is null when none
+          was -- so it carries no information beyond whether the join matched,
+          which benchmark_goal already reports. Kept only because
+          int_google_sheets__dibels_pm_expectations exposes the same column
+          name.
       - name: benchmark_goal
         description: >
           Benchmark score the student is measured against for the at-grade-level
