@@ -160,7 +160,7 @@ with
                 array_agg(r.role_id ignore nulls order by r.role_id), []
             ) as role_ids,
         from people_role_slots as p
-        left join unnest(p.role_name_slots) as rn
+        cross join unnest(p.role_name_slots) as rn
         left join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
         group by p.user_internal_id
     ),
