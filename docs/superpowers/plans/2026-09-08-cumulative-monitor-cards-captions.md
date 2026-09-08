@@ -1267,7 +1267,7 @@ against the source before each use.
 - Produces: `server/cum-final.twbx`, the handover package, and a review copy in
   `GPA-monitor-temp`.
 
-- [ ] **Step 1: Repack around the production extract**
+- [x] **Step 1: Repack around the production extract**
 
 ```bash
 cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
@@ -1278,7 +1278,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
 Expected: over 20 MB. A file in the hundreds of kilobytes means the extract was
 dropped — stop.
 
-- [ ] **Step 2: Publish the review copy and render both bases**
+- [x] **Step 2: Publish the review copy and render both bases**
 
 Write with the Write tool to `tests/tableau/test_zz_review.py`, copying the
 structure of the Task 1 probe but publishing `cum-final.twbx` as
@@ -1294,7 +1294,7 @@ publish, before rendering. Print the project name.
 
 Run: `uv run pytest tests/tableau/test_zz_review.py -s`
 
-- [ ] **Step 3: Assert the rendered colours by pixel, not by eye**
+- [x] **Step 3: Assert the rendered colours by pixel, not by eye**
 
 Run:
 
@@ -1320,7 +1320,7 @@ Expected: the two new colours have thousands of pixels each; the two retired
 colours have none, or a negligible count from anti-aliasing against the band
 chart. If a retired colour shows thousands, the edit missed a sheet.
 
-- [ ] **Step 4: Read both renders and check the text**
+- [x] **Step 4: Read both renders and check the text**
 
 Open `server/review-projected.png` and `server/review-onthebooks.png` with the
 Read tool. Confirm, in both:
@@ -1337,7 +1337,7 @@ Read tool. Confirm, in both:
 Also open the Academic Health Home render and confirm it is unchanged, including
 its blue and red goal bars.
 
-- [ ] **Step 5: Delete the throwaway, record and hand over**
+- [x] **Step 5: Delete the throwaway, record and hand over**
 
 ```bash
 rm -f /workspaces/teamster/tests/tableau/test_zz_review.py
@@ -1356,8 +1356,54 @@ Then report to the user, in the terminal:
 - An explicit statement that nothing was published to `Production` and that the
   production publish is theirs to run.
 
-- [ ] **Step 6: Open the pull request**
+- [x] **Step 6: Open the pull request**
 
 Push the branch and open a PR from `.github/pull_request_template.md`, with
 `Closes #5190` in the body. The PR carries the spec and the plan; the workbook
 itself is not in the repository, so say so in the body and link the review copy.
+
+**Result:**
+
+`server/cum-final.twbx`, 29,436,163 bytes, repacked around the production
+extract — all three `.hyper` files intact at 60.1, 3.4 and 3.4 MB. Review copy
+published to `GPA-monitor-temp` as `ZZ-REVIEW cum cards 20260908`
+(`06e50e42-74a8-41c4-9a8e-5690b6824896`), tabs visible. The `project_id`
+assertion ran before any render on every one of the six publishes. Nothing went
+near `Production`.
+
+**Colour, asserted by pixel rather than by eye.** In the goal-by-school panel:
+`#12a47c` 120,106 px and `#b3161c` 40,062 px projected, 82,975 and 32,159 on the
+books. The retired `#2f5fc4` is down to 2 anti-aliasing pixels and `#d8342f` to
+zero. Academic Health Home holds 84,248 blue and 35,320 red with zero green, and
+its render is byte-identical across all six publishes.
+
+**Live basis, confirmed to track the parameter.** The same workbook renders
+`Projected EOY` and `On the books today` on the three body charts at the two
+parameter values.
+
+**The render found four defects that every structural checker passed.** This is
+the task's main result.
+
+1. Both goal-strip numbers rendered as `####`. Task 3 had split
+   `— always projected` onto its own line for visual consistency, and three
+   lines do not fit that box at 66px, 78px or 88px. Reverted to production's
+   inline form, which is live today and renders `+4.4pp` cleanly.
+2. The GPA band legend showed 3 of 5 entries, then 4 of 5. Height was the lever,
+   not width: at 70px the strip fits a title plus two item rows, which also
+   explains the 3-then-4 progression at 40px and 50px.
+3. Row labels clipped to `al Un / ghted`, then wrapped mid-word. Shortened the
+   two constant-string calcs to `Actual` and `Projected`; the card caption
+   directly above already carries the explanation.
+4. The live basis line was **blank** on both headline BANs. My error: Task 1's
+   probe proved the parameter placeholder resolves in a worksheet title, and I
+   wrote "proven live in this workbook" into the plan and applied the same token
+   to mark labels. Mark labels carry FIELD placeholders; a field reference is
+   not a parameter reference. Routing the parameter through a calc on the Text
+   shelf was worse — it blanked the entire label, title and number included.
+   Both attempts passed every assertion.
+
+   Settled with static text, `Follows the GPA basis`, in the same run style and
+   position. All four headline numbers now read uniformly. The live value stays
+   where it was asked for and where it works: the three switch-driven cards.
+
+The reminders assertion records both failed mechanisms so neither is retried.
