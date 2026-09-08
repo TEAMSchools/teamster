@@ -27,6 +27,12 @@ metadata. Both facts are in this page: the recipe works, and the credentials
 step is the one that is easy to miss and expensive to miss. Read _A publish
 drops five pieces of server-side state_ before publishing anything.
 
+Exercised again on 2026-09-08 across nine of those workbooks — a group swap in
+17 calculated fields plus a new grant in 15 — which is where the credential step
+stopped being manual. `update_connection` after the publish embeds the service
+account and holds; see _Re-embedding the credential_. The claim this page
+previously made, that only Desktop could do it, was wrong.
+
 ---
 
 ## The MCP cannot do this
@@ -291,17 +297,9 @@ degrades:
     `embed_password=True` with the correct service-account username, because that
     field records intent rather than a live token.
 
-    **`publish(connections=...)` cannot carry them for BigQuery** — tested
-    2026-09-04, and having the service-account key does not help. A BigQuery
-    `<connection>` has no `server` attribute at all (its identity is
-    `CATALOG='teamster-332318'` plus `schema`), the REST API reports
-    `server_address=''`, and TSC raises
-    `ValueError: Connection must have a server address` before it will serialise
-    one. Passing `embed_password=True` without a password serialises but emits no
-    `connectionCredentials` element, so it carries nothing.
-
-    The reliable fix is re-embedding from Desktop (republish with _Embed
-    password_ checked) or on Server via the workbook's Data Connections page.
+    **This is fixable from here — see _Re-embedding the credential_ below.** An
+    earlier version of this page said the manual Desktop step was unavoidable.
+    It is not.
 
     **After any publish, trigger a refresh and confirm it succeeds.** Metadata
     verification is not sufficient — that is exactly the check that missed this.
@@ -316,10 +314,9 @@ degrades:
     11 gated workbooks. It is a Tableau admin plus Desktop change, filed as
     [#5157](https://github.com/TEAMSchools/teamster/issues/5157).
 
-    Until that lands, **publish and then re-embed by hand** is the accepted
-    recipe. The manual step is the price of editing calculations
-    programmatically, and the trade is worth it — but the refresh check is not
-    optional, because a missed re-embed fails silently.
+    Until that lands, **publish and then `update_connection`** is the recipe —
+    scripted, not manual. #5157 is still worth doing, because it removes the
+    step entirely rather than automating it, but it is no longer blocking.
 
 **`hidden_views` is the one that bites.** Which sheets Desktop chose to publish
 is server-side state absent from the file, so a REST publish exposes every sheet
@@ -328,9 +325,90 @@ visible where Production published 9 — a naive overwrite would have exposed tw
 dashboards built on legacy permission gates. Read the live view list with
 `populate_views` **before** publishing, and pass the difference.
 
+The file's own side comes from the `<windows>` element, not from `<worksheets>`
+or `<dashboards>` — those list every sheet whether or not it is publishable:
+
+```python
+wins = ElementTree.fromstring(twb_text).find("windows")
+visible = {
+    w.get("name") for w in wins
+    if w.get("class") in ("worksheet", "dashboard")
+    and w.get("hidden") != "true"
+}
+hidden_views = sorted(visible - set(live_view_names))
+```
+
+Verified across nine workbooks: every one published exactly its pre-publish view
+count with this. The gap is routinely large — `Survey Dashboard`'s file marks 12
+visible against 7 live, `Stipend and Bonus` 12 against 2 — so skipping it
+exposes real sheets, not stragglers. Assert the published view list equals the
+recorded one afterwards; it is a cheap check and it catches a wrong difference.
+
 Tags matter because `entra-ready` is the permissions inventory that the
 permissions guide keys off. Losing it drops the workbook out of the inventory
 with no error.
+
+### Re-embedding the credential
+
+Corrected 2026-09-08. The previous claim here — that `publish(connections=...)`
+"cannot carry BigQuery credentials at all" and that re-embedding from Desktop
+was the only fix — was wrong, and it cost a round of manual work per workbook.
+
+**Use `update_connection` after the publish**, once per connection. Passing the
+service-account JSON key as the password with `oauth = True` sets a credential
+that survives and actually authenticates:
+
+```python
+creds = tsc.ConnectionCredentials(sa_user, sa_key_json, embed=True)
+creds.oauth = True                      # required; without it the credential
+                                        # stores but does not authenticate
+srv.workbooks.populate_connections(pub)
+for c in list(pub.connections):
+    c.username, c.password, c.embed_password = sa_user, sa_key_json, True
+    c.connection_credentials = creds
+    srv.workbooks.update_connection(pub, c)
+```
+
+`sa_user` and `sa_key_json` are the username and the attached JSON key on the
+`Teamster Service Account - Tableau` 1Password item.
+
+Three things that are easy to get wrong:
+
+- **`oauth = True` is the load-bearing flag.** Tested both ways on a `TEMP-CB`
+  copy: with it, the extract refresh finishes `finish_code=0`; without it, the
+  refresh fails with `Tableau needs an unexpired OAuth refresh token`. That is
+  the same error as a stripped credential, so it looks like the embed did not
+  happen at all.
+- **Prefer `update_connection` over `publish(connections=...)`.** The publish
+  argument does work, but only for extract-backed workbooks — the earlier
+  `ValueError: Connection must have a server address` is avoidable because
+  `server_address` comes from the `ConnectionItem` you construct, not the file,
+  so any non-empty string gets past it. On a **live-connection** workbook it
+  silently reported `embed_password=False` and left the views unable to render.
+  The in-place update held on both kinds.
+- **`update_connections` (plural) needs REST API 3.26.** This server is 3.25, so
+  it raises `EndpointUnavailableError`. Use the singular call in a loop.
+
+#### Proving it worked
+
+An extract refresh is still the only real proof, but it is not available
+everywhere. A workbook with no extract — a live connection — rejects the request
+outright:
+
+```text
+403180: Full extract refresh operation for the workbook '<id>' is not allowed.
+```
+
+**That is not a credential failure.** Treat it as "not applicable" and prove the
+credential by rendering a view instead: a live connection cannot draw a view
+without one, so a successful `populate_image` is equivalent evidence. For an
+extract-backed workbook the reverse holds — views render off the `.hyper`
+regardless, so rendering proves nothing and only the refresh counts.
+
+Of the 11 gated workbooks, `Leadership Development` and
+`Stipend and Bonus Dashboard` are the live-connection ones. Both download to
+~0.1MB with `include_extract=True` and contain no `.hyper`; that size is the
+quickest tell.
 
 ### What is not affected
 
@@ -375,11 +453,23 @@ restoring rather than assuming the revision is self-contained.
 1. Publish `Overwrite` to Production with `hidden_views`; assert id and
    `content_url` are unchanged.
 1. Restore owner, workbook tags, and per-view tags.
-1. Re-embed the connection credentials, then re-download and diff every recorded
-   attribute against pre-state.
-1. **Trigger an extract refresh and confirm it finishes `Success`.** This is the
-   only step that proves the credentials survived, and it is the one the
-   2026-09-04 publish skipped.
+1. Re-embed the credential with `update_connection` per connection, then
+   re-download and diff every recorded attribute against pre-state.
+1. **Trigger an extract refresh and confirm it finishes `Success`** — or, on a
+   workbook with no extract, render a view. This is the only step that proves
+   the credential survived, and it is the one the 2026-09-04 publish skipped.
+
+!!! warning "Sign in once for a batch, not once per workbook"
+
+    Running this sequence across nine workbooks with a fresh
+    `auth.sign_in` each time intermittently failed on
+    `401002: Invalid authentication credentials` — on a token that signed in
+    fine seconds later. The PAT dislikes a burst of new sessions. Hold one
+    session for the whole batch.
+
+    It fails at sign-in, before the publish, so it leaves no partial state. Make
+    the batch resumable anyway: record per-workbook results and skip the ones
+    already done, so a retry does not republish what already landed.
 
 ## Before you publish
 
