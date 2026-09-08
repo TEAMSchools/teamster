@@ -109,14 +109,15 @@ with
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
         from powerschool_renumbered as ps
         cross join cutover as c
-        -- Inclusive on both ends: the roster's exitdate is the stint's last
-        -- day, and it trims each stint to the day before the next starts, so
-        -- one day matches at most one stint.
+        -- Half-open: the union conforms exitdate to the day after the stint's
+        -- last day, and the roster trims each stint to the day before the next
+        -- starts, so one day matches at most one stint.
         left join
             focus_stints as fs
             on ps.student_number = fs.student_number
             and ps.yearid = fs.yearid
-            and ps.calendardate between fs.entrydate and fs.exitdate
+            and ps.calendardate >= fs.entrydate
+            and ps.calendardate < fs.exitdate
         where
             not (
                 ps._dbt_source_project = 'kippmiami'
