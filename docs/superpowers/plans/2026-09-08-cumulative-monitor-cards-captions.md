@@ -1109,7 +1109,7 @@ spec's budget prose predicted a small cut; the reconciled arithmetic is better
 than that. `check_geometry.py` from Task 4 is the judge — if these values do not
 satisfy it, fix the values, not the checker.
 
-- [ ] **Step 1: Write the failing assertion**
+- [x] **Step 1: Write the failing assertion**
 
 Write `.claude/scratch/gpa-overnight/assert_cum_cards.py`. It asserts, against
 the `Cumulative GPA Monitor` dashboard:
@@ -1126,14 +1126,14 @@ the `Cumulative GPA Monitor` dashboard:
 - In every `zone-style`, no child `zone` element follows it within the same
   parent.
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run:
 `cd /workspaces/teamster/.claude/scratch/gpa-overnight && uv run python assert_cum_cards.py server/cum-2-reminders.twb`
 
 Expected: FAIL on every assertion above.
 
-- [ ] **Step 3: Write the edit**
+- [x] **Step 3: Write the edit**
 
 Write `.claude/scratch/gpa-overnight/task_cum_cards.py`, operating only within
 the `Cumulative GPA Monitor` dashboard element and only on its `<zones>` block,
@@ -1147,7 +1147,7 @@ length before writing.
 Assert every anchor matches exactly once. Parse with `ET.fromstring` before
 writing. Write with `newline=""`.
 
-- [ ] **Step 4: Run the edit and all three checkers**
+- [x] **Step 4: Run the edit and all three checkers**
 
 ```bash
 cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
@@ -1163,7 +1163,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
 Expected: all seven clean. The two earlier assertions re-run here to prove the
 restructure did not undo them.
 
-- [ ] **Step 5: Confirm nothing else moved**
+- [x] **Step 5: Confirm nothing else moved**
 
 Run:
 
@@ -1189,10 +1189,67 @@ PY
 Expected: no worksheets or parameters gone, `filter-group='17'` count unchanged,
 and all three other dashboards `UNCHANGED`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Tick the boxes, then commit the plan with message
 `docs(tableau): record the Cumulative card restructure`.
+
+**Result:**
+
+Four cards, four header strips, nine zones re-parented. The workbook came out
+right on the first delivery and never changed after it — md5
+`ec34ccaff8d4f40de47de04d25e2b876` through both fix rounds. Everything the two
+rounds fixed was in the test.
+
+Structure: cards 20, 30, 40 and 50 bordered `#001e62` 1pt margin 5; strips 800
+and 810 under card 40, 820 and 830 under card 50; the standalone GPA band legend
+143 relocated inside strip 810, where Academic Health docks its own legends;
+`GPA - Title`'s caption shortened now that every panel states its own basis.
+
+Verified: 68 worksheets and 14 parameters unchanged with none added or removed,
+`filter-group='17'` still on 17 zones, and all four sibling dashboards
+byte-identical. CRLF 27,758 → 27,848 with zero bare LF. Length +0.4%. The
+manifest is byte-identical to production. Content-model ordering clean in all
+ten touched containers.
+
+**Two arithmetic errors of mine, both caught by `check_geometry.py`.** The
+plan's original height table left both body columns short of their parent by
+4,445 and 4,001 units. My corrected table then made the children sum to the
+parent exactly, ignoring the 888-unit margin each column carries. The
+implementer fixed the values rather than weakening the checker, exactly as
+instructed: zone 144 to 38,668 and zone 152 to 39,113. Both columns now show gap
+888, matching the baseline.
+
+A third error of mine: I told the implementer to pin zones 40 and 50 to zone 3.
+They are children of zone 35. Following that literally would have made the
+assertion reject the correct workbook. The implementer pinned 40 and 50 to 35,
+added 35 to 3 to close the chain, and said so rather than quietly complying.
+
+**Fix round 1.** `assert_cum_cards.py` was discriminating — 33 failures on the
+input — but did not pin the tree. Three mutants of the shipped file all passed:
+a stale duplicate legend left as a sibling of 144, strip 820 re-parented under
+the wrong card, and strip 800 moved out of order. The first is exactly the
+failure the brief singled out; it passed because the parent map was overwritten
+in document order. Also fixed: stale `fixed-size` on five zones this task
+resized. The implementer derived the rule from production before applying it and
+declared the scope widening from three zones to five. An independent audit of
+all 66 `is-fixed` zones confirms the production invariant holds — `fixed-size`
+is never larger than the stored size, zero violations before and zero after.
+
+**Fix round 2.** The hardened assertion still did not pin the four card zones. A
+card nested inside a sibling card, placed before its `zone-style` so the content
+model stayed valid, passed cleanly. Pinned zones 20, 30, 35, 40 and 50 and the
+top-level child lists: 22 ids unique, 14 parents pinned, 8 sequences pinned.
+
+The assertion now catches all four original mutants and five further ones a
+reviewer invented afterwards — changed border colour, `zone-style` before
+children, a text zone lifted out of its strip, a strip deleted, and two cards
+swapped. It generalizes rather than being fitted to the cases it was shown.
+
+Mutants were built by text surgery, not ElementTree. An ET round-trip changes
+attribute quoting and line endings enough that the unmutated control failed, so
+ET-built mutants would have proved nothing. The harness is checked lossless
+against the source before each use.
 
 ---
 
