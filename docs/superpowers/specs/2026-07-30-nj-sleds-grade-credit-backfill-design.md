@@ -400,25 +400,34 @@ staff file as well. Out of scope here, tracked separately.
 
 ## Blockers outside this scope
 
-The CDS defect identified in the June audit is **still live** in the 2026-07-29
-extract and gates the same upload:
+### CDS — RESOLVED 2026-07-31
 
-| Region | County | District | School | Rows   | Status            |
-| ------ | ------ | -------- | ------ | ------ | ----------------- |
-| Newark | `80`   | `7325`   | `965`  | 22,841 | correct           |
-| Newark | blank  | `7325`   | `732`  | 5,958  | wrong on both     |
-| Newark | `80`   | `7325`   | `732`  | 4,351  | wrong school code |
-| Camden | blank  | `1799`   | `179`  | 6,695  | wrong on both     |
-| Camden | `07`   | `1799`   | `179`  | 3,648  | wrong school code |
+The CDS defect this spec was written against **has been fixed.** The School
+Setup change landed between the 2026-07-29 and 2026-07-31 extracts, and all four
+files in the 2026-07-31 drop now carry the correct triple on every single row:
+Newark `80`/`7325`/`965`, Camden `07`/`1799`/`111`, with no blanks and no
+fallback codes.
 
-20,652 of 43,493 rows (47%) carry a bad CDS, including every Camden row. Camden
-emits `179`, which is neither the expected `111` nor the Newark-style `732`
-pattern, but fits the same root cause: an unset Alternate School Number causing
-a fallback to the internal school number prefix.
+That also settles an open item this spec carried: Camden's expected school code
+really is `111`. The corrected source emits it, so it no longer needs confirming
+against the NJDOE directory.
 
-The fix remains the one-pass School Setup change on 3 Newark and 5 Camden
-schools documented in the runbook. **A clean grade backfill does not make the
-file submittable on its own.**
+For the record, because the shape of the defect is worth keeping — as of the
+2026-07-29 extract, 20,652 of 43,493 rows (47%) carried a bad CDS, including
+every Camden row. Newark emitted `732` on 10,309 rows and Camden `179` on all
+10,343, both from the same root cause: an unset Alternate School Number causing
+a fallback to a prefix of the internal school number. Those values were the
+defect, never alternative valid codes — a distinction that matters, because two
+independent attempts to encode a CDS check later mistook them for the expected
+values and calibrated against them.
+
+### Remaining — the ungraded worklist
+
+With CDS resolved, the 108 in-scope rows that have no usable grade in any source
+are now the **only** thing between this work and a submittable student file. The
+validation gate still reports them against the 2026-07-31 data, unchanged from
+2026-07-29, because the CDS fix touched the CDS columns and not grades. See
+_What the fallback actually recovered_ and the worklist view.
 
 ## Open items to confirm during implementation
 
