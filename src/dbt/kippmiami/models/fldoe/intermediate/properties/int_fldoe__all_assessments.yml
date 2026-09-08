@@ -4,10 +4,10 @@ models:
       Union of FLDOE state assessment results (EOC, FAST, Science, FSA) for KIPP
       Miami, with assessment-grade and performance-level coalesced to single
       canonical fields and assessment_name derived from the source relation.
-      Resolves student_number by joining stg_powerschool__u_studentsuserfields
-      on fleid. Adds standardized metadata columns (results_type,
-      district_state, illuminate_subject, fast_aggregated_proficiency) for use
-      in network-level reporting.
+      Resolves student_number by joining int_focus__students on
+      florida_education_identifier. Adds standardized metadata columns
+      (results_type, district_state, illuminate_subject,
+      fast_aggregated_proficiency) for use in network-level reporting.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -74,9 +74,13 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student_number resolved by joining student_id (FLEID) to
-          stg_powerschool__u_studentsuserfields.fleid. Null for the small number
-          of FLDOE students with no matching PowerSchool record.
+          Network student_number (the 8400-prefixed Focus student_id) resolved
+          by joining student_id (FLEID) to
+          int_focus__students.florida_education_identifier. Where a FLEID sits
+          on more than one Focus record (#3887), the lowest student_number wins:
+          it is the migrated record and the one enrollments carry (216 of 279
+          affected score rows attach, against 55 for the highest). Null for the
+          small number of FLDOE students with no Focus record.
       - name: results_type
         data_type: string
         description: Always 'Actual' for FLDOE results (no preliminary scores).

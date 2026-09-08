@@ -19,10 +19,9 @@ variant and 15 post-hooks in `dbt_project.yml`: `stg_powerschool__students` gets
 the 8400 Focus prefix on `student_number`, and the 14 staging models with
 `yearid` drop rows past AY2025 (`yearid > 35`). The package is removed again
 after the prod build (#5012); the hook YAML in that PR is the rebuild recipe.
-While the package is included, the `fldoe` source `kippmiami_powerschool`
-carries no `meta.dagster.asset_key` (the package model owns that key); PR 1b
-restores it. kipptaf reads the dataset as a BQ-native source. Do not drop the
-dataset or the GCS files.
+`int_fldoe__all_assessments` resolves `student_number` from
+`int_focus__students`, not the archive. kipptaf reads the dataset as a BQ-native
+source. Do not drop the dataset or the GCS files.
 
 ## Source Packages
 

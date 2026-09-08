@@ -6,6 +6,7 @@ from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response, Session
+from requests.exceptions import ChunkedEncodingError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError, Timeout
 from requests_oauthlib import OAuth2Session
@@ -37,9 +38,10 @@ class GrowServerError(GrowAPIError):
     """Raised when a request to the Grow API fails transiently.
 
     Covers a 5xx response and a connection-level failure (refused, reset, DNS,
-    timeout) on an idempotent request. An upstream flake, not an application
-    bug, so it is recoverable via retry. POST is excluded: the create may have
-    landed server-side, so retrying it risks a duplicate record.
+    timeout, body truncated mid-stream) on an idempotent request. An upstream
+    flake, not an application bug, so it is recoverable via retry. POST is
+    excluded: the create may have landed server-side, so retrying it risks a
+    duplicate record.
     """
 
 
@@ -94,7 +96,7 @@ class GrowResource(ConfigurableResource):
     def _request(self, method: str, url: str, **kwargs) -> Response:
         try:
             response = self._session.request(method=method, url=url, **kwargs)
-        except (RequestsConnectionError, Timeout) as e:
+        except (RequestsConnectionError, Timeout, ChunkedEncodingError) as e:
             self._raise_request_error(
                 message=str(e), cause=e, transient=method != "POST"
             )

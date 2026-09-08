@@ -140,11 +140,11 @@ Stays in kipptaf, with the reason:
 - `CLAUDE.md`: record that `kippmiami_powerschool` is rebuilt, not raw-frozen,
   and how (re-include the package with these hooks).
 
-The `fldoe` source block for `kippmiami_powerschool` stays, minus its hand-set
-`meta.dagster.asset_key` entries: while the package is included, the package
-model owns that asset key and dagster-dbt rejects the duplicate. PR 1b restores
-them when the package is removed, and `int_fldoe__all_assessments` keeps reading
-the native source throughout.
+The `fldoe` BigQuery-native source for `kippmiami_powerschool` is gone from
+`kippmiami` (#5078 moved `int_fldoe__all_assessments` onto
+`int_focus__students`), so the package model `stg_powerschool__students` owns
+the Dagster asset key `[kippmiami, powerschool, stg_powerschool__students]` with
+no collision.
 
 The hooks are warehouse `update` and `delete` statements. They run under
 Dagster's dbt credentials during the one materialization, only against the 15
