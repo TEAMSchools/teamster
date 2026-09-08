@@ -1,4 +1,4 @@
-# Rebuild Miami's PowerSchool archive through the shared powerschool package
+# Rebuild Miami's PowerSchool archive once through the powerschool package
 
 Design for #5012, steps 3 to 5. Brainstormed 2026-09-08. Counts measured on
 `main` at `cd6c6700d4` and in prod BigQuery the same day; re-measure before each
@@ -14,76 +14,47 @@ rows in `src_powerschool__cc`) and 90 base tables built from them in
 Miami-only conformance, copied into several models: the 8400 student-number
 prefix, the Focus `entrydate` re-key, and the AY2025 cutover bound.
 
-The prefix and the bound move into the shared `powerschool` package as 2
-var-driven transforms that render as no-ops for New Jersey. The `kippmiami`
-project re-includes the package with the ODBC staging variant enabled and
-`+materialized: table`, and rebuilds the archive once, in place, into
-`kippmiami_powerschool`. kipptaf's 45 PowerSchool union models keep reading that
-dataset; 13 of them drop the Miami relation, and the Miami-only steps in kipptaf
-are deleted. The re-key stays in kipptaf because it needs the Focus roster,
-which the package cannot ref. No new folder, no new dataset, no new source
-declaration.
+The prefix and the bound get baked into the archive tables themselves. The
+`kippmiami` project re-includes the shared `powerschool` package for one build,
+with the ODBC staging variant enabled, `+materialized: table`, and 15 post-hooks
+that renumber and bound the staging tables before any intermediate reads them.
+The archive rebuilds in place into `kippmiami_powerschool`. A follow-up PR
+removes the package again; the tables stay. The shared package is not edited.
+
+kipptaf's 45 PowerSchool union models keep reading that dataset; 13 drop the
+Miami relation, and the Miami-only steps in kipptaf are deleted. The re-key
+stays in kipptaf because it needs the Focus roster. No new folder, dataset,
+source, or package change.
 
 Compute is not the reason. Jobs touching `kippmiami_powerschool` billed 3.3 TiB
 in the last 7 days, but Miami is 8.4% of the union bytes. The reason is that the
-Miami archive policy lives in the package, once, instead of in copied kipptaf
-predicates.
+Miami archive policy is applied once, in the archive, instead of in copied
+kipptaf predicates.
 
-## Package changes (`src/dbt/powerschool`)
-
-Both transforms live in the staging layer, because every downstream column
-derives from there. Apply them in the `odbc` and `dlt` variants, so the siblings
-stay in step per `src/dbt/powerschool/CLAUDE.md`. Defaults keep New Jersey
-output byte-identical.
-
-1. Renumber. `stg_powerschool__students` is the only staging model that carries
-   `student_number`; every `student_number` in `int_*` and `base_*` comes from a
-   join to it. Where it casts the column:
-
-   ```sql
-   cast(student_number.double_value as int)
-   + {{ var("powerschool_student_number_offset", 0) }} as student_number,
-   ```
-
-   Not `focus_student_number`: that macro is conditional on year, and the
-   archive is bounded to AY2025 by transform 2, so the offset applies to every
-   row.
-
-1. Bound. New `macros/archive.sql` (the package already declares
-   `macro-paths: [macros]`):
-
-   ```sql
-   {% macro powerschool_archive_bound(yearid) -%}
-       {%- set max_yearid = var("powerschool_archive_max_yearid", none) -%}
-       {%- if max_yearid is none %}true{% else %}{{ yearid }} <= {{ max_yearid }}{% endif -%}
-   {%- endmacro %}
-   ```
-
-   Added as a `where` predicate to the 14 ODBC staging models with `yearid`
-   (`assignmentcategoryassoc`, `assignmentsection`, `attendance`,
-   `attendance_code`, `cc`, `fte`, `gen`, `gradecalculationtype`,
-   `gradeformulaset`, `gradeschoolconfig`, `prefs`, `storedgrades`, `termbins`,
-   `terms`) and their 13 dlt siblings. Tables without a year column (`students`,
-   `schools`, `courses`, and so on) pass through whole; they support joins from
-   the bounded tables.
-
-`kippmiami` sets `powerschool_student_number_offset: 8400000000` and
-`powerschool_archive_max_yearid: 35` (AY2025). NJ projects set neither.
-
-## kippmiami project changes
+## kippmiami project changes (PR 1)
 
 - `packages.yml`: add `- local: ../powerschool` back (removed in `223c10eb60`).
 - `dbt_project.yml`:
 
   ```yaml
-  powerschool:
-    +materialized: table
-    sis:
-      staging:
-        dlt:
-          +enabled: false
-        odbc:
-          +enabled: true
+  models:
+    powerschool:
+      +materialized: table
+      sis:
+        staging:
+          dlt:
+            +enabled: false
+          odbc:
+            +enabled: true
+            stg_powerschool__students:
+              +post-hook: >-
+                update {{ this }} set student_number = student_number +
+                8400000000 where true
+            stg_powerschool__terms:
+              +post-hook: delete from {{ this }} where yearid > 35
+            # identical delete on: assignmentcategoryassoc, assignmentsection,
+            # attendance, attendance_code, cc, fte, gen, gradecalculationtype,
+            # gradeformulaset, gradeschoolconfig, prefs, storedgrades, termbins
   sources:
     powerschool:
       sis:
@@ -92,34 +63,58 @@ output byte-identical.
             +enabled: true
   ```
 
-  plus the 2 vars above. The ODBC `sources-external.yml` resolves to
-  `{{ cloud_storage_uri_base }}/powerschool/<table>/*`, which is the URI the
-  frozen externals already use, so `stage_external_sources` recreates the same
-  58 tables over the same files.
+  The root project may set any config on a package model, hooks included. A
+  post-hook runs inside that model's build, so every dependent reads the
+  renumbered, bounded rows. `stg_powerschool__students` is the only staging
+  model with `student_number`, and every downstream `student_number` derives
+  from it, so one `update` renumbers the archive. `yearid` 35 is AY2025. Tables
+  without a year column (`students`, `schools`, `courses`, and so on) keep every
+  row; they support joins from the bounded tables.
 
-- `models/fldoe/sources-bigquery.yml`: delete the `kippmiami_powerschool` source
-  block; `int_fldoe__all_assessments` goes back to
-  `ref("stg_powerschool__students")`.
-- `CLAUDE.md`: PowerSchool is an archive built from the package, not a native
-  source.
+  The ODBC `sources-external.yml` resolves to
+  `{{ cloud_storage_uri_base }}/powerschool/<table>/*`, the URI the frozen
+  externals already use, so `stage_external_sources` recreates the same 58
+  tables over the same files.
 
-The package builds about 120 models for Miami once. Dagster gives them the eager
-table condition, but their upstream `src_*` sources emit no events, so nothing
-rebuilds on its own. First and only materialization: Dagster UI,
-`kippmiami_dbt_assets`, group `powerschool`. After that the tables rebuild only
-when someone materializes them after a package change.
+- `CLAUDE.md`: record that `kippmiami_powerschool` is rebuilt, not raw-frozen,
+  and how (re-include the package with these hooks).
 
-Building in place replaces the 2026-07-01 tables. The externals are the ground
-truth and stay; a bad build is repaired by rebuilding. Columns may differ from
-the frozen copies where the package changed since July; `union_relations`
-intersects columns at run time, and PR 2's compile catches a consumer that named
-a dropped column.
+The `fldoe` source block for `kippmiami_powerschool` stays; after PR 1b the
+package is gone again and `int_fldoe__all_assessments` keeps reading the native
+source.
 
-## kipptaf changes
+The hooks are warehouse `update` and `delete` statements. They run under
+Dagster's dbt credentials during the one materialization, only against the 15
+kippmiami tables being rebuilt in that run.
+
+### Materialization
+
+Branch deployments point the externals at `gs://teamster-test`, so the rebuild
+runs from prod after PR 1 merges: Dagster UI, `kippmiami_dbt_assets`, group
+`powerschool`, about 120 models. Their upstream `src_*` sources emit no events,
+so nothing rebuilds on its own afterwards.
+
+Building in place replaces the 2026-07-01 tables. The externals and GCS files
+are the ground truth and stay; a bad build is repaired by rebuilding. Columns
+may differ from the frozen copies where the package changed since July;
+`union_relations` intersects columns at run time, and PR 2's compile catches a
+consumer that named a dropped column.
+
+## Remove the package again (PR 1b)
+
+After verification passes, revert the `packages.yml` line and the
+`models: powerschool:` and `sources: powerschool:` blocks. dbt does not drop a
+table because its model went away, and kipptaf reads `kippmiami_powerschool` as
+a BQ-native source, so nothing depends on the kippmiami manifest. kippmiami
+returns to zero PowerSchool models. Keep the hook YAML in the CLAUDE.md note so
+a future rebuild is a re-include.
+
+## kipptaf changes (PR 2)
 
 - `sources-kippmiami.yml`: remove the 13 dropped tables from the
   `kippmiami_powerschool` source. Description changes from "never rebuilt" to
-  "archive, rebuilt from the frozen externals by the kippmiami project".
+  "archive, rebuilt once from the frozen externals with the 8400 prefix and
+  AY2025 bound applied".
 - 13 unions: delete the `kippmiami` relation. `users`, `userscorefields`, `log`,
   `gen`, `fte`, `test`, `testscore`, `studenttest`, `studenttestscore`,
   `int_powerschool__spenrollments`, `int_powerschool__student_enrollment_union`,
@@ -129,7 +124,7 @@ a dropped column.
   which #4775 made the sole Miami source.
 - 32 unions: unchanged. They keep `source("kippmiami_powerschool", X)` and now
   receive bounded, renumbered rows.
-- Delete the Miami-only steps the package now performs:
+- Delete the Miami-only steps the archive now carries:
   - `focus_student_number` calls in `int_powerschool__ada`,
     `int_powerschool__attendance_streak`, and
     `int_powerschool__ps_adaadm_daily_ctod`. The archive is already prefixed; a
@@ -173,7 +168,7 @@ Every other PowerSchool consumer reads only the 32 retained relations. For them
 PR 2 is a pure refactor: identical Miami rows before and after. That is the
 acceptance test, not a verdict.
 
-## Filters
+## Filters (PR 2 and PR 3)
 
 The 59 Miami exclusion literals and 12 `exclude_frozen` calls split by why they
 exist:
@@ -202,23 +197,23 @@ assumed.
 
 ## Delivery
 
-PR 1, `powerschool` package plus `kippmiami`: the 2 transforms, the package
-re-include, the vars, the fldoe source swap. dbt Cloud CI builds kipptaf only,
-so NJ parity is checked locally: build one NJ district's `stg_powerschool__*`
-with `--target staging` and compare to prod. Then materialize the Miami archive
-in prod before PR 2.
-
-PR 2, `kipptaf`: everything under "kipptaf changes", filter groups 1 and 2, the
-3 repoints. Depends on PR 1 materialized. Also touches `int_students__ada` and
-`int_students__attendance_streak`, which PR #5188 (#5160) edits: merge #5188
-first and delete its renumber here, or close #5188 as superseded because the
-archive renumbers those tables. Decide before opening PR 2.
-
-PR 3, `kipptaf`: filter group 3 conversions and `rpt_tableau__crdc_roster`.
+1. PR 1, `kippmiami`: package include, hooks, materialization config. No
+   blockers. dbt Cloud CI builds kipptaf only, so this PR's CI proves nothing
+   about the build; verification happens after the prod materialization.
+1. Materialize in prod from the Dagster UI. Run the PR 1 verification.
+1. PR 1b, `kippmiami`: remove the include and config blocks. Fold into PR 2 only
+   if the same person ships both the same day; otherwise separate, so the
+   archive's provenance is one clean merge.
+1. PR 2, `kipptaf`: everything under "kipptaf changes", filter groups 1 and 2,
+   the 3 repoints. Depends on step 2. Also touches `int_students__ada` and
+   `int_students__attendance_streak`, which PR #5188 (#5160) edits: merge #5188
+   first and delete its renumber here, or close #5188 as superseded because the
+   archive renumbers those tables. Decide before opening PR 2.
+1. PR 3, `kipptaf`: filter group 3 conversions and `rpt_tableau__crdc_roster`.
 
 ## Verification
 
-PR 1, before the Miami build, snapshot per frozen table:
+Before step 2, snapshot every frozen table:
 
 ```sql
 select academic_year, count(*)
@@ -226,14 +221,13 @@ from `teamster-332318.kippmiami_powerschool.<table>`
 group by 1 order by 1
 ```
 
-After: row counts equal for AY2025 and earlier; 0 rows for AY2026 (today
-`stg_powerschool__terms` carries 21 scaffold rows at `yearid >= 36`, and
-`stg_powerschool__cc` carries 0); `countif(student_number < 8400000000)` is 0 on
-`stg_powerschool__students`, `int_powerschool__ada`,
-`int_powerschool__attendance_streak`, and
+After step 2: row counts equal for AY2025 and earlier; 0 rows at `yearid > 35`
+in the 14 bounded tables (today `stg_powerschool__terms` carries 21 scaffold
+rows there and `stg_powerschool__cc` carries 0);
+`countif(student_number < 8400000000)` is 0 on `stg_powerschool__students`,
+`int_powerschool__ada`, `int_powerschool__attendance_streak`, and
 `int_powerschool__ps_adaadm_daily_ctod` (today all 3,946 students and 7,930 ADA
-rows are bare). NJ: one district's staging models row-identical to prod with the
-vars unset.
+rows are bare). NJ is untouched by PR 1, so no NJ check is needed there.
 
 PR 2, per PowerSchool consumer (145 models), before and after in dev, deferred
 to prod:
@@ -258,6 +252,7 @@ sequencing dependency, for PR 2.
 
 ## Out of scope
 
+- Editing the shared `powerschool` package.
 - Dropping the `kippmiami_powerschool` dataset or the GCS files under it. They
   are the archive's ground truth.
 - Moving archive grades or attendance into Focus. Focus holds no real pre-AY2026
