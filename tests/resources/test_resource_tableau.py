@@ -72,8 +72,13 @@ def test_tableau_add_group_users():
     tableau._server.groups.add_users(group_item=group_item, users=users)
 
 
-def _build_offline_resource(sign_in_fn) -> TableauServerResource:
-    """Instantiate the resource with a fake server, bypassing the network path."""
+def _build_offline_resource(
+    sign_in_fn, probe_fn=lambda _user_id: None
+) -> TableauServerResource:
+    """Instantiate the resource with a fake server, bypassing the network path.
+
+    ``probe_fn`` stands in for the post-sign-in ``users.get_by_id`` self-lookup.
+    """
     tableau = TableauServerResource(
         server_address="https://tableau.example.com",
         token_name="x",
@@ -84,7 +89,11 @@ def _build_offline_resource(sign_in_fn) -> TableauServerResource:
     object.__setattr__(
         tableau,
         "_server",
-        types.SimpleNamespace(auth=types.SimpleNamespace(sign_in=sign_in_fn)),
+        types.SimpleNamespace(
+            auth=types.SimpleNamespace(sign_in=sign_in_fn),
+            users=types.SimpleNamespace(get_by_id=probe_fn),
+            user_id="user-1",
+        ),
     )
 
     return tableau
@@ -223,3 +232,35 @@ def test_setup_for_execution_invokes_sign_in(monkeypatch: pytest.MonkeyPatch):
 
     assert calls["n"] == 1
     assert tableau._server.version == "3.25"
+
+
+def test_sign_in_re_signs_in_when_fresh_session_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A 401 on the first call after a successful sign-in triggers a re-sign-in.
+
+    Regression for prod runs afa747ef, 1de7236e, dd451efd (2026-09-06..08): PAT
+    sign-in succeeded, and the very next request 0.2-0.4s later returned
+    ``401002 Unauthorized Access``. The run-level auto-retry (a full new sign-in)
+    recovered every time, so the resource must probe the session before handing
+    it to the op and re-sign-in when the probe is rejected.
+    """
+    monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"sign_in": 0, "probe": 0}
+
+    def sign_in_fn(_auth) -> None:
+        calls["sign_in"] += 1
+
+    def probe_fn(_user_id):
+        calls["probe"] += 1
+        if calls["probe"] == 1:
+            raise FailedSignInError(
+                "401002", "Unauthorized Access", "Invalid authentication", "url"
+            )
+
+    tableau = _build_offline_resource(sign_in_fn, probe_fn)
+
+    tableau._sign_in()
+
+    assert calls == {"sign_in": 2, "probe": 2}
