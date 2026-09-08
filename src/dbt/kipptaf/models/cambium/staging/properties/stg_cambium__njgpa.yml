@@ -131,3 +131,76 @@ models:
         description: >-
           Source REGION ('kippnewark' / 'kippcamden'), from
           extract_source_project(). Despite the name it is not the vendor.
+      - name: results_type
+        data_type: string
+        description: Constant 'Actual', matching the Pearson relations.
+      - name: district_state
+        data_type: string
+        description: Constant 'KTAF NJ', matching the Pearson relations.
+      - name: assessment_type
+        data_type: string
+        description: Constant 'state_nj_njgpa', matching the Pearson NJGPA rows.
+      - name: aligned_test_code
+        data_type: string
+        description:
+          Equal to testcode (ELAGP, MATGP), as in the Pearson relations.
+      - name: aligned_subject
+        data_type: string
+        description: Equal to subject_area.
+      - name: admin
+        data_type: string
+        quote: true
+        description:
+          Equal to administration_period; reserved-word alias for Tableau.
+      - name: illuminate_subject
+        data_type: string
+        description: "'Text Study' for ELA, else the subject as sent."
+      - name: aligned_performance_band_group
+        data_type: string
+        description:
+          "'Lvl 4' for Graduation Ready (level 2), 'Lvl 3' for level 1."
+      - name: is_approaching_int
+        data_type: int64
+        description: Always 0 for NJGPA, as in the Pearson rows.
+      - name: is_below_int
+        data_type: int64
+        description: >-
+          1 for every NJGPA row, matching the Pearson macro's ELA/Math branch
+          (any level below 3). Parity with prod, not a proficiency judgment.
+      - name: is_proficient_int
+        data_type: int64
+        description: is_proficient as 1/0.
+      - name: njsla_aggregated_proficiency
+        data_type: string
+        description: Always null; NJSLA-only column carried for the union.
+      - name: njsla_performance_band_group_label
+        data_type: string
+        description: Always null; NJSLA-only column carried for the union.
+      - name: is_504
+        data_type: boolean
+        description: True when student_with_disabilities is '504' or 'B'.
+      - name: lep_status
+        data_type: boolean
+        description: True when multilingual_learner is 'Y'.
+      - name: aligned_ml_status
+        data_type: string
+        description: "'ML' when lep_status, else 'Not ML'."
+      - name: iep_status
+        data_type: string
+        description:
+          "'Has IEP' when student_with_disabilities is 'IEP' or 'B', else 'No
+          IEP'."
+      - name: aligned_iep_status
+        data_type: string
+        description:
+          "'Students With Disabilities' or 'Students Without Disabilities'."
+      - name: race_ethnicity
+        data_type: string
+        description: >-
+          Single-character code from the Cambium race flags, same priority as
+          the Pearson mapping (T, H, I, A, B, P, W). Duplicated here on purpose;
+          see the SQL comment.
+      - name: aligned_aggregate_ethnicity
+        data_type: string
+        description:
+          race_ethnicity expanded to the shared label; null maps to 'Blank'.

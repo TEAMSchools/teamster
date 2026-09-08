@@ -247,44 +247,53 @@ with
             ) as test_date,
 
         from earliest_test_start
-    )
+    ),
 
-select
-    *,
+    final as (
+        select
+            *,
 
-    'NJSLA Science' as assessment_name,
-    'NJSLA Science' as assessment_version,
-    'Science' as discipline,
+            'NJSLA Science' as assessment_name,
+            'NJSLA Science' as assessment_version,
+            'Science' as discipline,
 
-    if(
-        `subject` = 'English Language Arts/Literacy', 'English Language Arts', `subject`
-    ) as subject_area,
+            if(
+                `subject` = 'English Language Arts/Literacy',
+                'English Language Arts',
+                `subject`
+            ) as subject_area,
 
-    if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
+            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
-    case
-        testcode
-        when 'SC05'
-        then 'SCI05'
-        when 'SC08'
-        then 'SCI08'
-        when 'SC11'
-        then 'SCI11'
-        else testcode
-    end as module_code,
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as module_code,
 
-    if(testperformancelevel >= 3, true, false) as is_proficient,
+            if(testperformancelevel >= 3, true, false) as is_proficient,
 
-    case
-        testperformancelevel
-        when 4
-        then 'Exceeded Expectations'
-        when 3
-        then 'Met Expectations'
-        when 2
-        then 'Approached Expectations'
-        when 1
-        then 'Did Not Yet Meet Expectations'
-    end as testperformancelevel_text,
+            case
+                testperformancelevel
+                when 4
+                then 'Exceeded Expectations'
+                when 3
+                then 'Met Expectations'
+                when 2
+                then 'Approached Expectations'
+                when 1
+                then 'Did Not Yet Meet Expectations'
+            end as testperformancelevel_text,
 
-from test_date_resolved
+        from test_date_resolved
+    ),
+
+    aligned as (select *, {{ pearson_aligned_columns() }} from final)
+
+select *, {{ pearson_aligned_labels() }}
+from aligned
