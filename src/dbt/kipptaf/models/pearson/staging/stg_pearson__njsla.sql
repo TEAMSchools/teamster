@@ -11,28 +11,5 @@ with
         }}
     )
 
-select
-    *,
-
-    'NJSLA' as assessment_version,
-
-    if(
-        `subject` = 'English Language Arts/Literacy', 'English Language Arts', `subject`
-    ) as subject_area,
-
-    if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
-    {{ extract_source_project("union_relations") }} as _dbt_source_project,
-
-    case
-        testcode
-        when 'SC05'
-        then 'SCI05'
-        when 'SC08'
-        then 'SCI08'
-        when 'SC11'
-        then 'SCI11'
-        else testcode
-    end as module_code,
-
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations
