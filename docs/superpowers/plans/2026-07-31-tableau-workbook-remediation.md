@@ -239,13 +239,38 @@ agree; for 3 they do not, and those 3 would silently fail a mail-only match.
 ### Tier 2 — all-access functional groups
 
 Preserve each workbook's existing membership from this list: `All Data`, `TC`,
-`All HR`, `All T&L`, `Recruiting`, `New Teacher Development`,
-`Leadership Development`.
+`Group Staff Employee Relations`, `All T&L`, `Recruiting`,
+`New Teacher Development`, `Leadership Development`.
 
 Two rules apply everywhere. Remove `Syndicate`. Remove **all 12 individual
 username grants** — this tier is where they lived, and no individual grant
 survives anywhere. The 12 names are held in `.claude/scratch/`, deliberately
 uncommitted because staff usernames are identifiers.
+
+!!! warning "`KNJ-SG-Tableau All HR` was replaced, not joined, on 2026-09-08"
+
+    Every `ISMEMBEROF('KNJ-SG-Tableau All HR')` became
+    `ISMEMBEROF('Group Staff Employee Relations')` — 125 textual occurrences
+    across 17 calculated fields in 8 workbooks. This **narrowed** access: `All
+    HR` had 14 members and `Group Staff Employee Relations` has 5, only 4 of
+    which were in `All HR`, so 10 people lost blanket visibility. That was the
+    intent, not an accident.
+
+    `All HR` still exists as a Tableau group and is still populated. It simply
+    no longer appears in any permission calculation. Do not "restore" it on the
+    assumption that its absence is a bug, and do not add a workbook back to it
+    without checking who is in each group first.
+
+    Two fields carrying `All HR` were **not** row gates and changed anyway,
+    because the rule was applied uniformly: Survey Dashboard's `Calculation1`
+    and Stipend and Bonus's `Permissions HR Download`, which gates a download
+    button rather than a set of rows. HR lost that button.
+
+    Four permission fields never referenced `All HR` and were deliberately left
+    alone, so Employee Relations has no grant on them: Operations Systems
+    `Permissions`, Survey Dashboard `Permissions - Completion` and
+    `Permissions - Support`, and Personalized Survey Links `Permissions - Self`.
+    "All access" is therefore not literally true — it is "everywhere HR had it".
 
 ### Tier 3 — regional ops
 
@@ -382,6 +407,72 @@ accident. **Comment any deviation inline** — Miami's is the model to copy:
 | `All DSO` OR `All SL` OR `All AP`, AP unrestricted — **uncommented**                          | Survey Dashboard                                                                                              |
 | `All DSO` OR `All SL` only — **uncommented**                                                  | Operations Systems                                                                                            |
 | `All SL` only — **uncommented**                                                               | Leadership Development                                                                                        |
+
+### Custom group grants that sit beside Tier 5
+
+A named group can be given school-scoped access without going through the three
+gates. This is the shape to copy, added 2026-09-08 for `Paterson TEAM Staff`:
+
+```text
+// Paterson TEAM Staff — scoped like an SL/DSO of a Paterson school.
+// Location-only: both Paterson Prep locations belong to KIPP Paterson
+// alone, so no entity gate is needed. Narrow the list below to
+// restrict this group to a single school.
+OR (
+    ISMEMBEROF('Paterson TEAM Staff')
+    AND [location_clean_name] IN ('Paterson Prep Elementary School', 'Paterson Prep Middle School')
+)
+```
+
+Three things about this shape are deliberate.
+
+**It skips the entity gate on purpose.** The two Paterson Prep locations exist
+only under `KIPP Paterson`, so naming the locations already implies the entity.
+Adding the entity gate would be redundant, and going through the gate properly
+would mean editing all three shared fields for one group.
+
+**Membership is the role qualification.** Everyone in the group is expected to
+hold an SL- or DSO-equivalent remit for Paterson. Both current members were
+already in `KNJ-SG-Tableau All SL` and were failing only entity and location,
+which is exactly why they saw nothing.
+
+**Narrowing later is a one-line edit** — drop a school from the `IN` list. That
+was the reason for putting the whole grant on one line rather than threading the
+group through `RLS - Entity Gate`, `RLS - Location Gate` and `RLS - Role Gate`.
+
+The clause goes in these 15 fields. Two carry a variant:
+
+| Workbook                    | Fields                                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Coaching Conversation Tool  | `Permissions`                                                                                               |
+| Manager Survey Reports      | `Permissions`                                                                                               |
+| Manager Survey Rollup       | `Permissions`                                                                                               |
+| Miami Instructional Rubrics | `Permissions`                                                                                               |
+| Operations Systems          | `Permissions` on both datasources                                                                           |
+| SchoolMint Grow Dashboard   | `Permissions` on all three datasources, `Permissions - Norming`, `Permissions  - Norming - Individual Data` |
+| Stipend and Bonus Dashboard | `Permissions`                                                                                               |
+| Survey Dashboard            | `Permissions - Completion`, `Permissions - Support`, `Permissions - ITR`                                    |
+
+**Variant 1 — Operations Systems `operations_ekg` reads `[school_clean_name]`,
+not `[location_clean_name]`**, for the same reason its location gate does: the
+row is about the school that was walked, not the respondent's home school.
+Getting this wrong grants on the wrong axis and the mistake is invisible in the
+UI.
+
+**Variant 2 — the ITR copy carries the route-4 peer exclusion.** See _The Intent
+to Return variant_.
+
+Deliberately excluded, and why:
+
+- **Leadership Development** — retiring to Lattice; it took the Tier 2 swap
+  only.
+- **Manager Survey Rollup `Permission (detail)` and `Permissions (summary)`** —
+  legacy fields never brought onto the canonical block; they still reference
+  retired campus groups.
+- **Personalized Survey Links `Permissions - Self`** — self only, no Tier 5 to
+  sit beside.
+- **Stipend and Bonus `Permissions HR Download`** — gates a download button, not
+  rows.
 
 ### `RLS - Subject Is Senior Leader`
 
@@ -695,7 +786,22 @@ OR (
     ISMEMBEROF('Group Staff TEAM Council')
     AND NOT [RLS - ITR Respondent Is Chief Level]
 )
+
+// 8. Paterson TEAM Staff: both Paterson Prep schools, minus school
+//    leadership - the same exclusion route 4 puts on SLs and DSOs.
+OR (
+    ISMEMBEROF('Paterson TEAM Staff')
+    AND [location_clean_name] IN ('Paterson Prep Elementary School', 'Paterson Prep Middle School')
+    AND NOT [RLS - ITR Respondent Is School Leadership]
+)
 ```
+
+**Branch 8 must keep its exclusion.** Everywhere else the Paterson clause is a
+plain location test, and copying that plain form here would be a real
+over-grant: route 4 stops a school leader seeing other school leaders' answers,
+so a group modelled on school leaders that skipped the exclusion would see ITR
+responses that Paterson's own SLs and DSOs cannot. The asymmetry is the whole
+reason this branch differs from the other 14.
 
 Three things about branch 2 and 3: `All Parliament` is deliberately absent
 because it contains peers and subordinates of the respondents; `TEAM Council`
@@ -836,6 +942,24 @@ KIPP Purpose Academy
 If a location appears here with no group, create the group before proceeding. If
 a group exists for a location not on this list, it is retired — leave it alone
 but do not reference it.
+
+### Custom groups outside the naming rule
+
+Three groups in live calculations carry no `KNJ-SG-Tableau` prefix and follow no
+naming rule. They are local Tableau groups, not AD-synced, so they will not
+appear in a directory search:
+
+| Group                            | Tier   | Members (2026-09-08) |
+| -------------------------------- | ------ | -------------------- |
+| `Group Staff Employee Relations` | Tier 2 | 5                    |
+| `Paterson TEAM Staff`            | Tier 5 | 2                    |
+| `Leadership Development`         | Tier 2 | —                    |
+
+Verify the exact string before referencing one. `ISMEMBEROF` against a group
+that does not exist does not error — it silently returns false, which reads as
+"that person has no access" rather than "that calculation is broken." Check
+membership too: `Group Staff Employee Relations` looks like a rename of
+`KNJ-SG-Tableau All HR` and is not one.
 
 ---
 

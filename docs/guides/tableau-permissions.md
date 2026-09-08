@@ -35,16 +35,27 @@ can be granted or removed by changing a group, with no change to any workbook.
 
 You see a row if **any one** of these is true. They are additive.
 
-|     | Route                    | You see                                                                                        |
-| --- | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| 1   | **You, or your manager** | Your own row. Your direct reports' rows.                                                       |
-| 2   | **A network-wide group** | Everything, for a small number of functional groups such as the data team and HR.              |
-| 3   | **Regional operations**  | Your region's rows, if you are in a regional ops group.                                        |
-| 4   | **Regional leadership**  | Your region's rows, if you are a regional leader.                                              |
-| 5   | **Your school**          | Your school's rows, if you are in that school's staff group _and_ hold a role that permits it. |
+|     | Route                    | You see                                                                                           |
+| --- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| 1   | **You, or your manager** | Your own row. Your direct reports' rows.                                                          |
+| 2   | **A network-wide group** | Everything, for a small number of functional groups such as the data team and Employee Relations. |
+| 3   | **Regional operations**  | Your region's rows, if you are in a regional ops group.                                           |
+| 4   | **Regional leadership**  | Your region's rows, if you are a regional leader.                                                 |
+| 5   | **Your school**          | Your school's rows, if you are in that school's staff group _and_ hold a role that permits it.    |
 
 Route 5 needs all three of the right entity, the right school, and a qualifying
 role. Missing any one of them means no access by that route.
+
+!!! note "A sixth route exists for one named group"
+
+    `Paterson TEAM Staff` reaches both Paterson Prep schools' rows directly,
+    without the three-part route-5 test. Membership of the group is itself the
+    qualification, and it is scoped to the same rows a school leader or director
+    of school operations at those schools would see.
+
+    This is the exception, not a new pattern. It exists because the remit spans
+    both Paterson schools rather than sitting at one of them. Everyone else
+    still goes through routes 1 to 5.
 
 !!! note "Route 3 does not currently reach Paterson"
 
@@ -92,31 +103,32 @@ from both sides.
 
 #### If you answered, who sees it
 
-| If you are                                       | Your answers reach                                                                                                                                                                        |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A teacher or learning specialist                 | Your manager, your school's assistant principals, your school leader and director of school operations, your regional leadership, and the HR, Recruiting and Leadership Development teams |
-| An assistant school leader                       | Your manager, your school leader and director of school operations, your regional leadership, and those three teams — **not** other assistant principals                                  |
-| A school leader or director of school operations | Your manager, your regional leadership, and those three teams — **not** other school leaders or DSOs                                                                                      |
-| A departmental director                          | Your manager, your region's senior leadership, and those three teams — **not** other directors in your department                                                                         |
-| Regional leadership                              | Your manager and those three teams — **not** other regional leaders                                                                                                                       |
-| Central office staff                             | Your manager and those three teams. No regional leader sees central office answers                                                                                                        |
+| If you are                                       | Your answers reach                                                                                                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A teacher or learning specialist                 | Your manager, your school's assistant principals, your school leader and director of school operations, your regional leadership, and the Employee Relations, Recruiting and Leadership Development teams |
+| An assistant school leader                       | Your manager, your school leader and director of school operations, your regional leadership, and those three teams — **not** other assistant principals                                                  |
+| A school leader or director of school operations | Your manager, your regional leadership, and those three teams — **not** other school leaders or DSOs                                                                                                      |
+| A departmental director                          | Your manager, your region's senior leadership, and those three teams — **not** other directors in your department                                                                                         |
+| Regional leadership                              | Your manager and those three teams — **not** other regional leaders                                                                                                                                       |
+| Central office staff                             | Your manager and those three teams. No regional leader sees central office answers                                                                                                                        |
 
 #### If you are a viewer, what you see
 
-Seven routes, and the peer exclusion differs on each because "your own level"
+Eight routes, and the peer exclusion differs on each because "your own level"
 means something different depending on where you sit.
 
-| Route | Who                                                                                            | Reaches                                          | Minus                                                                                                                  |
-| ----- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| 1     | You, and the manager recorded on the response                                                  | that response                                    | nothing — a manager sees their report even when both are director-rank                                                 |
-| 2     | The administrators of the process — the Data, HR, Recruiting, and Leadership Development teams | everything, network-wide                         | nothing                                                                                                                |
-| 3a    | Managing directors of school operations, heads of schools, managing directors of operations    | your region                                      | regional-leadership respondents. Directors stay visible — you sit above them                                           |
-| 3b    | The Syndicate                                                                                  | your region                                      | regional leadership, and director-rank peers — **except** school operations directors, who are your own line of report |
-| 3c    | School Support Directors                                                                       | your region                                      | regional leadership, and every director rank                                                                           |
-| 4     | School leaders and directors of school operations                                              | your school                                      | each other                                                                                                             |
-| 5     | Assistant principals                                                                           | teachers and learning specialists at your school | everyone else at that school                                                                                           |
-| 6     | Special Education Directors, KIPP Forward Directors                                            | your own department, in your own region          | director-rank peers. Associate directors stay visible                                                                  |
-| 7     | TEAM Council                                                                                   | everyone, network-wide                           | chief-level respondents                                                                                                |
+| Route | Who                                                                                                            | Reaches                                          | Minus                                                                                                                  |
+| ----- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| 1     | You, and the manager recorded on the response                                                                  | that response                                    | nothing — a manager sees their report even when both are director-rank                                                 |
+| 2     | The administrators of the process — the Data, Employee Relations, Recruiting, and Leadership Development teams | everything, network-wide                         | nothing                                                                                                                |
+| 3a    | Managing directors of school operations, heads of schools, managing directors of operations                    | your region                                      | regional-leadership respondents. Directors stay visible — you sit above them                                           |
+| 3b    | The Syndicate                                                                                                  | your region                                      | regional leadership, and director-rank peers — **except** school operations directors, who are your own line of report |
+| 3c    | School Support Directors                                                                                       | your region                                      | regional leadership, and every director rank                                                                           |
+| 4     | School leaders and directors of school operations                                                              | your school                                      | each other                                                                                                             |
+| 5     | Assistant principals                                                                                           | teachers and learning specialists at your school | everyone else at that school                                                                                           |
+| 6     | Special Education Directors, KIPP Forward Directors                                                            | your own department, in your own region          | director-rank peers. Associate directors stay visible                                                                  |
+| 7     | TEAM Council                                                                                                   | everyone, network-wide                           | chief-level respondents                                                                                                |
+| 8     | Paterson TEAM Staff                                                                                            | both Paterson Prep schools                       | school leadership, the same people a Paterson school leader cannot see                                                 |
 
 Routes 3a, 3b and 3c look redundant and are not. They are three groups sitting
 at three different heights, so one shared exclusion would hide the wrong people:
@@ -300,6 +312,16 @@ Rooms are deliberately absent — see _Rooms do not grant access_.
 | Director of school operations | `KNJ-SG-Tableau All DSO` |
 | Assistant principal           | `KNJ-SG-Tableau All AP`  |
 
+#### Paterson-wide remits
+
+| Who                                                        | Group                 |
+| ---------------------------------------------------------- | --------------------- |
+| School-leader-equivalent across both Paterson Prep schools | `Paterson TEAM Staff` |
+
+This one grants on its own — no entity or school group is needed alongside it,
+because the two Paterson Prep locations belong to KIPP Paterson and nobody else.
+Note it has no `KNJ-SG-Tableau` prefix; that is the real name.
+
 #### Regional operations and leadership
 
 | Who                                    | Group                                        |
@@ -320,10 +342,25 @@ Rooms are deliberately absent — see _Rooms do not grant access_.
 These grant broadly and are not added on request from an individual — they
 follow from the function you sit in.
 
-`KNJ-SG-Tableau All Data`, `KNJ-SG-Tableau All HR`,
+`KNJ-SG-Tableau All Data`, `Group Staff Employee Relations`,
 `KNJ-SG-Tableau All Recruiting`, `KNJ-SG-Tableau All T&L`, `KNJ-SG-Tableau TC`,
 `KNJ-SG-Tableau All New Teacher Development`, `Leadership Development`,
 `Group Staff TEAM Council`, `TS-DL-Teaching And Learning`.
+
+!!! warning "HR's blanket access moved to Employee Relations on 2026-09-08"
+
+    `KNJ-SG-Tableau All HR` no longer appears in any permission calculation.
+    `Group Staff Employee Relations` took its place everywhere it was used.
+
+    The two groups are **not** the same people. `All HR` had 14 members;
+    `Group Staff Employee Relations` has 5, and only 4 of those were in `All HR`.
+    Ten people who previously saw everything on these dashboards now see only
+    what their own role gives them. If you have lost access you expect to have,
+    this is the likely reason — ask to be added to
+    `Group Staff Employee Relations`, and note it is not granted on request from
+    an individual.
+
+    `All HR` still exists and is still populated. It simply grants nothing here.
 
 !!! note "Not every workbook grants every group"
 
