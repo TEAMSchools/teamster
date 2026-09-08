@@ -88,9 +88,7 @@ with
         where cd.insession = 1
     )
 
-    -- overlapping stints (see
-    -- test_int_powerschool__ps_enrollment_all__no_overlapping_stints)
-    -- emit one row per stint for each shared day; keep the later stint
+    -- see test_int_powerschool__ps_enrollment_all__no_overlapping_stints
     {{
         dbt_utils.deduplicate(
             relation="membership",
