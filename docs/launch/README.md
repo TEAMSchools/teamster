@@ -11,15 +11,19 @@ same source into Okta bookmark tiles or a discovery skill.
 excluded from the build, so setting `verified` is not a quality note — it is
 what puts the tool in front of staff. The page starts empty and fills up.
 
-| File         | What it is                                                      |
-| ------------ | --------------------------------------------------------------- |
-| `links.yml`  | Every tool: name, URL, description, who it is for               |
-| `views.yml`  | The five views and their intro copy. Presentation only          |
-| `RUNBOOK.md` | The task sequence — start there if you are picking up this work |
-| `README.md`  | This file: what the directory is and what "reviewed" means      |
+| File            | What it is                                                            |
+| --------------- | --------------------------------------------------------------------- |
+| `links.yml`     | Every tool: name, URL, description, who it is for                     |
+| `groups.yml`    | Topical groups, tool families, promo cards, and the publish threshold |
+| `build.py`      | Loads, validates, and renders the catalog into the page               |
+| `template.html` | The page shell the catalog gets rendered into                         |
+| `RUNBOOK.md`    | The task sequence — start there if you are picking up this work       |
+| `PROJECT.md`    | Why this exists, where it stands, and what's still open               |
+| `README.md`     | This file: what the directory is and what "reviewed" means            |
 
-The renderer and publishing pipeline do not exist yet. This is the data they
-will consume.
+`build.py` loads `links.yml` and `groups.yml`, validates them, and renders
+`template.html` into the published page. See PROJECT.md for how the pieces fit
+together and what's left to decide.
 
 ## Current state
 
@@ -27,10 +31,10 @@ will consume.
 starting point, not a finished catalog. Every entry started at
 `status: needs-review`.
 
-- **46 tools** — 35 Tableau, 7 Google Sheets, 3 AppSheet apps, 1 Zendesk
-- **61 `TODO` lines** flagging specific things a human needs to resolve
-- **9 tools** have a linked user guide; the rest may or may not have one
-- **4 tools** have no `audiences` at all and need roles assigned
+- **44 tools** — 34 Tableau, 7 Google Sheets, 3 AppSheet apps, 0 Zendesk
+- **12 `TODO` lines** flagging specific things a human needs to resolve
+- **7 tools** have a linked user guide; the rest may or may not have one
+- **3 tools** have no `audiences` at all and need roles assigned
 
 The scrape found several kinds of problem, which is a good sign — these are
 exactly the failures that come from maintaining the same list on five separate
@@ -47,14 +51,30 @@ when all five of these are true:
    not what the old site called it.
 1. **The description is accurate and one sentence.** Say what the tool is for,
    not how it works. Many scraped descriptions are decent; some are stale.
-1. **`audiences` is right.** Who actually needs this in their day-to-day? See
-   `views.yml` for what each role means. A tool can be in several. A tool in
-   none still appears in the All view, so an empty list is a real answer — but
-   it should be a decision, not an accident.
+1. **`audiences` is right.** Who actually needs this in their day-to-day? A tool
+   can be in several. A tool in none still appears in the All view, so an empty
+   list is a real answer — but it should be a decision, not an accident.
 1. **`system` is right** — `tableau`, `appsheet`, `zendesk`, `google-sheet`,
    `google-slides`, `google-form`, `google-doc`, `apps-script`, or `other`.
 1. **For anything Google-hosted, the sharing is group-based.** See below. This
    one is not optional.
+
+### `group`
+
+**Every entry needs a `group`.** It is what section of the published page the
+tool sorts into, and it is required — an entry with a missing or unknown `group`
+fails validation. The legal ids come from `groups.yml`:
+
+- `attendance` — Attendance & behavior
+- `academics` — Academics & assessment
+- `college` — College readiness & pathways
+- `performance` — Performance management & coaching
+- `staff` — Staff, hiring & pay
+- `operations` — Enrollment & operations
+- `surveys` — Surveys
+
+Pick whichever one the tool most belongs under. If none fits, that is a
+`groups.yml` conversation, not a reason to guess.
 
 ### The other fields
 
@@ -115,9 +135,7 @@ stays the field reference so the two cannot drift apart.
 
 Do not worry about any of this — it is handled elsewhere:
 
-- The rendering or publishing pipeline
 - Zendesk configuration, permissions, or article IDs
-- Rewriting the `views.yml` intro copy (it needs doing, but not by hand here)
 - The Our Team page, the support runbook, or the blog — those live in Zendesk
   directly and are not part of this catalog
 

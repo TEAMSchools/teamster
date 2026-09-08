@@ -6,6 +6,15 @@ models:
       `id_attributes` identifiers pivoted to columns). Enabled only where the
       Finalsite API layer is wired — today KIPP Miami, Newark, Camden and
       Paterson; carries `_dbt_source_relation`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - focus_student_id_prefixed
+              - _dbt_source_project
+          config:
+            where: focus_student_id_prefixed is not null
+            severity: warn
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -19,4 +28,11 @@ models:
           The 8400-prefixed Focus student id the `rpt_focus__*` extracts
           consume, produced by the per-region package model. Null outside Miami,
           which is what limits those extracts to Miami rows when they filter on
-          it being non-null.
+          it being non-null. Where it is non-null it is one row per student per
+          district, which is what lets consumers join it to a student roster
+          without deduplicating first -- `rpt_tableau__fresh_dashboard_qc`
+          relies on that, and the model-level test above is what keeps the
+          assumption honest. The test warns rather than errors because a second
+          contact record for one student is a plausible Finalsite state (a
+          re-application, say) rather than corruption -- it should surface for a
+          human, not break every build downstream of this model.

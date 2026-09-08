@@ -1,5 +1,9 @@
 # Launch page: build, validation, and CI gate
 
+> **Superseded on location:** this design says `src/launch/`. The catalog moved
+> to `docs/launch/` after the spec merged; see the implementation plan dated
+> 2026-08-12. Everything else here still holds.
+
 Design for productionizing the launch page generator and building the CI gate
 that must exist before it can publish. Companion to the launch page design,
 which settles what the page is; this settles how it gets built and what stops it

@@ -72,18 +72,23 @@ with
         select
             _dbt_source_project,
             ethnicity,
+            fedethnicity,
             gender,
             gifted_and_talented,
             homeless_code,
             homeless_primary_nighttime_residence_code,
             idea_educational_environment,
             idea_educational_environment_label,
+            is_504,
             is_homeless,
             lep_status,
             lunchstatus,
+            middle_name,
             spedlep,
             state_studentnumber,
             student_number,
+
+            florida_education_identifier as fleid,
 
             if(
                 idea_educational_environment_code in ('C', 'D', 'F', 'H', 'P'),
@@ -126,6 +131,10 @@ with
             stu.ethnicity,
             stu.gender,
             stu.state_studentnumber,
+            stu.middle_name,
+            stu.fedethnicity,
+            stu.fleid,
+            stu.is_504,
 
             adv.advisory_section_number,
             adv.advisory_name,
@@ -140,6 +149,7 @@ with
             enr.student_last_name as last_name,
             enr.student_name as lastfirst,
             enr.school as school_name,
+            -- The 8400-prefixed Focus id is the Miami student number.
             enr.network_student_number as student_number,
 
             (enr.academic_year + 13) + (-1 * enr.grade_level) as cohort_primary,
@@ -280,13 +290,189 @@ with
         from union_relations
     ),
 
+    -- Both branches list every column. UNION ALL CORRESPONDING matches by name
+    -- and errors when the two lists differ, so a column one SIS lacks has to
+    -- be written down as an explicit null here instead of being padded
+    -- silently (the FULL form did that, and hid the Miami nulls #5148 fixes).
     with_region as (
-        select *,
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            region,
+            student_number,
+            grade_level,
+            schoolid,
+            entrydate,
+            exitdate,
+            entrycode,
+            exitcode,
+            lunchstatus,
+            state_studentnumber,
+            first_name,
+            middle_name,
+            last_name,
+            lastfirst,
+            enroll_status,
+            dob,
+            state,
+            fedethnicity,
+            gender,
+            ethnicity,
+            academic_year,
+            cohort_primary,
+            rn_all,
+            rn_year,
+            grade_level_prev,
+            year_in_school,
+            year_in_network,
+            is_enrolled_y1,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            is_enrolled_mar15,
+            is_enrolled_recent,
+            is_enrolled_fdos,
+            is_retained_year,
+            is_retained_ever,
+            boy_status,
+            cohort_secondary,
+            entry_schoolid,
+            entry_grade_level,
+            school_name,
+            school_abbreviation,
+            spedlep,
+            lep_status,
+            homeless_code,
+            is_homeless,
+            advisory_section_number,
+            advisory_name,
+            advisor_lastfirst,
+            is_out_of_district,
+            reporting_schoolid,
+            reporting_school_name,
+            school_level,
+            cohort,
+
+            /* PowerSchool only */
+            studentid,
+            students_dcid,
+            reenrollments_dcid,
+            exitcomment,
+            fteid,
+            street,
+            city,
+            zip,
+            home_phone,
+            next_school,
+            sched_nextyeargrade,
+            highest_grade_level_achieved,
+            yearid,
+            track,
+            rn_school,
+            yearid_prev,
+            rn_undergrad,
+            cohort_graduated,
+            prevstudentid,
+            advisor_teachernumber,
+            exit_code_kf,
+            exit_code_ts,
+            is_self_contained,
+
+            /* Focus only */
+            cast(null as int64) as homeless_primary_nighttime_residence_code,
+            cast(null as string) as gifted_and_talented,
+            cast(null as string) as fleid,
+            cast(null as bool) as is_504,
         from powerschool_conformed
 
-        full union all corresponding
+        union all corresponding
 
-        select * except (academic_year_prev),
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            region,
+            student_number,
+            grade_level,
+            schoolid,
+            entrydate,
+            exitdate,
+            entrycode,
+            exitcode,
+            lunchstatus,
+            state_studentnumber,
+            first_name,
+            middle_name,
+            last_name,
+            lastfirst,
+            enroll_status,
+            dob,
+            state,
+            fedethnicity,
+            gender,
+            ethnicity,
+            academic_year,
+            cohort_primary,
+            rn_all,
+            rn_year,
+            grade_level_prev,
+            year_in_school,
+            year_in_network,
+            is_enrolled_y1,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            is_enrolled_mar15,
+            is_enrolled_recent,
+            is_enrolled_fdos,
+            is_retained_year,
+            is_retained_ever,
+            boy_status,
+            cohort_secondary,
+            entry_schoolid,
+            entry_grade_level,
+            school_name,
+            school_abbreviation,
+            spedlep,
+            lep_status,
+            homeless_code,
+            is_homeless,
+            advisory_section_number,
+            advisory_name,
+            advisor_lastfirst,
+            is_out_of_district,
+            reporting_schoolid,
+            reporting_school_name,
+            school_level,
+            cohort,
+
+            /* PowerSchool only: no Focus source */
+            cast(null as int64) as studentid,
+            cast(null as int64) as students_dcid,
+            cast(null as int64) as reenrollments_dcid,
+            cast(null as string) as exitcomment,
+            cast(null as int64) as fteid,
+            cast(null as string) as street,
+            cast(null as string) as city,
+            cast(null as string) as zip,
+            cast(null as string) as home_phone,
+            cast(null as int64) as next_school,
+            cast(null as int64) as sched_nextyeargrade,
+            cast(null as int64) as highest_grade_level_achieved,
+            cast(null as int64) as yearid,
+            cast(null as string) as track,
+            cast(null as int64) as rn_school,
+            cast(null as int64) as yearid_prev,
+            cast(null as int64) as rn_undergrad,
+            cast(null as int64) as cohort_graduated,
+            cast(null as int64) as prevstudentid,
+            cast(null as string) as advisor_teachernumber,
+            cast(null as string) as exit_code_kf,
+            cast(null as string) as exit_code_ts,
+            cast(null as bool) as is_self_contained,
+
+            /* Focus only */
+            homeless_primary_nighttime_residence_code,
+            gifted_and_talented,
+            fleid,
+            is_504,
         from focus_final
     )
 
@@ -298,7 +484,8 @@ select
         prevstudentid,
         homeless_code,
         homeless_primary_nighttime_residence_code,
-        gifted_and_talented
+        gifted_and_talented,
+        is_504
     ),
 
     -- same value as _dbt_source_project, named for the Dagster code location;
@@ -311,7 +498,8 @@ select
     ar.student_number as pearson_local_student_identifier,
 
     /* regional differences */
-    suf.fleid,
+    -- fleid comes only from Focus (florida_education_identifier), via ar.*;
+    -- the PowerSchool u_studentsuserfields copy is retired.
     suf.newark_enrollment_number,
     suf.infosnap_id,
     suf.infosnap_opt_in,
@@ -369,11 +557,11 @@ select
         njs.gifted_and_talented, suf.gifted_and_talented, ar.gifted_and_talented, 'N'
     ) as gifted_and_talented,
 
-    -- Both njr and suf join through students_dcid, which Focus never
-    -- populates, so Miami has no 504 source at all -- null means unknown,
-    -- not the fabricated negative false would imply.
+    -- njr and suf join through students_dcid, which Focus never populates, so
+    -- Miami reads int_focus__students.is_504 (Section 504 Eligible). Null
+    -- there means unset, not the fabricated negative false would imply.
     if(
-        ar.region = 'Miami', null, coalesce(njr.pid_504_tf, suf.is_504, false)
+        ar.region = 'Miami', ar.is_504, coalesce(njr.pid_504_tf, suf.is_504, false)
     ) as is_504,
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,

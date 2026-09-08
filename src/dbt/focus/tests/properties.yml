@@ -84,6 +84,25 @@ data_tests:
           ref:
             name: stg_focus__student_enrollment
             package: focus
+  - name: int_focus__student_enrollment__no_overlapping_stints
+    description: >-
+      A student holds one enrollment stint at a time. Focus accepts a second
+      open stint at another school without closing the first.
+      int_focus__student_enrollment_roster trims the earlier stint to the day
+      before the next one starts, so downstream models never see the overlap and
+      a test on the roster could not fail; this one reads the pre-trim
+      enrollment rows. Strict on the boundary, so a stint that starts on the day
+      another ends passes as a sequential transfer, and an open stint ends June
+      30 like the roster's default. Failing with 1 pair as of 2026-09-04, one
+      AY2026 student open at 2 schools from 2026-09-04. Runs at the consuming
+      district project's default warn severity. Any returned row is a failure,
+      and the fix is in Focus: close the stale stint.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_focus__student_enrollment
+            package: focus
   - name: int_focus__schedule__no_overlapping_course_periods
     description: >-
       A student must not sit in two course periods of the same course, in the

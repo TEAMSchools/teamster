@@ -194,7 +194,6 @@ with
             term.semester,
 
             gtq.gpa_semester,
-            gtq.total_credit_hours_y1 as gpa_total_credit_hours,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -241,6 +240,12 @@ with
             if(
                 term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
             ) as gpa_n_failing_y1,
+
+            if(
+                term.quarter = 'Y1',
+                gty.total_credit_hours_y1,
+                gtq.total_credit_hours_y1
+            ) as gpa_total_credit_hours,
 
             /* KIPP GPA Band, the KIPP Foundation five-band unweighted scale
                documented in models/students/CLAUDE.md. Band 5 is open-ended
@@ -855,6 +860,26 @@ with
         from category_ranked
         where rn_latest_term = 1
         group by _dbt_source_project, studentid, yearid, sectionid
+    ),
+
+    course_priority as (
+        /* No (x is null) asc guard, unlike category_ranked above — the
+           filter removes nulls before the window runs, so an ungraded course
+           takes no rank and the left join at the foot of the model is what
+           nulls the column. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            `quarter`,
+            course_number,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, yearid, `quarter`
+                order by quarter_course_percent_grade asc, course_number asc
+            ) as office_hours_priority_rank,
+        from quarter_grades
+        where quarter_course_percent_grade is not null
     )
 
 select
@@ -993,6 +1018,8 @@ select
     gsl.need_next_letter_grade,
     gsl.need_next_cutoff_percent,
 
+    cp.office_hours_priority_rank,
+
     /* signed, so negative means the projection sits below last year's actual.
        Both inputs are student-grain, so these repeat across every quarter row
        and the Y1 row for a student, which is what makes them filterable at any
@@ -1089,4 +1116,12 @@ left join
     and s._dbt_source_project = cd._dbt_source_project
     and ce.sectionid = cd.sectionid
     and ce._dbt_source_project = cd._dbt_source_project
+left join
+    course_priority as cp
+    on s.studentid = cp.studentid
+    and s.yearid = cp.yearid
+    and s.`quarter` = cp.`quarter`
+    and s._dbt_source_project = cp._dbt_source_project
+    and ce.course_number = cp.course_number
+    and ce._dbt_source_project = cp._dbt_source_project
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')

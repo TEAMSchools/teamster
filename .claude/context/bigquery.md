@@ -126,3 +126,8 @@ select k, countif(to_json_string(j[k]) not in ('null', '""')) as populated
 from rows_json, unnest(json_keys(j, 1)) as k
 group by k
 ```
+
+Extracting a relation name from `JOBS_BY_PROJECT.query` with a regex catches
+developer dev-schema jobs (`zz_<user>_<schema>`) alongside prod. Anchor the
+pattern on the full backticked path (`` `<project>`.`<schema>`.`<rel>` ``) or
+prod and dev failures land in the same result set.

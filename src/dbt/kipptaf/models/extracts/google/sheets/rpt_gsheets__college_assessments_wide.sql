@@ -61,8 +61,8 @@ with
             sh.sat_ebrw_highest,
             sh.sat_math_highest,
 
-            coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
-            coalesce(c.sections_external_expression, 'No Data') as ccr_section,
+            coalesce(c.ccr_teacher_name, 'No Data') as ccr_teacher_name,
+            coalesce(c.ccr_section, 'No Data') as ccr_section,
 
             coalesce(p.psat89_count_lifetime, 0) as psat89_count_lifetime,
             coalesce(p.psat10_count_lifetime, 0) as psat10_count_lifetime,
@@ -84,17 +84,9 @@ with
             and ea.expected_score_category = a.score_category
         left join sat_highlights as sh on e.student_number = sh.student_number
         left join
-            {{ ref("base_powerschool__course_enrollments") }} as c
-            on e.student_number = c.students_student_number
-            and e.academic_year = c.cc_academic_year
-            and c.rn_course_number_year = 1
-            and not c.is_dropped_section
-            and c.courses_course_name in (
-                'College and Career IV',
-                'College and Career I',
-                'College and Career III',
-                'College and Career II'
-            )
+            {{ ref("int_students__ccr_schedule") }} as c
+            on e.student_number = c.student_number
+            and e.academic_year = c.academic_year
         left join
             {{ ref("int_students__college_assessment_participation_roster") }} as p
             on e.student_number = p.student_number

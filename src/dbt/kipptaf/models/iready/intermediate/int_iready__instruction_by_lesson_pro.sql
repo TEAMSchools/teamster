@@ -10,6 +10,18 @@ with
                 ]
             )
         }}
+    ),
+
+    sourced as (
+        select
+            * except (student_id),
+
+            {{
+                focus_student_number(
+                    "student_id", "academic_year_int", extract_source_project()
+                )
+            }} as student_id,
+        from union_relations
     )
 
 select
@@ -20,6 +32,6 @@ select
         r'kipp[a-z]+_',
         lc.location_dagster_code_location || '_'
     ) as _dbt_source_relation,
-from union_relations as ur
+from sourced as ur
 left join
     {{ ref("int_people__location_crosswalk") }} as lc on ur.school = lc.location_name

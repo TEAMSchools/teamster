@@ -1,14 +1,4 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_powerschool__student_enrollment_union"),
-                partition_by="student_number, academic_year, entrydate",
-                order_by="student_number desc",
-            )
-        }}
-    ),
-
     enr_bools as (
         select
             enr.*,
@@ -24,7 +14,7 @@ with
                 then true
                 else false
             end as is_enrolled_recent,
-        from deduplicate as enr
+        from {{ ref("int_powerschool__student_enrollment_union") }} as enr
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
             on enr.schoolid = cr.schoolid

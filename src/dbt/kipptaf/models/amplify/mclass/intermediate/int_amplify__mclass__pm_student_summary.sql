@@ -19,6 +19,10 @@ with
             x.location_powerschool_school_id as schoolid,
             x.location_dagster_code_location as _dbt_source_project,
 
+            coalesce(
+                ur.student_primary_id, ur.student_primary_id_studentnumber
+            ) as student_primary_id_keyed,
+
             initcap(
                 regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')
             ) as region,
@@ -42,6 +46,7 @@ select
         school_primary_id,
         student_primary_id,
         student_primary_id_studentnumber,
+        student_primary_id_keyed,
         student_id_state_id,
         secondary_student_id_stateid,
         primary_school_id
@@ -54,9 +59,11 @@ select
     coalesce(device_date, client_date) as client_date,
     coalesce(account_name, district_name) as district_name,
     coalesce(schoolid, school_primary_id) as school_primary_id,
-    coalesce(
-        student_primary_id, student_primary_id_studentnumber
-    ) as student_primary_id,
+    {{
+        focus_student_number(
+            "student_primary_id_keyed", "academic_year", "_dbt_source_project"
+        )
+    }} as student_primary_id,
     coalesce(student_id_state_id, secondary_student_id_stateid) as student_id_state_id,
 
 from location_xref

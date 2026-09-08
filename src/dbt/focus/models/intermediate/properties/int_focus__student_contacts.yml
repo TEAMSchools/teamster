@@ -14,13 +14,25 @@ models:
       (stg_focus__students_join_people is unique on id only). If it fires, Focus
       has emitted multiple link rows for one student-person pair — expected
       cause is one row per address — so collapse to the residence-flagged
-      address in this model rather than relaxing the test.
+      address in this model rather than relaxing the test. Deduped to one link
+      per (student_id, sort_order), keeping the most recently updated: a Focus
+      re-import can recreate a student's whole contact set under new person_ids,
+      which the (student_id, person_id) test cannot see. Left in place, the
+      copies consume the downstream emergency_1..4 slots and push a real contact
+      out of the feed entirely.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_id
               - person_id
+          config:
+            severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - sort_order
           config:
             severity: error
     columns:

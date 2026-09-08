@@ -15,7 +15,7 @@ excluded from the page, so verifying an entry is what ships it.
 
 ## The goal
 
-**All 46 entries in `links.yml` carry `status: verified`.**
+**All 44 entries in `links.yml` carry `status: verified`.**
 
 That is the deliverable. Steps 0 through 2 get there. Step 3 is a contingent
 stretch that only exists if the exposures triage lands in time, and the week is
@@ -29,7 +29,7 @@ Nothing else can start until these work. Check all of them the first morning and
 escalate immediately if any is missing; waiting until Wednesday to discover a
 Tableau access gap loses the week.
 
-- [ ] **Tableau** — `tableau.kipp.org`. Needed for 35 of the 46 entries. This is
+- [ ] **Tableau** — `tableau.kipp.org`. Needed for 34 of the 44 entries. This is
       the one that blocks everything.
 - [ ] **Google Drive** — the GPA Rosters, the Student Contact Info Feeds, and
       the Sheets behind the AppSheet apps.
@@ -55,7 +55,7 @@ Suggested order:
 1. **Anything Google-hosted gets the sharing check** described in README.md.
    Non-optional, and it is the one check with a real consequence if skipped.
 
-Roughly 46 entries at ten to fifteen minutes each is about a day and a half of
+Roughly 44 entries at ten to fifteen minutes each is about a day and a half of
 focused time. The rest of the week is the judgment calls and what you turn up
 along the way.
 
@@ -166,8 +166,8 @@ space) needs quotes. Most do not, and adding them anyway fails the linter.
 **Ask early.** Every judgment call in this file is one somebody else can answer
 in two minutes. Guessing costs more than asking.
 
-**Do not worry about** the rendering pipeline, the `views.yml` intro copy, or
-the Our Team / support / blog content. All handled elsewhere.
+**Do not worry about** the rendering pipeline or the Our Team / support / blog
+content. All handled elsewhere.
 
 ---
 
