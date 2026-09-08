@@ -590,7 +590,7 @@ The edits, exhaustively:
 `GPA - BAN Below 3.0` and `GPA - BAN Can reach` already carry the fixed line in
 the right place and are not edited.
 
-- [ ] **Step 1: Write the failing assertion**
+- [x] **Step 1: Write the failing assertion**
 
 Write `.claude/scratch/gpa-overnight/assert_cum_reminders.py`:
 
@@ -663,7 +663,7 @@ if __name__ == "__main__":
     main(sys.argv[1])
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run:
 `cd /workspaces/teamster/.claude/scratch/gpa-overnight && uv run python assert_cum_reminders.py server/cum-1-colour.twb`
@@ -672,7 +672,7 @@ Expected: FAIL with 10 lines — 5 missing placeholders (2 mark labels, 3
 worksheet titles), 3 zones not showing a title, and `GPA - BAN Gap to goal` and
 `GPA - BAN Students needed` reported for having no standalone fixed run.
 
-- [ ] **Step 3: Write the edit**
+- [x] **Step 3: Write the edit**
 
 Write `.claude/scratch/gpa-overnight/task_cum_reminders.py`. It performs three
 distinct transforms. Every anchor must match exactly once; abort otherwise.
@@ -732,7 +732,7 @@ number of lines inserted.
 
 Parse with `ET.fromstring` before writing.
 
-- [ ] **Step 4: Run the edit, the assertion and the checker**
+- [x] **Step 4: Run the edit, the assertion and the checker**
 
 ```bash
 cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
@@ -743,7 +743,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
 
 Expected: assertion prints `OK: 5 live, 4 fixed`, checker clean.
 
-- [ ] **Step 5: Confirm the break run survived byte-exact**
+- [x] **Step 5: Confirm the break run survived byte-exact**
 
 Run:
 
@@ -755,10 +755,42 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight/server && \
 Expected: the second count is higher than the first by exactly the number of
 break runs the edit added, and no other value. Record both numbers.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Tick the boxes, then commit the plan with message
 `docs(tableau): record the Cumulative basis reminders`.
+
+**Result:**
+
+Nine edits, no zones moved. 34 lines added, 5 removed, CRLF 27,729 → 27,758
+(+29, matching the lines inserted), `Æ` break runs 229 → 233 (+4).
+
+All four headline numbers now share one structure — label, basis, number. The
+two that follow the switch carry the live placeholder; the two that do not carry
+`Always projected`, split out of the 13pt label where it used to run inline.
+`GPA - BAN Below 3.0` and `GPA - BAN Can reach` were not touched: they already
+had the fixed line in that exact slot, and they are what the other four now
+match.
+
+The three body sheets carry the placeholder as a worksheet title, and zones 144,
+151 and 152 were flipped to `show-title='true'`. Without that flip the title is
+swallowed — Task 1's probe rendered a perfect title and showed nothing at all.
+
+Task 2's colours and the structural checker both still pass on the output.
+
+**Fix round 1/5.** Review found the assertion checked presence, not position: it
+searched the whole label for a placeholder _somewhere_, so a run in the wrong
+slot would have passed. The finding was against the plan's own text rather than
+the implementation, and I ruled it worth fixing now — Task 5 re-runs this
+assertion to prove that re-parenting nine zones did not scramble the labels,
+which is exactly the failure a positional check catches.
+
+The assertion now requires the exact 5-run sequence and prints the actual
+sequence on failure. Proved independently: a copy of the workbook with the basis
+run moved ahead of the label run fails the new check with
+`run 0 is not the expected 'label' run`, and the old presence-only logic returns
+`True` on the same file. Re-review verdicted the finding ADDRESSED with no new
+breakage.
 
 ---
 
