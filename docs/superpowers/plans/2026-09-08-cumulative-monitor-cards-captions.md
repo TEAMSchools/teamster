@@ -810,7 +810,7 @@ the checker before the change it guards.
 - Produces: `check_geometry.py`, run by Task 5 and Task 6. Exits non-zero on any
   violation.
 
-- [ ] **Step 1: Write the checker**
+- [x] **Step 1: Write the checker**
 
 Write `.claude/scratch/gpa-overnight/check_geometry.py`:
 
@@ -884,7 +884,7 @@ if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
 ```
 
-- [ ] **Step 2: Prove it passes on known-good input**
+- [x] **Step 2: Prove it passes on known-good input**
 
 Run:
 
@@ -897,7 +897,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
 Expected: both print `OK`. A checker that fails on production is a broken
 checker, not a finding — fix the checker.
 
-- [ ] **Step 3: Prove it catches a real fault**
+- [x] **Step 3: Prove it catches a real fault**
 
 Run:
 
@@ -919,10 +919,52 @@ rm -f server/zz-broken.twb
 Expected: non-zero exit with at least one `FAIL` line. A checker that passes the
 broken file is useless — fix it and repeat.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 Tick the boxes, then commit the plan with message
 `docs(tableau): record the dashboard geometry checker`.
+
+**Result:**
+
+`check_geometry.py` asserts three invariants no schema check covers: siblings do
+not overlap, a flow container's children account for the container, and the
+top-level zone spans the canvas. It took two fix rounds, and both misses were
+the same shape — a rule that looked like it was checking something while having
+a hole exactly where the real defect lives.
+
+**Round 1, Critical.** The delivered checker used a tolerance of 900 units per
+child. With five children that is 4,500 units of slack against the 4,445-unit
+shortfall the pre-flight scan had already found in this plan's own height table,
+so the checker passed the exact defect it exists to catch. Proven rather than
+argued: `body-left` at `h='62222'` with five children summing to 57,777,
+sequential `y`, no overlap, returned `OK: geometry consistent`.
+
+Tightening the tolerance was not the fix either — at 40 it false-positived on
+six legitimate production containers. The real parent-minus-children gaps in
+`prod-base3.twb` are stable per-container constants with no relation to child
+count: 0, 0, 1, 586, 586, 587, 587, 888, 888, 2636. A per-child multiplier is
+unsound in both directions.
+
+The checker now compares each zone's gap against the same zone in a `--baseline`
+workbook and requires it to be identical, falling back to an absolute 0–3000
+bound only for zones the baseline does not contain, which is what Task 5's new
+header strips will be. It prints which mode it ran in, so the weaker check
+cannot be mistaken for the stronger one.
+
+**Round 2, two Important.** Top-level sibling zones were never compared to each
+other, so a visible top-level zone covering the whole body passed. That is not
+hypothetical — the rollup-overlay incident earlier today was a zone lifted out
+of the flow to top level, which is precisely the case this missed. And an
+unrecognised argument such as `--baselien` silently degraded to the weak mode
+and exited 0, handing a pass to any caller gating on exit code.
+
+Verified independently at every step, with exit codes read directly rather than
+through a pipeline: known-good files pass in both modes across both dashboards;
+the fabricated top-level overlap fails; the 4,445 gap fails naming zone 40 and
+its expected 888; and all four misuse paths exit 1 with a readable one-line
+message. Non-vacuity confirmed both ways — the hidden pop-out panels 220 and 224
+genuinely do overlap the body and are excluded only by the `hidden-by-user`
+skip, not by an absence of overlap to find.
 
 ---
 
