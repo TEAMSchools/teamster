@@ -27,21 +27,18 @@ Injected on the first `Agent` or `Workflow` call in a session.
   should return findings as text". Have them return the report as final text and
   persist it to the scratchpad yourself.
 
-## Model and effort
+## Price ratios
 
-When a skill carries its own model-selection guidance (for example
-subagent-driven-development), follow the skill; this table only binds its tiers
-to models. The `Agent` tool accepts only `model`; effort is settable on Workflow
-`agent()`, not `Agent`, so via `Agent` pass the model and drop the effort tier.
+The decision rules are in the root CLAUDE.md _Subagents_ section. Numbers behind
+them:
 
-| Task                                 | Model    | Effort |
-| ------------------------------------ | -------- | ------ |
-| Mechanical, 1-2 files, precise brief | `haiku`  | omit   |
-| Integration or debugging implementer | `sonnet` | high   |
-| Review and re-review                 | `sonnet` | xhigh  |
-| Design work                          | `opus`   | high   |
-| Final whole-branch review            | `opus`   | xhigh  |
-| None of the above                    | omit     | omit   |
+- Per token, Fable costs 5x Sonnet and Opus 2.5x. On Opus the gap is smaller, so
+  inline wins more often.
+- A cached context token costs a fraction of a cold one, which is why a small
+  inline edit beats a cold subagent.
+- A retry costs more than the tier you saved. When in doubt, go up a tier.
+- A skill's own model guidance wins over these rules.
+- Effort is settable only on Workflow `agent()`, not `Agent`.
 
 ## Verifying the result
 

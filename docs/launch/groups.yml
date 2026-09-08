@@ -25,12 +25,18 @@ groups:
 families:
   - id: gpa_roster
     name: GPA Roster
-    description: Course grades and GPA by student. One sheet per region.
+    description:
+      Student GPA for the current year, one sheet per region — quarter GPAs,
+      year-to-date, and cumulative in weighted, unweighted and projected forms —
+      plus grade level, advisory, ADA, and IEP, 504, MLL and gifted status. (No
+      Miami for now — Miami's gradebook runs on Focus and its GPA data isn't
+      available yet.)
     group: academics
     members:
       - "GPA Roster: Camden"
       - "GPA Roster: Miami"
       - "GPA Roster: Newark"
+      - "GPA Roster: Paterson"
   - id: student_contact_info_feed
     name: Student Contact Info Feed (SCIF)
     description: Student and guardian contact information. Pick your region.

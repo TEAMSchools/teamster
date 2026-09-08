@@ -54,7 +54,7 @@ left join
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 where
     -- summer toggle: see skill (no storedgrades fallback here -- see skill)
-    s.academic_year = {{ var("current_academic_year") - 1 }}
+    s.academic_year = {{ var("current_academic_year") }}
     /* alt so Sumner G5 (treated as MS) stays in the audit, not the ES view */
     and s.region_school_level_alt in ('CamdenES', 'NewarkES', 'PatersonES')
     and s.credit_type in ('HR', 'MATH', 'ENG')

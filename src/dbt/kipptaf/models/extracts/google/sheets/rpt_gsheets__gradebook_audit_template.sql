@@ -19,7 +19,7 @@ with
         from {{ ref("int_students__calendar_week") }}
         where
             -- summer toggle: see skill
-            academic_year = {{ var("current_academic_year") - 1 }}
+            academic_year = {{ var("current_academic_year") }}
             and week_start_monday
             < date_trunc(current_date('{{ var("local_timezone") }}'), isoweek)
         group by
@@ -63,11 +63,15 @@ select
     week_start_monday,
     school_week_end_date as week_end_friday,
     notes,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_w as `W`,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_h as `H`,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_f as `F`,
+    -- trunk-ignore(sqlfluff/RF06): keeps the uppercase header T&L uploads
     cnt_s as `S`,
 
-    {{ var("current_academic_year") - 1 }} as academic_year,  /* summer toggle: see skill */
+    {{ var("current_academic_year") }} as academic_year,  /* summer toggle: see skill */
 
 from week_expectations
