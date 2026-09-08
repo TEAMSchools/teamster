@@ -5,8 +5,7 @@ with
         select distinct _dbt_source_project, academic_year, region, ps_schoolid,
 
         from {{ ref("int_students__school_directory") }}
-        -- Finalsite rows are next year's recruiting, not a year students
-        -- attended, so there is no calendar to count days in.
+        -- no calendar to count: recruiting rows, and DIBELS is K-8
         where school_source != 'finalsite' and school_level_alt != 'HS'
     ),
 
@@ -17,30 +16,18 @@ with
             t.academic_year,
             t.name as term_name,
 
-            -- P?LIT, anchored: a round's day count is its LIT testing window
-            -- PLUS its PLIT instructional window, and PLIT supplies most of it.
-            -- Anchoring keeps that deliberate instead of relying on LIT
-            -- matching inside PLIT, which any future code containing LIT would
-            -- also do.
+            -- anchored, and P?LIT matches PLIT deliberately
             safe_cast(regexp_extract(t.code, r'^P?LIT(\d+)$') as int) as round_number,
 
             count(distinct c.date_value) as pm_round_days,
 
         from school_years as s
-        -- Not stg_powerschool__calendar_day: Miami is Focus-only from AY2026, and
-        -- the frozen PowerSchool archive still serves a rolled-forward Miami
-        -- calendar (phantom in-session days in Jul 2026, Aug 3-11, Jun 4-29) that
-        -- would shift PM round boundaries. int_students__calendar_day substitutes
-        -- Focus for Focus-covered years and is day-for-day identical for NJ.
+        -- SIS-neutral, not stg_powerschool__calendar_day: Miami is Focus-only
         inner join
             {{ ref("int_students__calendar_day") }} as c
             on s.ps_schoolid = c.schoolid
             and c.insession = 1
             and s._dbt_source_project = c._dbt_source_project
-        -- s.academic_year = t.academic_year is the Miami SIS boundary, and it
-        -- needs no cutover year: the directory already assigns Miami's SY25-26
-        -- and prior to PowerSchool and SY26-27 onward to Focus, so a school only
-        -- contributes days to years it actually enrolled students in.
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as t
             on s.region = t.region
@@ -101,8 +88,5 @@ left join
     and e.admin_season = g.matching_pm_season
 where
     e.assessment_type = 'PM'
-    -- the window comes from upstream, which resolves it per grade against the
-    -- row's own band. Re-joining reporting__terms here would match every band.
-    -- A null window means no term row covers this grade, which is what the
-    -- inner join to terms used to drop.
+    -- no term row covers this grade, so the round has no window
     and e.start_date is not null

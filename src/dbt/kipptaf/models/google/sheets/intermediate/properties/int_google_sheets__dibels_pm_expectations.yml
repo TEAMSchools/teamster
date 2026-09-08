@@ -14,14 +14,48 @@ models:
       count, so it gets its own models rather than sharing this one behind a
       discriminator.
 
-      pm_round_days counts the round's LIT testing window plus its PLIT
-      instructional window. PLIT supplies most of the count, which is why the
-      round regex matches both.
+      How the day count is built, and the three decisions inside it.
+
+      The schools it counts over come from int_students__school_directory,
+      filtered two ways. Finalsite rows are next year's recruiting rather than a
+      year students attended, so there is no calendar to count days in. High
+      schools are excluded because DIBELS is K-8 and a high school contributing
+      in-session days would inflate pm_round_days -- measured as no change on
+      current data, since a high school shares its region's calendar, but it is
+      wrong in principle and would bite the moment one diverges. Grade level
+      drops out of the directory grain because days are counted per school-year,
+      which is what the select distinct projects away.
+
+      The calendar is int_students__calendar_day, deliberately not
+      stg_powerschool__calendar_day. Miami is Focus-only from AY2026, and the
+      frozen PowerSchool archive still serves a rolled-forward Miami calendar
+      with phantom in-session days -- July 2026, Aug 3-11 before Focus's real
+      Aug 12 start, and Jun 4-29 after its real Jun 3 end. Because the Aug 3-11
+      block coincides with PLIT1's start anchor, the PowerSchool path yields
+      Miami round boundaries that are wrong without looking wrong. The
+      SIS-neutral model substitutes Focus for Focus-covered years and is
+      day-for-day identical for all three NJ regions.
+
+      Joining the calendar on academic_year as well as school is what handles
+      the Miami SIS boundary, and it needs no hardcoded cutover year: the
+      directory already assigns Miami's SY25-26 and earlier to PowerSchool and
+      SY26-27 onward to Focus, so a school only contributes days to years it
+      actually enrolled students in.
+
+      The round regex is anchored, and P?LIT matches PLIT on purpose -- a
+      round's day count is its LIT testing window plus its PLIT instructional
+      window, and PLIT supplies most of it. Anchoring keeps that deliberate
+      rather than relying on LIT matching inside PLIT, which any future code
+      containing the letters LIT would also do. Reading the code's last
+      character instead folds Miami's LIT10 and LIT11 onto rounds 0 and 1.
 
       The window comes through from
       int_google_sheets__dibels_expected_assessments, which resolves it against
       each grade's own band. Re-joining reporting terms here would match every
-      band at once and pick an arbitrary one.
+      band at once and pick an arbitrary one -- that re-join is what left a 7.6x
+      fan-out sitting in prod. Rows whose grade no covering term row exists for
+      are dropped on a null start_date, which is what the old inner join to
+      terms did implicitly.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -57,8 +91,9 @@ models:
       - name: round_number
         data_type: int64
         description: >
-          Round number parsed from the code. Miami runs 11 rounds, so this is a
-          regex rather than the code's last character.
+          Round number parsed from the code with an anchored regex. Miami runs
+          11 rounds, so reading the code's last character folds rounds 10 and 11
+          onto 0 and 1.
       - name: min_pm_round
         data_type: int64
         description:
@@ -73,8 +108,11 @@ models:
       - name: start_date
         data_type: date
         description: >
-          First day of the round's testing window. Rows whose grade has no
-          covering term row are dropped, so this is never null.
+          First day of the round's testing window, resolved upstream against the
+          grade's own band. Rows whose grade has no covering term row are
+          dropped, so this is never null -- a grade the region did not enrol
+          that year has no band covering it, which is how Paterson's AY2025
+          grades 4 and 8 leave the model.
       - name: end_date
         data_type: date
         description: >
