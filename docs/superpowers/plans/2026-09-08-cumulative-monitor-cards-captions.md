@@ -38,8 +38,10 @@ Insert into `<document-format-change-manifest>`, never rebuild it.
 The paragraph break inside `<formatted-text>` is the literal run
 `<run>Æ&#10;</run>`. It must be byte-exact.
 
-The workbook file uses CRLF line endings. Read and write with `encoding="utf-8"`
-and never normalise newlines.
+The workbook file uses CRLF line endings, 27,729 of them. Read and write with
+`encoding="utf-8", newline=""` on both sides. A plain `read_text` applies
+universal newlines and hands back a string with no `\r` in it at all, so any
+later attempt to detect or preserve CRLF is working on already-flattened text.
 
 Working directory for all scripts and artifacts:
 `/workspaces/teamster/.claude/scratch/gpa-overnight/`, workbooks under its
@@ -232,7 +234,7 @@ already in the workbook. No parameter placeholder exists in this file yet.
 - Produces: a yes or no answer, recorded in the plan. Produces no artifact any
   later task depends on.
 
-- [ ] **Step 1: Write the probe edit**
+- [x] **Step 1: Write the probe edit**
 
 Write `.claude/scratch/gpa-overnight/probe_placeholder.py`:
 
@@ -276,7 +278,7 @@ if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
 ```
 
-- [ ] **Step 2: Run it and repack**
+- [x] **Step 2: Run it and repack**
 
 ```bash
 cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
@@ -287,7 +289,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && \
 
 Expected: checker clean, `probe.twbx` over 20 MB.
 
-- [ ] **Step 3: Write the publish-and-render probe**
+- [x] **Step 3: Write the publish-and-render probe**
 
 Write with the Write tool to `tests/tableau/test_zz_probe.py`:
 
@@ -327,7 +329,7 @@ def test_probe():
             print(f"RENDERED {value}: {out} {out.stat().st_size} bytes")
 ```
 
-- [ ] **Step 4: Run it and read the images**
+- [x] **Step 4: Run it and read the images**
 
 Run: `uv run pytest tests/tableau/test_zz_probe.py -s`
 
@@ -342,7 +344,7 @@ the title is empty. On FAIL, stop. Record which of these it was, then report to
 the user. Fallbacks in the spec, in order: caption-style syntax, native axis
 titles plus a badge worksheet, fixed text.
 
-- [ ] **Step 5: Delete the throwaway and commit the answer**
+- [x] **Step 5: Delete the throwaway and commit the answer**
 
 ```bash
 rm -f /workspaces/teamster/tests/tableau/test_zz_probe.py
@@ -350,6 +352,27 @@ rm -f /workspaces/teamster/tests/tableau/test_zz_probe.py
 
 Append a `**Result:**` line under this task's heading recording PASS or FAIL and
 the exact rendered string, then commit the plan.
+
+**Result:**
+
+**PASS.** `<[Parameters].[Parameter 11]>` resolves in a worksheet title and
+tracks the parameter. Rendered `PROBE Projected EOY` and
+`PROBE On the books today` from the same workbook at the two parameter values.
+Published to `GPA-monitor-temp` as `ZZ-PROBE placeholder 20260908`
+(`31523f3b-a642-40df-8710-e314b8318a46`); the `project_id` assertion held.
+
+The first probe run rendered nothing at all, and it was not the syntax. A
+worksheet `<title>` is invisible unless its dashboard zone carries
+`show-title='true'`, and every body zone on this dashboard ships
+`show-title='false'`. Task 3 now flips zones 144, 151 and 152, and its assertion
+checks the zone attribute as well as the title content — without that check the
+task would have passed with an invisible reminder.
+
+CRLF handling in the plan's sample code was also wrong and is corrected. A plain
+`Path.read_text(encoding="utf-8")` applies universal newlines, so the sample's
+`"\r\n" in t` sniff can never be true and every write would have flattened all
+27,729 CRLF endings to LF. Both read and write now pass `newline=""`. Verified
+on the probe: CRLF count went 27,729 → 27,736, exactly the 7 lines inserted.
 
 ---
 
@@ -555,7 +578,11 @@ FIXED = "Always projected"
 STYLE = "fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'"
 
 LIVE_LABEL = ["GPA - BAN % 3.5+", "GPA - BAN % 3.0+"]
-LIVE_TITLE = ["GPA - Dist by grade", "GPA - Goal by grade", "GPA - Goal by school"]
+# sheet -> its dashboard zone id. A worksheet <title> renders ONLY if its zone
+# carries show-title='true'; every body zone ships with 'false', which swallows
+# the title silently. Task 1's probe proved this the hard way.
+LIVE_TITLE = {"GPA - Dist by grade": "144", "GPA - Goal by grade": "151",
+              "GPA - Goal by school": "152"}
 FIXED_LABEL = ["GPA - BAN Below 3.0", "GPA - BAN Can reach",
                "GPA - BAN Gap to goal", "GPA - BAN Students needed"]
 
@@ -574,14 +601,23 @@ def main(path):
         if not lab or PLACEHOLDER not in lab.group(0):
             print(f"  FAIL {name}: no basis placeholder in customized-label")
             bad += 1
-    for name in LIVE_TITLE:
+    di = t.index("name='Cumulative GPA Monitor'>")
+    dash = t[di : t.index("</dashboard>", di)]
+    for name, zid in LIVE_TITLE.items():
         seg = sheet(t, name)
         ttl = re.search(r"<layout-options>.*?<title>.*?</title>.*?</layout-options>", seg, re.S)
         if not ttl or PLACEHOLDER not in ttl.group(0):
             print(f"  FAIL {name}: no basis placeholder in worksheet title")
             bad += 1
-        elif not seg.lstrip().startswith("<worksheet") or seg.index("<layout-options>") > seg.index("<table>"):
+        elif seg.index("<layout-options>") > seg.index("<table>"):
             print(f"  FAIL {name}: layout-options must precede table")
+            bad += 1
+        zone = re.search(rf"<zone [^>]*id='{zid}'[^>]*>", dash)
+        if not zone:
+            print(f"  FAIL {name}: dashboard zone {zid} not found")
+            bad += 1
+        elif "show-title='true'" not in zone.group(0):
+            print(f"  FAIL {name}: zone {zid} does not show-title, so the title is invisible")
             bad += 1
     for name in FIXED_LABEL:
         seg = sheet(t, name)
@@ -604,9 +640,9 @@ if __name__ == "__main__":
 Run:
 `cd /workspaces/teamster/.claude/scratch/gpa-overnight && uv run python assert_cum_reminders.py server/cum-1-colour.twb`
 
-Expected: FAIL with 7 lines — 5 missing placeholders, and
-`GPA - BAN Gap to goal` and `GPA - BAN Students needed` reported for having no
-standalone fixed run.
+Expected: FAIL with 10 lines — 5 missing placeholders (2 mark labels, 3
+worksheet titles), 3 zones not showing a title, and `GPA - BAN Gap to goal` and
+`GPA - BAN Students needed` reported for having no standalone fixed run.
 
 - [ ] **Step 3: Write the edit**
 
@@ -648,13 +684,25 @@ text at the em dash, strip trailing whitespace, then insert a break run and a
 fixed run reading `Always projected` in the standard style. Match the em dash as
 the literal character `—`, not a hyphen.
 
-Transform C, for the three body sheets. Insert the title block after
-`<worksheet name='...'>`. All three currently have no `<layout-options>`; assert
-that before inserting, and abort if one appears.
+Transform C, for the three body sheets. Two halves, and both are required:
 
-Preserve CRLF: detect the newline from the source text and use it in every
-inserted line. Parse with `ET.fromstring` before writing. Write with
-`newline=""`.
+1. Insert the title block after `<worksheet name='...'>`. All three currently
+   have no `<layout-options>`; assert that before inserting, and abort if one
+   appears.
+2. In the `Cumulative GPA Monitor` dashboard, flip `show-title='false'` to
+   `show-title='true'` on zones 144, 151 and 152. Task 1's probe proved that
+   without this the title is swallowed and renders as nothing at all. Assert one
+   substitution per zone.
+
+Preserve CRLF properly. `Path.read_text(encoding="utf-8")` applies universal
+newlines, so `"\r\n"` can never appear in the string it returns and any sniff
+for it silently picks `"\n"` — writing then converts all 27,729 CRLF line
+endings in the file to LF. Read AND write with `newline=""` (Python 3.13
+supports it on `Path.read_text`), and build inserted lines with the separator
+detected from the untranslated text. Assert the CRLF count rises by exactly the
+number of lines inserted.
+
+Parse with `ET.fromstring` before writing.
 
 - [ ] **Step 4: Run the edit, the assertion and the checker**
 
