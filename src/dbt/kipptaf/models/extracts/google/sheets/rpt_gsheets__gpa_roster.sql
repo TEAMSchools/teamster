@@ -8,11 +8,14 @@ with
             co.team,
             co.student_number,
             co.student_name,
+            co.salesforce_id,
             co.iep_status,
             co.gender,
             co.lep_status,
             co.is_504,
             co.gifted_and_talented,
+            co.unweighted_ada,
+            co.weighted_ada,
 
             term,
 
@@ -66,6 +69,8 @@ select
     lep_status,
     gifted_and_talented,
     is_504,
+    unweighted_ada,
+    weighted_ada,
 
     gpa_q1,
     gpa_q2,
@@ -79,4 +84,6 @@ select
     cumulative_y1_gpa_projected_s1_unweighted,
     cumulative_y1_gpa,
     cumulative_y1_gpa_projected,
+
+    salesforce_id as salesforce_contact_id,
 from roster pivot (max(gpa_term) as gpa for term in ('Q1', 'Q2', 'Q3', 'Q4'))

@@ -1,0 +1,110 @@
+{
+  "regions": ["Camden", "Newark"],
+  "admins": [
+    {
+      "grade": 9,
+      "test_type": "Practice",
+      "scope": "PSAT 8/9",
+      "season": "Fall",
+      "months": ["August", "September"],
+      "growth": false,
+      "scope_round": "PSAT891"
+    },
+    {
+      "grade": 9,
+      "test_type": "Official",
+      "scope": "PSAT 8/9",
+      "season": "Fall",
+      "months": ["October"],
+      "growth": false
+    },
+    {
+      "grade": 9,
+      "test_type": "Official",
+      "scope": "PSAT 8/9",
+      "season": "Spring",
+      "months": ["March"],
+      "growth": false
+    },
+    {
+      "grade": 10,
+      "test_type": "Practice",
+      "scope": "PSAT10",
+      "season": "Fall",
+      "months": ["October"],
+      "growth": false,
+      "scope_round": "PSAT101"
+    },
+    {
+      "grade": 10,
+      "test_type": "Official",
+      "scope": "PSAT10",
+      "season": "Spring",
+      "months": ["February", "March", "April"],
+      "growth": false
+    },
+    {
+      "grade": 10,
+      "test_type": "Official",
+      "scope": "PSAT NMSQT",
+      "season": "Fall",
+      "months": ["October"],
+      "growth": false
+    },
+    {
+      "grade": 11,
+      "test_type": "Practice",
+      "scope": "SAT",
+      "season": "Fall",
+      "months": ["September"],
+      "growth": false,
+      "scope_round": "SAT1"
+    },
+    {
+      "grade": 11,
+      "test_type": "Official",
+      "scope": "SAT",
+      "season": "Winter",
+      "months": ["December", "January", "March"],
+      "growth": true
+    },
+    {
+      "grade": 11,
+      "test_type": "Official",
+      "scope": "SAT",
+      "season": "Spring",
+      "months": ["April", "May", "June"],
+      "growth": true
+    },
+    {
+      "grade": 12,
+      "test_type": "Official",
+      "scope": "SAT",
+      "season": "Fall",
+      "months": ["August", "September", "October", "November"],
+      "growth": true
+    },
+    {
+      "grade": 12,
+      "test_type": "Official",
+      "scope": "SAT",
+      "season": "Winter",
+      "months": ["December", "January"],
+      "growth": true
+    }
+  ],
+  "not_reported": [
+    {
+      "grade": 11,
+      "test_type": "Official",
+      "scope": "SAT",
+      "months": ["August", "September", "October", "November"]
+    },
+    {
+      "grade": 12,
+      "test_type": "Official",
+      "scope": "SAT",
+      "months": ["March", "May", "June"]
+    }
+  ]
+}

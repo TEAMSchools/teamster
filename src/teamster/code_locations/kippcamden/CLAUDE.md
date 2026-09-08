@@ -15,6 +15,7 @@ GCS bucket: `teamster-kippcamden`
 | ------------- | ----------------- | --------------------------------------------------------------------- |
 | `dbt`         | dbt assets        | `AutomationConditionSensor`                                           |
 | `powerschool` | dlt assets        | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
+| `cambium`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `deanslist`   | API assets        | schedule (nightly)                                                    |
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
@@ -26,14 +27,14 @@ GCS bucket: `teamster-kippcamden`
 
 ## PowerSchool Configuration
 
-Uses **dlt** (sensor-gated intraday + unconditional nightly full-refresh, over
-57 tables), not ODBC. Config at `powerschool/sis/dlt/config/assets.yaml`
-(per-table `cursor_column` + `intraday`/`nightly` membership booleans). Intraday
-selection is decided by `kippcamden__powerschool__dlt__intraday_sensor` (probe +
-dlt-state baseline); the nightly schedule full-refreshes its targets
-unconditionally and re-baselines. Resources `ssh_powerschool` (paramiko tunnel)
-and `db_powerschool` (Oracle creds) are built by the shared `core/resources.py`
-factories. Writes directly to BigQuery — no GCS IO manager.
+Uses **dlt** (sensor-gated intraday + unconditional nightly full-refresh), not
+ODBC. Config at `powerschool/sis/dlt/config/assets.yaml` (per-table
+`cursor_column` + `intraday`/`nightly` membership booleans). Intraday selection
+is decided by `kippcamden__powerschool__dlt__intraday_sensor` (probe + dlt-state
+baseline); the nightly schedule full-refreshes its targets unconditionally and
+re-baselines. Resources `ssh_powerschool` (paramiko tunnel) and `db_powerschool`
+(Oracle creds) are built by the shared `core/resources.py` factories. Writes
+directly to BigQuery — no GCS IO manager.
 
 The `dlt_powerschool_kippcamden` pool must stay at limit 1 (Dagster+ deployment
 setting) — it is the backstop against a manually-launched run overlapping a

@@ -1,5 +1,14 @@
 models:
   - name: stg_kippadb__enrollment
+    data_tests:
+      - dbt_utils.expression_is_true:
+          name: enrollment_graduated_end_date_not_future
+          arguments:
+            expression:
+              actual_end_date <= current_date('{{ var("local_timezone") }}')
+          config:
+            severity: warn
+            where: status = 'Graduated'
     columns:
       - name: id
         data_type: string

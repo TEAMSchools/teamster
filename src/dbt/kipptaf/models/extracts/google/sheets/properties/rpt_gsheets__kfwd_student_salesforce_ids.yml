@@ -1,0 +1,108 @@
+models:
+  - name: rpt_gsheets__kfwd_student_salesforce_ids
+    description:
+      Google Sheets lookup pairing each KIPP Forward student with their
+      Salesforce contact id, so whoever records an emergency postsecondary aid
+      disbursement in Coupa can attach the id to that transaction instead of
+      leaving the student to be matched by name after the fact. One row per
+      Salesforce contact. Currently enrolled 8th graders are dropped from
+      int_kippadb__roster because no aid request originates from one; the roster
+      itself only covers students with a KIPP secondary enrollment, so a
+      Salesforce contact without one does not appear here. The remaining columns
+      exist to tell same-name students apart — cohort separates most pairs,
+      region and birth date separate the rest, which is why all three carry a
+      null check.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: salesforce_contact_id
+        data_type: string
+        data_tests:
+          - unique
+        description:
+          Salesforce contact id in its 18-character form, which is
+          case-insensitive and self-checksumming. This is the value copied into
+          Coupa on an aid disbursement and the key that ties the resulting KIPP
+          Aid record to the right student.
+        config:
+          meta:
+            contains_pii: true
+      - name: birthdate
+        data_type: date
+        data_tests:
+          - not_null
+        description:
+          Student date of birth from Salesforce. Carried only as the final
+          tiebreaker for students who share a name, a cohort, and a region.
+        config:
+          meta:
+            contains_pii: true
+      - name: cohort
+        data_type: int64
+        data_tests:
+          - not_null
+        description:
+          Year-group the student entered 9th grade with, taken from the
+          Salesforce KIPP high school class and falling back to the PowerSchool
+          cohort. Fixed at entry, so it does not move for a retention or a
+          skipped grade and can differ from the year the student is projected to
+          graduate. The strongest single disambiguator between students who
+          share a name.
+      - name: region
+        data_type: string
+        data_tests:
+          - not_null
+        description:
+          Region whose schools the student attended — Newark, Camden, Miami, or
+          Paterson.
+      - name: student_name
+        data_type: string
+        description:
+          Student name as last name, comma, first name — the field to scan when
+          looking a student up. Sourced from Salesforce, falling back to the
+          PowerSchool name when Salesforce carries none.
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        data_type: string
+        description:
+          Student last name, exposed separately from the combined name so the
+          sheet can be sorted and filtered on it.
+        config:
+          meta:
+            contains_pii: true
+      - name: first_name
+        data_type: string
+        description:
+          Student first name, exposed separately from the combined name so the
+          sheet can be sorted and filtered on it.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_number
+        data_type: int64
+        description:
+          Student number assigned by the school, carried so an id can be
+          cross-checked against paperwork that cites the SIS identifier rather
+          than a name.
+        config:
+          meta:
+            contains_pii: true
+      - name: record_type
+        data_type: string
+        description:
+          Salesforce record type on the contact, describing the lifecycle stage
+          the record was last set to. Present for context only. It is not a
+          reliable indicator of where a student actually is, because the value
+          lags real transitions in both directions, so it must not be used to
+          decide whether a student is eligible for postsecondary aid.
+      - name: ktc_status
+        data_type: string
+        description:
+          KIPP Through College status describing where the student sits relative
+          to KIPP secondary enrollment — a grade-level code while enrolled in a
+          KIPP high school, HSG once they graduate one, and TAF or TAFHS for a
+          KIPP middle school graduate who has not graduated from a KIPP high
+          school. Useful for orientation rather than for lookup.

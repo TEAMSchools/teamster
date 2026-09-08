@@ -22,9 +22,7 @@ select
 from {{ ref("stg_powerschool__schools") }}
 where
     /* filter out summer school and graduated students */
-    state_excludefromreporting = 0
-    -- Miami rosters into Clever directly from Focus; excluded from all six feeds
-    and _dbt_source_relation not like '%kippmiami%'
+    state_excludefromreporting = 0 and {{ exclude_frozen("_dbt_source_project") }}
 
 union all
 

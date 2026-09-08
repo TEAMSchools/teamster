@@ -256,7 +256,7 @@ with
         from {{ ref("int_finalsite__contact_id_attributes") }}
     ),
 
-    -- The Focus vertical (int_focus__student_enrollments) carries no
+    -- The Focus vertical (int_focus__student_enrollment_roster) carries no
     -- Finalsite identity of its own -- this crosswalk join is what blends the
     -- two sources, so it belongs here (the consumer), not in the Focus
     -- wrapper. Inner join keeps only Focus enrollments that match a Finalsite
@@ -275,7 +275,7 @@ with
             e.is_enrolled_mar15,
 
             f.finalsite_enrollment_id,
-        from {{ ref("int_focus__student_enrollments") }} as e
+        from {{ ref("int_focus__student_enrollment_roster") }} as e
         inner join
             finalsite_contact_ids as f
             on e.student_number = f.focus_student_id

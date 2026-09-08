@@ -1,0 +1,202 @@
+models:
+  - name: int_students__gpa
+    description: >-
+      SIS-neutral GPA spine. Unions the PowerSchool GPA chain
+      (`int_powerschool__gpa_term` left-joined to
+      `int_powerschool__gpa_cumulative`) with Miami's Focus
+      `student_gpa_calculated`, conformed inline to the PowerSchool column
+      vocabulary. The Miami PowerSchool branch is scoped to years before Focus
+      coverage begins, and the Focus branch to years at or after it, so the
+      frozen archive and the live SIS never overlap. Replaces the two
+      `int_powerschool__gpa_*` models as the source `fct_grades_gpa` reads.
+
+
+      **The Focus branch is cumulative-only.** Focus's `student_gpa_calculated`
+      carries `marking_period_id = -1` on every row, which the vendor defines as
+      the course-history GPA. There is no term-grained row in the table, so
+      `term_name`, `semester`, `gpa_term`, `gpa_semester`, the year-to-date
+      measures and the term credit-hour measures are all null on Miami rows.
+      Recomputing them from Focus grades is not possible either: only 145 of
+      Miami's 1,808 AY2026 rows in `int_students__final_grades` carry
+      `exclude_from_gpa = 0`, and Miami posts a single `storecode` against the
+      NJ regions' 4.
+
+
+      **Miami coverage is partial and that is a property of the source.** On the
+      first prod load Focus held 441 rows for 319 students against 1,757
+      students enrolled in AY2026, spread across every grade K through 9. Every
+      student with imported course history has a row, all 290 of them. So a
+      Miami student absent from this model has no imported course history, not a
+      broken join.
+
+
+      Keyed on `student_number` rather than PowerSchool's `studentid`, for the
+      same reason as `int_students__final_grades`: the Focus branch has no
+      PowerSchool `studentid`, and `int_students__student_enrollment_union`
+      leaves `studentid` and `yearid` null on all 10,075 Miami rows, so that
+      join could never have matched a Focus row. `(studentid, yearid)` and
+      `(student_number, academic_year)` are exactly 1:1 inside every NJ
+      district, so the swap is row-preserving there. Measured against prod:
+      Camden 47,018, Newark 165,670 and Paterson 2,536 rows join enrollment
+      identically under both keys.
+
+
+      **The key swap also surfaces Miami's pre-Focus GPA history**, which the
+      old key silently hid. 13,928 Miami PowerSchool rows for AY2020 through
+      AY2025 now reach `fct_grades_gpa`; under the `studentid` join they matched
+      nothing, because the enrollment union leaves `studentid` null on every
+      Miami row. That is a gain, not a regression — the archive was always meant
+      to stay readable — but it is a visible change to a fact that previously
+      held no Miami row in any year.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 1x/day instead of eager. Rebuilds 85.7 times a day at 0.137 GiB a
+          # build, 11.7 GiB/day, and it is one of the models driving the
+          # 69.7/day churn in snapshot_powerschool__gpa_term and 73.7/day in
+          # snapshot_powerschool__gpa_cumulative. Eager buys freshness nothing
+          # reads: the only downstream mart is fct_grades_gpa, which appears in
+          # no cube file and no extract. The cube_semantic_layer exposure does
+          # list it, but no file under src/cube/model/ reads it, so that entry
+          # overstates consumption.
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here is the SIS-cutover tripwire. The PowerSchool
+          # and Focus branches are exact complements around
+          # focus_start_academic_year, so a >= slipping to >, the floor moving,
+          # or the not (...) guard being dropped makes one Miami academic year
+          # emit from both branches -- both carrying
+          # _dbt_source_project = 'kippmiami', which the uniqueness key
+          # catches. As a view the test would fire only on code change, because
+          # the data-change condition re-materializes tables only. A daily tick
+          # keeps it firing on the one boundary the SIS migration is actively
+          # moving.
+          #
+          # 0 4 matches the gradebook_and_gpa_dashboard batch these marts feed.
+          # All 4 leaves (category_grades, gradebook_assignments_scores, gpa,
+          # final_grades) share the tick, so ~any_deps_in_progress serializes
+          # the pass -- they are direct parent-child. The group costs about
+          # 8.7 GiB/day against 228.1 today. Refs #5082
+          automation_condition:
+            cron_schedule: 0 4 * * *
+    data_tests:
+      # Scoped to rows that resolved a student_number. int_powerschool__gpa_term
+      # carries 4 Camden AY2015 rows at schoolid 0 whose student fails the
+      # dcid >= 1 placeholder filter, so the left join leaves student_number
+      # null and they collide with each other. They are kept rather than
+      # dropped, and fct_grades_gpa excludes them anyway on its inner join to
+      # enrollment.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - term_name
+              - _dbt_source_project
+          config:
+            where: student_number is not null
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
+      - name: student_number
+        data_type: int64
+        description: >-
+          Network student number. The only student key both branches share, and
+          what `fct_grades_gpa` joins enrollment on.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year. Derived as `yearid + 1990` on the PowerSchool branch
+          and taken from Focus's `syear` on the Focus branch.
+      - name: studentid
+        data_type: int64
+        description: >-
+          PowerSchool student id. Null on every Focus row — Focus has no
+          PowerSchool student id.
+      - name: schoolid
+        data_type: int64
+        description: >-
+          PowerSchool school id. On the Focus branch it is
+          `stg_google_sheets__people__locations.powerschool_school_id`, reached
+          by joining Focus's `school_number` to that model's `focus_school_id`.
+      - name: yearid
+        data_type: int64
+        description: >-
+          PowerSchool year id, `academic_year - 1990`. Derived on the Focus
+          branch so `fct_grades_gpa`'s reporting-terms join keeps working for
+          both branches.
+      - name: term_name
+        data_type: string
+        description: >-
+          Reporting term the row covers. Null on every Focus row, which carries
+          no term.
+      - name: semester
+        data_type: string
+        description: Semester the term falls in. Null on every Focus row.
+      - name: gpa_term
+        data_type: float64
+        description: Term GPA. Null on every Focus row.
+      - name: gpa_y1
+        data_type: float64
+        description: Year-to-date weighted GPA. Null on every Focus row.
+      - name: gpa_y1_unweighted
+        data_type: float64
+        description: Year-to-date unweighted GPA. Null on every Focus row.
+      - name: gpa_semester
+        data_type: float64
+        description: Semester GPA. Null on every Focus row.
+      - name: n_failing_y1
+        data_type: int64
+        description: Year-to-date failing course count. Null on every Focus row.
+      - name: total_credit_hours_term
+        data_type: float64
+        description:
+          Credit hours attempted in the term. Null on every Focus row.
+      - name: total_credit_hours_y1
+        data_type: float64
+        description:
+          Year-to-date credit hours attempted. Null on every Focus row.
+      - name: grade_avg_term
+        data_type: float64
+        description: Term percent-grade average. Null on every Focus row.
+      - name: grade_avg_y1
+        data_type: float64
+        description:
+          Year-to-date percent-grade average. Null on every Focus row.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted GPA. Mapped from Focus's
+          `cumulative_weighted_gpa`, which is the weighted measure despite the
+          unqualified PowerSchool column name.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description: >-
+          Cumulative unweighted GPA. Mapped from Focus's `cumulative_gpa`.
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+        description: >-
+          Projected year-end cumulative GPA. Null on every Focus row — Focus
+          projects nothing.
+      - name: earned_credits_cum
+        data_type: float64
+        description: >-
+          Cumulative credits earned. Mapped from Focus's `cumulative_credits`.
+      - name: potential_credits_cum
+        data_type: float64
+        description: >-
+          Cumulative credits attempted. Null on every Focus row.
+      - name: class_rank
+        data_type: int64
+        description: >-
+          Class rank as the SIS computed it. Null on every PowerSchool row —
+          that chain does not produce a rank at all — and populated on only 3 of
+          441 Focus rows so far, so it is not yet usable as a reporting measure.

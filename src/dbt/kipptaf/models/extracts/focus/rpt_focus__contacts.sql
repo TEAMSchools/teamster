@@ -8,6 +8,8 @@ with
             g.middle_name,
             g.last_name,
             g.email,
+            g.gender as contact_gender,
+            g.household_ids,
             g.phone_1_type as contact1_type,
             g.phone_1_number as contact1_value,
             g.phone_2_type as contact2_type,
@@ -23,12 +25,12 @@ with
 
             0 as contact_group,
 
-            cast(null as string) as resides_with_stud,
-            cast(null as string) as custody,
-            cast(null as string) as emergency,
-            cast(null as string) as pickup,
             cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
+
+            cast(null as bool) as contact1_opt_in,
+            cast(null as bool) as contact2_opt_in,
+            cast(null as bool) as contact3_opt_in,
 
             if(rel.is_primary, 0, 1) as group_rank,
         from {{ ref("stg_finalsite__contact_relationships") }} as rel
@@ -66,13 +68,13 @@ with
     ),
 
     emergency_long as (
-        -- Positional passthrough: emergency_N is the emrg_N custom-field set
-        -- as-is. Finalsite emergency contacts are custom fields on the
+        -- Positional passthrough: `emergency_N` is the `emrg_N` custom-field
+        -- set as-is. Finalsite emergency contacts are custom fields on the
         -- student's own record, not relationship rows, so they never reach the
-        -- relationship-type filter above. The shape here mirrors
-        -- int_finalsite__student_contacts, which cannot be ref'd — it excludes
-        -- Miami to avoid double-counting against the PowerSchool branch of
-        -- int_students__contacts.
+        -- relationship-type filter above. The shape mirrors
+        -- `int_finalsite__student_contacts`, which this model cannot `ref` —
+        -- that model excludes Miami to avoid double-counting against the
+        -- PowerSchool branch of `int_students__contacts`.
         select
             a.emrg_1_name_first_name as first_name,
             a.emrg_1_name_middle_name as middle_name,
@@ -84,12 +86,14 @@ with
             a.emrg_1_phone_2_number as contact2_value,
             a.emrg_1_phone_3_type as contact3_type,
             a.emrg_1_phone_3_number as contact3_value,
+            a.emrg_1_phone_1_opt_in as contact1_opt_in,
+            a.emrg_1_phone_2_opt_in as contact2_opt_in,
+            a.emrg_1_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
             1 as contact_group,
             1 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -97,14 +101,12 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_1_relationship_ss, a.emrg_1_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_1_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_1_custody_yn, 'Y', null) as custody,
-            if(a.emrg_1_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -132,12 +134,14 @@ with
             a.emrg_2_phone_2_number as contact2_value,
             a.emrg_2_phone_3_type as contact3_type,
             a.emrg_2_phone_3_number as contact3_value,
+            a.emrg_2_phone_1_opt_in as contact1_opt_in,
+            a.emrg_2_phone_2_opt_in as contact2_opt_in,
+            a.emrg_2_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
             1 as contact_group,
             2 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -145,14 +149,12 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_2_relationship_ss, a.emrg_2_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_2_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_2_custody_yn, 'Y', null) as custody,
-            if(a.emrg_2_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -180,12 +182,14 @@ with
             a.emrg_3_phone_2_number as contact2_value,
             a.emrg_3_phone_3_type as contact3_type,
             a.emrg_3_phone_3_number as contact3_value,
+            a.emrg_3_phone_1_opt_in as contact1_opt_in,
+            a.emrg_3_phone_2_opt_in as contact2_opt_in,
+            a.emrg_3_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
             1 as contact_group,
             3 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -193,14 +197,12 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_3_relationship_ss, a.emrg_3_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_3_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_3_custody_yn, 'Y', null) as custody,
-            if(a.emrg_3_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -228,12 +230,14 @@ with
             a.emrg_4_phone_2_number as contact2_value,
             a.emrg_4_phone_3_type as contact3_type,
             a.emrg_4_phone_3_number as contact3_value,
+            a.emrg_4_phone_1_opt_in as contact1_opt_in,
+            a.emrg_4_phone_2_opt_in as contact2_opt_in,
+            a.emrg_4_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
             1 as contact_group,
             4 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -241,14 +245,12 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_4_relationship_ss, a.emrg_4_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_4_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_4_custody_yn, 'Y', null) as custody,
-            if(a.emrg_4_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -273,21 +275,22 @@ with
             middle_name,
             last_name,
             email,
+            contact_gender,
+            household_ids,
             contact1_type,
             contact1_value,
             contact2_type,
             contact2_value,
             contact3_type,
             contact3_value,
+            contact1_opt_in,
+            contact2_opt_in,
+            contact3_opt_in,
             address,
             address2,
             city,
             state,
             zipcode,
-            resides_with_stud,
-            custody,
-            emergency,
-            pickup,
             contact_group,
             group_rank,
         from guardians
@@ -302,24 +305,102 @@ with
             middle_name,
             last_name,
             email,
+            contact_gender,
+            household_ids,
             contact1_type,
             contact1_value,
             contact2_type,
             contact2_value,
             contact3_type,
             contact3_value,
+            contact1_opt_in,
+            contact2_opt_in,
+            contact3_opt_in,
             address,
             address2,
             city,
             state,
             zipcode,
-            resides_with_stud,
-            custody,
-            emergency,
-            pickup,
             contact_group,
             group_rank,
         from emergency_long
+    ),
+
+    crosswalked as (
+        -- Gender is present only on the guardian branch (a guardian's own
+        -- stg_finalsite__contacts row); emergency rows are custom fields on
+        -- the student's record and fall through to the non-gendered value.
+        select
+            * except (student_relation, contact_gender),
+
+            case
+                -- The next several branches are case-sensitive exact
+                -- matches against controlled-vocabulary fields: Finalsite's
+                -- guardian `rel_type`, or `emrg_N_relationship_ss`. The
+                -- lowercase 'parent', 'guardian' and 'stepparent' below stay
+                -- distinct from the Title-Case free-text fallback further
+                -- down, which would otherwise swallow them before their
+                -- gender split ran.
+                when student_relation = 'parent' and contact_gender in ('F', 'Female')
+                then 'Mother'
+                when student_relation = 'parent' and contact_gender in ('M', 'Male')
+                then 'Father'
+                when student_relation = 'parent'
+                then 'Parent'
+                when
+                    student_relation = 'grandparent'
+                    and contact_gender in ('F', 'Female')
+                then 'Grandmother'
+                when
+                    student_relation = 'grandparent' and contact_gender in ('M', 'Male')
+                then 'Grandfather'
+                when
+                    student_relation = 'aunt/uncle'
+                    and contact_gender in ('F', 'Female')
+                then 'Aunt'
+                when student_relation = 'aunt/uncle' and contact_gender in ('M', 'Male')
+                then 'Uncle'
+                when
+                    student_relation = 'stepparent'
+                    and contact_gender in ('F', 'Female')
+                then 'Stepmother'
+                when student_relation = 'stepparent' and contact_gender in ('M', 'Male')
+                then 'Stepfather'
+                when student_relation = 'stepparent'
+                then 'Stepparent'
+                when student_relation = 'guardian'
+                then 'Guardian'
+                when student_relation = 'Great Aunt'
+                then 'Aunt'
+                when student_relation = 'Great Uncle'
+                then 'Uncle'
+                -- `emrg_N_relationship_txt` is free text, so case and
+                -- padding are not guaranteed. Match it case- and
+                -- whitespace-insensitively, but still emit the canonical
+                -- Title-Case Focus value. Every name in this list is a single
+                -- word, so `initcap()` reconstructs it correctly. This branch
+                -- is last so it catches only values the case-sensitive
+                -- branches above missed. Otherwise it swallows a lowercase
+                -- guardian `rel_type` before its gender split runs.
+                when
+                    lower(trim(student_relation)) in (
+                        'mother',
+                        'father',
+                        'parent',
+                        'guardian',
+                        'grandmother',
+                        'grandfather',
+                        'aunt',
+                        'uncle',
+                        'stepfather',
+                        'stepmother',
+                        'stepparent',
+                        'surrogate'
+                    )
+                then initcap(trim(student_relation))
+                else 'None'
+            end as student_relation,
+        from all_contacts
     ),
 
     ranked as (
@@ -340,7 +421,184 @@ with
                     first_name asc,
                     relationship_id asc
             ) as sort_order,
-        from all_contacts
+        from crosswalked
+    ),
+
+    household_compared as (
+        -- `resides_with_stud` / `custody`: the first contact per student is
+        -- always Y. A later contact is Y only when it shares a household with
+        -- that first contact. Household membership beats an address string
+        -- comparison: '123 Main St' against '123 Main Street', or a unit
+        -- number that sits in `address` on one row and `address2` on the
+        -- other, both read as a false N. N is an explicit default when
+        -- household membership is unknown on either side, not a guess.
+        --
+        -- "First contact" means `sort_order` = 1, the same ordering `ranked`
+        -- above uses. Reading `sort_order` directly beats re-deriving it from
+        -- a second copy of the same 5-column ORDER BY, which could silently
+        -- drift.
+        select
+            *,
+
+            first_value(household_ids) over (
+                partition by student_id order by sort_order
+            ) as first_contact_household_ids,
+        from ranked
+    ),
+
+    household_flagged as (
+        select
+            * except (household_ids, first_contact_household_ids),
+
+            (
+                select count(*),
+                from unnest(household_ids) as h
+                where h in unnest(first_contact_household_ids)
+            ) as shared_household_count,
+        from household_compared
+    ),
+
+    phones_valid as (
+        -- clean_phone already normalized both phone sources to E.164, and its
+        -- contract is to never return NULL -- unparseable input passes through
+        -- de-garbled. So repeated-digit junk (which is NANP-valid) survives it
+        -- as a well-formed +1XXXXXXXXXX. Reject it here rather than in the
+        -- macro: the macro is shared by rpt_parentsquare__parents,
+        -- rpt_deanslist__family_contacts, and int_students__contacts, and a
+        -- guard inside its CASE would emit the raw digits instead of nulling
+        -- them. Only repeated digits 2-9 can reach this -- clean_phone's NANP
+        -- check already rejects a leading 0 or 1. See #4769 decision Q.
+        -- Known limitation: clean_phone appends x<ext> when the source number
+        -- carries an extension, so a junk number with an extension would slip
+        -- past this exact-match list -- vanishingly rare, not worth expanding
+        -- scope over.
+        select
+            * except (contact1_value, contact2_value, contact3_value),
+
+            if(
+                contact1_value in (
+                    '+12222222222',
+                    '+13333333333',
+                    '+14444444444',
+                    '+15555555555',
+                    '+16666666666',
+                    '+17777777777',
+                    '+18888888888',
+                    '+19999999999'
+                ),
+                cast(null as string),
+                contact1_value
+            ) as contact1_value,
+            if(
+                contact2_value in (
+                    '+12222222222',
+                    '+13333333333',
+                    '+14444444444',
+                    '+15555555555',
+                    '+16666666666',
+                    '+17777777777',
+                    '+18888888888',
+                    '+19999999999'
+                ),
+                cast(null as string),
+                contact2_value
+            ) as contact2_value,
+            if(
+                contact3_value in (
+                    '+12222222222',
+                    '+13333333333',
+                    '+14444444444',
+                    '+15555555555',
+                    '+16666666666',
+                    '+17777777777',
+                    '+18888888888',
+                    '+19999999999'
+                ),
+                cast(null as string),
+                contact3_value
+            ) as contact3_value,
+        from household_flagged
+    ),
+
+    phones_typed as (
+        -- A blank or unrecognized type defaults to Cell Phone rather than
+        -- dropping the contact (#4769 decision J) -- but only when the slot
+        -- actually carries a surviving number. A slot with no value (never
+        -- had one, or had one and phones_valid junk-rejected it above) gets a
+        -- null type instead: there is no contact to guess a type for, and
+        -- Task 7 reads this column to decide whether the slot is an SMS
+        -- target, so a phantom type on an empty slot would wrongly mark it
+        -- one.
+        select
+            * except (contact1_type, contact2_type, contact3_type),
+
+            case
+                when contact1_value is null
+                then cast(null as string)
+                when lower(trim(contact1_type)) in ('cell', 'mobile')
+                then 'Cell Phone'
+                when lower(trim(contact1_type)) = 'home'
+                then 'Home Phone'
+                when lower(trim(contact1_type)) in ('work', 'business', 'office')
+                then 'Work Phone'
+                when lower(trim(contact1_type)) = 'workplace'
+                then 'Workplace'
+                when lower(trim(contact1_type)) in ('alternate', 'day', 'daytime')
+                then 'Alternate Phone'
+                else 'Cell Phone'
+            end as contact1_type,
+            case
+                when contact2_value is null
+                then cast(null as string)
+                when lower(trim(contact2_type)) in ('cell', 'mobile')
+                then 'Cell Phone'
+                when lower(trim(contact2_type)) = 'home'
+                then 'Home Phone'
+                when lower(trim(contact2_type)) in ('work', 'business', 'office')
+                then 'Work Phone'
+                when lower(trim(contact2_type)) = 'workplace'
+                then 'Workplace'
+                when lower(trim(contact2_type)) in ('alternate', 'day', 'daytime')
+                then 'Alternate Phone'
+                else 'Cell Phone'
+            end as contact2_type,
+            case
+                when contact3_value is null
+                then cast(null as string)
+                when lower(trim(contact3_type)) in ('cell', 'mobile')
+                then 'Cell Phone'
+                when lower(trim(contact3_type)) = 'home'
+                then 'Home Phone'
+                when lower(trim(contact3_type)) in ('work', 'business', 'office')
+                then 'Work Phone'
+                when lower(trim(contact3_type)) = 'workplace'
+                then 'Workplace'
+                when lower(trim(contact3_type)) in ('alternate', 'day', 'daytime')
+                then 'Alternate Phone'
+                else 'Cell Phone'
+            end as contact3_type,
+        from phones_valid
+    ),
+
+    custody_flagged as (
+        -- Derived once here and projected as both RESIDES_WITH_STUD and
+        -- CUSTODY in the final select below. BigQuery has no lateral column
+        -- aliases, so the select list that produces `sort_order` (added by
+        -- `ranked` above) cannot also read it.
+        --
+        -- `sort_order` = 1 assumes the student's first contact is a guardian.
+        -- No student currently has emergency contacts but no guardian rows,
+        -- so an emergency contact never lands at `sort_order` 1 today. If that
+        -- changes, an emergency contact lands at `sort_order` 1 and gets Y
+        -- here regardless of what Finalsite says about them living with the
+        -- student.
+        select
+            * except (shared_household_count),
+
+            if(
+                sort_order = 1 or shared_household_count > 0, 'Y', 'N'
+            ) as lives_with_flag,
+        from phones_typed
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
@@ -353,10 +611,10 @@ select
     middle_name,
     last_name,
 
-    resides_with_stud,
-    custody,
-    emergency,
-    pickup,
+    lives_with_flag as resides_with_stud,
+    lives_with_flag as custody,
+    'Y' as emergency,
+    'Y' as pickup,
 
     address,
     address2,
@@ -369,38 +627,88 @@ select
 
     cast(null as string) as contact1_blocked,
     cast(null as string) as contact1_unlisted,
-    cast(null as string) as contact1_callout,
+    case
+        when contact1_value is null
+        then cast(null as string)
+        when contact1_opt_in is false
+        then 'N'
+        else 'Y'
+    end as contact1_callout,
+    case
+        when contact1_value is null
+        then cast(null as string)
+        when contact1_opt_in is false
+        then 'N'
+        when contact1_type in ('Work Phone', 'Workplace')
+        then 'N'
+        else 'Y'
+    end as contact1_sms,
 
     contact2_type,
     contact2_value,
 
     cast(null as string) as contact2_blocked,
     cast(null as string) as contact2_unlisted,
-    cast(null as string) as contact2_callout,
+    case
+        when contact2_value is null
+        then cast(null as string)
+        when contact2_opt_in is false
+        then 'N'
+        else 'Y'
+    end as contact2_callout,
+    case
+        when contact2_value is null
+        then cast(null as string)
+        when contact2_opt_in is false
+        then 'N'
+        when contact2_type in ('Work Phone', 'Workplace')
+        then 'N'
+        else 'Y'
+    end as contact2_sms,
 
     contact3_type,
     contact3_value,
 
     cast(null as string) as contact3_blocked,
     cast(null as string) as contact3_unlisted,
-    cast(null as string) as contact3_callout,
+    case
+        when contact3_value is null
+        then cast(null as string)
+        when contact3_opt_in is false
+        then 'N'
+        else 'Y'
+    end as contact3_callout,
+    case
+        when contact3_value is null
+        then cast(null as string)
+        when contact3_opt_in is false
+        then 'N'
+        when contact3_type in ('Work Phone', 'Workplace')
+        then 'N'
+        else 'Y'
+    end as contact3_sms,
     cast(null as string) as contact4_type,
     cast(null as string) as contact4_value,
     cast(null as string) as contact4_blocked,
     cast(null as string) as contact4_unlisted,
     cast(null as string) as contact4_callout,
+    cast(null as string) as contact4_sms,
     cast(null as string) as contact5_type,
     cast(null as string) as contact5_value,
     cast(null as string) as contact5_blocked,
     cast(null as string) as contact5_unlisted,
     cast(null as string) as contact5_callout,
+    cast(null as string) as contact5_sms,
     cast(null as string) as contact6_type,
     cast(null as string) as contact6_value,
     cast(null as string) as contact6_blocked,
     cast(null as string) as contact6_unlisted,
     cast(null as string) as contact6_callout,
+    cast(null as string) as contact6_sms,
     cast(null as string) as contact7_type,
     cast(null as string) as contact7_value,
     cast(null as string) as contact7_blocked,
     cast(null as string) as contact7_unlisted,
-from ranked
+    cast(null as string) as contact7_callout,
+    cast(null as string) as contact7_sms,
+from custody_flagged

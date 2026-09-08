@@ -253,8 +253,11 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- TODO(#4388): stg_renlearn__star holds fiscal-year re-pull duplicates
-    -- (same assessment_id in two partitions) and same-day retests.
+    -- This dedupe is permanent, not a workaround for #4388. STAR records each
+    -- sitting under its own assessment_id, and students genuinely retest the
+    -- same subject on the same day -- 144 rows as of 2026-09-01 -- so the fact
+    -- grain (which carries no attempt dimension) is coarser than staging on
+    -- purpose. scale_score desc keeps the best sitting.
     -- partition_by deliberately omits academic_year: a physical test pulled
     -- under two fiscal-year partitions has the same test_date but a differing
     -- pull-derived academic_year, so keying on academic_year would keep both
@@ -262,7 +265,7 @@ with
     -- test date (#4546). A date belongs to exactly one academic year, so
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic. Remove this dedupe when staging is fixed.
+    -- deterministic.
     star_scores as (
         {{
             dbt_utils.deduplicate(
@@ -355,6 +358,19 @@ with
             national_percentile,
             is_mastery,
         from dibels_scores
+    ),
+
+    -- Reporting quarters. A score's quarter comes from the date it was
+    -- administered or taken, NOT from its section enrollment: a section spans
+    -- several quarters, so "the quarter for a section enrollment" is not well
+    -- defined (#4484). Resolved per score row rather than in
+    -- int_assessments__resolved_section_enrollments, which is one row per score
+    -- GRAIN — scores sharing a grain can carry different dates. RT rows abut but
+    -- never overlap within a (school_id, region), so BETWEEN matches one row.
+    reporting_terms as (
+        select `type`, code, `name`, `start_date`, end_date, region, school_id,
+        from {{ ref("stg_google_sheets__reporting__terms") }}
+        where `type` = 'RT'
     )
 
 /* internal assessments */
@@ -387,6 +403,23 @@ select
         )
     }} as assessment_administration_key,
 
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
+
     sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
@@ -418,6 +451,11 @@ inner join
     and ia.assessment_id = sr.canonical_assessment_id
     and ia._dbt_source_project = sr._dbt_source_project
     and sr.source_type = 'internal'
+left join
+    reporting_terms as rt
+    on sr.powerschool_school_id = rt.school_id
+    and sr.region = rt.region
+    and ia.assessment_date_key between rt.`start_date` and rt.end_date
 
 union all
 
@@ -449,6 +487,23 @@ select
             ]
         )
     }} as assessment_administration_key,
+
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     sr.student_section_enrollment_key,
 
@@ -486,6 +541,11 @@ inner join
     and su.illuminate_subject = sr.subject_area
     and su._dbt_source_project = sr._dbt_source_project
     and sr.source_type in ('state_nj', 'state_fl')
+left join
+    reporting_terms as rt
+    on sr.powerschool_school_id = rt.school_id
+    and sr.region = rt.region
+    and su.test_date between rt.`start_date` and rt.end_date
 
 union all
 
@@ -519,6 +579,23 @@ select
             ]
         )
     }} as assessment_administration_key,
+
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     sr.student_section_enrollment_key,
 
@@ -555,3 +632,8 @@ inner join
     and va.illuminate_subject = sr.subject_area
     and va._dbt_source_project = sr._dbt_source_project
     and va.score_source = sr.source_type
+left join
+    reporting_terms as rt
+    on sr.powerschool_school_id = rt.school_id
+    and sr.region = rt.region
+    and va.test_date between rt.`start_date` and rt.end_date

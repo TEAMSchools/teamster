@@ -1,11 +1,10 @@
 from collections.abc import Iterator
-from dataclasses import dataclass
-from datetime import date, datetime
 
 import dlt
 import sqlalchemy as sa
 from dagster import AssetExecutionContext, AssetKey, AssetSpec, Config
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dlt import config as dlt_config
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter
@@ -14,6 +13,11 @@ from sqlalchemy import Float, Numeric
 from sqlalchemy.types import TypeEngine
 
 from teamster.libraries.dlt.powerschool.resources import OracleResource
+from teamster.libraries.dlt.probe import (
+    ProbeSignatureConfig,
+    ProbeTable,
+    probe_signature,
+)
 from teamster.libraries.ssh.resources import SSHResource
 
 # PowerSchool tables are owned by the `ps` schema. The ODBC pipeline reaches
@@ -37,87 +41,12 @@ def _asset_key(code_location: str, table_name: str) -> AssetKey:
     return AssetKey([code_location, _SOURCE_NAME, "sis", table_name])
 
 
-@dataclass(frozen=True)
-class PowerSchoolTable:
-    """One PowerSchool table's sync config.
-
-    cursor_column None means the table has no change-tracking column and is
-    always fully replaced when selected (nightly tier only).
-    """
-
-    name: str
-    cursor_column: str | None
-
-
-def probe_signature(
-    connection, table_name: str, cursor_column: str | None
-) -> dict[str, int | str | None]:
-    """Fetch the change signature for a table: total count + max cursor.
-
-    Equality-compared against the stored signature; drift in either value
-    (including a cursor regression) triggers a full replace. Tables without a
-    cursor column are count-only — the signature still carries
-    ``max_cursor: None`` so it compares equal to the run-config round-trip
-    shape (which defaults the key to None). Values are JSON-serializable for
-    dlt resource state.
-    """
-    if cursor_column is None:
-        (count,) = connection.execute(
-            # trunk-ignore(bandit/B608): table name from static YAML config
-            sa.text(f"SELECT COUNT(*) FROM {table_name}")
-        ).one()
-
-        return {"count": int(count), "max_cursor": None}
-
-    count, max_cursor = connection.execute(
-        # trunk-ignore(bandit/B608): table/column names from static YAML config
-        sa.text(f"SELECT COUNT(*), MAX({cursor_column}) FROM {table_name}")
-    ).one()
-
-    if max_cursor is None:
-        max_cursor_value = None
-    elif isinstance(max_cursor, (datetime, date)):
-        max_cursor_value = max_cursor.isoformat()
-    else:
-        # Non-temporal cursor (e.g. a numeric change column on a future table);
-        # store its string form so the signature stays JSON-serializable.
-        max_cursor_value = str(max_cursor)
-
-    # int(count): mirror the JSON-safe-scalar normalization done for max_cursor
-    # above (oracledb returns int today, but keep the state doc driver-agnostic).
-    return {"count": int(count), "max_cursor": max_cursor_value}
-
-
-def _compute_changed(
-    selected: list[PowerSchoolTable],
-    current: dict[str, dict],
-    stored: dict[str, dict],
-) -> list[PowerSchoolTable]:
-    """Select tables whose just-probed signature differs from the stored one.
-
-    Drift in count or max cursor — or a missing stored entry (first tick, or a
-    table new to intraday) — selects the table. No-cursor tables carry a
-    count-only signature (``max_cursor: None``), so a net row add/remove
-    selects them; in-place edits are caught by the nightly full refresh.
-    """
-    return [
-        table for table in selected if current.get(table.name) != stored.get(table.name)
-    ]
-
-
 def _resolve_extract_workers(tag_value: str | None, param: int | None) -> int | None:
     """Resolve the dlt extract worker cap: a per-run tag overrides the
     factory param, which overrides dlt's default (None = leave default)."""
     if tag_value is not None:
         return int(tag_value)
     return param
-
-
-class ProbeSignatureConfig(Config):
-    """One table's probed change signature, passed by the intraday sensor."""
-
-    count: int
-    max_cursor: str | None = None
 
 
 class PowerSchoolDltConfig(Config):
@@ -181,7 +110,7 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
 
 
 def _build_resource(
-    table: PowerSchoolTable, signature: dict | None, connection_url: str, arraysize: int
+    table: ProbeTable, signature: dict | None, connection_url: str, arraysize: int
 ):
     """Build one full-replace, parallel-extracted dlt resource for a table.
 
@@ -237,7 +166,7 @@ def _build_resource(
 
 @dlt.source(name=_SOURCE_NAME)
 def _powerschool_source(
-    selected: list[PowerSchoolTable],
+    selected: list[ProbeTable],
     signatures: dict[str, dict],
     connection_url: str,
     arraysize: int,
@@ -251,7 +180,7 @@ def _powerschool_source(
 
 def build_powerschool_dlt_assets(
     code_location: str,
-    tables: list[PowerSchoolTable],
+    tables: list[ProbeTable],
     op_tags: dict[str, object] | None = None,
     max_extract_workers: int | None = None,
 ):
@@ -299,11 +228,13 @@ def build_powerschool_dlt_assets(
             context.run.tags.get("dlt_extract_workers"), max_extract_workers
         )
         if workers is not None:
-            # Set via dlt's config accessor (an in-memory provider that
-            # pipeline.extract() resolves `workers=ConfigValue` from) rather than
-            # os.environ — keeps the override inside dlt's config channel instead
-            # of mutating the process environment.
-            dlt.config["extract.workers"] = workers
+            # Uses `dlt_config` (the module-level accessor imported above), NOT
+            # `dlt.config` — `dlt` is the resource parameter here, so `.config`
+            # resolves to `DagsterDltResource`, which has no `config` attribute
+            # (AttributeError). `dlt_config` is an in-memory provider that
+            # pipeline.extract() resolves `workers=ConfigValue` from — preferred
+            # over os.environ so the op doesn't mutate the process environment.
+            dlt_config["extract.workers"] = workers
             context.log.info(f"dlt extract workers capped at {workers}")
 
         # Diagnostic knob: Oracle cursor fetch size (rows/round-trip).
@@ -357,9 +288,11 @@ def build_powerschool_dlt_assets(
             )
 
             try:
-                # fetch_row_count() attaches an authoritative per-table row_count
-                # to each materialization's metadata (surfaced in the asset
-                # catalog) alongside dagster-dlt's default load metadata.
+                # dagster-dlt already attaches dlt's own per-table `rows_loaded`
+                # to every materialization. Do NOT chain `.fetch_row_count()`
+                # here: it raises on a materialization with no `jobs` metadata (a
+                # first load that extracted zero rows), and one multi-asset op
+                # means that raise kills every other table in the run.
                 yield from dlt.run(
                     context=context,
                     dlt_source=_powerschool_source(
@@ -368,7 +301,7 @@ def build_powerschool_dlt_assets(
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",
-                ).fetch_row_count()
+                )
             except Exception:
                 # Surface dlt's per-table extracted row counts in the run log so a
                 # load failure is legible without walking the exception chain.
@@ -381,15 +314,3 @@ def build_powerschool_dlt_assets(
                 raise
 
     return _assets
-
-
-def _stored_signatures(dlt_pipeline, source_name: str) -> dict[str, dict]:
-    """Read last-run per-resource signatures from dlt pipeline state."""
-    resources = (
-        dlt_pipeline.state.get("sources", {}).get(source_name, {}).get("resources", {})
-    )
-    return {
-        name: res_state["signature"]
-        for name, res_state in resources.items()
-        if isinstance(res_state, dict) and "signature" in res_state
-    }

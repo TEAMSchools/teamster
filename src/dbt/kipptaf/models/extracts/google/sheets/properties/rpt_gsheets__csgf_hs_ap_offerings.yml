@@ -1,5 +1,12 @@
 models:
   - name: rpt_gsheets__csgf_hs_ap_offerings
+    description: >-
+      High-school AP course offerings for Charter School Growth Fund reporting.
+      Network-wide, Miami included: there is no region filter, so Miami enters
+      the population as its high school grows. It has no rows yet because the
+      reporting window is the prior academic year, before Miami had a high
+      school. Note the `is_enrolled_recent` filter, which was null for Miami
+      until #5038. Ratified on #4996.
     columns:
       - name: school_name
         data_type: string

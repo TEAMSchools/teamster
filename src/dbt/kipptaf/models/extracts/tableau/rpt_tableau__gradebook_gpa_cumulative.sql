@@ -48,4 +48,3 @@ where
     and not is_out_of_district
     and school_level_alt in ('MS', 'HS')
     and enroll_status in (0, 3)
-    and region != 'Paterson'

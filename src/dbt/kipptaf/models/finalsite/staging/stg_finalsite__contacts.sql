@@ -1,6 +1,3 @@
--- Finalsite contacts API layer is enabled only in regions with Finalsite
--- ingestion wired (today: KIPP Miami). Add each region's relation here when its
--- api layer is enabled.
 with
     union_relations as (
         {{

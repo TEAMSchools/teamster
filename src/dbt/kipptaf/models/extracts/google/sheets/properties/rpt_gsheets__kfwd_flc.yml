@@ -1,5 +1,9 @@
 models:
   - name: rpt_gsheets__kfwd_flc
+    description: >-
+      **Excludes Miami by design.** KIPP Forward tracks alumni through college,
+      and Miami has no graduating class yet, so it has no alumni to track.
+      Ratified on #4996.
     columns:
       - name: student_number
         data_type: int64

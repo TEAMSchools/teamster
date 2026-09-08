@@ -1,0 +1,262 @@
+models:
+  - name: stg_focus__discipline_referrals
+    description: >-
+      Focus discipline referrals — one row per referral written on a student.
+      Discipline is the last Focus domain to come online in KIPP Miami, so most
+      non-custom columns (suspension dates, dismissal and closure flags,
+      attendance linkages) are still unpopulated network-wide; they are
+      projected here so the model does not need widening as the domain fills in.
+
+      The `custom_*` fields are aliased to their `custom_fields.title` under
+      `source_class = 'SISDisciplineReferral'`. `select`-type values stay raw
+      option ids here — decoding to labels belongs in an intermediate `__pivot`
+      model (tracked in #4865), not in staging.
+    columns:
+      - name: referral_id
+        description: Primary key — Focus discipline referral id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id the referral was written on. Note this is the network
+          student number prefixed with `8400` (Miami-Dade's FLDOE district
+          number), not the bare student number.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: school_id
+        description: Focus school id the referral was written at.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__schools')
+                field: id
+              config:
+                severity: error
+      - name: district_id
+        description: Focus district id the referral belongs to.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, e.g. 2026 = 2026-27).
+        data_type: int
+      - name: staff_id
+        description: >-
+          Focus staff id of the user who wrote the referral (joins
+          `stg_focus__users`).
+        data_type: int
+      - name: teacher_code
+        description: Teacher code recorded on the referral.
+        data_type: string
+      - name: classroom
+        description: Classroom the incident took place in.
+        data_type: string
+      - name: entry_date
+        description: Date the referral was entered.
+        data_type: date
+      - name: referral_date
+        description: >-
+          Referral date as recorded on the Focus referral form. Distinct from
+          `refer_date`, which is the custom field titled "Refer Date".
+        data_type: date
+      - name: creation_date
+        description: Date the referral record was created.
+        data_type: date
+      - name: submission_date
+        description:
+          Timestamp the referral was submitted for administrative review.
+        data_type: timestamp
+      - name: last_updated
+        description: Source last-updated date.
+        data_type: date
+      - name: suspension_begin
+        description: First day of the suspension resulting from the referral.
+        data_type: date
+      - name: suspension_end
+        description: Last day of the suspension resulting from the referral.
+        data_type: date
+      - name: suspension_length
+        description: Length of the resulting suspension, in days.
+        data_type: numeric
+      - name: attendance_code
+        description: >-
+          Attendance code id applied for the days covered by the referral (joins
+          `stg_focus__attendance_codes` on `id`).
+        data_type: int
+      - name: attendance_day_id
+        description: >-
+          Daily attendance record the referral was raised from (joins
+          `stg_focus__attendance_day`).
+        data_type: int
+      - name: attendance_period_id
+        description: >-
+          Period attendance record the referral was raised from (joins
+          `stg_focus__attendance_period`).
+        data_type: int
+      - name: attendance_threshold_id
+        description: >-
+          Attendance threshold rule that auto-generated the referral, when it
+          was not written by hand.
+        data_type: int
+      - name: tardy_threshold_id
+        description: Tardy threshold rule that auto-generated the referral.
+        data_type: int
+      - name: merged_referral_id
+        description: >-
+          Referral this one was merged into, when duplicate referrals were
+          consolidated.
+        data_type: int
+      - name: referral_import_key
+        description: Import key for referrals loaded from an external system.
+        data_type: string
+      - name: discipline_code_ai
+        description:
+          Discipline code suggested by Focus's automated classification.
+        data_type: string
+      - name: notification_sent
+        description: >-
+          `1` when the referral notification has been sent, `0` when it has not.
+        data_type: int
+      - name: incomplete
+        description: >-
+          `1` when the referral is still incomplete, `0` or null when it is
+          finished.
+        data_type: int
+      - name: processed
+        description: Y/N — whether an administrator has processed the referral.
+        data_type: string
+      - name: closed
+        description: Y/N — whether the referral is closed.
+        data_type: string
+      - name: dismissed
+        description: Y/N — whether the referral was dismissed without action.
+        data_type: string
+      - name: returned
+        description: Y/N — whether the referral was returned to its author.
+        data_type: string
+      - name: display
+        description: Y/N — whether the referral is displayed in Focus.
+        data_type: string
+      - name: comment
+        description: Free-text comment on the referral.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: imported
+        description: Y/N — whether the referral was imported.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: reason_for_referral
+        description: >-
+          Custom field "Reason for Referral" — free-text narrative of the
+          incident.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: location
+        description: >-
+          Custom field "Location" — where the incident took place, as a raw
+          select option code (decode deferred).
+        data_type: int
+      - name: discipline_code
+        description: >-
+          Custom field "Discipline Code" — the Florida discipline code, as a raw
+          select option code (decode deferred).
+        data_type: int
+      - name: refer_date
+        description: >-
+          Custom field "Refer Date". Stored as a timestamp in Focus despite
+          being defined as a date field.
+        data_type: timestamp
+      - name: context
+        description: >-
+          Custom field "Context" — the context the incident occurred in, as a
+          raw select option code (decode deferred).
+        data_type: int
+      - name: action_taken_by
+        description: >-
+          Custom field "Action Taken By" — free-text name of the administrator
+          who acted on the referral. A staff name, so tagged PII on the same
+          basis as the name columns on `stg_focus__users`.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: admin_comments
+        description: >-
+          Custom field "Admin. Comments" — free-text administrative notes on the
+          referral.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: involved_in_hate_crime
+        description: >-
+          Custom field "Involved in Hate Crime", as a raw select option code
+          (decode deferred).
+        data_type: int
+      - name: use_of_alcohol
+        description: >-
+          Custom field "Use of Alcohol", as a raw select option code (decode
+          deferred).
+        data_type: int
+      - name: use_of_drugs
+        description: >-
+          Custom field "Use of Drugs", as a raw select option code (decode
+          deferred).
+        data_type: int
+      - name: weapon_use
+        description: >-
+          Custom field "Weapon Use", as a raw select option code (decode
+          deferred).
+        data_type: int
+      - name: involved_in_bullying
+        description: >-
+          Custom field "Involved in Bullying", as a raw select option code
+          (decode deferred).
+        data_type: int
+      - name: referral_number
+        description: >-
+          Custom field titled "Referral ID" — an 8-digit district-facing
+          referral number, distinct from the internal `referral_id` primary key.
+        data_type: string
+      - name: school_related_arrests
+        description: >-
+          Custom field "School-Related Arrests", as a raw select option code
+          (decode deferred).
+        data_type: int
+      - name: zero_tolerance_expulsion
+        description: >-
+          Custom field "Zero-Tolerance:Expulsion", as a raw select option code
+          (decode deferred).
+        data_type: int

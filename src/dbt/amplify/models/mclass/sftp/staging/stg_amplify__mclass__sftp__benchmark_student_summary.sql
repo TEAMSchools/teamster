@@ -46,7 +46,6 @@ select
     cast(device_date as date) as device_date,
     cast(sync_date as date) as sync_date,
 
-    -- scores
     cast(basic_comprehension_maze_score as numeric) as basic_comprehension_maze_score,
     cast(composite_score as numeric) as composite_score,
     cast(correct_responses_maze_score as numeric) as correct_responses_maze_score,
@@ -72,7 +71,6 @@ select
         enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
     ) as enrollment_grade_int,
 
-    -- Tested Out
     if(
         composite_national_norm_percentile = 'Tested Out', true, false
     ) as composite_tested_out,
@@ -109,7 +107,6 @@ select
         word_reading_wrf_national_norm_percentile = 'Tested Out', true, false
     ) as word_reading_wrf_tested_out,
 
-    -- Discontinued
     if(
         composite_national_norm_percentile = 'Discontinued', true, false
     ) as composite_discontinued,
@@ -138,7 +135,6 @@ select
         word_reading_wrf_national_norm_percentile = 'Discontinued', true, false
     ) as word_reading_wrf_discontinued,
 
-    -- Local Percentiles
     safe_cast(composite_local_percentile as numeric) as composite_local_percentile,
     safe_cast(
         letter_names_lnf_local_percentile as numeric
@@ -165,7 +161,6 @@ select
         basic_comprehension_maze_local_percentile as numeric
     ) as basic_comprehension_maze_local_percentile,
 
-    -- National Percentiles
     safe_cast(
         composite_national_norm_percentile as numeric
     ) as composite_national_norm_percentile,

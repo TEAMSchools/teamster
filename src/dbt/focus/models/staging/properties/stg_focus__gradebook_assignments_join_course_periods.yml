@@ -1,0 +1,94 @@
+models:
+  - name: stg_focus__gradebook_assignments_join_course_periods
+    description: >-
+      Focus link between a gradebook assignment and the course periods it was
+      assigned to — one row per assignment per course period, carrying the
+      assignment's dates for that section. An assignment is commonly assigned to
+      several sections, so this table is many-to-one against
+      stg_focus__gradebook_assignments.
+    columns:
+      - name: id
+        description: Primary key — Focus assignment/course-period link id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: assignment_id
+        description: >-
+          Focus gradebook assignment being linked (joins
+          `stg_focus__gradebook_assignments`).
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__gradebook_assignments')
+                field: assignment_id
+              config:
+                severity: error
+      - name: course_period_id
+        description: >-
+          Focus course period (section) the assignment was assigned to.
+        data_type: int
+      - name: marking_period_id
+        description: Focus marking period the assignment belongs to.
+        data_type: int
+      - name: assigned_date
+        description: Date the assignment was assigned to this section.
+        data_type: timestamp
+      - name: due_date
+        description: Date the assignment is due for this section.
+        data_type: timestamp
+      - name: publish_date
+        description: Date the assignment became visible for this section.
+        data_type: timestamp
+      - name: show_assigned_time
+        description: Whether the assigned time is shown alongside the date.
+        data_type: boolean
+      - name: show_due_time
+        description: Whether the due time is shown alongside the date.
+        data_type: boolean
+      - name: show_publish_time
+        description: Whether the publish time is shown alongside the date.
+        data_type: boolean
+      - name: assigned_to_all_students
+        description: >-
+          Whether every student in the section received the assignment, as
+          opposed to a selected subset.
+        data_type: boolean
+      - name: include_weekends
+        description: Whether weekends count toward the assignment's date span.
+        data_type: boolean
+      - name: course_buffer
+        description: Whether a course buffer applies to the assignment dates.
+        data_type: boolean
+      - name: restrict_test_to_times
+        description:
+          Whether the assignment is a test restricted to a time window.
+        data_type: boolean
+      - name: google_classroom_url
+        description: Google Classroom link for the assignment, where integrated.
+        data_type: string
+      - name: external_api_id
+        description: >-
+          External API id for the link, when it arrived from an integrated
+          grading tool.
+        data_type: int
+      - name: external_api_uuid
+        description: External API uuid for the link.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

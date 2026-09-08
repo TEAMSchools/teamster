@@ -10,6 +10,7 @@ from dagster_k8s import k8s_job_executor
 from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
     DBT_PROJECT,
+    cambium,
     couchdrop,
     dbt,
     deanslist,
@@ -47,6 +48,7 @@ defs = Definitions(
         load_assets_from_modules(
             modules=[
                 dbt,
+                cambium,
                 extracts,
                 deanslist,
                 edplan,

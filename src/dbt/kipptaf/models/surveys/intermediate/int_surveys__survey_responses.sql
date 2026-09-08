@@ -168,11 +168,31 @@ with
             between srh_alias.effective_date_start_timestamp
             and srh_alias.effective_date_end_timestamp
             and srh_alias.primary_indicator
+    ),
+
+    question_departments as (
+        /* the crosswalk is already one row per abbreviation, so this joins at
+           grain with no projection. Lowered on both sides because sheet entry is
+           not case-constrained; the crosswalk's unique_lowered_abbreviation test
+           is what keeps lowering from collapsing two rows into a fan-out. */
+        select
+            rated_department_code,
+            rated_department_name,
+
+            lower(abbreviation) as question_shortname,
+        from {{ ref("stg_google_sheets__google_forms__question_department_crosswalk") }}
+        where abbreviation is not null
     )
 
 select
     e.*,
+
+    qd.rated_department_code,
+    qd.rated_department_name,
+
     coalesce(
         cast(e.respondent_employee_number as string), e.respondent_email
     ) as respondent_identifier,
 from enriched as e
+left join
+    question_departments as qd on lower(e.question_shortname) = qd.question_shortname

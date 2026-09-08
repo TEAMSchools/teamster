@@ -2,14 +2,12 @@ with
     student_enrollments as (
         select
             _dbt_source_project,
-            studentid,
             schoolid,
-            yearid,
             student_number,
             entrydate,
             exitdate,
             academic_year,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
     ),
 
     reporting_terms as (
@@ -28,35 +26,34 @@ with
 
     gpa_term as (
         select
-            gt._dbt_source_project,
-            gt.studentid,
-            gt.schoolid,
-            gt.yearid,
-            gt.term_name,
-            gt.semester,
-            gt.is_current,
-            gt.gpa_term,
-            gt.gpa_y1,
-            gt.gpa_y1_unweighted,
-            gt.gpa_semester,
-            gt.n_failing_y1,
-            gt.total_credit_hours_term,
-            gt.total_credit_hours_y1,
-            gt.grade_avg_term,
-            gt.grade_avg_y1,
-
-            gc.cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected,
-            gc.earned_credits_cum,
-            gc.potential_credits_cum,
+            _dbt_source_project,
+            schoolid,
+            yearid,
+            academic_year,
+            student_number,
+            term_name,
+            semester,
+            gpa_term,
+            gpa_y1,
+            gpa_y1_unweighted,
+            gpa_semester,
+            n_failing_y1,
+            total_credit_hours_term,
+            total_credit_hours_y1,
+            grade_avg_term,
+            grade_avg_y1,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            cumulative_y1_gpa_projected,
+            earned_credits_cum,
+            potential_credits_cum,
 
             row_number() over (
-                partition by gt._dbt_source_project, gt.studentid, gt.schoolid
+                partition by _dbt_source_project, student_number, schoolid
                 order by
-                    gt.yearid desc,
+                    academic_year desc,
                     case
-                        gt.term_name
+                        term_name
                         when 'Q4'
                         then 4
                         when 'Q3'
@@ -69,12 +66,7 @@ with
                     end desc
             ) as rn_current,
 
-        from {{ ref("int_powerschool__gpa_term") }} as gt
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on gt.studentid = gc.studentid
-            and gt.schoolid = gc.schoolid
-            and gt._dbt_source_project = gc._dbt_source_project
+        from {{ ref("int_students__gpa") }}
     )
 
 select
@@ -143,9 +135,9 @@ select
 from gpa_term as gt
 inner join
     student_enrollments as enr
-    on gt.studentid = enr.studentid
+    on gt.student_number = enr.student_number
     and gt.schoolid = enr.schoolid
-    and gt.yearid = enr.yearid
+    and gt.academic_year = enr.academic_year
     and gt._dbt_source_project = enr._dbt_source_project
 left join
     reporting_terms as rt

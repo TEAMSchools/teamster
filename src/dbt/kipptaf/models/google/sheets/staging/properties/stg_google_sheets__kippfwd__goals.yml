@@ -1,37 +1,131 @@
 models:
   - name: stg_google_sheets__kippfwd__goals
+    description: >-
+      KIPP Forward's percentage targets for college-entrance assessments, one
+      row per academic year, test type, grade level, score type, and metric. The
+      sheet is wide, carrying one column per metric; this model unpivots it to
+      long so a consumer can join a goal to a score without naming each metric.
+
+
+      Carries only the share of students expected to clear a bar — the bar
+      itself lives on stg_google_sheets__kippfwd__scaffold as
+      a1_attempt_min_score, a2_plus_attempts_min_score, hs_grad_ready_min_score,
+      and college_ready_min_score. A consumer needs both models to evaluate a
+      goal.
+
+
+      PSAT administrations have no second-attempt goal, and UNPIVOT excludes
+      nulls, so those rows are absent rather than present with a null goal.
+
+
+      Replaces a sheet that keyed goals by region, school, and a derived metric
+      label, and that mixed thresholds and percentages in one pair of columns.
+      Goals are no longer differentiated by region or school.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - test_type
+              - grade_level
+              - score_type
+              - expected_metric_type
+              - is_over_time_goal
+          config:
+            severity: error
+            # expected_metric_type is in the key because the unpivot emits one
+            # row per metric. cohort is deliberately out of it — it moves
+            # one-for-one with grade_level, so it would never break a tie.
+            # score_type is in it because grade 10 carries separate PSAT10, PSAT
+            # NMSQT, and combined rows, and grade_level is in it because SAT
+            # appears at both 11 and 12. is_over_time_goal is in it because the
+            # sheet's over time columns strip to the same expected_metric_type as
+            # their per-grade counterparts.
     columns:
-      - name: region
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the goal applies to, start-year convention, so SY26-27
+          reads 2026. Every current row is 2026 — the sheet is restated each
+          year rather than accumulating history.
+      - name: test_type
         data_type: string
-      - name: schoolid
-        data_type: int64
+        description: >-
+          Official or Practice, matching the test_type vocabulary on both
+          assessment hubs. Practice carries its own targets because a practice
+          administration is scheduled, so participation is expected to run
+          higher than for an official sitting the student registers for.
       - name: grade_level
-        data_type: int64
+        data_type: string
+        description: >-
+          Grade the goal applies to. String rather than integer to match
+          expected_grade_level on the scaffold, which holds comma-separated
+          lists where one row covers two grades.
       - name: cohort
         data_type: string
-      - name: expected_test_type
+        description: >-
+          Graduating class the goal applies to, an alternate key to grade_level
+          for the same students. Both are carried because a student who falls
+          behind sits a grade that no longer matches their cohort, and the two
+          framings disagree for them.
+      - name: score_type
         data_type: string
-      - name: expected_scope
+        description: >-
+          Score identifier the goal is measured against, matching score_type on
+          the assessment hubs. psat10nmsqt_total is a combined row covering both
+          PSAT10 and PSAT NMSQT attempts, which have no separate goal at the
+          combined grain.
+      - name: expected_metric_type
         data_type: string
-      - name: expected_score_type
-        data_type: string
-      - name: expected_subject_area
-        data_type: string
+        description: >-
+          Which metric the goal targets — pct_1_attempt, pct_2_plus_attempts,
+          pct_hs_grad_ready, or pct_college_ready. Values are the sheet's wide
+          column names, carried through by the unpivot, so adding a metric to
+          the sheet adds rows here rather than columns. The sheet's two over
+          time columns strip to the same four values, so this column names the
+          metric and is_over_time_goal names which framing of it, keeping
+          consumers off suffixed string matching.
+      - name: expected_metric_goal
+        data_type: float64
+        description: >-
+          Share of students expected to meet the metric, as a 0-1 fraction.
+      - name: is_over_time_goal
+        data_type: boolean
+        description: >-
+          Whether the goal is the cohort-independent one stated for the over
+          time view, which reports on neither grade level nor cohort and so
+          cannot use a per-grade goal. False rows are the per-grade goals every
+          other view reads.
+
+
+          Stated on every row, so a benchmark goal always resolves from one
+          place rather than sometimes falling back to the per-grade columns. SAT
+          is the only score type where the two disagree, being the only one
+          stated at more than one grade.
+
+
+          The sheet has no over time column for the Attempts metrics, whose
+          goals match across a score type's grades, so those have no true row
+          here. UNPIVOT excludes nulls, so an absent over time goal is a missing
+          row rather than a row with a null goal.
       - name: expected_goal_type
         data_type: string
-      - name: pct_goal
-        data_type: float64
-      - name: min_score
-        data_type: float64
-      - name: expected_metric_name
-        data_type: string
+        description: >-
+          Attempts or Benchmark, grouping the metric types into the two families
+          the reporting views branch on — Attempts compares against a count of
+          sittings, Benchmark against a scale score. Null for a metric type the
+          case does not name, which is how a new sheet column surfaces here
+          rather than being silently folded into an existing family.
       - name: expected_goal_subtype
         data_type: string
-      - name: expected_aligned_scope
-        data_type: string
-      - name: expected_aligned_subject_area
-        data_type: string
-      - name: expected_metric_label
-        data_type: string
-      - name: expected_aligned_subject
-        data_type: string
+        description: >-
+          The metric as the reporting views label it — 1 Attempt, 2+ Attempts,
+          HS Grad-Ready, College-Ready. Spelled out rather than derived from
+          expected_metric_type because the four values disagree on separator and
+          on casing, and HS is an initialism no casing function reproduces.
+          Reuses the strings the retired sheet emitted, so predicates already
+          keyed on them keep working. Null alongside a null expected_goal_type
+          for an unnamed metric type.

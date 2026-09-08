@@ -1,0 +1,40 @@
+models:
+  - name: int_focus__calendar_day
+    description: >-
+      Focus in-session calendar days, one row per school per in-session date.
+      Presence of a row in Focus's attendance_calendar is itself the in-session
+      flag, so no constant column is needed to express it. Emits Focus's
+      internal schoolid; kipptaf crosswalks it. Five Focus schools carry
+      unfiltered 212-day calendars that include holidays -- a Focus
+      configuration problem tracked with Ops, deliberately not filtered here.
+      Internal-only -- a rpt_ view must sit between this model and any external
+      consumer.
+    data_tests:
+      # Includes academic_year deliberately. Focus reuses a calendar date
+      # across school years for the same school -- 13,552 rows carry only
+      # 12,484 distinct (schoolid, school_date) pairs, but all 13,552 are
+      # distinct once academic_year is added. Asserting the pair alone
+      # reports 1,068 false violations.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [schoolid, academic_year, school_date]
+          config:
+            severity: error
+    columns:
+      - name: school_date
+        description: The in-session calendar date.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: schoolid
+        description: >-
+          Focus internal school id, not the network school number. kipptaf
+          resolves it through the locations crosswalk.
+      - name: academic_year
+        description:
+          Academic year start year (2026 = 2026-27), from Focus syear.
+      - name: week_start_date
+        description: Sunday of the week the date falls in.
+      - name: week_end_date
+        description: Saturday of the week the date falls in.

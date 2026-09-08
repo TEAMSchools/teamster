@@ -180,7 +180,7 @@ with
             week_number_academic_year,
 
             sum(is_tardy) as n_tardies_week,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        from {{ ref("int_students__attendance_daily") }}
         group by
             _dbt_source_project,
             student_number,
@@ -239,6 +239,8 @@ select
     co.ml_status,
     co.status_504,
     co.self_contained_status,
+    co.homeless_status,
+    co.homeless_primary_nighttime_residence,
     co.week_start_monday,
     co.week_end_sunday,
     co.week_number_academic_year,
@@ -293,6 +295,10 @@ select
     coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
 
     if(co.unweighted_ada <= 0.90, true, false) as is_chronically_absent,
+
+    if(
+        co.unweighted_ada <= 0.90, 'Chronic Absence', 'Not Chronic Absence'
+    ) as chronic_absence_status,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 

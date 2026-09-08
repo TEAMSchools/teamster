@@ -1,24 +1,3 @@
-{#-
-  One row per active, primary staff member, keyed on staff_key. Resolves each
-  person's current role to the Cube access model: the student location scope,
-  the staff sensitive-field remit (location + department), and the per-field
-  sensitive scopes. Read by cube.js's resolveAccess (by google_email) to build
-  the securityContext groups and the location/department allow-lists that each
-  view's access_policy reads; not exposed as a Cube. Assembled intra-mart from
-  the current primary work assignment; mappings come from the Google Sheets
-  crosswalks (department override wins over the role mapping). entity
-  (KTAF/Region) is derived from business_unit_name. The viewer identity keys
-  (region_key, location_abbreviation, department_group) are carried so
-  resolveAccess precomputes the location/department allow-lists from the scope
-  level. Rows that resolve to no role emit 'none' (deny) rather than NULL.
-
-  Role crosswalk precedence: when the cube_access_role sheet carries both a
-  wildcard row (entity='any') and a specific row (entity=KTAF/Region) for the
-  same job_function_code, the specific row wins — role_picked ranks a specific
-  entity match ahead of the wildcard and keeps one row per staff, so the overlap
-  cannot fan out staff_key (previously it would have, caught only by the unique
-  test). Wildcard rows remain the entity-agnostic fallback.
--#}
 with
     -- one current primary work assignment per staff (dedup'd below)
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
@@ -122,11 +101,10 @@ with
     ),
 
     -- Rank the crosswalk role rows so a specific-entity match beats the 'any'
-    -- wildcard, then keep one per staff (role_picked). Prevents the fan-out when
-    -- the sheet carries both a wildcard and a specific row for one
-    -- job_function_code. Window rank as a named column, filtered in the next CTE
-    -- (no QUALIFY, per the SQL guide). A LEFT-join miss yields one null-role row
-    -- (role_rank 1) that coalesces to 'none' downstream.
+    -- wildcard, then keep 1 per staff member (`role_picked`). The rank prevents
+    -- a fan-out when the sheet carries both a wildcard and a specific row for
+    -- one `job_function_code`. A LEFT-join miss yields 1 null-role row at
+    -- `role_rank` 1, which coalesces to 'none' downstream.
     role_ranked as (
         select
             e.staff_key,

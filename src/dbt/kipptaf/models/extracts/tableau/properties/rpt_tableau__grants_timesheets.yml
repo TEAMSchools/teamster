@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__grants_timesheets
+    config:
+      enabled: false
     columns:
       - name: location_clean_name
         data_type: string

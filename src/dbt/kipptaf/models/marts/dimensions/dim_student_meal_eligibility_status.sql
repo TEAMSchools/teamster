@@ -1,10 +1,6 @@
 {% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
 
 with
-    -- Per-enrollment-stint PowerSchool enrollment range. One row per stint;
-    -- multi-stint students get multiple dim rows per eligibility record, each
-    -- clipped to its specific entry/exit window. Aggregating to min/max would
-    -- span gaps between stints.
     enrollments as (
         select
             student_number,
@@ -20,7 +16,7 @@ with
             coalesce(
                 date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
             ) as enrollment_end,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         -- graduates carry NULL entry/exit as a placeholder row; drop them
         -- (no enrollment context to clip against).
         where entrydate is not null
@@ -34,12 +30,12 @@ with
 
             person_identifier as student_number,
 
-            -- Titan ships ~14-month annual windows that overlap at academic-year
-            -- boundaries (current year extends past Sept 30, next year begins
-            -- before Aug 1). Trim each row's end to day-before-next-row's-start
-            -- so cross-value transitions don't produce overlapping spans after
-            -- island collapse. Coalesce the open-ended sentinel so nj_leg can
-            -- use a plain max() without re-handling NULL.
+            -- Titan ships roughly 14-month annual windows that overlap at
+            -- academic-year boundaries: the current year extends past Sept 30,
+            -- and the next year begins before Aug 1. Trim each row's end to the
+            -- day before the next row's start, so cross-value transitions do
+            -- not produce overlapping spans after island collapse. Coalesce the
+            -- open-ended sentinel so `nj_leg` can use a plain `max()`.
             least(
                 coalesce(eligibility_end_date, cast('9999-12-31' as date)),
                 coalesce(
@@ -111,7 +107,7 @@ with
             and l.effective_date_end >= e.entrydate
     ),
 
-    pm_leg as (
+    miami_leg as (
         select
             e.student_number,
             e._dbt_source_project,
@@ -126,7 +122,7 @@ with
             e.entrydate as effective_date_start,
             e.enrollment_end as effective_date_end,
         from enrollments as e
-        where e._dbt_source_project in ('kipppaterson', 'kippmiami')
+        where e._dbt_source_project = 'kippmiami'
     ),
 
     unioned as (
@@ -152,11 +148,11 @@ with
             meal_eligibility,
             effective_date_start,
             effective_date_end,
-        from pm_leg
+        from miami_leg
     ),
 
     classified as (
-        -- coalesce both NJ (titan, ~2 NULLs) and PM (lunchstatus NULL when
+        -- coalesce both NJ (titan, ~2 NULLs) and Miami (lunchstatus NULL when
         -- invalid or no current eligibility) to a single 'Unknown' so the
         -- is_meal_eligible derivation never returns NULL.
         select *, coalesce(meal_eligibility, 'Unknown') as meal_eligibility_clean,

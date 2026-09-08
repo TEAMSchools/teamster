@@ -36,6 +36,11 @@ models:
         data_type: date
       - name: advising_provider
         data_type: string
+      - name: college_counselor_id
+        data_type: string
+        description:
+          Salesforce contact id of the college counselor assigned to this
+          contact. Names resolve by joining back to this model on id.
       - name: college_graduated_from
         data_type: string
       - name: college_match_display_gpa

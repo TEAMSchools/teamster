@@ -4,7 +4,6 @@ select
     source_id,
     code,
     label,
-    sort_order,
     min_syear,
     max_syear,
     inactive,
@@ -13,5 +12,7 @@ select
     parent_student_label,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "custom_field_select_options") }}
 where deleted is null

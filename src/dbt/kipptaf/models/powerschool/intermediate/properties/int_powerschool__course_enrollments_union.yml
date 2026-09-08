@@ -1,0 +1,48 @@
+models:
+  - name: int_powerschool__course_enrollments_union
+    description: >-
+      Cross-district union of the four PowerSchool district
+      `base_powerschool__course_enrollments` sources (Newark, Camden, Miami,
+      Paterson), with `_dbt_source_project` extracted from
+      `_dbt_source_relation`. Exists so the SIS-neutral
+      `int_students__course_enrollments` model can `ref()` it instead of
+      inlining `dbt_utils.union_relations`.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 4x/day instead of eager. Rebuilds 24.3 times a day at 1.132 GiB a
+          # build, 27.5 GiB/day, to feed one consumer:
+          # int_students__course_enrollments, which is now on this same cron.
+          # Eager here rebuilds on any change to any of the 4 district
+          # base_powerschool__course_enrollments sources, so it fires far more
+          # often than anything downstream reads.
+          #
+          # Same tick as int_students__course_enrollments, which is its only
+          # child. That model's genuine consumers are all batch exposures --
+          # ddi_suite (0 1, 0 16 Fri, 0 18), literacy_dashboard (0 5),
+          # apm_dashboard (0 6) -- and each tick precedes its consumer.
+          # Sharing the tick means ~any_deps_in_progress serializes the pass:
+          # this model builds first, its child follows in the same run. The
+          # pair costs about 9.4 GiB/day against 81.1 today.
+          #
+          # Not a view: the uniqueness test on (cc_dcid, _dbt_source_project)
+          # guards the cross-district union grain, and the data-change
+          # condition re-materializes tables only, so as a view the test would
+          # fire on code change alone. Refs #5082
+          automation_condition:
+            cron_schedule: 0 0,4,15,17 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cc_dcid
+              - _dbt_source_project
+    columns:
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`) extracted from `_dbt_source_relation`. Materialized at
+          the union point so downstream consumers can join and hash on a stable
+          value.
+        data_type: string

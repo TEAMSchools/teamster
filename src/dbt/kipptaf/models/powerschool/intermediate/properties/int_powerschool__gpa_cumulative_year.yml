@@ -2,10 +2,10 @@ models:
   - name: int_powerschool__gpa_cumulative_year
     description: >-
       Network union of the district int_powerschool__gpa_cumulative_year models
-      (Newark, Camden, Miami) — one row per student, school, and academic year
-      with cumulative Y1 GPA as of the end of that year; current-year rows are
-      projected (is_projected = true) and match int_powerschool__gpa_cumulative
-      projected values exactly.
+      (Newark, Camden, Miami, Paterson) — one row per student, school, and
+      academic year with cumulative Y1 GPA as of the end of that year;
+      current-year rows are projected (is_projected = true) and match
+      int_powerschool__gpa_cumulative projected values exactly.
     config:
       materialized: table
     data_tests:

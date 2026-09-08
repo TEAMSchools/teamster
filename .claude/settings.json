@@ -1,4 +1,7 @@
 {
+  "env": {
+    "MCP_TIMEOUT": "90000"
+  },
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
@@ -184,7 +187,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*",
+        "matcher": "Agent|Workflow|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -212,7 +215,6 @@
     "commit-commands@claude-plugins-official": true,
     "dagster-expert@dagster": true,
     "dbt@dbt-agent-marketplace": true,
-    "dignified-python@dagster": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "superpowers@superpowers-marketplace": true
@@ -237,6 +239,12 @@
       }
     },
     "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers"
+      }
+    },
+    "superpowers-dev": {
       "source": {
         "source": "github",
         "repo": "obra/superpowers"

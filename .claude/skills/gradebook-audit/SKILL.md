@@ -129,10 +129,15 @@ Current `depends_on` list (update if the exposure changes):
 There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
 only if the user asks about disabled or archived workbooks.
 
-The companion student-flags Google Sheet has its own separate exposure in
-`src/dbt/kipptaf/models/exposures/google-sheets.yml`, named
-`rpt_gsheets__gradebook_audit_student_flags` — check there if asked about the
-gsheets side rather than the Tableau side.
+Two companion Google Sheets have their own exposures in
+`src/dbt/kipptaf/models/exposures/google-sheets.yml` — check there if asked
+about the gsheets side rather than the Tableau side:
+
+- `rpt_gsheets__gradebook_audit_student_flags` — the flagged-student review
+  sheet (read side, carries student PII)
+- `rpt_gsheets__gradebook_audit_template` — the expectations upload template
+  (write side; T&L exports it as the CSV they load into `U_EXPECTATIONS` via the
+  PowerSchool plugin)
 
 ---
 
@@ -178,8 +183,11 @@ present it as fact.
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed. Since
 the July 2026 teacher/student split there are no UNPIVOT lists — every flag is a
 hardcoded boolean column, and which model it lives in depends on its grain. Per
-the split's design goal, do NOT add a "reason" column explaining why a flag
-fired — flags stay aggregated booleans.
+the split's design goal, do NOT add a "reason" column to a **student-level**
+flag — those stay aggregated booleans, because they carry PII and fan out per
+student. **Assignment-level** checks are the exception: `flag_reasons` on the
+`category_summary` row already names them in plain language, so a new
+assignment-level check needs a label added there (see "Add a new flag" below).
 
 **Student-level flag** (per student × section × quarter, like
 `qt_percent_grade_greater_100`/`qt_grade_70_comment_missing`):
@@ -204,6 +212,20 @@ fired — flags stay aggregated booleans.
 4. Build in dependency order — `int_extracts__gradebook_audit_student_flags`
    first, then `rpt_gsheets__gradebook_audit_student_flags` and
    `rpt_tableau__gradebook_audit` (both read the int).
+
+**Assignment-level check** (per assignment, like `percent_graded_min_not_met`):
+
+1. Add the check to `int_powerschool__gradebook_assignment_scores_rollup.sql`
+   and fold it into `assignment_has_flags`.
+2. In `rpt_tableau__gradebook_audit.sql`'s `category_join`, add a window
+   `countif` for it over the existing partition
+   (`_dbt_source_project, sectionid, quarter, assignment_category_code`),
+   matching its 4 siblings.
+3. Add a plain-language label to the `array_to_string` array in
+   `category_summary`, keeping the array order stable — Tableau groups on the
+   string, so reordering changes existing values. Do NOT reword an existing
+   label without telling the requester; the strings are user-facing.
+4. Update the properties YAML for both models.
 
 **Category-level flag** (per section × quarter × category, like
 `not_enough_assignments`):
@@ -246,9 +268,27 @@ correctly.
    region's PowerSchool instance and the `U_EXPECTATIONS` table is populated.
    Plugin source and update instructions:
    [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
-2. Verify `int_powerschool__u_expectations_qtd_unpivot` returns rows for the new
+2. Wire the ingestion and the union — four files, in this order (Paterson's
+   rollout in #4879 is the worked example):
+   - add `u_expectations` to
+     `src/teamster/code_locations/<district>/powerschool/sis/dlt/config/assets.yaml`
+     (`cursor_column: whenmodified`, `intraday: true`, `nightly: false`) and
+     bump that district's hardcoded asset counts in `tests/`
+   - drop the `stg_powerschool__u_expectations: +enabled: false` entry from
+     `src/dbt/<district>/dbt_project.yml`
+   - add the `stg_powerschool__u_expectations` source entry to
+     `src/dbt/kipptaf/models/powerschool/sources-<district>.yml`
+   - add the relation to `union_relations` in
+     `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`
+3. **Materialize the dlt asset BEFORE enabling the dbt staging model, and
+   confirm the BigQuery table exists.** dlt creates no table at all for the
+   first load of a source table that is empty, and the newly enabled staging
+   model then fails on a missing relation — which cascades into the kipptaf
+   union and takes the whole gradebook audit down, not just the new region. The
+   plugin being installed is not sufficient; the table needs at least one row.
+4. Verify `int_powerschool__u_expectations_qtd_unpivot` returns rows for the new
    region.
-3. No flag sheet changes needed — the flag columns in
+5. No flag sheet changes needed — the flag columns in
    `rpt_tableau__gradebook_audit` apply to all regions. The only exclusions,
    applied in `category_join`'s `WHERE` clause (and matched in
    `int_extracts__gradebook_audit_student_flags`'s own filters, which both
@@ -297,8 +337,9 @@ reads; the gsheets report itself no longer carries any toggle):
 - `src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`
 - `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
+- `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_template.sql`
 
-**Four changes to make:**
+**Five changes to make:**
 
 1. In `rpt_tableau__gradebook_audit` — change the year filter in
    `category_join`'s `WHERE` clause (1 occurrence, marked
@@ -398,7 +439,25 @@ reads; the gsheets report itself no longer carries any toggle):
    fallback data source available; escalate instead of shipping a change that
    silently reports every comment as missing.
 
-Build and verify after all four changes:
+5. In `rpt_gsheets__gradebook_audit_template` — the expectations upload template
+   T&L uses to build the PowerSchool CSV. Change both occurrences (one filters
+   `int_powerschool__calendar_week` in the `term_weeks` CTE, marked
+   `-- summer toggle: see skill`; one stamps the output `academic_year` column,
+   marked `/* summer toggle: see skill */`):
+
+   ```sql
+   -- change this (appears 2 times):
+   {{ var("current_academic_year") }}
+   -- to this:
+   {{ var("current_academic_year") - 1 }}
+   ```
+
+   **While toggled, this model shows the PRIOR year's week grid.** It is the
+   sheet T&L exports to upload the NEW year's expectations, so do not hand it
+   over as the new-year grid until the toggle is reverted — they would be
+   editing last year's weeks.
+
+Build and verify after all five changes:
 
 ```bash
 uv run dbt build \
@@ -406,6 +465,7 @@ uv run dbt build \
     int_extracts__gradebook_audit_student_flags \
     rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
     rpt_tableau__gradebook_es_comments \
+    rpt_gsheets__gradebook_audit_template \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state target/prod
@@ -417,7 +477,7 @@ would otherwise read the un-toggled prod copy.
 
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
-`current_academic_year - 1` → `current_academic_year` in all four files, and
+`current_academic_year - 1` → `current_academic_year` in all five files, and
 `'last_year'` → `'current_year'` in
 `int_extracts__gradebook_audit_student_flags`.
 

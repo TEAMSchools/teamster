@@ -1,0 +1,65 @@
+models:
+  - name: stg_focus__students_join_groups
+    description: >-
+      Focus student group membership — one row per student per group per school
+      year.
+    columns:
+      - name: id
+        description: Primary key — Focus student-group membership id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: group_id
+        description: Focus student group the membership is in.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__student_groups')
+                field: id
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id in the group. Note this is the network student number
+          prefixed with `8400` (Miami-Dade's FLDOE district number), not the
+          bare student number.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: syear
+        description: Focus school year (start year, e.g. 2026 = 2026-27).
+        data_type: int
+      - name: assignment_type
+        description: >-
+          How the membership was assigned — `dynamic` (resolved from the group's
+          saved search) or assigned by hand.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

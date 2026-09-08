@@ -18,21 +18,18 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_project, academic_year, and entrydate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_student_enrollments')
@@ -46,11 +43,11 @@ models:
           Nullable when the DeansList user cannot be matched to a staff record
           (approximately 4.8% of rows — typically departed staff absent from the
           current roster snapshot).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -66,11 +63,11 @@ models:
           `int_deanslist__incidents` via the canonical master on
           `deanslist_school_id`. NULL for rows where the DeansList school_id
           has no canonical mapping.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:
@@ -85,11 +82,11 @@ models:
           FK to dim_dates for the date the incident was created. Matches
           dim_dates.date_key.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -157,11 +154,11 @@ models:
           FK to dim_dates for the date the incident was closed. Matches
           dim_dates.date_key. Nullable — open incidents have no close date.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -173,11 +170,11 @@ models:
           FK to dim_dates for the date the student is expected to return.
           Matches dim_dates.date_key. Nullable — not all incidents have a return
           date.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

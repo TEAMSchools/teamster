@@ -19,6 +19,6 @@ select
 
 from {{ ref("base_powerschool__sections") }} as sec
 left join
-    {{ ref("stg_powerschool__schools") }} as sch
+    {{ ref("int_students__schools") }} as sch
     on sec.sections_schoolid = sch.school_number
     and sec._dbt_source_project = sch._dbt_source_project

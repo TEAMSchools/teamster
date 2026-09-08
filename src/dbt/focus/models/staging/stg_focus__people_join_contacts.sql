@@ -1,10 +1,3 @@
--- Focus contact detail titles are free-typed; phone_type maps them to the
--- vocabulary shared with the Finalsite contacts intermediate. Email-shaped
--- titles (e.g. "Home Email") also match the home/work substrings below, so
--- is_email_title is derived here and must be checked by downstream consumers
--- before treating value as a phone number. Unmapped and ambiguous (matching
--- both vocabularies) titles are surfaced by the
--- focus_unmapped_phone_contact_titles test.
 select
     id,
     person_id,

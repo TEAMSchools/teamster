@@ -22,8 +22,6 @@ with
     final as (
         select
             roster.*,
-            -- logic to determine if title is active in leader performance management
-            -- by default, editable in app
             coalesce(
                 contains_substr(roster.job_title, 'Chief')
                 or contains_substr(roster.job_title, 'Director')
@@ -34,19 +32,15 @@ with
                 false
             ) as active,
 
-            -- logic for permissions levels in app
             case
-                -- 7: All access
                 when roster.department in ('Data', 'Leadership Development')
                 then 7
                 when roster.job_title = 'Chief Executive Officer'
                 then 7
                 when contains_substr(roster.job_title, 'President')
                 then 7
-                -- 6: All entities, below own permission level
                 when contains_substr(roster.job_title, 'Chief')
                 then 6
-                -- 5: Own entity, below own permission level
                 when
                     contains_substr(roster.job_title, 'Managing Director')
                     and roster.department = 'School Support'
@@ -60,18 +54,14 @@ with
                         'Head of Schools in Residence'
                     )
                 then 5
-                -- Own location, below own permission level
                 when roster.job_title in ('School Leader', 'School Leader in Residence')
                 then 4
-                -- Own location, below own permission level
                 when
                     contains_substr(roster.job_title, 'Managing Director')
                     and roster.entity = 'KIPP TEAM and Family Schools Inc'
                 then 3
-                -- Only their own direct reports
                 when managers.reports_to_employee_number is not null
                 then 2
-                -- Only their own data
                 else 1
             end as permission_level,
         from roster

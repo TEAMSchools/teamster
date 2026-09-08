@@ -387,7 +387,6 @@ with
             cu.criteria as criteria_actual,
 
             if(cu.criteria >= pc.criteria, true, false) as is_met_criteria,
-        -- if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
         from {{ ref("stg_people__miami_performance_criteria") }} as pc
         left join
             criteria_union as cu

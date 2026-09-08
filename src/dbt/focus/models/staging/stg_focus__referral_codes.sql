@@ -25,7 +25,8 @@ select
     letter_source,
     grade_levels,
     probation_option_ids,
-    priority,
     created_at,
     updated_at,
+
+    cast(priority as numeric) as priority,
 from {{ source("focus", "referral_codes") }}

@@ -52,3 +52,24 @@ data_tests:
           ref:
             name: int_powerschool__gpa_cumulative_year
             package: powerschool
+
+  - name: base_powerschool__course_enrollments__no_studyear_course_overlap
+    description: >-
+      Within a (student, year, course) -- cc_studyear is PowerSchool's composite
+      student-and-year identifier -- consecutive enrollment rows must not have
+      date ranges that overlap by more than one day. A single shared boundary
+      day is a normal sequential transfer and is allowed; multi-day overlap is
+      the source-side defect behind the cc date-range fan-out (#3900, Ops
+      cleanup #3915). Moved here from kipptaf, where it read the network-level
+      union and was therefore blind to Miami, whose PowerSchool archive holds no
+      AY2026 rows. Runs at each consuming district project's default warn
+      severity. Failing with 10,807 rows as of 2026-08-28: kippnewark 7,901,
+      kippcamden 2,783, kipppaterson 123. Note: kippmiami does not consume the
+      powerschool package — its legacy PowerSchool stack was removed in #4441
+      once the SIS had moved to Focus — so Miami is not monitored by this test.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: base_powerschool__course_enrollments
+            package: powerschool

@@ -14,6 +14,7 @@ select
     c.actual_college_graduation_date as contact_actual_college_graduation_date,
     c.actual_hs_graduation_date as contact_actual_hs_graduation_date,
     c.advising_provider as contact_advising_provider,
+    c.college_counselor_id as contact_college_counselor_id,
     c.college_graduated_from as contact_college_graduated_from,
     c.college_match_display_gpa as contact_college_match_display_gpa,
     c.current_college_cumulative_gpa as contact_current_college_cumulative_gpa,
@@ -78,6 +79,8 @@ select
 
     psc.name as contact_postsec_advisor_name,
 
+    ccc.name as contact_college_counselor_name,
+
     c.last_name || ', ' || c.first_name as contact_lastfirst,
 
     (
@@ -89,3 +92,4 @@ from {{ ref("stg_kippadb__contact") }} as c
 left join {{ ref("stg_kippadb__user") }} as u on c.owner_id = u.id
 left join {{ ref("stg_kippadb__record_type") }} as rt on c.record_type_id = rt.id
 left join {{ ref("stg_kippadb__contact") }} as psc on c.postsec_advisor = psc.id
+left join {{ ref("stg_kippadb__contact") }} as ccc on c.college_counselor_id = ccc.id

@@ -1,7 +1,9 @@
 # CLAUDE.md — `.k8s/`
 
 Helm overrides and deploy scripts for Dagster Cloud agent and 1Password Connect
-on GKE Autopilot.
+on GKE Autopilot. Agent lifecycle, eviction and priority, troubleshooting, and
+agent error observability are incident runbooks: invoke the `dagster-k8s-ops`
+skill.
 
 ## Cluster
 
@@ -28,9 +30,17 @@ on GKE Autopilot.
 - **Helm deploy is manual** — editing `values-override.yaml` is fine, but
   changes only take effect after `helm upgrade`. `git push` builds code location
   images, not Helm agent config.
+- `deploymentStartupTimeout` (Helm `workspace` key, chart default 300s) — time
+  the agent waits for the code server Deployment to become ready, i.e. for the
+  pod to be SCHEDULED. Currently set to 900s. This is the timeout that fires
+  during a NAP `FailedScheduling` wait. Raising it also raises the agent's
+  worst-case first reconcile, so the `readinessProbe` `failureThreshold` and
+  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` must move with it, along
+  with `install.sh`'s `rollout status --timeout`.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
-  agent waits for a code server gRPC ping after creating the Deployment.
-  Currently set to 300s in `values-override.yaml`.
+  agent waits for a code server gRPC ping after the Deployment exists. Fires on
+  slow definitions import, not on failed placement. Currently set to 300s in
+  `values-override.yaml`.
 
 ## Scheduling
 
@@ -72,6 +82,12 @@ on GKE Autopilot.
   `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
   reconciliation cascade (cold start + ClusterIP churn) — factor into cost
   analysis.
+- **Run/step pods and code servers both run at priority 0.** Do not add a
+  `priorityClassName` to either. Run pods sat at 1000 (`dagster-run`) until
+  2026-09-08, when one preempted the kippcamden code server mid-upload and left
+  the location in a terminal `ERROR` for four days (#5187). Only the agent
+  carries a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes
+  where it competes with nothing. Asserted in `tests/test_k8s_config.py`.
 - **Code server topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
@@ -98,82 +114,6 @@ hit built-in login/SFTP-template fields.
   and `dagster-k8s/config` tags can set: `resources`, `env`, `volumeMounts`,
   `nodeSelector`, `affinity`, `volumes`, `annotations`, and
   `ttlSecondsAfterFinished`. Everything else is locked to Helm chart values.
-
-## Agent Lifecycle
-
-- Container images are multi-arch (amd64 + arm64) via Docker buildx matrix in CI
-  — x86 fallback works without build changes.
-- **Agent image architecture**: `dagster/dagster-cloud-agent` is amd64-only (as
-  of 1.12.22). Check with
-  `curl -s "https://hub.docker.com/v2/repositories/dagster/dagster-cloud-agent/tags/?page_size=3"`.
-  `docker` CLI is not available in codespace.
-- **Agent readiness probe** checks for
-  `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
-  (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
-- **Orphan cleanup env vars** —
-  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` (set to 900s) and
-  `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
-  quickly orphaned code server Deployments from previous agent IDs are deleted.
-  Do not set grace period below reconciliation time (~3-4 min).
-- **Code server ClusterIPs change on every reconcile** —
-  `unique_resource_name()` in
-  `dagster_cloud/workspace/user_code_launcher/utils.py` appends a fresh
-  `uuid4().hex[:6]`; Services are delete-old/create-new, never updated in place.
-  Multiple distinct gRPC IPs across tick errors in a short window = agent
-  reconciliation, NOT pod preemption. Audit-log signal:
-  `protoPayload.methodName="io.k8s.core.v1.services.create"` on `dagster-cloud`
-  namespace.
-- **`dagsterCloudAgent.replicas: 2` doubles Service churn** — both replicas race
-  and independently recreate Services per control-plane update. Agent HA trades
-  directly against reduced ClusterIP churn; currently set to 1.
-
-## Eviction and Priority
-
-- `safe-to-evict: "false"` only blocks cluster autoscaler evictions — kubelet
-  node-pressure evictions (exit 137, OOM) are unaffected. Scale-Out density
-  makes these occasional; Dagster retries automatically.
-- **PriorityClass `dagster-run`** (value 1000) on run/step pods makes kubelet
-  evict code server pods (default priority 0) first during node memory pressure.
-- **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
-  run/step pods, preventing mutual preemption. Does not protect against OOM
-  kills of the pod itself — only eviction ordering. Code servers tolerate
-  eviction: they are stateless and PDB-protected (`maxUnavailable: 1`).
-- **PDB for code servers** uses `maxUnavailable: 1`. Do not switch to
-  `minAvailable: 1` — GKE Recommender flags single-replica + `minAvailable: 1`
-  as blocking voluntary evictions (node maintenance). The known
-  `CalculateExpectedPodCountFailed` warning during Dagster Cloud rollovers (old
-  Deployment deleted before pods terminate) is acceptable: single-replica
-  rollovers are unprotected by definition.
-- **PDBs do NOT block spot reclaim** — spot reclaim is involuntary.
-- **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
-  `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
-  (priority 1000) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,
-  metrics-agent, etc. on a node. Unpreventable at our layer. Observable
-  signature in pod events: "Preempted in order to admit critical pod". Mitigated
-  by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
-  `DisruptionTarget` pod condition — preempted pods transparently retry without
-  burning `backoffLimit`.
-- **Step pod replacement zombie (upstream
-  [dagster-io/dagster#33755](https://github.com/dagster-io/dagster/issues/33755))**
-  — when `podFailurePolicy: Ignore` spawns a replacement step pod (preemption,
-  `TaintManagerEviction`, any `DisruptionTarget`), the replacement hits
-  Dagster's `verify_step()` duplicate-start guard, logs
-  `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
-  and exits 0. Step state never advances; run hangs until
-  `run_monitoring.max_runtime_seconds`. Signature: duplicate
-  `StepWorkerStartedEvent` → "already started" `EngineEvent` → silence →
-  `RunCancelingEvent` at the max_runtime mark. Don't chase the asset's code or
-  query — check the auto-retry; if it succeeded, this was infra disruption, no
-  fix needed.
-- **`required` antiAffinity authorizes scheduler preemption** of the target pods
-  when no other node fits. `runK8sConfig.affinity.podAntiAffinity` is `required`
-  against code-server labels, with run pods at priority 1000 vs code-server 0 —
-  so the scheduler CAN evict code servers at schedule time, not just kubelet at
-  eviction time. Do not describe this anti-affinity as "isolating" code servers
-  from runs or "preventing co-location."
-- `ttlSecondsAfterFinished` is etcd/apiserver hygiene only — terminated
-  containers already released cgroup RSS, so TTL does NOT free node memory. Do
-  not propose it as a lever for node memory pressure or eviction issues.
 
 ## gRPC Worker Threads
 
@@ -245,78 +185,6 @@ and block scheduling everywhere. Use code-server-specific labels
 (`managed_by: K8sUserCodeLauncher`) or agent-specific labels
 (`app.kubernetes.io/name: dagster-cloud-agent`) when the anti-affinity target is
 a different pod type.
-
-## Troubleshooting
-
-- **Code location down**: Use `list_code_locations` (Dagster MCP) for the error
-  summary, then **GKE pod logs** (`mcp__gke__query_logs`) for the full picture.
-  The `list_code_locations` error only shows the last 25 log lines from the pod
-  — always check GKE logs for the complete timeline.
-- **Dagster Cloud deployment model**: Each deploy creates a new k8s Deployment
-  (`<location>-prod-<hash>`). Old Deployments are deleted during rollover.
-  Multiple commits in quick succession → multiple deployments → pods competing
-  for resources.
-- **GKE log queries**: Filter by `resource.labels.pod_name:<prefix>` for
-  container logs. For k8s events (log_name `.../logs/events`), resource type
-  depends on event scope: pod-level kubelet/scheduler events (`Preempted`,
-  `Evicted`, `OOMKilling`, `Killing`) are `resource.type="k8s_pod"`;
-  cluster-level events (`ScaleUpFailed`, `FailedScheduling`, `NodeNotReady`,
-  `FailedCreate`) are `resource.type="k8s_cluster"`. Use `jsonPayload.reason` to
-  filter event types.
-- **Pathlib `AttributeError` on code server startup**: `PosixPath` missing
-  `_str`/`_drv` slots = SIGTERM hit during Python module import (preemption or
-  eviction). Pods self-heal on restart. Safe to mute in GCP Error Reporting.
-- **GCP Error Reporting investigation**: `list_group_stats` (find groups) →
-  `list_log_entries` (reconstruct multi-line tracebacks from individual log
-  entries) → `k8s_pod` events (find root cause: preemption, OOM, eviction).
-- **Timeout types** (do not conflate): Startup (`serverProcessStartupTimeout`,
-  default 180s) = agent→code server gRPC ping; failure → deployment removed +
-  replacement, causes churn. Sensor execution (300s) = sensor ran too long; code
-  server stays up, no churn.
-- **Code server startup failure signals**: Check ALL pods for the deployment.
-  `Aborted!` stderr = SIGABRT (native crash). `DagsterExecutionInterruptedError`
-  = SIGTERM during import (rollover). Silent hang after "Starting Dagster code
-  server" = blocked I/O — confirm with
-  `kubernetes.io/container/cpu/core_usage_time` (`ALIGN_RATE`,
-  `alignmentPeriod: "60s"`): near-zero CPU on Running/Ready pod = I/O block.
-- **Agent health check replacement paths**: Four paths replace code server. Only
-  gRPC UNAVAILABLE uses grace period
-  (`DAGSTER_CLOUD_CODE_SERVER_HEALTH_CHECK_REDEPLOY_TIMEOUT` = startup timeout).
-  Other three immediate: error state (SerializableErrorInfo), recovery (agent
-  local error vs Cloud healthy), pex disappeared. "300 seconds" log + immediate
-  replace = hit immediate path on next reconciliation.
-- **GKE traceback retrieval**: Tracebacks split across many log entries. Search
-  exception line first:
-  `textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"`.
-  Narrow timestamp. pageSize 10-15 (50 exceeds tokens on per-line entries).
-- **Pod zone placement**: `list_log_entries` with
-  `resource.type="gce_subnetwork"` +
-  `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
-  `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
-- **Autopilot node pre-warming**: Not possible — no DaemonSets, no image
-  pre-pulling, no node lifecycle control. Only levers for cold-node startup
-  latency: image size reduction and Dagster timeout increases.
-- **CPU limit alert sensitivity**: `GKE Container - High CPU Limit Utilization`
-  fires at >90% `ALIGN_MEAN` over 60s with `count=1`. When an asset's `op_tags`
-  CPU limit alerts, bump by 250m — re-measure peak with
-  `kubernetes.io/container/cpu/core_usage_time` `ALIGN_RATE` before each
-  subsequent bump.
-
-## Agent Error Observability
-
-- `get_cloud_agents` errors array capped at **25 per agent** — most recent 25
-  only. GCP container logs on `user-cloud-dagster-cloud-agent-agent` pods are
-  the complete record.
-- Schedule tick evaluation retries gRPC calls indefinitely within a single tick.
-  Agent-level "Error serving request" logs during preemption are noise, not tick
-  failures. Only `get_tick_history(statuses=["FAILURE"])` reflects terminal
-  schedule failures.
-- **Hybrid daemon location** — sensor / asset / schedule daemons run in the
-  Dagster Cloud control plane, NOT in the local agent. OSS `dagster.yaml`
-  settings (`max_tick_retries`, `auto_materialize.*`, etc.) do not apply; the
-  Dagster+ full deployment settings (see Dagster+ Deployment Settings section)
-  expose no tick-retry knob. Terminal `DagsterUserCodeUnreachableError` ticks
-  remain terminal.
 
 ## Dagster+ Deployment Settings
 

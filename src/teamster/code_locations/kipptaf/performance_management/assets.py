@@ -174,7 +174,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     if df_current.shape[0] == 0:
         yield Output(value=([], OUTLIER_DETECTION_SCHEMA), metadata={"records": 0})
         yield check_avro_schema_valid(
-            asset_key=context.asset_key, records=[{}], schema=OUTLIER_DETECTION_SCHEMA
+            asset_key=context.asset_key, records=[], schema=OUTLIER_DETECTION_SCHEMA
         )
         return
 

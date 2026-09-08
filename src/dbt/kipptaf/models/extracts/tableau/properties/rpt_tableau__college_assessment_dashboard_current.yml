@@ -1,5 +1,44 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_current
+    description: >-
+      Currently enrolled high school students measured against KIPP Forward's
+      attempt and benchmark goals, one row per student per goal. The workbook
+      aggregates these rows into its school, regional and network views, so the
+      model no longer emits a row per granularity level.
+
+
+      That collapse is possible because goals stopped varying by school and
+      region. One goal now applies at every level, and grade is the only
+      dimension a goal is still stated at.
+
+
+      Reads the By Grade branch of int_google_sheets__kippfwd__goals_unpivot, so
+      thresholds and targets arrive paired and neither sheet is joined here. ACT
+      is excluded, matching what this report has always covered.
+
+
+      Only a total-level Benchmark is grade-specific. Attempts and section
+      thresholds apply to every student regardless of grade, which is how the
+      retired goals sheet carried them.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - expected_test_type
+              - expected_score_type
+              - expected_metric_name
+          config:
+            severity: error
+            # The grain the workbook aggregates over, so a fan-out here
+            # double-counts a student into a reported percentage rather than
+            # failing. expected_test_type is in the key because Official and
+            # Practice share one score_type vocabulary; without it the two would
+            # collide and any per-test-type logic that blends them would surface
+            # here as duplicates instead of as quietly wrong values.
     columns:
       - name: academic_year
         data_type: int64
@@ -7,6 +46,22 @@ models:
         data_type: string
       - name: state
         data_type: string
+      - name: district
+        data_type: string
+        description: >-
+          Reads KTAF for every row, so the network view is an aggregation over a
+          real column rather than a grand total. state, region, school and
+          schoolid carry the narrower levels, and all of them now share one goal
+          per grade and metric — the sheet no longer differentiates a goal by
+          school or region.
+
+
+          A KTAF total here covers Camden and Newark only, which is narrower
+          than the name suggests. This report is high school and Paterson has no
+          high school grades. Miami has no HS rows in this model in any academic
+          year, and is not on Illuminate, so its practice scores could not be
+          tracked even once it does. So the network level is every high school
+          with trackable scores rather than every region.
       - name: region
         data_type: string
       - name: schoolid
@@ -67,29 +122,41 @@ models:
         data_type: string
       - name: score_type
         data_type: string
-      - name: granularity_level
-        data_type: string
-      - name: expected_board_890_plus_min_score
-        data_type: float64
-      - name: expected_board_1010_plus_min_score
-        data_type: float64
-      - name: expected_board_890_plus_pct_goal
-        data_type: float64
-      - name: expected_board_450_plus_min_score
-        data_type: float64
-      - name: expected_board_440_plus_min_score
-        data_type: float64
       - name: score
         data_type: float64
+        description: >-
+          The student's best result for this metric — their highest scale score
+          on a Benchmark row, their lifetime sitting count on an Attempts row.
+          Null where they have no result for the score type, which is how a
+          non-test-taker stays visible rather than being dropped.
       - name: met_min_score_int
         data_type: int64
+        description: >-
+          Whether score clears expected_metric_min_score. Reads 0 rather than
+          null when score is null, so an average over it treats a non-test-taker
+          as not meeting the bar.
       - name: alt_met_min_score_int
         data_type: int64
-      - name: met_min_board_890_plus_score_int
-        data_type: int64
-      - name: met_min_board_1010_plus_score_int
-        data_type: int64
-      - name: met_min_board_450_plus_min_score
-        data_type: int64
-      - name: met_min_board_440_plus_min_score
-        data_type: int64
+        description: >-
+          The same comparison, except that 1 Attempt requires score to equal the
+          threshold rather than clear it, so a student who sat the test twice is
+          not counted under the one-attempt metric.
+      - name: benchmark_tier
+        data_type: string
+        description: >-
+          Which readiness band the student's score falls in for this score type
+          — College-Ready, HS Grad-Ready, or No Benchmark Met. The three are
+          mutually exclusive and cover every test taker, so a share of test
+          takers sums to one across them.
+
+
+          Derived from both tiers evaluated over the same student and score
+          type, which is why it can be read off a single row. It replaces four
+          wide met_min_board_* flags, whose thresholds were a duplicate encoding
+          of the HS Grad-Ready and College-Ready cut scores the scaffold already
+          carries.
+
+
+          Null on Attempts rows, which have no readiness band, and null where
+          score is null — so filtering it non-null gives the test-taker
+          population these bands are reported over.

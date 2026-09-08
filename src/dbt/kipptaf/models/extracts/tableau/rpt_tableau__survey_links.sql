@@ -75,7 +75,6 @@ with
     ),
 
     final as (
-        /* Staff Info and Cert */
         select
             r.employee_number,
             r.assignment_status,
@@ -188,7 +187,6 @@ with
 
         union all
 
-        /* Intent to Return */
         select
             r.employee_number,
             r.assignment_status,
@@ -224,7 +222,6 @@ with
 
         union all
 
-        /* KTAF Support Survey */
         select
             r.employee_number,
             r.assignment_status,
@@ -280,7 +277,6 @@ with
 
         union all
 
-        /* Manager Survey */
         select
             r.employee_number,
             r.assignment_status,
@@ -339,7 +335,6 @@ with
 
         union all
 
-        /* Support Survey */
         select
             r.employee_number,
             r.assignment_status,
@@ -382,7 +377,6 @@ with
 
         union all
 
-        /* School Community Diagnostic Staff Survey */
         select
             r.employee_number,
             r.assignment_status,
@@ -416,7 +410,6 @@ with
 
         union all
 
-        /* TNTP Insight */
         select
             r.employee_number,
             r.assignment_status,
@@ -451,7 +444,6 @@ with
 
         union all
 
-        /* Gallup Q12 Survey */
         select
             r.employee_number,
             r.assignment_status,

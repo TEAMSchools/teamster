@@ -65,6 +65,22 @@ def test_parse_fk_edges_ignores_relationships_tests_on_table_marts() -> None:
     ]
 
 
+def test_parse_fk_edges_reads_config_meta_foreign_key() -> None:
+    edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_fct_meta_fk.yml")
+
+    # A table mart records FKs under config.meta.foreign_key instead of as
+    # constraints (#4587 / #4821). Both forms yield edges, in column order;
+    # primary_key and relationships-only columns still yield nothing.
+    assert edges == [
+        gen.FkEdge(
+            "fct_meta_sample",
+            "assessment_administration_key",
+            "dim_assessment_administrations",
+        ),
+        gen.FkEdge("fct_meta_sample", "still_constrained_key", "dim_other"),
+    ]
+
+
 def test_parse_fk_edges_warns_and_skips_legacy_expression(capsys) -> None:
     # An FK constraint using the legacy free-text expression: form (no to:) is
     # skipped, and a warning is emitted so the dropped FK is not silent.

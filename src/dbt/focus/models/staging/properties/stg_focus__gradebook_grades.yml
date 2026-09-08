@@ -1,0 +1,113 @@
+models:
+  - name: stg_focus__gradebook_grades
+    description: >-
+      Focus gradebook scores — one row per student per assignment, carrying the
+      earned points, the letter grade, and the flags that decide whether the
+      score counts toward the average.
+    columns:
+      - name: id
+        description: Primary key — Focus gradebook grade id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id. Note this is the network student number prefixed
+          with `8400` (Miami-Dade's FLDOE district number), not the bare student
+          number.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: assignment_id
+        description: >-
+          Focus gradebook assignment the score is for (joins
+          `stg_focus__gradebook_assignments`).
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__gradebook_assignments')
+                field: assignment_id
+              config:
+                severity: error
+      - name: standard_id
+        description: >-
+          Focus standard the score is against, for standards-based rows (joins
+          `stg_focus__standards`).
+        data_type: int
+      - name: points
+        description: Points the student earned on the assignment.
+        data_type: numeric
+      - name: possible_points
+        description: >-
+          Points possible for this student, when it differs from the
+          assignment's own point value (e.g. an accommodation).
+        data_type: numeric
+      - name: letter_grade
+        description: >-
+          Letter grade recorded for the score, for assignments graded by letter
+          rather than points.
+        data_type: string
+      - name: exclude_from_average
+        description: Whether the score is excluded from the gradebook average.
+        data_type: boolean
+      - name: late
+        description: Whether the assignment was turned in late.
+        data_type: boolean
+      - name: highlight
+        description: Y/N — whether the teacher flagged the score for follow-up.
+        data_type: string
+      - name: comment
+        description: Free-text teacher comment on the score.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: comment_codes
+        description: Canned comment codes attached to the score.
+        data_type: string
+      - name: accommodations
+        description: Accommodations applied when the assignment was scored.
+        data_type: string
+      - name: external_api_uuid
+        description: >-
+          External API uuid for the score, when it arrived from an integrated
+          grading tool.
+        data_type: string
+      - name: last_updated_user
+        description: Identifier of the user who last updated the score.
+        data_type: int
+      - name: last_updated_date
+        description: Source last-updated timestamp.
+        data_type: timestamp
+      - name: imported
+        description: Y/N — whether the score was imported.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

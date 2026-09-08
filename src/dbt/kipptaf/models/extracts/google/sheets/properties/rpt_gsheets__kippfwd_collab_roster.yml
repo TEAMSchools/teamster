@@ -1,5 +1,8 @@
 models:
   - name: rpt_gsheets__kippfwd_collab_roster
+    description: >-
+      **Excludes Miami by design.** Same KIPP Forward alumni population as
+      `rpt_gsheets__kfwd_flc`; Miami has no graduates yet. Ratified on #4996.
     columns:
       - name: "`Salesforce ID`"
         data_type: string

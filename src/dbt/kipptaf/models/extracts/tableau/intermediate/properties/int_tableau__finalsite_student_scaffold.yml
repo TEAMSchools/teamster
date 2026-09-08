@@ -2,6 +2,18 @@ models:
   - name: int_tableau__finalsite_student_scaffold
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~118 executions/day on the eager table condition. Only 3 models
+          # depend on it and its sole exposure, fresh_dashboard, refreshes at
+          # `0 5 * * *`. A 04:00 tick leads it.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 4 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

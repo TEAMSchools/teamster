@@ -1,10 +1,6 @@
 import sqlalchemy as sa
 from dagster import (
-    DagsterInstance,
-    DagsterRunStatus,
-    RunRecord,
     RunRequest,
-    RunsFilter,
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
@@ -13,53 +9,23 @@ from dagster import (
 
 from teamster.libraries.dlt.powerschool.assets import (
     _SOURCE_NAME,
-    PowerSchoolTable,
     _asset_key,
-    _compute_changed,
-    _stored_signatures,
     build_powerschool_dlt_pipeline,
-    probe_signature,
 )
 from teamster.libraries.dlt.powerschool.resources import OracleResource
+from teamster.libraries.dlt.probe import (
+    ProbeTable,
+    compute_changed,
+    in_flight_run,
+    probe_signature,
+    stored_signatures,
+)
 from teamster.libraries.ssh.resources import SSHResource
-
-_IN_FLIGHT_STATUSES = [
-    DagsterRunStatus.QUEUED,
-    DagsterRunStatus.NOT_STARTED,
-    DagsterRunStatus.STARTING,
-    DagsterRunStatus.STARTED,
-    DagsterRunStatus.CANCELING,
-]
-
-
-def _in_flight_run(
-    instance: DagsterInstance, sensor_name: str, nightly_schedule_name: str
-) -> RunRecord | None:
-    """Return the first in-flight run launched by this sensor or the nightly
-    schedule, or None.
-
-    The intraday baseline advances only on load success, so while a run
-    launched by either trigger is still committing, re-selecting its tables
-    would double-launch. Checked over the non-terminal status set
-    (``_IN_FLIGHT_STATUSES``) against the auto-applied ``dagster/sensor_name``
-    and ``dagster/schedule_name`` run tags.
-    """
-    for tag, value in (
-        ("dagster/sensor_name", sensor_name),
-        ("dagster/schedule_name", nightly_schedule_name),
-    ):
-        records = instance.get_run_records(
-            filters=RunsFilter(tags={tag: value}, statuses=_IN_FLIGHT_STATUSES),
-            limit=1,
-        )
-        if records:
-            return records[0]
-    return None
 
 
 def _build_run_request(
     code_location: str,
-    changed: list[PowerSchoolTable],
+    changed: list[ProbeTable],
     current: dict[str, dict],
 ) -> RunRequest:
     """RunRequest for the changed tables, passing their probed signatures.
@@ -85,7 +51,7 @@ def _build_run_request(
 
 def build_powerschool_dlt_intraday_sensor(
     code_location: str,
-    tables: list[PowerSchoolTable],
+    tables: list[ProbeTable],
     nightly_schedule_name: str,
     minimum_interval_seconds: int = 900,
 ) -> SensorDefinition:
@@ -112,7 +78,7 @@ def build_powerschool_dlt_intraday_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> RunRequest | SkipReason:
-        in_flight = _in_flight_run(context.instance, sensor_name, nightly_schedule_name)
+        in_flight = in_flight_run(context.instance, sensor_name, nightly_schedule_name)
         if in_flight is not None:
             return SkipReason(f"run {in_flight.dagster_run.run_id} in flight")
 
@@ -134,7 +100,7 @@ def build_powerschool_dlt_intraday_sensor(
                     "changed (expected only on first run / new dataset)"
                 )
 
-            stored = _stored_signatures(dlt_pipeline, _SOURCE_NAME)
+            stored = stored_signatures(dlt_pipeline, _SOURCE_NAME)
 
             # One shared engine over the single tunnel, like the op's probe.
             engine = sa.create_engine(connection_url)
@@ -149,7 +115,7 @@ def build_powerschool_dlt_intraday_sensor(
             finally:
                 engine.dispose()
 
-        changed = _compute_changed(tables, current, stored)
+        changed = compute_changed(tables, current, stored)
 
         context.log.info(
             f"powerschool probe: {len(changed)}/{len(tables)} changed; "

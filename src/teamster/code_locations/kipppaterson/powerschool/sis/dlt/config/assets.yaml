@@ -80,6 +80,10 @@ assets:
     cursor_column: transaction_date
     intraday: true
     nightly: false
+  - table_name: u_expectations
+    cursor_column: whenmodified
+    intraday: true
+    nightly: false
   - table_name: u_studentsuserfields
     cursor_column: whenmodified
     intraday: true

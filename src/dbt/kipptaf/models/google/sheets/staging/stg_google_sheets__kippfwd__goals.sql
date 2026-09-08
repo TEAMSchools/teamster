@@ -1,126 +1,61 @@
 with
-    calcs as (
+    goals_long as (
         select
-            region,
-            schoolid,
+            academic_year,
+            test_type,
             grade_level,
             cohort,
-            expected_test_type,
-            expected_scope,
-            expected_score_type,
-            expected_subject_area,
-            goal_type as expected_goal_type,
-            pct_goal,
+            score_type,
+            expected_metric_goal,
 
-            safe_cast(min_score as float64) as min_score,
+            ends_with(expected_metric_column, '_over_time') as is_over_time_goal,
 
-            case
-                when goal_type = 'Attempts'
-                then concat(expected_scope, ' ', goal_category)
-                when goal_type = 'Board'
-                then
-                    concat(
-                        goal_category,
-                        ' ',
-                        expected_scope,
-                        ' ',
-                        expected_subject_area,
-                        ' Grade ',
-                        grade_level
-                    )
-                else goal_subtype
-            end as expected_metric_name,
+            regexp_replace(
+                expected_metric_column, r'_over_time$', ''
+            ) as expected_metric_type,
 
-            case
-                when goal_type = 'Attempts'
-                then goal_category
-                when goal_type = 'Board'
-                then
-                    concat(
-                        goal_category,
-                        ' ',
-                        expected_scope,
-                        ' ',
-                        expected_subject_area,
-                        ' Grade ',
-                        grade_level
-                    )
-                else goal_subtype
-            end as expected_goal_subtype,
-
-            case
-                when expected_scope in ('ACT', 'SAT')
-                then 'ACT/SAT'
-                when expected_scope in ('PSAT10', 'PSAT NMSQT')
-                then 'PSAT10/NMSQT'
-                else expected_scope
-            end as expected_aligned_scope,
-
-            if(
-                expected_subject_area in ('Composite', 'Combined'),
-                'Total',
-                expected_subject_area
-            ) as expected_aligned_subject_area,
-
-        from {{ source("google_sheets", "src_google_sheets__kippfwd__goals") }}
+        from
+            {{ source("google_sheets", "src_google_sheets__kippfwd__goals") }} unpivot (
+                expected_metric_goal
+                for
+                expected_metric_column in (
+                    pct_1_attempt,
+                    pct_2_plus_attempts,
+                    pct_hs_grad_ready,
+                    pct_college_ready,
+                    pct_hs_grad_ready_over_time,
+                    pct_college_ready_over_time
+                )
+            )
     )
 
 select
-    *,
+    academic_year,
+    test_type,
+    grade_level,
+    cohort,
+    score_type,
+    expected_metric_type,
+    expected_metric_goal,
+    is_over_time_goal,
 
     case
-        expected_metric_name
-        when 'ACT 1 Attempt'
-        then 'act_1_attempt'
-        when 'ACT 2+ Attempts'
-        then 'act_2_plus_attempts'
-        when 'SAT 1 Attempt'
-        then 'sat_1_attempt'
-        when 'SAT 2+ Attempts'
-        then 'sat_2_plus_attempts'
-        when 'PSAT 8/9 1 Attempt'
-        then 'psat89_1_attempt'
-        when 'PSAT 8/9 2+ Attempts'
-        then 'psat89_2_plus_attempts'
-        when 'PSAT10 1 Attempt'
-        then 'psat10_1_attempt'
-        when 'PSAT10 2+ Attempts'
-        then 'psat10_2_plus_attempts'
-        when 'PSAT NMSQT 1 Attempt'
-        then 'psatnmsqt_1_attempt'
-        when 'PSAT NMSQT 2+ Attempts'
-        then 'psatnmsqt_2_plus_attempts'
-        when '% 890+ SAT Combined Grade 11'
-        then 'sat_combined_pct_890_plus_g11'
-        when '% 890+ SAT Combined Grade 12'
-        then 'sat_combined_pct_890_plus_g12'
-        when '% 1010+ SAT Combined Grade 11'
-        then 'sat_combined_pct_1010_plus_g11'
-        when '% 1010+ SAT Combined Grade 12'
-        then 'sat_combined_pct_1010_plus_g12'
-        when '% 450+ SAT EBRW Grade 11'
-        then 'sat_ebrw_pct_450_plus_g11'
-        when '% 450+ SAT EBRW Grade 12'
-        then 'sat_ebrw_pct_450_plus_g12'
-        when '% 440+ SAT Math Grade 11'
-        then 'sat_math_pct_440_plus_g11'
-        when '% 440+ SAT Math Grade 12'
-        then 'sat_math_pct_440_plus_g12'
-    end as expected_metric_label,
+        when expected_metric_type in ('pct_1_attempt', 'pct_2_plus_attempts')
+        then 'Attempts'
+        when expected_metric_type in ('pct_hs_grad_ready', 'pct_college_ready')
+        then 'Benchmark'
+    end as expected_goal_type,
 
     case
-        when
-            expected_score_type in (
-                'act_reading',
-                'sat_ebrw',
-                'psat10_ebrw',
-                'psatnmsqt_ebrw',
-                'psat89_ebrw'
-            )
-        then 'EBRW/Reading'
-        when expected_aligned_subject_area = 'Total'
-        then 'Total'
-        else expected_subject_area
-    end as expected_aligned_subject,
+        expected_metric_type
+        when 'pct_hs_grad_ready'
+        then 'HS Grad-Ready'
+        when 'pct_college_ready'
+        then 'College-Ready'
+        when 'pct_1_attempt'
+        then '1 Attempt'
+        when 'pct_2_plus_attempts'
+        then '2+ Attempts'
+    end as expected_goal_subtype,
 
-from calcs
+from goals_long

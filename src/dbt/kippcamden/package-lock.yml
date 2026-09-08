@@ -1,4 +1,6 @@
 packages:
+  - local: ../cambium
+    name: cambium
   - local: ../deanslist
     name: deanslist
   - local: ../edplan
@@ -19,4 +21,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: af574a8b35ffc4b6e887724310a907084806a0b1
+sha1_hash: c972e6d16e69218935de784f6733d82306bb0364

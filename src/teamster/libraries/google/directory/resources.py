@@ -1,5 +1,7 @@
 import time
-from collections.abc import Callable
+from collections import defaultdict
+from collections.abc import Callable, Iterator
+from itertools import zip_longest
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster._utils.backoff import backoff, exponential_delay_generator
@@ -54,6 +56,44 @@ def _retryable_execute(request) -> Callable[[], dict]:
             raise
 
     return execute
+
+
+def _batch_by_distinct_org_unit(
+    role_assignments: list[dict], size: int
+) -> Iterator[list[dict]]:
+    """Yield batches in which no two role assignments share an ``orgUnitId``.
+
+    The Directory API serializes writes against a single org unit, so two
+    inserts scoped to the same org unit inside one ``BatchHttpRequest`` race each
+    other and one comes back ``409 Conflicting requests. Please try again``.
+    Dealing at most one item per org unit into each batch removes that
+    contention: batches execute sequentially, so no two writes to the same org
+    unit are ever in flight together.
+
+    A batch therefore holds at most ``size`` items AND at most one per distinct
+    org unit, so a payload targeting few org units yields more, smaller batches:
+    the batch count equals the largest single org unit's row count. An item
+    without an ``orgUnitId`` (a customer-scoped assignment) is keyed on its
+    position instead, so those still pack to ``size``.
+
+    Args:
+        role_assignments: Role assignment resource dicts.
+        size: Maximum items per batch.
+
+    Yields:
+        Batches of role assignment dicts, preserving input order within each
+        org unit.
+    """
+    by_org_unit = defaultdict[str | int, list[dict]](list)
+
+    for i, role_assignment in enumerate(role_assignments):
+        by_org_unit[role_assignment.get("orgUnitId") or i].append(role_assignment)
+
+    # One "round" takes at most one item per org unit, so a round already
+    # satisfies the distinctness rule; chunk() only caps it at ``size`` for the
+    # case where the org units outnumber a single batch.
+    for round_ in zip_longest(*by_org_unit.values()):
+        yield from chunk(obj=[item for item in round_ if item is not None], size=size)
 
 
 class GoogleDirectoryResource(ConfigurableResource):
@@ -299,7 +339,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         Args:
             **kwargs: Forwarded to ``_list``. ``customer`` defaults to
-                ``self.customer_id``.
+                ``self.customer_id``. Page size defaults to 200 (API maximum).
 
         Returns:
             List of group resource dicts.
@@ -308,7 +348,13 @@ class GoogleDirectoryResource(ConfigurableResource):
             HttpError: If all retry attempts are exhausted.
         """
         customer = kwargs.pop("customer", self.customer_id)
-        return self._list(api_name="groups", customer=customer, **kwargs)
+        max_results = kwargs.pop("max_results", 200)
+        return self._list(
+            api_name="groups",
+            customer=customer,
+            max_results=max_results,
+            **kwargs,
+        )
 
     def list_members(self, group_key: str, **kwargs) -> list[dict]:
         """Retrieves a paginated list of all members in a group.
@@ -654,7 +700,12 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_role_assignments(
         self, role_assignments: list[dict], customer: str | None = None
     ) -> list[str]:
-        """Create multiple role assignments in batches of 10.
+        """Create multiple role assignments in batches of at most 10.
+
+        Batches are built so that no two assignments in one batch target the
+        same org unit — see :func:`_batch_by_distinct_org_unit`, which exists
+        because concurrent writes to one org unit return ``409 Conflicting
+        requests``, a status the batch retry layer does not treat as transient.
 
         Each batch — and each individual sub-request within it — is retried on
         transient errors (5xx, 429) with exponential backoff to handle quota
@@ -669,7 +720,9 @@ class GoogleDirectoryResource(ConfigurableResource):
         """
         exceptions = []
 
-        batches = list(chunk(obj=role_assignments, size=10))
+        batches = list(
+            _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+        )
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
@@ -695,12 +748,18 @@ class GoogleDirectoryResource(ConfigurableResource):
 
 def members_for_created_users(
     users: list[dict], create_errors: list[dict]
-) -> list[dict]:
+) -> tuple[list[dict], list[dict]]:
     """Build group-membership payloads for users whose creation did not fail.
 
     A user's group membership can only be added once the account exists, so a
     user whose ``batch_insert_users`` call failed must be excluded — otherwise
     the membership insert is guaranteed to fail with "resource not found".
+
+    A user whose ``groupKey`` is null is excluded for a different reason: the
+    extract resolves ``groupKey`` against the groups Google actually has, so
+    null means the students group for that region does not exist. Attempting the
+    add would fail with "404 Resource Not Found: groupKey" once per user, so the
+    membership is skipped and reported once for the whole run instead.
 
     Args:
         users: The users passed to
@@ -709,18 +768,42 @@ def members_for_created_users(
             users whose creation ultimately failed.
 
     Returns:
+        A two-tuple. The first element holds
         :meth:`GoogleDirectoryResource.batch_insert_members` payloads
-        (``groupKey`` / ``email`` / ``delivery_settings``) for the users NOT
-        present in ``create_errors``.
+        (``groupKey`` / ``email`` / ``delivery_settings``) for created users
+        whose ``groupKey`` resolved. The second holds at most one aggregated
+        ``{"error", "count", "orgUnitPaths"}`` dict describing the created users
+        whose group could not be resolved, and is empty when every group
+        resolved.
     """
     failed_emails = {e["primaryEmail"] for e in create_errors}
 
-    return [
+    created = [u for u in users if u["primaryEmail"] not in failed_emails]
+
+    members = [
         {
             "groupKey": u["groupKey"],
             "email": u["primaryEmail"],
             "delivery_settings": "DISABLED",
         }
-        for u in users
-        if u["primaryEmail"] not in failed_emails
+        for u in created
+        if u["groupKey"] is not None
+    ]
+
+    unresolved = [u for u in created if u["groupKey"] is None]
+
+    if not unresolved:
+        return members, []
+
+    count = len(unresolved)
+    return members, [
+        {
+            "error": (
+                f"{count} created {'user' if count == 1 else 'users'} "
+                f"{'has' if count == 1 else 'have'} no resolvable students"
+                " group; membership skipped"
+            ),
+            "count": count,
+            "orgUnitPaths": sorted({u["orgUnitPath"] for u in unresolved}),
+        }
     ]

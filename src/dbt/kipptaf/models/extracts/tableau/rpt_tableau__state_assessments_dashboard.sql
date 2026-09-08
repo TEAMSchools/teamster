@@ -244,7 +244,6 @@ with
             and academic_year >= 2024
     )
 
--- NJ scores
 select
     e.academic_year,
     e.academic_year_display,
@@ -376,7 +375,6 @@ left join
 
 union all
 
--- FL scores
 select
     e.academic_year,
     e.academic_year_display,
@@ -509,7 +507,6 @@ left join
 
 union all
 
--- NJ prelim scores
 select
     e.academic_year,
     e.academic_year_display,

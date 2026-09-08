@@ -1,0 +1,15 @@
+models:
+  - name: int_students__sis_cutover
+    description: >-
+      The academic year Miami's attendance moved from PowerSchool to Focus,
+      derived from the first year Focus holds recorded attendance. One row.
+      Every int_students__* conform scopes both sides of its Miami union on it:
+      PowerSchool serves the years below it, Focus serves it and forward.
+    columns:
+      - name: focus_start_academic_year
+        description: >-
+          First academic year with recorded Focus attendance. Currently 2026.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

@@ -1,5 +1,8 @@
 models:
   - name: rpt_tableau__iready_apm
+    description: >-
+      Network-wide, Miami included. Miami held 110,994 AY2026 rows in prod as of
+      2026-08-27. Ratified on #4996.
     columns:
       - name: academic_year
         data_type: int64

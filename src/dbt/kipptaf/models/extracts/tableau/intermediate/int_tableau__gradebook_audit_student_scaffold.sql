@@ -158,7 +158,6 @@ select
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
 
-    -- gpa and ada tag
     if(
         s.school_level_alt != 'ES'
         and s.ada_above_or_at_80
@@ -167,12 +166,10 @@ select
         false
     ) as qt_student_is_ada_80_plus_gpa_less_2,
 
-    -- quarter course grade above 100
     if(
         qg.quarter_course_percent_grade > 100, true, false
     ) as qt_percent_grade_greater_100,
 
-    -- course comments
     if(
         s.school_level_alt != 'ES'
         and sec.is_quarter_end_date_range
@@ -199,7 +196,6 @@ select
         false
     ) as qt_es_comment_missing,
 
-    -- conduct codes
     if(
         s.region = 'Miami'
         and s.grade_level != 0

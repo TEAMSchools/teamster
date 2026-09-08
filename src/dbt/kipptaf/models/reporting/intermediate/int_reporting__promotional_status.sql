@@ -1,9 +1,13 @@
 with
+    -- Keyed on student_number, not studentid: studentid is a PowerSchool-
+    -- internal id and is null for every Focus-sourced (Miami) row, so
+    -- grouping on it would collapse every Miami student into one row per
+    -- (yearid, term_name). student_number is populated on both branches.
     attendance as (
         select
             mem._dbt_source_relation,
             mem._dbt_source_project,
-            mem.studentid,
+            mem.student_number,
             mem.yearid,
 
             rt.name as term_name,
@@ -33,7 +37,7 @@ with
                 when mem._dbt_source_project = 'kippcamden'
                 then 9 * safe_cast(right(rt.name, 1) as int)
             end as hs_off_track_absences,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
+        from {{ ref("int_students__attendance_daily") }} as mem
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on mem.schoolid = rt.school_id
@@ -48,7 +52,7 @@ with
             mem._dbt_source_relation,
             mem._dbt_source_project,
             mem.yearid,
-            mem.studentid,
+            mem.student_number,
             rt.name
     ),
 
@@ -504,7 +508,7 @@ with
             and rt.type = 'RT'
         left join
             attendance as att
-            on co.studentid = att.studentid
+            on co.student_number = att.student_number
             and co.yearid = att.yearid
             and rt.name = att.term_name
             and co._dbt_source_project = att._dbt_source_project

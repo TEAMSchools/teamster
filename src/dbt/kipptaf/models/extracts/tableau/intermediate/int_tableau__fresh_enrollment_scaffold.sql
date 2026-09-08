@@ -48,7 +48,7 @@ with
 
         select distinct ps_schoolid as schoolid, grade_level, _dbt_source_project,
 
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
         where
             enroll_status = 0
             and academic_year = {{ var("current_academic_year") }}

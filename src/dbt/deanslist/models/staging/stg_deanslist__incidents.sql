@@ -14,6 +14,7 @@ with
             hearingflag as hearing_flag,
             isactive as is_active,
             isreferral as is_referral,
+            nondisciplinary as non_disciplinary,
             sendalert as send_alert,
 
             /* records */

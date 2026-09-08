@@ -1,5 +1,12 @@
 models:
   - name: rpt_tableau__miami_fast
+    description: >-
+      Miami-only by name and by its `region = 'Miami'` filter. This model
+      returned **zero rows of any kind** in prod as of 2026-08-27: its where
+      clause requires `co.is_enrolled_y1`, which was null on every Miami row
+      because the Focus branch of `int_students__student_enrollments` never
+      populated it. #5038 derives it, which restores roughly 4,772 rows across
+      AY2025 and AY2026. Ratified on #4996.
     columns:
       - name: academic_year
         data_type: int64

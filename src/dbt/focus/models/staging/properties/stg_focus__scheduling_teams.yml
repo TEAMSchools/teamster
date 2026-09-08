@@ -1,0 +1,59 @@
+models:
+  - name: stg_focus__scheduling_teams
+    description: >-
+      Focus scheduling teams — one row per team a school groups students into
+      when building the master schedule.
+    columns:
+      - name: id
+        description: Primary key — Focus scheduling team id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school id the team belongs to.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__schools')
+                field: id
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2026 = 2026-27).
+        data_type: int
+      - name: grade_id
+        description: >-
+          Focus grade level the team is scoped to (joins
+          `stg_focus__school_gradelevels`).
+        data_type: int
+      - name: title
+        description: Team name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated team name.
+        data_type: string
+      - name: sort_order
+        description: Display order of the team within its school.
+        data_type: numeric
+      - name: rollover_id
+        description: Team id this one rolled over from in the prior school year.
+        data_type: int
+      - name: include_in_optimize
+        description: >-
+          Y/N — whether the team is honored by Focus's schedule optimizer.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

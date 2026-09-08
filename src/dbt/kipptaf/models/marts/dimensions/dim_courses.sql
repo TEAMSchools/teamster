@@ -10,7 +10,7 @@ select
     csc.discipline as academic_subject,
     csc.is_foundations,
 
-from {{ ref("stg_powerschool__courses") }} as c
+from {{ ref("int_students__courses") }} as c
 left join
     {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
     on c.course_number = csc.powerschool_course_number

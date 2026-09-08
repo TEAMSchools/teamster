@@ -79,7 +79,6 @@ select
     reports_to_mail,
     reports_to_sam_account_name,
 
-    /* pivot cols */
     approver_email,
     parse_date('%m/%d/%Y', teammate_signature) as teammate_signature,
     parse_date('%m/%d/%Y', approver_signature) as approver_signature,

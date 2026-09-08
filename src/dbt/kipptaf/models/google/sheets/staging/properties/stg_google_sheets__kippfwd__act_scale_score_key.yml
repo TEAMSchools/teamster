@@ -1,21 +1,79 @@
 models:
   - name: stg_google_sheets__kippfwd__act_scale_score_key
+    description: >-
+      KIPP Forward's raw-score-to-scale-score conversion tables for practice SAT
+      and ACT administrations, entered by the data team from College Board's
+      published conversions. One row per raw-score band per assessment, so an
+      assessment carries roughly 45 to 54 rows. Membership in this sheet is what
+      designates an Illuminate assessment as a reportable practice assessment in
+      int_assessments__college_assessment_practice — Illuminate's own scope is
+      not used, because externally created practice assessments carry scope
+      Benchmark rather than SAT. The sheet is also authoritative for subject,
+      grade level, and administration round, which Illuminate reports
+      incompletely.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Assessment_ID
+              - Raw_Score_Low
+          config:
+            severity: error
     columns:
       - name: Assessment_ID
         data_type: int64
+        description: >-
+          Illuminate canonical assessment id. Repeats across the assessment's
+          raw-score bands, so it is not unique on its own. Must reference the
+          canonical (lowest) id if a practice administration is ever
+          canonicalized into a multi-member group.
       - name: Academic_Year
         data_type: int64
+        description: >-
+          Start-year convention, so SY26-27 reads 2026 — matching what
+          int_assessments__response_rollup exposes, not Illuminate's raw
+          academic_year, which is the spring year. Not a join key; it scopes
+          audits and lets a human filter the sheet by year.
       - name: Test_Type
         data_type: string
+        description: >-
+          SAT or ACT. Stays SAT for practice SAT assessments even when
+          Illuminate's scope reads Benchmark — this sheet is the authority.
       - name: Administration_Round
         data_type: string
+        description: >-
+          Administration identifier within an academic year, such as SAT1, SAT2,
+          or ACT1. Not season names. Two administrations in the same year must
+          carry different values, because this column partitions the composite
+          and combined score calculations — a shared value sums both
+          administrations into one meaningless total.
       - name: Subject
         data_type: string
+        description: >-
+          Section subject as the sheet spells it — Mathematics, Reading and
+          Writing, Reading, Writing, English, or Science. Mathematics, never
+          Math; the rename to Math happens downstream.
       - name: Grade_Level
         data_type: int64
+        description: >-
+          Grade sitting the assessment, as an actual grade number. Equal to
+          Illuminate's grade_level_id minus one.
       - name: Raw_Score_Low
         data_type: int64
+        description: >-
+          Lowest raw score, meaning number of questions correct, that converts
+          to this row's scale score.
       - name: Raw_Score_High
         data_type: int64
+        description: >-
+          Highest raw score that converts to this row's scale score. Equal to
+          Raw_Score_Low except where consecutive raw scores share a scale score.
+          Bands must cover zero through the section's maximum raw score without
+          gaps, or a response at an uncovered raw score resolves to a null scale
+          score.
       - name: Scale_Score
         data_type: int64
+        description: >-
+          Converted scale score for this raw-score band, taken from the lower
+          bound of College Board's published range. Because the lower bound is
+          used, a perfect raw score converts to just below the section maximum.

@@ -3,16 +3,20 @@ packages:
     name: amplify
   - local: ../deanslist
     name: deanslist
+  - local: ../edplan
+    name: edplan
   - local: ../finalsite
     name: finalsite
   - local: ../pearson
     name: pearson
   - local: ../powerschool
     name: powerschool
+  - local: ../titan
+    name: titan
   - name: dbt_external_tables
     package: dbt-labs/dbt_external_tables
     version: 0.12.3
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: 15227b8eff77471b17ff6a67f5b905d4aa92cdb8
+sha1_hash: 8941fab7afd6b44bef66bf60da251878fb303c62

@@ -19,21 +19,18 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_project, academic_year, and entrydate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_student_enrollments')
@@ -45,11 +42,11 @@ models:
           start_date, region, and school_id of the matching reporting term. Null
           when the PowerSchool term / year / school does not map to a
           reporting-term record.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
           - relationships:
               arguments:

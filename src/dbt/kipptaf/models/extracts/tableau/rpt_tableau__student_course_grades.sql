@@ -18,7 +18,8 @@ with
                 term when 'Q2' then 'Q1' when 'Q3' then 'Q2' when 'Q4' then 'Q3'
             end as prior_quarter,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
+        where term is not null
 
         union all
 
@@ -38,7 +39,7 @@ with
 
             cast(null as string) as prior_quarter,
 
-        from {{ ref("stg_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
         where isyearrec = 1
     ),
 
@@ -179,6 +180,8 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
             enr.ada,
+            enr.unweighted_ada,
+            enr.weighted_ada,
             enr.ada_above_or_at_80,
             enr.hos,
             enr.school_leader,
@@ -191,7 +194,6 @@ with
             term.semester,
 
             gtq.gpa_semester,
-            gtq.total_credit_hours_y1 as gpa_total_credit_hours,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -238,6 +240,12 @@ with
             if(
                 term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
             ) as gpa_n_failing_y1,
+
+            if(
+                term.quarter = 'Y1',
+                gty.total_credit_hours_y1,
+                gtq.total_credit_hours_y1
+            ) as gpa_total_credit_hours,
 
             /* KIPP GPA Band, the KIPP Foundation five-band unweighted scale
                documented in models/students/CLAUDE.md. Band 5 is open-ended
@@ -355,13 +363,7 @@ with
             and enr.academic_year <= {{ var("current_academic_year") }}
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
-            /* TODO(#4340): add Paterson once PS gradebook data is populated.
-               That change also has to add a kipppaterson source to
-               int_powerschool__gradescaleitem_lookup, which unions Newark,
-               Camden and Miami only — otherwise the grade_scale_ladder join
-               below finds no scale and need_next_* stays silently null for
-               every Paterson row. */
-            and enr.region in ('Newark', 'Camden')
+            and enr.region in ('Newark', 'Camden', 'Paterson')
     ),
 
     course_enrollments as (
@@ -858,6 +860,26 @@ with
         from category_ranked
         where rn_latest_term = 1
         group by _dbt_source_project, studentid, yearid, sectionid
+    ),
+
+    course_priority as (
+        /* No (x is null) asc guard, unlike category_ranked above — the
+           filter removes nulls before the window runs, so an ungraded course
+           takes no rank and the left join at the foot of the model is what
+           nulls the column. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            `quarter`,
+            course_number,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, yearid, `quarter`
+                order by quarter_course_percent_grade asc, course_number asc
+            ) as office_hours_priority_rank,
+        from quarter_grades
+        where quarter_course_percent_grade is not null
     )
 
 select
@@ -899,6 +921,8 @@ select
     s.is_counseling_services,
     s.is_student_athlete,
     s.ada,
+    s.unweighted_ada,
+    s.weighted_ada,
     s.ada_above_or_at_80,
 
     s.`quarter`,
@@ -993,6 +1017,8 @@ select
 
     gsl.need_next_letter_grade,
     gsl.need_next_cutoff_percent,
+
+    cp.office_hours_priority_rank,
 
     /* signed, so negative means the projection sits below last year's actual.
        Both inputs are student-grain, so these repeat across every quarter row
@@ -1090,4 +1116,12 @@ left join
     and s._dbt_source_project = cd._dbt_source_project
     and ce.sectionid = cd.sectionid
     and ce._dbt_source_project = cd._dbt_source_project
+left join
+    course_priority as cp
+    on s.studentid = cp.studentid
+    and s.yearid = cp.yearid
+    and s.`quarter` = cp.`quarter`
+    and s._dbt_source_project = cp._dbt_source_project
+    and ce.course_number = cp.course_number
+    and ce._dbt_source_project = cp._dbt_source_project
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')

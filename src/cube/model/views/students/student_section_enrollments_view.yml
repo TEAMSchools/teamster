@@ -44,13 +44,6 @@ views:
           - identifier
           - period
 
-      - join_path: student_section_enrollments.terms
-        includes:
-          - semester
-          - term_name
-          - term_code
-          - term_type
-
       - join_path: student_section_enrollments.student_school_enrollments
         prefix: false
         includes:
@@ -105,12 +98,6 @@ views:
             - is_foundations
             - identifier
             - period
-        - name: Term
-          members:
-            - semester
-            - term_name
-            - term_code
-            - term_type
         - name: Location
           members:
             - locations_location_name

@@ -5,7 +5,8 @@ models:
       stg_focus__schools column plus the int_focus__schools__pivot labels. This
       is the model to consume; the pivot is a decode companion that drops
       entities whose custom fields are all null, so it is not a complete spine
-      on its own. Column docs live on the two upstream models.
+      on its own. Column docs live on the two upstream models, except for
+      school_level, which this model derives.
     columns:
       - name: id
         description: Primary key — Focus school id.
@@ -16,3 +17,8 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: school_level
+        description: >-
+          School level in the network domain (ES/MS/HS), decoded from
+          school_level_label. Null for Combined and Adult/Higher-Ed schools, and
+          for closed legacy schools that carry no level.

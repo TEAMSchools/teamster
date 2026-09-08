@@ -11,28 +11,9 @@ with
     ),
 
     ops_leaders as (
-        -- The ParentSquare user population is the regional Operations leadership
-        -- (Integration Planner question 4: "Regional Operation leaders ... No
-        -- school staff, no teachers, etc"). Membership comes from the
-        -- hand-curated `TS-DL-Regional Ops Leaders` distribution list rather than
-        -- a hardcoded roster of individuals, so Ops owns the list and it tracks
-        -- role changes without a code change. No job-title or job-function rule
-        -- reproduces it: the regional Operations group holds twelve people across
-        -- eight titles, and `job_function` is null for one Managing Director of
-        -- School Operations who shares a title with two included peers — a data
-        -- gap that would silently add or drop them.
-        --
-        -- The group spans all four regions and both regional and school-based
-        -- staff. The scoping below reduces it to regional-office Operations, and
-        -- `code_location` carries each leader's region so the fan-out below stays
-        -- inside it. LDAP join shape follows rpt_clever__staff.
-        -- `google_email` (@apps.teamschools.org), NOT the roster's `mail` /
-        -- `user_principal_name`, which are the AD/Exchange addresses
-        -- (@kippnj.org, @kippteamandfamily.org). The two never coincide for any
-        -- leader in this group, and ParentSquare authenticates these users
-        -- through Google — so an AD address here syncs a staff user nobody can
-        -- sign in as. This is where rpt_parentsquare__staff diverges from
-        -- rpt_clever__staff, whose consumer matches on AD.
+        -- LDAP join shape follows rpt_clever__staff. The group spans both
+        -- regions and school-based staff, so the filters below reduce it to
+        -- regional-office Operations.
         select
             r.employee_number,
             r.job_title,
@@ -57,15 +38,6 @@ with
             and r.home_department_name = 'Operations'
     )
 
--- One row per (leader, school within their own region). ParentSquare's staff file
--- is per-school and its spec states a staff member "can be at more than one
--- school", so fanning a leader across every school in their region is what grants
--- them school-level access everywhere — and it is what makes every
--- rpt_parentsquare__sections.staff_id resolve at its own school. The join is
--- region-keyed rather than a bare cross join, which matches the "all region"
--- assignment branch in rpt_clever__staff and keeps a leader out of another
--- region's feed. No district-office row is emitted because schools.csv carries
--- only operating schools, so a school_id of 0 would dangle.
 select
     o.job_title as title,
     o.given_name as first_name,

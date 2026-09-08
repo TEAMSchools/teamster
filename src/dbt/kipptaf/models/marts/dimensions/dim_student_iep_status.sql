@@ -1,19 +1,9 @@
 with
-    -- Per-enrollment-stint PowerSchool enrollment range. Each row is one stint
-    -- (entry/exit pair) for a (student, district); a student with multiple
-    -- stints in the same district has multiple rows. Inner-joining the legs to
-    -- this CTE per-stint clips IEP spans to the student's actual enrollment
-    -- and drops phantom records. Multi-stint students get a separate dim row
-    -- per stint, each clipped to its specific entry/exit window. Aggregating
-    -- to min(entry)/max(exit) would wrongly span gaps between stints (e.g.,
-    -- a Newark → Camden → Newark student would have a Newark range covering
-    -- the Camden period).
     enrollments as (
         select
             student_number,
             _dbt_source_relation,
             _dbt_source_project,
-            students_dcid,
             academic_year,
             entrydate,
 
@@ -24,7 +14,7 @@ with
             coalesce(
                 date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
             ) as enrollment_end,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         -- graduates carry NULL entry/exit as a placeholder row; drop them
         -- (no enrollment context to clip against).
         where entrydate is not null
@@ -152,10 +142,14 @@ with
             coalesce(scf.spedlep, 'No IEP') as iep_classification,
         from enrollments as e
         left join
-            {{ ref("stg_powerschool__studentcorefields") }} as scf
-            on e.students_dcid = scf.studentsdcid
+            {{ ref("int_students__student_core_fields") }} as scf
+            on e.student_number = scf.student_number
             and e._dbt_source_project = scf._dbt_source_project
-        where e._dbt_source_project in ('kipppaterson', 'kippmiami')
+        -- Miami only. Every NJ region, Paterson included, gets its IEP
+        -- legs from the edplan union in nj_leg above; listing a region
+        -- here as well would emit two rows per stint and collide on
+        -- student_iep_status_key.
+        where e._dbt_source_project = 'kippmiami'
     ),
 
     unioned as (

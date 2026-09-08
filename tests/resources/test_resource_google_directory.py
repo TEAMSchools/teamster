@@ -8,6 +8,7 @@ from googleapiclient.errors import HttpError
 
 from teamster.libraries.google.directory.resources import (
     GoogleDirectoryResource,
+    _batch_by_distinct_org_unit,
     _retryable_execute,
     _TransientHttpError,
     members_for_created_users,
@@ -441,6 +442,76 @@ def test_batch_insert_role_assignments_retries_transient_subrequest_and_succeeds
     assert mock_api.new_batch_http_request.call_count == 2
 
 
+# ── _batch_by_distinct_org_unit ───────────────────────────────────────────────
+
+
+def test_batch_by_distinct_org_unit_never_repeats_an_org_unit_in_a_batch():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "orgUnitId": org_unit_id}
+        for org_unit_id, count in [("ou_a", 56), ("ou_b", 33), ("ou_c", 3)]
+        for i in range(count)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    for batch in batches:
+        org_unit_ids = [ra["orgUnitId"] for ra in batch]
+        assert len(org_unit_ids) == len(set(org_unit_ids))
+        assert len(batch) <= 10
+
+    flat = [ra for batch in batches for ra in batch]
+    assert len(flat) == len(role_assignments)
+
+    for org_unit_id in ("ou_a", "ou_b", "ou_c"):
+        assert [ra for ra in flat if ra["orgUnitId"] == org_unit_id] == [
+            ra for ra in role_assignments if ra["orgUnitId"] == org_unit_id
+        ]
+
+
+def test_batch_by_distinct_org_unit_yields_every_item_exactly_once():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "orgUnitId": "ou_a"} for i in range(5)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    assert batches == [[ra] for ra in role_assignments]
+
+
+def test_batch_by_distinct_org_unit_packs_customer_scoped_items_to_size():
+    role_assignments = [
+        {"assignedTo": f"uid{i}", "scopeType": "CUSTOMER"} for i in range(25)
+    ]
+
+    batches = list(
+        _batch_by_distinct_org_unit(role_assignments=role_assignments, size=10)
+    )
+
+    assert [len(batch) for batch in batches] == [10, 10, 5]
+
+
+def test_batch_insert_role_assignments_splits_same_org_unit_across_batches():
+    resource, mock_api = _make_resource()
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[({"roleAssignmentId": f"ra{i}"}, None)] for i in range(3)]
+    )
+
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_role_assignments(
+            [
+                {"assignedTo": f"uid{i}", "roleId": "rid", "orgUnitId": "ou_a"}
+                for i in range(3)
+            ]
+        )
+
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 3
+
+
 # ── list_roles / list_role_assignments default params ─────────────────────────
 
 
@@ -466,11 +537,30 @@ def test_list_role_assignments_uses_max_results_200_and_items_key():
     assert call_kwargs["maxResults"] == 200
 
 
+def test_list_groups_uses_max_results_200():
+    resource, mock_api = _make_resource()
+    mock_api.groups.return_value.list.return_value.execute.return_value = {
+        "groups": [{"email": "g@x.org"}]
+    }
+    data = resource.list_groups()
+    assert data == [{"email": "g@x.org"}]
+    _, call_kwargs = mock_api.groups.return_value.list.call_args
+    assert call_kwargs["maxResults"] == 200
+
+
 # ── members_for_created_users ─────────────────────────────────────────────────
 
 
-def _created_user(email: str) -> dict:
-    return {"primaryEmail": email, "groupKey": "g@x.org"}
+def _created_user(
+    email: str,
+    group_key: str | None = "g@x.org",
+    org_unit_path: str = "/Students/School A",
+) -> dict:
+    return {
+        "primaryEmail": email,
+        "groupKey": group_key,
+        "orgUnitPath": org_unit_path,
+    }
 
 
 def _member(email: str) -> dict:
@@ -479,22 +569,77 @@ def _member(email: str) -> dict:
 
 def test_members_for_created_users_all_succeeded():
     users = [_created_user("a@x.org"), _created_user("b@x.org")]
-    assert members_for_created_users(users, []) == [
-        _member("a@x.org"),
-        _member("b@x.org"),
-    ]
+    assert members_for_created_users(users, []) == (
+        [_member("a@x.org"), _member("b@x.org")],
+        [],
+    )
 
 
 def test_members_for_created_users_skips_failed_create():
     users = [_created_user("a@x.org"), _created_user("b@x.org")]
     create_errors = [{"primaryEmail": "b@x.org", "error": "boom"}]
-    assert members_for_created_users(users, create_errors) == [_member("a@x.org")]
+    assert members_for_created_users(users, create_errors) == (
+        [_member("a@x.org")],
+        [],
+    )
 
 
 def test_members_for_created_users_all_failed_returns_empty():
     users = [_created_user("a@x.org")]
     create_errors = [{"primaryEmail": "a@x.org", "error": "boom"}]
-    assert members_for_created_users(users, create_errors) == []
+    assert members_for_created_users(users, create_errors) == ([], [])
+
+
+def test_members_for_created_users_skips_null_group_key():
+    users = [_created_user("a@x.org"), _created_user("b@x.org", group_key=None)]
+
+    members, _ = members_for_created_users(users, [])
+
+    assert members == [_member("a@x.org")]
+
+
+def test_members_for_created_users_reports_null_group_key_once():
+    users = [
+        _created_user("a@x.org", group_key=None, org_unit_path="/Students/School B"),
+        _created_user("b@x.org", group_key=None, org_unit_path="/Students/School A"),
+    ]
+
+    _, unresolved = members_for_created_users(users, [])
+
+    assert unresolved == [
+        {
+            "error": (
+                "2 created users have no resolvable students group; membership skipped"
+            ),
+            "count": 2,
+            "orgUnitPaths": ["/Students/School A", "/Students/School B"],
+        }
+    ]
+
+
+def test_members_for_created_users_reports_null_group_key_singular():
+    users = [
+        _created_user("a@x.org", group_key=None, org_unit_path="/Students/School A")
+    ]
+
+    _, unresolved = members_for_created_users(users, [])
+
+    assert unresolved == [
+        {
+            "error": (
+                "1 created user has no resolvable students group; membership skipped"
+            ),
+            "count": 1,
+            "orgUnitPaths": ["/Students/School A"],
+        }
+    ]
+
+
+def test_members_for_created_users_does_not_report_null_group_key_for_failed_create():
+    users = [_created_user("a@x.org", group_key=None)]
+    create_errors = [{"primaryEmail": "a@x.org", "error": "boom"}]
+
+    assert members_for_created_users(users, create_errors) == ([], [])
 
 
 def get_google_directory_resource() -> GoogleDirectoryResource:

@@ -1,0 +1,11 @@
+models:
+  - name: int_focus__calendar_day
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__calendar_day — Focus in-session calendar days, one row per
+      school per in-session date. Focus is Miami-only today; this shape lets a
+      future region's Focus ingestion union in without a rewrite. Column
+      docs/tests live on the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

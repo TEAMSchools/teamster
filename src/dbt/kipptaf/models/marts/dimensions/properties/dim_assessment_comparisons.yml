@@ -17,7 +17,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: region_key
         data_type: string
@@ -25,11 +24,11 @@ models:
           FK to dim_regions. Derived from region using
           generate_surrogate_key(["region"]).
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_regions')
-            to_columns: [region_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
         data_tests:
           - relationships:
               arguments:

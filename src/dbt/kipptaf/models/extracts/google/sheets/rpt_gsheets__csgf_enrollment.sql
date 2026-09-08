@@ -1,7 +1,7 @@
 with
     calendar_days as (
         select yearid, schoolid, avg(days_total) as total_instructional_days,
-        from {{ ref("int_powerschool__calendar_rollup") }}
+        from {{ ref("int_students__calendar_rollup") }}
         where yearid = {{ var("current_academic_year") - 1990 }}
         group by yearid, schoolid
     ),

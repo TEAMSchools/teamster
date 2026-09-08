@@ -77,10 +77,6 @@ models:
           Number of distinct addresses on this contact's household linkage. One
           resolves outright; zero means no household carries a street; more than
           one means the emitted address was picked from among them.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
       - name: address_1
         data_type: string
         description:

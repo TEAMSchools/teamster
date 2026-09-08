@@ -228,12 +228,12 @@ select
     s_withdrawal_school_txt as withdrawal_school_txt,
     s_withdrawal_transfer_type_ss as withdrawal_transfer_type_ss,
 
-    -- normalize to E.164 here, the earliest point these phones exist as scalar
-    -- columns: they arrive inside the `custom_attributes` repeated struct, so
-    -- staging cannot reach them. Roughly a third are hand-entered with
-    -- punctuation (dashes, parens, a leading `+`) — much messier than the base
-    -- `phone_N_number` fields. Anything not confidently parseable passes
-    -- through de-garbled rather than nulling.
+    -- Normalize to E.164 here, the earliest point these phones exist as scalar
+    -- columns. They arrive inside the `custom_attributes` repeated struct, so
+    -- staging cannot reach them. About a third are hand-entered with
+    -- punctuation, which makes them messier than the base `phone_N_number`
+    -- fields. A number that does not parse confidently passes through
+    -- de-garbled rather than nulled.
     {{ clean_phone("s_additional_phone_number_1_phone_number") }}
     as additional_phone_number_1_phone_number,
     {{ clean_phone("s_emrg_1_phone_1_number") }} as emrg_1_phone_1_number,

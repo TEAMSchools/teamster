@@ -35,7 +35,7 @@ select
     pm.final_score as overall_score,
 from {{ ref("int_people__staff_attrition_details") }} as l
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on l.powerschool_teacher_number = tgl.teachernumber
     and l.academic_year = tgl.academic_year
     and l.home_work_location_dagster_code_location = tgl._dbt_source_project

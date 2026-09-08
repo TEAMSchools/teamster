@@ -53,6 +53,7 @@ select
     satbenchmarkcategory as sat_benchmark_category,
     schoolbenchmarkcategoryname as school_benchmark_category_name,
     schoolbenchmarkproficient as school_benchmark_proficient,
+    schoolidentifier as school_identifier,
     schoolname as school_name,
     schoolrenaissanceid as school_renaissance_id,
     schoolsourcedid as school_sourced_id,
@@ -114,7 +115,6 @@ select
     cast(
         schoolbenchmarknumberofcategorylevels as int
     ) as school_benchmark_number_of_category_levels,
-    cast(schoolidentifier as int) as school_identifier,
     cast(studentdisplayid as int) as student_display_id,
     cast(studentidentifier as int) as student_identifier,
     cast(studentsourcedid as int) as student_sourced_id,

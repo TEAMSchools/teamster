@@ -8,6 +8,16 @@ models:
       returned by a single reportee filter. Consumed by the Cube semantic layer
       to grant a manager detail-level access to their own downline. Reflects the
       present org only — built from current primary assignments.
+
+      Isolated-node gap — the staff spine derives exclusively from current-slice
+      reporting-period edges, so a staff member with no current reporting
+      relationship at all (no manager, no direct reports) gets no self-pair. For
+      the staff-pii-reporting_chain Cube scope this resolves the reportee set to
+      empty and denies access as if they had no downline. Virtually all KTAF
+      staff have at least one reporting relationship, but a newly-hired
+      executive before their reports are loaded, or an ADP data-quality gap, can
+      hit this silently — debug via dim_staff_reporting_periods for the affected
+      staff.
     config:
       # WITH RECURSIVE is incompatible with the contract-validation subquery
       # wrapper; orphan detection is preserved via the relationships tests below.
@@ -26,11 +36,11 @@ models:
           Foreign key to dim_staff — a staff member at or above the reportee in
           the reporting tree. Equals reportee_staff_key on the depth-0
           self-pair.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - not_null
           - relationships:
@@ -42,11 +52,11 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff — the direct or indirect report.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - not_null
           - relationships:

@@ -49,7 +49,12 @@ with
             cast(ada.is_iss as int64) as is_iss,
             cast(ada.is_suspended as int64) as is_suspended,
 
+            -- a null attendancevalue means PowerSchool recorded no attendance
+            -- for the day (the is_* flags are null too); it must not read as
+            -- Present through the else branch
             case
+                when ada.attendancevalue is null
+                then null
                 when ada.is_oss = 1
                 then 'Out-of-School Suspension'
                 when ada.is_iss = 1
@@ -60,7 +65,7 @@ with
                 then 'Tardy'
                 else 'Present'
             end as attendance_category,
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
+        from {{ ref("int_students__attendance_daily") }} as ada
         left join
             {{ ref("dim_terms") }} as t
             on ada.schoolid = t.school_id

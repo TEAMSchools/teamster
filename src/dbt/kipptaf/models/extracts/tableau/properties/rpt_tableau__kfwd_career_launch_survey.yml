@@ -301,3 +301,9 @@ models:
           Whether all seven KFWD career conversation checklist items are marked
           complete for the alumnus in the Career Conversation Tracker AppSheet
           app. False when any item is incomplete or no conversation is recorded.
+      - name: last_ccr_date
+        data_type: date
+        description:
+          Contact note date of the alumnus's most recent Career Conversation
+          (CC1 through CC5) record in Salesforce, across all academic years.
+          NULL when no Career Conversation note is logged.
