@@ -1,4 +1,9 @@
 with
+    base as (
+        select *, regexp_extract(test_name, r'Grade (\d+)') as grade_number,
+        from {{ ref("stg_pearson__student_list_report") }}
+    ),
+
     scores as (
         select
             academic_year,
@@ -43,15 +48,9 @@ with
                 when test_name = 'Algebra I'
                 then 'ALG01'
                 when test_name like '%Mathematics%'
-                then
-                    concat(
-                        'MAT', lpad(regexp_extract(test_name, r'Grade (\d+)'), 2, '0')
-                    )
+                then concat('MAT', lpad(grade_number, 2, '0'))
                 when test_name like '%ELA%'
-                then
-                    concat(
-                        'ELA', lpad(regexp_extract(test_name, r'Grade (\d+)'), 2, '0')
-                    )
+                then concat('ELA', lpad(grade_number, 2, '0'))
             end as aligned_test_code,
 
             case
@@ -71,7 +70,7 @@ with
                 then 2
             end as performance_band_level,
 
-        from {{ ref("stg_pearson__student_list_report") }}
+        from base
     )
 
 select
