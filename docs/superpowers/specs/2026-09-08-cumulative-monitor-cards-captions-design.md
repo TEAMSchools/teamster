@@ -193,14 +193,16 @@ Four header strips and three worksheet titles have to come from somewhere:
 - The band legend zone folds into a header strip: 38 pixels.
 - The two single-row bars go from 86 to 62 pixels each. They are single bars.
 - Goal strip goes from 78 to 66 pixels.
-- `GPA - Goal by school` goes from 399 to about 324 pixels. Twelve rows at 27
-  pixels each; the Academic Health equivalent runs nine rows at 20 and reads
-  fine.
-- `GPA - Goal by grade` goes from 141 to about 120 pixels.
-- `GPA - Dist by grade` barely moves, 330 to about 316 pixels.
+- `GPA - Goal by school` goes from 399 to 360 pixels. Twelve rows at 30 pixels
+  each; the Academic Health equivalent runs nine rows at 20 and reads fine.
+- `GPA - Goal by grade` goes from 141 to 120 pixels.
+- `GPA - Dist by grade` gains, 330 to 356 pixels.
 
-The visible cost concentrates in the school panel. Final values are set during
-the build, where the check is that each flow container's children sum to the
+The visible cost concentrates in the school panel, and it is smaller than it
+first looked. Reconciling each flow container's children against its parent
+during planning showed that folding the standalone legend into a header strip
+frees more than the four strips cost, so the by-grade chart grows rather than
+shrinking. The build's check is that each flow container's children sum to the
 parent and the whole dashboard sums to 100000 units.
 
 ## Build order

@@ -921,14 +921,24 @@ Height budget, in the 100000-unit space where 1 pixel is 111.11 units. Set these
 | 800, 810, 820, 830 strips | —       | `4444`  | 0 → 40    |
 | 141, 142                  | `9556`  | `6889`  | 86 → 62   |
 | 143 legend                | `4222`  | `4222`  | 38, moved |
-| 144                       | `36667` | `35111` | 330 → 316 |
+| 144                       | `36667` | `39556` | 330 → 356 |
 | 151                       | `15668` | `13333` | 141 → 120 |
-| 152                       | `44333` | `36000` | 399 → 324 |
+| 152                       | `44333` | `40001` | 399 → 360 |
 
-Body left children then sum to `4444 + 6889 + 6889 + 4444 + 35111 = 57777`, plus
-the legend `4222` nested inside strip 810, giving `62222` less margins. Body
-right sums to `4444 + 13333 + 4444 + 36000 = 58221`. Reconcile both against the
-parent before writing, and let `check_geometry.py` be the judge.
+Both columns sum exactly to their parent:
+
+- left `4444 + 6889 + 6889 + 4444 + 39556 = 62222`
+- right `4444 + 13333 + 4444 + 40001 = 62222`
+
+Legend zone 143 keeps `h='4222'` and sits horizontally beside the text zone
+inside strip 810, so it consumes no vertical space of its own — strip 810 at
+`4444` is 222 units taller than the legend it holds.
+
+`GPA - Dist by grade` gains height rather than losing it, because folding the
+standalone legend into a header strip frees more than the strips cost. The
+spec's budget prose predicted a small cut; the reconciled arithmetic is better
+than that. `check_geometry.py` from Task 4 is the judge — if these values do not
+satisfy it, fix the values, not the checker.
 
 - [ ] **Step 1: Write the failing assertion**
 
