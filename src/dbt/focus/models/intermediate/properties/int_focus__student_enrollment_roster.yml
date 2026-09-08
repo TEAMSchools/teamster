@@ -62,8 +62,10 @@ models:
         description: Enrollment start date.
       - name: exitdate
         description: >-
-          Enrollment end date, defaulted to June 30 of the academic year when
-          the stint has no end_date (still open).
+          Enrollment end date, inclusive. Defaulted to June 30 of the academic
+          year when the stint has no end_date (still open), then trimmed to the
+          day before the student's next stint in the same year starts, so stints
+          never overlap and a transfer day belongs to the arriving school.
       - name: entrycode
         description: Short name of the code used to enter the enrollment.
       - name: exitcode

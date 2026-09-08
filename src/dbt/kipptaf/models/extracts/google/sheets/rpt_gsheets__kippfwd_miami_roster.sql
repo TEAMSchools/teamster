@@ -54,7 +54,7 @@ with
             student_id,
             powerschool_id,
             sex_label,
-            ese_fefp_code,
+            has_iep,
             cast(disis_id as string) as mdcps_id_raw,
             cast(student_id as string) as student_id_string,
         from {{ ref("int_focus__students") }}
@@ -128,9 +128,7 @@ select
 
     regexp_extract(s.sex_label, r'\[(\w)\]') as gender,
 
-    coalesce(
-        psy.iep_status, if(s.ese_fefp_code is not null, 'Has IEP', 'No IEP')
-    ) as iep_status,
+    coalesce(psy.iep_status, if(s.has_iep, 'Has IEP', 'No IEP')) as iep_status,
 
     c1.contact_name as contact_1_name,
     c1.phone_home as contact_1_phone_home,

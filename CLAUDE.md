@@ -86,7 +86,16 @@ specifics live there.
 
 ## Subagents
 
-Dispatch rules, model tiers, and Workflow cleanup inject from
+Decide these two things before every `Agent` call, including the first:
+
+- Dispatch or stay inline. Dispatch when the task writes a lot, would flood your
+  context with reading, can run in parallel, or needs a fresh reviewer.
+  Otherwise do it inline: a small edit with the files already loaded is cheaper
+  on the main model than a cold subagent on a cheaper one.
+- Which `model`. Pass the cheapest one you expect to finish on the first try.
+  Omit it (inherit) for judgment calls and reviews you will act on.
+
+Price ratios, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
 accept a subagent's self-report without the checks there.
 

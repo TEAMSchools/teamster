@@ -142,8 +142,37 @@ with
         }}
     ),
 
-    with_flags as (
+    next_stint as (
         -- trunk-ignore(sqlfluff/AM04): deduplicate resolves columns at run time
+        select
+            *,
+
+            lead(startdate) over (
+                partition by student_number, academic_year order by startdate
+            ) as next_startdate,
+        from deduplicate
+    ),
+
+    -- A stint ends the day before the next one starts. Focus dates a transfer
+    -- with the departing stint's end_date on the arriving stint's start_date,
+    -- and leaves the departing stint open outright when nobody closes it, so
+    -- without this trim a student holds two schools on the same day and every
+    -- model that scaffolds days from this roster carries that day twice. The
+    -- source shape is asserted in the focus package test
+    -- int_focus__student_enrollment__no_overlapping_stints.
+    trimmed as (
+        select
+            * except (exitdate, next_startdate),
+
+            if(
+                next_startdate <= exitdate,
+                date_sub(next_startdate, interval 1 day),
+                exitdate
+            ) as exitdate,
+        from next_stint
+    ),
+
+    with_flags as (
         select
             *,
 
@@ -174,7 +203,7 @@ with
                 partition by student_number
                 order by academic_year desc, exitdate desc, startdate desc
             ) as rn_all,
-        from deduplicate
+        from trimmed
     ),
 
     with_year_counts as (

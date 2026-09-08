@@ -5,16 +5,14 @@ models:
       to int_powerschool__ps_adaadm_daily_ctod, which is now a thin PowerSchool
       union. Holds every derived flag, point-in-time anchor, and running calc
       for both SIS branches, so there is one definition rather than one per
-      branch. The PowerSchool branch is project-scoped: Miami is served by Focus
-      from AY2026 forward and by nothing before that. The frozen Miami
-      PowerSchool archive (AY2020 through AY2025, 793,259 rows, 2,582 students)
-      was dropped in #4803 rather than re-keyed, because Focus re-dated Miami's
-      enrollment stints and 153,577 archive rows no longer joined to
-      dim_student_enrollments. Miami daily attendance before AY2026 is absent
-      from this model by decision, not by defect. Note that int_students__ada
-      and int_students__attendance_streak keep independent Miami legs and still
-      carry pre-AY2026 history. Six flags are null for Focus-sourced Miami rows
-      because Focus has no day-grain source for them — see #4927.
+      branch. The PowerSchool branch is year-scoped, so the frozen Miami
+      PowerSchool archive keeps serving AY2020 through AY2025 while Focus serves
+      AY2026 forward, the same split int_students__ada and
+      int_students__attendance_streak apply. Focus is the enrollment source of
+      record for Miami and re-dated the archive's stints, so Miami archive rows
+      take entrydate from the Focus stint that contains the day and fall back to
+      the archive date when none does. Six flags are null for Focus-sourced
+      Miami rows because Focus has no day-grain source for them — see #4927.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -45,8 +43,8 @@ models:
           branch, that PowerSchool has no such concept — it records only
           absences), which is distinct from a recorded presence. Never null
           network-wide. On the Focus branch, this — not studentid — is the real
-          recorded/unrecorded signal; on the PowerSchool branch (NJ regions only
-          since #4803) it is always false by construction.
+          recorded/unrecorded signal; on the PowerSchool branch (including the
+          frozen Miami archive) it is always false by construction.
         data_tests:
           - not_null:
               config:
@@ -57,18 +55,19 @@ models:
           per-district source, or the Focus kipptaf passthrough).
       - name: studentid
         description: >-
-          PowerSchool internal student id. Null for every Focus-sourced row,
-          which since #4803 is every Miami row — Phase 1 left it unpopulated for
-          Focus, so joins use student_number. Retained for existing consumers
-          built against the PowerSchool branch; the #4927 null flags are
-          discriminated on the explicit is_focus_source flag, not on this
-          column.
+          PowerSchool internal student id. Null for every Focus-sourced row
+          (Miami AY2026 forward) — Phase 1 left it unpopulated for Focus, so
+          joins use student_number. Retained for existing consumers built
+          against the PowerSchool branch; the #4927 null flags are discriminated
+          on the explicit is_focus_source flag, not on this column.
       - name: schoolid
         description: Network school number.
       - name: entrydate
         description: >-
-          Enrollment stint start date the row belongs to. Legacy alias,
-          transitional — see enrollment_start_date.
+          Enrollment stint start date the row belongs to. On Miami archive rows
+          this is the Focus stint's start date, not PowerSchool's, so the row
+          keys to dim_student_enrollments. Legacy alias, transitional — see
+          enrollment_start_date.
       - name: fteid
         description: >-
           PowerSchool internal FTE id. Null for every Focus-sourced row — Focus
