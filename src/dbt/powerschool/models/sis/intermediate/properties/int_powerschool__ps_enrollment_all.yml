@@ -48,8 +48,9 @@ models:
         data_type: date
         description: >-
           `exitdate`, cut back to the next stint's `entrydate` when a later
-          stint at the same school starts before this one ends. Date-range joins
-          that must stay one row per student-day
-          (int_powerschool__ps_membership_reg) use this instead of `exitdate`;
-          overlapping stints are a source defect surfaced by
+          stint at any school starts before this one ends. PowerSchool holds one
+          enrollment at a time, so a transfer whose old stint was left open is
+          cut at the new school's start. Date-range joins that must stay one row
+          per student-day (int_powerschool__ps_membership_reg) use this instead
+          of `exitdate`; overlapping stints are a source defect surfaced by
           test_int_powerschool__ps_enrollment_all__no_overlapping_stints.

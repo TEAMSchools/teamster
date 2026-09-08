@@ -5,7 +5,7 @@ models:
       stint in int_powerschool__ps_enrollment_all joined to the school's
       calendar over the half-open `[entrydate, exitdate_clipped)`. The clipped
       exit comes from int_powerschool__ps_enrollment_all, which cuts a stint off
-      where the next stint at the same school begins, so overlapping stints
+      where the student's next stint begins at any school, so overlapping stints
       cannot emit 2 rows for one student-day here. The grain is guarded
       upstream, where a defect would originate: the overlap test on
       int_powerschool__ps_enrollment_all, the `(schoolid, date_value)`

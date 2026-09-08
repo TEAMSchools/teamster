@@ -20,8 +20,8 @@ data_tests:
 
   - name: test_int_powerschool__ps_enrollment_all__no_overlapping_stints
     description: >-
-      Within a `(studentid, schoolid)` partition, no stint's `entrydate` may
-      fall inside an earlier stint's half-open `[entrydate, exitdate)`. An
+      For each `studentid`, at any school, no stint's `entrydate` may fall
+      inside an earlier stint's half-open `[entrydate, exitdate)`. An
       overlapping pair makes `int_powerschool__ps_membership_reg` emit 2 rows
       for every in-session day in the overlap, and every attendance model
       downstream double-counts those student-days. `exitdate_clipped` on this
@@ -30,11 +30,11 @@ data_tests:
       stints, but the source defect is only visible here. The existing
       `(studentid, entrydate)` and `(studentid, exitdate)` uniqueness tests miss
       overlaps whose dates differ. Runs at the consuming district's default warn
-      severity. Failing with 21 stints as of 2026-09-08 (kippnewark 1,
-      kippcamden 3, kipppaterson 17), none of which reach an in-session calendar
-      day, so the clip changes 0 rows today. The 2026-08-20 Newark incident
-      (#5160) produced 558 duplicate student-days before Ops corrected the
-      stints.
+      severity. Failing with 56 stints as of 2026-09-08 (kippnewark 36,
+      kippcamden 3, kipppaterson 17), most of them cross-school stints from
+      yearid 26. None reach an in-session calendar day, so the clip changes 0
+      rows today. The 2026-08-20 Newark incident (#5160) produced 558 duplicate
+      student-days before Ops corrected the stints.
     config:
       meta:
         dagster:

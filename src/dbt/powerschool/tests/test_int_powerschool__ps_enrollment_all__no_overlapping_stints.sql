@@ -7,7 +7,7 @@ with
             entrydate,
             exitdate,
             max(exitdate) over (
-                partition by studentid, schoolid
+                partition by studentid
                 order by entrydate, exitdate
                 rows between unbounded preceding and 1 preceding
             ) as prior_max_exitdate,

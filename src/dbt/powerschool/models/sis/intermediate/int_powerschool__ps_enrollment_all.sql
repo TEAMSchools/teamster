@@ -61,7 +61,7 @@ with
             coalesce(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,
 
             lead(sr.entrydate) over (
-                partition by sr.id, sr.schoolid order by sr.entrydate, sr.exitdate
+                partition by sr.id order by sr.entrydate, sr.exitdate
             ) as next_entrydate,
         from union_relations as sr
         left join {{ ref("stg_powerschool__fte") }} as f on sr.fteid = f.id
@@ -75,7 +75,7 @@ with
 select
     * except (next_entrydate),
 
-    -- overlapping stints at one school: the later stint owns the shared days
+    -- overlapping stints: the later stint owns the shared days
     -- (see test_int_powerschool__ps_enrollment_all__no_overlapping_stints)
     if(next_entrydate < exitdate, next_entrydate, exitdate) as exitdate_clipped,
 from enrollments
