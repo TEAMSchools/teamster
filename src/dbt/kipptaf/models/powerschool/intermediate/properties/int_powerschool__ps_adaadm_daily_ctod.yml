@@ -28,7 +28,10 @@ models:
             column_role: foreign_key
       - name: student_number
         data_type: int64
-        description: Student Number assigned by the school. Indexed.
+        description:
+          Network student number. Miami's frozen PowerSchool archive carries the
+          bare pre-Focus number, so those rows are offset by 8400000000 to the
+          Focus id the enrollment union uses.
         config:
           meta:
             source_system: PowerSchool
