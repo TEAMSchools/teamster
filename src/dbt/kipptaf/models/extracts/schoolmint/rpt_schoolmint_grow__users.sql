@@ -135,6 +135,22 @@ with
             and sr.active_through >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
 
+    /* one slot per role; null slots drop out at the aggregate below */
+    people_role_slots as (
+        select
+            user_internal_id,
+
+            [
+                if(is_regional_admin, 'Regional Admin', null),
+                if(is_school_admin, 'School Admin', null),
+                if(is_school_assistant_admin, 'School Assistant Admin', null),
+                if(is_coach, 'Coach', null),
+                if(is_regional_observer, 'Regional Observer', null),
+                if(is_teacher, 'Teacher', null)
+            ] as role_name_slots,
+        from people
+    ),
+
     people_roles as (
         select
             p.user_internal_id,
@@ -143,40 +159,31 @@ with
             ifnull(
                 array_agg(r.role_id ignore nulls order by r.role_id), []
             ) as role_ids,
-        from people as p
-        left join
-            unnest(
-                [
-                    if(p.is_regional_admin, 'Regional Admin', null),
-                    if(p.is_school_admin, 'School Admin', null),
-                    if(p.is_school_assistant_admin, 'School Assistant Admin', null),
-                    if(p.is_coach, 'Coach', null),
-                    if(p.is_regional_observer, 'Regional Observer', null),
-                    if(p.is_teacher, 'Teacher', null)
-                ]
-            ) as rn
+        from people_role_slots as p
+        left join unnest(p.role_name_slots) as rn
         left join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
         group by p.user_internal_id
     ),
 
+    regional_scope_schools as (
+        /* Regional Admin: Chief Level sees every school, others their region */
+        select p.user_internal_id, gs.school_id,
+        from people as p
+        inner join grow_schools as gs on (p.is_chief or p.region = gs.region)
+        where p.is_regional_admin
+
+        union distinct
+
+        /* Regional Observer: their own school only */
+        select p.user_internal_id, gs.school_id,
+        from people as p
+        inner join grow_schools as gs on p.school_name = gs.school_name
+        where p.is_regional_observer
+    ),
+
     regional_scope as (
         select user_internal_id, array_agg(school_id order by school_id) as school_ids,
-        from
-            (
-                /* Regional Admin: Chief Level sees every school, others their region */
-                select p.user_internal_id, gs.school_id,
-                from people as p
-                inner join grow_schools as gs on (p.is_chief or p.region = gs.region)
-                where p.is_regional_admin
-
-                union distinct
-
-                /* Regional Observer: their own school only */
-                select p.user_internal_id, gs.school_id,
-                from people as p
-                inner join grow_schools as gs on p.school_name = gs.school_name
-                where p.is_regional_observer
-            )
+        from regional_scope_schools
         group by user_internal_id
     ),
 
