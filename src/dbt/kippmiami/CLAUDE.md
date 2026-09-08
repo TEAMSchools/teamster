@@ -12,10 +12,10 @@ models/
     staging/
 ```
 
-PowerSchool (pre-Focus SIS) is retired. The frozen `kippmiami_powerschool`
-BigQuery dataset (source, not a dbt package) now feeds
-`int_fldoe__all_assessments` directly; `powerschool` is no longer in
-`packages.yml`.
+PowerSchool (pre-Focus SIS) is retired and `powerschool` is no longer in
+`packages.yml`. `int_fldoe__all_assessments` resolves `student_number` from
+`int_focus__students`, not the frozen `kippmiami_powerschool` dataset; kipptaf
+still reads that dataset through its own source, so do not drop it.
 
 ## Source Packages
 
