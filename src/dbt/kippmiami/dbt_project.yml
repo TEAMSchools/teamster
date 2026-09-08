@@ -101,9 +101,9 @@ models:
             +post-hook: delete from {{ this }} where yearid > 35
           stg_powerschool__terms:
             +post-hook: delete from {{ this }} where yearid > 35
-          # Miami's frozen archive has no NJ state-reporting files for these
-          # four ODBC tables (no files match the GCS pattern); nothing in the
-          # archive relations depends on any of them, so disable per Step 4.
+          # No frozen files under
+          # gs://teamster-kippmiami/dagster/kippmiami/powerschool/<table>/ for
+          # these NJ state-reporting tables; disabled with their consumers.
           stg_powerschool__s_nj_crs_x:
             +enabled: false
           stg_powerschool__s_nj_ren_x:
@@ -112,6 +112,9 @@ models:
             +enabled: false
           stg_powerschool__s_nj_usr_x:
             +enabled: false
+          # No frozen files under
+          # gs://teamster-kippmiami/dagster/kippmiami/powerschool/<table>/ for
+          # these tables; disabled with their consumers.
           stg_powerschool__studentrace:
             +enabled: false
           stg_powerschool__u_def_ext_students:
@@ -122,6 +125,9 @@ models:
             +enabled: false
           stg_powerschool__u_storedgrades_de:
             +enabled: false
+          # No frozen files under
+          # gs://teamster-kippmiami/dagster/kippmiami/powerschool/<table>/ for
+          # these grad-plan tables; disabled with their consumers.
           stg_powerschool__gpselectedcrs:
             +enabled: false
           stg_powerschool__gpselectedcrtype:
@@ -136,13 +142,11 @@ models:
             +enabled: false
           stg_powerschool__s_stu_x:
             +enabled: false
-          # Miami's frozen archive has no gpnode/gpprogresssubject* files
-          # either (contrary to Task 1's expectation) — no files match the
-          # GCS pattern. int_powerschool__gpnode and
-          # int_powerschool__gpprogress_grades (their only consumers) are
-          # leaf models with no further downstream reader in the package, and
-          # nothing in the archive relations depends on them, so disable both
-          # per Step 4.
+          # No frozen files under
+          # gs://teamster-kippmiami/dagster/kippmiami/powerschool/<table>/ for
+          # these tables; disabled with their consumers
+          # (int_powerschool__gpnode and int_powerschool__gpprogress_grades,
+          # which have no further downstream reader in the package).
           stg_powerschool__gpnode:
             +enabled: false
           stg_powerschool__gpprogresssubject:
@@ -157,11 +161,8 @@ models:
             +enabled: false
           stg_powerschool__gpprogresssubjwaivedapplied:
             +enabled: false
-          # Both models exist in the package with no properties.yml (no
-          # contract `columns:` spec), so the enforced contract fails
-          # "'columns' specification is missing" on build (package gap,
-          # unrelated to the frozen archive). Neither has a package
-          # consumer, so disable per Step 4.
+          # No properties file in the package, so the enforced contract
+          # fails; nothing in the archive reads them.
           stg_powerschool__period:
             +enabled: false
           stg_powerschool__sced_code_mapping:
@@ -187,6 +188,8 @@ sources:
       staging:
         odbc:
           +enabled: true
+          # Mirrors the model disables above so stage_external_sources and
+          # dbt build agree.
           powerschool_odbc:
             src_powerschool__s_nj_crs_x:
               +enabled: false

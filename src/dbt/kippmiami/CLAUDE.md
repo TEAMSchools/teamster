@@ -28,4 +28,6 @@ dataset or the GCS files.
 
 Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). `focus`
 — `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not use
-`edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.
+`edplan`, `overgrad`, `pearson`, `powerschool`, or `titan` (`powerschool` is
+temporarily included for the #5012 archive rebuild; see the PowerSchool
+paragraph above).

@@ -87,8 +87,10 @@ models:
         description: Letter grade earned or projected for the course.
         data_type: string
       - name: is_transfer_grade
-        description:
-          True if the grade was transferred in, false for current-year courses.
+        description: >
+          True when the stored grade's schoolname has no match in
+          stg_powerschool__schools, i.e. the grade was earned at a school
+          outside the district. Always false for in-progress grades.
         data_type: boolean
       - name: credit_status
         description:

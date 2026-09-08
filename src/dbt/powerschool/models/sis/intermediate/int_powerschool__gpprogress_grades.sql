@@ -44,7 +44,6 @@ with
             {{ ref("stg_powerschool__storedgrades") }} as sg
             on se.storedgradesdcid = sg.dcid
             and sg.storecode = 'Y1'
-        -- transfer grade: earned at a school outside this district
         left join
             {{ ref("stg_powerschool__schools") }} as sch on sg.schoolname = sch.name
 
