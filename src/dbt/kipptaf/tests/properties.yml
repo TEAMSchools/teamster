@@ -749,6 +749,168 @@ data_tests:
           ref:
             name: stg_cambium__njgpa
 
+  - name: int_students__graduation_path_codes__cutoff_within_score_scale
+    description: >-
+      A graduation pathway cut score must be reachable on the scale of the
+      scores it is compared against. NJDOE replaced the NJGPA with the adaptive
+      NJGPA-A at the spring 2026 administration, moving to a lower,
+      non-overlapping scale and the cut from 725 to 450. Until the cut score
+      sheet gained an assessment_version column, every adaptive score was
+      compared against 725 and read as not met, and the only symptom was a
+      graduating class that appeared to fail. This fires when no student in a
+      group of at least 20 scored rows can reach the cut score, which is what a
+      cut score keyed to the wrong scale looks like. The floor of 20 keeps a
+      genuinely hard cut score with few takers from tripping it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
+  - name: int_students__graduation_pathway_scores__one_cutoff_per_score_type
+    description: >-
+      A student must face exactly one cut score for a given subject, score type
+      and assessment version. The model's own uniqueness test cannot catch a
+      breach of this: its key ends in rn_highest, which is a row_number over a
+      subset of that key and so is unique whatever the data does. The cut score
+      sheet's uniqueness test does not catch it either, because the sheet is
+      keyed on cohort, discipline, score type and version while the join also
+      matches pathway_option -- two sheet rows differing only in pathway_option
+      pass that test and fan a student out here, silently doubling the grain the
+      way it doubled when the second NJGPA row was first added.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_pathway_scores
+
+  - name: int_students__graduation_path_codes__labels_agree
+    description: >-
+      A student coded straight from PowerSchool carries their pathway label in
+      two columns -- test_type, which describes the row, and
+      final_grad_path_name, which describes the determination. Both are decoded
+      from the same PowerSchool code but in different models, so the two label
+      lists can drift apart and put one dashboard in contradiction with itself.
+      Code O already did this once, reading `No Pathway` in dbt and `Met No
+      Requirements` in the workbook calculation the label was lifted from. DLM
+      and portfolio students give this live coverage; codes O and P have never
+      appeared in our data, so drift there would otherwise surface only when the
+      first student hits one.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
+  - name: int_students__graduation_path_codes__scores_have_cutoffs
+    description: >-
+      Every student who sat the NJGPA needs a cut score row that accepts their
+      score. This finds students the model records as having attempted the
+      assessment for a discipline but whose NJGPA rows all carry a null scale
+      score, meaning no cut score row matched on their cohort, score type and
+      assessment version. Those students fall through to a final_grad_path_code
+      of R, which is indistinguishable from genuinely meeting no pathway. DLM,
+      portfolio, no-pathway and incomplete-credit students are excluded because
+      they are coded straight from PowerSchool and never reach the cut score
+      join at all. NJDOE publishes cut scores per graduating class only after
+      the administration is scored, and a retained or accelerated student can
+      sit a version their own cohort has no row for, so warn rather than error
+      -- the value is the named list of who is unscoreable, not a blocked build.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__student_graduation_path_cutoffs
+
+  - name: int_students__student_enrollments__cohort_not_ahead_of_entry
+    description: >-
+      A high school student should never be ahead of the cohort they entered
+      with. For grade 9 and up, cohort freezes at the student's first year in
+      the school, which is correct for New Jersey's 4-year adjusted cohort
+      graduation rate. Falling behind that cohort is ordinary retention and is
+      not a defect, so only the other direction is tested -- a student whose
+      grade level implies an earlier graduating class than their recorded
+      cohort. That means a skipped grade or a missing enrollment year, and it
+      misstates the graduating class in state reporting. Warn because the fix is
+      a records correction in PowerSchool rather than a code change.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_students__student_enrollments
+
+  - name: int_students__graduation_pathway_scores__best_score_ranked_first
+    description: >-
+      Within a student and score type, the row ranked first must be a passing
+      score whenever the student has one. Consumers filter on rn_highest of 1 to
+      get a single row per score type, so a passing score ranked behind a
+      failing one disappears from the dashboard and the student reads as having
+      missed. The two NJGPA versions share a score type but not a score scale,
+      so ranking on the raw score would put a failing 700 on the retired scale
+      above a passing 500 on the adaptive one. Ranking on whether the score
+      passed, and then on how far it cleared its own cut score, is comparable
+      across both.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_pathway_scores
+
+  - name: int_students__graduation_pathway_scores__points_short_agrees_with_met
+    description: >-
+      met_pathway_cutoff and points_short describe the same fact from two
+      angles, so they must never disagree. A score that cleared its cut score
+      has points_short of zero or more, and one that fell short has a negative
+      value. When the two disagree there is no way to tell from the dashboard
+      which of them is lying. Scoped to rows that actually made a comparison,
+      since students whose pathway PowerSchool already decided have neither a
+      cut score nor a margin.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_pathway_scores
+
+  - name: int_students__graduation_path_codes__code_agrees_with_met_flags
+    description: >-
+      The pathway code reported to the state must match the flags it was derived
+      from. Code S requires met_njgpa. Each alternative code requires its own
+      flag AND requires that every higher-priority pathway was not met, because
+      New Jersey prefers the state assessment first and then ACT, SAT, PSAT10
+      and PSAT/NMSQT in that order. This is the guard on the precedence logic
+      itself -- a mistake there produces a plausible-looking code rather than an
+      error, and it is written back to the state.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
+  - name: int_students__graduation_path_codes__eligibility_agrees_with_subjects
+    description: >-
+      The eligibility label must match the subjects the student actually met. A
+      subject only counts when the student also sat the NJGPA in it, so met_ela
+      alone is not enough. Grad Eligible and No FAFSA require both subjects,
+      unless the student is an 11th grader who has attempted nothing and is
+      still inside the grace period. ELA Only requires exactly ELA, Math Only
+      exactly mathematics, and FAFSA Only or Not Grad Eligible require neither.
+      This guards the derivation that replaced the hand-maintained combinations
+      sheet.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_students__graduation_path_codes
+
   - name: test_state_assessment_joins_resolve_miami
     description: >-
       Fails when either state-assessment model holds zero Miami rows. The

@@ -12,5 +12,7 @@ for NJGPA and has `stg_pearson__njgpa` disabled.
 Column names are snake_case because Cambium ships spaced CSV headers, where
 Pearson shipped camel case. Only 11 of 225 column names overlap with
 `stg_pearson__njgpa`; the two are unrelated schemas over the same assessment.
-Alignment into the shared NJ-assessment column shape happens in kipptaf's
-`stg_cambium__njgpa`, not here.
+`stg_cambium__njgpa` maps them into the shared NJ-assessment column shape
+(Pearson names plus the aligned reporting columns) so kipptaf unions the two
+vendors as passthroughs. Keep it in step with the pearson package's
+`int_pearson__all_assessments`.

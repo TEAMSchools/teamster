@@ -188,6 +188,11 @@ issue a `drop view` for the orphaned relation. Disabling a model does NOT
 disable its tests (see _Test config defaults_ in `.claude/rules/dbt-yaml.md`) —
 add `enabled: false` to each of those too.
 
+Exception, decided on #5162: a kipptaf `select *` union passthrough over
+district sources with no remaining `ref()` is deleted outright, source entries
+included. It holds no logic, and the district relations it read stay in place,
+so a forgotten consumer loses nothing that disabling would have preserved.
+
 ### Verifying a test-removal PR
 
 Never report a count from the YAML diff — it does not say which dbt nodes
