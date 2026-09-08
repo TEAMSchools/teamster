@@ -8,9 +8,10 @@ models:
       same shape. The model's Pearson-only name is a known misnomer now that a
       second vendor feeds it; a rename is pending. The aligned demographic
       labels, proficiency banding, and subject/test-code normalization are
-      computed upstream (pearson_aligned_columns() in the pearson package;
-      stg_cambium__njgpa for Cambium). This model only unions, repairs
-      localstudentidentifier from the crosswalk, and casts the state id.
+      computed upstream: int_pearson__all_assessments in the pearson package per
+      district, and stg_cambium__njgpa in the cambium package. This model only
+      unions the district copies, repairs localstudentidentifier from the
+      crosswalk, and casts the state id.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

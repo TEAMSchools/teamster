@@ -26,6 +26,14 @@ clean-targets: # directories to be removed by `dbt clean`
 
 vars:
   bigquery_external_connection_name: null
+  # Staging relations int_pearson__all_assessments unions. A district that
+  # disables some of these models, or remaps IDs in its own int_pearson__*
+  # models, overrides this list in its dbt_project.yml (see kipppaterson).
+  pearson_state_assessment_relations:
+    - stg_pearson__parcc
+    - stg_pearson__njsla
+    - stg_pearson__njsla_science
+    - stg_pearson__njgpa
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models

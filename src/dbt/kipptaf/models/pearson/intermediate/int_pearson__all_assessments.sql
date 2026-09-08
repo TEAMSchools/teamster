@@ -4,15 +4,14 @@ with
             dbt_utils.union_relations(
                 source_column_name="_dbt_source_relation_2",
                 relations=[
-                    ref("stg_pearson__parcc"),
-                    ref("stg_pearson__njsla"),
-                    ref("stg_pearson__njsla_science"),
-                    ref("stg_pearson__njgpa"),
-                    ref("stg_cambium__njgpa"),
+                    source("kippnewark_pearson", "int_pearson__all_assessments"),
+                    source("kippcamden_pearson", "int_pearson__all_assessments"),
+                    source("kipppaterson_pearson", "int_pearson__all_assessments"),
+                    source("kippnewark_cambium", "stg_cambium__njgpa"),
+                    source("kippcamden_cambium", "stg_cambium__njgpa"),
                 ],
                 include=[
                     "_dbt_source_relation",
-                    "_dbt_source_project",
                     "academic_year",
                     "admin",
                     "administration_period",
@@ -70,17 +69,33 @@ with
                 ],
             )
         }}
+    ),
+
+    sourced as (
+        select
+            * except (_dbt_source_relation, _dbt_source_relation_2),
+
+            /* The Pearson relations arrive with the staging relation they came
+               from; the Cambium relations have no inner union, so fall back to
+               this union's own source column. Either way the value names the
+               district dataset. */
+            coalesce(
+                _dbt_source_relation, _dbt_source_relation_2
+            ) as _dbt_source_relation,
+        from union_relations
     )
 
-/* Every per-row derivation lives upstream: pearson_aligned_columns() in the
-   pearson package for the Pearson relations, and stg_cambium__njgpa for the
-   adaptive NJGPA rows. Only the two cross-source repairs remain here. */
+/* Every per-row derivation lives upstream: int_pearson__all_assessments in the
+   pearson package and stg_cambium__njgpa in the cambium package. Only the two
+   cross-source repairs remain here. */
 select
-    u.* except (_dbt_source_relation_2) replace (
-        cast(u.statestudentidentifier as string) as statestudentidentifier,
-        coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier
+    s.* replace (
+        cast(s.statestudentidentifier as string) as statestudentidentifier,
+        coalesce(x.student_number, s.localstudentidentifier) as localstudentidentifier
     ),
-from union_relations as u
+
+    {{ extract_source_project("s") }} as _dbt_source_project,
+from sourced as s
 left join
     {{ ref("stg_google_sheets__pearson__student_crosswalk") }} as x
-    on u.studenttestuuid = x.student_test_uuid
+    on s.studenttestuuid = x.student_test_uuid

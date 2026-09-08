@@ -31,3 +31,12 @@ sources:
                 - kipppaterson
                 - pearson
                 - int_pearson__student_list_report
+      - name: int_pearson__all_assessments
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - int_pearson__all_assessments

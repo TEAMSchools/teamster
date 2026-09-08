@@ -67,7 +67,6 @@ with
             ) as unit3_start_timestamp,
             safe_cast(paperattemptcreatedate as date) as paper_attempt_date,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
             if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
 
         from {{ source("pearson", "src_pearson__njgpa") }}
@@ -104,48 +103,39 @@ with
             ) as test_date,
 
         from earliest_test_start
-    ),
+    )
 
-    final as (
-        select
-            *,
+select
+    *,
 
-            'NJGPA' as assessment_name,
-            'NJGPA' as assessment_version,
+    'NJGPA' as assessment_name,
+    'NJGPA' as assessment_version,
 
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
+    if(
+        `subject` = 'English Language Arts/Literacy', 'English Language Arts', `subject`
+    ) as subject_area,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
+    if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
+    case
+        testcode
+        when 'SC05'
+        then 'SCI05'
+        when 'SC08'
+        then 'SCI08'
+        when 'SC11'
+        then 'SCI11'
+        else testcode
+    end as module_code,
 
-            if(testperformancelevel = 2, true, false) as is_proficient,
+    if(testperformancelevel = 2, true, false) as is_proficient,
 
-            case
-                testperformancelevel
-                when 2
-                then 'Graduation Ready'
-                when 1
-                then 'Not Yet Graduation Ready'
-            end as testperformancelevel_text,
+    case
+        testperformancelevel
+        when 2
+        then 'Graduation Ready'
+        when 1
+        then 'Not Yet Graduation Ready'
+    end as testperformancelevel_text,
 
-        from test_date_resolved
-    ),
-
-    aligned as (select *, {{ pearson_aligned_columns() }} from final)
-
-select *, {{ pearson_aligned_labels() }}
-from aligned
+from test_date_resolved
