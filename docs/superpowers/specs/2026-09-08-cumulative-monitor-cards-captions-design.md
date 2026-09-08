@@ -24,10 +24,25 @@ screen marking the difference.
 Tracing `[Parameter 11]` through the calculations gives three groups, not two.
 The reminder design follows from this split, so it is recorded here in full.
 
-**Follows the switch.** `GPA - Dist by grade`, `GPA - Goal by grade`,
-`GPA - Goal by school`, `GPA - BAN % 3.5+` and `GPA - BAN % 3.0+`. Each resolves
-through `Calculation_0141679102236570168` (`Cum GPA (unweighted)`), which
-branches on `[Parameters].[Parameter 11]`.
+**Follows the switch, wholly.** `GPA - Dist by grade` — bars, mark labels and
+the `GPA band` colour encoding all resolve through
+`Calculation_0141679102236570168` (`Cum GPA (unweighted)`), which branches on
+`[Parameters].[Parameter 11]`. `GPA - BAN % 3.5+` and `GPA - BAN % 3.0+` do the
+same.
+
+**Follows the switch in part.** `GPA - Goal by grade` and `GPA - Goal by school`
+each encode three things — bar length, mark label, colour — and not every
+encoding is parameter-aware. On `GPA - Goal by grade`, bar length and the mark
+label both resolve through `Calculation_0141679102236570168`; only the colour,
+`Calculation_7236501339153214575` (`Goal status`), is built on
+`Calculation_9485136151529756033` / `Calculation_4693780698737655073`, a
+projected-only pair. On `GPA - Goal by school`, only the bar length,
+`Calculation_9335003396903351453` (`% at 3.0+`), is parameter-aware. Both the
+mark label, `Calculation_3466859908724272046` (`Gap to goal (pts)`), and the
+colour — the same `Goal status` calc — are built on that same projected-only
+pair. Setting the basis to `On the books today` therefore moves the bars on both
+panels while their gap labels and colours stay projected, which is what produces
+a near-zero-length bar carrying a label like `+11.4pp` in green.
 
 **Ignores the switch, always projected.** `GPA - BAN Below 3.0`,
 `GPA - BAN Can reach`, `GPA - BAN Gap to goal` and `GPA - BAN Students needed`.
@@ -40,7 +55,8 @@ compare against `gpa_goal_proportion_org`, or `gpa_goal_proportion_region` when
 one panel, whatever the switch is set to.
 
 A reader who sets the basis to `On the books today` therefore sees four numbers
-and one panel that did not change, and the dashboard says nothing about it.
+and one panel that do not change, two panels whose bars move while their labels
+and colour stay projected, and the dashboard says nothing about any of it.
 
 ## The pattern being copied
 
@@ -113,16 +129,32 @@ Every basis line in this design reuses that exact formatting, so `Tableau Light`
 10 in `#8c8c8c` means "which basis you are looking at" everywhere on the
 dashboard, whether a mark label or a sheet title renders it.
 
-**Live.** `GPA - BAN % 3.5+` and `GPA - BAN % 3.0+` gain the placeholder as
-their middle line, in the slot the other two BANs already use. All four then
-share one structure: label, basis, number. `GPA - Dist by grade`,
-`GPA - Goal by grade` and `GPA - Goal by school` carry the same line as a
-worksheet title, top left, under the header strip.
+**Live.** The plan was for `GPA - BAN % 3.5+` and `GPA - BAN % 3.0+` to gain the
+placeholder as their middle line, in the slot the other two BANs already use, so
+all four would share one structure: label, basis, number. That failed twice. A
+`<[Parameters].…>` token renders blank inside a mark label. Routing the
+parameter through a calculation on the Text shelf was worse — it blanked the
+whole label, title and number included, not just the basis line. The
+worksheet-title route is the only one that resolves a parameter in this
+workbook. `GPA - BAN % 3.5+` and `GPA - BAN % 3.0+` ship with static text,
+`Follows the GPA basis`, in the same run style and position instead.
+`GPA - Dist by grade`, `GPA - Goal by grade` and `GPA - Goal by school` carry
+the live placeholder as a worksheet title, top left, under the header strip —
+that route works, which is why those three keep it.
 
 **Fixed.** `GPA - BAN Gap to goal` and `GPA - BAN Students needed` already say
-`— always projected`, but inline in the 13 point label where it runs long. Split
-it onto its own line in the standard grey. Card 3's first header strip states in
-its caption that the panel shows both bases.
+`— always projected`, inline in the 13 point label where it runs long. The plan
+called for splitting it onto its own line in the standard grey; that rendered
+the number as `####` in both BANs — three lines do not fit the box at this size
+— so the build reverted to production's inline form, which is what ships. Card
+3's first header strip states in its caption that the panel shows both bases.
+
+**Left alone.** The row labels ship as `Actual` / `Projected`, a different
+vocabulary from the parameter's own `On the books today` / `Projected EOY` —
+three names for two states. That inconsistency stands on purpose: lengthening
+either row label to match the parameter's wording caused a mid-word wrap defect
+that cost two fix rounds, and the card caption directly above already explains
+what the rows are.
 
 `GPA - Dist by grade` cannot use a native axis title, because its value axis
 sets `display='false'`. The other two charts do render a default `% at 3.0+`
@@ -140,12 +172,24 @@ card.
 | Card 2 label   | Progress against the goal    | Always projected, against the network goal — or the selected region's goal.                                  |
 | Card 3, first  | Band mix, network            | On the books today above, projected to year end below. This panel shows both, whatever the switch is set to. |
 | Card 3, second | Band mix by grade            | The same bands, split by grade.                                                                              |
-| Card 4, first  | % at 3.0+ by grade           | Share of students at a 3.0 cumulative or better. The grey tick is the network goal for that grade.           |
-| Card 4, second | Gap to goal, school by grade | Bar length is % at 3.0+; the label is the gap in points; the grey tick is that school's own goal.            |
+| Card 4, first  | % at 3.0+ by grade           | Share at a 3.0 cumulative or better. Tick is the grade's network goal. Colour always projected.              |
+| Card 4, second | Gap to goal, school by grade | Bar is % at 3.0+, follows the basis. Label and colour always projected. Tick is the school goal.             |
 
-`GPA - Title`'s caption currently hedges with "Projected end-of-year unless the
-basis switch is set to on the books today". Once every panel states its own
-basis, that sentence can go.
+Header strips clip their caption with an ellipsis rather than wrapping it, so
+caption length is a hard constraint and not a matter of taste. The budget scales
+with the strip's width. Measured from renders: at 39676 units, captions of 97
+and 96 characters render in full while 129 and 142 clip; at 58565 units, 108
+characters render in full. `assert_cum_cards.py` enforces `97 * width / 39676`,
+which is deliberately conservative — a caption that fails it may still fit, so
+the response to a failure is to render and look, never to raise the constant.
+
+No structural check can see this. It cost a round: the first attempt at the two
+`Card 4` captions above stated the always-projected caveat correctly and at 129
+and 142 characters, and both truncated mid-sentence on screen.
+
+`GPA - Title`'s caption hedged with "Projected end-of-year unless the basis
+switch is set to on the books today". Every panel now states its own basis, so
+that sentence was removed.
 
 ### Colour
 
@@ -190,20 +234,28 @@ Body left holds 86, 86, 38 and 330. Body right holds 141 and 399.
 
 Four header strips and three worksheet titles have to come from somewhere:
 
-- The band legend zone folds into a header strip: 38 pixels.
-- The two single-row bars go from 86 to 62 pixels each. They are single bars.
-- Goal strip goes from 78 to 66 pixels.
+- The band legend zone folds into strip 810, which needs 70 pixels to render all
+  five legend entries — not the 40 pixels a plain header strip costs.
+- The two single-row bars go from 86 to 74 pixels each, not the planned 62.
+- Goal strip goes from 78 to 80 pixels — it grew, not the planned shrink to 66.
 - `GPA - Goal by school` goes from 399 to 360 pixels. Twelve rows at 30 pixels
   each; the Academic Health equivalent runs nine rows at 20 and reads fine.
 - `GPA - Goal by grade` goes from 141 to 120 pixels.
-- `GPA - Dist by grade` gains, 330 to 356 pixels.
+- `GPA - Dist by grade` loses height, 330 to 302 pixels, rather than the planned
+  gain to 356.
+- The headline card also shrank, 138 to 116 pixels, a change nothing in this
+  design called for.
 
-The visible cost concentrates in the school panel, and it is smaller than it
-first looked. Reconciling each flow container's children against its parent
-during planning showed that folding the standalone legend into a header strip
-frees more than the four strips cost, so the by-grade chart grows rather than
-shrinking. The build's check is that each flow container's children sum to the
-parent and the whole dashboard sums to 100000 units.
+The planned savings did not hold. The legend's own strip costs as much as a
+plain strip plus what the legend itself needs, and the goal strip grew instead
+of shrinking. What actually freed the room for the body to grow from 556 to 576
+pixels was the headline card's unplanned 22 pixel loss, offset by 2 pixels back
+into the goal strip — not the legend fold. `GPA - Dist by grade` ends up
+smaller, not larger, because strip 810 and the two single-row bars above it in
+body left consumed more of the column's share than planned. The build's check —
+that each flow container's children sum to the parent and the whole dashboard
+sums to 100000 units — held throughout; it confirms internal consistency, not
+that the plan's pixel predictions did.
 
 ## Build order
 
