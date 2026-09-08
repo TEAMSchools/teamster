@@ -8,7 +8,7 @@ with
             exitdate,
             max(exitdate) over (
                 partition by studentid, schoolid
-                order by entrydate
+                order by entrydate, exitdate
                 rows between unbounded preceding and 1 preceding
             ) as prior_max_exitdate,
         from {{ ref("int_powerschool__ps_enrollment_all") }}

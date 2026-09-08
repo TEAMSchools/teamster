@@ -37,32 +37,45 @@ with
             {{ ref("stg_powerschool__students") }} as s
             on r.studentid = s.id
             and s.enroll_status != 1
+    ),
+
+    enrollments as (
+        select
+            sr.id as studentid,
+            sr.student_number,
+            sr.schoolid,
+            sr.entrydate,
+            sr.entrycode,
+            sr.exitdate,
+            sr.exitcode,
+            sr.grade_level,
+            sr.fteid,
+            sr.membershipshare,
+            sr.track,
+
+            t.yearid,
+
+            -1 as programid,
+
+            coalesce(f.dflt_att_mode_code, '-1') as dflt_att_mode_code,
+            coalesce(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,
+
+            lead(sr.entrydate) over (
+                partition by sr.id, sr.schoolid order by sr.entrydate, sr.exitdate
+            ) as next_entrydate,
+        from union_relations as sr
+        left join {{ ref("stg_powerschool__fte") }} as f on sr.fteid = f.id
+        left join
+            {{ ref("stg_powerschool__terms") }} as t
+            on sr.schoolid = t.schoolid
+            and t.isyearrec = 1
+            and sr.entrydate between t.firstday and t.lastday
     )
 
 select
-    sr.id as studentid,
-    sr.student_number,
-    sr.schoolid,
-    sr.entrydate,
-    sr.entrycode,
-    sr.exitdate,
-    sr.exitcode,
-    sr.grade_level,
-    sr.fteid,
-    sr.membershipshare,
-    sr.track,
+    * except (next_entrydate),
 
-    t.yearid,
-
-    -1 as programid,
-
-    coalesce(f.dflt_att_mode_code, '-1') as dflt_att_mode_code,
-    coalesce(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,
-
-from union_relations as sr
-left join {{ ref("stg_powerschool__fte") }} as f on sr.fteid = f.id
-left join
-    {{ ref("stg_powerschool__terms") }} as t
-    on sr.schoolid = t.schoolid
-    and t.isyearrec = 1
-    and sr.entrydate between t.firstday and t.lastday
+    -- overlapping stints at one school: the later stint owns the shared days
+    -- (see test_int_powerschool__ps_enrollment_all__no_overlapping_stints)
+    if(next_entrydate < exitdate, next_entrydate, exitdate) as exitdate_clipped,
+from enrollments
