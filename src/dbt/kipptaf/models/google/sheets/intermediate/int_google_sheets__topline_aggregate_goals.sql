@@ -31,5 +31,12 @@ select
         when g.org_level = 'school'
         then s.abbreviation || ' ' || g.grade_band
     end as aggregation_display,
+
+    if(
+        g.aggregation_data_type = 'Numeric', cast(g.goal as numeric), null
+    ) as goal_numeric,
+    if(
+        g.aggregation_data_type = 'Integer', cast(g.goal as int64), null
+    ) as goal_integer,
 from {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
 left join {{ ref("stg_powerschool__schools") }} as s on g.schoolid = s.school_number

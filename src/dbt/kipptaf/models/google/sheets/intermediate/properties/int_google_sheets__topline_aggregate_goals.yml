@@ -38,3 +38,13 @@ models:
         description:
           The short name for the school displayed on most screens. Categorical
           mapping of abbreviation, entity, grade_band, layer, org_level.
+      - name: goal_numeric
+        data_type: numeric
+        description:
+          NULL values for all goals not numeric in data type - for Tableau
+          formatting
+      - name: goal_integer
+        data_type: integer
+        description:
+          NULL values for all goals not integer in data type - for Tableau
+          formatting
