@@ -60,5 +60,11 @@ inner join
     on st.student_number = enr.student_number
     and st.academic_year = enr.academic_year
     and st.streak_start_date >= enr.entrydate
-    and st.streak_start_date < enr.exitdate
+    -- exitdate semantics differ by source. PowerSchool's is the day AFTER the
+    -- last day, so a streak starting on it belongs to the next stint and an
+    -- inclusive end fans 33 NJ streaks out across two stints. Focus's roster
+    -- exitdate is the inclusive last day (#5158), so the half-open end drops
+    -- 451 Miami streaks that start on a stint's last day.
+    and st.streak_start_date
+    < if(enr._dbt_source_project = 'kippmiami', enr.exitdate + 1, enr.exitdate)
     and st._dbt_source_project = enr._dbt_source_project
