@@ -159,6 +159,18 @@
   group: academics
   regions: [newark]
   status: verified
+- id: gpa_roster_paterson
+  name: "GPA Roster: Paterson"
+  url: https://docs.google.com/spreadsheets/d/13j1khv49eSxTFUJGxbgQKnjvmUhYTgH-SshZr5NWCbU/edit?gid=0#gid=0
+  description:
+    Provides term GPA, Y1 GPA, and cumulative GPA (unweighted, weighted, and
+    projected), along with basic identification information for students in the
+    Paterson region for grade levels 5 through 8.
+  audiences: [region, teachers]
+  system: google-sheet
+  group: academics
+  regions: [paterson]
+  status: verified
 
 - id: academic_gradebook_health_suite
   name: Academic & Gradebook Health Suite
