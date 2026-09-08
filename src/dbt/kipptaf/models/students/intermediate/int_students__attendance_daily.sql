@@ -64,22 +64,6 @@ with
         }}
     ),
 
-    -- Miami's student_number is the 8400-prefixed Focus id since #5148, and the
-    -- frozen archive carries the bare PowerSchool number, like the pre-Focus
-    -- vendor rows the macro was written for. int_focus__students.powerschool_id
-    -- confirms the offset for every archive student.
-    powerschool_renumbered as (
-        select
-            * except (student_number),
-
-            {{
-                focus_student_number(
-                    "student_number", "yearid + 1990", "_dbt_source_project"
-                )
-            }} as student_number,
-        from powerschool_deduped
-    ),
-
     -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
     -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
     -- outright (the way int_students__terms does) would delete six years of
@@ -107,7 +91,7 @@ with
             -- Archive date when no Focus stint contains the day (51 AY2025 rows
             -- per #4803); those rows already resolve on the archive date.
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
-        from powerschool_renumbered as ps
+        from powerschool_deduped as ps
         cross join cutover as c
         -- Half-open: the union conforms exitdate to the day after the stint's
         -- last day, and the roster trims each stint to the day before the next

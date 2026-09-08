@@ -7,21 +7,9 @@ with
 
     -- The frozen PowerSchool archive keeps serving Miami for every year Focus
     -- does not cover. Scoping by year rather than by project is what preserves
-    -- Miami AY2020 through AY2025. Miami's student_number is the 8400-prefixed
-    -- Focus id since #5148 and the archive carries the bare PowerSchool number,
-    -- so the archive is renumbered here the way int_students__attendance_daily
-    -- does, or its Miami rows no longer join the enrollment union.
+    -- Miami AY2020 through AY2025.
     powerschool_conformed as (
-        select
-            ps.* except (student_number),
-
-            ps.yearid + 1990 as academic_year,
-
-            {{
-                focus_student_number(
-                    "ps.student_number", "ps.yearid + 1990", "ps._dbt_source_project"
-                )
-            }} as student_number,
+        select ps.*, ps.yearid + 1990 as academic_year,
         from {{ ref("int_powerschool__attendance_streak") }} as ps
         cross join cutover as c
         where
