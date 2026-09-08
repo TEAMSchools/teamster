@@ -12,7 +12,7 @@ select
     e.expected_measure_standard,
     e.measure_standard_level,
     e.pm_goal_criteria,
-    e.test_code as code,
+    e.code,
     e.start_date,
     e.end_date,
 

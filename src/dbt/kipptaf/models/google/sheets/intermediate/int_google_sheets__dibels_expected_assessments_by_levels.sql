@@ -24,7 +24,7 @@ select
     e.subject_area,
     e.measure_standard,
     e.measure_standard_level,
-    e.test_code,
+    e.test_code as code,
     e.admin_season,
     e.month_round,
     e.illuminate_subject,
@@ -34,7 +34,7 @@ select
     e.pm_goal_include,
     e.pm_goal_criteria,
     e.assessment_type,
-    e.matching_pm_season,
+    e.matching_bm_season,
     e.expected_measure_name_code,
     e.expected_measure_name,
     e.expected_measure_standard,
@@ -43,6 +43,9 @@ select
 
     t.start_date,
     t.end_date,
+
+    g.grade_level_standard as benchmark_goal,
+    g.admin_season as benchmark_season,
 
     min(e.round_number) over (
         partition by
@@ -64,3 +67,8 @@ left join
     and e.admin_season = t.name
     and e.test_code = t.code
     and e.grade = t.grade_level
+left join
+    {{ ref("stg_google_sheets__dibels_goals_long") }} as g
+    on e.expected_measure_standard = g.measure_standard
+    and e.grade = g.grade_level
+    and e.admin_season = g.matching_pm_season

@@ -10,8 +10,8 @@ select
     if(grade = 0, 'K', cast(grade as string)) as grade_level_text,
 
     case
-        admin_season when 'BOY' then 'BOY->MOY' when 'MOY' then 'MOY->EOY'
-    end as matching_pm_season,
+        admin_season when 'BOY->MOY' then 'BOY' when 'MOY->EOY' then 'MOY'
+    end as matching_bm_season,
 
 from
     {{
