@@ -26,11 +26,11 @@ with
             sg.potentialcrhrs as official_potential_credits,
             sg.potentialcrhrs as potential_credits,
 
-            sch.name is null as is_transfer_grade,
-
             'Earned' as credit_status,
 
             coalesce(sg.earnedcrhrs, 0.0) as earned_credits,
+
+            sch.name is null as is_transfer_grade,
 
         from {{ ref("int_powerschool__gpnode") }} as gpn
         inner join
