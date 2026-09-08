@@ -5,12 +5,22 @@
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
-      "Bash(cat)",
-      "Bash(git diff)",
-      "Bash(git status)",
-      "Bash(git worktree list)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git status:*)",
+      "Bash(git worktree list:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(ls:*)",
+      "Bash(rg:*)",
+      "Bash(tail:*)",
       "Bash(uv run .claude/skills/dagster-day2/scripts/day2_collect.py)",
       "Bash(uv run .claude/skills/dagster-day2/scripts/day2_summarize.py --details)",
+      "Bash(uv tool list)",
+      "Bash(wc:*)",
       "Bash(uv tool list)",
       "Edit(/.claude/scratch/**)",
       "Edit(/.claude/skills/dagster-day2/**)",
@@ -154,7 +164,7 @@
       "Read(/env/**)"
     ]
   },
-  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
+  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt", "github", "tableau"],
   "hooks": {
     "SessionStart": [
       {
