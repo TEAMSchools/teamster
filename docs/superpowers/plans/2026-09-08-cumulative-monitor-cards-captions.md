@@ -410,7 +410,7 @@ BANNED = {"#2f5fc4", "#d8342f"}
 
 
 def main(path):
-    t = Path(path).read_text(encoding="utf-8")
+    t = Path(path).read_text(encoding="utf-8", newline="")
     m = re.search(rf"<encoding attr='color'[^>]*{CALC}[^>]*>(.*?)</encoding>", t, re.S)
     if not m:
         sys.exit(f"FAIL: no colour encoding for {CALC}")
@@ -467,7 +467,10 @@ SWAP = {"At or above goal": ("#2f5fc4", "#12a47c"), "Below goal": ("#d8342f", "#
 
 
 def main(src, dst):
-    t = (D / src).read_text(encoding="utf-8")
+    # newline="" on BOTH sides: a plain read_text applies universal newlines and
+    # the write then flattens all 27,729 CRLF endings to LF.
+    t = (D / src).read_text(encoding="utf-8", newline="")
+    crlf_in = t.count("\r\n")
     m = re.search(rf"<encoding attr='color'[^>]*{CALC}[^>]*>.*?</encoding>", t, re.S)
     if not m:
         sys.exit(f"FAIL: no colour encoding for {CALC}")
@@ -481,7 +484,10 @@ def main(src, dst):
         print(f"  {member}: {old} -> {want}")
     t = t[: m.start()] + new + t[m.end() :]
     ET.fromstring(t)
+    if t.count("\r\n") != crlf_in:
+        sys.exit(f"FAIL: CRLF count moved {crlf_in} -> {t.count(chr(13) + chr(10))}")
     (D / dst).write_text(t, encoding="utf-8", newline="")
+    print(f"  CRLF lines unchanged at {crlf_in}")
     print(f"  wrote {dst}")
 
 
@@ -593,7 +599,7 @@ def sheet(t, name):
 
 
 def main(path):
-    t = Path(path).read_text(encoding="utf-8")
+    t = Path(path).read_text(encoding="utf-8", newline="")
     bad = 0
     for name in LIVE_LABEL:
         seg = sheet(t, name)
