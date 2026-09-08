@@ -82,6 +82,12 @@ skill.
   `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
   reconciliation cascade (cold start + ClusterIP churn) — factor into cost
   analysis.
+- **Run/step pods and code servers both run at priority 0.** Do not add a
+  `priorityClassName` to either. Run pods sat at 1000 (`dagster-run`) until
+  2026-09-08, when one preempted the kippcamden code server mid-upload and left
+  the location in a terminal `ERROR` for four days (#5187). Only the agent
+  carries a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes
+  where it competes with nothing. Asserted in `tests/test_k8s_config.py`.
 - **Code server topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
