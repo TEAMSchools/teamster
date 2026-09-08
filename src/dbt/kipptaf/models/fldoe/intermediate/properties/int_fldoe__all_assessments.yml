@@ -92,9 +92,9 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student_number resolved in the upstream kippmiami
-          int_fldoe__all_assessments model by joining FLDOE student_id (FLEID)
-          to stg_powerschool__u_studentsuserfields.fleid. Null when no PS Miami
+          Network student_number (the 8400-prefixed Focus student_id) resolved
+          in the upstream kippmiami int_fldoe__all_assessments model by joining
+          FLDOE student_id (FLEID) to int_focus__students. Null when no Focus
           student carries the matching FLEID.
 
       - name: test_date
