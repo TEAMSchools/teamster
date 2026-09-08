@@ -95,7 +95,7 @@ later task builds on this task's output.
   3 and 5 edit in sequence. `server/prod-base3.twbx`, the donor archive whose
   extract Task 6 repacks around the final XML.
 
-- [ ] **Step 1: Write the download helper**
+- [x] **Step 1: Write the download helper**
 
 Write this with the Write tool to `tests/tableau/test_zz_pull.py`:
 
@@ -139,14 +139,14 @@ def test_pull():
     print(f"EXTRACTED: {(OUT / 'prod-base3.twb').stat().st_size} bytes")
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/tableau/test_zz_pull.py -s`
 
 Expected: PASS. Record the printed `PROJECT`, `UPDATED` and byte sizes — they go
 in the commit note. `PROJECT` must read `Production`.
 
-- [ ] **Step 3: Diff the base against the previous pull**
+- [x] **Step 3: Diff the base against the previous pull**
 
 Run:
 
@@ -169,7 +169,7 @@ Expected: no `GONE` lines, and `school filter zones` at least 17. A `GONE` line
 means production changed in a way this plan did not anticipate — stop and report
 rather than proceeding.
 
-- [ ] **Step 4: Baseline the structural checker**
+- [x] **Step 4: Baseline the structural checker**
 
 Run:
 
@@ -180,7 +180,7 @@ cd /workspaces/teamster/.claude/scratch/gpa-overnight && uv run python check_twb
 Expected: clean. This is the reference result every later task must still
 produce.
 
-- [ ] **Step 5: Delete the throwaway and commit**
+- [x] **Step 5: Delete the throwaway and commit**
 
 ```bash
 rm -f /workspaces/teamster/tests/tableau/test_zz_pull.py
@@ -190,6 +190,25 @@ git -C /workspaces/teamster/.worktrees/anthonygwalters/feat/claude-cum-monitor-c
 
 Tick this task's boxes and append the recorded `UPDATED` timestamp and byte
 sizes under the task heading before committing.
+
+**Result:**
+
+Pulled 2026-09-08. `PROJECT: Production`,
+`NAME: Academic & Gradebook Health Suite`, `UPDATED: 2026-09-08 16:04:16+00:00`
+— later than the 14:39 revision the earlier base came from. `prod-base3.twbx` is
+30,913,759 bytes; `prod-base3.twb` is 1,926,339 bytes.
+
+`tableauserverclient` appends the extension to whatever `filepath` it is given,
+so `filepath="…/prod-base3"` is what produces `prod-base3.twbx`. Passing the
+full name yields `prod-base3.twbx.twbx`.
+
+Diff against the 15:52 base: 68 worksheets, 5 dashboards and 11 parameters
+unchanged with no additions or removals; `filter-group='17'` still on 17 zones;
+all 5 dashboard elements byte-identical. The entire 29,657-character growth sits
+in `<datasources>`, which is the 16:04 extract refresh writing new extract
+metadata. No design change to rebase onto.
+
+`check_twb.py server/prod-base3.twb --ref server/prod-base2.twb` → `CLEAN`.
 
 ---
 
