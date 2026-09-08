@@ -29,9 +29,10 @@ with
 
     -- Every value on this fact is read from fct_student_days, never recomputed.
     -- The tier ladder, the eligibility floor and the year-to-date accumulation
-    -- are expressed there and only there, so the two facts cannot disagree. All
-    -- this model does is decide which day ends each period and pick up that
-    -- day's row.
+    -- are expressed there and only there, so the two facts cannot disagree.
+    -- This model decides which day ends each period and picks up that day's
+    -- row; the one exception is is_truant, which reads across the period's
+    -- membership days rather than only its last one.
     daily as (
         select
             i.student_number,
@@ -115,6 +116,13 @@ with
                 if(membership_value = 1, date_key, null)
             ) as period_start_membership_date_key,
             max(if(membership_value = 1, date_key, null)) as period_end_date_key,
+
+            -- The one value not read from the period-end row: truancy is a
+            -- status that can switch off before the period ends. Restricted to
+            -- membership days because is_truant is carried across break days on
+            -- fct_student_days, so a leading holiday would otherwise import the
+            -- previous period's status into this one.
+            logical_or(if(membership_value = 1, is_truant, null)) as is_truant,
         from bucketed
         group by
             location_key,
@@ -168,13 +176,13 @@ select
     pp.period_start_date_key,
     pp.period_start_membership_date_key,
     pp.period_end_date_key,
+    pp.is_truant,
 
     -- Read as of period end, not recomputed. n_membership_days_ytd accumulates
     -- by calendar date on fct_student_days, so year, month and week grain all
     -- report the same year-to-date position on the same date.
     b.n_membership_days_ytd,
     b.n_present_days_ytd,
-    b.is_truant,
     b.ada_tier,
     b.is_chronically_absent,
 from per_period as pp

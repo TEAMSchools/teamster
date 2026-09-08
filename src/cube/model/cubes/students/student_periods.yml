@@ -137,10 +137,15 @@ cubes:
 
       - name: is_truant
         description: >-
-          Whether the student met regional truancy criteria as of
-          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
+          Whether the student met regional truancy criteria on any membership
+          day in the period. Miami: 15+ absences in a 90-day rolling window. NJ
           regions: projected absences reach 50+ for the year. No eligibility
           floor -- neither regional rule has one.
+
+          Truancy is a status rather than an event, so it turns on and off
+          within a period and this reads across the whole period, unlike every
+          other value here, which is read as of period_end_date. For truancy as
+          of one specific date, pin attendance_date on student_days_view.
         sql: is_truant
         type: boolean
         public: true
@@ -274,10 +279,13 @@ cubes:
 
       - name: count_truants
         description: >-
-          Student-school records meeting regional truancy criteria as of
-          period_end_date. Miami: 15+ absences in a 90-day rolling window. NJ
-          regions: projected absences reach 50+ for the year. Same
+          Student-school records meeting regional truancy criteria on any
+          membership day in the period. Miami: 15+ absences in a 90-day rolling
+          window. NJ regions: projected absences reach 50+ for the year. Same
           distinct-student counting grain as count_students.
+
+          This is the one measure here not read as of period_end_date -- see
+          is_truant for why, and for how to get a single-date reading instead.
 
           No eligibility floor is applied here. Neither the Miami nor the NJ
           truancy rule requires a minimum membership-day count, so any such
@@ -297,13 +305,13 @@ cubes:
 
       - name: pct_truant
         description: >-
-          Percentage of students meeting regional truancy criteria as of
-          period_end_date. Denominator is count_students, every student in the
-          queried slice. No minimum-membership-day floor applies. Numerator and
-          denominator share the same population, so a student whose attendance
-          was never recorded is outside both and cannot pull the rate down.
-           Truancy has no eligibility concept
-          in either the Miami or the NJ rule.
+          Percentage of students meeting regional truancy criteria on any
+          membership day in the period. Denominator is count_students, every
+          student in the queried slice. No minimum-membership-day floor applies.
+          Numerator and denominator share the same population, so a student
+          whose attendance was never recorded is outside both and cannot pull
+          the rate down. Truancy has no eligibility concept in either the Miami
+          or the NJ rule.
 
           Any minimum-membership-day condition would belong inside is_truant on
           the fact, which keeps this denominator correct through a later change

@@ -1,10 +1,11 @@
 views:
   - name: student_periods_view
     description: >-
-      Student counts and rates as of the end of a period — chronic absence, ADA
-      tier mix and truancy. Use this view for "how many students crossed a line"
-      questions (chronic absence rate this year, ADA tier mix this month,
-      truancy trend by week).
+      Student counts and rates for a period — chronic absence and ADA tier mix
+      as of the period's last membership day, truancy on any membership day in
+      it. Use this view for "how many students crossed a line" questions
+      (chronic absence rate this year, ADA tier mix this month, truancy trend by
+      week).
 
       Every measure here is student-weighted: it counts students against a
       threshold they reached cumulatively by period end. There is no
@@ -19,12 +20,19 @@ views:
 
       Set period_type to year, month, or week to select the grain and group by
       period_start_date. No anchor filter is needed or accepted — the row
-      already is the period-end value, so there is nothing to pin it to: a
+      already carries the period's value, so there is nothing to pin it to: a
       single-date filter narrows which periods you get back rather than
       selecting a point in time within one. A row exists only for a period in
       which the student had a membership day at that school, so a withdrawn
       student stops appearing rather than carrying forward, and a trend's
       denominator shifts between points.
+
+      Truancy is the one measure here that is not read as of period end. Chronic
+      absence and ADA tier only ever accumulate, so their last-day reading is
+      their high-water mark; truancy is a status that turns on and off within a
+      period, so count_truants and pct_truant count a student who met the
+      criteria on any membership day in it. For truancy as of one specific date,
+      pin attendance_date on student_days_view instead.
 
       No minimum-membership-day floor is applied to any rate on this view. Every
       rate divides by the students who have at least one recorded attendance day

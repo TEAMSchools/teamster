@@ -5,12 +5,14 @@ models:
       period type x period start date, carrying that student's cumulative
       position at that school as of the period's end.
 
-      It derives nothing. Every value is read from fct_student_days at
-      period_end_date_key, which is where the tier ladder, the eligibility floor
-      and the year-to-date accumulation are expressed — so this fact and that
-      one cannot disagree. All this model decides is which day ends each period.
-      Identity comes from int_students__enrollment_days, because no fact in this
-      layer publishes a natural student identifier.
+      It derives nothing. Every value is read from fct_student_days, which is
+      where the tier ladder, the eligibility floor and the year-to-date
+      accumulation are expressed — so this fact and that one cannot disagree.
+      All this model decides is which of a period's rows to read: the row at
+      period_end_date_key for every value but is_truant, which reads across the
+      period's membership days because truancy is a status that turns on and off
+      within a period. Identity comes from int_students__enrollment_days,
+      because no fact in this layer publishes a natural student identifier.
 
       School is not projected. It groups the periods and is a hash input to
       student_period_key, but it is reachable from student_enrollment_key
@@ -255,12 +257,26 @@ models:
       - name: is_truant
         data_type: boolean
         description: >-
-          Truancy status as of period_end_date_key, read from
-          int_students__attendance_daily on that same date. Regional truancy
-          criteria (Miami: 15 or more absences in a 90-day window; the NJ
-          regions: a projected 50 or more for the year) are computed upstream
-          and carried through unchanged here. No membership-day floor is applied
-          to it, which matches both regional rules — neither requires one.
+          Whether the student met regional truancy criteria on any membership
+          day in the period. Regional criteria (Miami: 15 or more absences in a
+          90-day window; the NJ regions: a projected 50 or more for the year)
+          are computed upstream in int_students__attendance_daily and carried
+          through unchanged. No membership-day floor is applied to it, which
+          matches both regional rules — neither requires one.
+
+          This is the only column here not read as of period_end_date_key.
+          Truancy is a status rather than an event, so it turns on and off
+          within a period, and a period-end reading would report only whether it
+          happened to be on that last day — dropping every student who was
+          truant earlier in the period and had recovered by its end. The two
+          readings diverge most in the opening weeks of an academic year, where
+          the NJ projection swings on a handful of days, and converge as the
+          year settles.
+
+          Break days are excluded because is_truant is carried forward across
+          them on fct_student_days: without the membership-day restriction, a
+          period starting on a holiday would import the previous period's
+          status. Null when the period contains no measured membership day.
 
       - name: ada_tier
         data_type: string
@@ -620,14 +636,17 @@ unit_tests:
   - name: test_periods_reads_the_value_from_period_end_not_another_day
     description: Five membership days whose ada_tier deliberately differs per
       day, ending Tier 4, followed by a sixth day with zero membership carrying
-      Tier 1. Every period row must report the fifth day's values -- Tier 4,
-      chronically absent, truant -- proving two things at once --
-      period_end_date_key is the last MEMBERSHIP day rather than the last day
-      present, and the cumulative columns are read from exactly that row rather
-      than from the period start, an aggregate, or the latest row in the bucket.
+      Tier 1. Every period row must report the fifth day's ada_tier and
+      is_chronically_absent -- Tier 4, chronically absent -- proving two things
+      at once -- period_end_date_key is the last MEMBERSHIP day rather than the
+      last day present, and the cumulative columns are read from exactly that
+      row rather than from the period start, an aggregate, or the latest row in
+      the bucket.
 
       This is the join fct_student_periods now depends on, since it reads every
-      value from fct_student_days rather than deriving any of them.
+      value from fct_student_days rather than deriving any of them. is_truant is
+      the one column that reads across the period rather than at its end;
+      test_periods_truancy_reads_any_membership_day covers it.
     model: fct_student_periods
     given:
       - input: ref('int_students__enrollment_days')
@@ -714,4 +733,111 @@ unit_tests:
           ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
           ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true),
           ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 5.0, true, 'Tier 4', true)
+        ])
+
+  - name: test_periods_truancy_reads_any_membership_day
+    description:
+      Two students who are not truant on their period's last membership day, for
+      opposite reasons. Student 1 is truant on the second and third of five
+      membership days and has recovered by the fifth, so is_truant must read
+      true from the middle of the period while ada_tier and
+      is_chronically_absent still read the fifth day's Tier 1 and false --
+      truancy is the one column that reads across the period rather than at its
+      end. Student 2 opens the period with a break day carrying true from the
+      prior month and is not truant on either membership day that follows, so
+      is_truant must read false -- the aggregate is restricted to membership
+      days, or a leading holiday would import the previous period's status.
+    model: fct_student_periods
+    given:
+      - input: ref('int_students__enrollment_days')
+        format: sql
+        rows: |
+          select
+            student_number,
+            _dbt_source_project,
+            calendardate,
+          from unnest([
+            struct<
+              student_number int64, _dbt_source_project string,
+              calendardate date
+            >
+            (1, 'kippnewark', date '2025-09-01'),
+            (1, 'kippnewark', date '2025-09-02'),
+            (1, 'kippnewark', date '2025-09-03'),
+            (1, 'kippnewark', date '2025-09-04'),
+            (1, 'kippnewark', date '2025-09-05'),
+            (2, 'kippnewark', date '2025-09-01'),
+            (2, 'kippnewark', date '2025-09-02'),
+            (2, 'kippnewark', date '2025-09-03')
+          ])
+
+      - input: ref('fct_student_days')
+        format: sql
+        rows: |
+          select
+            student_day_key,
+            student_enrollment_key,
+            term_key,
+            date_key,
+            location_key,
+            academic_year,
+            week_start_monday,
+            membership_value,
+            n_membership_days_ytd,
+            n_present_days_ytd,
+            is_truant,
+            ada_tier,
+            is_chronically_absent,
+          from unnest([
+            struct<
+              student_day_key string, student_enrollment_key string,
+              term_key string, date_key date, location_key string,
+              academic_year int64, week_start_monday date, membership_value float64,
+              n_membership_days_ytd float64, n_present_days_ytd float64,
+              is_truant bool, ada_tier string,
+              is_chronically_absent bool
+            >
+            ('e12d648390f873d30442ba8cf3d9233e', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 1.0, 1.0, 1.0, false, 'Tier 1', false),
+            ('166308e26f59d74d70a9703faa290c40', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 2.0, 1.0, true, 'Tier 4', true),
+            ('14c2fbb87081fa46aa2caceee14d62d2', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 3.0, 2.0, true, 'Tier 3', true),
+            ('df2b9117d1507e688a505364902c1fd8', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-04', 'loc-a', 2025, date '2025-09-01', 1.0, 4.0, 3.0, false, 'Tier 2', false),
+            ('ab2389be57ae0977aa91ba35bd40d5a4', '53b6a73797c6a5dadb03eb37053e45f4', cast(null as string), date '2025-09-05', 'loc-a', 2025, date '2025-09-01', 1.0, 5.0, 4.0, false, 'Tier 1', false),
+            ('88069d903ef3d092c4eeb74fdb9bd014', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', cast(null as string), date '2025-09-01', 'loc-a', 2025, date '2025-09-01', 0.0, 10.0, 8.0, true, 'Tier 3', true),
+            ('59505aa7f7c1d16b45240af568a2ef1f', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', cast(null as string), date '2025-09-02', 'loc-a', 2025, date '2025-09-01', 1.0, 11.0, 9.0, false, 'Tier 1', false),
+            ('eb5fe9064ec8e7917ce6794adbd953a5', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', cast(null as string), date '2025-09-03', 'loc-a', 2025, date '2025-09-01', 1.0, 12.0, 10.0, false, 'Tier 1', false)
+          ])
+
+    expect:
+      format: sql
+      rows: |
+        select
+          student_period_key,
+          student_enrollment_key,
+          term_key,
+          academic_year,
+          period_type,
+          period_start_date_key,
+          period_start_membership_date_key,
+          period_end_date_key,
+          n_membership_days_ytd,
+          n_present_days_ytd,
+          is_truant,
+          ada_tier,
+          is_chronically_absent,
+        from unnest([
+          struct<
+            student_period_key string, student_enrollment_key string,
+            term_key string,
+            academic_year int64, period_type string, period_start_date_key date,
+            period_start_membership_date_key date,
+            period_end_date_key date, n_membership_days_ytd float64,
+            n_present_days_ytd float64, is_truant bool,
+            ada_tier string, is_chronically_absent bool
+          >
+          ('4c63e1617a32c43b1a19311bc66f3c12', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'year', date '2025-07-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, true, 'Tier 1', false),
+          ('27c6f1c36f4368eb481fcf495685c2a0', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'month', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, true, 'Tier 1', false),
+          ('da4753748381ee38275c6a5649f378dc', '53b6a73797c6a5dadb03eb37053e45f4', null, 2025, 'week', date '2025-09-01', date '2025-09-01', date '2025-09-05', 5.0, 4.0, true, 'Tier 1', false),
+          ('a28bd0cb8d767fda67687b3e03ac54b4', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', null, 2025, 'year', date '2025-07-01', date '2025-09-02', date '2025-09-03', 12.0, 10.0, false, 'Tier 1', false),
+          ('469b5b8b6ef42be202979e0bbf7699bd', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', null, 2025, 'month', date '2025-09-01', date '2025-09-02', date '2025-09-03', 12.0, 10.0, false, 'Tier 1', false),
+          ('f9e83d295f5293f1eb52d94a028ed666', '9f1c2b7d4e6a8035bc17d92f4e0a6b58', null, 2025, 'week', date '2025-09-01', date '2025-09-02', date '2025-09-03', 12.0, 10.0, false, 'Tier 1', false)
         ])
