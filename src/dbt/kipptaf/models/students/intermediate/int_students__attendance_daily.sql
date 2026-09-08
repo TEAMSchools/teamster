@@ -31,39 +31,6 @@ with
         where _dbt_source_project = 'kippmiami'
     ),
 
-    -- The per-district ctod source carries 561 duplicate (studentid,
-    -- calendardate) keys network-wide (1,301 excess rows: every column
-    -- byte-identical, a raw double-write -- confirmed against the raw
-    -- per-district source tables) plus 18 genuine same-day conflicts (rows
-    -- that differ -- one Camden student-day carries two different
-    -- fteid/grade_level rows for the same studentid/date). 558 of the 561
-    -- keys are Newark, spanning 2026-08-19 through 2027-06-17 -- the current,
-    -- still-loading academic year, so this is an ONGOING double-write, not a
-    -- closed historical defect. Both are pre-existing upstream PowerSchool
-    -- data-quality artifacts, unrelated to this model's Focus conform logic
-    -- -- they were previously invisible because the old ctod's own
-    -- uniqueness test carried no severity override and silently warned.
-    -- TODO: the PowerSchool attendance-calendar load needs an upsert/natural-
-    -- key constraint on (studentid, calendardate) so it stops writing a
-    -- second identical row for the same student-day when the nightly
-    -- pre-population job reruns; until then this dedup must stay.
-    -- _dbt_source_project MUST be in partition_by, not just studentid:
-    -- PowerSchool's internal studentid is assigned per-district, not
-    -- network-wide, so two different students in two different districts
-    -- routinely collide on the same (studentid, calendardate) -- omitting
-    -- the project from the partition silently merged unrelated students
-    -- from different districts (caught via a dev-vs-prod parity check:
-    -- dropping it undercounted every NJ district by 1-2K rows/year).
-    powerschool_deduped as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_powerschool__ps_adaadm_daily_ctod"),
-                partition_by="_dbt_source_project, studentid, calendardate",
-                order_by="(attendancevalue is null) asc",
-            )
-        }}
-    ),
-
     -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
     -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
     -- outright (the way int_students__terms does) would delete six years of
@@ -91,7 +58,7 @@ with
             -- Archive date when no Focus stint contains the day (51 AY2025 rows
             -- per #4803); those rows already resolve on the archive date.
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
-        from powerschool_deduped as ps
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ps
         cross join cutover as c
         -- Half-open: the union conforms exitdate to the day after the stint's
         -- last day, and the roster trims each stint to the day before the next
