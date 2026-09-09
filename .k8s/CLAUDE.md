@@ -70,12 +70,14 @@ skill.
 - **Do NOT use `Balanced` or `Performance`** — Balanced minimum requests (1 vCPU
   / 4 GiB) exceed ours (500m / 2 GiB). Performance has the same node-based
   pricing penalty as CCCs.
-- **`safe-to-evict: "false"` (extended-duration) is on agent and run pods.**
-  Under built-in Scale-Out it works as documented — blocks cluster autoscaler
-  eviction. Mutually exclusive with spot; do not move agent or run pods to a
-  spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget` →
-  `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent does
-  not.
+- **`safe-to-evict: "false"` (extended-duration) is on agent, run, and code
+  server pods.** Under built-in Scale-Out it works as documented — blocks
+  cluster autoscaler eviction. Mutually exclusive with spot; do not move any of
+  them to a spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget`
+  → `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent
+  does not. The code-server annotation depends on run pods and code servers
+  sharing priority 0: reintroducing a priority gap turns it back into the #4921
+  preemption storm. Asserted in `tests/test_k8s_config.py`.
 - **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
   set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
   nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with

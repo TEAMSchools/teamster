@@ -167,28 +167,15 @@ published page is a bug.
 
 ## PII reference
 
-`config.meta.contains_pii: true` in model YAML is authoritative but incomplete.
-Untagged columns are PII under FERPA's direct-identifier list
-([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3)):
-name, SSN, student/employee ID, address, date/place of birth, mother's maiden
-name, biometric record, plus "other information... linked or linkable to a
-specific student." Schema mapping: IDs (`student_number`, `employee_number`,
-`ssn`, `state_id`, `local_id`, kippadb `school_specific_id`), names (`*_name`),
-contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
-`dob`/`birth_date`, guardian/parent fields, free-text `comment`/`note` on people
-tables, credentials/tokens.
-
-Indirect identifiers (FERPA "linked or linkable"): gender, birth date,
-geographic indicators (school, zip), race/ethnicity, religion, place of birth,
-education info (grade level, EL status, IEP/504/disability), financial info (FRL
-status), activities. Each alone may be safe; combinations may not. When unsure,
-consult the [PTAC glossary](https://studentprivacy.ed.gov/glossary) or treat as
-PII. Aggregates and deidentified data are not PII.
-
-PII-tagging precedent in staging (powerschool) is narrower than this list: it
-omits gender, race/ethnicity, and internal/student ids. For a PII-heavy new
-model, confirm scope (direct-only vs direct+indirect) with the user before
-tagging.
+`config.meta.contains_pii: true` in model YAML is authoritative but incomplete;
+untagged columns can still be PII. The definition (34 CFR §99.3 verbatim), the
+column decision procedure, and the surrogate-key and small-cell rules are in
+`.claude/rules/ferpa-pii.md`, which loads on the first read of dbt YAML or a
+Cube file. Read it before tagging, before answering a raw-warehouse question,
+and before posting query rows anywhere outbound. Short form: names, contact,
+`student_number` and other school-facing ids, birth data, free text about a
+person, and student-level grades, attendance, or status flags are PII; database
+surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
 
 ## Superpowers skill overrides
 

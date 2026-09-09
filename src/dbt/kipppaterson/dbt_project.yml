@@ -99,6 +99,13 @@ models:
         # Paterson's PowerSchool (no dlt model)
         int_powerschool__section_grade_config:
           +enabled: false
+        # data-forced exception: needs the grad-plan dlt tables (gpnode,
+        # gpprogresssubject*), which are disabled below (empty in Paterson's
+        # PowerSchool)
+        int_powerschool__gpnode:
+          +enabled: false
+        int_powerschool__gpprogress_grades:
+          +enabled: false
         # contacts layer disabled for Paterson (parity with kippnewark)
         int_powerschool__contacts:
           +enabled: false

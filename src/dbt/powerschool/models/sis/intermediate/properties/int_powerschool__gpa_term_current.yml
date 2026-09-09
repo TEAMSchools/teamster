@@ -1,0 +1,4 @@
+models:
+  - name: int_powerschool__gpa_term_current
+    config:
+      materialized: ephemeral
