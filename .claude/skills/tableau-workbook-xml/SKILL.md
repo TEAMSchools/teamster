@@ -66,13 +66,14 @@ gets no secrets). Read exit codes with a redirect, never through a pipe.
    result is void). `mutate.py` only mutates zones inside one dashboard; for a
    worksheet, manifest, or format edit, hand-write the broken variant.
 3. **Edit** with `encoding="utf-8", newline=""` on both read and write. Anchor
-   every substitution and assert it matched exactly once. Assert the output
-   length moved by what you inserted (the 20% guard catches only gross
-   truncation). Parse with `ET.fromstring` before writing. Edit the dashboard's
-   `<zones>` block; if a `<devicelayouts>` block exists, say in the hand-over
-   that it was untouched. Inside `<formatted-text>` a line break is its own run
-   `<run>Æ&#10;</run>` (U+00C6 then `&#10;`), reproduced byte-exactly; the
-   tooltips in this corpus used bare `&#10;` instead. Traps:
+   every substitution and assert it matched exactly once; a unique anchor can
+   still land an element in the wrong content-model position, which is what step
+   4 checks. Assert the output length moved by what you inserted (the 20% guard
+   catches only gross truncation). Parse with `ET.fromstring` before writing.
+   Edit the dashboard's `<zones>` block; if a `<devicelayouts>` block exists,
+   say in the hand-over that it was untouched. Inside `<formatted-text>` a line
+   break is its own run `<run>Æ&#10;</run>` (U+00C6 then `&#10;`), reproduced
+   byte-exactly; the tooltips in this corpus used bare `&#10;` instead. Traps:
    [references/formatting.md](references/formatting.md).
 4. **Check.** `--ref` and `--baseline` are the untouched base from step 1, never
    an earlier edit of your own. Run `check_geometry.py` once per dashboard that
