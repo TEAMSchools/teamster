@@ -5,18 +5,12 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project is what preserves
-    -- Miami AY2020 through AY2025.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     powerschool_conformed as (
         select ps.*, ps.yearid + 1990 as academic_year,
         from {{ ref("int_powerschool__attendance_streak") }} as ps
-        cross join cutover as c
-        where
-            not (
-                ps._dbt_source_project = 'kippmiami'
-                and ps.yearid >= c.focus_start_academic_year - 1990
-            )
     ),
 
     -- `int_focus__attendance_streak` splits the district's overloaded

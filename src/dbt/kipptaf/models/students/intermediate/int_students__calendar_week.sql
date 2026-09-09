@@ -19,19 +19,11 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. int_powerschool__calendar_week already dual-exposes
-    -- yearid/academic_year and neutral date columns, so no extra aliasing is
-    -- needed here.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     powerschool_conformed as (
-        select cw.*,
-        from {{ ref("int_powerschool__calendar_week") }} as cw
-        cross join cutover as c
-        where
-            not (
-                cw._dbt_source_project = 'kippmiami'
-                and cw.yearid >= c.focus_start_academic_year - 1990
-            )
+        select cw.*, from {{ ref("int_powerschool__calendar_week") }} as cw
     ),
 
     -- int_focus__calendar_week is Focus-native: it emits academic_year but no

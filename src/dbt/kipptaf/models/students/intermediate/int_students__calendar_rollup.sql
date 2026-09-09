@@ -16,21 +16,11 @@ with
         select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project preserves Miami
-    -- AY2020 through AY2025. The star is qualified to the aliased relation: an
-    -- unqualified `select *,` leaks the cross-joined cutover CTE's
-    -- `focus_start_academic_year` into the output, because `full union all
-    -- corresponding` null-fills it on the `focus_conformed` side.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     powerschool_conformed as (
-        select cr.*,
-        from {{ ref("int_powerschool__calendar_rollup") }} as cr
-        cross join cutover as c
-        where
-            not (
-                cr._dbt_source_project = 'kippmiami'
-                and cr.yearid >= c.focus_start_academic_year - 1990
-            )
+        select cr.*, from {{ ref("int_powerschool__calendar_rollup") }} as cr
     ),
 
     -- int_focus__calendar_rollup is Focus-native: academic_year, min_school_date

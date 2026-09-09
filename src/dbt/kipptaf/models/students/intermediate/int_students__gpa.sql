@@ -2,14 +2,7 @@ with
     -- One row. See int_students__sis_cutover for why the boundary is a floor
     -- and why it is derived from recorded attendance rather than row presence.
     sis_cutover as (
-        select
-            focus_start_academic_year,
-
-            -- PowerSchool yearid form of the same boundary, so the archive
-            -- branch filters on a bare gt.yearid instead of recomputing
-            -- yearid + 1990 per row in WHERE.
-            focus_start_academic_year - 1990 as focus_start_yearid,
-        from {{ ref("int_students__sis_cutover") }}
+        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
     ),
 
     -- dcid >= 1 is the placeholder filter. See the model description for why
@@ -55,7 +48,6 @@ with
             -- The PowerSchool GPA chain does not produce class rank at all.
             cast(null as int64) as class_rank,
         from {{ ref("int_powerschool__gpa_term") }} as gt
-        cross join sis_cutover as sc
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on gt.studentid = gc.studentid
@@ -69,11 +61,6 @@ with
             powerschool_students as ps
             on gt.studentid = ps.studentid
             and gt._dbt_source_project = ps._dbt_source_project
-        where
-            not (
-                gt._dbt_source_project = 'kippmiami'
-                and gt.yearid >= sc.focus_start_yearid
-            )
     ),
 
     focus_conformed as (

@@ -44,13 +44,6 @@ with
 
             cd.insession = 1 as is_in_session,
             cd.membershipvalue > 0 as is_in_membership,
-
-            -- NULL-safe cutover flag: a day with no covering term (t.yearid is
-            -- NULL) is never a Focus-covered year, so it's kept below
-            -- regardless of project.
-            coalesce(
-                t.yearid >= c.focus_start_academic_year - 1990, false
-            ) as is_focus_covered_year,
         from {{ ref("stg_powerschool__calendar_day") }} as cd
         left join
             {{ ref("stg_powerschool__terms") }} as t
@@ -58,7 +51,6 @@ with
             and cd.date_value between t.firstday and t.lastday
             and cd._dbt_source_project = t._dbt_source_project
             and t.isyearrec = 1
-        cross join cutover as c
         -- stg_powerschool__calendar_day NULLs date_value for pre-2000 sentinel
         -- rows (a handful of PowerSchool junk records). The old INNER JOIN
         -- incidentally dropped them (BETWEEN against NULL is never true); the
@@ -67,10 +59,9 @@ with
         where cd.date_value is not null
     ),
 
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project preserves Miami
-    -- AY2020 through AY2025. A no-term day is never dropped here, even for
-    -- Miami — see `is_focus_covered_year` above.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     --
     -- Dual-exposes the neutral names (`school_date`, `academic_year`,
     -- `is_in_session`, `is_in_membership`) alongside the legacy names
@@ -93,7 +84,6 @@ with
 
             yearid + 1990 as academic_year,
         from powerschool_dated
-        where not (_dbt_source_project = 'kippmiami' and is_focus_covered_year)
     ),
 
     -- int_focus__calendar_day is Focus-native: it emits academic_year and

@@ -31,10 +31,9 @@ with
         where _dbt_source_project = 'kippmiami'
     ),
 
-    -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
-    -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
-    -- outright (the way int_students__terms does) would delete six years of
-    -- history.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     powerschool_conformed as (
         select
             ps.* except (entrydate),
@@ -59,7 +58,6 @@ with
             -- per #4803); those rows already resolve on the archive date.
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ps
-        cross join cutover as c
         -- Half-open: the union conforms exitdate to the day after the stint's
         -- last day, and the roster trims each stint to the day before the next
         -- starts, so one day matches at most one stint.
@@ -69,11 +67,6 @@ with
             and ps.yearid = fs.yearid
             and ps.calendardate >= fs.entrydate
             and ps.calendardate < fs.exitdate
-        where
-            not (
-                ps._dbt_source_project = 'kippmiami'
-                and ps.yearid >= c.focus_start_academic_year - 1990
-            )
     ),
 
     -- The whole Focus-to-network translation lives here. See "The conform

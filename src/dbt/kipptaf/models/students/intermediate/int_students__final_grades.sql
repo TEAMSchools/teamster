@@ -42,7 +42,6 @@ with
 
             ps.student_number,
         from {{ ref("base_powerschool__final_grades") }} as fg
-        cross join sis_cutover as sc
         -- left, not inner: an inner join would silently drop any final-grade row
         -- whose student fails the dcid >= 1 placeholder filter, changing the NJ
         -- population. Measured at zero such rows, but the join type is what
@@ -51,11 +50,6 @@ with
             powerschool_students as ps
             on fg.studentid = ps.studentid
             and fg._dbt_source_project = ps._dbt_source_project
-        where
-            not (
-                fg._dbt_source_project = 'kippmiami'
-                and fg.academic_year >= sc.focus_start_academic_year
-            )
     ),
 
     focus_conformed as (
