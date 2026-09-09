@@ -114,8 +114,7 @@ with
             grade_level_ratio,
 
             cast(null as string) as _dbt_source_relation,
-
-            academic_year - 1990 as yearid,
+            cast(null as int64) as yearid,
 
             row_number() over (
                 partition by teachernumber, academic_year
