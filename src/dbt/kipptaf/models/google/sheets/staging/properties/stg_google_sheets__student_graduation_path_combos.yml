@@ -1,5 +1,12 @@
 models:
   - name: stg_google_sheets__student_graduation_path_combos
+    description: >-
+      Retired. The graduation eligibility label it supplied is now derived in
+      int_students__graduation_path_codes, which reproduces all 83 rows of this
+      sheet from its own inputs and covers the combinations the sheet never
+      enumerated. Disabled rather than deleted so the relation stays in place.
+    config:
+      enabled: false
     columns:
       - name: grade_level
         data_type: int64

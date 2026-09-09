@@ -20,9 +20,9 @@ models:
       - name: student_number
         data_type: int64
         description:
-          Network student number. Miami's frozen PowerSchool archive carries the
-          bare pre-Focus number, so those rows are offset by 8400000000 to the
-          Focus id the enrollment union uses.
+          Network student number. Miami's frozen PowerSchool archive was rebuilt
+          with the 8400 Focus prefix applied (#5012), so every project's rows
+          share one id space with no offset here.
         config:
           meta:
             source_system: PowerSchool

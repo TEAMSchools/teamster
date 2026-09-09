@@ -10,15 +10,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence:
-    -- int_focus__attendance_daily scaffolds a present-by-default row back to
-    -- AY2020, so scoping on the years it contains would replace six years of
-    -- real PowerSchool attendance with fabricated perfect attendance.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
     -- Focus re-dated Miami's enrollment stints (a returning student's stint
     -- starts on the real first day of school, where PowerSchool used a July 1
     -- rollover), and entrydate feeds student_enrollment_key, so the frozen
@@ -31,10 +22,9 @@ with
         where _dbt_source_project = 'kippmiami'
     ),
 
-    -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
-    -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
-    -- outright (the way int_students__terms does) would delete six years of
-    -- history.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     powerschool_conformed as (
         select
             ps.* except (entrydate),
@@ -59,7 +49,6 @@ with
             -- per #4803); those rows already resolve on the archive date.
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ps
-        cross join cutover as c
         -- Half-open: the union conforms exitdate to the day after the stint's
         -- last day, and the roster trims each stint to the day before the next
         -- starts, so one day matches at most one stint.
@@ -69,11 +58,6 @@ with
             and ps.yearid = fs.yearid
             and ps.calendardate >= fs.entrydate
             and ps.calendardate < fs.exitdate
-        where
-            not (
-                ps._dbt_source_project = 'kippmiami'
-                and ps.yearid >= c.focus_start_academic_year - 1990
-            )
     ),
 
     -- The whole Focus-to-network translation lives here. See "The conform
@@ -131,10 +115,16 @@ with
             if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2020 through
-        -- AY2025 rows land beside PowerSchool's real rows for the same Miami
-        -- school-days and break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence: int_focus__attendance_daily scaffolds a present-by-default
+        -- row back to AY2020, so scoping on the years it contains would
+        -- replace six years of real PowerSchool attendance with fabricated
+        -- perfect attendance. Required, not belt-and-braces: without it
+        -- Focus's AY2020 through AY2025 rows land beside PowerSchool's real
+        -- rows for the same Miami school-days and break this model's own
+        -- grain test.
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where ad.academic_year >= c.focus_start_academic_year
     ),
 

@@ -46,20 +46,22 @@ description:
 - `safe-to-evict: "false"` only blocks cluster autoscaler evictions — kubelet
   node-pressure evictions (exit 137, OOM) are unaffected. Scale-Out density
   makes these occasional; Dagster retries automatically.
-- **Do NOT add `safe-to-evict: "false"` to code server pods.** Tried 2026-08-18
-  to stop the 38-59 weekly autoscaler relocations, reverted the same day
-  (#4921). Because it blocks only autoscaler eviction and NOT scheduler
-  preemption, pinning a priority-0 pod removes the graceful way to free its node
-  and leaves only the violent one: capacity fragments, then run pods (then
-  priority 1000) preempted code servers to obtain it — and every preemption
-  recreates the Service with a fresh ClusterIP, which is the churn the
-  annotation was meant to reduce. Measured at matched load (~32 run/step pods
-  per 15 min): with it, 18-20 agent gRPC errors and 8-9 `Preempted` per 15 min;
-  without it, 0 and 0 across 12 hours including the nightly wave. **General
-  rule: pinning a low-priority pod against the autoscaler converts graceful
-  relocation into preemption.** The agent and run pods keep the annotation —
-  nothing outranks them the way run pods used to outrank code servers. Absence
-  is asserted in `tests/test_k8s_config.py`.
+- **`safe-to-evict: "false"` on code server pods is safe ONLY at equal priority
+  with run pods.** First tried 2026-08-18 to stop the 38-59 weekly autoscaler
+  relocations, reverted the same day (#4921). It blocks only autoscaler eviction
+  and NOT scheduler preemption, so pinning a priority-0 pod while run pods sat
+  at 1000 removed the graceful way to free its node and left the violent one:
+  capacity fragmented, run pods preempted code servers to obtain it, and every
+  preemption recreated the Service with a fresh ClusterIP. Measured at matched
+  load (~32 run/step pods per 15 min): with it, 18-20 agent gRPC errors and 8-9
+  `Preempted` per 15 min; without it, 0 and 0 across 12 hours. **General rule:
+  pinning a pod against the autoscaler is safe only when nothing outranks it on
+  the node.** #5187 put run pods at 0, so the annotation came back on code
+  servers to stop autoscaler `ScaleDown` kills (the 2026-09-09 kippmiami
+  trigger). Keep-or-revert is judged at matched load: revert if code-server
+  `Preempted` or agent gRPC errors rise above 0/0; keep if `ScaleDown` kills of
+  code servers reach 0. Presence on all three pod types is asserted in
+  `tests/test_k8s_config.py`.
 - **Judge a scheduling change only against matched run-pod load.** Code-server
   churn tracks run-pod volume, so a quiet window reads as success and a busy one
   as regression. Count `Scheduled` events on `dagster-run-` / `dagster-step-`

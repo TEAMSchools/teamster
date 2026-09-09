@@ -4,7 +4,15 @@ models:
       School year calendar is maintained is this table. It's used for Bell
       Schedules, ADM/ADA reports and overall attendance by showing which days
       are in-session withindifferent tracks or overall. This used to be named
-      DailySchedules.
+      DailySchedules. One row per `(schoolid, date_value)`. Date-range joins
+      such as int_powerschool__ps_membership_reg rely on that grain to stay at
+      one row per student-day.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - date_value
     columns:
       - name: id
         data_type: int64
