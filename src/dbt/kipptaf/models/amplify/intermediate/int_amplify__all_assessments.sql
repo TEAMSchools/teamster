@@ -275,6 +275,9 @@ select
     -- misplacement is accepted silently rather than failing on type.
     s.pm_eligible as overall_probe_eligible,
 
+    -- model_type is in the partition so each method counts only its own rows.
+    -- Without it the two methods count each other and a round that expects at
+    -- most 5 measures reports up to 10, breaking every completion comparison.
     count(*) over (
         partition by
             s.academic_year,
@@ -282,7 +285,8 @@ select
             s.assessment_grade,
             s.period,
             s.round_number,
-            s.student_number
+            s.student_number,
+            s.model_type
     ) as actual_row_count,
 
 from max_score as s
