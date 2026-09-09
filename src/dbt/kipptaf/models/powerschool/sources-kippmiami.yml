@@ -665,3 +665,21 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__terms
+      - name: int_powerschool__final_grades_rollup
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__final_grades_rollup
+      - name: int_powerschool__gpa_term_pivot
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__gpa_term_pivot

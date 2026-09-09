@@ -1,17 +1,16 @@
-select
-    log._dbt_source_relation,
-    log._dbt_source_project,
-    log.studentid,
-    log.dcid,
-    log.logtypeid,
-    log.entry_date,
-    log.entry,
-    log.academic_year,
+with
+    union_relations as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("kippnewark_powerschool", model.name),
+                    source("kippcamden_powerschool", model.name),
+                    source("kipppaterson_powerschool", model.name),
+                ]
+            )
+        }}
+    )
 
-    gen.name as log_type,
-from {{ ref("stg_powerschool__log") }} as `log`
-inner join
-    {{ ref("stg_powerschool__gen") }} as gen
-    on log.logtypeid = gen.id
-    and gen.cat = 'logtype'
-    and log._dbt_source_project = gen._dbt_source_project
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
+from union_relations
