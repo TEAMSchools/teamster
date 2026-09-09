@@ -224,16 +224,26 @@ Ask for the one matching the department whose feedback you need to read.
     not apply to them and they reach everyone who passes the entity, region and
     school gates.
 
-    That includes the open-ended answers. Anyone who can reach a support row can
-    read the free-text comments attached to it, and a comment naming its author
-    is readable by that same audience — the gates scope rows, not the words
-    inside them.
+    That includes the free-text boxes, so those reach the widest audience of
+    anything on the support sheets.
 
-!!! warning "Respondent names are never shown on the support sheets"
+!!! warning "The support sheets do not show respondent names, and that is not
+the same as anonymous"
 
-    The support views deliberately carry no respondent name. Note this protects
-    the name **field**; it cannot remove a name a respondent typed into their own
-    free-text answer.
+    No support sheet displays a respondent's name. Treat that as the normal
+    reading experience rather than as a guarantee, because two things sit
+    outside it.
+
+    The underlying data still carries the name, along with employee number and
+    email. Tableau has no way to hide a column from someone who can download the
+    data or edit the workbook on the web, so those two permissions reach it
+    whatever any sheet shows. Web editing also lets a person take the permission
+    filter off a sheet, which is why that permission is the one worth being
+    careful with.
+
+    And a respondent can name themselves inside their own free-text answer.
+    Nothing in the permissions model can strip that. Anyone who can reach the
+    row can read the words in it.
 
 ### The walkthrough sheets scope by the school walked
 
@@ -437,10 +447,9 @@ Nine workbooks carry a `Permissions` field. All sit in the `Production` project
 and all are tagged `entra-ready` on Tableau Server. **A gated workbook without
 that tag is either unfinished or was built without following the playbook.**
 
-The reverse does not hold yet. Querying the tag today returns **11**, not nine —
-the two workbooks leaving the model below are still tagged. They lose the tag
-when they are retired, and until then the table below is the inventory and the
-tag is a superset of it.
+The reverse does not hold. Querying the tag returns **11**, not nine, because
+the two workbooks described below the table carry it as well. The table is the
+inventory; the tag is a superset of it.
 
 | Workbook                    | Datasource                                                                                                                    |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
