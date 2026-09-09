@@ -174,44 +174,75 @@ a future rebuild is a re-include.
 
 ## kipptaf changes (PR 2)
 
-- `sources-kippmiami.yml`: remove the 13 dropped tables from the
-  `kippmiami_powerschool` source. Description changes from "never rebuilt" to
-  "archive, rebuilt once from the frozen externals with the 8400 prefix and
-  AY2025 bound applied".
-- 13 unions: delete the `kippmiami` relation. `users`, `userscorefields`, `log`,
-  `gen`, `fte`, `test`, `testscore`, `studenttest`, `studenttestscore`,
-  `int_powerschool__spenrollments`, `int_powerschool__student_enrollment_union`,
+Revised 2026-09-09 after PR 1 (#5201), PR 1b (#5208), and #5188 merged. The
+changes from the first draft: the renumber CTE is already gone, the 4 test
+tables have no kipptaf model, `state_assessments_transfer_scores` is already a
+wrapper, Paterson disables the 2 grad-plan models, and PII tags are in scope.
+
+- `sources-kippmiami.yml`: remove 13 tables from the `kippmiami_powerschool`
+  source. 9 are the dropped unions below. 4 are stale entries with no kipptaf
+  reader on the Miami relation: `studentrace`, `u_def_ext_students`, `period`,
+  `sced_code_mapping`. Description changes from "never rebuilt" to "archive,
+  rebuilt once from the frozen externals with the 8400 prefix and AY2025 bound
+  applied".
+- 9 unions: delete the `kippmiami` relation. `users`, `userscorefields`, `log`,
+  `gen`, `fte`, `int_powerschool__spenrollments`,
+  `int_powerschool__student_enrollment_union`,
   `int_powerschool__district_entry_date`,
   `int_powerschool__teacher_grade_levels`. No consumer wants Miami history from
   them; enrollment stints and district entry dates come from the Focus roster,
-  which #4775 made the sole Miami source.
+  which #4775 made the sole Miami source. The first draft counted 13 by
+  including `test`, `testscore`, `studenttest`, and `studenttestscore`; kipptaf
+  has no model for any of them and `sources-kippmiami.yml` never listed them.
 - 32 unions: unchanged. They keep `source("kippmiami_powerschool", X)` and now
   receive bounded, renumbered rows.
-- 8 new unions: the 8 moved models become `union_relations` wrappers over the
-  package models, with a table entry in each `sources-kipp*.yml`. The Miami
-  relation is included where the model is retained (`final_grades_rollup`,
-  `gpa_term_current`, `gpa_term_pivot`) and omitted where it is dropped or
-  NJ-only (`log`, `state_assessments_transfer_scores`, `gpnode`,
-  `gpprogress_grades`, `s_nj_stu_x_unpivot`). Consumers keep their `ref()`.
+- 7 new wrappers: the 7 models PR 1 moved into the package become
+  `union_relations` wrappers over
+  `source("kipp<region>_powerschool", model.name)`, the shape
+  `int_powerschool__state_assessments_transfer_scores` already has. Each
+  region's `sources-kipp*.yml` gains a table entry with the Dagster `asset_key`
+  meta. Regions per wrapper:
+  - all 4: `final_grades_rollup`, `gpa_term_pivot`
+  - `gpa_term_current` is declared ephemeral in the package YAML, but every
+    district project sets `+materialized: table` on the package, so each region
+    does materialize it. kipptaf does not wrap it: the kipptaf model stays a
+    `where is_current` filter over the kipptaf `gpa_term` wrapper.
+  - NJ 3: `log`, `s_nj_stu_x_unpivot`
+  - Newark and Camden: `gpnode`, `gpprogress_grades` (Paterson disables both; no
+    grad-plan dlt tables)
+
+  Consumers keep their `ref()`.
+
 - Delete the Miami-only steps the archive now carries:
   - `focus_student_number` calls in `int_powerschool__ada`,
     `int_powerschool__attendance_streak`, and
-    `int_powerschool__ps_adaadm_daily_ctod`. The archive is already prefixed; a
-    second call would add 8400000000 again.
-  - The `powerschool_renumbered` CTE in `int_students__attendance_daily`. The
-    re-key CTE that follows it stays.
+    `int_powerschool__ps_adaadm_daily_ctod`. #5188 added them; the archive is
+    already prefixed and the macro's `id < 8400000000` guard makes them no-ops.
   - The `focus_start_academic_year` cutover predicate in `int_students__ada`,
     `int_students__attendance_daily`, `int_students__attendance_streak`,
     `int_students__calendar_day`, `int_students__calendar_rollup`,
     `int_students__calendar_week`, `int_students__final_grades`, and
     `int_students__gpa`. The archive ends at AY2025, so it is redundant.
     `int_students__sis_cutover` stays; its YAML explains the bound.
+  - The `powerschool_renumbered` CTE in `int_students__attendance_daily` was the
+    first draft's third item. #5188 removed it; nothing to do.
 - Repoint 3 Miami-required readers of dropped or stale relations:
   `rpt_gsheets__kippfwd_miami_roster` and `rpt_gsheets__kippmiami_payout_roster`
   to `int_students__students`; `rpt_deanslist__state_test_scores` to
   `int_students__student_enrollments`, which carries `fleid` from Focus. Without
   the last one, students who joined Miami after the cutover have no FAST scores
   in DeansList.
+- PII tags on the moved package models, column-level
+  `config.meta.contains_pii: true` per `.claude/rules/ferpa-pii.md`:
+  `is_iep_eligible` on `s_nj_stu_x_unpivot`; `entry` on `log`; `teacher_name`,
+  `letter_grade`, and the credit columns on `gpprogress_grades`; the grade and
+  GPA columns on `final_grades_rollup`, `gpa_term_pivot`, and `gpa_term_current`
+  (which needs a `columns` block first). `studentid` and `studentsdcid` are
+  surrogate keys and stay untagged. `gpnode` is plan structure with no student
+  row and gets no tag.
+- Not changed: the package's `int_powerschool__gpprogress_grades` union. Both
+  branches already list every column explicitly, which is the repo's rule for a
+  hand-written `union all`.
 
 ### Verdicts for readers of a dropped relation
 
@@ -270,10 +301,8 @@ The issue's criterion that the var and macro are deleted is withdrawn from #5012
    if the same person ships both the same day; otherwise separate, so the
    archive's provenance is one clean merge.
 1. PR 2, `kipptaf`: everything under "kipptaf changes" and the 3 repoints.
-   Depends on step 2 for all 4 regions. Also touches `int_students__ada` and
-   `int_students__attendance_streak`, which PR #5188 (#5160) edits: merge #5188
-   first and delete its renumber here, or close #5188 as superseded because the
-   archive renumbers those tables. Decide before opening PR 2.
+   Depends on step 2 for all 4 regions (done 2026-09-09). #5188 (#5160) merged
+   2026-09-08, so PR 2 deletes its 3 `focus_student_number` calls.
 1. #5193 picks up the filters.
 
 ## Verification
