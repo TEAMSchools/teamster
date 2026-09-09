@@ -2,7 +2,11 @@ models:
   - name: int_powerschool__gpa_term_current
     description: >-
       int_powerschool__gpa_term filtered to the current term per student and
-      school. Ephemeral; consumers read it through the district wrapper.
+      school. Declared ephemeral here; district projects materialize it as a
+      table. kipptaf does not wrap it and filters its own gpa_term wrapper
+      instead. Column list is partial; grade_avg_*, gpa_points_total_*,
+      weighted_gpa_points_*, and total_credit_hours_* are undocumented
+      student-level grade content.
     config:
       materialized: ephemeral
     columns:

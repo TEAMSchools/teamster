@@ -1,5 +1,8 @@
 models:
   - name: int_powerschool__log
+    config:
+      meta:
+        contains_pii: true
     description: >-
       Union of each region's int_powerschool__log (the powerschool package
       model). Column docs and the per-instance tests live in the package; this

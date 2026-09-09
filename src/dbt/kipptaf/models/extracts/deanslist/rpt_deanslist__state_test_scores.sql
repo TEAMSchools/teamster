@@ -1,3 +1,11 @@
+with
+    miami_fleid as (
+        -- grain projection, not dup-masking: one row per student_number, fleid
+        select distinct student_number, fleid,
+        from {{ ref("int_students__student_enrollments") }}
+        where _dbt_source_project = 'kippmiami' and fleid is not null
+    )
+
 select
     localstudentidentifier as student_number,
     assessmentyear as academic_year,
@@ -42,10 +50,5 @@ select
         partition by co.student_number, fl.assessment_subject
         order by fl.academic_year asc, fl.administration_window asc
     ) as test_index,
-from
-    (
-        select distinct student_number, fleid,
-        from {{ ref("int_students__student_enrollments") }}
-        where _dbt_source_project = 'kippmiami' and fleid is not null
-    ) as co
+from miami_fleid as co
 inner join {{ ref("stg_fldoe__fast") }} as fl on co.fleid = fl.student_id

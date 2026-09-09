@@ -21,9 +21,6 @@ with
         }}
     ),
 
-    -- Miami's student_number is the 8400-prefixed Focus id since #5148 and the
-    -- frozen archive carries the bare PowerSchool number. Renumbered here, where
-    -- the archive first enters kipptaf, so every consumer reads one id space.
     unioned as (
         select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
         from union_relations as ur
