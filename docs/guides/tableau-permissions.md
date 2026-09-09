@@ -13,8 +13,7 @@ question what they can see, and needs no Tableau knowledge. **Part 2** is for
 Tableau developers and describes the field structure and points at the build
 reference.
 
-**Status: live** on nine workbooks, listed in Part 2. One caveat is called out
-inline where it applies: the support surveys are not yet scoped by department.
+**Status: live** on nine workbooks, listed in Part 2.
 
 ---
 
@@ -172,34 +171,60 @@ These are accepted, not undiscovered. Each is a place the gate is approximate.
   every title test with a job-function code and removes this whole class of
   guesswork.
 
-### The support surveys are not department-scoped yet
+### The support surveys are scoped by the department being rated
 
-The Survey Dashboard's KTAF support sheets — the ones asking staff to rate how
-well a central office department supports them — are gated by entity, region and
-school, and **not** by the department being rated. Two consequences today:
+The Survey Dashboard's support sheets ask staff to rate how well a central
+office department supports them. Each of those questions is tagged with the
+department it rates, and you see a row only if you belong to that department's
+group.
 
-- Every member of the central office staff group sees **every** row, including
-  feedback about departments other than their own.
-- A viewer who reaches the sheets by any other route sees every department's
-  feedback for the rows they can reach, not just their own department's.
+This applies **on top of** entity, region and school. Belonging to the
+Operations group does not show you Operations feedback from a region you cannot
+otherwise reach — both tests have to pass.
 
-!!! note "Planned: department scoping"
+Four groups see every department regardless: the data team, TEAM Council,
+managing directors of school operations, and heads of schools. The last two sit
+across departments, so scoping them to one would hide most of what they oversee.
 
-    The fix is to carry the department each question rates through to the extract
-    and add a department gate, so a viewer sees feedback about their own
-    department and the blanket central-office grant can be removed.
-    [#4721](https://github.com/TEAMSchools/teamster/issues/4721) is the issue and
-    [#4728](https://github.com/TEAMSchools/teamster/pull/4728) the open PR.
+#### The department groups
 
-    **This has not shipped.** The PR carries only the data layer and is blocked on
-    two things outside the repo — Ops adding the department columns to the
-    form-items sheet, and a decision on how merged departments resolve to a single
-    code. Until both land and the workbook is edited, the behaviour above is what
-    is live. Treat department scoping as future state.
+Ask for the one matching the department whose feedback you need to read.
 
-    The rated department cannot be parsed out of the question name: it exists only
-    as a prefix across three inconsistent naming schemes, and departments have
-    merged over time. It has to come from data.
+| Department rated                | Group                                               |
+| ------------------------------- | --------------------------------------------------- |
+| Compliance                      | `KNJ-SG-Tableau All Compliance`                     |
+| Data                            | `KNJ-SG-Tableau All Data`                           |
+| Development                     | `TS-DL-Development`                                 |
+| Finance, including Purchasing   | `TS-SG-R9 Finance` or `TS-SG-R9 Purchasing`         |
+| Human Resources Operations      | `Group Staff Employee Relations`                    |
+| Leadership Development          | `KNJ-SG-Tableau All Leadership Development`         |
+| Marketing, Comms and Enrollment | `KNJ-SG-Tableau All Marketing Comms and Enrollment` |
+| Operations                      | `KNJ-SG-Tableau All Operations`                     |
+| Real Estate and Facilities      | `TS-SG-R9 Facilities`                               |
+| Special Education               | `KNJ-SG-Tableau Special Education Directors`        |
+| Talent Acquisition              | `KNJ-SG-Tableau All Recruiting`                     |
+| Teacher Development             | `KNJ-SG-Tableau All New Teacher Development`        |
+| Teaching and Learning           | `KNJ-SG-Tableau All T&L`                            |
+| Technology                      | `TS-SG-R9 Technology`                               |
+
+!!! note "Questions that rate no department"
+
+    Some questions rate the organisation rather than a department — whether your
+    region is headed in the right direction, and the free-text boxes asking for
+    any other feedback. Those carry no department, so the department test does
+    not apply to them and they reach everyone who passes the entity, region and
+    school gates.
+
+    That includes the open-ended answers. Anyone who can reach a support row can
+    read the free-text comments attached to it, and a comment naming its author
+    is readable by that same audience — the gates scope rows, not the words
+    inside them.
+
+!!! warning "Respondent names are never shown on the support sheets"
+
+    The support views deliberately carry no respondent name. Note this protects
+    the name **field**; it cannot remove a name a respondent typed into their own
+    free-text answer.
 
 ### The walkthrough sheets scope by the school walked
 
@@ -300,7 +325,7 @@ right column, not the name in the left.
 | Paterson Prep Middle School     | `KNJ-SG-Tableau All Staff KIPP Paterson Prep Middle`      |
 
 The five where the names differ are Hatch, Poinciana, Sumner, and both Paterson
-Prep schools. They will be tidied up when the groups are renamed.
+Prep schools.
 
 Rooms are deliberately absent — see _Rooms do not grant access_.
 
@@ -420,12 +445,11 @@ tag is a superset of it.
 | Stipend and Bonus Dashboard | `rpt_tableau__stipend_and_bonus_app`                                                                                          |
 | Personalized Survey Links   | `rpt_tableau__survey_completion`                                                                                              |
 
-Two workbooks are leaving this list. Federal Grants Timesheet Approval now reads
-a live Google Sheet rather than a dbt extract, so it has no gated datasource;
-Leadership Development is becoming archive-only as leader performance management
-moves to Lattice. Neither is a gap. Until they are retired, Leadership
-Development is also one of three workbooks that shield senior leaders from each
-other, which then becomes two.
+Two workbooks sit outside the table. Federal Grants Timesheet Approval reads a
+live Google Sheet rather than a dbt extract, so it has no gated datasource.
+Leadership Development is archive-only, leader performance management having
+moved to Lattice; it is one of three workbooks that shield senior leaders from
+each other. Neither is a gap.
 
 Each of these uses an **embedded** extract rather than a published datasource,
 so this table is the readable mapping. It is not the only one: Tableau Server
@@ -449,5 +473,3 @@ playbook.
 - [#4631](https://github.com/TEAMSchools/teamster/issues/4631) — replaces every
   job-title test with a job-function code, which removes the title fallbacks
   this page describes as approximate
-- [#4721](https://github.com/TEAMSchools/teamster/issues/4721) — department
-  scoping for the support surveys
