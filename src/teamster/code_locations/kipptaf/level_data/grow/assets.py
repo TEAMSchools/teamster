@@ -1,5 +1,5 @@
 import pathlib
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any
 
 from dagster import (
@@ -70,6 +70,11 @@ observations = build_grow_asset(
     schema=OBSERVATION_SCHEMA,
 )
 
+# Grow school payload key -> role name. Also the roles that observe a school's
+# Teachers fallback group: a coach reaches their own reports through their own
+# group, so listing them on the fallback too duplicates it in their picker.
+ADMIN_ROLES = {"admins": "School Admin", "assistantAdmins": "School Assistant Admin"}
+
 
 def _match_observation_group(
     name: str,
@@ -77,51 +82,22 @@ def _match_observation_group(
     existing_by_id: dict[str, str],
     claimed: set[str],
 ) -> str | None:
-    """Find an unclaimed existing group id for this wanted group.
+    """Unclaimed existing group id for this wanted group, or None.
 
-    Prefers an exact name match. Falls back to ``match_key``, a stable
-    substring that survives a display-name change -- for a coach group that is
-    the parenthesised employee number.
-
-    The fallback is a suffix match and nothing more: any existing group whose
-    name ends in ``(<employee number>)`` is claimed, and the school PUT then
-    replaces its membership. A group with no ``match_key``, such as Teachers,
-    gets no fallback at all and so can never be claimed this way.
-
-    That leaves a hand-made group named ``... (<a live employee number>)``
-    theoretically claimable. Measured 2026-09-02: zero of the 585 existing
-    groups end in parenthesised digits, and every active employee number is
-    six digits in 100001-402082 -- so no group name carrying a year or a small
-    cohort number can collide. Revisit if employee numbering ever narrows to
-    four digits.
+    Exact name first, then a suffix match on ``match_key`` (the parenthesised
+    employee number, which survives a coach rename). None means no fallback.
     """
-    for group_id, group_name in existing_by_id.items():
-        if group_id not in claimed and group_name == name:
-            return group_id
+    unclaimed = [(i, n) for i, n in existing_by_id.items() if i not in claimed]
 
-    if match_key is None:
-        return None
-
-    return next(
-        (
-            group_id
-            for group_id, group_name in existing_by_id.items()
-            if group_id not in claimed and group_name.endswith(match_key)
-        ),
-        None,
+    return next((i for i, n in unclaimed if n == name), None) or (
+        next((i for i, n in unclaimed if n.endswith(match_key)), None)
+        if match_key is not None
+        else None
     )
 
 
-FALLBACK_OBSERVER_ROLE_NAMES = ("School Admin", "School Assistant Admin")
-
-
 def _can_anchor_group(user: dict[str, Any]) -> bool:
-    """Whether this user can be the sole observer of a coaching group.
-
-    A coach who is inactive, readonly, or no longer carries an observer role
-    cannot actually observe, so their reports fall back to the school's
-    Teachers group rather than into a group nobody can act in.
-    """
+    """Active, writable, and observer-capable: can be a group's sole observer."""
     return (
         user["inactive"] == 0
         and not user["readonly"]
@@ -130,30 +106,28 @@ def _can_anchor_group(user: dict[str, Any]) -> bool:
 
 
 def _observes_fallback(user: dict[str, Any]) -> bool:
-    """Whether this user observes a school's Teachers fallback group.
-
-    The fallback holds only the observees whose own manager cannot anchor a
-    group, which makes it a leadership backstop rather than a coaching
-    assignment. Every coach already reaches their own reports through their own
-    group, so listing them here too puts a second, wider group in their picker
-    for teachers they do not coach. Only a school's admins and assistant admins
-    observe it.
-    """
-    return _can_anchor_group(user) and any(
-        role in user["role_names"] for role in FALLBACK_OBSERVER_ROLE_NAMES
+    """A school admin or assistant admin who can anchor a group."""
+    return _can_anchor_group(user) and not set(ADMIN_ROLES.values()).isdisjoint(
+        user["role_names"]
     )
 
 
-def _fallback_group(uncoached: list[str], observers: list[str]) -> dict[str, list[str]]:
-    """Membership of a school's Teachers fallback group.
+def _at_school(
+    school_users: list[dict[str, Any]],
+    users_by_grow_id: dict[str, dict[str, Any]],
+    pred: Callable[[dict[str, Any]], bool],
+) -> list[str]:
+    """Home-school users matching pred, plus managers of reports here who match.
 
-    Its observers go with its observees: an empty fallback that still carries
-    observers shows up as a group in each of their pickers, holding nobody.
+    A leader covering a satellite campus reaches its users through their
+    reports, not their own school_id.
     """
-    return {
-        "observees": uncoached,
-        "observers": observers if uncoached else [],
-    }
+    managers = (users_by_grow_id.get(u["coach_id"]) for u in school_users)
+
+    return sorted(
+        {u["user_id"] for u in school_users if pred(u)}
+        | {m["user_id"] for m in managers if m is not None and pred(m)}
+    )
 
 
 @asset(
@@ -176,10 +150,8 @@ def grow_user_sync(
     with db_bigquery.get_client() as bq:
         query_job = bq.query(query=query, project=db_bigquery.project)
 
-    arrow = query_job.to_arrow()
-
-    context.log.info(f"Retrieved {arrow.num_rows} rows")
-    users = arrow.to_pylist()
+    users = query_job.to_arrow().to_pylist()
+    context.log.info(f"Retrieved {len(users)} rows")
 
     # create/update users
     for u in users:
@@ -228,7 +200,6 @@ def grow_user_sync(
             "readonly": bool(u["readonly"]),
         }
 
-        # reset request_args after the restore branch may have mutated it
         request_args = ["users"]
 
         try:
@@ -267,11 +238,6 @@ def grow_user_sync(
             continue
 
     # update school observation groups
-    admin_roles = {
-        "admins": "School Admin",
-        "assistantAdmins": "School Assistant Admin",
-    }
-
     schools = grow.get("schools")["data"]
 
     # A coach's home school often differs from their reports', so resolve
@@ -301,21 +267,9 @@ def grow_user_sync(
             g["_id"]: g["name"] for g in school["observationGroups"]
         }
 
-        # Home-school membership, plus any manager of a report at this school
-        # who observes the fallback -- mirrors the admin lists' reach so a
-        # leader covering a satellite campus can observe its coachless teachers
-        # there too.
-        school_observers_set = {
-            u["user_id"] for u in school_users if _observes_fallback(u)
-        }
-
-        for u in school_users:
-            manager = users_by_grow_id.get(u["coach_id"])
-
-            if manager is not None and _observes_fallback(manager):
-                school_observers_set.add(manager["user_id"])
-
-        school_observers = sorted(school_observers_set)
+        school_observers = _at_school(
+            school_users, users_by_grow_id, _observes_fallback
+        )
 
         # Route every observee to their coach's group, or to the fallback.
         by_coach: dict[str, list[str]] = {}
@@ -337,12 +291,14 @@ def grow_user_sync(
             else:
                 by_coach.setdefault(coach_id, []).append(u["user_id"])
 
-        def coach_group_name(coach: dict[str, Any]) -> str:
-            return f"{coach['user_name']} ({coach['user_internal_id']})"
-
         wanted: dict[str, dict[str, Any]] = {
-            # Teachers survives as the fallback for observees with no coach.
-            "Teachers": _fallback_group(uncoached, school_observers)
+            # Teachers survives as the fallback for observees with no coach. An
+            # empty fallback drops its observers too, or it still shows up in
+            # each of their pickers holding nobody.
+            "Teachers": {
+                "observees": uncoached,
+                "observers": school_observers if uncoached else [],
+            }
         }
         # Parenthesised employee number, so a display-name change relabels
         # the group without breaking its identity. None (e.g. Teachers) gets
@@ -352,7 +308,7 @@ def grow_user_sync(
 
         for coach_id, observee_ids in by_coach.items():
             coach = users_by_grow_id[coach_id]
-            name = coach_group_name(coach)
+            name = f"{coach['user_name']} ({coach['user_internal_id']})"
 
             wanted[name] = {
                 "observees": observee_ids,
@@ -381,44 +337,22 @@ def grow_user_sync(
         # The school PUT REPLACES this array, so a group left out is deleted.
         # Emit every surviving group emptied rather than dropping it, so no
         # observation history is ever orphaned by a coach moving on.
-        for group_id, group_name in existing_by_id.items():
-            if group_id in claimed:
-                continue
-
-            observation_groups.append(
-                {
-                    "_id": group_id,
-                    "name": group_name,
-                    "observees": [],
-                    "observers": [],
-                }
-            )
+        observation_groups += [
+            {"_id": i, "name": n, "observees": [], "observers": []}
+            for i, n in existing_by_id.items()
+            if i not in claimed
+        ]
 
         payload["observationGroups"] = observation_groups
 
-        for key, role_name in admin_roles.items():
-            # Home-school membership, plus anyone whose reports sit at this
-            # school -- a leader covering two campuses belongs to both.
-            admins_here = {
-                u["user_id"] for u in school_users if role_name in u["role_names"]
-            }
-
-            for u in school_users:
-                manager = users_by_grow_id.get(u["coach_id"])
-
-                if (
-                    manager is not None
-                    and manager["inactive"] == 0
-                    and role_name in manager["role_names"]
-                ):
-                    admins_here.add(manager["user_id"])
-
+        for key, role_name in ADMIN_ROLES.items():
             payload[key] = [
-                {
-                    "_id": user_id,
-                    "name": users_by_grow_id[user_id]["user_name"],
-                }
-                for user_id in sorted(admins_here)
+                {"_id": i, "name": users_by_grow_id[i]["user_name"]}
+                for i in _at_school(
+                    school_users,
+                    users_by_grow_id,
+                    lambda u, r=role_name: u["inactive"] == 0 and r in u["role_names"],
+                )
             ]
 
         try:
@@ -445,10 +379,7 @@ def grow_user_sync(
     )
 
 
-grow_multi_partitions_assets = [
-    assignments,
-    observations,
-]
+grow_multi_partitions_assets = [assignments, observations]
 
 assets = [
     *grow_multi_partitions_assets,

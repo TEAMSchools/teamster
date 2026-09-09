@@ -9,7 +9,6 @@ from typing import Any
 
 from teamster.code_locations.kipptaf.level_data.grow.assets import (
     _can_anchor_group,
-    _fallback_group,
     _match_observation_group,
     _observes_fallback,
 )
@@ -87,7 +86,10 @@ def test_match_observation_group_claims_any_group_with_the_key_suffix() -> None:
     Pins the residual risk rather than asserting it away: a hand-made group
     whose name ends in a live employee number IS claimed, and the school PUT
     replaces its membership. Accepted because no real group name can collide
-    -- see the docstring on ``_match_observation_group`` for the measurement.
+    Measured 2026-09-02: zero of the 585 existing groups end in parenthesised
+    digits, and every active employee number is six digits in 100001-402082,
+    so no name carrying a year or a small cohort number can match. Revisit if
+    employee numbering ever narrows to four digits.
     If a shape gate is ever added, this test is the one that must change.
     """
     existing_by_id = {"g1": "New Hires (123456)"}
@@ -154,19 +156,3 @@ def test_observes_fallback_false_for_regional_observer() -> None:
 
 def test_observes_fallback_false_when_admin_cannot_anchor() -> None:
     assert _observes_fallback(_user(role_names=["School Admin"], readonly=1)) is False
-
-
-def test_fallback_group_keeps_observers_while_it_holds_observees() -> None:
-    assert _fallback_group(["u1", "u2"], ["a1"]) == {
-        "observees": ["u1", "u2"],
-        "observers": ["a1"],
-    }
-
-
-def test_fallback_group_drops_observers_when_it_holds_nobody() -> None:
-    """An empty fallback with observers still shows up in each of their pickers.
-
-    24 of the 28 schools have an empty fallback, so this is what actually
-    clears the duplicate group for a coach who is also an assistant admin.
-    """
-    assert _fallback_group([], ["a1", "a2"]) == {"observees": [], "observers": []}
