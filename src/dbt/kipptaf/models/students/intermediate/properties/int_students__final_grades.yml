@@ -94,10 +94,11 @@ models:
           district prefix.
         data_type: int64
         data_tests:
-          # Null only when a PowerSchool final-grade row's student fails the
-          # dcid >= 1 placeholder filter. Measured at 0 rows, but fct_grades_term
-          # joins enrollment on this column, so a future null would silently drop
-          # the row from the fact with nothing else to catch it. Warn, not error:
+          # Null only when base_powerschool__final_grades.students_student_number
+          # is itself null for a stored-grade row whose student is missing from
+          # the archive. Measured at 0 rows, but fct_grades_term joins
+          # enrollment on this column, so a future null would silently drop the
+          # row from the fact with nothing else to catch it. Warn, not error:
           # the drop is a coverage gap, not a corrupt row.
           - not_null:
               config:
