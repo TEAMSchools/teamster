@@ -119,6 +119,7 @@ select
 
     sch.name as school_name,
     sch.abbreviation as school_abbreviation,
+
     entry_sch.abbreviation as entry_school_abbreviation,
 
     scf.spedlep,
