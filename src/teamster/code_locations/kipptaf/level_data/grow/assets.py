@@ -144,6 +144,18 @@ def _observes_fallback(user: dict[str, Any]) -> bool:
     )
 
 
+def _fallback_group(uncoached: list[str], observers: list[str]) -> dict[str, list[str]]:
+    """Membership of a school's Teachers fallback group.
+
+    Its observers go with its observees: an empty fallback that still carries
+    observers shows up as a group in each of their pickers, holding nobody.
+    """
+    return {
+        "observees": uncoached,
+        "observers": observers if uncoached else [],
+    }
+
+
 @asset(
     key=[*key_prefix, "user_sync"],
     deps=[AssetKey(["kipptaf", "extracts", "rpt_schoolmint_grow__users"])],
@@ -330,12 +342,7 @@ def grow_user_sync(
 
         wanted: dict[str, dict[str, Any]] = {
             # Teachers survives as the fallback for observees with no coach.
-            # Its observers go with its observees: an empty fallback with
-            # observers still shows up as a group in each of their pickers.
-            "Teachers": {
-                "observees": uncoached,
-                "observers": school_observers if uncoached else [],
-            }
+            "Teachers": _fallback_group(uncoached, school_observers)
         }
         # Parenthesised employee number, so a display-name change relabels
         # the group without breaking its identity. None (e.g. Teachers) gets

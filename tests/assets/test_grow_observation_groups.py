@@ -9,6 +9,7 @@ from typing import Any
 
 from teamster.code_locations.kipptaf.level_data.grow.assets import (
     _can_anchor_group,
+    _fallback_group,
     _match_observation_group,
     _observes_fallback,
 )
@@ -153,3 +154,19 @@ def test_observes_fallback_false_for_regional_observer() -> None:
 
 def test_observes_fallback_false_when_admin_cannot_anchor() -> None:
     assert _observes_fallback(_user(role_names=["School Admin"], readonly=1)) is False
+
+
+def test_fallback_group_keeps_observers_while_it_holds_observees() -> None:
+    assert _fallback_group(["u1", "u2"], ["a1"]) == {
+        "observees": ["u1", "u2"],
+        "observers": ["a1"],
+    }
+
+
+def test_fallback_group_drops_observers_when_it_holds_nobody() -> None:
+    """An empty fallback with observers still shows up in each of their pickers.
+
+    24 of the 28 schools have an empty fallback, so this is what actually
+    clears the duplicate group for a coach who is also an assistant admin.
+    """
+    assert _fallback_group([], ["a1", "a2"]) == {"observees": [], "observers": []}
