@@ -20,9 +20,5 @@ with
         from union_relations as ur
     )
 
-select
-    * except (student_number),
-
-    {{ focus_student_number("student_number", "yearid + 1990", "_dbt_source_project") }}
-    as student_number,
+select *,
 from unioned
