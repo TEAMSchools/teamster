@@ -40,29 +40,6 @@ with
         where date_key <= current_date('{{ var("local_timezone") }}')
     ),
 
-    -- TODO: int_students__calendar_day carries two rows per Miami school-day
-    -- for the years Focus covers -- one from Focus with a yearid, one from the
-    -- PowerSchool archive with none -- since 409be13dc re-included the Miami
-    -- powerschool package for its one-time rebuild and 053c8e428 stopped
-    -- dropping rows with no year record. Its own grain test passes because
-    -- yearid separates the pair. Both rows agree on insession, membershipvalue
-    -- and week_start_date on all 364 affected days, so the pick is
-    -- information-preserving. Deduping rather than adding yearid to the join
-    -- below keeps this independent of whether a calendar row's yearid always
-    -- equals the student's academic_year - 1990, which nothing here enforces.
-    -- Drop this CTE once the archive stops emitting calendar days for
-    -- Focus-covered years, per
-    -- docs/superpowers/specs/2026-09-08-miami-powerschool-retirement-design.md.
-    calendar_day as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_students__calendar_day"),
-                partition_by="schoolid, _dbt_source_project, date_value",
-                order_by="(yearid is null) asc, yearid desc",
-            )
-        }}
-    ),
-
     enrollment_windows as (
         select
             s.student_number,
@@ -122,7 +99,7 @@ from enrollment_windows as w
 inner join
     calendar_spine as d on w.window_start <= d.date_key and w.window_end >= d.date_key
 left join
-    calendar_day as cd
+    {{ ref("int_students__calendar_day") }} as cd
     on w.schoolid = cd.schoolid
     and w._dbt_source_project = cd._dbt_source_project
     and d.date_key = cd.date_value
