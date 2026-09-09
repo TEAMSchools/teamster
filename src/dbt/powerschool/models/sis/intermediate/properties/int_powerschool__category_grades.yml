@@ -9,7 +9,7 @@ models:
       a daily batch: the DeansList final-grades extract at 01:25, and the
       Tableau gradebook batch plus kipptaf `int_students__category_grades` at
       04:00. Eager rebuilds ran 68 times a day in Newark at 26 slot-minutes
-      each, 205 slot hours a week, for freshness nothing read. Refs #5213.
+      each, 205 slot hours a week, for freshness nothing read.
 
       The section pick is a `row_number` window, not
       `dbt_utils.deduplicate`. The macro compiles to one
@@ -65,7 +65,16 @@ models:
         data_type: string
       - name: percent_grade
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: citizenship_grade
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: percent_grade_y1_running
         data_type: float64
+        config:
+          meta:
+            contains_pii: true

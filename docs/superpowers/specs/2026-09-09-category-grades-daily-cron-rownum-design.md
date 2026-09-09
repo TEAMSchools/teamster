@@ -85,7 +85,7 @@ ranked as (
     from enr_gr
 ),
 
-deduplicate as (select * except (rn) from ranked where rn = 1)
+deduplicate as (select * except (rn), from ranked where rn = 1)
 ```
 
 Same partition and order keys as the macro call, so the same pick, ties
