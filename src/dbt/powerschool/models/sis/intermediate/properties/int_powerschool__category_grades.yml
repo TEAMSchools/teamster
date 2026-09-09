@@ -1,5 +1,37 @@
 models:
   - name: int_powerschool__category_grades
+    description: |
+      One row per student, year, course, and termbin storecode, with the
+      category grade from storedgrades or pgfinalgrades and the best section
+      picked per row.
+
+      Built once a day at local midnight instead of eagerly. Every consumer is
+      a daily batch: the DeansList final-grades extract at 01:25, and the
+      Tableau gradebook batch plus kipptaf `int_students__category_grades` at
+      04:00. Eager rebuilds ran 68 times a day in Newark at 26 slot-minutes
+      each, 205 slot hours a week, for freshness nothing read. Refs #5213.
+
+      The section pick is a `row_number` window, not
+      `dbt_utils.deduplicate`. The macro compiles to one
+      `array_agg(... limit 1)` per column, 16 here, and BigQuery runs a
+      partial aggregate for each inside the join stage. Measured on Newark
+      prod tables with identical output: 12.1 slot-minutes for the macro,
+      3.2 for the window.
+    config:
+      meta:
+        dagster:
+          automation_condition:
+            cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - yearid
+              - course_number
+              - storecode
+          config:
+            severity: error
     columns:
       - name: sectionid
         data_type: int64
