@@ -146,14 +146,22 @@ with
         select
             *,
 
-            -- partitioned on columns that are never null: the student from the
-            -- benchmark side, the measure from the expectation gate. surrogate_key
-            -- and measure_standard both come from the score side, so on an
-            -- untested row they are null and every such row for a round collapses
-            -- into one partition -- rn = 1 then keeps 8 of 20,081.
+            -- partitioned on columns that are never null: the student and year
+            -- from the benchmark side, the measure from the expectation gate.
+            -- surrogate_key and measure_standard both come from the score side,
+            -- so on an untested row they are null and every such row for a round
+            -- collapses into one partition -- rn = 1 then keeps 8 of 20,081.
+            -- academic_year is load-bearing: round numbers restart each year, so
+            -- without it a student's AY2026 round 1 competes with their AY2025
+            -- round 1 and the untested current-year row loses to last year's
+            -- score. It dropped 11,140 AY2026 rows and 1,114 AY2025 rows.
             row_number() over (
                 partition by
-                    student_number, model_type, round_number, expected_measure_standard
+                    academic_year,
+                    student_number,
+                    model_type,
+                    round_number,
+                    expected_measure_standard
                 order by probe_number desc, client_date desc
             ) as rn_highest,
 
