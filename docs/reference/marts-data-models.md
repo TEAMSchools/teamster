@@ -5,8 +5,9 @@
 The `kipptaf` marts are dimensional models (fact and dimension tables) consumed
 by Cube and Tableau. They follow a **strict-chain snowflake** design: each fact
 table holds foreign keys to its _direct_ parents only, and deeper context is
-reached by chaining one dimension to its parent dimension (`fct_student_days` →
-`dim_student_enrollments` → `dim_students`).
+reached by chaining one dimension to its parent dimension
+(`fct_student_attendance_enrollment_daily` → `dim_student_enrollments` →
+`dim_students`).
 
 Each section below shows one fact table and the snowflake chain reachable from
 it, followed by the fact's own foreign keys. **Conformed dimensions —
@@ -346,11 +347,11 @@ erDiagram
 | `streak_start_date_key`  | `dim_dates`               |
 | `student_enrollment_key` | `dim_student_enrollments` |
 
-## fct_student_days
+## fct_student_attendance_enrollment_daily
 
 ```mermaid
 erDiagram
-  fct_student_days }o--|| dim_student_enrollments : "student_enrollment_key"
+  fct_student_attendance_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
 ```
 
@@ -362,11 +363,11 @@ erDiagram
 | `student_enrollment_key` | `dim_student_enrollments` |
 | `term_key`               | `dim_terms`               |
 
-## fct_student_periods
+## fct_student_attendance_enrollment_periods
 
 ```mermaid
 erDiagram
-  fct_student_periods }o--|| dim_student_enrollments : "student_enrollment_key"
+  fct_student_attendance_enrollment_periods }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
 ```
 

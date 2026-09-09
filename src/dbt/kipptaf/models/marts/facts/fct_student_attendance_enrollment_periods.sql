@@ -1,7 +1,8 @@
 with
     -- Identity only. No fact in this layer publishes a natural student
     -- identifier, so the surrogate keys below are built from the enrollment
-    -- spine and fct_student_days is joined on its own primary key instead.
+    -- spine and fct_student_attendance_enrollment_daily is joined on its own primary
+    -- key instead.
     --
     -- Collapsed to student-day because the spine's grain includes entrydate.
     -- That is a no-op today -- no student has ever held two overlapping
@@ -27,7 +28,8 @@ with
         group by student_number, _dbt_source_project, calendardate
     ),
 
-    -- Every value on this fact is read from fct_student_days, never recomputed.
+    -- Every value on this fact is read from fct_student_attendance_enrollment_daily,
+    -- never recomputed.
     -- The tier ladder, the eligibility floor and the year-to-date accumulation
     -- are expressed there and only there, so the two facts cannot disagree.
     -- This model decides which day ends each period and picks up that day's
@@ -54,12 +56,14 @@ with
             date(d.academic_year, 7, 1) as year_start_date,
         from identity as i
         inner join
-            {{ ref("fct_student_days") }} as d on i.student_day_key = d.student_day_key
+            {{ ref("fct_student_attendance_enrollment_daily") }} as d
+            on i.student_day_key = d.student_day_key
     ),
 
     -- The period start comes from a rule: July 1 for a year, date_trunc for a
     -- month, and the school week's Monday for a week. Only the week has no
-    -- formula, which is why fct_student_days carries week_start_monday.
+    -- formula, which is why fct_student_attendance_enrollment_daily carries
+    -- week_start_monday.
     spine as (
         select
             d.*,
@@ -120,7 +124,8 @@ with
             -- The one value not read from the period-end row: truancy is a
             -- status that can switch off before the period ends. Restricted to
             -- membership days because is_truant is carried across break days on
-            -- fct_student_days, so a leading holiday would otherwise import the
+            -- fct_student_attendance_enrollment_daily, so a leading holiday would
+            -- otherwise import the
             -- previous period's status into this one.
             logical_or(if(membership_value = 1, is_truant, null)) as is_truant,
         from bucketed
@@ -151,7 +156,8 @@ select
     -- student_key is not projected. It was neither a hash input nor read by
     -- anything, and dim_student_enrollments carries its own FK to dim_students,
     -- so declaring it here gave this fact two routes to the same dim. Reach the
-    -- student by traversing student_enrollment_key, as fct_student_days does.
+    -- student by traversing student_enrollment_key, as
+    -- fct_student_attendance_enrollment_daily does.
     -- Read from the period-end row, so every enrollment attribute reached
     -- through it -- grade level, IEP and ELL status, homeroom teacher -- is the
     -- one that applied as of period end, matching every other value here. The
@@ -179,7 +185,8 @@ select
     pp.is_truant,
 
     -- Read as of period end, not recomputed. n_membership_days_ytd accumulates
-    -- by calendar date on fct_student_days, so year, month and week grain all
+    -- by calendar date on fct_student_attendance_enrollment_daily, so year, month and
+    -- week grain all
     -- report the same year-to-date position on the same date.
     b.n_membership_days_ytd,
     b.n_present_days_ytd,

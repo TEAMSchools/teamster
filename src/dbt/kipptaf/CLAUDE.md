@@ -244,7 +244,7 @@ Facebook, Illuminate Fivetran, Instagram.
 date filter routed through the `dates` join into a predicate on `dim_dates`, and
 BigQuery cannot prune a fact's partitions from a predicate on a joined table.
 The partition only pays off paired with a fact-side time dimension the view's
-description sends date filters to — `fct_student_days`
+description sends date filters to — `fct_student_attendance_enrollment_daily`
 (`PARTITION BY DATE_TRUNC(date_key, MONTH)`) with `student_days.attendance_date`
 is the worked example. Pick monthly over daily for a multi-year daily-grain
 fact: 7,058 distinct dates already, so daily passes BigQuery's 4,000-partition
@@ -265,9 +265,9 @@ decided against on 2026-08-14.
 `enroll_status`.** `count_students` on the `student_days` Cube counts distinct
 students over whatever slice is queried. There are no anchor measures and no
 anchor columns — pin `dates_date_day` to a date for a point-in-time figure,
-leave it open for ever-enrolled over a range. `fct_student_days` carries a row
-for every calendar day inside a stint, break days included, so any date resolves
-for every school.
+leave it open for ever-enrolled over a range.
+`fct_student_attendance_enrollment_daily` carries a row for every calendar day
+inside a stint, break days included, so any date resolves for every school.
 
 **Each stint's day window is clamped to its school's academic year, and that
 clamp is load-bearing.** PowerSchool rolls NJ stints over on 1 July while Focus
@@ -278,7 +278,8 @@ purely from a source-system date convention. Clamping to the school year makes
 any calendar date comparable across regions; mid-July correctly returns nobody
 anywhere.
 
-**Miami is present across history on `fct_student_days`.** Its rows come from
+**Miami is present across history on
+`fct_student_attendance_enrollment_daily`.** Its rows come from
 `int_extracts__student_enrollments` × `int_students__calendar_day`, and both
 retain Miami — the calendar keeps the frozen PowerSchool archive for the years
 Focus does not cover. Miami _attendance_ for those years comes from that same

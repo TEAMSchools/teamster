@@ -26,7 +26,8 @@ with
 
             coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
         from {{ ref("int_students__enrollment_days") }} as ed
-        -- location_key is projected for fct_student_periods to key its grain on,
+        -- location_key is projected for fct_student_attendance_enrollment_periods to
+        -- key its grain on,
         -- NOT to partition the cumulative windows below.
         inner join
             {{ ref("int_students__schools") }} as sch
@@ -100,7 +101,8 @@ with
     -- ada_tier must be a real column of a prior CTE before is_chronically_absent
     -- can be derived from it -- a select cannot reference its own alias. This is
     -- the only place in the project where the tier ladder is expressed;
-    -- fct_student_periods reads these columns rather than recomputing them.
+    -- fct_student_attendance_enrollment_periods reads these columns rather than
+    -- recomputing them.
     tiered as (
         select
             *,

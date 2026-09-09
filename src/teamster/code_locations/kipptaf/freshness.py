@@ -13,8 +13,8 @@ adp_wfn_policy = FreshnessPolicy.cron(
 # Both attendance facts materialize on the same 0 6,15 * * * cron, are both
 # tables, and are both the sole published source of what they carry -- so one
 # policy, one reason. A failed build silently keeps serving the last-built rows:
-# for fct_student_days that is every day-level attendance figure, and for
-# fct_student_periods every chronic-absence, ADA-tier and truancy rate, since the
+# for fct_student_attendance_enrollment_daily that is every day-level attendance figure, and for
+# fct_student_attendance_enrollment_periods every chronic-absence, ADA-tier and truancy rate, since the
 # query-rewrite anchor hook that used to compute those at read time is retired.
 #
 # Deadlines sit one hour after each materialization tick. A normal build (~2.4
@@ -40,6 +40,10 @@ policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(
         ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]
     ): adp_wfn_policy,
-    AssetKey(["kipptaf", "marts", "fct_student_days"]): attendance_facts_policy,
-    AssetKey(["kipptaf", "marts", "fct_student_periods"]): attendance_facts_policy,
+    AssetKey(
+        ["kipptaf", "marts", "fct_student_attendance_enrollment_daily"]
+    ): attendance_facts_policy,
+    AssetKey(
+        ["kipptaf", "marts", "fct_student_attendance_enrollment_periods"]
+    ): attendance_facts_policy,
 }

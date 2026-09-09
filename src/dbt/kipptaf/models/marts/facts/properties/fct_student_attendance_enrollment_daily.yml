@@ -1,5 +1,5 @@
 models:
-  - name: fct_student_days
+  - name: fct_student_attendance_enrollment_daily
     description: >-
       One row per student per calendar day they were enrolled, network-wide.
       Enrollment decides which rows exist and attendance is joined onto them, so
@@ -103,7 +103,7 @@ models:
             expression: (ada_tier is null) = (is_truant is null)
           config:
             severity: error
-          name: fct_student_days_truancy_resolves_with_the_ada_tier
+          name: fct_student_attendance_enrollment_daily_truancy_resolves_with_the_ada_tier
           description: >-
             A truancy status must resolve over exactly the rows an ADA tier
             does. Both are gated on the cumulative membership count, so a day we
@@ -307,8 +307,9 @@ models:
           accumulate per student per academic year, so a student who transfers
           mid-year carries their position to the new school rather than starting
           a fresh count. This column records which school owned the day, and
-          fct_student_periods reads it to group its periods, so a school-level
-          rate still counts only the students that school served.
+          fct_student_attendance_enrollment_periods reads it to group its
+          periods, so a school-level rate still counts only the students that
+          school served.
 
           Degenerate: deliberately carries no declared foreign key. Location is
           already reachable from student_enrollment_key through
@@ -379,8 +380,9 @@ models:
           model description.
 
           This is the only place in the project where the tier ladder is
-          expressed. fct_student_periods reads this column at period end rather
-          than recomputing it, so the two facts cannot disagree.
+          expressed. fct_student_attendance_enrollment_periods reads this column
+          at period end rather than recomputing it, so the two facts cannot
+          disagree.
 
       - name: is_chronically_absent
         data_type: boolean
@@ -404,7 +406,7 @@ unit_tests:
       0.9 is exactly 90.0 percent and must be Tier 3, never Tier 2, and must be
       chronically absent. 0.8 is exactly 80 percent and must be Tier 3. 0.799 is
       below 80 percent and must be Tier 4.
-    model: fct_student_days
+    model: fct_student_attendance_enrollment_daily
     given:
       - input: ref('int_students__enrollment_days')
         format: sql
@@ -561,7 +563,7 @@ unit_tests:
       properties of a child's year and not of a school's roster. location_key
       flips with the move, so the row still reports which school the day
       belonged to.
-    model: fct_student_days
+    model: fct_student_attendance_enrollment_daily
     given:
       - input: ref('int_students__enrollment_days')
         format: sql

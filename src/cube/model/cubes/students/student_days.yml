@@ -1,7 +1,7 @@
 cubes:
   - name: student_days
     public: false
-    sql_table: kipptaf_marts.fct_student_days
+    sql_table: kipptaf_marts.fct_student_attendance_enrollment_daily
 
     joins:
       # Join on the raw DATE key, not the date_day time dimension — Cube wraps
@@ -55,10 +55,11 @@ cubes:
         description: >-
           This day's calendar date, read from the fact rather than through the
           dates join. Prefer it over dates_date_day for any single-date or
-          date-range filter: it compiles to a predicate on fct_student_days' own
-          date_key, which is the table's partitioning column, whereas a
-          dates_date_day filter lands on dim_dates and leaves the whole fact to
-          be scanned. Both return the same rows.
+          date-range filter: it compiles to a predicate on
+          fct_student_attendance_enrollment_daily' own date_key, which is the
+          table's partitioning column, whereas a dates_date_day filter lands on
+          dim_dates and leaves the whole fact to be scanned. Both return the
+          same rows.
         # {CUBE} is required, not stylistic: a bare date_key is ambiguous
         # against dim_dates.date_key on any view carrying the dates join, and
         # filtering this dimension then failed outright with "Column name
@@ -212,9 +213,10 @@ cubes:
 
           Exactly 90.0% is Tier 3, and therefore chronically absent. Evaluated
           on accumulated counts cross-multiplied against each other, never on an
-          averaged float. Computed once in fct_student_days;
-          student_periods_view reads the same column at period end rather than
-          recomputing it, so the two views cannot disagree.
+          averaged float. Computed once in
+          fct_student_attendance_enrollment_daily; student_periods_view reads
+          the same column at period end rather than recomputing it, so the two
+          views cannot disagree.
         sql: ada_tier
         type: string
         public: true

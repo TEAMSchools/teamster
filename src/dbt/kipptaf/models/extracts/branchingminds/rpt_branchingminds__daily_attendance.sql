@@ -16,7 +16,7 @@ select
         then 'Tardy'
         else 'Absent'
     end as record_category,
-from {{ ref("fct_student_days") }} as fsd
+from {{ ref("fct_student_attendance_enrollment_daily") }} as fsd
 inner join
     {{ ref("dim_student_enrollments") }} as dse
     on fsd.student_enrollment_key = dse.student_enrollment_key

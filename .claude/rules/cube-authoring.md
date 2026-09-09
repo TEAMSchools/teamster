@@ -94,7 +94,8 @@ and diagnostics are in the `cube-ops` skill.
   (`dates.date_timestamp >= TIMESTAMP(?)`), and BigQuery cannot prune a fact's
   partitions from a predicate on a joined table — so partitioning a mart is a
   **no-op** unless the view also exposes a fact-side time dimension and its
-  description routes single-date and range filters there. `fct_student_days` is
+  description routes single-date and range filters there.
+  `fct_student_attendance_enrollment_daily` is
   `PARTITION BY DATE_TRUNC(date_key, MONTH)` and `student_days.attendance_date`
   is that member: measured, single-date network headcount reads **63 MiB / 0.7
   slot-seconds** via `attendance_date` against **1,257 MiB / 24–82
@@ -368,9 +369,9 @@ access policies above). `cube.js` exports exactly `driverFactory`,
 
 Period-end values (chronic absence, ADA tier, truancy rate) are materialized in
 dbt at period grain, never computed at query time. Each value is a row in
-`fct_student_periods`, read via `student_periods_view` filtering its
-`period_type` dimension (`year` / `month` / `week`). Cube filters to the right
-row and computes nothing.
+`fct_student_attendance_enrollment_periods`, read via `student_periods_view`
+filtering its `period_type` dimension (`year` / `month` / `week`). Cube filters
+to the right row and computes nothing.
 
 **The two student attendance views split on weighting, not on time grain.**
 `student_days_view` measures are day-weighted — ratios of summed day counts,

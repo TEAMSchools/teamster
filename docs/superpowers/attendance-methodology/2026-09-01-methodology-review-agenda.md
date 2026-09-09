@@ -17,20 +17,21 @@ choice as it was measured on 2026-09-02, which is what they are for.
 
 **Read first:** nothing on a production dashboard moves when this merges.
 Tableau and Topline both read `int_students__attendance_daily` directly. Neither
-reads `fct_student_days` or `fct_student_periods` — verified by grep across
-`src/`; the only consumers are `src/cube/` and the facts' own YAML. Every
-discrepancy below is Cube-vs-production, not a number that changes under
-someone's feet.
+reads `fct_student_attendance_enrollment_daily` or
+`fct_student_attendance_enrollment_periods` — verified by grep across `src/`;
+the only consumers are `src/cube/` and the facts' own YAML. Every discrepancy
+below is Cube-vs-production, not a number that changes under someone's feet.
 
 ---
 
 ## 1. What this ships (10 min)
 
 Chronic absence, the ADA tier and truancy are now computed once, in dbt, on
-`fct_student_days` — a materialized daily fact where every row carries the
-student's cumulative position at that school. `fct_student_periods` reads that
-fact at period end — except for truancy, which reads any membership day in the
-period (2.2) — and derives nothing. Cube computes nothing at query time.
+`fct_student_attendance_enrollment_daily` — a materialized daily fact where
+every row carries the student's cumulative position at that school.
+`fct_student_attendance_enrollment_periods` reads that fact at period end —
+except for truancy, which reads any membership day in the period (2.2) — and
+derives nothing. Cube computes nothing at query time.
 
 What that buys, in the order it matters to the dashboard:
 
@@ -89,9 +90,9 @@ student nobody measured is outside both. See 2.5 for what that means for Miami.
 
 Walters' call, shipped. Truancy is a **status**, not an event: both regional
 rules test a running absence figure, so it turns on and off within a week.
-`fct_student_periods.is_truant` now reads any membership day in the period,
-which is Topline's reading. A period-end reading would have reported only
-whether the status happened to be on that last day.
+`fct_student_attendance_enrollment_periods.is_truant` now reads any membership
+day in the period, which is Topline's reading. A period-end reading would have
+reported only whether the status happened to be on that last day.
 
 **The disagreement is strictly one-directional.** Period-end can only ever be a
 subset of any-day, so the whole question was whether we keep a student who was
@@ -156,7 +157,7 @@ now" is not blocked by this default.
 
 #### 2.3 · Total Enrollment — anchored on the first membership day
 
-Walters' call, shipped. `fct_student_periods` carries
+Walters' call, shipped. `fct_student_attendance_enrollment_periods` carries
 `period_start_membership_date_key`, the student's own earliest membership day in
 the period, exposed on the view as `period_start_membership_date`.
 
@@ -345,8 +346,9 @@ Ordering, from the PR:
 1. Switch Cube Cloud to CLI deploy mode (stops the automatic production build)
 1. Merge
 1. Wait for the Dagster deploy across all five code locations
-1. Run one ordered build: `int_students__enrollment_days` → `fct_student_days` →
-   `fct_student_periods`
+1. Run one ordered build: `int_students__enrollment_days` →
+   `fct_student_attendance_enrollment_daily` →
+   `fct_student_attendance_enrollment_periods`
 1. Confirm both marts hold rows
 1. Deploy Cube deliberately, then switch back to Git deploy mode
 
@@ -368,19 +370,22 @@ live wrong number.
   (`if(ada_running <= 0.90, 1, 0)`; `Total Enrollment` = `is_enrolled_week` from
   `int_extracts__student_enrollments_weeks`, i.e. Monday between entry and
   exit).
-- New rules read from `fct_student_days.sql` (tier ladder, and both `ada_tier`
-  and `is_truant` gated on `n_membership_days_ytd > 0`) and
-  `fct_student_periods.sql` (`period_start_membership_date_key` and
-  `period_end_date_key` = the student's own first and last membership day in the
-  bucket; `is_truant` = `logical_or` over the bucket's membership days, the one
-  column not read at `period_end_date_key`).
+- New rules read from `fct_student_attendance_enrollment_daily.sql` (tier
+  ladder, and both `ada_tier` and `is_truant` gated on
+  `n_membership_days_ytd > 0`) and
+  `fct_student_attendance_enrollment_periods.sql`
+  (`period_start_membership_date_key` and `period_end_date_key` = the student's
+  own first and last membership day in the bucket; `is_truant` = `logical_or`
+  over the bucket's membership days, the one column not read at
+  `period_end_date_key`).
 - Every figure in section 2 is read off a local build of both facts on
-  2026-09-02 — `fct_student_days` 29.6M rows, `fct_student_periods` 4.4M rows,
-  attendance through 2026-09-02. That build predates the 2.2 decision, so it
-  carries the period-end truancy reading; 2.2's any-day and period-end columns
-  are both computed from it, and 2.4's built-fact column is period-end only. The
-  Topline side comes from prod `int_topline__ada_running_weekly`,
-  `int_topline__truancy_weekly` and `int_extracts__student_enrollments_weeks`.
+  2026-09-02 — `fct_student_attendance_enrollment_daily` 29.6M rows,
+  `fct_student_attendance_enrollment_periods` 4.4M rows, attendance through
+  2026-09-02. That build predates the 2.2 decision, so it carries the period-end
+  truancy reading; 2.2's any-day and period-end columns are both computed from
+  it, and 2.4's built-fact column is period-end only. The Topline side comes
+  from prod `int_topline__ada_running_weekly`, `int_topline__truancy_weekly` and
+  `int_extracts__student_enrollments_weeks`.
 - AY2025 figures exclude Miami on both sides, so they compare the three regions
   production served on 2026-09-02. #5114 changed that on 2026-09-04 — see 2.5.
 - Rates divide by `count_students`, which counts distinct students holding at
