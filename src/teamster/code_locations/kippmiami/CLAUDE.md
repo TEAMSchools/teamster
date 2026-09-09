@@ -109,5 +109,7 @@ Miami is the only code location with `fldoe` (Florida Department of Education
 assessment data — FSA, EOC, Science). These are SFTP assets from a Florida state
 data file drop.
 
-PowerSchool (pre-Focus SIS) is retired — frozen archive in BigQuery dataset
-`kippmiami_powerschool`; do not drop.
+PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is a frozen
+archive rebuilt once through the dbt `powerschool` package (#5012); do not drop
+the dataset or the GCS files under
+`gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.

@@ -123,14 +123,18 @@ hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
   `scripts/`, `.github/workflows/` (excludes markdown). A PR editing a workflow
   runs that PR's own copy of it, so workflow changes review themselves. **Gated
   to `base=main` (`branches: [main]`)** — a **stacked PR** (base = another
-  feature branch) gets no auto-review. dbt Cloud CI is NOT base-gated: it
-  triggers via dbt Cloud's own GitHub app on PR events, independent of any
-  GH-Actions `branches` filter, so a stacked PR **does** run dbt Cloud CI
-  (verified on #4381) alongside Trunk + Dagster deploy — only
-  `claude-code-review` is skipped. Review a stacked PR via
-  `superpowers:requesting-code-review` or an `@claude` PR comment (`claude.yaml`
-  is comment-triggered, not base-gated). A base-retarget after the parent merges
-  does NOT re-fire `opened`, so `claude-code-review` does not auto-trigger then.
+  feature branch) gets no auto-review. dbt Cloud CI is ALSO base-gated, by dbt
+  Cloud itself: it triggers only for PRs whose base is the environment's branch
+  (`main`), so a stacked PR gets NO `dbt Cloud` commit status at all (#5194:
+  none after 70 minutes and two pushes, while its parent #5162 carried one). Do
+  not wait or monitor for it; local `--target dev` builds plus `zz_stg_*`
+  seeding are the pre-merge validation, and CI first fires on the re-target to
+  `main`. Only Trunk runs on a stacked PR. (An older note here cited #4381 as a
+  stacked PR that ran dbt Cloud CI; #5194 contradicts it.) Review a stacked PR
+  via `superpowers:requesting-code-review` or an `@claude` PR comment
+  (`claude.yaml` is comment-triggered, not base-gated). A base-retarget after
+  the parent merges does NOT re-fire `opened`, so `claude-code-review` does not
+  auto-trigger then.
 
 - **`claude-code-action` headless deadlock**: the action breaks its SDK loop on
   the FIRST result (`base-action/src/run-claude-sdk.ts`), so a run that
