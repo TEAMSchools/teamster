@@ -160,29 +160,27 @@ def test_run_pods_and_code_servers_share_default_priority():
     assert priority_classes == {"dagster-agent"}
 
 
-def test_code_servers_are_not_pinned_against_the_autoscaler():
-    """safe-to-evict: "false" was tried on code servers and reverted the same day.
+def test_every_dagster_pod_is_pinned_against_the_autoscaler():
+    """Agent, run/step, and code server pods all carry safe-to-evict: "false".
 
-    It blocks autoscaler relocation but not scheduler preemption, so it converted
-    graceful relocations into preemptions: measured ~62x the baseline gRPC error
-    rate and ~118x Preempted over one hour, with Evicted flat at 0. Asserted here
-    so it cannot be reintroduced without the reasoning resurfacing.
+    The code-server annotation is safe only while run pods and code servers share
+    a priority. It was reverted in #4921 when run pods sat at 1000: pinning a
+    code server to its node left preemption as the only way for a run pod to
+    claim capacity, and Preempted ran ~118x baseline within the hour. With both
+    at 0 (asserted above) that path is closed, and the annotation stops the
+    autoscaler ScaleDown that killed kippmiami's code server on 2026-09-09.
     """
-    server_config = _helm_values()["workspace"]["serverK8sConfig"]
+    values = _helm_values()
+    key = "cluster-autoscaler.kubernetes.io/safe-to-evict"
 
-    annotations = server_config["podTemplateSpecMetadata"]["annotations"]
+    assert values["dagsterCloudAgent"]["annotations"][key] == "false"
 
-    assert "cluster-autoscaler.kubernetes.io/safe-to-evict" not in annotations
+    for config in ("serverK8sConfig", "runK8sConfig"):
+        annotations = values["workspace"][config]["podTemplateSpecMetadata"][
+            "annotations"
+        ]
 
-    # the agent and run pods DO carry it, and should keep it -- the agent
-    # outranks everything else in the namespace, and run pods are alone on
-    # arm64 nodes with code servers at the same priority, so neither can be
-    # preempted the way code servers were when run pods sat at 1000
-    agent_annotations = _helm_values()["dagsterCloudAgent"]["annotations"]
-
-    assert (
-        agent_annotations["cluster-autoscaler.kubernetes.io/safe-to-evict"] == "false"
-    )
+        assert annotations[key] == "false"
 
 
 def test_code_server_requests_meet_scale_out_minimum():

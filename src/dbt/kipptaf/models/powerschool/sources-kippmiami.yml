@@ -466,24 +466,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__terms
-      - name: stg_powerschool__test
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__test
-      - name: stg_powerschool__testscore
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__testscore
       - name: stg_powerschool__u_clg_et_stu
         config:
           meta:
@@ -754,24 +736,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__attendance_streak
-      - name: stg_powerschool__studenttest
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__studenttest
-      - name: stg_powerschool__studenttestscore
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__studenttestscore
       - name: int_powerschool__ada
         config:
           meta:

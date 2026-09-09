@@ -24,5 +24,9 @@
    location: extract_source_project() inside a union_relations CTE, or the
    _dbt_source_project column once it exists. #}
 {% macro focus_student_number(id, year, project) -%}
-    {{ id }} + if({{ project }} = 'kippmiami' and {{ year }} <= 2025, 8400000000, 0)
+    {{ id }} + if(
+        {{ project }} = 'kippmiami' and {{ year }} <= 2025 and {{ id }} < 8400000000,
+        8400000000,
+        0
+    )
 {%- endmacro %}
