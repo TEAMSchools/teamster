@@ -75,13 +75,13 @@ with
             fg.courses_credit_hours as official_potential_credits,
             sub.enrolledcredits as potential_credits,
 
-            false as is_transfer_grade,
-
             'Enrolled' as credit_status,
 
             if(
                 fg.y1_letter_grade not like 'F%', sub.enrolledcredits, 0.0
             ) as earned_credits,
+
+            false as is_transfer_grade,
 
         from {{ ref("int_powerschool__gpnode") }} as gpn
         inner join
