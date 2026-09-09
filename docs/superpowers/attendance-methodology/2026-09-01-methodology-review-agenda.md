@@ -9,12 +9,11 @@ rows, with attendance through 2026-09-02. Topline figures come from production.
 Every figure below was re-measured after the review; none is carried over from
 the pre-review draft.
 
-**Two things have moved since that build, and neither figure has been
-re-measured.** Miami's pre-AY2026 attendance came back on 2026-09-04 (2.5), so
-every pre-AY2026 figure here covers three regions where the merged code now
-covers four. And the truancy reading settled on any-day (2.2) after 2.4's
-built-fact column was measured, so that column reads period-end. Both are item 1
-on the chase-down list.
+**Re-measured 2026-09-09** on a fresh build of both facts against production
+upstreams, after Miami's pre-AY2026 attendance returned (2.5) and after the
+truancy reading settled on any-day (2.2). Sections 2.4 and 2.5 carry the new
+figures. The AY2024 and AY2025 comparison tables in 2.2 still describe the
+choice as it was measured on 2026-09-02, which is what they are for.
 
 **Read first:** nothing on a production dashboard moves when this merges.
 Tableau and Topline both read `int_students__attendance_daily` directly. Neither
@@ -181,42 +180,33 @@ rather than compute the anchor itself.
 
 ### Shared problems — not a methodology choice, but they will get asked about
 
-#### 2.4 · Truancy reads about 50% on Topline right now
+#### 2.4 · The early-year truancy spike has settled, and the two methods now agree
 
-| AY2026 week    | Topline student-weeks | Topline rate | Built fact student-weeks | Built fact rate, period-end |
-| -------------- | --------------------: | -----------: | -----------------------: | --------------------------: |
-| 2026-08-10     |                 1,606 |        0.00% |                    1,514 |                       0.00% |
-| 2026-08-17     |                11,312 |       57.69% |                    6,361 |                      24.19% |
-| 2026-08-24     |                11,152 |       53.36% |                   11,040 |                      49.39% |
-| **2026-08-31** |                11,061 |   **50.85%** |                   10,978 |                  **21.24%** |
+The draft of this memo reported truancy near 50% on Topline. That was the NJ
+projection early in a year, not a defect. The rule projects a student's absences
+to a full-year total, so two absences in seven days clears the 50-absence
+threshold. As attendance accumulates the projection settles, and it has.
 
-The NJ rule projects a student's absences to a full-year total, so two absences
-in seven days projects past the 50-absence threshold. Half the network trips it
-on Topline, and it falls week by week as the projection settles.
+Re-measured 2026-09-09, against a fresh build of both facts:
 
-**The built-fact column was measured before 2.2 shipped, so it reads period-end
-and the fact no longer does.** Only the current week can be re-derived from
-figures already in this document: 5,622 students of 10,978 under any-day, which
-is **51.21% against Topline's 50.85%** — the two methods now agree in the week
-where they used to differ most. The earlier weeks need a rebuild to re-measure;
-that is item 1 on the chase-down list.
+| AY2026 week | Topline students | Topline rate | Built fact students | Built fact rate, any-day |
+| ----------- | ---------------: | -----------: | ------------------: | -----------------------: |
+| 2026-08-10  |            1,586 |        0.00% |               1,493 |                    0.00% |
+| 2026-08-17  |            3,650 |       10.38% |               3,641 |                   10.24% |
+| 2026-08-24  |           11,042 |       11.89% |              10,945 |                   11.28% |
+| 2026-08-31  |           11,009 |    **9.56%** |              10,930 |                **8.97%** |
+| 2026-09-07  |           11,022 |        6.23% |              10,995 |                    6.09% |
 
-**Neither method causes the projection problem and neither fixes it.** It is one
-upstream flag. The any-day reading now puts a 50% truancy headline on our own
-surface as well as Topline's, which raises the priority of the upstream fix
-rather than changing what it is.
+**The two methods agree to within 0.6 points in every week.** That is the 2.2
+decision working as intended: any-day is Topline's reading, so the fact and
+Topline now answer the truancy question the same way. The residual gap is the
+denominator — `count_students` requires a measured day, so it runs 80 to 100
+students below Topline's roster count.
 
-**And the New Jersey rule may not match the statute at all.**
-[N.J.A.C. 6A:16-7.6](https://www.law.cornell.edu/regulations/new-jersey/N-J-A-C-6A-16-7-6)
-defines truancy as 10 or more cumulative _unexcused_ absences.
-`int_students__attendance_daily` computes a running absence rate multiplied by
-the year's membership days, tested against 50 _total_ absences — a different
-shape, a different threshold, and no excused/unexcused split. Florida's rule for
-Miami, 15 unexcused within 90 calendar days, is much closer to what we compute
-(15 over a 90-row window). I have not established whether the 50 is deliberate,
-so treat this as a flag rather than a bug report. It is upstream of the reading
-2.2 settled and of Topline, so it survives that decision untouched and is the
-larger of the two.
+**The 50% headline is gone from both surfaces.** Topline read 50.85% for the
+week of 2026-08-31 when this memo was drafted on 2026-09-02 and reads 9.56% for
+the same week today. Nothing changed in the truancy code between those two
+measurements. Late-entered attendance did the work.
 
 #### 2.5 · Miami AY2020-AY2025 attendance is back, and every pre-AY2026 figure here predates it
 
@@ -233,16 +223,21 @@ stints go 1,518 to 1,517, because one student's two archive stints fall inside a
 single Focus stint. The fix lands in `int_students__attendance_daily`, so both
 facts here inherit it with no change to their own code.
 
-**Consequence: every pre-AY2026 figure in this document is a three-region figure
-the merged code no longer produces.** They were measured on the 2026-09-02
-build, two days before the restore landed. Read the AY2025 tables in 2.1 and 2.2
-as Camden, Newark and Paterson — population as well as rate — and do not compare
-them against anything built from `main` today.
+**Measured effect on the network rate, AY2025 at year grain:**
 
-Direction of the move, not a measurement: #5114 estimated the network
-chronic-absence rate rises about 1.2 points once Miami returns. That came from a
-development build made before the drop, not from these facts, so treat it as an
-order of magnitude while the re-measure is outstanding.
+| Population               | Students | Chronically absent |       Rate |
+| ------------------------ | -------: | -----------------: | ---------: |
+| Four regions, with Miami |   11,200 |              2,991 | **26.71%** |
+| Miami alone              |    1,493 |                322 |     21.57% |
+
+Miami runs below the network, so its return moves the AY2025 network rate down
+0.76 points from the three-region 27.47% in 2.1. #5114 estimated a rise of about
+1.2 points from a development build made before the drop. That estimate is wrong
+in direction, and this figure supersedes it.
+
+The AY2025 and AY2024 tables in 2.1 and 2.2 stay as measured — three regions,
+2026-09-02. They compare this fact against Topline on one population, which is
+what they are for, and adding Miami to one side would break that.
 
 #### 2.6 · Paterson #4193, open and unquantified
 
@@ -319,15 +314,15 @@ will not be resolved, rather than one pending a backfill.
 
 ## 3. Chase-down list (10 min)
 
-| #   | Item                                                                                                                                                                                  | Owner            | Blocks                                            |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ------------------------------------------------- |
-| 1   | Rebuild both facts and re-measure — 2.4's built-fact column reads period-end (only its 2026-08-31 row could be re-derived here), and every pre-AY2026 figure predates Miami's restore | me               | 2.4 and pre-AY2026 are stale                      |
-| 2   | Confirm KIPP Foundation reads chronic absence as item 8 (at or below 90.0%), not item 1                                                                                               | ?                | Any figure going to KIPP                          |
-| 3   | Confirm #4193 is permanent for pre-AY2026, as Walters reads it                                                                                                                        | PowerSchool side | Whether the caveat is final or pending a backfill |
-| 4   | ~~Decide whether Topline's Monday anchor gets fixed~~ — filed as #5122, together with the chronic-absence reset                                                                       | —                | —                                                 |
-| 5   | Decide whether the NJ truancy projection gets its own fix, and where                                                                                                                  | ?                | 2.4 — asked about either way                      |
-| 6   | Decide what a dashboard publishes in the first three weeks of a year, given the rate moves ~4 points a day                                                                            | ?                | Any September figure                              |
-| 7   | Find out how peer networks report truancy — informational now that 2.2 is settled, but it shapes the fix in item 5                                                                    | me               | Item 5                                            |
+| #   | Item                                                                                                            | Owner | Blocks |
+| --- | --------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| 1   | ~~Rebuild both facts and re-measure~~ — done 2026-09-09; 2.4 and 2.5 carry the new figures                      | me    | —      |
+| 2   | ~~Confirm KIPP Foundation reads chronic absence as item 8~~ — follow item 8, which is what this PR does         | —     | —      |
+| 3   | ~~Confirm #4193 is permanent for pre-AY2026~~ — Walters' read stands                                            | —     | —      |
+| 4   | ~~Decide whether Topline's Monday anchor gets fixed~~ — filed as #5122, together with the chronic-absence reset | —     | —      |
+| 5   | ~~Decide whether the NJ truancy projection gets its own fix~~ — the current calculation stands                  | —     | —      |
+| 6   | ~~Decide what a dashboard publishes in the first three weeks of a year~~ — out of scope for this PR             | —     | —      |
+| 7   | ~~Find out how peer networks report truancy~~ — out of scope for this PR                                        | —     | —      |
 
 Closed since the review: the Total Enrollment gap is measured and anchored
 (2.3), the truancy reading is settled on any-day and shipped (2.2), every
