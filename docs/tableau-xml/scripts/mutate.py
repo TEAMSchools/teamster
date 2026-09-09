@@ -20,8 +20,12 @@ Operations:
     reparent    <zone> <new-parent>  move <zone> to be the first child of another
     move-after  <zone> <sibling>     reorder <zone> to sit after <sibling>
     swap        <zone-a> <zone-b>    exchange two zones' positions
-    set-attr    <zone> <attr> <val>  change one attribute on one zone
+    set-attr    <zone> <attr> <val>  change one attribute on the zone tag
+    set-format  <zone> <attr> <val>  change one <format> in the zone's own <zone-style>
     delete      <zone>               remove a zone and its subtree
+
+Zones only, inside one dashboard. A tooltip, pane order, manifest entry or
+default-format mutant is hand-written.
 """
 
 import re

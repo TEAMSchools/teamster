@@ -97,15 +97,25 @@ nobody noticed, because the file on disk stayed correct.
 Template for download, publish and render. Copy it to `tests/test_zz_*.py`, fill
 the three `REPLACE-ME` values, run under pytest, delete it.
 
-The publish gate is the important line:
+The publish gate runs **before** the publish call. By the time `publish`
+returns, the overwrite has already happened on the server, so a check on the
+returned item can only confirm where it landed. The template asserts the target
+id against an allowlist of non-production projects and requires the `ZZ-REVIEW`
+name prefix on the request object, then keeps a post-publish raise as
+confirmation. Raises, not asserts: asserts are stripped under `-O`.
 
 ```python
-assert item.project_id == TEMP_PROJECT, f"published to {item.project_name}!"
+if TEMP_PROJECT not in NON_PRODUCTION_PROJECTS:
+    raise RuntimeError("target is not an agreed non-production project")
+if not item.name.startswith("ZZ-REVIEW "):
+    raise RuntimeError("review copies carry the ZZ-REVIEW prefix")
+item = server.workbooks.publish(item, path, mode=tsc.Server.PublishMode.Overwrite)
+if item.project_id != TEMP_PROJECT:
+    raise RuntimeError(f"published to {item.project_name}, not the temp project")
 ```
 
-Put it immediately after the publish call, before any render or populate. It is
-the only thing standing between a scripted mistake and a corrupted production
-workbook.
+Ask the user which non-production project or subproject the build should land in
+before the first publish, and add that id to the allowlist.
 
 ## Reading exit codes
 

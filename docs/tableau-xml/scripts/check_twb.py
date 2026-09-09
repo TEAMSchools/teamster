@@ -205,13 +205,13 @@ if __name__ == "__main__":
     total = 0
     for a in args:
         p = Path(a)
-        text = p.read_text(encoding="utf-8")
+        text = p.read_text(encoding="utf-8", newline="")
         n = check_worksheets(text, p.name)
         n += check_features(text, p.name)
         n += check_views(text, p.name)
         n += check_pane_order(text, p.name)
         if ref_path:
-            ref_text = ref_path.read_text(encoding="utf-8")
+            ref_text = ref_path.read_text(encoding="utf-8", newline="")
             n += check_manifest_drop(text, ref_text, p.name)
             n += check_unknown(text, ref_text, p.name)
         print(f"{p.name}: {'CLEAN' if not n else f'{n} problem(s)'}")
