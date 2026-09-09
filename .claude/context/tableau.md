@@ -5,11 +5,10 @@ There is no publish, no workbook edit, no group mutation — do not look for an
 MCP tool that does it.
 
 That is a limit of the MCP, not of this Codespace. Workbook content **can** be
-edited and republished here with `tableauserverclient`; see _Publishing back_
-below, and
-[the workbook-editing guide](../../docs/guides/tableau-workbook-editing.md) for
-the full recipe with worked code. Group membership and Server admin remain
-user-side.
+edited and republished here with `tableauserverclient` — invoke the
+`tableau-workbook-xml` skill, which carries the checkers, the repack script, and
+the review-copy gate that has to happen before any production publish. Group
+membership and Server admin remain user-side.
 
 **No tool returns calculated-field formulas.** `get-workbook` and
 `list-workbooks` return workbook, view, and datasource metadata — never the calc
@@ -34,14 +33,16 @@ therefore no back door either.
 **Reading and writing calc text is possible from the Codespace, but the recipe
 does not live here.** `tableauserverclient` is already a project dependency and
 the same PAT the MCP uses is in 1Password, so a workbook can be downloaded,
-parsed, edited and republished. That path has real traps — a publish drops five
-pieces of server-side state including the embedded connection credentials, and
-the credential failure is silent until the next extract refresh.
+parsed, edited and republished. That path has real traps — a publish drops
+server-side state including the embedded connection credentials, and the
+credential failure is silent until the next extract refresh.
 
-Do not attempt a publish from memory. Read
-`docs/guides/tableau-workbook-editing.md` first; it carries the worked code, the
-five parsing traps, and the post-publish restore steps. Tracked in
-[#5157](https://github.com/TEAMSchools/teamster/issues/5157).
+**Do not attempt a publish from memory. Invoke the `tableau-workbook-xml`
+skill.** Two things it will tell you that cost hours otherwise: the PAT allows
+only one active session, so a second sign-in anywhere fails with `401002` until
+the first is released; and a publish must be followed by
+`update_connection(..., oauth=True)` carrying the service-account key, or the
+next extract refresh fails hours later with no earlier symptom.
 
 **`get-workbook` DOES give the workbook-to-table mapping.** Its
 `upstreamDatasources` array returns each datasource's `name`, `luid`, and

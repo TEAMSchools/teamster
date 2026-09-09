@@ -484,8 +484,7 @@ playbook.
   work: `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`
 - How to read and change these calculations programmatically, and how to
   republish without dropping the `entra-ready` tag this page treats as the
-  inventory: `docs/guides/tableau-workbook-editing.md`, landing separately in
-  [#5157](https://github.com/TEAMSchools/teamster/issues/5157)
+  inventory: the `tableau-workbook-xml` skill
 - Design rationale for each tier and each peer-exclusion helper:
   `docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md`
 - [#4631](https://github.com/TEAMSchools/teamster/issues/4631) — replaces every
