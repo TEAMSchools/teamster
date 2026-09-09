@@ -13,18 +13,18 @@ models/
 ```
 
 PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is an archive
-rebuilt once from the frozen `src_powerschool__*` externals (final ODBC pull
-2026-07-01) by re-including the `powerschool` package with the ODBC staging
-variant and 15 post-hooks: `stg_powerschool__students` got the 8400 Focus prefix
-on `student_number`, and the 14 staging models with `yearid` dropped rows past
-AY2025 (`yearid > 35`). The archive was rebuilt on 2026-09-09 (#5012) and again
-after #5228 to add identity and school columns to the GPA, final grades,
-calendar day, and student enrollment models; the package is re-included for each
-rebuild and removed after. `int_fldoe__all_assessments` resolves
-`student_number` from `int_focus__students`, not the archive. kipptaf reads the
-dataset as a BQ-native source. Do not drop the dataset or the GCS files. The
-16th hook (`stg_powerschool__calendar_day`, delete `date_value >= '2026-07-01'`)
-is now in the recipe.
+built from the frozen `src_powerschool__*` externals (final ODBC pull
+2026-07-01). It was rebuilt on 2026-09-09 (#5012). A second rebuild, after #5228
+merges, adds identity and school columns to the GPA, final grades, calendar day,
+and student enrollment models. The recipe is the `dbt_project.yml`
+`powerschool:` block: re-include the package with the ODBC staging variant and
+16 post-hooks — the 8400 Focus prefix on `student_number`
+(`stg_powerschool__students`), 14 staging models with `yearid` dropping rows
+past AY2025 (`yearid > 35`), and `stg_powerschool__calendar_day` deleting
+`date_value >= '2026-07-01'`. The package is re-included for each rebuild and
+removed after. `int_fldoe__all_assessments` resolves `student_number` from
+`int_focus__students`, not the archive. kipptaf reads the dataset as a BQ-native
+source. Do not drop the dataset or the GCS files.
 
 ## Source Packages
 

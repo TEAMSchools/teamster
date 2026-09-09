@@ -73,10 +73,9 @@ extension tables (`u_studentsuserfields`, `studentcorefields`, `s_stu_x`),
 `category_grades`, `gpprogress_grades`. Their kipptaf readers are NJ-only or
 current-state, and an NJ-only students union is the right join for them.
 
-PII: `students_student_number` on the 3 GPA models gets column-level
-`config.meta.contains_pii: true` in the package YAML, per
-`.claude/rules/ferpa-pii.md`. `base_powerschool__final_grades` already carries
-the tag from #5224.
+PII: `students_student_number` and its `config.meta.contains_pii: true` tag are
+added to all 4 models — the 3 GPA models and `base_powerschool__final_grades` —
+in the package YAML, per `.claude/rules/ferpa-pii.md`.
 
 Also in PR A: `src/dbt/kippmiami` re-includes the package with the ODBC staging
 variant, `+materialized: table`, and the 16 post-hooks (15 from #5201 plus the
