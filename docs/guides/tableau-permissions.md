@@ -111,6 +111,11 @@ from both sides.
 | Regional leadership                              | Your manager and those three teams — **not** other regional leaders                                                                                                                                       |
 | Central office staff                             | Your manager and those three teams. No regional leader sees central office answers                                                                                                                        |
 
+Two audiences are on every row above and are easy to miss. **The data team**
+administers the survey and reaches every response. **TEAM Council** reaches
+every response too, with one exception — answers from chief-level staff, which
+it does not see.
+
 #### If you are a viewer, what you see
 
 Eight routes, and the peer exclusion differs on each because "your own level"
@@ -118,7 +123,7 @@ means something different depending on where you sit.
 
 | Route | Who                                                                                                            | Reaches                                          | Minus                                                                                                                  |
 | ----- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| 1     | You, and the manager recorded on the response                                                                  | that response                                    | nothing — a manager sees their report even when both are director-rank                                                 |
+| 1     | You, and the manager recorded on the response                                                                  | that response                                    | nothing — you see your own answers, and your manager sees yours, even when you are both director-rank                  |
 | 2     | The administrators of the process — the Data, Employee Relations, Recruiting, and Leadership Development teams | everything, network-wide                         | nothing                                                                                                                |
 | 3a    | Managing directors of school operations, heads of schools, managing directors of operations                    | your region                                      | regional-leadership respondents. Directors stay visible — you sit above them                                           |
 | 3b    | The Syndicate                                                                                                  | your region                                      | regional leadership, and director-rank peers — **except** school operations directors, who are your own line of report |
@@ -190,22 +195,22 @@ across departments, so scoping them to one would hide most of what they oversee.
 
 Ask for the one matching the department whose feedback you need to read.
 
-| Department rated                | Group                                               |
-| ------------------------------- | --------------------------------------------------- |
-| Compliance                      | `KNJ-SG-Tableau All Compliance`                     |
-| Data                            | `KNJ-SG-Tableau All Data`                           |
-| Development                     | `TS-DL-Development`                                 |
-| Finance, including Purchasing   | `TS-SG-R9 Finance` or `TS-SG-R9 Purchasing`         |
-| Human Resources Operations      | `Group Staff Employee Relations`                    |
-| Leadership Development          | `KNJ-SG-Tableau All Leadership Development`         |
-| Marketing, Comms and Enrollment | `KNJ-SG-Tableau All Marketing Comms and Enrollment` |
-| Operations                      | `KNJ-SG-Tableau All Operations`                     |
-| Real Estate and Facilities      | `TS-SG-R9 Facilities`                               |
-| Special Education               | `KNJ-SG-Tableau Special Education Directors`        |
-| Talent Acquisition              | `KNJ-SG-Tableau All Recruiting`                     |
-| Teacher Development             | `KNJ-SG-Tableau All New Teacher Development`        |
-| Teaching and Learning           | `KNJ-SG-Tableau All T&L`                            |
-| Technology                      | `TS-SG-R9 Technology`                               |
+| Department rated                     | Group                                               |
+| ------------------------------------ | --------------------------------------------------- |
+| Compliance                           | `KNJ-SG-Tableau All Compliance`                     |
+| Data                                 | `KNJ-SG-Tableau All Data`                           |
+| Development                          | `TS-DL-Development`                                 |
+| Finance, including Purchasing        | `TS-SG-R9 Finance` or `TS-SG-R9 Purchasing`         |
+| Human Resources - Employee Relations | `Group Staff Employee Relations`                    |
+| Leadership Development               | `KNJ-SG-Tableau All Leadership Development`         |
+| Marketing, Comms and Enrollment      | `KNJ-SG-Tableau All Marketing Comms and Enrollment` |
+| Operations                           | `KNJ-SG-Tableau All Operations`                     |
+| Real Estate and Facilities           | `TS-SG-R9 Facilities`                               |
+| Special Education                    | `KNJ-SG-Tableau Special Education Directors`        |
+| Talent Acquisition                   | `KNJ-SG-Tableau All Recruiting`                     |
+| Teacher Development                  | `KNJ-SG-Tableau All New Teacher Development`        |
+| Teaching and Learning                | `KNJ-SG-Tableau All T&L`                            |
+| Technology                           | `TS-SG-R9 Technology`                               |
 
 !!! note "Questions that rate no department"
 
