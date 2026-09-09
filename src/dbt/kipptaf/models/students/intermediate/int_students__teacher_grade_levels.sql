@@ -113,23 +113,42 @@ with
             student_total_all_grades,
             grade_level_ratio,
 
+            cast(null as string) as _dbt_source_relation,
+            cast(null as int64) as yearid,
+
             row_number() over (
                 partition by teachernumber, academic_year
                 order by grade_level_ratio desc
             ) as grade_level_rank,
         from percentages
-    ),
-
-    powerschool_conformed as (
-        select *,
-        from {{ ref("int_powerschool__teacher_grade_levels") }}
-        where _dbt_source_project != 'kippmiami'
     )
 
-select *,
-from powerschool_conformed
+select
+    _dbt_source_relation,
+    teachernumber,
+    yearid,
+    academic_year,
+    grade_level,
+    section_count_distinct,
+    student_count,
+    student_total_all_grades,
+    grade_level_ratio,
+    grade_level_rank,
+    _dbt_source_project,
+from {{ ref("int_powerschool__teacher_grade_levels") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    teachernumber,
+    yearid,
+    academic_year,
+    grade_level,
+    section_count_distinct,
+    student_count,
+    student_total_all_grades,
+    grade_level_ratio,
+    grade_level_rank,
+    _dbt_source_project,
 from focus_conformed

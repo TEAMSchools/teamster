@@ -3,9 +3,10 @@
 The task sequence for getting `links.yml` from a scraped starting point to a
 catalog we would put in front of staff.
 
-[README.md](README.md) is the reference: what the directory is, what each field
-means, and what "verified" requires. This file is the order to do things in and
-who owns what.
+[Adding a tool to the launch page](../guides/launch-page-guide.md) is the field
+reference: what each field means and what the legal values are.
+[README.md](README.md) covers what this directory is and what "verified"
+requires. This file is the order to do things in and who owns what.
 
 The design for how this catalog gets served is tracked separately in #4762 — a
 static page built from `links.yml` and published to GitHub Pages. You do not
@@ -43,17 +44,18 @@ a `guide:` link points at a real article.
 
 ## Step 1 — Verify the catalog entries
 
-The week's work. For each entry, apply the five checks in
-[README.md](README.md#the-work) and change `status: needs-review` to
-`status: verified`.
+The week's work. For each entry, apply the checks in
+[README.md](README.md#what-verified-means-here) and change
+`status: needs-review` to `status: verified`.
 
 Suggested order:
 
 1. **The tools you already know**, to confirm the pattern before scaling up.
 1. **The rest alphabetically.** Most are quick — open it, confirm the name,
    tighten the description, decide the audiences.
-1. **Anything Google-hosted gets the sharing check** described in README.md.
-   Non-optional, and it is the one check with a real consequence if skipped.
+1. **Anything Google-hosted gets the sharing check** described in
+   [the guide](../guides/launch-page-guide.md#the-sharing-check). Non-optional,
+   and it is the one check with a real consequence if skipped.
 
 Roughly 44 entries at ten to fifteen minutes each is about a day and a half of
 focused time. The rest of the week is the judgment calls and what you turn up
