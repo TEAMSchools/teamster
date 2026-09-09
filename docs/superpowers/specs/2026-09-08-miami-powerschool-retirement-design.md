@@ -202,7 +202,10 @@ wrapper, Paterson disables the 2 grad-plan models, and PII tags are in scope.
   `int_powerschool__state_assessments_transfer_scores` already has. Each
   region's `sources-kipp*.yml` gains a table entry with the Dagster `asset_key`
   meta. Regions per wrapper:
-  - all 4: `final_grades_rollup`, `gpa_term_current`, `gpa_term_pivot`
+  - all 4: `final_grades_rollup`, `gpa_term_pivot`
+  - `gpa_term_current` is `materialized: ephemeral` in the package, so no region
+    has a table to wrap. The kipptaf model stays a `where is_current` filter
+    over the kipptaf `gpa_term` wrapper.
   - NJ 3: `log`, `s_nj_stu_x_unpivot`
   - Newark and Camden: `gpnode`, `gpprogress_grades` (Paterson disables both; no
     grad-plan dlt tables)
