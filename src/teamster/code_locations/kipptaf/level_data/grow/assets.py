@@ -112,6 +112,9 @@ def _match_observation_group(
     )
 
 
+FALLBACK_OBSERVER_ROLE_NAMES = ("School Admin", "School Assistant Admin")
+
+
 def _can_anchor_group(user: dict[str, Any]) -> bool:
     """Whether this user can be the sole observer of a coaching group.
 
@@ -123,6 +126,21 @@ def _can_anchor_group(user: dict[str, Any]) -> bool:
         user["inactive"] == 0
         and not user["readonly"]
         and "observers" in user["group_type"]
+    )
+
+
+def _observes_fallback(user: dict[str, Any]) -> bool:
+    """Whether this user observes a school's Teachers fallback group.
+
+    The fallback holds only the observees whose own manager cannot anchor a
+    group, which makes it a leadership backstop rather than a coaching
+    assignment. Every coach already reaches their own reports through their own
+    group, so listing them here too puts a second, wider group in their picker
+    for teachers they do not coach. Only a school's admins and assistant admins
+    observe it.
+    """
+    return _can_anchor_group(user) and any(
+        role in user["role_names"] for role in FALLBACK_OBSERVER_ROLE_NAMES
     )
 
 
@@ -272,17 +290,17 @@ def grow_user_sync(
         }
 
         # Home-school membership, plus any manager of a report at this school
-        # who is themselves observer-capable -- mirrors the admin lists' reach
-        # so a leader covering a satellite campus can observe its coachless
-        # teachers there too.
+        # who observes the fallback -- mirrors the admin lists' reach so a
+        # leader covering a satellite campus can observe its coachless teachers
+        # there too.
         school_observers_set = {
-            u["user_id"] for u in school_users if "observers" in u["group_type"]
+            u["user_id"] for u in school_users if _observes_fallback(u)
         }
 
         for u in school_users:
             manager = users_by_grow_id.get(u["coach_id"])
 
-            if manager is not None and _can_anchor_group(manager):
+            if manager is not None and _observes_fallback(manager):
                 school_observers_set.add(manager["user_id"])
 
         school_observers = sorted(school_observers_set)
@@ -312,7 +330,12 @@ def grow_user_sync(
 
         wanted: dict[str, dict[str, Any]] = {
             # Teachers survives as the fallback for observees with no coach.
-            "Teachers": {"observees": uncoached, "observers": school_observers}
+            # Its observers go with its observees: an empty fallback with
+            # observers still shows up as a group in each of their pickers.
+            "Teachers": {
+                "observees": uncoached,
+                "observers": school_observers if uncoached else [],
+            }
         }
         # Parenthesised employee number, so a display-name change relabels
         # the group without breaking its identity. None (e.g. Teachers) gets

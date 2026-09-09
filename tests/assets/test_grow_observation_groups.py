@@ -1,7 +1,8 @@
 """Pure-helper coverage for Grow observation-group matching and anchoring.
 
-`_match_observation_group` and `_can_anchor_group` are plain functions over
-small dicts -- no Dagster execution, no Grow API, no fixtures beyond literals.
+`_match_observation_group`, `_can_anchor_group` and `_observes_fallback` are
+plain functions over small dicts -- no Dagster execution, no Grow API, no
+fixtures beyond literals.
 """
 
 from typing import Any
@@ -9,6 +10,7 @@ from typing import Any
 from teamster.code_locations.kipptaf.level_data.grow.assets import (
     _can_anchor_group,
     _match_observation_group,
+    _observes_fallback,
 )
 
 
@@ -101,6 +103,7 @@ def _user(**overrides: Any) -> dict[str, Any]:
         "inactive": 0,
         "readonly": 0,
         "group_type": ["observers", "observees"],
+        "role_names": ["School Admin"],
     }
     user.update(overrides)
 
@@ -121,3 +124,32 @@ def test_can_anchor_group_false_when_missing_observers_role() -> None:
 
 def test_can_anchor_group_true_when_active_not_readonly_and_observer() -> None:
     assert _can_anchor_group(_user()) is True
+
+
+def test_observes_fallback_true_for_school_admin() -> None:
+    assert _observes_fallback(_user(role_names=["School Admin"])) is True
+
+
+def test_observes_fallback_true_for_school_assistant_admin() -> None:
+    assert (
+        _observes_fallback(_user(role_names=["Coach", "School Assistant Admin"]))
+        is True
+    )
+
+
+def test_observes_fallback_false_for_coach_without_an_admin_role() -> None:
+    """A coach reaches their own reports through their own group, not the fallback.
+
+    Pins the fix for the duplicate group: before this, every observer-capable
+    user at a school observed the fallback too, so a coach was listed against
+    the coachless teachers they do not coach.
+    """
+    assert _observes_fallback(_user(role_names=["Coach"])) is False
+
+
+def test_observes_fallback_false_for_regional_observer() -> None:
+    assert _observes_fallback(_user(role_names=["Regional Observer"])) is False
+
+
+def test_observes_fallback_false_when_admin_cannot_anchor() -> None:
+    assert _observes_fallback(_user(role_names=["School Admin"], readonly=1)) is False
