@@ -1,10 +1,4 @@
 with
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
     -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
     -- #5012), so every archive row is a pre-Focus year and needs no cutover
     -- predicate. The Focus branch below still floors at the cutover year.
@@ -43,10 +37,12 @@ with
             fa.academic_year - 1990 as yearid,
             coalesce(fa.streak_value, 'P') as att_code,
         from {{ ref("int_focus__attendance_streak") }} as fa
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2020 rows would
-        -- land beside PowerSchool's real AY2020-AY2025 rows for Miami and
-        -- break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence. Required, not belt-and-braces: without it Focus's AY2020
+        -- rows would land beside PowerSchool's real AY2020-AY2025 rows for
+        -- Miami and break this model's own grain test.
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where fa.academic_year >= c.focus_start_academic_year
     )
 

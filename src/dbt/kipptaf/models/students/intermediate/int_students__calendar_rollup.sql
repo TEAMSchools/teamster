@@ -10,19 +10,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
-    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
-    -- #5012), so every archive row is a pre-Focus year and needs no cutover
-    -- predicate. The Focus branch below still floors at the cutover year.
-    powerschool_conformed as (
-        select cr.*, from {{ ref("int_powerschool__calendar_rollup") }} as cr
-    ),
-
     -- int_focus__calendar_rollup is Focus-native: academic_year, min_school_date
     -- and max_school_date, and no track column at all. track is supplied here
     -- as a typed NULL, which is what the consuming join is made null-safe for.
@@ -45,18 +32,23 @@ with
             cast(null as string) as track,
         from {{ ref("int_focus__calendar_rollup") }} as cr
         inner join focus_schools as fs on cr.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's pre-cutover rows
-        -- would land beside PowerSchool's real rows for the same Miami
-        -- school-years and break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence. Required, not belt-and-braces: without it Focus's
+        -- pre-cutover rows would land beside PowerSchool's real rows for the
+        -- same Miami school-years and break this model's own grain test.
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where cr.academic_year >= c.focus_start_academic_year
     )
 
 -- `full union all corresponding` matches columns by NAME. A plain `union all`
 -- matches by POSITION, and the two CTEs above list schoolid/yearid in
 -- different positions, which would silently misalign columns.
+-- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+-- #5012), so every archive row is a pre-Focus year and needs no cutover
+-- predicate. The Focus branch above still floors at the cutover year.
 select *,
-from powerschool_conformed
+from {{ ref("int_powerschool__calendar_rollup") }}
 
 full union all corresponding
 

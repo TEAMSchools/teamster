@@ -118,16 +118,10 @@ with
                 order by grade_level_ratio desc
             ) as grade_level_rank,
         from percentages
-    ),
-
-    powerschool_conformed as (
-        select *,
-        from {{ ref("int_powerschool__teacher_grade_levels") }}
-        where _dbt_source_project != 'kippmiami'
     )
 
 select *,
-from powerschool_conformed
+from {{ ref("int_powerschool__teacher_grade_levels") }}
 
 full union all corresponding
 

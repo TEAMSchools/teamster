@@ -32,15 +32,9 @@ with
         from {{ ref("int_focus__student_enrollment_roster") }}
     ),
 
-    powerschool_conformed as (
-        select *,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
-        where _dbt_source_project != 'kippmiami'
-    ),
-
     unioned as (
         select *,
-        from powerschool_conformed
+        from {{ ref("int_powerschool__student_enrollment_union") }}
 
         full union all corresponding
 

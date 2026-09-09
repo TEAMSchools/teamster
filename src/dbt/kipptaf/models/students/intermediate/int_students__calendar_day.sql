@@ -13,15 +13,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence:
-    -- int_focus__calendar_day reaches back to AY2010 with 3 schools against
-    -- PowerSchool's 6, so scoping on the years it contains would replace most of
-    -- Miami's calendar history with a thinner copy.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
     -- LEFT JOIN: `stg_powerschool__terms` carries only `isyearrec` = 1 windows,
     -- and some real calendar days fall outside every window — mostly August
     -- pre-service dates, plus a 15-day Paterson gap. An INNER JOIN silently
@@ -109,10 +100,16 @@ with
             true as is_in_membership,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2010 through AY2025
-        -- calendar rows land beside PowerSchool's real rows for the same Miami
-        -- school-days and break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence: int_focus__calendar_day reaches back to AY2010 with 3
+        -- schools against PowerSchool's 6, so scoping on the years it
+        -- contains would replace most of Miami's calendar history with a
+        -- thinner copy. Required, not belt-and-braces: without it Focus's
+        -- AY2010 through AY2025 calendar rows land beside PowerSchool's real
+        -- rows for the same Miami school-days and break this model's own
+        -- grain test.
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where cd.academic_year >= c.focus_start_academic_year
     )
 

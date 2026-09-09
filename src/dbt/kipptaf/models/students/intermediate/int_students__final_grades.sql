@@ -1,10 +1,4 @@
 with
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- and why it is derived from recorded attendance rather than row presence.
-    sis_cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
     -- dcid >= 1 is the placeholder filter. See the model description for why
     -- student_number is the join key.
     powerschool_students as (
@@ -120,8 +114,10 @@ with
         -- or after the cutover — the same boundary, applied from the other
         -- side. Course history also carries an invariant the schedule join
         -- depends on: every row has a null `course_period_id` (15,278 of
-        -- 15,278) and drops out of that inner join anyway.
-        cross join sis_cutover as sc
+        -- 15,278) and drops out of that inner join anyway. One row. See
+        -- int_students__sis_cutover for why the boundary is a floor and why
+        -- it is derived from recorded attendance rather than row presence.
+        cross join {{ ref("int_students__sis_cutover") }} as sc
         where g.academic_year >= sc.focus_start_academic_year
     )
 

@@ -10,15 +10,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence:
-    -- int_focus__attendance_daily scaffolds a present-by-default row back to
-    -- AY2020, so scoping on the years it contains would replace six years of
-    -- real PowerSchool attendance with fabricated perfect attendance.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
     -- Focus re-dated Miami's enrollment stints (a returning student's stint
     -- starts on the real first day of school, where PowerSchool used a July 1
     -- rollover), and entrydate feeds student_enrollment_key, so the frozen
@@ -124,10 +115,16 @@ with
             if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2020 through
-        -- AY2025 rows land beside PowerSchool's real rows for the same Miami
-        -- school-days and break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence: int_focus__attendance_daily scaffolds a present-by-default
+        -- row back to AY2020, so scoping on the years it contains would
+        -- replace six years of real PowerSchool attendance with fabricated
+        -- perfect attendance. Required, not belt-and-braces: without it
+        -- Focus's AY2020 through AY2025 rows land beside PowerSchool's real
+        -- rows for the same Miami school-days and break this model's own
+        -- grain test.
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where ad.academic_year >= c.focus_start_academic_year
     ),
 

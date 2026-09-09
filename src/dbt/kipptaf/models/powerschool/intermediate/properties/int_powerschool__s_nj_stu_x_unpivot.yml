@@ -11,6 +11,15 @@ models:
       only unique within one PowerSchool instance, can be disambiguated
       downstream. NJ only; Miami's PowerSchool history for this table ends at
       AY2025 and nothing reports it.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studentsdcid
+              - name_column
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
