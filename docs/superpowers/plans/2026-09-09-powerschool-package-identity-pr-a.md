@@ -892,7 +892,7 @@ count is 1.
 - [ ] **Step 4: Stage the externals into your dev schema and build the package**
 
 ```bash
-uv run dbt run-operation stage_external_sources --args "select: powerschool" --vars '{ext_full_refresh: true}' --target dev --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami
+uv run dbt run-operation stage_external_sources --args "select: powerschool_odbc" --vars '{ext_full_refresh: true}' --target dev --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami
 uv run dbt build --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-package-identity/src/dbt/kippmiami --target dev --select package:powerschool
 ```
 
