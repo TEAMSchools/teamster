@@ -2,9 +2,10 @@ sources:
   - name: kippmiami_powerschool
     description: >-
       Frozen pre-Focus PowerSchool archive (final ODBC pull 2026-07-01; Miami's
-      SIS moved to Focus). Never rebuilt — the kippmiami_powerschool dataset
-      must not be dropped. Declared BQ-native (plain schema, no target branch)
-      so every target reads the frozen prod tables directly.
+      SIS moved to Focus). Rebuilt once on 2026-09-09 from the frozen externals
+      with the 8400 Focus prefix on student_number and an AY2025 bound applied
+      (#5012). The dataset must not be dropped. Declared BQ-native (plain
+      schema, no target branch) so every target reads the prod tables directly.
     schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
@@ -133,24 +134,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__emailaddress
-      - name: stg_powerschool__fte
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__fte
-      - name: stg_powerschool__gen
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__gen
       - name: stg_powerschool__gradecalcformulaweight
         config:
           meta:
@@ -223,15 +206,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__gradesectionconfig
-      - name: stg_powerschool__log
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__log
       - name: stg_powerschool__originalcontactmap
         config:
           meta:
@@ -241,15 +215,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__originalcontactmap
-      - name: stg_powerschool__period
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__period
       - name: stg_powerschool__person
         config:
           meta:
@@ -421,15 +386,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__studentcorefields
-      - name: stg_powerschool__studentrace
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__studentrace
       - name: stg_powerschool__students
         config:
           meta:
@@ -484,15 +440,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__u_clg_et_stu_alt
-      - name: stg_powerschool__u_def_ext_students
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__u_def_ext_students
       - name: stg_powerschool__u_studentsuserfields
         config:
           meta:
@@ -502,15 +449,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - stg_powerschool__u_studentsuserfields
-      - name: stg_powerschool__users
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__users
       - name: base_powerschool__course_enrollments
         config:
           meta:
@@ -592,24 +530,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__ps_membership_reg
-      - name: int_powerschool__spenrollments
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__spenrollments
-      - name: int_powerschool__student_enrollment_union
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__student_enrollment_union
       - name: int_powerschool__teachers
         config:
           meta:
@@ -619,24 +539,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__teachers
-      - name: int_powerschool__teacher_grade_levels
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__teacher_grade_levels
-      - name: int_powerschool__district_entry_date
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__district_entry_date
       - name: base_powerschool__final_grades
         config:
           meta:
@@ -745,15 +647,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__ada
-      - name: stg_powerschool__sced_code_mapping
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__sced_code_mapping
       - name: int_powerschool__calendar_week
         config:
           meta:
@@ -763,15 +656,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__calendar_week
-      - name: stg_powerschool__userscorefields
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - stg_powerschool__userscorefields
       - name: int_powerschool__terms
         config:
           meta:

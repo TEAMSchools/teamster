@@ -10,9 +10,6 @@ with
                         "kippcamden_powerschool", "stg_powerschool__userscorefields"
                     ),
                     source(
-                        "kippmiami_powerschool", "stg_powerschool__userscorefields"
-                    ),
-                    source(
                         "kipppaterson_powerschool", "stg_powerschool__userscorefields"
                     ),
                 ]
