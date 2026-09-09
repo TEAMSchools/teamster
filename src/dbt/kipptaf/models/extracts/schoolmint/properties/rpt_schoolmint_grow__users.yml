@@ -159,12 +159,13 @@ models:
         data_type: string
         description: >
           Observation-group membership directive consumed by `grow_user_sync`.
-          Observee and observer are independent: `observees` covers `Teacher`,
-          `School Admin` and `School Assistant Admin`, `observers` covers any
-          admin role plus `Regional Observer` and `Coach`, and a user who
-          matches both gets `observees;observers`. A New Teacher Network
-          Coordinator is usually a teacher too, so they get both. Empty string
-          when the user matches neither.
+          Observee and observer are independent: `observees` covers `Teacher`
+          only, `observers` covers any admin role plus `Regional Observer` and
+          `Coach`, and a user who matches both gets `observees;observers`. A New
+          Teacher Network Coordinator is usually a teacher too, so they get
+          both. A school admin or assistant admin observes without being
+          observed -- they hold a leadership role rather than a coached teaching
+          assignment. Empty string when the user matches neither.
       - name: surrogate_key_source
         data_type: string
         description: >
@@ -711,10 +712,9 @@ unit_tests:
 
   - name: unit_grow_users_group_type_additive
     description:
-      Pins observee and observer membership as two independent predicates. A
-      School Assistant Admin who coaches is now both, where the old first-match
-      CASE made every admin an observer only. A Regional Admin is an observer
-      but never an observee. A plain teacher stays an observee.
+      Pins observee and observer membership as two independent predicates. Only
+      a teacher is an observee -- a School Assistant Admin who coaches observes
+      and is never observed, and neither is a Regional Admin.
     model: rpt_schoolmint_grow__users
     given:
       - input: ref('int_people__staff_roster')
@@ -820,7 +820,7 @@ unit_tests:
     expect:
       rows:
         - { user_internal_id: 200, group_type: observers }
-        - { user_internal_id: 201, group_type: observees;observers }
+        - { user_internal_id: 201, group_type: observers }
         - { user_internal_id: 202, group_type: observees }
 
   - name: unit_grow_users_region_scope
@@ -1089,7 +1089,7 @@ unit_tests:
             role_names: [Regional Observer, School Assistant Admin],
             regional_admin_school_ids: [sch-courage],
             readonly: 0,
-            group_type: observees;observers,
+            group_type: observers,
           }
         - {
             user_internal_id: 402,

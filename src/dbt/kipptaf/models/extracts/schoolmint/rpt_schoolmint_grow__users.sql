@@ -230,16 +230,10 @@ with
                 select role._id from unnest(u.roles) as role order by role._id
             ) as role_ids_ws,
 
-            /* observee and observer are independent; a coaching admin is both */
+            /* observee and observer are independent; only teachers are observed */
             array_to_string(
                 [
-                    if(
-                        p.is_teacher
-                        or p.is_school_admin
-                        or p.is_school_assistant_admin,
-                        'observees',
-                        null
-                    ),
+                    if(p.is_teacher, 'observees', null),
                     if(
                         p.is_regional_admin
                         or p.is_regional_observer
