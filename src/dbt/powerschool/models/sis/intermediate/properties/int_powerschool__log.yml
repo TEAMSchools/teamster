@@ -9,9 +9,18 @@ models:
         data_type: int64
       - name: entry_date
         data_type: date
+        config:
+          meta:
+            contains_pii: true
       - name: entry
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
       - name: log_type
         data_type: string
+        config:
+          meta:
+            contains_pii: true

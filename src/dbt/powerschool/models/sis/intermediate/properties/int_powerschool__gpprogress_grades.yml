@@ -71,6 +71,9 @@ models:
       - name: teacher_name
         description: Teacher name for the course.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: course_number
         description: Course number.
         data_type: string
@@ -86,6 +89,9 @@ models:
       - name: letter_grade
         description: Letter grade earned or projected for the course.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: is_transfer_grade
         description: >
           True when the stored grade's schoolname has no match in
@@ -96,60 +102,117 @@ models:
         description:
           Whether this row represents an Earned or Enrolled grade record.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: official_potential_credits
         description: Potential credits from the source grade table.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: potential_credits
         description:
           Credits available for this course toward the grad plan slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: earned_credits
         description: >
           Credits earned; for enrolled rows, zero when letter grade starts with
           F.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_required_credits
         description: Credits required to satisfy the grad plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_enrolled_credits
         description: Credits currently enrolled toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_requested_credits
         description: Credits requested toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_earned_credits
         description: Credits earned toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: plan_waived_credits
         description: Credits waived toward the plan.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_required_credits
         description: Credits required to satisfy this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_enrolled_credits
         description: Credits currently enrolled toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_requested_credits
         description: Credits requested toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_earned_credits
         description: Credits earned toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: discipline_waived_credits
         description: Credits waived toward this discipline.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_required_credits
         description: Credits required to satisfy this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_enrolled_credits
         description: Credits currently enrolled toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_requested_credits
         description: Credits requested toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_earned_credits
         description: Credits earned toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: subject_waived_credits
         description: Credits waived toward this subject slot.
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
