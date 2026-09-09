@@ -692,10 +692,21 @@ discrepancies are then out of scope for whatever you find.
    `F` is ordinary authoring and needs no explanation, whereas **a lone literal
    in an otherwise-formula column is the signature of a manual overwrite** — and
    from here it is indistinguishable from an accidental paste over the formula.
-   That is an SRE question, never a value to push. Verified 2026-09-09: cover
-   sheet `H11` (Purpose `New Student Target`) is the only literal in col `H`,
-   reading 69 against the `Newark` tab's `P51` (`=sum(P47:P50)`) of 73.97 → 74,
-   which is the value prod holds.
+
+   **That is where it stops. Do not escalate a hand-typed override and do not
+   push a value from it.** SRE customizes cells by hand and that is theirs to
+   do, so a literal in a formula column EXPLAINS a diff rather than being a
+   defect to chase — this is the standing call from the data team, not a
+   judgement to re-make per cell. Say what you found, leave prod as loaded, and
+   move on. It is also the exception to the "flag it as a question for SRE" rule
+   in the step above: that rule is for two SOURCED numbers disagreeing, not for
+   a cover-sheet cell someone deliberately typed.
+
+   Verified 2026-09-09: cover sheet `H11` (Purpose `New Student Target`) is the
+   only literal in col `H`, reading 69 against the `Newark` tab's `P51`
+   (`=sum(P47:P50)`) of 73.97 → 74. Prod holds 74, and 74 was KEPT — the
+   divergence from the cover sheet's 69 was accepted rather than reconciled, and
+   no question went to SRE. Do not re-open it.
 
    Print only a literal-vs-formula CLASSIFICATION, never the formula strings: a
    grid of formula text trips `check-output.sh`'s high-entropy scan and the
