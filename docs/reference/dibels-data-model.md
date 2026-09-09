@@ -374,30 +374,72 @@ added here: `illuminate_subject` as a constant, plus typed nulls for
 `probe_number`, `total_number_of_probes` and `score_change`, which are PM-only.
 Verified identical to the pre-split output on all 38 columns, every year.
 
-Both PM branches start from eligibility, not from scores. Each reads
+Both PM branches start from eligibility rather than from scores. Each reads
 `int_amplify__benchmark_student_summary` at `rn_pm_eligibility = 1` (one row per
 benchmark administration), inner-joins its own expectation gate for the rounds
-and measures the student is expected on, then LEFT joins the scores. So
-"expected but not tested" becomes a row rather than an absence, which is what
-the Not Tested reporting category needs and what the pre-split model cannot
-express.
+and measures the student is expected on, then inner-joins the scores.
+
+**This model carries scored rows only, as it always has.** An expected round
+with no score does not become a row here. An intermediate version LEFT joined
+the scores so that "expected but not tested" was a row; that was reverted. Not
+Tested is the participation roster's job, and the roster already answers it
+without help: it reads the gate directly, counts the measures expected for a
+(year, region, grade, season, round) as `expected_row_count`, and compares that
+to `actual_row_count` from this model. The dashboard's PM branch does the same
+thing at measure granularity, driving off the gate's `expected_measure_standard`
+and LEFT joining this model, so an unscored measure still gets a named row
+there. Two places already manufacture the absence; a third would only let them
+disagree.
 
 Two consequences worth knowing before reading any count:
 
-- The PM branches no longer match the pre-split PM row count, and cannot. They
-  add expected-but-not-tested rows, and they drop scores from students who were
-  not PM-eligible. Measured on AY2025, the old model carried 8,253 such rows for
-  3,052 students whose composite was At/Above Benchmark or who had no benchmark
-  row. Those students were already invisible downstream (the participation
-  roster and the dashboard each re-derive eligibility, and both return zero rows
-  for them), so the filter consolidates the gate from three places to one rather
-  than changing a reported number.
+- The PM branches do not match the pre-split PM row count, because they drop
+  scores from students who were never PM-eligible. Measured on AY2025, the old
+  model carried 8,253 such rows — 8,170 for 3,024 students whose composite was
+  At/Above Benchmark, and 83 for 28 students with no benchmark row at all. Those
+  students were already invisible downstream (the participation roster and the
+  dashboard each re-derive eligibility, and both return zero rows for them), so
+  the filter consolidates the gate from three places to one rather than changing
+  a reported number.
 - `max_score` partitions on
-  `student_number, model_type, round_number, expected_measure_standard`, all
-  non-nullable. An earlier version partitioned on `surrogate_key` and
-  `measure_standard`, which come from the score side and are null on an untested
-  row: every untested row for a round fell into one partition and
-  `rn_highest = 1` kept 8 of 20,081.
+  `academic_year, student_number, model_type, round_number, expected_measure_standard`.
+  `academic_year` is load-bearing: round numbers restart every year, so without
+  it a student's AY2026 round 1 competes with their AY2025 round 1 for the same
+  measure and one real score is dropped. `model_type` keeps the two methods from
+  ranking against each other.
+
+#### A student's two grade columns can disagree, and that is not fixable
+
+On a PM row, `assessment_grade` comes from the score side (the grade the probe
+was administered at) and `assessment_grade_int` comes from the benchmark side
+(the grade the student was benchmarked at). A student who changes grade level
+mid-year has both, and they differ. Measured on AY2025: one student, four rows,
+`assessment_grade = '4'` against `assessment_grade_int = 3`.
+
+**This is known, it is a property of the data, and neither column is wrong.**
+The student really did sit their benchmark at one grade and their progress
+monitoring at another. Do not "fix" it by sourcing both columns from one side:
+
+- Both from the score side matches the pre-split model, but the row would then
+  claim grade 4 while carrying the round windows and expected measures that came
+  from grade 3's gate row.
+- Both from the benchmark side keeps the row coherent with its expectations, but
+  discards the grade the probe was actually sat at.
+
+**It settles at the reporting layer, which is why neither choice matters much.**
+`rpt_tableau__dibels_dashboard`'s PM branch drives off the student's enrollment
+record: it joins `int_extracts__student_enrollments_subjects` to
+`int_google_sheets__dibels_pm_expectations` on `s.grade_level = e.grade`, so the
+**enrolled** grade decides which expectations the student is held to. The score
+is then attached with a LEFT JOIN on year, season, round, measure and student
+number — with no grade predicate at all. So whichever grade the PM row carries,
+the score still lands on the enrolled-grade expectation row. The two grade
+columns on the PM row never reach the dashboard's grade logic.
+
+The only practical consequence is internal: these rows key to a different grade
+than the pre-split model did, so a prod-versus-branch row comparison will always
+show them as branch-only. That is expected. Confirm the count is still tiny
+before treating it as a finding.
 
 #### Computed fields
 

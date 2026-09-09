@@ -1370,12 +1370,14 @@ initcap(regexp_extract(lc.location_dagster_code_location, r'kipp(\w+)')) as regi
 ```
 
 Emitting `location_region` from
-`int_amplify__mclass__pm_student_summary_aimline` produced 35,546 aimline rows
-in which every single row was untested, with no error anywhere: the
-expectation-gate join simply never matched. Nothing fails loudly, because
-"expected but not tested" is a legitimate output of that model. Diagnose this
-class of bug by adding the join predicates cumulatively and watching where the
-tested count goes to zero.
+`int_amplify__mclass__pm_student_summary_aimline` made the expectation-gate join
+never match. At the time the PM branches LEFT joined the scores, so it surfaced
+as 35,546 aimline rows in which every single row was untested, with no error
+anywhere. The branches inner-join now, so the same mistake would instead produce
+**zero aimline rows** -- louder, but still not an error. Either way, diagnose
+this class of bug by adding the join predicates cumulatively and watching where
+the row count collapses; a region join that resolves to the wrong name form
+fails silently in both shapes.
 
 ### `UNION ALL` binds by position, and a same-typed misplacement is silent
 
@@ -1392,35 +1394,84 @@ branch of a wide union, diff the two projected column lists by ordinal, not by
 eye. The repo convention of enumerating columns per branch (never `select *`) is
 the correctness fix here, not just the CV03 lint fix.
 
-### A window partition key from a LEFT-joined side is nullable
+### `all_assessments` carries scored rows only -- do not LEFT join the scores
 
-Both PM branches LEFT join the scores, so every score-side column is null on an
-expected-but-not-tested row. `max_score` originally partitioned on
-`surrogate_key` and `measure_standard`, both from the score side: every untested
-row for a round collapsed into a single partition, and `rn_highest = 1` kept 8
-rows out of 20,081. The fix is to partition on columns that exist regardless of
-whether a score was found -- `student_number` and `round_number` from the
-benchmark side, `expected_measure_standard` from the gate, plus `model_type` so
-the two methods do not rank against each other.
+An intermediate version of both PM branches LEFT joined the score source so that
+"expected but not tested" became a row. **That was reverted, deliberately. Do
+not reintroduce it.** This model has only ever carried scored rows, and Not
+Tested is the participation roster's job.
 
-Any model that turns absences into rows has this hazard. Check every
-`partition by` against which join produced each column.
+The roster already answers it without help: it reads the gate directly, counts
+the measures expected for a (year, region, grade, season, round) as
+`expected_row_count`, and compares that to `actual_row_count` from this model.
+The dashboard's PM branch does the same at measure granularity -- it drives off
+the gate's `expected_measure_standard` and LEFT joins this model, so an unscored
+measure still gets a named row there. Two places already manufacture the
+absence; a third only lets them disagree.
+
+Two things the LEFT-join version taught, both still worth knowing:
+
+- **Untested rows carried no measure identity.** `measure_standard`,
+  `measure_name` and `measure_name_code` all come off the score, so on an
+  untested row they were null and every such row for a round was byte-identical.
+  20,074 AY2025 rows collapsed to about 9,600 distinguishable ones. If anyone
+  proposes emitting absences from a model again, the expected value has to come
+  with them.
+- **A window partition key from a LEFT-joined side is nullable.** `max_score`
+  originally partitioned on `surrogate_key` and `measure_standard`, both from
+  the score side: every untested row for a round collapsed into one partition
+  and `rn_highest = 1` kept 8 rows out of 20,081. Any model that turns absences
+  into rows has this hazard -- check every `partition by` against which join
+  produced each column.
+
+`max_score` now partitions on
+`academic_year, student_number, model_type, round_number, expected_measure_standard`.
+**`academic_year` is load-bearing**: round numbers restart every year, so
+without it a student's AY2026 round 1 competes with their AY2025 round 1 for the
+same measure and one real score is dropped. `model_type` keeps the two methods
+from ranking against each other.
 
 ### The PM branches cannot match prod's row count, and should not
 
 Do not treat a PM row-count difference against prod as a regression to fix. The
-new branches differ in two deliberate directions:
+branches drop scores from students who were never PM-eligible. Measured on
+AY2025, prod carried 8,253 such rows -- 8,170 for 3,024 students whose composite
+was At/Above Benchmark, and 83 for 28 students with no benchmark row at all.
 
-- They **add** rows: an expected round with no score is now a row, which is what
-  the Not Tested reporting category needs.
-- They **drop** rows: prod carried PM scores for students who were never
-  PM-eligible. Measured on AY2025, 8,253 rows for 3,052 students whose composite
-  was At/Above Benchmark or who had no benchmark row at all.
+Those students were already invisible downstream -- the participation roster and
+the dashboard each re-derive eligibility independently, and both return zero
+rows for them. Verify that before accepting the drop, then treat the change as
+consolidating one gate from three places to one.
 
-Those 3,052 students were already invisible downstream -- the participation
-roster and the dashboard each re-derive eligibility independently, and both
-return zero rows for them. Verify that before accepting the drop, then treat the
-change as consolidating one gate from three places to one.
+### A student's two grade columns can disagree -- known, and not fixable
+
+On a PM row, `assessment_grade` comes from the score side (the grade the probe
+was administered at) and `assessment_grade_int` comes from the benchmark side
+(the grade the student was benchmarked at). A student who changes grade level
+mid-year has both, and they differ. Measured on AY2025: one student, four rows,
+`assessment_grade = '4'` against `assessment_grade_int = 3`.
+
+**This is known and accepted. Neither column is wrong** -- the student really
+did sit their benchmark at one grade and their progress monitoring at another.
+Do not "fix" it by sourcing both from one side. Both from the score side matches
+prod, but the row would then claim grade 4 while carrying the round windows and
+expected measures that came from grade 3's gate row. Both from the benchmark
+side keeps the row coherent with its expectations, but discards the grade the
+probe was actually sat at.
+
+**It settles at the reporting layer anyway.** The dashboard's PM branch drives
+off the student's enrollment record --
+`int_extracts__student_enrollments_subjects` joined to
+`int_google_sheets__dibels_pm_expectations` on `s.grade_level = e.grade` -- so
+the ENROLLED grade decides which expectations the student is held to. The score
+is attached with a LEFT JOIN on year, season, round, measure and student number,
+**with no grade predicate at all**. Whichever grade the PM row carries, the
+score lands on the enrolled-grade expectation row. The two grade columns never
+reach the dashboard's grade logic.
+
+The only consequence is internal: these rows key to a different grade than prod
+does, so a prod-versus-branch comparison always shows them as branch-only.
+Confirm the count is still tiny, then move on.
 
 What _must_ match prod is the Benchmark half. That was verified byte-for-byte:
 337,073 rows, 38 columns, zero differing values.
