@@ -52,18 +52,17 @@ with
             and r.matching_season = e.admin_season
             and e.assessment_include is null
             and e.pm_goal_include is null
-        left join
+        -- inner, not left: this model carries scored rows only, as it always
+        -- has. An expected round with no score is the participation roster's
+        -- job -- it counts the gate's rows against these.
+        inner join
             {{ ref("int_amplify__mclass__pm_student_summary") }} as p
             on e.academic_year = p.academic_year
             and e.region = p.region
             and e.expected_measure_standard = p.measure
             and e.admin_season = p.pm_period
-            and e.assessment_include is null
-            and e.pm_goal_include is null
             and r.student_number = p.student_primary_id
-            and p.enrollment_grade = p.assessment_grade
             and p.client_date between e.start_date and e.end_date
-            and p.assessment_grade is not null
         -- EOY opens no PM season. Year floor matches the aimline branch's
         -- coverage, so the two methods report over the same years.
         where
@@ -71,6 +70,8 @@ with
             and r.academic_year >= 2025
             and r.overall_probe_eligible = 'Yes'
             and r.rn_pm_eligibility = 1
+            and p.enrollment_grade = p.assessment_grade
+            and p.assessment_grade is not null
 
         union all
 
@@ -127,34 +128,32 @@ with
             and r.overall_aimline_composite_level = e.measure_standard_level
             and e.assessment_include is null
             and e.pm_goal_include is null
-        left join
+        -- see the internal branch above
+        inner join
             {{ ref("int_amplify__mclass__pm_student_summary_aimline") }} as p
             on e.academic_year = p.academic_year
             and e.region = p.region
             and e.expected_measure_standard = p.measure
             and e.admin_season = p.pm_period
-            and e.assessment_include is null
-            and e.pm_goal_include is null
             and r.student_number = p.student_primary_id
-            and p.enrollment_grade = p.assessment_grade
             and p.device_date between e.start_date and e.end_date
+        where
+            r.period != 'EOY'
+            and r.academic_year >= 2025
+            and r.rn_pm_eligibility = 1
+            and p.enrollment_grade = p.assessment_grade
             and p.assessment_grade is not null
-        where r.period != 'EOY' and r.academic_year >= 2025 and r.rn_pm_eligibility = 1
     ),
 
     max_score as (
         select
             *,
 
-            -- partitioned on columns that are never null: the student and year
-            -- from the benchmark side, the measure from the expectation gate.
-            -- surrogate_key and measure_standard both come from the score side,
-            -- so on an untested row they are null and every such row for a round
-            -- collapses into one partition -- rn = 1 then keeps 8 of 20,081.
-            -- academic_year is load-bearing: round numbers restart each year, so
-            -- without it a student's AY2026 round 1 competes with their AY2025
-            -- round 1 and the untested current-year row loses to last year's
-            -- score. It dropped 11,140 AY2026 rows and 1,114 AY2025 rows.
+            -- keeps the last probe a student sat in a round. academic_year is
+            -- load-bearing: round numbers restart every year, so without it a
+            -- student's AY2026 round 1 competes with their AY2025 round 1 for
+            -- the same measure and one real score is dropped. model_type keeps
+            -- the two methods from ranking against each other.
             row_number() over (
                 partition by
                     academic_year,
