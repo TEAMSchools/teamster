@@ -144,10 +144,16 @@ with
         select
             c.*,
 
-            lc.location_region as region,
             lc.location_abbreviation as school,
             lc.location_powerschool_school_id as schoolid,
             lc.location_dagster_code_location as _dbt_source_project,
+
+            -- the city form, matching int_amplify__mclass__pm_student_summary and
+            -- the expectation gates. location_region is the long-form entity name
+            -- (TEAM Academy Charter School), which joins to nothing downstream.
+            initcap(
+                regexp_extract(lc.location_dagster_code_location, r'kipp(\w+)')
+            ) as region,
 
         from combined as c
         left join
@@ -173,4 +179,3 @@ select
     }} as surrogate_key,
 
 from enriched
-where assessment_grade_int >= 3

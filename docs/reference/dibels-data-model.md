@@ -356,19 +356,48 @@ or grades only appear once the data team adds them to the config.
 
 #### Internal structure
 
-The model has three UNION branches in the `assessments_scores` CTE:
+**Restructured for SY26-27.** The Benchmark half moved out to
+`int_amplify__benchmark_student_summary`, and the PM half became two branches,
+one per data model. `model_type` (`BM` / `Internal` / `Aimline`) tells them
+apart, and any consumer counting PM must filter it or it double-counts.
 
-| Branch             | Source                                                     | Scope                            |
-| ------------------ | ---------------------------------------------------------- | -------------------------------- |
-| Benchmark (mCLASS) | `int_amplify__mclass__benchmark_student_summary` + unpivot | All years except SY24 grades 7–8 |
-| Benchmark (DDS)    | `int_amplify__dds__data_farming_unpivot`                   | SY24 grades 7–8 only             |
-| PM                 | `int_amplify__mclass__pm_student_summary`                  | All PM years                     |
+| Half          | Source                                                                     | Scope           |
+| ------------- | -------------------------------------------------------------------------- | --------------- |
+| Benchmark     | `int_amplify__benchmark_student_summary`                                   | all years       |
+| PM - internal | `int_amplify__mclass__pm_student_summary` + the 16-column expectation gate | all PM years    |
+| PM - aimline  | `int_amplify__mclass__pm_student_summary_aimline` + the by-levels gate     | SY25-26 forward |
 
-The `max_score` CTE deduplicates using
-`row_number() over (partition by surrogate_key, round_number, measure_standard order by measure_standard_level_int desc)`,
-keeping the highest-level score when a student has multiple entries for the same
-assessment slot. The final SELECT is a `UNION ALL` of two branches (Benchmark
-and PM), each filtered by `rn_highest = 1`.
+The Benchmark half is now a plain select from its own model, which computes the
+composites, both aggregated level columns, `benchmark_goal_season`,
+`overall_probe_eligible` and `actual_row_count` itself. Only four columns are
+added here: `illuminate_subject` as a constant, plus typed nulls for
+`probe_number`, `total_number_of_probes` and `score_change`, which are PM-only.
+Verified identical to the pre-split output on all 38 columns, every year.
+
+Both PM branches start from eligibility, not from scores. Each reads
+`int_amplify__benchmark_student_summary` at `rn_pm_eligibility = 1` (one row per
+benchmark administration), inner-joins its own expectation gate for the rounds
+and measures the student is expected on, then LEFT joins the scores. So
+"expected but not tested" becomes a row rather than an absence, which is what
+the Not Tested reporting category needs and what the pre-split model cannot
+express.
+
+Two consequences worth knowing before reading any count:
+
+- The PM branches no longer match the pre-split PM row count, and cannot. They
+  add expected-but-not-tested rows, and they drop scores from students who were
+  not PM-eligible. Measured on AY2025, the old model carried 8,253 such rows for
+  3,052 students whose composite was At/Above Benchmark or who had no benchmark
+  row. Those students were already invisible downstream (the participation
+  roster and the dashboard each re-derive eligibility, and both return zero rows
+  for them), so the filter consolidates the gate from three places to one rather
+  than changing a reported number.
+- `max_score` partitions on
+  `student_number, model_type, round_number, expected_measure_standard`, all
+  non-nullable. An earlier version partitioned on `surrogate_key` and
+  `measure_standard`, which come from the score side and are null on an untested
+  row: every untested row for a round fell into one partition and
+  `rn_highest = 1` kept 8 of 20,081.
 
 #### Computed fields
 
@@ -498,16 +527,76 @@ expectations, so it has no cohort split — and while it was briefly emitted fro
 both ranges, it doubled every dashboard Benchmark row and inflated participation
 expected counts from 4-8 to 8-16, with CI catching none of it.
 
-`int_amplify__all_assessments` retains both BM and PM branches — it is the
-single safe read point for all valid assessment scores and must stay that way.
-The DDS branch stays indefinitely to preserve SY24 7–8 grade benchmark history.
-The `int_google_sheets__dibels_expected_assessments` inner join and all computed
-fields remain unchanged for the BM branch.
+`int_amplify__all_assessments` retains both BM and PM output — it is the single
+safe read point for all valid assessment scores and must stay that way. What
+changed is its shape: three UNION branches became one Benchmark select plus two
+PM branches, told apart by a new `model_type` column (`BM` / `Internal` /
+`Aimline`). Any consumer that counts PM rows must filter `model_type`, or every
+eligible student is counted once per method.
+
+The Benchmark half now lives in its own model,
+`int_amplify__benchmark_student_summary` — see the section below. Its output is
+identical to what `all_assessments` produced for Benchmark rows before the
+split, on all 38 columns, every year, including the DDS branch that preserves
+SY24 7–8 grade benchmark history.
 
 !!! note "Deprecation approach" Per team convention, deprecated models in this
 refactor are **deactivated** (`config: enabled: false` in properties YAML)
 rather than deleted. This preserves them as reference implementations for
 similar future work.
+
+### Benchmark half: `int_amplify__benchmark_student_summary`
+
+New for SY26-27. Holds everything `int_amplify__all_assessments` used to compute
+for Benchmark rows, so that both PM branches can read benchmark eligibility from
+one place instead of each re-deriving it.
+
+Pipeline:
+
+| CTE                       | What it does                                                                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `data_farming`            | SY24 grades 7–8 from DDS, with `_dbt_source_project` synthesized from `region`                                                         |
+| `assessments_scores`      | Two UNION branches (mCLASS + unpivot, and DDS), both inner-joined to the 16-column gate at `assessment_type = 'Benchmark'`             |
+| `composite_only`          | Just the Composite rows                                                                                                                |
+| `composite_by_window`     | Pivots Composite level to `boy` / `moy` / `eoy` per student-year                                                                       |
+| `probe_eligible_tag`      | Joins those three back onto every row; `No data` where absent                                                                          |
+| `custom_composite_labels` | The aggregated level columns, `benchmark_goal_season`, `overall_probe_eligible`, `overall_aimline_composite_level`, `actual_row_count` |
+
+Two columns exist purely to serve the PM branches downstream:
+
+- **`overall_probe_eligible`** — the internal method's gate. Resolves to this
+  row's own window: `boy_probe_eligible` on a BOY row, `moy_probe_eligible` on
+  MOY, null on EOY (EOY opens no PM season). `'Yes'` when that window's
+  composite was Below or Well Below Benchmark.
+- **`overall_aimline_composite_level`** — the aimline method's gate, and the
+  reason a null is not acceptable here. It inner-joins to
+  `measure_standard_level` on the by-levels gate, and a null joins to nothing,
+  so a student with no benchmark row gets the literal `'No data'` rather than
+  null. `'No data'` and `At/Above Benchmark` both match no by-levels row, which
+  is the intended outcome: neither is aimline-eligible.
+
+Then `rn_pm_eligibility`:
+
+```sql
+row_number() over (
+    partition by academic_year, student_number, `period`, assessment_grade_int
+    order by (measure_standard = 'Composite') desc, measure_standard
+) as rn_pm_eligibility,
+```
+
+This is what the PM branches filter to `= 1` to get **one row per student per
+benchmark administration** — the model's own grain is one row per measure, which
+would fan every PM round out by the measure count.
+
+`assessment_grade_int` is in the partition on purpose. A student can be assessed
+at two grades inside one benchmark window (a mid-window grade change), and each
+sitting is its own administration with its own expectations; the PM consumers
+join assessed grade to enrolled grade, so both sittings must survive.
+
+The `order by` prefers the Composite row when there is one, but does not require
+it: `row_number()` always assigns 1 within a partition, so a student-period with
+no Composite row still yields exactly one row (312 such student-periods in
+AY2025, all retained).
 
 ### Benchmark goal pipeline: `stg_google_sheets__dibels_foundation_goals` → `stg_google_sheets__dibels_bm_goals`
 
@@ -1311,6 +1400,25 @@ The file covers all regions via the location crosswalk join in the kipptaf
 staging model. It provides probe-level detail (one row per student / measure /
 probe attempt within a PM period).
 
+`measure_standard_score_change` is on the raw file but is **not** projected by
+`int_amplify__mclass__pm_student_summary_aimline`, so the aimline PM branch of
+`int_amplify__all_assessments` emits `cast(null as numeric) as score_change`.
+The cast is required, not cosmetic: a bare `null` infers as `INT64` in BigQuery
+and collides with the internal branch's `NUMERIC` at the same position.
+
+Two things about that model are easy to get wrong:
+
+- **It must emit `region` in the city form** — `Newark`, `Camden`, `Miami`,
+  `Paterson` — derived as
+  `initcap(regexp_extract(location_dagster_code_location, r'kipp(\w+)'))`. The
+  crosswalk's `location_region` is the long-form entity name
+  (`TEAM Academy Charter School`), which joins to nothing downstream. Emitting
+  it produced 35,546 aimline rows where every single one was untested, with no
+  error: the gate join simply never matched.
+- **It has no grade floor.** An earlier version filtered
+  `assessment_grade_int >= 3`, back when aimline was expected to be a 3-8 pilot.
+  Aimline runs K-8.
+
 ### What stays the same
 
 - **PM eligibility** is not provided by Amplify — still derived from benchmark
@@ -1323,6 +1431,11 @@ probe attempt within a PM period).
   comparisons; the AND/OR round criteria logic across measures is retained
 - **Testing seasons** (BOY→MOY, MOY→EOY) remain the same; only the testing
   cadence within each season changes
+- **`matching_season`** is emitted by both PM intermediate models as
+  `if(pm_period = 'BOY->MOY', 'MOY', 'EOY')` — the benchmark season the round
+  aims at. Distinct from `period`, which on a PM row is the PM season itself
+  (`BOY->MOY`), because that is what the participation roster joins
+  `admin_season` to.
 
 ### Models once slated for deprecation — none of them this year
 

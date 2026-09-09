@@ -1324,6 +1324,123 @@ year filters to the model -- flip `assessment_include` instead. Currently off:
 all AY2024 PM rows on both tabs, and 99 AY2023 Benchmark rows (upper grades did
 not sit Benchmark that year).
 
+### The Benchmark half moved to `int_amplify__benchmark_student_summary`
+
+`int_amplify__all_assessments` used to compute benchmark composites, the
+aggregated level columns and `overall_probe_eligible` inline, then reuse them in
+its PM branch. With two PM methods, both needing the same eligibility, that had
+to move upstream. The new model holds the whole Benchmark half;
+`all_assessments` selects from it and adds four columns (`illuminate_subject`
+plus typed nulls for `probe_number`, `total_number_of_probes`, `score_change`).
+
+Three things about it are load-bearing:
+
+- **`rn_pm_eligibility` is how the PM branches get one row per administration.**
+  The model's own grain is one row per measure, so a PM round joined to it
+  without this filter fans out by the measure count (measured 9x and 7.6x on the
+  two methods before the fix). Both PM branches filter `rn_pm_eligibility = 1`.
+- **`assessment_grade_int` is in that partition, and must stay.** A student can
+  be assessed at two grades inside one benchmark window; each sitting is its own
+  administration with its own expectations, and the PM consumers join assessed
+  grade to enrolled grade. Leaving it out looks like tighter dedup and silently
+  drops the second sitting. Per the user: "we can have mid benchmark grade level
+  changes and there is nothing we can do about it."
+- **`overall_aimline_composite_level` uses the literal `'No data'`, never
+  null.** It inner-joins to `measure_standard_level` on the by-levels gate, and
+  null joins to nothing -- which would look identical to "not eligible" but for
+  the wrong reason. `'No data'` and `At/Above Benchmark` both match no by-levels
+  row, which is correct: neither is aimline-eligible. Do not "simplify" it back
+  to null.
+
+The `order by` in `rn_pm_eligibility` prefers the Composite row but does not
+require one. `row_number()` always assigns 1 within a partition, so a
+student-period with no Composite row still yields exactly one row -- 312 such
+student-periods in AY2025, all retained. If someone asks "does a student without
+a composite get dropped?", the answer is no, and that is the reason.
+
+### `region` on the aimline PM model must be the city form
+
+`int_people__location_crosswalk` has two region-ish columns and they are not
+interchangeable. `location_region` is the long-form legal entity name
+(`TEAM Academy Charter School`). Every DIBELS model joins on the city form --
+`Newark`, `Camden`, `Miami`, `Paterson` -- derived as:
+
+```sql
+initcap(regexp_extract(lc.location_dagster_code_location, r'kipp(\w+)')) as region,
+```
+
+Emitting `location_region` from
+`int_amplify__mclass__pm_student_summary_aimline` produced 35,546 aimline rows
+in which every single row was untested, with no error anywhere: the
+expectation-gate join simply never matched. Nothing fails loudly, because
+"expected but not tested" is a legitimate output of that model. Diagnose this
+class of bug by adding the join predicates cumulatively and watching where the
+tested count goes to zero.
+
+### `UNION ALL` binds by position, and a same-typed misplacement is silent
+
+Two bugs of this shape in one session on `int_amplify__all_assessments`:
+
+- `score_change` (NUMERIC) at position 29 in one branch against `model_type`
+  (STRING) in the other. **Failed loudly** -- types disagreed.
+- `overall_probe_eligible` at position 32 in the PM branch against position 37
+  in the Benchmark branch. Both STRING, so BigQuery accepted it. It surfaced
+  only because `model_type` started returning `'Yes'` in query output.
+
+So a clean build is not evidence the branches line up. When editing either
+branch of a wide union, diff the two projected column lists by ordinal, not by
+eye. The repo convention of enumerating columns per branch (never `select *`) is
+the correctness fix here, not just the CV03 lint fix.
+
+### A window partition key from a LEFT-joined side is nullable
+
+Both PM branches LEFT join the scores, so every score-side column is null on an
+expected-but-not-tested row. `max_score` originally partitioned on
+`surrogate_key` and `measure_standard`, both from the score side: every untested
+row for a round collapsed into a single partition, and `rn_highest = 1` kept 8
+rows out of 20,081. The fix is to partition on columns that exist regardless of
+whether a score was found -- `student_number` and `round_number` from the
+benchmark side, `expected_measure_standard` from the gate, plus `model_type` so
+the two methods do not rank against each other.
+
+Any model that turns absences into rows has this hazard. Check every
+`partition by` against which join produced each column.
+
+### The PM branches cannot match prod's row count, and should not
+
+Do not treat a PM row-count difference against prod as a regression to fix. The
+new branches differ in two deliberate directions:
+
+- They **add** rows: an expected round with no score is now a row, which is what
+  the Not Tested reporting category needs.
+- They **drop** rows: prod carried PM scores for students who were never
+  PM-eligible. Measured on AY2025, 8,253 rows for 3,052 students whose composite
+  was At/Above Benchmark or who had no benchmark row at all.
+
+Those 3,052 students were already invisible downstream -- the participation
+roster and the dashboard each re-derive eligibility independently, and both
+return zero rows for them. Verify that before accepting the drop, then treat the
+change as consolidating one gate from three places to one.
+
+What _must_ match prod is the Benchmark half. That was verified byte-for-byte:
+337,073 rows, 38 columns, zero differing values.
+
+### A stale dev relation will hide a filter you removed
+
+After the `assessment_grade_int >= 3` floor was removed from
+`int_amplify__mclass__pm_student_summary_aimline`, downstream queries still
+returned grades 3-8 only. The SQL was correct; the dev relation was not rebuilt,
+and dbt prefers an existing dev relation over the deferred prod one. Rebuild the
+edited model before reading anything downstream of it, and reach for
+`--favor-state` when deferring. Same trap with the Google Sheets externals: the
+external reads the sheet live, but `stg_*` is frozen at its last build, so a
+fresh paste is invisible until you rebuild the staging model.
+
+Watch for orphaned relations from renames too -- `__dibels__` (double
+underscore) renames left single-underscore copies of both by-levels models in
+the dev and PR schemas. They resolve, they hold stale data, and nothing points
+at them.
+
 ### Generating rows for both models
 
 Both models come out of the same transcribed T&L round data in
@@ -1355,12 +1472,14 @@ it yields 1,170 rows (758 NJ + 412 Miami) against the default's 1,294; the
 rows would be.** The round data carries ONE measure list per grade/round plus a
 cohort tag -- never per-cohort measure lists -- so single-row mode just omits
 the tag. The reverse direction, folding already-split sheet rows down to single
-rows, is a real decision and no script can infer it: of 771 AY2026
-`(region, grade, round, measure)` combos, 523 carry both cohorts and **248 carry
-`Well Below` only**. Those 248 encode who gets tested -- Miami alternates
-cohorts by round, and several NJ rounds are Well-Below-only. Flattening them
-either over-tests `Below` students or throws the distinction away. Always
-regenerate from the doc; never collapse the sheet.
+rows, is a real decision and no script can infer it: of the 709 AY2026
+`(region, grade, round, measure)` combos in the by-levels range, 461 carry both
+cohorts and **248 carry `Well Below` only**. The same query over AY2025 returns
+790 combos with both cohorts on every one and zero cohort-only, so re-derive per
+year rather than reusing either number. Those 248 encode who gets tested --
+Miami alternates cohorts by round, and several NJ rounds are Well-Below-only.
+Flattening them either over-tests `Below` students or throws the distinction
+away. Always regenerate from the doc; never collapse the sheet.
 
 **The `pm_goal_include` scaffold is the only grade-band difference between the
 models.** Under aimline, 3-8 rows carry a blank `pm_goal_include` and exist only
@@ -1416,21 +1535,44 @@ for Newark, Paterson, and Camden, and serves both data models unchanged.
 **Both Expected Assessments models need their own row set.** Regenerated and
 counted at the current commit:
 
-| Row set                       | Combo (by-levels range) | Internal K-8 (V1 range) |
-| ----------------------------- | ----------------------- | ----------------------- |
-| NJ (Newark, Paterson, Camden) | 1,294                   | 883                     |
-| Miami                         | 416                     | 269                     |
+| Row set                       | Aimline (by-levels range) | Internal K-8 (V1 range) |
+| ----------------------------- | ------------------------- | ----------------------- |
+| NJ (Newark, Paterson, Camden) | 758                       | 614                     |
+| Miami                         | 412                       | 269                     |
 
-The combo set is larger at every grade despite scaffolding fewer of them,
+**The by-levels range takes the `--no-scaffold` set, not the default combo
+set.** An earlier version of this table listed the combo output (878 NJ + 416
+Miami = 1,294), written when K-2 was expected to stay on the internal method
+inside the 18-column range. That is not what shipped: aimline runs K-8 and
+supplies its own goals, so no grade needs the trajectory scaffold. What is in
+the sheet, verified against the staging model, is the `--no-scaffold` set --
+Newark 282, Paterson 282, Camden 194, Miami 412 = 1,170 AY2026 rows, all four
+regions pasted.
+
+The aimline set is larger at every grade despite scaffolding none of them,
 because it splits each row into `Below` / `Well Below` (523 `Both` rows become
 1,046) while the 16-column V1 range has no cohort. Verified in the generated
 output: internal 3-8 carries 112 rows at `pm_goal_include = false` (the scaffold
 extends to every grade) where combo 3-8 carries zero (aimline supplies the
 goal).
 
-NJ's internal set (883) has been pasted. Miami's internal set (269) and the
-Miami combo set (416) are generated but **paste status is unconfirmed** -- check
-the tab before regenerating.
+**Both row sets are pasted, all four regions -- verified against the staging
+models, not assumed.** Query the staging model rather than trusting a note here;
+the sheets are live and a note goes stale the moment T&L edits a tab.
+
+| Range              | Newark | Paterson | Camden | Miami | Total |
+| ------------------ | ------ | -------- | ------ | ----- | ----- |
+| V1 16-col, PM rows | 244    | 244      | 126    | 269   | 883   |
+| By-levels 18-col   | 282    | 282      | 194    | 412   | 1,170 |
+
+The V1 range also carries 144 Benchmark rows per region for AY2026; the
+by-levels range carries none, by design.
+
+```sql
+select academic_year, region, count(*)
+from <dataset>.stg_google_sheets__dibels__expected_assessments_by_levels
+group by 1, 2
+```
 
 **Miami: the boundary rule is now verified** (see _`PLIT` boundary rule_ above
 -- same rule, with two unresolved divergences), so that is no longer the

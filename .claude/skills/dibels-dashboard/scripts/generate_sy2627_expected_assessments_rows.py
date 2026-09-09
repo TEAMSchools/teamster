@@ -471,7 +471,14 @@ def emit(
     if single:
         rows.append(list(base))
         return
-    levels = ["Below", "Well Below"] if cohort == BOTH else ["Well Below"]
+    # full benchmark-level names, matching the live sheet and
+    # int_amplify__benchmark_student_summary.overall_aimline_composite_level --
+    # the short forms will not join
+    levels = (
+        ["Below Benchmark", "Well Below Benchmark"]
+        if cohort == BOTH
+        else ["Well Below Benchmark"]
+    )
     for level in levels:
         r = list(base)
         r[7] = level

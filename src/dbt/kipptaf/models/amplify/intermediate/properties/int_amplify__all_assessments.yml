@@ -123,6 +123,15 @@ models:
         data_type: string
       - name: eoy_composite
         data_type: string
+      - name: model_type
+        data_type: string
+        description: >-
+          Which data model produced the row: BM for Benchmark, Internal for the
+          in-house PM goal method, Aimline for Amplify's per-student aimline.
+          Both PM methods run K-8 in parallel, so a consumer that counts PM rows
+          must filter this column or every eligible student is counted once per
+          method. It is also in max_score's partition, so the two methods do not
+          rank against each other when picking a round's highest probe.
       - name: illuminate_subject
         data_type: string
         description: >-

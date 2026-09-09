@@ -1,0 +1,264 @@
+models:
+  - name: int_amplify__benchmark_student_summary
+    description: >
+      Every valid DIBELS Benchmark score, one row per student per measure per
+      administration, with the student's composite level for each window and
+      whether that makes them eligible for progress monitoring.
+
+      Two jobs, and the second is why the model exists. The first is to clean
+      the Benchmark scores -- union the mCLASS and DDS sources, keep only scores
+      that fall inside the region's own testing window, and drop rows where the
+      assessed grade disagrees with the enrolled grade. The second is to decide
+      PM eligibility from the composite, which the PM chain needs BEFORE it can
+      match a student to an expectation row.
+
+      That ordering is the point. The composite used to be computed inside
+      int_amplify__all_assessments, downstream of the CTE that needed it, so a
+      PM branch could not join a student to their own cohort without a circular
+      reference. Extracting the Benchmark half breaks the cycle. It is
+      value-preserving, not a rewrite -- the Benchmark rows here are identical
+      to what int_amplify__all_assessments produced before the split, verified
+      across all four academic years on every shared column.
+
+      Consumers read it two ways. The Benchmark branch of
+      int_amplify__all_assessments takes the score rows whole. The PM
+      eligibility scaffold takes one row per administration via
+      rn_pm_eligibility, because eligibility is a property of the student's
+      composite and does not vary by measure.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - period
+              - assessment_grade_int
+              - measure_standard
+    columns:
+      - name: rn_pm_eligibility
+        data_type: int64
+        description: >
+          Ranks a student's measure rows within one benchmark administration so
+          a consumer can take a single row per administration. Filter to 1 to
+          read PM eligibility; ignore it entirely when reading scores.
+
+          Composite sorts first, so the surviving row is normally the one
+          eligibility derives from. It is a rank rather than a measure_standard
+          = 'Composite' filter because a student can have measure rows and no
+          composite -- 524 administrations across AY2023 to AY2026 -- and a
+          filter would drop them while a rank keeps them on their alphabetically
+          first measure.
+
+          The grade is in the partition because a student can be assessed at two
+          grades inside one benchmark window. Two AY2025 students were: one sat
+          the full battery at grade 3 and again at grade 4 a week later, scoring
+          lower on every measure against the harder form. Each sitting passes
+          the enrolled-grade filter on its own, so nothing upstream can collapse
+          them, and each is a real administration deserving its own eligibility
+          row. Leaving the grade out would keep one arbitrarily and could drop
+          the student from an expectation gate keyed on their enrolled grade.
+        data_tests:
+          - not_null
+      - name: overall_probe_eligible
+        data_type: string
+        description: >
+          Whether this administration makes the student eligible for progress
+          monitoring in the season it opens -- Yes or No, and null at EOY, which
+          opens no PM season. Reads boy_probe_eligible on a BOY row and
+          moy_probe_eligible on a MOY row, so a consumer does not have to know
+          which composite to look at.
+
+          This is the internal method's eligibility gate. It is true exactly
+          when the season's composite is Below or Well Below Benchmark, which is
+          the same test the aimline chain expresses by joining
+          overall_aimline_composite_level to the by-levels range's cohort
+          column. The two run over the same student population wherever both
+          expectation ranges cover the year.
+      - name: overall_aimline_composite_level
+        data_type: string
+        description: >
+          The composite level the aimline chain matches a student's cohort on --
+          Below Benchmark, Well Below Benchmark, At Benchmark, Above Benchmark,
+          or No data. Reads boy_composite on a BOY row and moy_composite on a
+          MOY row, pairing with matching_season so a round is matched to the
+          composite that opens its season.
+
+          Written with the full benchmark-level names on purpose, matching the
+          by-levels expectation range so an inner join needs no mapping step. An
+          At or Above Benchmark student matches no by-levels row and is
+          correctly not eligible for aimline PM.
+
+          Never null -- No data covers both a student with no composite and an
+          EOY row, where no PM season starts. Neither joins to a cohort row, so
+          the distinction does not change any result, but it keeps the column
+          out of null-handling in every consumer.
+      - name: academic_year
+        data_type: int64
+        description: >
+          Academic year as the starting calendar year -- 2025 is SY25-26.
+      - name: region
+        data_type: string
+        description: Region name -- Camden, Miami, Newark or Paterson.
+      - name: student_number
+        data_type: int64
+        description: The student's SIS number.
+      - name: assessment_grade
+        data_type: string
+        description: >
+          Grade the student was assessed at, as text. Equal to their enrolled
+          grade for that sitting -- rows where the two disagree are dropped
+          upstream.
+      - name: assessment_grade_int
+        data_type: int64
+        description: >
+          Grade the student was assessed at, with kindergarten as 0. Part of the
+          grain, because a mid-window grade change produces two administrations.
+      - name: period
+        data_type: string
+        description: Benchmark administration -- BOY, MOY or EOY.
+      - name: client_date
+        data_type: date
+        description: >
+          Date the assessment was administered. Can be null on a DDS row, and on
+          at least one mCLASS row that otherwise looks like a real second
+          sitting.
+      - name: sync_date
+        data_type: date
+        description: >
+          Date Amplify synced the score. Equal to client_date on the DDS branch,
+          which carries no separate sync timestamp.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location the row came from.
+      - name: surrogate_key
+        data_type: string
+        description: >
+          Identifies one administration. A student with two sittings in a window
+          has two, which is what makes the grade-change case visible.
+      - name: measure_name
+        data_type: string
+        description: Measure name, such as Oral Reading Fluency.
+      - name: measure_name_code
+        data_type: string
+        description: Measure code, such as ORF or NWF.
+      - name: measure_standard
+        data_type: string
+        description: >
+          Measure and benchmark level the score is reported against, such as
+          Reading Fluency (ORF). Composite is the overall score rather than a
+          single measure, and is the row PM eligibility derives from.
+      - name: measure_standard_score
+        data_type: float64
+        description: >
+          The score. Units differ by measure and are not interchangeable --
+          Reading Accuracy is a percentage of words read correctly, Reading
+          Fluency is words per minute, Maze is a comprehension question count.
+          Do not aggregate across measures.
+      - name: measure_standard_level
+        data_type: string
+        description: >
+          Benchmark level for this measure -- Above, At, Below or Well Below
+          Benchmark. NA on rows carried for structure rather than scoring.
+      - name: measure_standard_level_int
+        data_type: int64
+        description: >
+          The level as 1 to 4, Well Below through Above. Drives the two
+          aggregated level columns below.
+      - name: measure_percentile
+        data_type: float64
+        description: >
+          National norm percentile at the time of testing. A point-in-time
+          standing, not a growth measure.
+      - name: measure_semester_growth
+        data_type: string
+        description: >
+          Amplify's growth classification against the prior administration --
+          Well Below Average through Well Above Average. Null on a BOY row,
+          which has nothing to grow from. Tracks percentile movement rather than
+          raw score, so a rising raw score can still read Below Average.
+      - name: measure_year_growth
+        data_type: string
+        description: >
+          Amplify's growth classification across the full year, populated on EOY
+          rows. A third comparison, distinct from the semester one -- do not
+          conflate them.
+      - name: assessment_type
+        data_type: string
+        description: Benchmark on every row here, from the expectation gate.
+      - name: round_number
+        data_type: int64
+        description: >
+          Round number from the expectation gate. Benchmark seasons map to LIT1
+          through LIT3.
+      - name: month_round
+        data_type: string
+        description: >
+          Month label for the window, from the sheet. It has drifted from the
+          real calendar before -- prefer the month of start_date.
+      - name: start_date
+        data_type: date
+        description: >
+          First day of the region's benchmark window. Scores outside it never
+          reach this model.
+      - name: end_date
+        data_type: date
+        description: Last day of the region's benchmark window.
+      - name: matching_season
+        data_type: string
+        description: >
+          The PM season this administration opens -- BOY->MOY on a BOY row,
+          MOY->EOY on a MOY row, null on EOY. Joins the expectation gate's
+          admin_season, which is how a benchmark composite reaches the PM rounds
+          it gates.
+      - name: boy_composite
+        data_type: string
+        description: >
+          The student's BOY composite level, repeated on every row for the year.
+          No data when they have no BOY composite.
+      - name: moy_composite
+        data_type: string
+        description:
+          The student's MOY composite level, same shape as boy_composite.
+      - name: eoy_composite
+        data_type: string
+        description:
+          The student's EOY composite level, same shape as boy_composite.
+      - name: boy_probe_eligible
+        data_type: string
+        description: >
+          Yes when the BOY composite is Below or Well Below Benchmark. Repeated
+          on every row for the year.
+      - name: moy_probe_eligible
+        data_type: string
+        description: >
+          Yes when the MOY composite is Below or Well Below Benchmark. Repeated
+          on every row for the year.
+      - name: model_type
+        data_type: string
+        description: >
+          BM on every row. Tells Benchmark rows apart from the internal and
+          aimline PM rows once the three are unioned downstream, so a consumer
+          counting PM does not include Benchmark.
+      - name: benchmark_goal_season
+        data_type: string
+        description: >
+          The administration a BOY or MOY score is compared against for goal
+          setting -- BOY maps to MOY, MOY to EOY. Null on EOY.
+      - name: aggregated_measure_standard_level
+        data_type: string
+        description: >
+          The level collapsed to At/Above versus Below/Well Below. The coarser
+          of the two rollups, used by the padded dashboard goal columns.
+      - name: foundation_measure_standard_level
+        data_type: string
+        description: >
+          The level collapsed to At/Above, Below, or Well Below. Keeps Well
+          Below separate so it reconciles against the Foundation goal types,
+          which the two-way split cannot.
+      - name: actual_row_count
+        data_type: int64
+        description: >
+          How many scores the student has in this region, grade, period and
+          round. Counted over every measure row, so it is unaffected by
+          rn_pm_eligibility -- the participation roster reads it downstream and
+          needs the full count, not the single eligibility row.
