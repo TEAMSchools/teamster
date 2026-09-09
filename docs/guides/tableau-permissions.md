@@ -89,9 +89,13 @@ peers who otherwise have broad access.
 
 Seniority is read from the ADP job function rather than from job title text, so
 a newly created senior title is covered automatically without anyone editing a
-workbook. Where the job function is missing, a job-title fallback applies —
-which currently over-reaches by one role, shielding executive assistants as
-though they were executives.
+workbook.
+
+Where the job function is missing, a job-title fallback applies instead: chief
+titles, president, and executive director. The job function is missing on most
+historical rows, so the fallback does the work on older data rather than being a
+rare edge case. It is deliberately a shade broader than the job function itself,
+which places executive directors and deputy chiefs one tier below chief level.
 
 ### The Intent to Return survey is different
 
