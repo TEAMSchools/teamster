@@ -299,40 +299,53 @@ with
     )
 
 select
-    studentid,
-    schoolid,
-    earned_credits_cum,
-    potential_credits_cum,
-    earned_credits_cum_projected,
-    earned_credits_cum_projected_s1,
-    potentialcrhrs_projected as potential_gpa_credits_cum_projected,
-    potentialcrhrs_current as potential_gpa_credits_current_year,
+    ng.studentid,
+    ng.schoolid,
+    ng.earned_credits_cum,
+    ng.potential_credits_cum,
+    ng.earned_credits_cum_projected,
+    ng.earned_credits_cum_projected_s1,
+    ng.potentialcrhrs_projected as potential_gpa_credits_cum_projected,
+    ng.potentialcrhrs_current as potential_gpa_credits_current_year,
 
-    round(safe_divide(weighted_points, potentialcrhrs), 2) as cumulative_y1_gpa,
+    s.dcid as students_dcid,
+    s.student_number as students_student_number,
+
+    sch.name as school_name,
+    sch.abbreviation as school_abbreviation,
+    sch.school_level,
+
+    round(safe_divide(ng.weighted_points, ng.potentialcrhrs), 2) as cumulative_y1_gpa,
     round(
-        safe_divide(unweighted_points, potentialcrhrs), 2
+        safe_divide(ng.unweighted_points, ng.potentialcrhrs), 2
     ) as cumulative_y1_gpa_unweighted,
     round(
-        safe_divide(weighted_points_projected, potentialcrhrs_projected), 2
+        safe_divide(ng.weighted_points_projected, ng.potentialcrhrs_projected), 2
     ) as cumulative_y1_gpa_projected,
     round(
-        safe_divide(weighted_points_projected_s1, potentialcrhrs_projected_s1), 2
+        safe_divide(ng.weighted_points_projected_s1, ng.potentialcrhrs_projected_s1), 2
     ) as cumulative_y1_gpa_projected_s1,
     round(
         safe_divide(
-            weighted_points_projected_s1_unweighted, potentialcrhrs_projected_s1
+            ng.weighted_points_projected_s1_unweighted, ng.potentialcrhrs_projected_s1
         ),
         2
     ) as cumulative_y1_gpa_projected_s1_unweighted,
     round(
-        safe_divide(weighted_points_projected_unweighted, potentialcrhrs_projected), 2
+        safe_divide(
+            ng.weighted_points_projected_unweighted, ng.potentialcrhrs_projected
+        ),
+        2
     ) as cumulative_y1_gpa_projected_unweighted,
     round(
-        safe_divide(weighted_points_core, potentialcrhrs_core), 2
+        safe_divide(ng.weighted_points_core, ng.potentialcrhrs_core), 2
     ) as core_cumulative_y1_gpa,
 
-    round(gpa_needed_raw, 2) as gpa_needed_for_cumulative_3_0,
+    round(ng.gpa_needed_raw, 2) as gpa_needed_for_cumulative_3_0,
 
-    round(gpa_needed_raw, 2)
-    <= round(gpa_max_current_raw, 2) as is_cumulative_3_0_attainable,
-from needed_gpa
+    round(ng.gpa_needed_raw, 2)
+    <= round(ng.gpa_max_current_raw, 2) as is_cumulative_3_0_attainable,
+from needed_gpa as ng
+left join {{ ref("stg_powerschool__students") }} as s on ng.studentid = s.id
+left join
+    {{ ref("stg_powerschool__schools") }} as sch on ng.schoolid = sch.school_number
