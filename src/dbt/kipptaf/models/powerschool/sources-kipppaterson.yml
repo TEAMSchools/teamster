@@ -599,6 +599,15 @@ sources:
                 - kipppaterson
                 - powerschool
                 - int_powerschool__calendar_rollup
+      - name: int_powerschool__calendar_day
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kipppaterson
+                - powerschool
+                - int_powerschool__calendar_day
       - name: int_powerschool__contacts
         config:
           meta:
