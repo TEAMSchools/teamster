@@ -158,24 +158,30 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
-        # Do NOT add cluster-autoscaler.kubernetes.io/safe-to-evict: "false" here.
-        # It was added 2026-08-18 to stop the 38-59 autoscaler relocations per week
-        # and reverted the same day. Measured over the hour after it went live:
-        # agent "Could not reach user code server" errors ran ~62x the four-week
-        # baseline (40/hour against ~0.65) and code-server Preempted ran ~118x
-        # (20/hour against ~0.17), while Evicted stayed flat at 0 the whole time.
+        # Blocks cluster-autoscaler relocation of code servers. Second attempt.
         #
-        # Mechanism: the annotation blocks CLUSTER-AUTOSCALER eviction but not
-        # SCHEDULER preemption. Pinning code servers to their nodes stops the
-        # autoscaler relocating them, so capacity fragments and run pods
-        # (then priority 1000) could only obtain it by preempting code servers
-        # (priority 0). It converted graceful relocations into preemptions, each
-        # of which recreates the Service and produces a fresh ClusterIP -- which
-        # is the churn the annotation was meant to reduce.
+        # First attempt 2026-08-18 (#4921) was reverted the same day: run pods
+        # sat at priority 1000 and code servers at 0, so pinning a code server
+        # to its node left preemption as the only way for a run pod to claim
+        # capacity. Agent "Could not reach user code server" errors ran ~62x
+        # baseline and code-server Preempted ~118x within the hour.
         #
-        # Evicted holding at 0 is what isolates this from the `preferred`
-        # self-anti-affinity: that change's risk shows up as kubelet eviction, and
-        # it never fired.
+        # #5187 removed the run-pod PriorityClass, so run pods and code servers
+        # are both at 0 and preemption between them is impossible. That closes
+        # the failure mode #4921 measured. What remains is the one the
+        # annotation was always meant to stop: the autoscaler killing a code
+        # server pod during a ScaleDown. On 2026-09-09 that killed kippmiami's
+        # code server while the agent was re-uploading its metadata, and one
+        # gRPC UNAVAILABLE left the location in a terminal ERROR (#5187 covers
+        # the same mechanism with preemption as the trigger).
+        #
+        # Cost: a node holding a code server cannot consolidate, so run pods
+        # that fit nowhere wait for NAP instead. Keep-or-revert rule, judged at
+        # matched run-pod load (~25+ Scheduled events per 15 min): revert if
+        # code-server Preempted or agent gRPC errors rise above the 0/0 baseline
+        # from the #4921 measurement; keep if ScaleDown kills of code servers
+        # drop to 0 and Preempted stays at 0.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
       # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
