@@ -1,5 +1,5 @@
 models:
-  - name: int_students__enrollment_days
+  - name: int_students__enrollment_daily
     description: >-
       One row per enrollment stint per calendar day, network-wide and
       SIS-neutral. This is the row source for the daily and period student facts

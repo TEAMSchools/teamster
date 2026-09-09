@@ -346,7 +346,7 @@ Ordering, from the PR:
 1. Switch Cube Cloud to CLI deploy mode (stops the automatic production build)
 1. Merge
 1. Wait for the Dagster deploy across all five code locations
-1. Run one ordered build: `int_students__enrollment_days` →
+1. Run one ordered build: `int_students__enrollment_daily` →
    `fct_student_attendance_enrollment_daily` →
    `fct_student_attendance_enrollment_periods`
 1. Confirm both marts hold rows

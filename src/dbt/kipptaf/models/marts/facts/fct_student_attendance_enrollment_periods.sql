@@ -24,7 +24,7 @@ with
                     ]
                 )
             }} as student_day_key,
-        from {{ ref("int_students__enrollment_days") }}
+        from {{ ref("int_students__enrollment_daily") }}
         group by student_number, _dbt_source_project, calendardate
     ),
 

@@ -12,7 +12,7 @@ models:
       a period's rows to read: the row at period_end_date_key for every value
       but is_truant, which reads across the period's membership days because
       truancy is a status that turns on and off within a period. Identity comes
-      from int_students__enrollment_days, because no fact in this layer
+      from int_students__enrollment_daily, because no fact in this layer
       publishes a natural student identifier.
 
       School is not projected. It groups the periods and is a hash input to
@@ -230,7 +230,7 @@ models:
         description: >-
           Academic year the period belongs to, read from
           fct_student_attendance_enrollment_daily, whose own academic_year comes
-          from the enrollment spine (int_students__enrollment_days, ultimately
+          from the enrollment spine (int_students__enrollment_daily, ultimately
           int_extracts__student_enrollments) rather than from attendance. That
           matters at a June 30 / July 1 boundary: dim_dates carries a pure
           calendar cutover and can disagree with the stint's own year, which is
@@ -313,7 +313,7 @@ unit_tests:
       combined row.
     model: fct_student_attendance_enrollment_periods
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select
@@ -423,7 +423,7 @@ unit_tests:
       bucket.
     model: fct_student_attendance_enrollment_periods
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select
@@ -530,7 +530,7 @@ unit_tests:
       enrollment is the absence of any row.
     model: fct_student_attendance_enrollment_periods
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select
@@ -653,7 +653,7 @@ unit_tests:
       test_periods_truancy_reads_any_membership_day covers it.
     model: fct_student_attendance_enrollment_periods
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select
@@ -753,7 +753,7 @@ unit_tests:
       days, or a leading holiday would import the previous period's status.
     model: fct_student_attendance_enrollment_periods
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select

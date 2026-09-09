@@ -7,7 +7,7 @@ models:
       surface and an attendance surface at once, which is why it is named for
       its grain rather than for either concept.
 
-      Rows come from int_students__enrollment_days, whose day window is clamped
+      Rows come from int_students__enrollment_daily, whose day window is clamped
       to each school's own academic year. Break days are present and carry
       is_in_session_day = false with membership_value = 0 and no attendance, so
       a point-in-time question lands on any calendar date, weekend and holiday
@@ -408,7 +408,7 @@ unit_tests:
       below 80 percent and must be Tier 4.
     model: fct_student_attendance_enrollment_daily
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select
@@ -565,7 +565,7 @@ unit_tests:
       belonged to.
     model: fct_student_attendance_enrollment_daily
     given:
-      - input: ref('int_students__enrollment_days')
+      - input: ref('int_students__enrollment_daily')
         format: sql
         rows: |
           select

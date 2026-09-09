@@ -25,7 +25,7 @@ with
             ada.is_suspended,
 
             coalesce(ada.membershipvalue, ed.membershipvalue) as membershipvalue,
-        from {{ ref("int_students__enrollment_days") }} as ed
+        from {{ ref("int_students__enrollment_daily") }} as ed
         -- location_key is projected for fct_student_attendance_enrollment_periods to
         -- key its grain on,
         -- NOT to partition the cumulative windows below.
