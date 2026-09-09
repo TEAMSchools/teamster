@@ -99,28 +99,31 @@ not just the one that looks like the measure.**
 
 ## Tooling and process
 
-| Symptom                                          | Cause                                                                   |
-| ------------------------------------------------ | ----------------------------------------------------------------------- |
-| Workbook truncated to a fraction of its size     | Loop variable shadowed an outer regex match object                      |
-| Whole file shows as changed in a diff            | `read_text(encoding="utf-8")` flattened CRLF to LF                      |
-| Published workbook is a few hundred kilobytes    | `include_extract=False` on download                                     |
-| Download lands at `name.twbx.twbx`               | `tableauserverclient` appends the extension to `filepath`               |
-| An exit code is reported as `0` or `120` wrongly | Read through a pipeline; `$?` was `tail`'s status or a SIGPIPE artifact |
-| A commit lands on the wrong branch               | A failed command short-circuited a chained `cd`; use `git -C` always    |
+| Symptom                                             | Cause                                                                                    |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Workbook truncated to a fraction of its size        | Loop variable shadowed an outer regex match object                                       |
+| Whole file shows as changed in a diff               | `read_text(encoding="utf-8")` flattened CRLF to LF                                       |
+| Published workbook is a few hundred kilobytes       | `include_extract=False` on download                                                      |
+| Download lands at `name.twbx.twbx`                  | `tableauserverclient` appends the extension to `filepath`                                |
+| An exit code is reported as `0` or `120` wrongly    | Read through a pipeline; `$?` was `tail`'s status or a SIGPIPE artifact                  |
+| Extract refresh fails with `403180` after a publish | The workbook has no extract (live connection); not a credential failure. Verified, #5230 |
+| A commit lands on the wrong branch                  | A failed command short-circuited a chained `cd`; use `git -C` always                     |
 
 ## The tests themselves
 
 The most expensive category, because everything reports success.
 
-| Symptom                                                  | Cause                                                                       |
-| -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Geometry checker passes the exact bug it was written for | Per-child tolerance; 900 units × 5 children exceeded the 4,445-unit defect  |
-| Geometry checker false-positives on production           | An absolute tolerance tight enough for one container is wrong for another   |
-| Structure assertion passes a duplicated zone             | A parent map overwritten in document order hid the stale entry              |
-| Structure assertion passes a re-parented zone            | It checked existence and type, never parentage                              |
-| Structure assertion passes a reordered zone              | No sibling-order check                                                      |
-| Structure assertion passes a card nested inside a card   | Only leaf zones were pinned; the containers never were                      |
-| Assertion checks presence, not position                  | Searching a whole block for a token, rather than asserting the run sequence |
+| Symptom                                                                             | Cause                                                                                   |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Geometry checker passes the exact bug it was written for                            | Per-child tolerance; 900 units × 5 children exceeded the 4,445-unit defect              |
+| Geometry checker false-positives on production                                      | An absolute tolerance tight enough for one container is wrong for another               |
+| Structure assertion passes a duplicated zone                                        | A parent map overwritten in document order hid the stale entry                          |
+| Structure assertion passes a re-parented zone                                       | It checked existence and type, never parentage                                          |
+| Structure assertion passes a reordered zone                                         | No sibling-order check                                                                  |
+| Structure assertion passes a card nested inside a card                              | Only leaf zones were pinned; the containers never were                                  |
+| Assertion checks presence, not position                                             | Searching a whole block for a token, rather than asserting the run sequence             |
+| `populate_csv` on a dashboard returned 0 rows and read as a working permission gate | The control also returned 0; a dashboard view yields no crosstab. Verified, #5230       |
+| Length guard passes an edit that changed nothing                                    | A same-length replacement moves the byte total by 0; count the strings. Verified, #5230 |
 
 Every one of those was found by building a mutant and running the assertion
 against it. Make that a step, not an afterthought:

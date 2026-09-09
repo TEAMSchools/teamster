@@ -11,6 +11,15 @@ missing fixture.
 
 Adapt the credential lines for any other host. Everything below the sign-in is
 portable.
+
+One session at a time: the `with server.auth.sign_in(auth)` block IS the session
+and releases it on exit, including on an exception. Poll a job with your own
+loop and re-sign-in on `401002`; see the skill's references/build-workflow.md.
+
+A publish drops server-side state. Before publishing, set `hidden_views` on the
+WorkbookItem (the names to hide: publishable sheets from `<windows>` minus the
+target's live views minus sheets this edit added) and record the target's
+revision number via `populate_revisions`. Both recipes are in the same file.
 """
 
 import os
