@@ -57,7 +57,7 @@ import psycopg
 # real numbers year-round and a 0 can only mean a scope denial.
 DEFAULT_QUERY = (
     "SELECT regions_region_name, MEASURE(count_students) "
-    "FROM student_days_view GROUP BY 1 ORDER BY 1"
+    "FROM student_attendance_enrollment_daily_view GROUP BY 1 ORDER BY 1"
 )
 
 
