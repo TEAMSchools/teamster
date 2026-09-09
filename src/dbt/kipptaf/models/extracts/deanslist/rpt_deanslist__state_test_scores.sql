@@ -42,9 +42,10 @@ select
         partition by co.student_number, fl.assessment_subject
         order by fl.academic_year asc, fl.administration_window asc
     ) as test_index,
-from {{ ref("stg_powerschool__students") }} as co
-inner join
-    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-    on co.dcid = suf.studentsdcid
-    and co._dbt_source_project = suf._dbt_source_project
-inner join {{ ref("stg_fldoe__fast") }} as fl on suf.fleid = fl.student_id
+from
+    (
+        select distinct student_number, fleid,
+        from {{ ref("int_students__student_enrollments") }}
+        where _dbt_source_project = 'kippmiami' and fleid is not null
+    ) as co
+inner join {{ ref("stg_fldoe__fast") }} as fl on co.fleid = fl.student_id
