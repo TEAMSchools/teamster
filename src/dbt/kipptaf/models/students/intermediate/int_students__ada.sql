@@ -32,16 +32,33 @@ with
         where fa.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list columns in different
--- positions, which would silently misalign them.
 -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
 -- #5012), so every archive row is a pre-Focus year and needs no cutover
 -- predicate. The Focus branch above still floors at the cutover year.
-select *,
+select
+    _dbt_source_relation,
+    studentid,
+    yearid,
+    academic_year,
+    days_in_membership,
+    days_present,
+    days_absent_unexcused,
+    ada,
+    _dbt_source_project,
+    student_number,
 from {{ ref("int_powerschool__ada") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    studentid,
+    yearid,
+    academic_year,
+    days_in_membership,
+    days_present,
+    days_absent_unexcused,
+    ada,
+    _dbt_source_project,
+    student_number,
 from focus_conformed

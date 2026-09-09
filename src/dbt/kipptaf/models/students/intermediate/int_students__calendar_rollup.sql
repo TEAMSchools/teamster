@@ -14,6 +14,7 @@ with
     -- and max_school_date, and no track column at all. track is supplied here
     -- as a typed NULL, which is what the consuming join is made null-safe for.
     focus_conformed as (
+        -- trunk-ignore(sqlfluff/ST06): column order matches the PowerSchool arm's
         select
             cr.days_total,
             cr.days_remaining,
@@ -41,16 +42,31 @@ with
         where cr.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list schoolid/yearid in
--- different positions, which would silently misalign columns.
 -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
 -- #5012), so every archive row is a pre-Focus year and needs no cutover
 -- predicate. The Focus branch above still floors at the cutover year.
-select *,
+select
+    _dbt_source_relation,
+    schoolid,
+    yearid,
+    track,
+    min_calendardate,
+    max_calendardate,
+    days_total,
+    days_remaining,
+    _dbt_source_project,
 from {{ ref("int_powerschool__calendar_rollup") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    schoolid,
+    yearid,
+    track,
+    min_calendardate,
+    max_calendardate,
+    days_total,
+    days_remaining,
+    _dbt_source_project,
 from focus_conformed

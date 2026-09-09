@@ -37,16 +37,59 @@ with
         where cw.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list schoolid/yearid in
--- different positions, which would silently misalign columns.
 -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
 -- #5012), so every archive row is a pre-Focus year and needs no cutover
 -- predicate. The Focus branch above still floors at the cutover year.
-select *,
+select
+    _dbt_source_relation,
+    schoolid,
+    week_start_date,
+    week_end_date,
+    school_level,
+    yearid,
+    academic_year,
+    week_start_monday,
+    week_end_sunday,
+    school_week_start_date,
+    school_week_end_date,
+    date_count,
+    semester,
+    quarter,
+    first_day_school_year,
+    last_week_start_school_year,
+    last_day_school_year,
+    school_week_start_date_lead,
+    week_number_academic_year,
+    week_number_quarter,
+    is_current_week_mon_sun,
+    region,
+    _dbt_source_project,
 from {{ ref("int_powerschool__calendar_week") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    schoolid,
+    week_start_date,
+    week_end_date,
+    school_level,
+    yearid,
+    academic_year,
+    week_start_monday,
+    week_end_sunday,
+    school_week_start_date,
+    school_week_end_date,
+    date_count,
+    semester,
+    quarter,
+    first_day_school_year,
+    last_week_start_school_year,
+    last_day_school_year,
+    school_week_start_date_lead,
+    week_number_academic_year,
+    week_number_quarter,
+    is_current_week_mon_sun,
+    region,
+    _dbt_source_project,
 from focus_conformed

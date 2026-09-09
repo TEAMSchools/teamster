@@ -1,12 +1,4 @@
 with
-    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
-    -- #5012), so every archive row is a pre-Focus year and needs no cutover
-    -- predicate. The Focus branch below still floors at the cutover year.
-    powerschool_conformed as (
-        select ps.*, ps.yearid + 1990 as academic_year,
-        from {{ ref("int_powerschool__attendance_streak") }} as ps
-    ),
-
     -- `int_focus__attendance_streak` splits the district's overloaded
     -- `att_code` into `streak_type` plus `streak_value`. The 'daily_code'
     -- family carries the actual Focus attendance code, which is null on a
@@ -46,13 +38,38 @@ with
         where fa.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list columns in different
--- positions, which would silently misalign them.
-select *,
-from powerschool_conformed
+-- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+-- #5012), so every archive row is a pre-Focus year and needs no cutover
+-- predicate. The Focus branch above still floors at the cutover year.
+select
+    _dbt_source_relation,
+    studentid,
+    student_number,
+    yearid,
+    att_code,
+    streak_id,
+    streak_start_date,
+    streak_end_date,
+    streak_length_membership,
+    streak_length_calendar,
+    _dbt_source_project,
 
-full union all corresponding
+    yearid + 1990 as academic_year,
+from {{ ref("int_powerschool__attendance_streak") }}
 
-select *,
+union all
+
+select
+    _dbt_source_relation,
+    studentid,
+    student_number,
+    yearid,
+    att_code,
+    streak_id,
+    streak_start_date,
+    streak_end_date,
+    streak_length_membership,
+    streak_length_calendar,
+    _dbt_source_project,
+    academic_year,
 from focus_conformed
