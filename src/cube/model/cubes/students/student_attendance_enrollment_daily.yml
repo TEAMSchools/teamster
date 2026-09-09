@@ -1,5 +1,5 @@
 cubes:
-  - name: student_days
+  - name: student_attendance_enrollment_daily
     public: false
     sql_table: kipptaf_marts.fct_student_attendance_enrollment_daily
 
@@ -175,8 +175,9 @@ cubes:
           year it runs high several-fold, because one absence in the first days
           projects past 50 on a one-day denominator. Use this dimension for
           day-level drill-down (which days was a student flagged), and take the
-          period-end truancy count and rate from student_periods_view's
-          count_truants / pct_truant.
+          period-end truancy count and rate from
+          student_attendance_enrollment_periods_view's count_truants /
+          pct_truant.
         sql: is_truant
         type: boolean
         public: true
@@ -214,9 +215,10 @@ cubes:
           Exactly 90.0% is Tier 3, and therefore chronically absent. Evaluated
           on accumulated counts cross-multiplied against each other, never on an
           averaged float. Computed once in
-          fct_student_attendance_enrollment_daily; student_periods_view reads
-          the same column at period end rather than recomputing it, so the two
-          views cannot disagree.
+          fct_student_attendance_enrollment_daily;
+          student_attendance_enrollment_periods_view reads the same column at
+          period end rather than recomputing it, so the two views cannot
+          disagree.
         sql: ada_tier
         type: string
         public: true
@@ -251,8 +253,8 @@ cubes:
           weekend or holiday resolves the same as a school day.
 
            For students served across a whole period
-          use student_periods_view.count_students, which answers a different
-          question from enrolled on a given date.
+          use student_attendance_enrollment_periods_view.count_students, which
+          answers a different question from enrolled on a given date.
         sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
@@ -371,7 +373,7 @@ cubes:
       # they answer it on a weekend or a holiday too, because the cumulative
       # columns carry across break days.
       #
-      # student_periods_view answers the same questions at year, month and week
+      # student_attendance_enrollment_periods_view answers the same questions at year, month and week
       # end without a pinned date, off the same columns. Use that for a trend.
 
       - name: count_chronically_absent

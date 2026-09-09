@@ -64,12 +64,12 @@ _ACADEMIC_YEAR_LABEL_DESC = (
 META_STUB: dict[str, Any] = {
     "cubes": [
         {
-            "name": "student_days_view",
+            "name": "student_attendance_enrollment_daily_view",
             "title": "Student Attendance",
             "type": "view",
             "measures": [
                 {
-                    "name": "student_days_view.count_students",
+                    "name": "student_attendance_enrollment_daily_view.count_students",
                     "title": "Count Students",
                     "type": "number",
                     "description": (
@@ -80,19 +80,19 @@ META_STUB: dict[str, Any] = {
             ],
             "dimensions": [
                 {
-                    "name": "student_days_view.dates_academic_year",
+                    "name": "student_attendance_enrollment_daily_view.dates_academic_year",
                     "title": "Dates Academic Year",
                     "type": "number",
                     "description": _ACADEMIC_YEAR_DESC,
                 },
                 {
-                    "name": "student_days_view.dates_academic_year_label",
+                    "name": "student_attendance_enrollment_daily_view.dates_academic_year_label",
                     "title": "Dates Academic Year Label",
                     "type": "string",
                     "description": _ACADEMIC_YEAR_LABEL_DESC,
                 },
                 {
-                    "name": "student_days_view.school_abbreviation",
+                    "name": "student_attendance_enrollment_daily_view.school_abbreviation",
                     "title": "School",
                     "type": "string",
                     "description": "School abbreviation.",
@@ -101,12 +101,12 @@ META_STUB: dict[str, Any] = {
             "segments": [],
         },
         {
-            "name": "student_periods_view",
+            "name": "student_attendance_enrollment_periods_view",
             "title": "Student Attendance Periods",
             "type": "view",
             "measures": [
                 {
-                    "name": "student_periods_view.count_students",
+                    "name": "student_attendance_enrollment_periods_view.count_students",
                     "title": "Count Students",
                     "type": "number",
                     "description": (
@@ -115,7 +115,7 @@ META_STUB: dict[str, Any] = {
                     ),
                 },
                 {
-                    "name": "student_periods_view.count_chronically_absent",
+                    "name": "student_attendance_enrollment_periods_view.count_chronically_absent",
                     "title": "Count Chronically Absent",
                     "type": "number",
                     "description": (
@@ -124,7 +124,7 @@ META_STUB: dict[str, Any] = {
                     ),
                 },
                 {
-                    "name": "student_periods_view.pct_chronically_absent",
+                    "name": "student_attendance_enrollment_periods_view.pct_chronically_absent",
                     "title": "Percent Chronically Absent",
                     "type": "number",
                     "description": (
@@ -135,13 +135,13 @@ META_STUB: dict[str, Any] = {
             ],
             "dimensions": [
                 {
-                    "name": "student_periods_view.period_type",
+                    "name": "student_attendance_enrollment_periods_view.period_type",
                     "title": "Period Type",
                     "type": "string",
                     "description": "year, month, or week.",
                 },
                 {
-                    "name": "student_periods_view.academic_year_label",
+                    "name": "student_attendance_enrollment_periods_view.academic_year_label",
                     "title": "Academic Year Label",
                     "type": "string",
                     "description": _ACADEMIC_YEAR_LABEL_DESC,

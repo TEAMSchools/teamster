@@ -19,11 +19,11 @@ cubes:
           year, not the KIPP academic year — silent-failure trap. Asking for
           year granularity here splits every academic year across two buckets
           and answers a different question with no error. Measured on
-          student_days_view: distinct students by year granularity returns
-          12,847 / 13,163 / 10,726 where the academic-year answer is 10,158 /
-          10,849 / 11,260. Group by academic_year_label (or academic_year) for
-          anything school-year-shaped, and reserve this dimension's
-          granularities for day, week, month and quarter.
+          student_attendance_enrollment_daily_view: distinct students by year
+          granularity returns 12,847 / 13,163 / 10,726 where the academic-year
+          answer is 10,158 / 10,849 / 11,260. Group by academic_year_label (or
+          academic_year) for anything school-year-shaped, and reserve this
+          dimension's granularities for day, week, month and quarter.
         sql: date_timestamp
         type: time
         public: true

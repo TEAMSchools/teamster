@@ -1,5 +1,5 @@
 cubes:
-  - name: student_periods
+  - name: student_attendance_enrollment_periods
     public: false
     sql_table: kipptaf_marts.fct_student_attendance_enrollment_periods
 
@@ -16,7 +16,7 @@ cubes:
       # The canonical path to everything dimensional about a student: grade
       # level, ELL and IEP status, meal eligibility, the homeroom teacher, the
       # demographics behind it, and locations. Every cut available on
-      # student_days_view is available here through this join, which is the
+      # student_attendance_enrollment_daily_view is available here through this join, which is the
       # point of it, and it is the same chain that cube reaching locations
       # only via student_school_enrollments.
       #
@@ -145,7 +145,8 @@ cubes:
           Truancy is a status rather than an event, so it turns on and off
           within a period and this reads across the whole period, unlike every
           other value here, which is read as of period_end_date. For truancy as
-          of one specific date, pin attendance_date on student_days_view.
+          of one specific date, pin attendance_date on
+          student_attendance_enrollment_daily_view.
         sql: is_truant
         type: boolean
         public: true
@@ -167,7 +168,8 @@ cubes:
           n_membership_days_ytd counts. Divide by n_membership_days_ytd for one
           student's cumulative ADA as of period end. That is a per-student
           figure -- for a population ADA use avg_daily_attendance on
-          student_days_view, which is day-weighted and not the same number.
+          student_attendance_enrollment_daily_view, which is day-weighted and
+          not the same number.
         sql: n_present_days_ytd
         type: number
         public: true
@@ -189,7 +191,7 @@ cubes:
 
           This is a served-during-the-period count, a different question from
           enrolled on a given date — for that, pin the date on
-          student_days_view.
+          student_attendance_enrollment_daily_view.
 
           This is the denominator for every rate on this cube — chronic absence,
           both ADA-tier shares, and truancy. No rate here applies a

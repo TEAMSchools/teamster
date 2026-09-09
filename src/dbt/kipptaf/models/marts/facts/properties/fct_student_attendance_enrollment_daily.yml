@@ -59,11 +59,11 @@ models:
       # limit inside a decade. Monthly is 246 partitions today.
       #
       # This only pays off for a filter on the fact's OWN date_key, which is
-      # what student_days.attendance_date compiles to. A filter on
+      # what student_attendance_enrollment_daily.attendance_date compiles to. A filter on
       # dates.date_day lands on dim_dates instead and cannot prune this table,
       # so the view's description routes point-in-time questions to
       # attendance_date. Measured on the dev build, single-date network
-      # headcount through student_days_view, identical results both ways:
+      # headcount through student_attendance_enrollment_daily_view, identical results both ways:
       #
       #   dates_date_day    1,257 MiB   23.7-82.1 slot-seconds
       #   attendance_date      63 MiB    0.66-0.95 slot-seconds

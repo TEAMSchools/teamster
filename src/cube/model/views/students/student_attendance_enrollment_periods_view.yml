@@ -1,5 +1,5 @@
 views:
-  - name: student_periods_view
+  - name: student_attendance_enrollment_periods_view
     description: >-
       Student counts and rates for a period — chronic absence and ADA tier mix
       as of the period's last membership day, truancy on any membership day in
@@ -10,13 +10,13 @@ views:
       Every measure here is student-weighted: it counts students against a
       threshold they reached cumulatively by period end. There is no
       attendance-rate measure on this view and no ADA — those are day-weighted
-      and live on student_days_view, which is also where day-level questions
-      belong (was a student absent on a given date, a calendar heatmap,
-      day-of-week patterns). This view carries pre-computed period snapshots;
-      that one carries the row-level daily record. A question that wants both a
-      rate-of-students and an attendance rate is two queries, one per view: do
-      not substitute pct_chronically_absent or pct_tier_1_2 for ADA, and do not
-      rebuild chronic absence from daily rows.
+      and live on student_attendance_enrollment_daily_view, which is also where
+      day-level questions belong (was a student absent on a given date, a
+      calendar heatmap, day-of-week patterns). This view carries pre-computed
+      period snapshots; that one carries the row-level daily record. A question
+      that wants both a rate-of-students and an attendance rate is two queries,
+      one per view: do not substitute pct_chronically_absent or pct_tier_1_2 for
+      ADA, and do not rebuild chronic absence from daily rows.
 
       Set period_type to year, month, or week to select the grain and group by
       period_start_date. No anchor filter is needed or accepted — the row
@@ -32,7 +32,7 @@ views:
       their high-water mark; truancy is a status that turns on and off within a
       period, so count_truants and pct_truant count a student who met the
       criteria on any membership day in it. For truancy as of one specific date,
-      pin attendance_date on student_days_view instead.
+      pin attendance_date on student_attendance_enrollment_daily_view instead.
 
       No minimum-membership-day floor is applied to any rate on this view. Every
       rate divides by the students who have at least one recorded attendance day
@@ -56,7 +56,7 @@ views:
       pull a rate down.
 
     cubes:
-      - join_path: student_periods
+      - join_path: student_attendance_enrollment_periods
         includes:
           - count_students
           - count_chronically_absent
@@ -77,7 +77,7 @@ views:
           - n_membership_days_ytd
           - n_present_days_ytd
 
-      - join_path: student_periods.student_school_enrollments.locations
+      - join_path: student_attendance_enrollment_periods.student_school_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -87,7 +87,7 @@ views:
           - campus
           - city
 
-      - join_path: student_periods.student_school_enrollments
+      - join_path: student_attendance_enrollment_periods.student_school_enrollments
         prefix: false
         includes:
           - student_enrollment_key
@@ -97,7 +97,7 @@ views:
           - exit_date
           - is_retained_year
 
-      - join_path: student_periods.student_school_enrollments.students
+      - join_path: student_attendance_enrollment_periods.student_school_enrollments.students
         prefix: false
         includes:
           - student_key
@@ -110,7 +110,7 @@ views:
           - enrollment_status
           - is_gifted
 
-      - join_path: student_periods.student_school_enrollments.student_enrollment_status
+      - join_path: student_attendance_enrollment_periods.student_school_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -122,14 +122,14 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: student_periods.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
+      - join_path: student_attendance_enrollment_periods.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
         prefix: true
         includes:
           - full_name
           - first_name
           - last_name
 
-      - join_path: student_periods.terms
+      - join_path: student_attendance_enrollment_periods.terms
         prefix: true
         includes:
           - semester
@@ -137,7 +137,7 @@ views:
           - term_code
           - term_type
 
-      - join_path: student_periods.student_school_enrollments.locations.regions
+      - join_path: student_attendance_enrollment_periods.student_school_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
@@ -211,7 +211,7 @@ views:
             - staff_homeroom_teacher_last_name
 
     access_policy:
-      # Row-level location scoping, mirrored from student_days_view. A
+      # Row-level location scoping, mirrored from student_attendance_enrollment_daily_view. A
       # viewer holds exactly one student-<scope> group (buildGroups); none =>
       # no group => default-deny. row_level uses this view's flat location
       # member names (see the includes block above), not cube-qualified

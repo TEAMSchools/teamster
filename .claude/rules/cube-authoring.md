@@ -35,24 +35,26 @@ and diagnostics are in the `cube-ops` skill.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
-  rule:** student-domain cubes start with `student` (`student_days`,
-  `student_periods`, `student_school_enrollments`, `students`); staff-domain
-  cubes start with `staff`. This is an organizational convention only — RLS is
-  no longer keyed off the cube-name prefix. Every view enforces access through
-  its own `access_policy` matching a `securityContext` group (see View access
-  policies below); a misnamed cube has no security consequence, but keep the
-  convention so the domain is legible from the name. Conformed dims (`dates`,
-  `locations`, `regions`, `terms`, `school_calendars`) are deliberately
-  unprefixed — they carry no domain access tier. Student views are single,
-  collapsed views named `<domain>_view` (`student_days_view`,
-  `student_periods_view`, `student_section_enrollments_view`,
-  `student_assessment_scores_view`) — a view can't share a bare name with its
-  same-domain cube, hence the `_view` suffix. Staff views keep the
-  `<domain>_<grain>` pattern (`staff_directory`, `staff_pii`) since that split
-  is a genuine access tier, not a grain distinction (see View access policies
-  below). `sql_table` always points at `kipptaf_marts.<table>` (the warehouse
-  table keeps its `dim_`/`fct_` prefix) — cubes never read district datasets
-  directly.
+  rule:** student-domain cubes start with `student`
+  (`student_attendance_enrollment_daily`,
+  `student_attendance_enrollment_periods`, `student_school_enrollments`,
+  `students`); staff-domain cubes start with `staff`. This is an organizational
+  convention only — RLS is no longer keyed off the cube-name prefix. Every view
+  enforces access through its own `access_policy` matching a `securityContext`
+  group (see View access policies below); a misnamed cube has no security
+  consequence, but keep the convention so the domain is legible from the name.
+  Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
+  are deliberately unprefixed — they carry no domain access tier. Student views
+  are single, collapsed views named `<domain>_view`
+  (`student_attendance_enrollment_daily_view`,
+  `student_attendance_enrollment_periods_view`,
+  `student_section_enrollments_view`, `student_assessment_scores_view`) — a view
+  can't share a bare name with its same-domain cube, hence the `_view` suffix.
+  Staff views keep the `<domain>_<grain>` pattern (`staff_directory`,
+  `staff_pii`) since that split is a genuine access tier, not a grain
+  distinction (see View access policies below). `sql_table` always points at
+  `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`/`fct_` prefix) —
+  cubes never read district datasets directly.
 - **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
@@ -61,11 +63,11 @@ and diagnostics are in the `cube-ops` skill.
   join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → resolve to one
   canonical path. Reach deeper dims by traversing the FK chain (e.g.
-  `student_days` reaches `locations` only via
+  `student_attendance_enrollment_daily` reaches `locations` only via
   `student_school_enrollments.locations`, never directly — no second join).
   Alternative resolutions: a compound join on the canonical path (see
-  `student_days.yml` → `school_calendars`), or a degenerate FK with no declared
-  join. Comment the choice.
+  `student_attendance_enrollment_daily.yml` → `school_calendars`), or a
+  degenerate FK with no declared join. Comment the choice.
 - **Second join to an already-role-played mart → fresh `sql_table` cube, not
   `extends`.** To add a SECOND, differently-filtered join to a mart another cube
   already reaches (e.g. a stint cube reaching "the current homeroom section" of
@@ -84,9 +86,9 @@ and diagnostics are in the `cube-ops` skill.
 - **Qualify the column with `{CUBE}` in any expression-bodied dimension whose
   column name also exists on a joined cube.** Cube auto-qualifies a scalar
   `sql: <column>` but NOT an expression, so `sql: CAST(date_key AS TIMESTAMP)`
-  on `student_days` was ambiguous against `dim_dates.date_key` and **filtering
-  that published member failed outright** with
-  `Column name date_key is ambiguous`. Grouping by it compiled fine — the
+  on `student_attendance_enrollment_daily` was ambiguous against
+  `dim_dates.date_key` and **filtering that published member failed outright**
+  with `Column name date_key is ambiguous`. Grouping by it compiled fine — the
   asymmetry is why this survives review, so check filters, not just group-bys.
   Same root cause as the #4546 `CONCAT` note on `dates.academic_year_label`.
 - **A date filter routed through the `dates` join cannot prune a partitioned
@@ -96,14 +98,15 @@ and diagnostics are in the `cube-ops` skill.
   **no-op** unless the view also exposes a fact-side time dimension and its
   description routes single-date and range filters there.
   `fct_student_attendance_enrollment_daily` is
-  `PARTITION BY DATE_TRUNC(date_key, MONTH)` and `student_days.attendance_date`
-  is that member: measured, single-date network headcount reads **63 MiB / 0.7
-  slot-seconds** via `attendance_date` against **1,257 MiB / 24–82
-  slot-seconds** via `dates_date_day`, identical rows. A `CAST` around the
-  partitioning column does NOT block pruning (verified: bare and CAST-wrapped
-  predicates both read 34,224 bytes against 38,659,756 unfiltered). Keep the
-  `dates_*` members for grouping and for academic-year / month / week-of
-  questions, where they are the only path.
+  `PARTITION BY DATE_TRUNC(date_key, MONTH)` and
+  `student_attendance_enrollment_daily.attendance_date` is that member:
+  measured, single-date network headcount reads **63 MiB / 0.7 slot-seconds**
+  via `attendance_date` against **1,257 MiB / 24–82 slot-seconds** via
+  `dates_date_day`, identical rows. A `CAST` around the partitioning column does
+  NOT block pruning (verified: bare and CAST-wrapped predicates both read 34,224
+  bytes against 38,659,756 unfiltered). Keep the `dates_*` members for grouping
+  and for academic-year / month / week-of questions, where they are the only
+  path.
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_sum_attendance_value` building blocks).
 - **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
@@ -134,7 +137,7 @@ and diagnostics are in the `cube-ops` skill.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
   `regions_region_name` for
-  `student_days.student_school_enrollments.locations.regions`.
+  `student_attendance_enrollment_daily.student_school_enrollments.locations.regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -151,14 +154,15 @@ and diagnostics are in the `cube-ops` skill.
 - **Measure Cube's own overhead before proposing a pre-aggregation.** It runs
   0.9s–1.5s per query on the student views (planning, Cube Store transport,
   connection) and exceeds BigQuery execution time on most of them, so a pre-agg
-  removes the smaller half. Worst measured query on `student_days_view` at 29.6M
-  rows: 3.62s wall, 2.17s of it BigQuery — a _perfect_ pre-agg buys ~2.1s of a
-  55-second budget. Also check additivity first: `count_distinct` is
-  non-additive as a **rollup** property, so a day-grain rollup serves day-grain
-  queries and cannot reaggregate to month or year — you would need one pre-agg
-  per grain, or `count_distinct_approx` (HLL, wrong for a reported headcount).
-  Partitioning the underlying mart is usually the cheaper win; see the
-  partition-pruning rule under Authoring conventions.
+  removes the smaller half. Worst measured query on
+  `student_attendance_enrollment_daily_view` at 29.6M rows: 3.62s wall, 2.17s of
+  it BigQuery — a _perfect_ pre-agg buys ~2.1s of a 55-second budget. Also check
+  additivity first: `count_distinct` is non-additive as a **rollup** property,
+  so a day-grain rollup serves day-grain queries and cannot reaggregate to month
+  or year — you would need one pre-agg per grain, or `count_distinct_approx`
+  (HLL, wrong for a reported headcount). Partitioning the underlying mart is
+  usually the cheaper win; see the partition-pruning rule under Authoring
+  conventions.
 - **Custom granularities were evaluated and rejected.** `offset: -6 months` on
   `dates.date_day` does work on 1.7.14 and returns correct July-anchored
   buckets, but it costs 58.7 slot-seconds against the `academic_year`
@@ -176,7 +180,8 @@ axis, so exactly one policy per view is ever active — no AND/OR combination to
 reason about.
 
 - **Student views are single, collapsed views** — each student domain
-  (`student_days_view`, `student_periods_view`,
+  (`student_attendance_enrollment_daily_view`,
+  `student_attendance_enrollment_periods_view`,
   `student_section_enrollments_view`, `student_assessment_scores_view`) exposes
   both row-level identifiers and aggregate-breakdown dimensions on the same
   view; there is no separate detail/summary pair. Three policies, one per
@@ -369,28 +374,32 @@ access policies above). `cube.js` exports exactly `driverFactory`,
 
 Period-end values (chronic absence, ADA tier, truancy rate) are materialized in
 dbt at period grain, never computed at query time. Each value is a row in
-`fct_student_attendance_enrollment_periods`, read via `student_periods_view`
-filtering its `period_type` dimension (`year` / `month` / `week`). Cube filters
-to the right row and computes nothing.
+`fct_student_attendance_enrollment_periods`, read via
+`student_attendance_enrollment_periods_view` filtering its `period_type`
+dimension (`year` / `month` / `week`). Cube filters to the right row and
+computes nothing.
 
 **The two student attendance views split on weighting, not on time grain.**
-`student_days_view` measures are day-weighted — ratios of summed day counts,
-additive over any date range. `student_periods_view` measures are
-student-weighted — counts of students past a cumulative threshold at period end,
-non-additive across periods because `n_membership_days_ytd` accumulates from the
-start of the academic year. Routing consequence: ADA and every attendance-rate
-measure exist only on `student_days_view`; chronic absence, tier mix and truancy
-exist only on `student_periods_view`; a question wanting both is two queries. A
-day-weighted cumulative ADA on the periods cube would equal the daily view's ADA
-at year grain and be wrong summed across month or week rows — 1.65M membership
-days at year grain against 9.43M summing the eleven AY2025 month rows — which is
-why it is not there. A student-weighted one diverges from the daily view's ADA
-by 0.66 points (0.9141 against 0.9207, AY2025), so it must not reuse the name.
+`student_attendance_enrollment_daily_view` measures are day-weighted — ratios of
+summed day counts, additive over any date range.
+`student_attendance_enrollment_periods_view` measures are student-weighted —
+counts of students past a cumulative threshold at period end, non-additive
+across periods because `n_membership_days_ytd` accumulates from the start of the
+academic year. Routing consequence: ADA and every attendance-rate measure exist
+only on `student_attendance_enrollment_daily_view`; chronic absence, tier mix
+and truancy exist only on `student_attendance_enrollment_periods_view`; a
+question wanting both is two queries. A day-weighted cumulative ADA on the
+periods cube would equal the daily view's ADA at year grain and be wrong summed
+across month or week rows — 1.65M membership days at year grain against 9.43M
+summing the eleven AY2025 month rows — which is why it is not there. A
+student-weighted one diverges from the daily view's ADA by 0.66 points (0.9141
+against 0.9207, AY2025), so it must not reuse the name.
 
-**Point-in-time enrollment headcount is a pinned date on `student_days_view`.**
-The fact carries a row for every enrolled calendar day, break days included, so
-any date resolves — no anchor flag, and none available. Pin `attendance_date`,
-not `dates_date_day` (see the partition-pruning rule above).
+**Point-in-time enrollment headcount is a pinned date on
+`student_attendance_enrollment_daily_view`.** The fact carries a row for every
+enrolled calendar day, break days included, so any date resolves — no anchor
+flag, and none available. Pin `attendance_date`, not `dates_date_day` (see the
+partition-pruning rule above).
 
 Query-time **window functions** over the daily fact were measured and do not
 scale: multi-stage `rank` timed out past 150s, and scoping to one month did not
@@ -405,13 +414,14 @@ assessment cubes. Precompute in dbt instead.
 `add_group_by` + `reduce_by` compiles to a two-level GROUP BY (no window
 functions in the SQL) and is the only way to express a second aggregation level
 — mean-of-school-rates, or a count of schools past a threshold — over a row the
-periods fact already precomputed. Measured on `student_periods_view`, AY2025
-year grain: identical bytes to the flat query, **22x the slot-seconds (1.9 →
-42.8) but only 1.75s**, because the base is small. Nothing on either view
-answers that question today. The catch is semantic, not performance: a
-mean-of-school-rates measure beside the pooled `pct_chronically_absent` puts two
-different network numbers on one view (26.09% vs 27.21% for AY2025), so it needs
-a `description` naming which question each answers.
+periods fact already precomputed. Measured on
+`student_attendance_enrollment_periods_view`, AY2025 year grain: identical bytes
+to the flat query, **22x the slot-seconds (1.9 → 42.8) but only 1.75s**, because
+the base is small. Nothing on either view answers that question today. The catch
+is semantic, not performance: a mean-of-school-rates measure beside the pooled
+`pct_chronically_absent` puts two different network numbers on one view (26.09%
+vs 27.21% for AY2025), so it needs a `description` naming which question each
+answers.
 
 ## Jinja in cube YAML
 
@@ -446,32 +456,34 @@ diverge from ISO Monday). Both topline surfaces key on school weeks:
 cleanly via the join) rather than a raw fact column — Cube can throw "not found"
 on a `DATE` fact column cast to `TIMESTAMP` in a BigQuery view.
 
-**`student_periods.period_type = 'week'` is the PowerSchool school week, so
-group its rows by `period_start_date` — never by a native `granularity: "week"`
-(ISO) on a date dimension.** ISO bucketing compiles and runs, it does not throw,
-and silently returns a meaningless breakdown. There is no query-time guard; the
-caller has to group correctly.
+**`student_attendance_enrollment_periods.period_type = 'week'` is the
+PowerSchool school week, so group its rows by `period_start_date` — never by a
+native `granularity: "week"` (ISO) on a date dimension.** ISO bucketing compiles
+and runs, it does not throw, and silently returns a meaningless breakdown. There
+is no query-time guard; the caller has to group correctly.
 
 **The same trap exists at year grain on `dates.date_day`**: a native
 `granularity: "year"` buckets on the CALENDAR year and splits every academic
-year across two buckets. Measured on `student_days_view` — 12,847 / 13,163 /
-10,726 by year granularity against 10,158 / 10,849 / 11,260 by academic year.
-Group by `dates_academic_year_label` for anything school-year-shaped.
+year across two buckets. Measured on `student_attendance_enrollment_daily_view`
+— 12,847 / 13,163 / 10,726 by year granularity against 10,158 / 10,849 / 11,260
+by academic year. Group by `dates_academic_year_label` for anything
+school-year-shaped.
 
 ## `prefix: true` join member names
 
 A member inside a `prefix: true` includes block is exposed with the last
 `join_path` segment prepended: `school_week_start_date` under
-`join_path: student_days.dates` (prefix: true) surfaces as
-`dates_school_week_start_date`. A same-named fact-level dimension alongside the
-join creates ambiguity Cube can't resolve at query time. Route via the join when
-`dim_dates` carries the same value — avoids the compile error and the redundant
-fact column. **To test a model VARIANT without touching the repo tree, point
-`CUBEJS_SCHEMA_PATH` at a copy** — `cp -r src/cube/model <scratch>/model-x`,
-`sed` the `sql_table` redirect there, then run `npx cubejs-server` with cwd
-`src/cube` (so the dotenv file still loads) and `CUBEJS_SCHEMA_PATH` set. No
-`zz_` redirect in the working tree means no accidental commit, and two variants
-can be compared by restarting against a different copy. Two traps:
+`join_path: student_attendance_enrollment_daily.dates` (prefix: true) surfaces
+as `dates_school_week_start_date`. A same-named fact-level dimension alongside
+the join creates ambiguity Cube can't resolve at query time. Route via the join
+when `dim_dates` carries the same value — avoids the compile error and the
+redundant fact column. **To test a model VARIANT without touching the repo tree,
+point `CUBEJS_SCHEMA_PATH` at a copy** —
+`cp -r src/cube/model <scratch>/model-x`, `sed` the `sql_table` redirect there,
+then run `npx cubejs-server` with cwd `src/cube` (so the dotenv file still
+loads) and `CUBEJS_SCHEMA_PATH` set. No `zz_` redirect in the working tree means
+no accidental commit, and two variants can be compared by restarting against a
+different copy. Two traps:
 
 - **The path must be RELATIVE.** Cube's `FileRepository` does
   `path.join(process.cwd(), schemaPath)`, and `path.join` does not reset on an

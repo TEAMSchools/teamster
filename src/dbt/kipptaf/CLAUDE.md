@@ -245,11 +245,11 @@ date filter routed through the `dates` join into a predicate on `dim_dates`, and
 BigQuery cannot prune a fact's partitions from a predicate on a joined table.
 The partition only pays off paired with a fact-side time dimension the view's
 description sends date filters to — `fct_student_attendance_enrollment_daily`
-(`PARTITION BY DATE_TRUNC(date_key, MONTH)`) with `student_days.attendance_date`
-is the worked example. Pick monthly over daily for a multi-year daily-grain
-fact: 7,058 distinct dates already, so daily passes BigQuery's 4,000-partition
-cap inside a decade. See `src/cube/CLAUDE.md` for the measurements and the
-Cube-side rule.
+(`PARTITION BY DATE_TRUNC(date_key, MONTH)`) with
+`student_attendance_enrollment_daily.attendance_date` is the worked example.
+Pick monthly over daily for a multi-year daily-grain fact: 7,058 distinct dates
+already, so daily passes BigQuery's 4,000-partition cap inside a decade. See
+`src/cube/CLAUDE.md` for the measurements and the Cube-side rule.
 
 ## Known Upstream Issues
 
@@ -262,10 +262,10 @@ retain-graduate-placeholder rule below still binds the three NJ regions. Do not
 decided against on 2026-08-14.
 
 **Point-in-time enrollment headcount uses entry/exit dates, not
-`enroll_status`.** `count_students` on the `student_days` Cube counts distinct
-students over whatever slice is queried. There are no anchor measures and no
-anchor columns — pin `dates_date_day` to a date for a point-in-time figure,
-leave it open for ever-enrolled over a range.
+`enroll_status`.** `count_students` on the `student_attendance_enrollment_daily`
+Cube counts distinct students over whatever slice is queried. There are no
+anchor measures and no anchor columns — pin `dates_date_day` to a date for a
+point-in-time figure, leave it open for ever-enrolled over a range.
 `fct_student_attendance_enrollment_daily` carries a row for every calendar day
 inside a stint, break days included, so any date resolves for every school.
 
