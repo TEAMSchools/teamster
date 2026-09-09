@@ -55,15 +55,20 @@ input it would also pass, then build that input and run it.
 
 ## What is in here
 
-| File                                             | Covers                                                                          |
-| ------------------------------------------------ | ------------------------------------------------------------------------------- |
-| [01-content-models.md](01-content-models.md)     | Element ordering rules Desktop enforces and Server ignores                      |
-| [02-dynamic-text.md](02-dynamic-text.md)         | Which surfaces resolve field and parameter placeholders, and which render blank |
-| [03-layout-and-zones.md](03-layout-and-zones.md) | Dashboard geometry, cards, `fixed-size`, text clipping                          |
-| [04-formatting.md](04-formatting.md)             | Number formats, the paragraph-break sentinel, CRLF, encoding traps              |
-| [05-build-workflow.md](05-build-workflow.md)     | The pull, edit, verify, repack, publish loop that works                         |
-| [06-failure-catalog.md](06-failure-catalog.md)   | Symptom to cause to fix, for every failure observed                             |
-| [scripts/](scripts/)                             | Runnable checkers and helpers, with a README                                    |
+The skill built from these notes is now the canonical copy:
+`.claude/skills/tableau-workbook-xml/SKILL.md` and its `references/`. The six
+numbered files below are pointer stubs kept so links resolve; edit the skill
+reference, not the stub.
+
+| File                                             | Now lives at                                                                                                                       |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [01-content-models.md](01-content-models.md)     | [`references/content-models.md`](../../.claude/skills/tableau-workbook-xml/references/content-models.md)                           |
+| [02-dynamic-text.md](02-dynamic-text.md)         | [`references/dynamic-text.md`](../../.claude/skills/tableau-workbook-xml/references/dynamic-text.md)                               |
+| [03-layout-and-zones.md](03-layout-and-zones.md) | [`references/layout-and-zones.md`](../../.claude/skills/tableau-workbook-xml/references/layout-and-zones.md)                       |
+| [04-formatting.md](04-formatting.md)             | [`references/formatting.md`](../../.claude/skills/tableau-workbook-xml/references/formatting.md)                                   |
+| [05-build-workflow.md](05-build-workflow.md)     | `SKILL.md` "The loop" and [`references/build-workflow.md`](../../.claude/skills/tableau-workbook-xml/references/build-workflow.md) |
+| [06-failure-catalog.md](06-failure-catalog.md)   | [`references/failure-catalog.md`](../../.claude/skills/tableau-workbook-xml/references/failure-catalog.md)                         |
+| [scripts/](scripts/)                             | Still here: runnable checkers and helpers, with a README. The skill references them by this path                                   |
 
 ## Provenance and confidence
 

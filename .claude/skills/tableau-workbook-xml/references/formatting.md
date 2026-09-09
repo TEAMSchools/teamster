@@ -22,8 +22,11 @@ Variants carrying formatting exist and behave the same:
 <run fontcolor='#555555' fontname='Tableau Regular' fontsize='14'>Æ&#10;</run>
 ```
 
-**Tooltips are the exception.** They use plain `&#10;` inside the text runs and
-no `Æ` sentinel. See [dynamic-text.md](dynamic-text.md).
+**Tooltips in this corpus were the exception.** Their line breaks were plain
+`&#10;` inside the text runs with no `Æ` sentinel. A snippet file outside the
+corpus carries `Æ&#9;` (a tab) runs inside a tooltip, so `Æ` may be a general
+whitespace-run marker rather than a paragraph break; that is unverified. Copy
+the target sheet's own form. See [dynamic-text.md](dynamic-text.md).
 
 ## CRLF: the trap that looks like it is handled
 
@@ -65,8 +68,9 @@ both.
 ## Number formats
 
 **Verified.** Formats live on the `<column>` definition as `default-format`, and
-apply everywhere the field is used (labels, tooltips, headers) with no per-sheet
-work.
+in this corpus applied everywhere the field was used (labels, tooltips, headers)
+with no per-sheet work. Whether a worksheet-level format override would beat it
+was not probed; see [unverified-warnings.md](unverified-warnings.md).
 
 ```xml
 <column caption='% Failing' datatype='real' default-format='p0.0%'
@@ -98,8 +102,9 @@ want when a glyph carries the direction:
 a `<column>`, so `default-format` cannot reach it. No worksheet-level
 `attr='number-format'` element existed anywhere in the corpus to copy, so the
 element shape for formatting a table calc is unknown. The change was handed back
-to be done in Desktop, which is three clicks. If you need this, capture a
-Desktop-authored example first.
+to be done in Desktop, which is three clicks. If you need this, ask the owner to
+do those three clicks on a scratch copy, save, and send the `.twb`; diff it
+against the base and you own the shape.
 
 ## Entity encoding inside attributes
 
@@ -115,11 +120,15 @@ encode it the same way:
 A formula written with a raw `>` produces malformed XML; one written with a raw
 `&` breaks the attribute.
 
-### `<customized-label>` field references need the placeholder delimiters
+### Field references need the placeholder delimiters
 
-**Verified.** A field reference inside a `customized-label` template requires
-the `<` and `>` delimiters around the token, and in that context they are
-encoded. Omitting them prints the field name literally rather than its value.
+**Verified.** A field reference inside a `customized-label` or tooltip template
+requires the `<` and `>` delimiters around the token. Omitting them prints the
+field name literally rather than its value. How they are written depends on the
+run: inside a `<![CDATA[...]]>` run they are literal `<` and `>` (the verified
+mark-label example in [dynamic-text.md](dynamic-text.md)); in a bare run they
+are `&lt;` and `&gt;` (form B in the same file). Entity-encoding inside CDATA
+prints `&lt;` literally.
 
 ## Blanket string replacement is the recurring self-inflicted wound
 
@@ -158,10 +167,14 @@ an opening zone, inflates the depth and never closes. Use `<zone(?=[\s>])`.
 
 **Verified.** A loop written as `for n, m in enumerate(kids)` clobbered the
 outer regex match object `m` that held the dashboard span. The script wrote a
-workbook truncated from 1.45M characters to 143k. Cheap guard, worth having in
-every edit script:
+workbook truncated from 1.45M characters to 143k. The guard that caught it:
 
 ```python
 if abs(len(out) - len(src)) > 0.2 * len(src):
     sys.exit(f"FAIL: length moved {len(src)} -> {len(out)}")
 ```
+
+That bound catches only gross truncation: 20% of a 1.45M-character file is
+290,000 characters of undetected damage, the same shape of over-tolerance as the
+geometry checker in [layout-and-zones.md](layout-and-zones.md). When you know
+what you inserted, assert the delta equals its length instead.

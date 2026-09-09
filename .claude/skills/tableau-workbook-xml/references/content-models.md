@@ -54,9 +54,19 @@ is as Desktop reports it.
 `</encodings>` puts it ahead of a sheet's `<reference-line>` and Desktop refuses
 to open the workbook with
 `element 'reference-line' is not allowed for content model '(view,mark,mark-sizing?,encodings?,label-data*,dropline?,trendline?,reference-line,customized-tooltip,customized-label,style)'`.
-On sheets with a reference line (a goal tick, a target marker) the tooltip must
-come after it. The trap: most sheets have no reference line, so an insert
-anchored on `</encodings>` works everywhere until it does not.
+The element Desktop names is the one that could not follow what you inserted,
+not the one you touched. On sheets with a reference line (a goal tick, a target
+marker) the tooltip must come after it. The trap: most sheets have no reference
+line, so an insert anchored on `</encodings>` works everywhere until it does
+not.
+
+The indicators are as Desktop printed them. Read literally, `reference-line`,
+`customized-tooltip` and `customized-label` are each required exactly once, yet
+this corpus has panes without a reference line that Desktop opens, so the
+cardinality is not established (see
+[unverified-warnings.md](unverified-warnings.md)). `check_pane_order` in
+`check_twb.py` verifies order only: a second `<customized-tooltip>` in one pane
+passes it. Check for an existing one before inserting.
 
 ### Worksheet
 

@@ -15,15 +15,26 @@ portable.
 
 import os
 import zipfile
+from datetime import date
 from pathlib import Path
 
 import tableauserverclient as tsc
 
-OUT = Path("/workspaces/teamster/.claude/scratch/tableau/server")
+# This file is copied to tests/test_zz_*.py, so parents[1] is the checkout root
+# (main repo or worktree), never a hard-coded main-checkout path.
+OUT = Path(__file__).resolve().parents[1] / ".claude" / "scratch" / "tableau" / "server"
+OUT.mkdir(parents=True, exist_ok=True)
 
 WORKBOOK_LUID = "REPLACE-ME"
 #: Publishing anywhere else is the one unrecoverable mistake available here.
+#: Ask the user which non-production project or subproject this build lands in
+#: and put that id here AND in the allowlist below.
 TEMP_PROJECT = "REPLACE-ME"
+#: Every id a build may publish to. GPA-monitor-temp is the fallback when the
+#: user names no project. Production is never added here.
+NON_PRODUCTION_PROJECTS = {
+    "c74d8e08-b856-4430-a759-ebacb061e376": "GPA-monitor-temp",
+}
 
 
 def _server() -> tuple[tsc.Server, tsc.PersonalAccessTokenAuth]:
@@ -73,9 +84,20 @@ def test_publish_and_render() -> None:
     with server.auth.sign_in(auth):
         item = tsc.WorkbookItem(
             project_id=TEMP_PROJECT,
-            name="ZZ-REVIEW <describe the build>",
+            # Dated so two sessions cannot overwrite each other's review copy.
+            name=f"ZZ-REVIEW {date.today():%Y-%m-%d} <describe the build>",
+            # Whether True changes a setting the owner chose is unverified;
+            # read wb.show_tabs off the download and pass it through if so.
             show_tabs=True,
         )
+        # Gate BEFORE the call. By the time publish returns, the overwrite has
+        # already happened on the server; the check after the call can only
+        # confirm where it landed. Raises, not asserts: asserts are stripped
+        # under -O.
+        if TEMP_PROJECT not in NON_PRODUCTION_PROJECTS:
+            raise RuntimeError("target is not an agreed non-production project")
+        if not (item.name or "").startswith("ZZ-REVIEW "):
+            raise RuntimeError("review copies carry the ZZ-REVIEW prefix")
         # Pyright reports "No overloads for publish match" here. It is a false
         # positive: the runtime signature types `mode` as `str` and
         # PublishMode.Overwrite is the string 'Overwrite'. Verified from the
@@ -84,9 +106,7 @@ def test_publish_and_render() -> None:
         item = server.workbooks.publish(
             item, str(OUT / "final.twbx"), mode=tsc.Server.PublishMode.Overwrite
         )
-        # Gate first, before anything else touches the server. A raise, not an
-        # assert: asserts are stripped under -O, and this is the one check
-        # standing between a scripted slip and a corrupted production workbook.
+        # Confirms where it landed; the preventive gate is above the call.
         if item.project_id != TEMP_PROJECT:
             raise RuntimeError(
                 f"published to {item.project_name}, not the temp project"

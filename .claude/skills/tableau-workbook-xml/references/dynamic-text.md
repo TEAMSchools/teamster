@@ -21,9 +21,10 @@ that worksheet**, not the bare column name. The instance carries a derivation
 prefix and a type suffix: `none:`/`usr:`/`avg:`/`attr:`/`pcto:usr:` and `:nk`
 (nominal), `:ok` (ordinal), `:qk` (quantitative).
 
-The field must be in the view. Put it on the Tooltip shelf, never Detail: a
-`<lod>` on Detail doubled a percent-of-total axis to 200% (see
-[layout-and-zones.md](layout-and-zones.md)).
+The field must be in the view. The source project put tooltip fields on the
+Tooltip shelf after a `<lod>` on Detail doubled a percent-of-total axis to 200%
+(see [layout-and-zones.md](layout-and-zones.md)); that Tooltip is safe is
+Inferred, and [unverified-warnings.md](unverified-warnings.md) has the probe.
 
 ## The matrix
 
@@ -89,9 +90,10 @@ between the caption and the number. No text, no error.
 
 **Attempt 2: route the parameter through a calculated field on the Text shelf.**
 Worse: the entire mark label disappeared. Caption, basis line and the 30pt
-number all vanished. Neighbouring sheets rendered normally, so it was specific
-to the two edited sheets. Adding to the Text encoding evidently displaces
-`customized-label` rather than supplementing it.
+number all vanished (Verified). Neighbouring sheets rendered normally, so it was
+specific to the two edited sheets. The reading that Text displaces
+`customized-label` rather than supplementing it is the inference, not the
+observation.
 
 **What shipped instead:** static text in the same run style. The live value is
 available on the worksheet-title surface, which does work, so put it there when
@@ -117,9 +119,9 @@ This is how every big number on the dashboard renders.
 
 ## UNRESOLVED: the two tooltip encodings
 
-This is the one genuinely open question. Do not assert either form works until a
-probe (below) has rendered it. Do not settle it by reasoning about the two
-forms.
+This is the one genuinely open question. Settle it with a probe that renders, or
+with a human hover; until one of those has happened, report any tooltip you
+touched as unverified.
 
 **Form A: one CDATA run holding the whole line.**
 
@@ -130,8 +132,9 @@ forms.
 ```
 
 Present on `Y1 Landing - % ≥3.0 School Bars`, whose tooltips the workbook owner
-described as excellent, so it does render, and it resolves a **parameter** token
-too. Every resolving reference in it carries an `:nk` suffix.
+described as excellent. That is second-hand, not a probe: whether this form
+renders is unconfirmed by this project. It includes a **parameter** token, and
+every reference in it carries an `:nk` suffix.
 
 **Form B: the field instance alone in a bare run, delimiters split across run
 boundaries.**
@@ -147,12 +150,12 @@ boundaries.**
 A / B / C:  <]]></run>
 ```
 
-Present on `Y1 Schools - Teacher Grade Distro`. Tableau wrote this itself, and
-it resolves `:qk` suffixes and `pcto:` derivations. Line breaks are `&#10;`
-inside the text runs: tooltips do **not** use the `Æ` sentinel.
+Present on `Y1 Schools - Teacher Grade Distro`. Tableau wrote this itself; it
+carries `:qk` suffixes and `pcto:` derivations. Line breaks are `&#10;` inside
+the text runs: the tooltips in this corpus did not use the `Æ` sentinel.
 
 **The contradiction.** A hand-built tooltip in form A, structurally
-indistinguishable from the working example, rendered its instance strings
+indistinguishable from the example above, rendered its instance strings
 literally on the dashboard. The rebuild used form B and was published, but the
 hover was never confirmed because a Desktop content-model error intervened
 first.
@@ -161,21 +164,30 @@ Candidate explanations, none tested:
 
 - The `:nk` versus `:qk` suffix matters for form A specifically.
 - Form A works only for fields whose calc returns a pre-formatted string.
-- Something else about the hand-built file differed. Element order, nesting path
-  and datasource id were all checked and matched.
+- The instance string was not registered as a `<column-instance>` in that
+  worksheet's `<datasource-dependencies>`, or `[Parameters]` was not a
+  dependency of the view. Added in review; the free grep probe is in
+  [unverified-warnings.md](unverified-warnings.md). The source project checked
+  element order, nesting path and datasource id, which is not the same check.
+- Something else about the hand-built file differed.
 
 **What to do until it is settled:** copy a known-working tooltip's runs verbatim
-from the target workbook and substitute only the instance strings. Do not
-compose a tooltip from a remembered template. A tooltip is a hover, so a render
-cannot confirm it; ask a human to hover and report.
+from the target workbook, keep run attributes and separator text, and substitute
+only the `[datasource].[instance]` strings. Do not compose a tooltip from a
+remembered template or from a snippet file; the plugin snippet described in
+[build-workflow.md](build-workflow.md) uses `Æ&#9;` runs that this corpus never
+showed in a tooltip. A tooltip is a hover, so a render cannot confirm it; ask a
+human to hover and report.
 
 ## How to probe a new surface
 
 The pattern that works, and is cheap:
 
 1. Edit one sheet only, with a literal marker in the text (`PROBE `).
-2. Repack and publish to a scratch project.
+2. Repack and publish to the non-production project the user named.
 3. Render through the API, setting the parameter explicitly if relevant.
 4. Read the image. Confirm the marker _and_ the resolved value.
 5. If the surface is a hover or a click, a render cannot prove it. Say so and
    ask a human.
+6. If the element shape itself is unknown, ask the owner to author it in Desktop
+   on a scratch copy and send the saved `.twb`; diff it against the base.

@@ -2,6 +2,8 @@
 
 Every failure observed in the source project, as symptom to cause to fix.
 Ordered by where you notice it. All entries are **Verified** unless marked.
+Hypotheses raised in review that would reinterpret an entry are in
+[unverified-warnings.md](unverified-warnings.md) and are pointed to inline.
 
 ## Desktop refuses to open the workbook
 
@@ -16,9 +18,12 @@ Server accepted and rendered every one of these first.
 | `missing elements in content model '(datasources?,…,slices?,aggregation)'`   | `<view>` has no `<aggregation>`                           | Same                                                                  |
 | `element 'reference-line' is not allowed…` (`D2E8DA72`)                      | `<customized-tooltip>` inserted before `<reference-line>` | Insert after the last of label-data/dropline/trendline/reference-line |
 
-All six are covered by `docs/tableau-xml/scripts/check_twb.py`. Run it before
-handing anything over; the whole point is to catch these without a Desktop round
-trip. Models and manifest table: [content-models.md](content-models.md).
+All six are covered by `docs/tableau-xml/scripts/check_twb.py`, with two limits:
+its feature check knows eight elements, and its pane check verifies order only,
+so a second `<customized-tooltip>` in one pane passes. Run it before handing
+anything over; the point is to catch these without a Desktop round trip, but
+only a Desktop open confirms the fix. Models and manifest table:
+[content-models.md](content-models.md).
 
 ## Something renders blank or literal
 
@@ -26,21 +31,21 @@ trip. Models and manifest table: [content-models.md](content-models.md).
 | --------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Worksheet title shows nothing at all                      | The dashboard zone carries `show-title='false'`                       | Flip to `'true'` in `<zones>`, not `<devicelayouts>`            |
 | A line in a mark label is blank, space still reserved     | Parameter token in `<customized-label>`; it does not resolve          | Use static text, or move the value to a worksheet title         |
-| An entire mark label vanishes: caption, value, everything | A calculated field was added to the Text shelf                        | Revert; Text displaces `customized-label`                       |
+| An entire mark label vanishes: caption, value, everything | A calculated field was added to the Text shelf                        | Revert                                                          |
 | Tooltip prints raw `[federated…].[usr:Calculation_…:qk]`  | Encoding form: **unresolved**, see [dynamic-text.md](dynamic-text.md) | Copy a working tooltip's runs verbatim, swap only the instances |
-| A field name prints literally in a label template         | Missing `<` `>` placeholder delimiters around the token               | Add them, entity-encoded                                        |
+| A field name prints literally in a label template         | Missing `<` `>` placeholder delimiters around the token               | Add them, in the form the run type needs                        |
 
 ## Layout is wrong
 
-| Symptom                                 | Cause                                                  | Fix                                                     |
-| --------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| A number renders as `####`              | Text does not fit its box                              | Remove a line; growing the box 66→78→88px did not help  |
-| A caption truncates with an ellipsis    | Over roughly `97 * width / 39676` characters           | Shorten it; strips clip, they do not wrap               |
-| A legend shows some of its entries      | Strip too short for the swatch rows                    | Height, not width: 40px fits one row, 70px fits two     |
-| Row labels clip, then wrap mid-word     | Row-header width, not zone height                      | Shorten the label text                                  |
-| Two zones overlap on screen             | A zone at the wrong nesting depth; valid XML, no error | `docs/tableau-xml/scripts/check_geometry.py --baseline` |
-| A percent-of-total axis doubles to 200% | A `<lod>` on the Detail shelf changed the mark grain   | Put the field on Tooltip instead                        |
-| A dual axis renders side by side        | Fold flag missing from the **table-level** `<style>`   | See below                                               |
+| Symptom                                 | Cause                                                  | Fix                                                        |
+| --------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| A number renders as `####`              | Text does not fit its box                              | Remove a line; growing the box 66→78→88px did not help     |
+| A caption truncates with an ellipsis    | Over roughly `97 * width / 39676` characters           | Shorten it; the observed strips clipped, they did not wrap |
+| A legend shows some of its entries      | Strip too short for the swatch rows                    | Height, not width: 40px fits one row, 70px fits two        |
+| Row labels clip, then wrap mid-word     | Row-header width, not zone height                      | Shorten the label text                                     |
+| Two zones overlap on screen             | A zone at the wrong nesting depth; valid XML, no error | `docs/tableau-xml/scripts/check_geometry.py --baseline`    |
+| A percent-of-total axis doubles to 200% | A `<lod>` on the Detail shelf changed the mark grain   | The field went on Tooltip instead (Inferred safe)          |
+| A dual axis renders side by side        | Fold flag missing from the **table-level** `<style>`   | See below                                                  |
 
 The dual-axis fold flag is not on the shelf:
 
@@ -54,14 +59,15 @@ The dual-axis fold flag is not on the shelf:
 
 With it the axes fold correctly. **Unresolved:** even folded, the second axis
 drew no marks, including as a plain `Bar`. The approach was abandoned. If you
-need dual axis, budget a real investigation.
+need dual axis, ask the owner for a Desktop-authored one on a scratch copy and
+diff it; a review hypothesis (a missing second `<pane>`) is in
+[unverified-warnings.md](unverified-warnings.md).
 
 ## Reference lines
 
-**Verified.** A per-cell reference line does not resolve on a percent-of-total
-axis. It renders at a constant `2.0` whatever field it is given, and stretches
-the axis to 200% doing it. Five variations were tried. It works normally on a
-plain `usr:` axis:
+**Verified.** A per-cell reference line on a percent-of-total axis rendered at a
+constant `2.0` whatever field it was given, and stretched the axis to 200% doing
+it. Five variations were tried. It works normally on a plain `usr:` axis:
 
 ```xml
 <reference-line axis-column='[ds].[usr:Calculation_…:qk]'
@@ -69,7 +75,10 @@ plain `usr:` axis:
                 formula='average' scope='per-cell' />
 ```
 
-The value field must be in the view, and on Tooltip rather than Detail.
+The value field must be in the view; the source project put it on Tooltip rather
+than Detail. A review hypothesis that the line resolved correctly and the goal
+was simply in the wrong units for a 0 to 1 axis, with its probe, is in
+[unverified-warnings.md](unverified-warnings.md).
 
 ## Data reads wrong
 
@@ -114,7 +123,9 @@ The most expensive category, because everything reports success.
 | Assertion checks presence, not position                  | Searching a whole block for a token, rather than asserting the run sequence |
 
 Every one of those was found by building a mutant and running the assertion
-against it. `docs/tableau-xml/scripts/mutate.py` does the surgery.
+against it. Make that a step, not an afterthought:
+`docs/tableau-xml/scripts/mutate.py` does the zone surgery; for anything outside
+a dashboard's zones, hand-write the broken variant.
 
 ## The two reasoning failures worth naming
 

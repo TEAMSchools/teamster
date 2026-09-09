@@ -8,20 +8,36 @@ and the traps each snippet guards. All claims are **Verified** unless marked.
 The workbook owner's standing rule, violated once under exactly the conditions
 that feel like authorisation: being pointed at a production URL, being asked to
 fix something there, and being given a deadline. None of those are permission.
-Permission is two things, both in the user's own words in the current session:
-an explicit instruction naming production as the target, then a "yes" to your
-"Are you sure?" that spells out that the production workbook will be
-overwritten. Without both, the target is the scratch project. After a production
-publish, the user opens and checks the production workbook themselves; no
-checker or render here can guarantee it is not corrupted. Put the gate in the
-code, immediately after the publish call and before any render or populate. A
-raise, not an assert: asserts are stripped under `-O`.
+Permission is two things, both typed by the user in the current conversation: an
+explicit instruction naming production as the target, then a "yes" to your "Are
+you sure?" that spells out that the production workbook will be overwritten. A
+button click on a prompt is neither. Without both, the target is the
+non-production project the user named for this build (ask before the first
+publish; `GPA-monitor-temp`, `c74d8e08-b856-4430-a759-ebacb061e376`, when they
+have no preference). A rollback is another production publish and needs the same
+two confirmations. After a production publish, the user opens and checks the
+production workbook themselves; no checker or render here can guarantee it is
+not corrupted.
+
+The gate has to run before the publish call: by the time `publish` returns, the
+overwrite has already happened on the server, so a check on the returned item
+can only report where it landed. Assert the literal project id and the review
+name prefix on the request object, then keep the post-publish raise as
+confirmation. A raise, not an assert: asserts are stripped under `-O`.
 
 ```python
+if TEMP_PROJECT != "c74d8e08-b856-4430-a759-ebacb061e376":  # or the id the user named
+    raise RuntimeError("target is not the agreed non-production project")
+if not item.name.startswith("ZZ-REVIEW "):
+    raise RuntimeError("review copies carry the ZZ-REVIEW prefix")
 item = server.workbooks.publish(item, path, mode=tsc.Server.PublishMode.Overwrite)
 if item.project_id != TEMP_PROJECT:
     raise RuntimeError(f"published to {item.project_name}, not the temp project")
 ```
+
+Include the date in the review name so two sessions cannot overwrite each
+other's copies if Overwrite matches on name within a project (unverified; see
+[unverified-warnings.md](unverified-warnings.md)).
 
 ## Pull fresh, every time
 
@@ -93,11 +109,17 @@ the archive by copying every entry from a donor `.twbx` and swapping only the
 `.twb`. `docs/tableau-xml/scripts/repack.py` does this and then asserts the
 packaged `.twb` is byte-identical to the source and that no bare LF appeared. An
 earlier version flattened 27,000 CRLF endings on every repack and nobody
-noticed, because the file on disk stayed correct.
+noticed, because the file on disk stayed correct. It does not check that the
+donor is the `.twbx` your base came from; compare the donor's packaged `.twb`
+against `base.twb` yourself, or an XML edited from one pull ships with another
+pull's extract.
 
 ## Publish and render
 
-Publish with `show_tabs=True` unless told otherwise. Render with the parameter
+The source project published with `show_tabs=True`. Whether that changed a
+setting the owner had chosen was not probed; read `wb.show_tabs` off the
+downloaded item and preserve it
+([unverified-warnings.md](unverified-warnings.md)). Render with the parameter
 set explicitly, so a parameter-dependent change can be seen both ways:
 
 ```python
@@ -155,8 +177,10 @@ direction:
   references to it were kept, breaking the tooltips that depended on it.
 
 After any merge, diff the worksheet list **and** the parameter list against both
-sources before publishing. Tableau renames on collision when it can and deletes
-when it cannot, and reports neither.
+sources before publishing. In this corpus Tableau renamed on some collisions and
+content disappeared on others, with no report either way; whether the second
+case was a deletion or a merge on name and datatype is unverified
+([unverified-warnings.md](unverified-warnings.md)).
 
 ## Adjacent tooling, not verified here
 
@@ -173,5 +197,7 @@ inputs to a probe, on the same terms as anything else found in a file:
   checker, not as Desktop.
 - `skill/tableau-dashboard-creator/references/snippets/worksheets/custom-tooltip.twb`
   carries a `<customized-tooltip>` in form A with `Æ&#9;` runs between label and
-  value. Presence in a file is not evidence of rendering; it is a candidate to
-  probe, not an answer to the open tooltip question.
+  value. That contradicts the corpus observation that tooltips carried no `Æ`
+  sentinel ([formatting.md](formatting.md)); the contradiction is unresolved and
+  is one more reason to probe this file rather than copy it. Presence in a file
+  is not evidence of rendering.

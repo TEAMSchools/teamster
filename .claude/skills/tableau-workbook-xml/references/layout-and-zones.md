@@ -4,6 +4,12 @@ Dashboard layout is a tree of `<zone>` elements inside `<dashboard><zones>`.
 Everything here concerns that tree and how text behaves inside it. All claims
 are **Verified** (observed in a render or by measurement) unless marked.
 
+Every pixel figure in this file was measured on dashboards with
+`sizing-mode='fixed'` at 1366x900, rendered through the REST image API at
+`Resolution.High`, in the fonts the examples show. Outside those conditions the
+numbers are hypotheses; [unverified-warnings.md](unverified-warnings.md) lists
+the probes.
+
 ## The coordinate system
 
 **Verified.** Zone `x`, `y`, `w`, `h` are in units of 1/100000 of the dashboard,
@@ -67,7 +73,9 @@ Desktop re-solving the layout on open. Recompute it as
 ## Text clips, it does not wrap
 
 **Verified by render.** A header-strip caption that exceeds its width is
-truncated with an ellipsis. It does not wrap to a second line. Calibration
+truncated with an ellipsis. In the observed strips, all text zones at
+`fixed-size='40'` carrying an 8pt italic Arial caption, it did not wrap to a
+second line; whether it wraps given more height was not probed. Calibration
 points, all measured from renders:
 
 | Zone width (units) | Characters that fit | Characters that clipped |
@@ -103,9 +111,10 @@ one-string edit.
 
 **Verified.** Adding a field to the Detail shelf of a percent-of-total sheet
 doubled the axis to 200%. Percent-of-total is a table calculation over the mark
-partition, and Detail changes that partition. Put tooltip fields on the
-**Tooltip** shelf. Reserve Detail for cases where the grain change is the
-intent.
+partition, and Detail changes that partition. The source project put tooltip
+fields on the **Tooltip** shelf instead and reserved Detail for cases where the
+grain change is the intent. That Tooltip leaves the partition alone is
+**Inferred**; the probe is in [unverified-warnings.md](unverified-warnings.md).
 
 ## Copying a card pattern
 
@@ -161,5 +170,7 @@ Two structural points:
 
 **Verified.** A dashboard has a `<zones>` block and may have a `<devicelayouts>`
 block containing its own copy of the same zone ids. Edit `<zones>`. A change
-applied to the wrong copy has no effect on the default layout, and a change
-applied to both can desynchronise them.
+applied only to `<devicelayouts>` has no effect on the default layout, which is
+what the render API shows. What phone or tablet viewers see was not probed; say
+in the hand-over whether a `<devicelayouts>` block exists and that it was
+untouched ([unverified-warnings.md](unverified-warnings.md)).
