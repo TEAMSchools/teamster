@@ -157,8 +157,16 @@ models:
           met_pm_round_criteria gated on participation, so a round only counts
           as met when the student was also tested on everything it expected.
 
-          Two known gaps, both confined to history now that T&L set AND
-          network-wide. There is no OR branch, so an OR round returns 0 even
-          when met_pm_round_criteria is 1; and the branch for a null
-          pm_goal_criteria does not require completed_test_round, unlike the AND
-          branch.
+          The case has an AND branch and a null branch, and that is complete —
+          pm_goal_criteria never holds the string 'OR' in any year. Null IS the
+          OR criteria, and pm_goal_criteria's own case sends it to max(), which
+          lets one complete measure code satisfy the round. Academics used that
+          until SY25-26; every SY26-27 row is AND, so a student must now meet
+          every measure.
+
+          The null branch deliberately skips completed_test_round, unlike the
+          AND branch. pm_goal_criteria governs how multiple EXPECTED measures
+          combine, so a null-criteria round has no multi-measure requirement and
+          a valid score counts without checking that every probe was finished.
+          Unexpected probes are already excluded upstream by the expectation
+          gate.

@@ -1706,23 +1706,44 @@ benchmark but not aimline, they should still be in this category" -- so it is a
 priority cascade, NOT a 2x2 intersection. Getting that wrong puts a
 benchmark-meeting student in Below Aimline.
 
-### Two inert quirks in met_pm_round_overall_criteria
+### The OR criteria is spelled NULL, and it is live on history
 
-Neither is worth fixing, but both look like bugs on a cold read.
+**Do not read the `else max()` branch as dead legacy.** `pm_goal_criteria` never
+holds the string `'OR'` in any year. The OR behaviour is what **null** means,
+and the `case pm_goal_criteria when 'AND' then min() else max() end` sends null
+down the `max()` path.
 
-**There is no OR branch.** The final `case` handles `'AND'` and `null`; anything
-else returns 0, so an `OR` round scores 0 even when `met_pm_round_criteria` is
+The history, from `stg_google_sheets__dibels_expected_assessments` PM rows:
 
-1. Measured on AY2025: zero rows carry `'OR'`, and T&L set `AND` network-wide
-   for every K-8 round from SY26-27, so this can only ever have applied to
-   history.
+| Year | `AND`   | null  | Live rows                                          |
+| ---- | ------- | ----- | -------------------------------------------------- |
+| 2024 | 20      | 142   | **0** -- all switched off via `assessment_include` |
+| 2025 | 254     | 536   | 222 AND, 367 null                                  |
+| 2026 | **883** | **0** | 883 -- first fully-AND year                        |
 
-**The null branch skips the participation gate,** unlike the `'AND'` branch, and
-that is deliberate. `pm_goal_criteria` governs how multiple EXPECTED measures
-combine; a null-criteria round has no multi-measure requirement, so a valid
-score counts without checking whether every probe was finished. Unexpected
-probes are already excluded upstream by the expectation gate, so a null round is
-genuinely criteria-free rather than a data gap.
+So on AY2025 the OR path is live on 367 rows, more than half. SY26-27 is a clean
+cut: every row is `AND`, no nulls at all.
+
+**What the OR meant.** Academics used to let a student pass a round by meeting
+one _set_ of measures or a single measure, rather than all of them. The code
+expresses that exactly: `max()` runs over `met_measure_name_code_goal`, which is
+already the AND-within-a-code (both NWF standards, both ORF standards). So a set
+had to be complete, but only one set had to pass. From SY26-27 a student must
+meet every measure, which is why every row is now `AND`.
+
+**Consequences for `met_pm_round_overall_criteria`.** Its `case` has an `'AND'`
+branch and a null branch, and that is complete -- there is no third value to
+handle. The null branch deliberately skips `completed_test_round`, because
+`pm_goal_criteria` governs how multiple EXPECTED measures combine and a
+null-criteria round has no multi-measure requirement: a valid score counts
+without checking every probe was finished. Unexpected probes are already
+excluded upstream by the expectation gate, so a null round is genuinely
+criteria-free rather than a data gap.
+
+An earlier version of this section called the missing `'OR'` branch an inert
+gap, on the evidence that zero AY2025 rows carry `'OR'`. That was literally true
+and thoroughly misleading -- the OR behaviour is live, under a different
+spelling.
 
 ### all_assessments changed grain -- every consumer must NAME its model_type
 

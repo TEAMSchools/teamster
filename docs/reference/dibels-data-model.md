@@ -1775,6 +1775,28 @@ explicitly selected in `int_google_sheets__dibels_expected_assessments`. The
 refactored `int_amplify__pm_met_criteria` will source it from there, making
 `stg_google_sheets__dibels_pm_goals` fully deprecatable.
 
+**The OR criteria is spelled NULL.** The column never holds the string `'OR'` in
+any year — null is the OR, and
+`case pm_goal_criteria when 'AND' then min() else max() end` routes it to
+`max()`. So the `else` branch is not dead legacy; it is what more than half of
+AY2025 does.
+
+| Year | `AND` | null | Live rows                                               |
+| ---- | ----- | ---- | ------------------------------------------------------- |
+| 2024 | 20    | 142  | 0 — every AY2024 PM row is off via `assessment_include` |
+| 2025 | 254   | 536  | 222 `AND`, 367 null                                     |
+| 2026 | 883   | 0    | 883 — the first fully-`AND` year                        |
+
+Academics used the OR to let a student pass a round by meeting one complete
+_set_ of measures, or a single measure, rather than all of them. The code says
+exactly that: `max()` runs over `met_measure_name_code_goal`, which is already
+the AND-within-a-code — both NWF standards, both ORF standards. A set had to be
+complete; only one set had to pass. From SY26-27 a student must meet every
+measure, which is why every row is `AND` and none is null.
+
+That also makes `met_pm_round_overall_criteria`'s `case` complete rather than
+missing a branch: `'AND'` and null are the only two values that exist.
+
 ### PM status system — Bright Spots (AY 2026–2027)
 
 T&L has defined a **5-tier PM status** to replace the binary `aimline_status`

@@ -116,7 +116,7 @@ select
     student_number,
     measure_name_code,
     measure_standard_score,
-    start_date,
+    `start_date`,
     end_date,
     completed_test_round,
     completed_test_round_int,
