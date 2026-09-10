@@ -93,7 +93,8 @@ Decide these two things before every `Agent` call, including the first:
   Otherwise do it inline: a small edit with the files already loaded is cheaper
   on the main model than a cold subagent on a cheaper one.
 - Which `model`. Pass the cheapest one you expect to finish on the first try.
-  Omit it (inherit) for judgment calls and reviews you will act on.
+  Name it explicitly on every dispatch; pick the capable model for judgment
+  calls and reviews you will act on.
 
 Price ratios, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
@@ -193,6 +194,10 @@ surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
 - `finishing-a-development-branch` / `using-git-worktrees`: this repo uses `uv`,
   not `poetry`/`pip`. Run `uv run dbt build --select <model>+` alongside the
   skills' other tests.
+- `subagent-driven-development`: a plan step of roughly 10 lines or fewer whose
+  files are already in context is done inline, not dispatched. The skill assumes
+  every task is dispatched; the repo's dispatch-or-inline test in _Subagents_
+  governs.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
 
