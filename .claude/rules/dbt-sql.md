@@ -287,7 +287,16 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   fix, not just the lint fix — BigQuery matches UNION ALL branches by POSITION,
   so two `select *` branches whose column order differs bind the wrong columns
   to each other (a type mismatch fails loudly; two same-typed columns swap
-  silently).
+  silently). In a VIEW model, enumerating is also what lets an upstream column
+  add reach the view at all: BigQuery fixes a view's column list when the view
+  is created, and Dagster rebuilds a view only on `code_version_changed`, which
+  hashes the model's raw SQL. A `select *` view never picks up a column an
+  upstream adds, because its own raw SQL never changes. Enumerating makes the
+  column add an edit to the view's own SQL, so it recompiles on deploy.
+  2026-09-09: `kipptaf_powerschool.int_powerschool__gpa_term` compiled with
+  `cast(null as INT64) as students_student_number` for 3 regions and stayed that
+  way until a manual materialization. `full union all corresponding` removes the
+  positional-swap hazard but not this one.
 - **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
   sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
   from the UNION-ALL case above, which must enumerate columns.
