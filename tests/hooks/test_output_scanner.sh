@@ -208,4 +208,28 @@ check_output "#18 gzip+base64 blob inflates to key header" deny "data ${gzb64}"
 check_output "#30 JWT split across newline" deny "header eyJhbGciOiJSUzI1NiJ9
 .eyJzdWIiOiIxMjM0NTY3ODkwIn0 footer"
 
+# ─── Image blocks: base64 carrier skipped, everything else still scanned ────
+echo ""
+echo -e "${YELLOW}PostToolUse: image blocks (Read / MCP / API shapes)${NC}"
+
+# ~330-char mixed-case base64: trips the 120-char heuristic if scanned.
+img_b64=$(printf 'PNG pixel data 0123456789 abcdefghij KLMNOPQRST %.0s' {1..5} | base64 -w0)
+# trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
+expect_allow_raw "Read image output (file.base64) is clean" "${OUTPUT_HOOK}" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "Read", tool_response: {type: "image", file: {base64: $b, type: "image/png", originalSize: 48213}}}')"
+expect_allow_raw "MCP image content block (data) is clean" "${OUTPUT_HOOK}" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__tableau__render", tool_response: {content: [{type: "text", text: "rendered"}, {type: "image", data: $b, mimeType: "image/png"}]}}')"
+expect_allow_raw "API image block (source.data) is clean" "${OUTPUT_HOOK}" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "WebFetch", tool_response: {content: [{type: "image", source: {type: "base64", media_type: "image/png", data: $b}}]}}')"
+expect_redacted "image block sibling string still scanned" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__x__y", tool_response: {content: [{type: "text", text: "see op://vault/item/field"}, {type: "image", data: $b, mimeType: "image/png"}]}}')" \
+	"op://vault/item/field"
+expect_redacted "image block with plaintext (non-base64) data still scanned" \
+	"$(jq -n '{tool_name: "mcp__x__y", tool_response: {content: [{type: "image", data: "leaked op://vault/item/field", mimeType: "image/png"}]}}')" \
+	"op://vault/item/field"
+expect_redacted "text block with a base64 data field is not exempt" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__x__y", tool_response: {content: [{type: "text", data: $b}]}}')" \
+	"${img_b64}"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "Output Scanner"
