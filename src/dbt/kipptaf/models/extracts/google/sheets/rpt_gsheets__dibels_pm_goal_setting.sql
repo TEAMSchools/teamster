@@ -14,6 +14,19 @@ with
         from {{ ref("int_amplify__all_assessments") }}
         where
             academic_year = {{ var("current_academic_year") }}
+            -- the cohort's starting point is a BENCHMARK score, never a PM
+            -- probe, and all_assessments now emits a row per data method. Each
+            -- filter below does a different job -- none is redundant:
+            -- assessment_type/model_type -- Benchmark rows only. Without
+            -- them, only the period values kept PM out, and every Internal
+            -- PM row carries overall_probe_eligible = 'Yes', so Internal
+            -- and Aimline probes would average into the STARTING score.
+            -- period -- excludes EOY, which opens no PM season and therefore
+            -- sets no goals. Do not drop this on the grounds that
+            -- overall_probe_eligible is null on every EOY row; that is
+            -- true, but it is an eligibility column, not a season one.
+            and assessment_type = 'Benchmark'
+            and model_type = 'BM'
             and measure_standard != 'Composite'
             and overall_probe_eligible = 'Yes'
             and period in ('BOY', 'MOY')
