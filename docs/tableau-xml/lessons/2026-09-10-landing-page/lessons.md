@@ -1448,3 +1448,116 @@ Barrier proof, on a fixture whose first window has no `simple-id`:
 old lazy-any regex  -> {NEXT-WINDOW-UUID}
 barriered regex     -> None
 ```
+
+## 2026-09-10, build phase, Task 8
+
+### `publish()`'s return value does not carry `hidden_views` back
+
+**Verified.** `server.workbooks.publish(item, ...)` returns a NEW `WorkbookItem`
+built from the server's response, not the request object; the script reassigns
+`item = server.workbooks.publish(...)`, and the fresh object's `hidden_views` is
+`None` (it is a write-only field on the publish request, never populated from a
+GET). The first run read `len(item.hidden_views)` after that reassignment, for
+the `review-meta.txt` `hidden_count` field, and crashed with
+`TypeError: object of type 'NoneType' has no len()` — after the publish, the
+populate_views calls, and all seven renders had already succeeded, so the
+publish itself was never wrong, only the bookkeeping written after it. Do this
+instead: capture any value derived from the pre-publish `item` (here,
+`len(item.hidden_views)`) into a local BEFORE the
+`item = server.workbooks .publish(...)` line reassigns the name — the
+request-side item and the response-side item are two different objects sharing
+one variable name only by convention.
+
+### `DEFAULT_VIEW` answers whether Server honors the `maximized` marker on a REST publish
+
+**Verified.** Re-fetching the review copy by id after publish
+(`server.workbooks.get_by_id(item.id)`, `populate_views`) and matching
+`default_view_id` against the populated views resolved to `Landing Page` — the
+window this build added with `maximized='true'` between `class` and `name` in
+its `<window class='dashboard' maximized='true' name='Landing Page'>` element.
+Four earlier workbooks correlated "the window with `maximized='true'` becomes
+the default view on open" without a REST publish exercising it end to end; this
+publish is the first to prove it rather than infer it.
+
+### The `hidden_views` regex needs no change for `maximized`, only a read-through
+
+**Verified.** The brief's regex,
+`<window class='(?:worksheet|dashboard)'(?![^>]*hidden='true')[^>]*name='([^']*)'`,
+already treats everything between `class='...'` and `name='...'` as an opaque
+`[^>]*` span, so `maximized='true'` sitting in that gap on the `Landing Page`
+window matches the same as any other attribute — no group boundary depends on
+what comes between. The sheet names containing `&lt;` (e.g.
+`Y1 Landing - BAN HS &lt;2.0`) came through the capture group still escaped, as
+expected, and the existing `.replace("&lt;", "<").replace("&amp;", "&")` pass
+unescaped them before the `publishable - live - added` set arithmetic — a set of
+unescaped-both-ways names compared against `live_views` (itself unescaped, from
+`base-meta.txt`) matched with no drift. `HIDING` came back as exactly the 10
+pre-existing hidden sheets, and `LIVE will be` as exactly the five production
+dashboards plus `Landing Page` — six names, matching the `expected_live` check
+added before the publish gate.
+
+### A session race fired once, mid-run, and the idempotent Overwrite absorbed it
+
+**Verified.** The first `_with_retry` attempt published successfully
+(`PUBLISHED: 55cac48f-15d0-4048-b219-bb8dfbf39700 into GPA-monitor-temp`), then
+failed at the next server call with `FailedSignInError` /
+`401002: Unauthorized Access` — another Tableau MCP process on the same PAT had
+signed in and invalidated this session, exactly the failure mode
+`test_zz_lp_pull.py`'s retry wrapper was built for. The wrapper re-entered a
+fresh `with server.auth.sign_in(auth):` block, republished under the same
+`ZZ-REVIEW 2026-09-10 AGHS landing page` name into the same project in
+`Overwrite` mode, got the same review luid back, and completed the seven renders
+and the re-fetch on that second attempt. No manual rerun was needed; the retry
+the brief specified is what recovered it.
+
+### Verbatim run output
+
+```text
+repack rc=0
+  final.twbx: 28.4 MB
+  packaged .twb byte-identical to source; CRLF 30102, bare LF 0
+```
+
+Donor check: `base.twb` unzipped from `base.twbx` and `cmp`'d against
+`$lp/base.twb` on disk — identical, confirming the donor is the same production
+download the base came from.
+
+```text
+HIDING ['GPA - BAN Avg cum GPA', 'GPA - Equity Gender', 'GPA - Equity IEP', 'GPA - Equity MLL', 'GPA - Equity Race', 'Goal vs Actual by Grade', 'Sheet 69', 'Tooltip - category reasons', 'Tooltip - failures by grade', 'Y1 Schools - Teacher Grade Distro']
+HIDING 10 sheets; LIVE will be ['Academic Health Home', 'Academic Health Schools', 'Cumulative GPA Monitor', 'Gradebook School Rollup', 'Gradebook Teacher View', 'Landing Page']
+PUBLISHED: 55cac48f-15d0-4048-b219-bb8dfbf39700 into GPA-monitor-temp
+RETRY 1/3 after FailedSignInError: Failed Sign In Error:
+
+	401002: Unauthorized Access
+		Invalid authentication credentials were provided.
+HIDING ['GPA - BAN Avg cum GPA', 'GPA - Equity Gender', 'GPA - Equity IEP', 'GPA - Equity MLL', 'GPA - Equity Race', 'Goal vs Actual by Grade', 'Sheet 69', 'Tooltip - category reasons', 'Tooltip - failures by grade', 'Y1 Schools - Teacher Grade Distro']
+HIDING 10 sheets; LIVE will be ['Academic Health Home', 'Academic Health Schools', 'Cumulative GPA Monitor', 'Gradebook School Rollup', 'Gradebook Teacher View', 'Landing Page']
+PUBLISHED: 55cac48f-15d0-4048-b219-bb8dfbf39700 into GPA-monitor-temp
+RENDERED 'Academic Health Home': render-academic-health-home.png 454453 bytes
+RENDERED 'Academic Health Schools': render-academic-health-schools.png 364037 bytes
+RENDERED 'Cumulative GPA Monitor': render-cumulative-gpa-monitor.png 380966 bytes
+RENDERED 'Gradebook School Rollup': render-gradebook-school-rollup.png 247583 bytes
+RENDERED 'Gradebook Teacher View': render-gradebook-teacher-view.png 89813 bytes
+RENDERED 'Landing Page': render-landing-page.png 721195 bytes
+RENDERED 'Landing Page (Q1)': render-landing-q1.png 722897 bytes
+DEFAULT_VIEW Landing Page
+LIVE_VIEWS ['Academic Health Home', 'Academic Health Schools', 'Cumulative GPA Monitor', 'Gradebook School Rollup', 'Gradebook Teacher View', 'Landing Page']
+review_luid=55cac48f-15d0-4048-b219-bb8dfbf39700
+review_name=ZZ-REVIEW 2026-09-10 AGHS landing page
+production_revision=25
+default_view=Landing Page
+live_views=Academic Health Home|Academic Health Schools|Cumulative GPA Monitor|Gradebook School Rollup|Gradebook Teacher View|Landing Page
+hidden_count=10
+1 passed in 85.63s (0:01:25)
+```
+
+The `review_url` line is omitted from this transcript (internal server
+hostname); it is recorded in `$lp/review-meta.txt` and the Task 8 report.
+
+Note: this run's first pytest invocation crashed on the `hidden_views`
+bookkeeping bug above, AFTER the publish and all seven renders had already
+succeeded server-side. The fix (capture `hidden_count` before the `publish()`
+reassignment) required a second `pytest` invocation to get a clean pass and a
+written `review-meta.txt`; the second invocation's `Overwrite` publish landed on
+the same luid as the first, confirming the idempotency the retry design already
+relied on.
