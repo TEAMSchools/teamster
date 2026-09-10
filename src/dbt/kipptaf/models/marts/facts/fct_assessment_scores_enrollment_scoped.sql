@@ -296,22 +296,17 @@ with
         from iready_domain_scores_raw
     ),
 
-    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
-    -- same-day retests and fiscal-year re-pull duplicates exist upstream.
-    -- partition_by deliberately omits academic_year: a physical test pulled
-    -- under two fiscal-year partitions has the same test_date but a differing
-    -- pull-derived academic_year, so keying on academic_year would keep both
-    -- rows -- they then double-count once academic_year is resolved from the
-    -- test date (#4546). A date belongs to exactly one academic year, so
-    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
-    -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic. Remove this dedupe when staging is fixed.
-    -- response_type_code joins the partition because domain rows deliberately
-    -- share module_code with the subject-level anchor; without it all domains
-    -- plus the anchor collapse to one row. NULL groups cleanly for anchors.
-    -- Even with the discriminator the partition still collapses a large share
-    -- of domain rows. Nearly all of that is the #4387 fiscal-year re-pull,
-    -- where the duplicate rows differ only in academic_year, and is intended.
+    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test, so
+    -- same-day retests and fiscal-year re-pull duplicates reach this model.
+    -- Remove this dedupe when staging is fixed.
+    --
+    -- Two things the partition key gets right and would be easy to "fix"
+    -- wrong. It omits academic_year, because a re-pull repeats one sitting
+    -- under a second fiscal-year partition with the same test_date but a
+    -- different pull-derived academic_year, and keying on it keeps both
+    -- (#4546). It includes response_type_code, because domain rows share
+    -- module_code with the subject-level anchor, and without it every domain
+    -- and its anchor collapse into one row.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -355,19 +350,11 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- This dedupe is permanent, not a workaround for #4388. STAR records each
-    -- sitting under its own assessment_id, and students genuinely retest the
-    -- same subject on the same day, so the fact grain (which carries no
-    -- attempt dimension) is coarser than staging on purpose. scale_score desc
-    -- keeps the best sitting.
-    -- partition_by deliberately omits academic_year: a physical test pulled
-    -- under two fiscal-year partitions has the same test_date but a differing
-    -- pull-derived academic_year, so keying on academic_year would keep both
-    -- rows -- they then double-count once academic_year is resolved from the
-    -- test date (#4546). A date belongs to exactly one academic year, so
-    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
-    -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic.
+    -- Permanent, not a workaround for #4388: STAR records each sitting under
+    -- its own assessment_id and students genuinely retest the same subject on
+    -- the same day, so this grain is coarser than staging on purpose.
+    -- scale_score desc keeps the best sitting. academic_year is omitted from
+    -- the partition for the same #4546 reason as i-Ready above.
     star_scores as (
         {{
             dbt_utils.deduplicate(
