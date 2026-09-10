@@ -36,8 +36,8 @@ Apply to every assessment source unless a source section overrides them.
   - **`group`** — named breakdowns: Illuminate reporting groups, and now also
     i-Ready domains and DIBELS subtests.
   - **`standard`** — Illuminate standards only.
-  - **`not_taken`** — an Illuminate assessment a student was expected to take
-    but has no recorded response for.
+  - **`not_taken`** — an internal assessment a student was expected to take but
+    has no recorded response for.
   - `response_type_code` is populated on Illuminate `standard` rows and on
     vendor `group` rows (i-Ready domain codes, DIBELS subtest codes) — it is
     **NULL on Illuminate `group` rows.** Do not assume `group` always carries a
@@ -262,8 +262,8 @@ Apply to every assessment source unless a source section overrides them.
   report per-instrument is an open decision — flag it.)
 - **`response_type`:** `overall` / `standard` / `group` / `not_taken`. Use
   `overall` unless a standard/group breakdown is requested. `not_taken` is
-  Illuminate-only — it marks an assessment the student was expected to take but
-  has no recorded response for; exclude it explicitly if you are not
+  internal (Illuminate) only — it marks an assessment the student was expected
+  to take but has no recorded response for; exclude it explicitly if you are not
   deliberately including no-shows (proficiency measures already exclude it).
 - **Bands:** `performance_band_label_number` applies, but read the Shared
   conventions entry first — the number is only meaningful inside the

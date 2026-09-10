@@ -58,7 +58,11 @@ cubes:
         public: true
 
       - name: term_key
-        description: FK to terms — the reporting quarter containing the score.
+        description: >-
+          FK to terms. The reporting quarter containing the date this score was
+          administered or taken, at the school of the resolved section
+          enrollment. Null when no reporting quarter is defined for that school
+          and date.
         sql: term_key
         type: string
 
@@ -119,8 +123,8 @@ cubes:
           Non-nullable across every source, including state. overall (the
           summary row for every source), group (a named breakdown — Illuminate
           reporting groups, i-Ready domains, DIBELS subtests), standard
-          (Illuminate standards only), or not_taken (an Illuminate assessment
-          the student was expected to take but has no recorded response).
+          (Illuminate standards only), or not_taken (an internal assessment the
+          student was expected to take but has no recorded response).
         sql: response_type
         type: string
         public: true
@@ -159,7 +163,7 @@ cubes:
         description: >-
           Illuminate-only flag. TRUE when a K-8 student sat a
           replacement-curriculum assessment off their enrolled grade level. Null
-          for all non-Illuminate sources (state and vendor: iReady, DIBELS,
+          for all non-Illuminate sources (state and vendor: i-Ready, DIBELS,
           STAR), which have no replacement-curriculum concept.
         sql: is_replacement
         type: boolean
@@ -468,7 +472,7 @@ cubes:
         # so one straddling July 1 lands its scores across two academic_year
         # partitions here, by each score's own test date. That is correct
         # per-score attribution, not a fan-out: 0 state administrations split
-        # today, only a handful of iReady/DIBELS windows do (#4546 finding 3).
+        # today, only a handful of i-Ready/DIBELS windows do (#4546 finding 3).
         time_dimension: dates.date_day
         granularity: year
         partition_granularity: year
