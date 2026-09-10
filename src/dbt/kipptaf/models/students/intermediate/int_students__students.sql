@@ -167,7 +167,6 @@ select
     p.ethnicity_code,
     p._dbt_source_project,
 from {{ ref("stg_powerschool__students") }} as p
-where p._dbt_source_project != 'kippmiami'
 
 full union all corresponding
 

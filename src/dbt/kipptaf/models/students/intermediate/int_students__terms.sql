@@ -134,8 +134,6 @@ with
             and p.rn = 1
     ),
 
-    powerschool_conformed as (
-        select *, from powerschool_joined where _dbt_source_project != 'kippmiami'
     )
 
 -- The branches differ in width on purpose: `full union all corresponding`
@@ -177,7 +175,7 @@ select
     yearid,
     _dbt_source_project,
     academic_year,
-from powerschool_conformed
+from powerschool_joined
 
 full union all corresponding
 

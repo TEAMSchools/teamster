@@ -31,8 +31,7 @@
                 cast(null as int64) as student_number_bare,
             from {{ ref("stg_powerschool__students") }}
             where
-                _dbt_source_project != 'kippmiami'
-                and dob is not null
+                dob is not null
                 and first_name is not null
                 and last_name is not null
                 and enroll_status = 0

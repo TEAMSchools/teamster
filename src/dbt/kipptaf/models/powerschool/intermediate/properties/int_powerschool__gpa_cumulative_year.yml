@@ -8,6 +8,8 @@ models:
       int_powerschool__gpa_cumulative projected values exactly.
     config:
       materialized: table
+      meta:
+        contains_pii: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
