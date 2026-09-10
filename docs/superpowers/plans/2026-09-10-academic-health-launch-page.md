@@ -199,7 +199,7 @@ No commit: nothing under the worktree changed.
 **Interfaces:**
 
 - Produces:
-  `check_additive.py <edited.twb> <base.twb> --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix "Calculation_76" --action-prefix "LP_"`.
+  `check_additive.py <edited.twb> <base.twb> --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix "Calculation_77" --action-prefix "LP_"`.
   Exit 0 when stripping the named additions from the edited file leaves it
   byte-identical to the base. Exit 1 with a unified diff excerpt otherwise.
 
@@ -214,7 +214,7 @@ unmutated file round-trips byte-exact.
 
     uv run python check_additive.py edited.twb base.twb \
         --sheet-prefix "LP - " --dashboard "Landing Page" \
-        --calc-prefix Calculation_76 --action-prefix LP_
+        --calc-prefix Calculation_77 --action-prefix LP_
 """
 
 import argparse
@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
 ```bash
 cd /workspaces/teamster && lp=.claude/scratch/tableau/lp
-~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/base.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_76 --action-prefix LP_ >$lp/o-add-0.txt 2>&1; echo "rc=$?"; tail -2 $lp/o-add-0.txt
+~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/base.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_ >$lp/o-add-0.txt 2>&1; echo "rc=$?"; tail -2 $lp/o-add-0.txt
 ```
 
 Expected: `rc=0`, every `stripped` count `0`.
@@ -305,7 +305,7 @@ Expected: `rc=0`, every `stripped` count `0`.
 cd /workspaces/teamster && lp=.claude/scratch/tableau/lp
 ~/.local/bin/uv run python docs/tableau-xml/scripts/mutate.py $lp/base.twb $lp/ctrl.twb "Gradebook School Rollup" control; cmp $lp/base.twb $lp/ctrl.twb && echo CONTROL_OK
 ~/.local/bin/uv run python docs/tableau-xml/scripts/mutate.py $lp/base.twb $lp/mut-1.twb "Gradebook School Rollup" set-attr 10 show-title true
-~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/mut-1.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_76 --action-prefix LP_ >$lp/o-add-mut.txt 2>&1; echo "rc=$?"
+~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/mut-1.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_ >$lp/o-add-mut.txt 2>&1; echo "rc=$?"
 ```
 
 Expected: `CONTROL_OK`, then `rc=1` on the mutant with a diff naming zone
@@ -327,7 +327,7 @@ byte-identical to the base.
 
 ```bash
 uv run python check_additive.py <edited.twb> <base.twb> --sheet-prefix "LP - " \
-  --dashboard "Landing Page" --calc-prefix Calculation_76 --action-prefix LP_
+  --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_
 ```
 
 Prove it has teeth the same way as the others: `mutate.py set-attr` on any zone
@@ -366,19 +366,19 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
   `insert_after(text, anchor, block) -> str`, `new_uuid() -> str` (uppercase,
   braced), `crlf(block: str) -> str` (converts a Python triple-quoted block to
   CRLF and strips the leading newline).
-- Produces: the two calculation names `[Calculation_7600000000000000001]`
+- Produces: the two calculation names `[Calculation_7700000000000000001]`
   (caption `LP Students still needed (region)`) and
-  `[Calculation_7600000000000000002]` (caption `LP Gap to goal (region)`) on
+  `[Calculation_7700000000000000002]` (caption `LP Gap to goal (region)`) on
   datasource `federated.0n798br073i5kb170j6l90uiv50a`.
 
 - [ ] **Step 1: Confirm the new names are unused**
 
 ```bash
-grep -c "Calculation_76" /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+grep -c "Calculation_77" /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
 ```
 
 Expected: `0`. If not, pick the next free prefix and use it everywhere the plan
-says `Calculation_76`, including the `--calc-prefix` argument.
+says `Calculation_77`, including the `--calc-prefix` argument.
 
 - [ ] **Step 2: Write the assertion for this task first**
 
@@ -403,13 +403,13 @@ def count(text: str, pat: str) -> int:
 def task3(t: str) -> None:
     ds = re.search(rf"<datasource caption='[^']*' inline='true' name='{GOAL_DS}'.*?</datasource>", t, re.S).group(0)
     for name, cap in (
-        ("Calculation_7600000000000000001", "LP Students still needed \\(region\\)"),
-        ("Calculation_7600000000000000002", "LP Gap to goal \\(region\\)"),
+        ("Calculation_7700000000000000001", "LP Students still needed \\(region\\)"),
+        ("Calculation_7700000000000000002", "LP Gap to goal \\(region\\)"),
     ):
         assert count(ds, rf"<column caption='{cap}' [^>]*name='\[{name}\]'") == 1, name
         assert count(t, rf"\[{name}\]") >= 1
     assert "gpa_goal_proportion_region" in ds
-    assert "Parameter 3" not in re.search(r"name='\[Calculation_7600000000000000001\]'.*?</column>", ds, re.S).group(0)
+    assert "Parameter 3" not in re.search(r"name='\[Calculation_7700000000000000001\]'.*?</column>", ds, re.S).group(0)
 
 
 CHECKS = [task3]
@@ -499,10 +499,10 @@ def add_goal_calcs(t: str) -> str:
     anchor = ("      <column caption='Gap to goal (pts)' datatype='real' "
               "name='[Calculation_3466859908724272046]' role='measure' type='quantitative'>")
     block = crlf("""
-      <column caption='LP Students still needed (region)' datatype='real' name='[Calculation_7600000000000000001]' role='measure' type='quantitative'>
+      <column caption='LP Students still needed (region)' datatype='real' name='[Calculation_7700000000000000001]' role='measure' type='quantitative'>
         <calculation class='tableau' formula='// LP copy of [Students still needed] with the p_Region branch removed&#10;IF [Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10;   &gt;= AVG([gpa_goal_proportion_region])&#10;THEN 0&#10;ELSE ROUND(AVG([gpa_goal_proportion_region]) * [Calculation_4693780698737655073])&#10;     - [Calculation_9485136151529756033]&#10;END' />
       </column>
-      <column caption='LP Gap to goal (region)' datatype='real' name='[Calculation_7600000000000000002]' role='measure' type='quantitative'>
+      <column caption='LP Gap to goal (region)' datatype='real' name='[Calculation_7700000000000000002]' role='measure' type='quantitative'>
         <calculation class='tableau' formula='// LP copy of [Gap to goal (pts)] with the p_Region branch removed&#10;([Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10; - AVG([gpa_goal_proportion_region])) * 100' />
       </column>
 """)
@@ -540,7 +540,7 @@ different indentation.
 lp=/workspaces/teamster/.claude/scratch/tableau/lp; cd /workspaces/teamster
 ~/.local/bin/uv run python $lp/build_lp.py >$lp/o-build.txt 2>&1; echo "build rc=$?"; tail -3 $lp/o-build.txt
 ~/.local/bin/uv run python $lp/assert_lp.py >$lp/o-assert.txt 2>&1; echo "assert rc=$?"; cat $lp/o-assert.txt
-~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/out.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_76 --action-prefix LP_ >$lp/o-add.txt 2>&1; echo "additive rc=$?"
+~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/out.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_ >$lp/o-add.txt 2>&1; echo "additive rc=$?"
 ~/.local/bin/uv run python docs/tableau-xml/scripts/check_twb.py $lp/out.twb --ref $lp/base.twb >$lp/o-twb.txt 2>&1; echo "check_twb rc=$?"
 ```
 
@@ -829,7 +829,7 @@ def task5(t: str) -> None:
         assert f"name='[none:region:nk]'" in w, name
         assert count(t, rf"<window class='worksheet' hidden='true' name='{re.escape(name)}'") == 1
     cum = re.search(r"<worksheet name='LP - Strip Cumulative GPA'>.*?</worksheet>", t, re.S).group(0)
-    assert "Calculation_7600000000000000001" in cum   # region-goal variant, not the p_Region one
+    assert "Calculation_7700000000000000001" in cum   # region-goal variant, not the p_Region one
 ```
 
 Add to `CHECKS`; run; expected `FAIL task5`.
@@ -883,7 +883,7 @@ def add_strips(t: str) -> str:
          "<run fontname='Tableau Regular' fontsize='9'>Cumulative GPA at or above 3.0</run>"),
     ], extra=[
         # region-goal variant replaces the p_Region-aware one wherever the tile referenced it
-        ("[usr:Calculation_5262281088199017638:qk]", "[usr:Calculation_7600000000000000001:qk]"),
+        ("[usr:Calculation_5262281088199017638:qk]", "[usr:Calculation_7700000000000000001:qk]"),
     ])
     t = strip_from_tile(t, "LP - Tile Gradebook Health", "LP - Strip Gradebook Health", GB_DS, [
         ("<run fontcolor='#ffffff' fontname='Tableau Medium' fontsize='13'>% of teachers with a healthy gradebook</run>",
@@ -896,8 +896,8 @@ The swap of `Calculation_5262281088199017638` for the region variant on the
 cumulative strip only applies if Task 4 added that reference to the tile; if it
 did not, drop the `extra` list and instead add the `<column>`,
 `<column-instance>` and `<text column=...>` lines for
-`Calculation_7600000000000000001` the same way Task 4 describes, copying the
-column-instance form `[usr:Calculation_7600000000000000001:qk]`.
+`Calculation_7700000000000000001` the same way Task 4 describes, copying the
+column-instance form `[usr:Calculation_7700000000000000001:qk]`.
 
 Add `add_strips` to `STEPS` after the tiles.
 
@@ -1046,11 +1046,13 @@ def add_guides(t: str) -> str:
             (old_label, "                <run fontcolor='#b9c7e6' fontsize='8' italic='true'>Help guide: coming soon</run>"),
         ])
         w = worksheet_block(t, name)
-        # drop the cross-source school filter and its slice, and the goals source it needs
-        w2, n = re.subn(r"          <filter class='categorical' column='\[federated\.0n798br073i5kb170j6l90uiv50a\]\.\[none:school:nk\]'.*?</filter>\r\n", "", w, count=1, flags=re.S)
-        if n != 1:
-            raise RuntimeError(f"{name}: school filter")
-        w2 = sub_once(w2, "            <column>[federated.0n798br073i5kb170j6l90uiv50a].[none:school:nk]</column>\r\n", "")
+        # drop EVERY filter and every slice except [Exclude ES]: the base of
+        # 2026-09-10 13:40 UTC added two action filters to the roster sheets on
+        # top of the cross-source school filter, and a placeholder needs none.
+        w2, n = re.subn(r"          <filter class='categorical' [^>]*>.*?</filter>\r\n", "", w, flags=re.S)
+        if n < 1:
+            raise RuntimeError(f"{name}: no filters found to drop")
+        w2 = re.sub(r"            <column>(?!\[federated\.1ikycy21f3ow4k1eazzbx1iah2yl\]\.\[Exclude ES\])[^<]*</column>\r\n", "", w2)
         w2, n = re.subn(r"          <datasource-dependencies datasource='federated\.0n798br073i5kb170j6l90uiv50a'>.*?</datasource-dependencies>\r\n", "", w2, count=1, flags=re.S)
         if n != 1:
             raise RuntimeError(f"{name}: goals dependencies")
@@ -1133,7 +1135,7 @@ def task7(t: str) -> None:
     win = re.search(r"<windows[^>]*>\r\n(.*?)</window>", t, re.S).group(1)
     assert "class='dashboard' maximized='true' name='Landing Page'" in win, "Landing Page window is not first or not the default view"
     assert count(t, r" maximized='true'") == 1, "exactly one maximized window"
-    assert "maximized='true' name='Gradebook Teacher View'" not in t
+    assert re.search(r"maximized='true' name='(?!Landing Page)", t) is None
     # actions
     assert count(t, r"<nav-action caption='LP [^']*' name='\[LP_Nav_") == 9
     assert count(t, r"<action caption='GPA Roster [A-Za-z]+ \(Landing Page\)' name='\[LP_Link_") == 3
@@ -1411,9 +1413,14 @@ def add_dashboard(t: str) -> str:
     # the base's <windows> tag carries source-height='114'; anchor on the tag as found
     windows_tag = re.search(r"  <windows[^>]*>\r\n", t).group(0)
     t = insert_after(t, windows_tag, window)
-    # move the default-view marker off the Teacher View window (the one sanctioned edit)
-    t = sub_once(t, "<window class='dashboard' maximized='true' name='Gradebook Teacher View'",
-                 "<window class='dashboard' name='Gradebook Teacher View'")
+    # move the default-view marker off whichever existing window carries it
+    # (the one sanctioned edit). The base of 2026-09-10 13:40 UTC has it on
+    # Academic Health Home; an earlier base had it on Gradebook Teacher View.
+    if t.count(" maximized='true'") != 2:  # the new Landing Page window plus one existing
+        raise RuntimeError("expected exactly one pre-existing maximized window")
+    t = re.sub(r"(<window class='dashboard') maximized='true' (name='(?!Landing Page)[^']*')", r"\1 \2", t, count=1)
+    if t.count(" maximized='true'") != 1:
+        raise RuntimeError("default-view marker move failed")
     return t
 
 
@@ -1471,7 +1478,7 @@ differ.
 lp=/workspaces/teamster/.claude/scratch/tableau/lp; cd /workspaces/teamster
 ~/.local/bin/uv run python $lp/build_lp.py >$lp/o-build.txt 2>&1; echo "build rc=$?"
 ~/.local/bin/uv run python $lp/assert_lp.py >$lp/o-assert.txt 2>&1; echo "assert rc=$?"; grep -c PASS $lp/o-assert.txt
-~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/out.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_76 --action-prefix LP_ >$lp/o-add.txt 2>&1; echo "additive rc=$?"
+~/.local/bin/uv run python docs/tableau-xml/scripts/check_additive.py $lp/out.twb $lp/base.twb --sheet-prefix "LP - " --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_ >$lp/o-add.txt 2>&1; echo "additive rc=$?"
 ~/.local/bin/uv run python docs/tableau-xml/scripts/check_twb.py $lp/out.twb --ref $lp/base.twb >$lp/o-twb.txt 2>&1; echo "check_twb rc=$?"
 ~/.local/bin/uv run python docs/tableau-xml/scripts/check_geometry.py $lp/out.twb "Landing Page" --baseline $lp/base.twb >$lp/o-geo.txt 2>&1; echo "geometry rc=$?"; tail -5 $lp/o-geo.txt
 for d in "Academic Health Home" "Academic Health Schools" "Cumulative GPA Monitor" "Gradebook School Rollup" "Gradebook Teacher View"; do
@@ -1810,7 +1817,7 @@ Production publish is theirs.
   time" is the `<caption>` in Task 4.
 - Placeholders: none. The two places the plan defers to the base file (window
   uuids, roster URLs) read and assert at build time rather than trust the copy.
-- Names: `Calculation_7600000000000000001` and `...002`, `LP - ` prefix,
+- Names: `Calculation_7700000000000000001` and `...002`, `LP - ` prefix,
   `LP_Nav_` and `LP_Link_` action prefixes, and `Landing Page` are used
   identically in the build script, the assertions and the `check_additive`
   arguments.
