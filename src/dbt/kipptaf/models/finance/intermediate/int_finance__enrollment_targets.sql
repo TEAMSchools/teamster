@@ -17,5 +17,4 @@ select
 
     sch._dbt_source_project,
 from {{ ref("stg_google_sheets__finance__enrollment_targets") }} as et
-inner join
-    {{ ref("stg_powerschool__schools") }} as sch on et.schoolid = sch.school_number
+inner join {{ ref("int_students__schools") }} as sch on et.schoolid = sch.school_number

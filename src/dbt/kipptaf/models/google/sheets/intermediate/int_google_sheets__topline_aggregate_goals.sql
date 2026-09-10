@@ -32,4 +32,4 @@ select
         then s.abbreviation || ' ' || g.grade_band
     end as aggregation_display,
 from {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
-left join {{ ref("stg_powerschool__schools") }} as s on g.schoolid = s.school_number
+left join {{ ref("int_students__schools") }} as s on g.schoolid = s.school_number
