@@ -114,6 +114,16 @@ accept a subagent's self-report without the checks there.
 
 ## Tooling
 
+- Read a file under `src/dbt/` or `src/cube/` with Read, never `cat`. Same for a
+  filename matching `*college_assessment*`, `*fresh_*` or `*gradebook_audit*`.
+  Those paths carry `.claude/rules/*.md`, which load on a Read/Edit/Write path
+  match and never on a Bash command string — `cat` returns the file and silently
+  drops the conventions governing the edit you are about to make. Auto mode's
+  Bash-first instruction does not override this. It scopes itself to work Bash
+  can accomplish, and this is work Bash cannot accomplish.
+- Use Read/Edit/Write for all other file I/O, and Bash for `git`, `uv run`,
+  `gh`, `docker`, `trunk`, `ls`. On the native VS Code build Grep and Glob are
+  absent as tools, so search with `rg`/`grep` via Bash.
 - One-off deps: `uv run --with <pkg> python script.py`, not `uv add --dev`.
 - Credentialed one-offs run under pytest. The autouse session fixture in
   `tests/conftest.py` loads 1Password secrets, so live SFTP/API pulls, asset
@@ -131,17 +141,6 @@ accept a subagent's self-report without the checks there.
 - Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a derived value: line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline.
-- On the native VS Code build, Grep and Glob are absent as tools; search with
-  `rg`/`grep` via Bash. When the system prompt asks for Bash-first work (auto
-  mode), follow it for searching and for running things — but never to READ a
-  file that carries path-scoped rules. `.claude/rules/*.md` load on a
-  Read/Edit/Write path match and never on a Bash command string, so `cat` on
-  anything under `src/dbt/` or `src/cube/`, or on a filename matching
-  `*college_assessment*`, `*fresh_*` or `*gradebook_audit*`, skips the
-  conventions governing the edit you are about to make. Bash cannot accomplish
-  that job, so the auto-mode instruction does not cover it: use Read. Otherwise
-  use Read/Edit/Write for file I/O and Bash only for `git`, `uv run`, `gh`,
-  `docker`, `trunk`, `ls`.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
 - After any call that creates or updates a resource with string fields (issue
