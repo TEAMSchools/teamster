@@ -1137,6 +1137,47 @@ round:
 - **`benchmark_goal`**, **`pm_goal_include`**, **`pm_goal_criteria`** — passed
   through from `int_google_sheets__dibels_pm_expectations`.
 
+#### Worked example: how a trajectory is actually built
+
+Newark, grade 1, Decoding (NWF-WRC), BOY→MOY on AY2025. The cohort's average BOY
+benchmark score was 3, the padded grade-level standard is 17, so 14 words are
+owed across 70 in-session school days:
+
+| Round | `pm_round_days` | `round_growth_words_goal` | `cumulative_growth_words` | `pm_goal_include` |
+| ----- | --------------- | ------------------------- | ------------------------- | ----------------- |
+| 1     | 28              | **9**                     | 9                         | `false`           |
+| 2     | 19              | 4                         | 13                        | `false`           |
+| 3     | 6               | 1                         | 14                        | `null`            |
+| 4     | 17              | 3                         | **17**                    | `null`            |
+
+Three things to read off it.
+
+**Round 1 is a level, every later round is an increment.** `28 / 70 × 14 ≈ 6`,
+yet round 1 shows 9 — because the season's first round adds `starting_words` on
+top of its share. That is deliberate: a score is an absolute number of words, so
+the thing it is compared against has to be absolute too. Seeding round 1 with
+"where they started plus what they grew" makes the first cumulative value a
+level, and every later round adds its share, so **every** round's cumulative
+stays a level a raw score can be held against. Without the seed the running
+total would measure growth-since-the-benchmark and could never be compared to a
+score.
+
+**The last round lands exactly on the standard.** Round 4's cumulative is 17,
+not an accumulated approximation, because `cumulative_growth_words` sets the
+season's final round to `benchmark_goal` outright.
+
+**The scaffold rows carry the trajectory across untested rounds.** Decoding was
+not tested in rounds 1 and 2 here — both are `pm_goal_include = false` — but
+they still hold school days and growth, so the running sum reaches round 3
+already at 14. Filter scaffold rows out of the _trajectory_ and the cumulative
+restarts from nothing; filter them out when _evaluating a student_, which is
+what `pm_goal_include is null` is for.
+
+Note also that `round_growth_words_goal` is never compared against anything.
+`met_measure_standard_goal` uses `cumulative_growth_words`. The per-round figure
+exists to make a trajectory readable, so a dashboard showing "words needed this
+round" is explaining, not scoring.
+
 #### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_pm_goals`
 
 Just like the BM pipeline, the output is manually copy-pasted into a Google
