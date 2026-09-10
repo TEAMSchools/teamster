@@ -98,10 +98,9 @@ its upstream producer — never re-derive it downstream.
 
 - **Snapshot-fed models are the exception — they derive** from
   `_dbt_source_relation`: the snapshot doesn't carry `_dbt_source_project` (e.g.
-  `snapshot_powerschool__gpa_term`, whose source
-  `int_powerschool__gpa_term_current` re-selects columns and drops it), and
-  adding it to the snapshot's source model leaves it ~99% NULL — the `check`
-  strategy only backfills touched rows.
+  `snapshot_powerschool__gpa_term`, whose source is
+  `int_powerschool__gpa_term_current`), and adding it to the snapshot's source
+  model leaves it ~99% NULL — the `check` strategy only backfills touched rows.
 - Adding the column to a (non-contracted) intermediate still needs a
   `properties.yml` column entry
   (`description: District code location derived from _dbt_source_relation.`) —

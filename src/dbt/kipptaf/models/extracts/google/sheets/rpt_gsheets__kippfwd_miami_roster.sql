@@ -52,7 +52,6 @@ with
     students as (
         select
             student_id,
-            powerschool_id,
             sex_label,
             has_iep,
             cast(disis_id as string) as mdcps_id_raw,
@@ -78,24 +77,20 @@ with
         where _dbt_source_project = 'kippmiami' and studentid is not null
     ),
 
-    /* Miami's PowerSchool archive is frozen at AY2025 and keys on studentid,
-       which the Focus enrollment branch null-fills (#4775) -- so every ADA and
-       cumulative-GPA column reached through int_extracts reads null for Miami.
-       int_focus__students carries powerschool_id, which is the PowerSchool
-       student_number and NOT studentid, so bridge it to studentid here and read
-       the archive directly. Verified 1:1: no Miami student_number maps to more
-       than one studentid. schoolid comes along to keep the gpa_cumulative join
-       single-rowed -- 323 Miami students have more than one row there. */
+    /* gpa_cumulative is one row per student per school, and 323 Miami students
+       have more than one row. The student's primary school in the archive's
+       last year picks the row, the same school the retired students table
+       carried as the student's current school. student_number is the archive's
+       8400-prefixed value, so the Focus roster joins it directly. */
     ps_xwalk as (
         select
-            stu.student_number as ps_student_number,
-            stu.id as ps_studentid,
-            stu.schoolid,
+            se.student_number as ps_student_number,
+            se.schoolid,
 
             ply.academic_year as ps_last_academic_year,
-        from {{ ref("stg_powerschool__students") }} as stu
-        cross join ps_last_academic_year as ply
-        where stu._dbt_source_project = 'kippmiami'
+        from {{ ref("base_powerschool__student_enrollments") }} as se
+        inner join ps_last_academic_year as ply on se.academic_year = ply.academic_year
+        where se._dbt_source_project = 'kippmiami' and se.rn_year = 1
     ),
 
     /* gpa_y1 is PowerSchool-only. Keep the is_current filter and join THIS
@@ -122,7 +117,7 @@ select
        (advisor) and #4796 (GPA replacement). */
     psy.advisor_lastfirst,
 
-    cast(s.powerschool_id as int64) as ps_id,
+    if(px.ps_student_number is not null, e.student_number - 8400000000, null) as ps_id,
 
     lpad(s.mdcps_id_raw, 7, '0') as mdcps_id,
 
@@ -210,7 +205,7 @@ left join
     fast_pivot as fp_prev
     on e.fteid = fp_prev.student_id
     and e.academic_year - 1 = fp_prev.academic_year
-left join ps_xwalk as px on s.powerschool_id = px.ps_student_number
+left join ps_xwalk as px on e.student_number = px.ps_student_number
 left join
     -- Keyed on student_number, not studentid: studentid is null for every
     -- Focus-sourced kippmiami row in ada_term_pivot, which previously left
@@ -221,13 +216,13 @@ left join
     and pada._dbt_source_project = 'kippmiami'
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as pgc
-    on px.ps_studentid = pgc.studentid
+    on px.ps_student_number = pgc.students_student_number
     and px.schoolid = pgc.schoolid
     and pgc._dbt_source_project = 'kippmiami'
     and e.academic_year - 1 = px.ps_last_academic_year
 left join
     {{ ref("int_extracts__student_enrollments") }} as psy
-    on s.powerschool_id = psy.student_number
+    on e.student_number = psy.student_number
     and e.academic_year = psy.academic_year
     and psy.region = 'Miami'
     and psy.rn_year = 1

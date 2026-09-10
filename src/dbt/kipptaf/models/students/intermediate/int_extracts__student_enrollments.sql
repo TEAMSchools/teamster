@@ -5,50 +5,79 @@ with
         from {{ ref("int_students__calendar_week") }}
     ),
 
-    esms_attend as (
+    enrollments as (
         select
-            _dbt_source_project,
-            student_number,
-            school_level,
-            school_abbreviation,
+            *,
 
-            row_number() over (
-                partition by student_number, school_level order by exitdate desc
-            ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
-    ),
+            if(
+                school_level = 'MS', school_abbreviation, null
+            ) as ms_school_abbreviation,
+            if(
+                school_level = 'ES', school_abbreviation, null
+            ) as es_school_abbreviation,
+            if(
+                grade_level != 99, date_diff(exitdate, entrydate, day), null
+            ) as days_enrolled,
 
-    es_grad as (
-        select
-            student_number,
-            school_abbreviation,
-
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where
-            grade_level = 4
-            and extract(month from exitdate) = 6
-            and exitdate < current_date('{{ var("local_timezone") }}')
-    ),
-
-    next_year_school as (
-        select
-            student_number,
-            academic_year,
+            if(
+                grade_level = 4
+                and extract(month from exitdate) = 6
+                and exitdate < current_date('{{ var("local_timezone") }}'),
+                school_abbreviation,
+                null
+            ) as es_grad_school_abbreviation,
 
             lead(school_abbreviation, 1) over (
-                partition by student_number order by academic_year asc
-            ) as next_year_school,
+                partition by student_number, rn_year order by academic_year asc
+            ) as next_year_school_lead,
 
             lead(schoolid, 1) over (
-                partition by student_number order by academic_year asc
+                partition by student_number, rn_year order by academic_year asc
+            ) as next_year_schoolid_lead,
+        from {{ ref("base_powerschool__student_enrollments") }}
+    ),
+
+    windowed as (
+        select
+            * except (
+                ms_school_abbreviation,
+                es_school_abbreviation,
+                es_grad_school_abbreviation,
+                days_enrolled,
+                next_year_school_lead,
+                next_year_schoolid_lead
+            ),
+
+            first_value(ms_school_abbreviation ignore nulls) over (
+                partition by _dbt_source_project, student_number
+                order by rn_all asc
+                rows between unbounded preceding and unbounded following
+            ) as ms_attended,
+
+            first_value(es_school_abbreviation ignore nulls) over (
+                partition by _dbt_source_project, student_number
+                order by rn_all asc
+                rows between unbounded preceding and unbounded following
+            ) as es_attended,
+
+            first_value(es_grad_school_abbreviation ignore nulls) over (
+                partition by _dbt_source_project, student_number
+                order by rn_all asc
+                rows between unbounded preceding and unbounded following
+            ) as es_graduated,
+
+            max(if(rn_year = 1, next_year_school_lead, null)) over (
+                partition by student_number, academic_year
+            ) as next_year_school,
+
+            max(if(rn_year = 1, next_year_schoolid_lead, null)) over (
+                partition by student_number, academic_year
             ) as next_year_schoolid,
 
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_year = 1
+            sum(days_enrolled) over (
+                partition by _dbt_source_project, academic_year, student_number
+            ) as days_enrolled_year,
+        from enrollments
     ),
 
     mia_territory as (
@@ -81,23 +110,6 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
-    ),
-
-    finalsite_enrollment_type_calc as (
-        select
-            _dbt_source_project,
-            academic_year,
-            student_number,
-
-            if(
-                sum(date_diff(exitdate, entrydate, day)) >= 7,
-                'Previously Enrolled',
-                'NTK'
-            ) as next_year_enrollment_history,
-
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where grade_level != 99
-        group by _dbt_source_project, academic_year, student_number
     )
 
 select
@@ -117,7 +129,8 @@ select
         state_studentnumber,
         `state`,
         homeless_code,
-        homeless_primary_nighttime_residence_code
+        homeless_primary_nighttime_residence_code,
+        days_enrolled_year
     ),
 
     sc.contact_1_name,
@@ -218,12 +231,6 @@ select
     lc.location_region as region_official_name,
     lc.location_deanslist_school_id as deanslist_school_id,
 
-    m.school_abbreviation as ms_attended,
-
-    es.school_abbreviation as es_attended,
-
-    eg.school_abbreviation as es_graduated,
-
     mt.territory,
 
     hi.enter_date as home_instruction_enter_date,
@@ -258,9 +265,6 @@ select
     gc.earned_credits_cum_projected,
     gc.potential_credits_cum,
 
-    ny.next_year_school,
-    ny.next_year_schoolid,
-
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
@@ -270,10 +274,6 @@ select
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
-
-    if(
-        e.grade_level = 99, null, fs.next_year_enrollment_history
-    ) as next_year_enrollment_history,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 
@@ -354,6 +354,14 @@ select
     ) as is_ada_above_or_at_80_cum_gpa_less_2,
 
     if(e.exitdate < cal.first_day_school_year, true, false) as is_pre_year_withdrawal,
+
+    case
+        when e.grade_level = 99
+        then null
+        when e.days_enrolled_year >= 7
+        then 'Previously Enrolled'
+        else 'NTK'
+    end as next_year_enrollment_history,
 
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
@@ -454,7 +462,7 @@ select
         else 'No issues'
     end as fafsa_status_mismatch_category,
 
-from {{ ref("base_powerschool__student_enrollments") }} as e
+from windowed as e
 left join
     school_year_start as cal
     on e.schoolid = cal.schoolid
@@ -463,18 +471,6 @@ left join
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
     on e.school_name = lc.location_name
-left join
-    esms_attend as m
-    on e.student_number = m.student_number
-    and e._dbt_source_project = m._dbt_source_project
-    and m.school_level = 'MS'
-    and m.rn = 1
-left join
-    esms_attend as es
-    on e.student_number = es.student_number
-    and e._dbt_source_project = es._dbt_source_project
-    and es.school_level = 'ES'
-    and es.rn = 1
 left join
     mia_territory as mt
     on e.student_number = mt.student_school_id
@@ -533,18 +529,9 @@ left join
     and e.schoolid = gc.schoolid
     and e._dbt_source_project = gc._dbt_source_project
 left join
-    next_year_school as ny
-    on e.student_number = ny.student_number
-    and e.academic_year = ny.academic_year
-left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and e._dbt_source_project = mc._dbt_source_project
-left join
-    finalsite_enrollment_type_calc as fs
-    on e.academic_year = fs.academic_year
-    and e.student_number = fs.student_number
-    and e._dbt_source_project = fs._dbt_source_project
 left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on e.student_number = sip.students_student_number
@@ -553,7 +540,6 @@ left join
     and sip.courses_course_number = 'SEM01099G1'
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
-left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
 left join
     {{ ref("int_students__contacts_pivot") }} as sc
     on e.student_number = sc.student_number

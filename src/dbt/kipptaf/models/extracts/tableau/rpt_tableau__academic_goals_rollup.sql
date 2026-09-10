@@ -60,7 +60,7 @@ with
         union all
 
         select
-            s.student_number,
+            f.student_number,
 
             f.academic_year,
             f.scale_score,
@@ -77,24 +77,16 @@ with
             if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on f.student_id = suf.fleid
-            and f._dbt_source_project = suf._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on suf.studentsdcid = s.dcid
-            and suf._dbt_source_project = s._dbt_source_project
-            and s.grade_level >= 4
         where
             f.assessment_name = 'FAST'
             and f.administration_window = 'PM3'
             and f.scale_score is not null
+            and f.assessment_grade != '3'
 
         union all
 
         select
-            s.student_number,
+            f.student_number,
 
             f.academic_year,
             f.scale_score,
@@ -111,19 +103,11 @@ with
             if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on f.student_id = suf.fleid
-            and f._dbt_source_project = suf._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on suf.studentsdcid = s.dcid
-            and suf._dbt_source_project = s._dbt_source_project
-            and s.grade_level = 3
         where
             f.assessment_name = 'FAST'
             and f.administration_window = 'PM1'
             and f.scale_score is not null
+            and f.assessment_grade = '3'
 
         union all
 

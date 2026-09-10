@@ -82,11 +82,10 @@ models:
             cron_schedule: 0 4 * * *
     data_tests:
       # Scoped to rows that resolved a student_number. int_powerschool__gpa_term
-      # carries 4 Camden AY2015 rows at schoolid 0 whose student fails the
-      # dcid >= 1 placeholder filter, so the left join leaves student_number
-      # null and they collide with each other. They are kept rather than
-      # dropped, and fct_grades_gpa excludes them anyway on its inner join to
-      # enrollment.
+      # carries 4 Camden AY2015 rows at schoolid 0 whose students_student_number
+      # is null directly on the package fact, so they collide with each other.
+      # They are kept rather than dropped, and fct_grades_gpa excludes them
+      # anyway on its inner join to enrollment.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
