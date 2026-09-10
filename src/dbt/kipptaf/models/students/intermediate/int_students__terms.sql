@@ -108,9 +108,7 @@ with
             and p.rn = 1
     ),
 
-    powerschool_conformed as (
-        select *, from powerschool_joined where _dbt_source_project != 'kippmiami'
-    )
+    powerschool_conformed as (select *, from powerschool_joined)
 
 select *,
 from powerschool_conformed
