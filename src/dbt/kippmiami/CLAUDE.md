@@ -14,9 +14,9 @@ models/
 
 PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is an archive
 built from the frozen `src_powerschool__*` externals (final ODBC pull
-2026-07-01). It was rebuilt on 2026-09-09 (#5012). A second rebuild, after #5228
-merges, adds identity and school columns to the GPA, final grades, calendar day,
-and student enrollment models. The recipe is the `dbt_project.yml`
+2026-07-01). It was rebuilt on 2026-09-09 (#5012). It was rebuilt again after
+#5231 merged, adding identity and school columns to the GPA, final grades,
+calendar day, and student enrollment models. The recipe is the `dbt_project.yml`
 `powerschool:` block: re-include the package with the ODBC staging variant and
 16 post-hooks — the 8400 Focus prefix on `student_number`
 (`stg_powerschool__students`), 14 staging models with `yearid` dropping rows

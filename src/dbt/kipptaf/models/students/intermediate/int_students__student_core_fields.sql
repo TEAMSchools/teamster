@@ -12,7 +12,6 @@ with
             {{ ref("stg_powerschool__students") }} as s
             on scf.studentsdcid = s.dcid
             and scf._dbt_source_project = s._dbt_source_project
-        where s._dbt_source_project != 'kippmiami'
     ),
 
     -- Both fields are conformed in int_focus__students. Neither is fully

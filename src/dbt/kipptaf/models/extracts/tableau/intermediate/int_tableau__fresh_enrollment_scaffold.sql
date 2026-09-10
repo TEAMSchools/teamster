@@ -42,7 +42,7 @@ with
         select distinct schoolid, grade_level, _dbt_source_project,
 
         from {{ ref("stg_powerschool__students") }}
-        where enroll_status = 0 and _dbt_source_project != 'kippmiami'
+        where enroll_status = 0
 
         union all
 

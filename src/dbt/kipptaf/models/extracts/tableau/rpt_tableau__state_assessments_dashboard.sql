@@ -48,7 +48,7 @@ with
             c.courses_course_name as course_name,
             c.cc_course_number as course_number,
 
-            s.abbreviation as school,
+            c.school_abbreviation as school,
 
             if(
                 c.courses_credittype = 'SOC' and c.region = 'Miami',
@@ -57,9 +57,6 @@ with
             ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
-        left join
-            {{ ref("stg_powerschool__schools") }} as s
-            on c.cc_schoolid = s.school_number
         where
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
