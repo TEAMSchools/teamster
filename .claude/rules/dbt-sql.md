@@ -294,6 +294,59 @@ sqlfluff ST03.** Add
 `# trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below`
 above the CTE.
 
+### dbt_utils.deduplicate cost: ranked column above ~1M rows
+
+The macro compiles on BigQuery to
+`array_agg(original order by <expr> limit 1)[offset(0)]` grouped by the
+partition key. That packs the whole row into a struct, inflates the input
+shuffle, and pushes the aggregate past BigQuery's single-round-shuffle threshold
+— so the plan gains `Repartition` stages that a window function never emits.
+
+**Row count drives the penalty. Row width does not** — do not re-derive the
+width hypothesis. Measured on prod tables, macro against ranked column, output
+byte-identical in every pair (#5252):
+
+|  Rows | Bytes/row | Macro / ranked slot time | Macro / ranked shuffle |
+| ----: | --------: | -----------------------: | ---------------------: |
+| 44.5M |       241 |                     6.6x |                   5.4x |
+| 4.16M |        56 |                     4.6x |                   7.1x |
+|  125k |      3629 |                     2.2x |                   1.7x |
+|   18k |       195 |                     2.5x |         below 0.02 GiB |
+
+The widest table shows the smallest penalty; the narrowest shows the largest
+shuffle ratio.
+
+**The default stays `dbt_utils.deduplicate()`** — it is one call, and `QUALIFY`
+is banned here, so the window form always costs an extra CTE plus an `rn`
+column. **Above about 1M rows in the dedup input, use the ranked-column form
+instead:**
+
+```sql
+with
+    row_numbered as (
+        select
+            <columns>,
+
+            row_number() over (
+                partition by <key> order by <expr> desc
+            ) as rn,
+        from {{ source(...) }}
+    )
+
+select <columns>,
+from row_numbered
+where rn = 1
+```
+
+Two traps when converting:
+
+- A filter that ran AFTER the macro (a soft-delete predicate, typically) shares
+  the `WHERE` with `rn = 1`. It must not sit in the CTE that computes `rn` — the
+  window is evaluated before either predicate applies, so moving the filter up
+  changes which row wins.
+- Do not `select * except (rn)` to drop the helper column. Enumerate the output
+  columns instead.
+
 ### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
