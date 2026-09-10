@@ -93,7 +93,8 @@ Decide these two things before every `Agent` call, including the first:
   Otherwise do it inline: a small edit with the files already loaded is cheaper
   on the main model than a cold subagent on a cheaper one.
 - Which `model`. Pass the cheapest one you expect to finish on the first try.
-  Omit it (inherit) for judgment calls and reviews you will act on.
+  Name it explicitly on every dispatch; pick the capable model for judgment
+  calls and reviews you will act on.
 
 Price ratios, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
@@ -114,6 +115,15 @@ accept a subagent's self-report without the checks there.
 
 ## Tooling
 
+- Open a file under `src/dbt/` or `src/cube/` with the Read tool, never `cat`.
+  Both trees carry `.claude/rules/*.md`, which load on a Read/Edit/Write path
+  match and never on a Bash command string — `cat` returns the file and silently
+  drops the conventions governing the edit you are about to make. Auto mode's
+  Bash-first instruction does not override this: it scopes itself to work Bash
+  can accomplish, and this is work Bash cannot.
+- Use Read/Edit/Write for all other file I/O, and Bash for `git`, `uv run`,
+  `gh`, `docker`, `trunk`, `ls`. On the native VS Code build Grep and Glob are
+  absent as tools, so search with `rg`/`grep` via Bash.
 - One-off deps: `uv run --with <pkg> python script.py`, not `uv add --dev`.
 - Credentialed one-offs run under pytest. The autouse session fixture in
   `tests/conftest.py` loads 1Password secrets, so live SFTP/API pulls, asset
@@ -131,10 +141,6 @@ accept a subagent's self-report without the checks there.
 - Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a derived value: line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline.
-- On the native VS Code build, Grep and Glob are absent as tools; search with
-  `rg`/`grep` via Bash. When the system prompt asks for Bash-first work (auto
-  mode), follow it. Otherwise use Read/Edit/Write for file I/O and Bash only for
-  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
 - After any call that creates or updates a resource with string fields (issue
@@ -188,6 +194,10 @@ surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
 - `finishing-a-development-branch` / `using-git-worktrees`: this repo uses `uv`,
   not `poetry`/`pip`. Run `uv run dbt build --select <model>+` alongside the
   skills' other tests.
+- `subagent-driven-development`: a plan step of roughly 10 lines or fewer whose
+  files are already in context is done inline, not dispatched. The skill assumes
+  every task is dispatched; the repo's dispatch-or-inline test in _Subagents_
+  governs.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
 
@@ -226,6 +236,10 @@ exploration that led nowhere (keep only the conclusion).
   This file keeps only what must be known BEFORE any tool runs: safety
   prohibitions, branch and PR etiquette, and rules whose violation produces a
   silently wrong answer rather than a loud error.
+- A new `.claude/rules/<topic>.md` whose `paths:` reach outside `src/dbt/` and
+  `src/cube/` needs the first _Tooling_ bullet widened to match. That bullet
+  names the trees to open with Read instead of `cat`; a rule outside them loads
+  for nobody who reads the file through Bash.
 - Bold is reserved for the _Never_ block.
 
 ## MCP servers

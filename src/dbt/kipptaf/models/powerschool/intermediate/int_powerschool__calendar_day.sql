@@ -5,7 +5,6 @@ with
                 relations=[
                     source("kippnewark_powerschool", "int_powerschool__calendar_day"),
                     source("kippcamden_powerschool", "int_powerschool__calendar_day"),
-                    source("kippmiami_powerschool", "int_powerschool__calendar_day"),
                     source(
                         "kipppaterson_powerschool", "int_powerschool__calendar_day"
                     ),
