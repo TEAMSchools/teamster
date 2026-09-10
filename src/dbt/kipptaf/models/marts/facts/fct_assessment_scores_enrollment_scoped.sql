@@ -37,12 +37,6 @@ with
 
             c.administered_date,
 
-            -- assessment_date_key: the date used for academic-year / calendar
-            -- rollups -- administration date where present (internal/college),
-            -- else the student's test date. State/vendor administrations span a
-            -- window and carry no single administration date, so the join to
-            -- dim_dates must key on this to resolve academic_year for them
-            -- (#4546).
             coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
 
             cast(null as numeric) as scale_score,
@@ -212,19 +206,11 @@ with
     ),
 
     -- Domain-level rows. module_code stays the subject, for the same
-    -- FK-resolution reason as DIBELS above.
-    --
-    -- 'Not Assessed' is i-Ready's explicit not-administered marker and is
-    -- excluded. comprehension_overall is excluded as the rollup parent of
-    -- comprehension_literature and comprehension_informational_text -- Cube's
-    -- proficiency measures are additive, so retaining it would triple-count the
-    -- comprehension construct.
-    --
-    -- A domain with a placement but no scale score IS retained: the grade-level
-    -- placement is the primary domain signal.
-    --
-    -- No 'relative_placement is not null' predicate here: int_iready__domain_unpivot
-    -- enforces it upstream as its documented inclusion rule (#4709).
+    -- FK-resolution reason as DIBELS above. What the two exclusions below mean
+    -- for a reader of this table is on the model description; the reason there
+    -- is no third one is here: int_iready__domain_unpivot already enforces
+    -- 'relative_placement is not null' as its documented inclusion rule
+    -- (#4709), so repeating it would be redundant, not defensive.
     iready_domain_scores_raw as (
         select
             student_id as student_number,
@@ -304,22 +290,17 @@ with
         from iready_domain_scores_raw
     ),
 
-    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
-    -- same-day retests and fiscal-year re-pull duplicates exist upstream.
-    -- partition_by deliberately omits academic_year: a physical test pulled
-    -- under two fiscal-year partitions has the same test_date but a differing
-    -- pull-derived academic_year, so keying on academic_year would keep both
-    -- rows -- they then double-count once academic_year is resolved from the
-    -- test date (#4546). A date belongs to exactly one academic year, so
-    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
-    -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic. Remove this dedupe when staging is fixed.
-    -- response_type_code joins the partition because domain rows deliberately
-    -- share module_code with the subject-level anchor; without it all domains
-    -- plus the anchor collapse to one row. NULL groups cleanly for anchors.
-    -- Verified 2026-08-28: this partition still collapses 319,380 of 1,572,858
-    -- eligible domain rows, 95.8% of which are fiscal-year re-pulls differing
-    -- only in academic_year -- the intended #4387 behavior.
+    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test, so
+    -- students who retest the same subject on the same day arrive as separate
+    -- rows. Remove this dedupe when staging is fixed.
+    --
+    -- Two things the partition key gets right and would be easy to "fix"
+    -- wrong. It includes response_type_code, because domain rows share
+    -- module_code with the subject-level anchor, and without it every domain
+    -- and its anchor collapse into one row. It omits academic_year, which
+    -- guards the fiscal-year re-pull of #4388 -- fixed, but structural and
+    -- due to recur each July 1, so adding academic_year here would let a
+    -- re-pulled sitting through as two rows.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -363,19 +344,11 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- This dedupe is permanent, not a workaround for #4388. STAR records each
-    -- sitting under its own assessment_id, and students genuinely retest the
-    -- same subject on the same day -- 144 rows as of 2026-09-01 -- so the fact
-    -- grain (which carries no attempt dimension) is coarser than staging on
-    -- purpose. scale_score desc keeps the best sitting.
-    -- partition_by deliberately omits academic_year: a physical test pulled
-    -- under two fiscal-year partitions has the same test_date but a differing
-    -- pull-derived academic_year, so keying on academic_year would keep both
-    -- rows -- they then double-count once academic_year is resolved from the
-    -- test date (#4546). A date belongs to exactly one academic year, so
-    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
-    -- never distinct sittings. academic_year desc makes the survivor
-    -- deterministic.
+    -- Permanent, not a workaround for #4388 (which is fixed): STAR records
+    -- each sitting under its own assessment_id and students genuinely retest
+    -- the same subject on the same day, so this grain is coarser than staging
+    -- on purpose. scale_score desc keeps the best sitting. academic_year is
+    -- omitted from the partition as the same July-1 guard as i-Ready above.
     star_scores as (
         {{
             dbt_utils.deduplicate(
@@ -392,9 +365,9 @@ with
         }}
     ),
 
-    -- Unique at the (student, year, period, date, measure_standard) grain --
-    -- re-verified 2026-08-28 at the widened grain: 313,268 rows, 313,268
-    -- distinct eight-input keys. No dedupe needed.
+    -- Already unique at the (student, year, period, date, measure_standard)
+    -- grain, so no dedupe here. The unique test on assessment_score_key is
+    -- what holds that.
     dibels_scores as (
         select
             student_number,
@@ -636,8 +609,6 @@ select
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
-    -- state administrations carry no administration date; test_date is the
-    -- calendar date used for academic-year rollups (#4546)
     su.test_date as assessment_date_key,
 
     su.scale_score,
@@ -729,8 +700,6 @@ select
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
-    -- vendor administrations carry no administration date; test_date is the
-    -- calendar date used for academic-year rollups (#4546)
     va.test_date as assessment_date_key,
 
     va.scale_score,

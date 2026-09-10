@@ -8,6 +8,17 @@ models:
       Each row is linked to an assessment administration (via
       assessment_administration_key) and to the student's resolved section
       enrollment (via student_section_enrollment_key and enrollment_resolution).
+
+      Vendor breakdown rows sit alongside the summary row, not in place of it.
+      DIBELS contributes one row per subtest next to the Composite. i-Ready
+      contributes one row per domain next to the subject-level row, with two
+      exclusions: domains i-Ready marks 'Not Assessed', and
+      comprehension_overall. That last one is the rollup parent of
+      comprehension_literature and comprehension_informational_text, and the
+      proficiency measures built on this table are additive, so keeping it would
+      count the comprehension construct three times. A domain with a grade-level
+      placement but no scale score is kept — the placement is the primary domain
+      signal, so filtering on a non-null scale_score drops real rows.
     config:
       materialized: table
       meta:
@@ -200,10 +211,13 @@ models:
         data_type: boolean
         description: >-
           TRUE if the student met the mastery or proficiency threshold for this
-          assessment. Null on 5,565 DIBELS subtest rows where
-          measure_standard_level_int is null upstream (0 on Composite rows),
-          concentrated in the K-2 phonics measures — those rows sit in a
-          proficiency denominator without ever entering the numerator.
+          assessment. The threshold is per source: an at-or-above-grade-level
+          placement for i-Ready, the measure's own benchmark level for DIBELS,
+          the performance band for Illuminate, and the state achievement level
+          for NJSLA, NJGPA and FAST. Null on the DIBELS subtests whose benchmark
+          level is not set upstream, concentrated in the K-2 phonics measures —
+          those rows sit in a proficiency denominator without ever entering the
+          numerator.
 
       - name: response_type_code
         data_type: string
@@ -230,14 +244,9 @@ models:
         description: >-
           Description of the root (top-level) standard in the Illuminate
           standards hierarchy. Populated only where an Illuminate standard row
-          resolves a parent standard; null for Illuminate group rows, which have
-          no root-standard concept. Has no vendor or state equivalent — the
-          vendor and state branches of the final SELECT hardcode this column
-          NULL directly, independent of any hierarchy decision. (For i-Ready
-          specifically, the parent of its comprehension domains,
-          comprehension_overall, is excluded from the fact outright to avoid
-          double-counting the proficiency measure — a related but separate
-          reason vendor rows never carry a root description.)
+          resolves a parent standard. Null everywhere else: Illuminate group
+          rows, and every vendor and state row, which have no root-standard
+          concept.
 
       - name: is_replacement
         data_type: boolean
