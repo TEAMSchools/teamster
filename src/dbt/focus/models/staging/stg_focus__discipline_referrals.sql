@@ -14,7 +14,6 @@ select
     last_updated,
     suspension_begin,
     suspension_end,
-    suspension_length,
     attendance_code,
     attendance_day_id,
     attendance_period_id,
@@ -51,4 +50,6 @@ select
     custom_83 as referral_number,
     custom_200000020 as school_related_arrests,
     custom_200000021 as zero_tolerance_expulsion,
+
+    cast(suspension_length as numeric) as suspension_length,
 from {{ source("focus", "discipline_referrals") }}

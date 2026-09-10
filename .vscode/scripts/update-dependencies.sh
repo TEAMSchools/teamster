@@ -12,15 +12,15 @@ WORKTREE="${REPO_ROOT}/.worktrees/${BRANCH}"
 
 # --- create branch + worktree ---
 if [[ -d ${WORKTREE} ]]; then
-  echo "Reusing existing worktree: ${WORKTREE}"
+	echo "Reusing existing worktree: ${WORKTREE}"
 else
-  if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
-    echo "Adding worktree for existing branch: ${BRANCH}"
-    git worktree add "${WORKTREE}" "${BRANCH}"
-  else
-    echo "Creating branch + worktree: ${BRANCH}"
-    git worktree add -b "${BRANCH}" "${WORKTREE}"
-  fi
+	if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
+		echo "Adding worktree for existing branch: ${BRANCH}"
+		git worktree add "${WORKTREE}" "${BRANCH}"
+	else
+		echo "Creating branch + worktree: ${BRANCH}"
+		git worktree add -b "${BRANCH}" "${WORKTREE}"
+	fi
 fi
 
 cd "${WORKTREE}"
@@ -39,26 +39,27 @@ echo -e "\n\033[1;34m▶ npm update (src/cube)\033[0m"
 npm --prefix src/cube update --save
 
 DBT_PROJECTS=(
-  amplify
-  deanslist
-  edplan
-  finalsite
-  iready
-  overgrad
-  pearson
-  powerschool
-  renlearn
-  titan
-  kippcamden
-  kippmiami
-  kippnewark
-  kipppaterson
-  kipptaf
+	amplify
+	cambium
+	deanslist
+	edplan
+	finalsite
+	iready
+	overgrad
+	pearson
+	powerschool
+	renlearn
+	titan
+	kippcamden
+	kippmiami
+	kippnewark
+	kipppaterson
+	kipptaf
 )
 
 for project in "${DBT_PROJECTS[@]}"; do
-  echo -e "\n\033[1;34m▶ dbt deps --upgrade (${project})\033[0m"
-  uv run dbt deps --upgrade "--project-dir=src/dbt/${project}"
+	echo -e "\n\033[1;34m▶ dbt deps --upgrade (${project})\033[0m"
+	uv run dbt deps --upgrade "--project-dir=src/dbt/${project}"
 done
 
 # --- commit ---

@@ -144,9 +144,7 @@ workspace:
           # the control plane, but code servers still serve sensor
           # evaluations, workspace snapshots, and gRPC health checks —
           # kipptaf's large definitions module (every integration) bursts
-          # above 750m during sensor eval waves. Priority tier (0) is
-          # unchanged, so topology preferences and dagster-run preemption
-          # behavior are unaffected.
+          # above 750m during sensor eval waves.
           cpu: 1000m
           memory: 2.5Gi
       securityContext:
@@ -160,24 +158,30 @@ workspace:
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
-        # Do NOT add cluster-autoscaler.kubernetes.io/safe-to-evict: "false" here.
-        # It was added 2026-08-18 to stop the 38-59 autoscaler relocations per week
-        # and reverted the same day. Measured over the hour after it went live:
-        # agent "Could not reach user code server" errors ran ~62x the four-week
-        # baseline (40/hour against ~0.65) and code-server Preempted ran ~118x
-        # (20/hour against ~0.17), while Evicted stayed flat at 0 the whole time.
+        # Blocks cluster-autoscaler relocation of code servers. Second attempt.
         #
-        # Mechanism: the annotation blocks CLUSTER-AUTOSCALER eviction but not
-        # SCHEDULER preemption. Pinning code servers to their nodes stops the
-        # autoscaler relocating them, so capacity fragments and run pods
-        # (priority 1000) can only obtain it by preempting code servers
-        # (priority 0). It converted graceful relocations into preemptions, each
-        # of which recreates the Service and produces a fresh ClusterIP -- which
-        # is the churn the annotation was meant to reduce.
+        # First attempt 2026-08-18 (#4921) was reverted the same day: run pods
+        # sat at priority 1000 and code servers at 0, so pinning a code server
+        # to its node left preemption as the only way for a run pod to claim
+        # capacity. Agent "Could not reach user code server" errors ran ~62x
+        # baseline and code-server Preempted ~118x within the hour.
         #
-        # Evicted holding at 0 is what isolates this from the `preferred`
-        # self-anti-affinity: that change's risk shows up as kubelet eviction, and
-        # it never fired.
+        # #5187 removed the run-pod PriorityClass, so run pods and code servers
+        # are both at 0 and preemption between them is impossible. That closes
+        # the failure mode #4921 measured. What remains is the one the
+        # annotation was always meant to stop: the autoscaler killing a code
+        # server pod during a ScaleDown. On 2026-09-09 that killed kippmiami's
+        # code server while the agent was re-uploading its metadata, and one
+        # gRPC UNAVAILABLE left the location in a terminal ERROR (#5187 covers
+        # the same mechanism with preemption as the trigger).
+        #
+        # Cost: a node holding a code server cannot consolidate, so run pods
+        # that fit nowhere wait for NAP instead. Keep-or-revert rule, judged at
+        # matched run-pod load (~25+ Scheduled events per 15 min): revert if
+        # code-server Preempted or agent gRPC errors rise above the 0/0 baseline
+        # from the #4921 measurement; keep if ScaleDown kills of code servers
+        # drop to 0 and Preempted stays at 0.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
       # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
@@ -215,8 +219,8 @@ workspace:
       # K8s sets the DisruptionTarget pod condition when a pod is terminated by
       # priority-class preemption, eviction API (node drain), graceful node
       # shutdown, or taint-based eviction. On Autopilot, GKE system-critical
-      # pods (priority > 1000) routinely preempt our dagster-run pods
-      # (priority 1000) to land kube-dns, fluent-bit, metrics-agent, etc. —
+      # pods (priority 2,000,000,000) routinely preempt our dagster-run pods
+      # (priority 0) to land kube-dns, fluent-bit, metrics-agent, etc. —
       # this is unavoidable cluster-wide behavior. podFailurePolicy with
       # action=Ignore makes the Job controller treat those disruptions as
       # not-a-failure: the Job transparently replaces the pod without counting
@@ -255,7 +259,18 @@ workspace:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
-      priorityClassName: dagster-run
+      # No priorityClassName: run pods stay at default priority 0, the same tier
+      # as code servers. The `dagster-run` PriorityClass (value 1000) was removed
+      # 2026-09-08 after a run pod preempted the kippcamden code server while
+      # the agent was re-uploading its metadata (#5187). A single gRPC
+      # UNAVAILABLE in that window writes ERROR to the control plane, and the
+      # agent never retries a location the control plane already marks as
+      # errored -- so the location stayed down for four days. Equal priority
+      # means a run pod that finds no room waits for Node Auto Provisioning
+      # instead of preempting a code server. The kubelet eviction-order
+      # argument for 1000 never applied: the required anti-affinity below keeps
+      # run pods and code servers off the same node.
+      #
       # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
       # No fallback — arm64 STOCKOUT will leave run pods Pending until
       # capacity returns. `podFailurePolicy` (`DisruptionTarget` → `Ignore`)
@@ -266,7 +281,8 @@ workspace:
         kubernetes.io/arch: arm64
       affinity:
         # Hard-block run/step pods from sharing a node with code servers
-        # (eliminates preemption-driven code server evictions) or with the
+        # (with both at priority 0, a run pod that fits nowhere waits for a
+        # new node rather than preempting a code server) or with the
         # agent (protects the single-replica agent from kubelet node-pressure
         # eviction by bursty run workloads). Each term is evaluated
         # independently — a candidate node is rejected if EITHER selector
@@ -372,23 +388,14 @@ extraManifests:
   - apiVersion: scheduling.k8s.io/v1
     kind: PriorityClass
     metadata:
-      name: dagster-run
-    value: 1000
-    globalDefault: false
-    preemptionPolicy: PreemptLowerPriority
-    description: >-
-      Elevates run/step pods above default priority (0) so kubelet evicts code
-      server pods first during node memory pressure.
-  - apiVersion: scheduling.k8s.io/v1
-    kind: PriorityClass
-    metadata:
       name: dagster-agent
     value: 1000
     globalDefault: false
     preemptionPolicy: PreemptLowerPriority
     description: >-
-      Elevates agent pods to the same priority as run/step pods so the scheduler
-      cannot preempt them to fit run workloads.
+      Elevates agent pods above run/step and code server pods (priority 0) so
+      nothing in this namespace can preempt the single-replica agent. The agent
+      pins to amd64 nodes and the others to arm64, so it never preempts them.
   - apiVersion: policy/v1
     kind: PodDisruptionBudget
     metadata:

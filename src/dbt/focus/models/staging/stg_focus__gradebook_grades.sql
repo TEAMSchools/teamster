@@ -3,8 +3,6 @@ select
     student_id,
     assignment_id,
     standard_id,
-    points,
-    possible_points,
     letter_grade,
     exclude_from_average,
     late,
@@ -19,4 +17,7 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(points as numeric) as points,
+    cast(possible_points as numeric) as possible_points,
 from {{ source("focus", "gradebook_grades") }}

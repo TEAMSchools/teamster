@@ -1,0 +1,57 @@
+models:
+  - name: rpt_branchingminds__school_year
+    description: >
+      One row per KTAF district per academic year, built for the Branching Minds
+      daily SFTP feed. Start and end dates are the earliest and latest
+      in-session calendar dates across the district's schools; instruction days
+      is the average count across schools, since schools within a district don't
+      share one calendar. Scoped to Newark, Camden, and Paterson for the current
+      academic year only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - school_year_id
+              - district_id
+          config:
+            severity: error
+    columns:
+      - name: school_year_id
+        data_type: string
+        description: >-
+          School year identifier Branching Minds expects, expressed as the
+          calendar year the school year ends in (e.g. 2027 for the 2026-2027
+          school year).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        data_type: string
+        description: >-
+          NJ DOE county-district code, from dim_regions.state_district_id.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: start_date
+        data_type: date
+        description: >-
+          Earliest in-session calendar date across the district's schools.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: name
+        quote: true
+        data_type: string
+        description: Human-readable school year label, e.g. 2026-2027.
+      - name: end_date
+        data_type: date
+        description: >-
+          Latest in-session calendar date across the district's schools.
+      - name: instruction_days
+        data_type: int64
+        description: >-
+          Average count of in-session calendar days across the district's
+          schools for the year, rounded to a whole day.

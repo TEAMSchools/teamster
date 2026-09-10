@@ -28,7 +28,10 @@ models:
             column_role: foreign_key
       - name: student_number
         data_type: int64
-        description: Student Number assigned by the school. Indexed.
+        description:
+          Network student number. Miami's frozen PowerSchool archive was rebuilt
+          with the 8400 Focus prefix applied (#5012), so every project's rows
+          share one id space with no offset here.
         config:
           meta:
             source_system: PowerSchool

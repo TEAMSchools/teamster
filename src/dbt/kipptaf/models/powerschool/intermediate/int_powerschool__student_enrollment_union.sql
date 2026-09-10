@@ -12,10 +12,6 @@ with
                         "int_powerschool__student_enrollment_union",
                     ),
                     source(
-                        "kippmiami_powerschool",
-                        "int_powerschool__student_enrollment_union",
-                    ),
-                    source(
                         "kipppaterson_powerschool",
                         "int_powerschool__student_enrollment_union",
                     ),

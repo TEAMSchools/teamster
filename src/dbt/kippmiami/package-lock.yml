@@ -7,6 +7,8 @@ packages:
     name: iready
   - local: ../focus
     name: focus
+  - local: ../powerschool
+    name: powerschool
   - local: ../renlearn
     name: renlearn
   - name: dbt_external_tables
@@ -15,4 +17,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: 68067fa253185d85be62fe500489028f2d15daf5
+sha1_hash: 27346872ea8ba9aecf67148b288f7c78a7429627

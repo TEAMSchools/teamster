@@ -30,6 +30,36 @@ models:
       `dim_student_section_enrollments`.
     config:
       materialized: table
+      meta:
+        dagster:
+          # 1x/day instead of eager. Rebuilds 79.7 times a day at 0.107 GiB a
+          # build, 8.6 GiB/day, and it is one of the models driving the
+          # 44/day churn in stg_powerschool__pgfinalgrades and 51.3/day in
+          # base_powerschool__final_grades, both kippnewark. Eager buys
+          # freshness nothing reads: the only downstream mart is
+          # fct_grades_term, which appears in no cube file and no extract. The
+          # cube_semantic_layer exposure does list it, but no file under
+          # src/cube/model/ reads it, so that entry overstates consumption.
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here is the SIS-cutover tripwire. The PowerSchool
+          # and Focus branches are exact complements around
+          # focus_start_academic_year, so a >= slipping to >, the floor moving,
+          # or the not (...) guard being dropped makes one Miami academic year
+          # emit from both branches -- both carrying
+          # _dbt_source_project = 'kippmiami', which the uniqueness key
+          # catches. As a view the test would fire only on code change, because
+          # the data-change condition re-materializes tables only. A daily tick
+          # keeps it firing on the one boundary the SIS migration is actively
+          # moving.
+          #
+          # 0 4 matches the gradebook_and_gpa_dashboard batch these marts feed.
+          # All 4 leaves (category_grades, gradebook_assignments_scores, gpa,
+          # final_grades) share the tick, so ~any_deps_in_progress serializes
+          # the pass -- they are direct parent-child. The group costs about
+          # 8.7 GiB/day against 228.1 today. Refs #5082
+          automation_condition:
+            cron_schedule: 0 4 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

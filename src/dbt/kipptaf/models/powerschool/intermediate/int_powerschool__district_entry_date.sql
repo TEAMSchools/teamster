@@ -12,10 +12,6 @@ with
                         "int_powerschool__district_entry_date",
                     ),
                     source(
-                        "kippmiami_powerschool",
-                        "int_powerschool__district_entry_date",
-                    ),
-                    source(
                         "kipppaterson_powerschool",
                         "int_powerschool__district_entry_date",
                     ),

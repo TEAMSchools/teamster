@@ -1,0 +1,53 @@
+name: pytest
+
+on:
+  pull_request:
+    paths:
+      - docs/launch/**
+      - docs/hooks.py
+      - tests/launch/**
+      - mkdocs.yml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/pytest.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  launch:
+    name: launch
+    # No `github.actor != 'dependabot[bot]'` gate here, unlike the other
+    # workflows: dependabot's daily `uv` bump is the actor for nearly every
+    # PR that touches pyproject.toml/uv.lock, which is exactly why those
+    # files are in `paths` above. Gating this job on actor would skip the
+    # only check that runs on a dependency bump. Do not "restore
+    # consistency" with the other workflows.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # For repo checkout. Nothing here writes.
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Run the launch page tests
+        run: uv run --group docs pytest tests/launch -v
+
+      - name: Build the docs site
+        run: uv run --group docs mkdocs build --site-dir site
+
+      # https://github.com/actions/upload-artifact
+      - name: Upload the rendered page for review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: launch-page-preview
+          path: site/launch/index.html
+          # Below the publication threshold no page is generated. The
+          # default (warn) would print a confusing warning on every PR.
+          if-no-files-found: ignore

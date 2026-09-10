@@ -70,7 +70,7 @@ Constraints to preserve when touching any of these:
   The `0 4 * * *` schedule is the unconditional overnight backstop for only the
   count-only tables (`cursor_column: null` in `config/focus.yaml` —
   `co_teachers` as of writing), which is the set the sensor's count-only probe
-  can't fully see an in-place edit on. The other 75 `updated_at`-tracked tables
+  can't fully see an in-place edit on. The other 78 `updated_at`-tracked tables
   have NO unconditional reload anymore — if one of them is ever suspected of
   drifting (a stuck signature, a bad cursor), fix it with a manual launch of the
   Focus asset job for that table, not by waiting for a nightly pass that no
@@ -79,7 +79,7 @@ Constraints to preserve when touching any of these:
   import.
 - **First diagnostic when midday Focus data looks stale: check whether the
   intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
-  be enabled by hand after a one-off manual load of all 76 tables has seeded
+  be enabled by hand after a one-off manual load of all 79 tables has seeded
   their baselines — the 04:00 tier cannot seed them, since it now targets only
   the count-only tables (see `libraries/dlt/focus/CLAUDE.md`). A stopped sensor
   now silently freezes every `updated_at`-tracked table — the 04:00 tier no
@@ -109,5 +109,11 @@ Miami is the only code location with `fldoe` (Florida Department of Education
 assessment data — FSA, EOC, Science). These are SFTP assets from a Florida state
 data file drop.
 
-PowerSchool (pre-Focus SIS) is retired — frozen archive in BigQuery dataset
-`kippmiami_powerschool`; do not drop.
+PowerSchool (pre-Focus SIS) is retired. `kippmiami_powerschool` is a frozen
+archive rebuilt once through the dbt `powerschool` package (#5012, recipe in
+#5201's `dbt_project.yml`). The package is removed again, so this location has
+no `powerschool` assets — except while the package is included for an archive
+rebuild (#5195, #5228), when the location carries about 120
+`kippmiami/powerschool/*` dbt assets; PR B removes them again. kipptaf reads the
+dataset as a BQ-native source. Do not drop the dataset or the GCS files under
+`gs://teamster-kippmiami/dagster/kippmiami/powerschool/`.

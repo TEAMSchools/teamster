@@ -52,9 +52,8 @@ with
     students as (
         select
             student_id,
-            powerschool_id,
             sex_label,
-            ese_fefp_code,
+            has_iep,
             cast(disis_id as string) as mdcps_id_raw,
             cast(student_id as string) as student_id_string,
         from {{ ref("int_focus__students") }}
@@ -78,14 +77,11 @@ with
         where _dbt_source_project = 'kippmiami' and studentid is not null
     ),
 
-    /* Miami's PowerSchool archive is frozen at AY2025 and keys on studentid,
-       which the Focus enrollment branch null-fills (#4775) -- so every ADA and
-       cumulative-GPA column reached through int_extracts reads null for Miami.
-       int_focus__students carries powerschool_id, which is the PowerSchool
-       student_number and NOT studentid, so bridge it to studentid here and read
-       the archive directly. Verified 1:1: no Miami student_number maps to more
-       than one studentid. schoolid comes along to keep the gpa_cumulative join
-       single-rowed -- 323 Miami students have more than one row there. */
+    /* The archive was rebuilt with student_number 8400-prefixed to the Focus
+       id (#5012), so the roster's Focus student_number joins it directly.
+       studentid still comes from here because gpa_cumulative keys on it.
+       schoolid comes along to keep the gpa_cumulative join single-rowed --
+       323 Miami students have more than one row there. */
     ps_xwalk as (
         select
             stu.student_number as ps_student_number,
@@ -122,15 +118,13 @@ select
        (advisor) and #4796 (GPA replacement). */
     psy.advisor_lastfirst,
 
-    cast(s.powerschool_id as int64) as ps_id,
+    if(px.ps_student_number is not null, e.student_number - 8400000000, null) as ps_id,
 
     lpad(s.mdcps_id_raw, 7, '0') as mdcps_id,
 
     regexp_extract(s.sex_label, r'\[(\w)\]') as gender,
 
-    coalesce(
-        psy.iep_status, if(s.ese_fefp_code is not null, 'Has IEP', 'No IEP')
-    ) as iep_status,
+    coalesce(psy.iep_status, if(s.has_iep, 'Has IEP', 'No IEP')) as iep_status,
 
     c1.contact_name as contact_1_name,
     c1.phone_home as contact_1_phone_home,
@@ -212,7 +206,7 @@ left join
     fast_pivot as fp_prev
     on e.fteid = fp_prev.student_id
     and e.academic_year - 1 = fp_prev.academic_year
-left join ps_xwalk as px on s.powerschool_id = px.ps_student_number
+left join ps_xwalk as px on e.student_number = px.ps_student_number
 left join
     -- Keyed on student_number, not studentid: studentid is null for every
     -- Focus-sourced kippmiami row in ada_term_pivot, which previously left
@@ -229,7 +223,7 @@ left join
     and e.academic_year - 1 = px.ps_last_academic_year
 left join
     {{ ref("int_extracts__student_enrollments") }} as psy
-    on s.powerschool_id = psy.student_number
+    on e.student_number = psy.student_number
     and e.academic_year = psy.academic_year
     and psy.region = 'Miami'
     and psy.rn_year = 1

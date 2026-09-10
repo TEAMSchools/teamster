@@ -39,8 +39,26 @@ models:
         data_type: int64
       - name: category_type
         data_type: string
+        description:
+          Conformed behavior grouping. One of `BEAT`, `Corrective`, or `Habits
+          of Excellence`. Derived from `behavior_category` and closed by
+          construction -- a category the derivation does not map is dropped
+          rather than passed through null, so this column has no other values.
+          `Habits of Excellence` is middle- and high-school only.
       - name: behavior
         data_type: string
+        description:
+          Behavior name, conformed. Any parenthetical qualifier is stripped, so
+          AY2025's `Accountability (Excellence)` and a plain `Accountability`
+          are one member. `TEAMwork` is normalized to `Teamwork`, which the
+          Tableau colour map and manual sort expect.
+      - name: behavior_category
+        data_type: string
+        description:
+          Raw DeansList behavior category. Lets consumers separate the three
+          Values families -- `Values`, `Values (5)` and `Values (10 Point
+          Bonus)` all map to category_type BEAT, but only `Values` is comparable
+          year over year.
       - name: entry_staff
         data_type: string
       - name: total_points

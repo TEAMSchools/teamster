@@ -30,6 +30,19 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: florida_education_identifier
+        description: >-
+          Florida Education Identifier (FLEID), passed through from
+          stg_focus__students. One student should carry one FLEID; the unique
+          test warns while Focus holds duplicate student records for one FLEID.
+        config:
+          meta:
+            contains_pii: true
+        data_tests:
+          - unique:
+              config:
+                where: florida_education_identifier is not null
+                severity: warn
       - name: is_homeless
         data_type: boolean
         description:
@@ -50,9 +63,9 @@ models:
           USDA Provision 2, which says nothing about the individual student.
       - name: student_number
         description: >-
-          Canonical network student number — student_id with the leading 8400
-          Miami-Dade district prefix stripped. An id not carrying that prefix
-          passes through unchanged rather than being guessed at.
+          Canonical network student number for Miami: the Focus student_id,
+          which carries the 8400 Miami-Dade district prefix. The bare
+          pre-migration number is on powerschool_id for returning students.
         config:
           meta:
             contains_pii: true
@@ -74,11 +87,27 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: has_iep
+        description: >-
+          True when the student has an ESE Exceptionalities log entry that is
+          placed (P or T), not dismissed, and not gifted (L). The log is the
+          determination record Focus's own "ESE Primary Computed" field reads;
+          the ESE FEFP funding code is a downstream consequence and is not
+          consulted.
       - name: spedlep
         description: >-
-          IEP classification in the network domain. 'SPED' where an ESE FEFP
-          code is present, else null — a missing funding code does not assert
-          that the student has no IEP.
+          IEP classification in the network domain. 'SPED' where has_iep, else
+          null — a missing log entry does not assert that the student has no
+          IEP.
+      - name: fedethnicity
+        description: >-
+          Hispanic/Latino flag in the PowerSchool domain: 1 for the "Yes"
+          option, 0 for "No", null where unset.
+      - name: is_504
+        description: >-
+          Section 504 status from custom_621. True for codes Y and N (both
+          assert a 504 plan), false for I and Z, null where the field is unset —
+          a blank does not assert that the student has no plan.
       - name: gifted_and_talented
         description: >-
           Y where Gifted Eligibility names a qualifying FLDOE criteria

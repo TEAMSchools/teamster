@@ -19,7 +19,6 @@ select
     start_date,
     end_date,
     include_in_class_rank,
-    distance_from_school,
     next_grade,
     imported,
     first_time_indicator,
@@ -38,4 +37,6 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(distance_from_school as numeric) as distance_from_school,
 from {{ source("focus", "student_enrollment") }}

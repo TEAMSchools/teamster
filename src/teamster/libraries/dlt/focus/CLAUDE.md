@@ -8,12 +8,12 @@ and asset keys: see `../CLAUDE.md`. All tables come from the `public` schema
 
 ## Differences from Illuminate
 
-| Aspect              | Illuminate                              | Focus                              |
-| ------------------- | --------------------------------------- | ---------------------------------- |
-| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema             |
-| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter` |
-| Query callbacks     | `filter_date_taken_callback` (optional) | None                               |
-| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`       |
+| Aspect              | Illuminate                              | Focus                                                                 |
+| ------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema                                                |
+| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter`, `widen_unbounded_numeric_adapter` |
+| Query callbacks     | `filter_date_taken_callback` (optional) | None                                                                  |
+| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`                                          |
 
 ## Nullability adapter (required)
 
@@ -59,6 +59,14 @@ BigQuery column set, and other Focus tables may hold unpopulated `interval`
 columns that break on first use, which you cannot enumerate from BigQuery. Hence
 the adapter keys off the reflected type for every table rather than naming
 columns.
+
+## Numeric widening (source-wide)
+
+`widen_unbounded_numeric_adapter` applies unconditionally to every table in the
+source via `type_adapter_callback`, mapping unbounded Postgres `numeric` (no
+declared precision/scale) to `Numeric(76, 38)` — BigQuery `BIGNUMERIC`. A
+`stg_focus__*` model projecting such a column must `cast(col as numeric)` to
+hold its `numeric` contract.
 
 ## Empty source tables
 
@@ -106,7 +114,7 @@ wrote to dlt `resource_state`.
 
 - **Gating cannot move into the op.** A `replace` resource that yields zero rows
   truncates its table, so a skip has to be an exclusion from the run. Probing in
-  the op would also plan all 76 assets every tick and emit
+  the op would also plan all 79 assets every tick and emit
   `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones.
 - **The signature is written inside the extracted resource.** dlt commits state
   only from resources that reached the load package, so a failed load keeps the
@@ -124,9 +132,9 @@ wrote to dlt `resource_state`.
   (see the design spec's _Partially resolved risk_ section).
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before every table has a seeded baseline makes the
-  first tick select all 76 tables at once. The `0 4 * * *` schedule now only
-  seeds the count-only tables (`co_teachers`) — it is no longer a full-76-table
-  refresh, so it cannot be relied on to seed the other 75 by itself. Seed all 76
+  first tick select all 79 tables at once. The `0 4 * * *` schedule now only
+  seeds the count-only tables (`co_teachers`) — it is no longer a full-79-table
+  refresh, so it cannot be relied on to seed the other 78 by itself. Seed all 79
   with a manual launch of the Focus asset job first, then enable the sensor.
 
 ## Testing Constraints

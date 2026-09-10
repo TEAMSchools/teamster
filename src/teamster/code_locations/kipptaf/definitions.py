@@ -125,6 +125,7 @@ defs = Definitions(
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
+        "ssh_branchingminds": resources.SSH_RESOURCE_BRANCHINGMINDS,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_coupa": resources.SSH_RESOURCE_COUPA,

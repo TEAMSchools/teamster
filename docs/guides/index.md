@@ -48,6 +48,7 @@ Cloud:
 | [Local Development](local-development.md)   | Installing dependencies, running Dagster locally, linting, and testing      |
 | [Dagster](dagster.md)                       | Tableau scheduling, backfills, branch deployments, monitoring runs          |
 | [Google Sheets & Forms](google-sheets.md)   | Adding and updating Google Sheets and Forms sources                         |
+| [Launch Page](launch-page-guide.md)         | Adding, changing, or removing a tool on the staff launch page               |
 | [dbt Development](dbt-development.md)       | Targets, defer, staging external sources, cross-project workflows           |
 | [SFTP Integration](sftp-integration.md)     | Adding a new SFTP file drop using `init_sftp_integration.py`                |
 | [Claude Code & Superpowers](superpowers.md) | Using Claude Code's structured workflows for features, fixes, and refactors |
