@@ -22,10 +22,11 @@ the user to publish to Production.
 
 ## Why
 
-Today the workbook opens on `Gradebook Teacher View`, its default view. The
-suite has five tabs across three GPA concepts and two gradebook health bases,
-and nothing tells a first-time user which tab answers their question or what
-"healthy" or "cumulative" means on each one.
+When this was designed the workbook opened on `Gradebook Teacher View`; the
+owner's 2026-09-10 13:40 UTC republish moved the default to
+`Academic Health Home`. The suite has five tabs across three GPA concepts and
+two gradebook health bases, and nothing tells a first-time user which tab
+answers their question or what "healthy" or "cumulative" means on each one.
 
 The OKRTS, DDI and CARAT landing pages share one skeleton: a welcome header, a
 "How can this dashboard help me?" tab directory, one question-titled data block,
@@ -41,13 +42,16 @@ skeleton and refuses the accretion. One control, no analysis, no hidden panels.
 In scope:
 
 - One new dashboard, `Landing Page`, fixed 1366 by 1500.
-- New worksheets for the header title, four network tiles, the region strip,
-  five directory cards, five help-guide link sheets, and the Miami footnote.
+- Nineteen new worksheets: the header title, four network tiles, four region
+  strip sheets, five directory cards and five help-guide link sheets. The Miami
+  footnote is a dashboard text zone, not a worksheet.
 - Go to Sheet actions from the header buttons, the tiles and the cards to the
   existing dashboards.
 - The workbook's default view set to `Landing Page` at publish.
 - The `academic_gradebook_health_suite` entry in `docs/launch/links.yml` pointed
-  at the new view.
+  at the new view. Per ruling 17, the repoint is deferred to production publish
+  day, because the launch guide's only non-live status hides the entry from the
+  page; see the hand-off's follow-up 1.
 - The `academic_gradebook_health_suite` exposure in
   `src/dbt/kipptaf/models/exposures/tableau.yml` gains the two refs it is
   missing: `rpt_tableau__gpa_goal_progress` and `rpt_tableau__gradebook_audit`.
@@ -114,12 +118,12 @@ by name, and adds nothing. Tile anatomy, top to bottom: measure name, value
 large, denominator line, the comparison line the source sheet already has, a
 basis line in small text, and the source's data update time.
 
-| Tile             | Cloned from                           | Value calc                 | Denominator and comparison                                                                                          | Basis line                                                          | Navigates to              |
-| ---------------- | ------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------- |
-| Y1 GPA           | `Y1 Landing - BAN Network ≥3.0`       | `% Y1 GPA at or above 3.0` | Students with a Y1 GPA. `Y1 GPA 1 Week Change ≥3.0` and the 2-week and prior-quarter deltas the sheet already shows | Weighted Y1 GPA, middle and high schools; marking period in title   | `Academic Health Home`    |
-| Course failures  | `Y1 Landing - BAN Network Failing ≥2` | `% Y1 Failing 2 or more`   | Students with a Y1 failing count. Same three deltas                                                                 | Y1 grades, middle and high schools                                  | `Academic Health Schools` |
-| Cumulative GPA   | `GPA - BAN % 3.0+`                    | `% at 3.0+`                | `Measured` students. `Students still needed` to reach the network goal, and `Gap to goal (pts)`                     | Unweighted cumulative GPA, projected to year end, high schools only | `Cumulative GPA Monitor`  |
-| Gradebook health | `BAN Network`                         | `% healthy`                | `Healthy text` (healthy of total teachers). Current quarter                                                         | Current quarter, middle and high schools; health basis in title     | `Gradebook School Rollup` |
+| Tile             | Cloned from                           | Value calc                 | Denominator and comparison                                                                                                 | Basis line                                                          | Navigates to              |
+| ---------------- | ------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------- |
+| Y1 GPA           | `Y1 Landing - BAN Network ≥3.0`       | `% Y1 GPA at or above 3.0` | Students with a Y1 GPA. `Y1 GPA 1 Week Change ≥3.0` and the 2-week and prior-quarter deltas the sheet already shows        | Weighted Y1 GPA, middle and high schools; marking period in title   | `Academic Health Home`    |
+| Course failures  | `Y1 Landing - BAN Network Failing ≥2` | `% Y1 Failing 2 or more`   | Students with a Y1 failing count. Same three deltas                                                                        | Y1 grades, middle and high schools                                  | `Academic Health Schools` |
+| Cumulative GPA   | `GPA - BAN % 3.0+`                    | `% at 3.0+`                | `Measured` students. The label reads measure name, basis line, value, then a students-still-needed line labelled projected | Unweighted cumulative GPA, projected to year end, high schools only | `Cumulative GPA Monitor`  |
+| Gradebook health | `BAN Network`                         | `% healthy`                | `Healthy text` (healthy of total teachers). Current quarter                                                                | Current quarter, middle and high schools; health basis in title     | `Gradebook School Rollup` |
 
 Filters kept on each clone: the `Year Filter` calculation, so the tile follows
 `p_Academic_Year`; the `MP Filter` calculation on the two Y1 tiles; and the
@@ -156,11 +160,18 @@ The strip uses the same four value calculations as the tiles. Three of them are
 plain `COUNTD` ratios and split by region on rows without change. The fourth,
 the cumulative goal pair (`Students still needed` and `Gap to goal (pts)`),
 reads the org goal or the region goal based on `p_Region`. The strip needs a
-two-line variant of each that reads `gpa_goal_proportion_region` directly, so a
-region row compares against its own goal whatever `p_Region` is set to. These
-are the only new calculations on the page. They are copies of the existing pair
-with the parameter branch removed, and they live on the
+variant of each that reads `gpa_goal_proportion_region` directly, so a region
+row compares against its own goal whatever `p_Region` is set to:
+`LP Students still needed (region)` and `LP Gap to goal (region)`. With
+`LP Students still needed (org)` for the network tile (ruling 10), those are the
+three new calculations on the page. They are copies of the existing pair with
+the parameter branch removed, and they live on the
 `rpt_tableau__gpa_goal_progress` source alongside the originals.
+
+Ruling 18: `LP Gap to goal (region)` (`Calculation_7700000000000000002`) is
+defined at datasource level but referenced by no sheet. Removing it, or wiring
+it onto the strip, is a follow-up. It stays for now because removing it would
+mean rebuilding and republishing the review copy.
 
 Because the strip reads four sources, it is four worksheets side by side in one
 horizontal container, each with `region` on rows in the same sort order, with
@@ -184,6 +195,12 @@ Beneath the strip, one static text line:
 
 When Miami rows arrive in the sources, the strip picks them up on its own and
 the footnote is removed by hand.
+
+As built: four side-by-side sheets, one per source, region on rows. The
+cumulative sheet has two rows, Camden and Newark, and no Paterson row — no dash,
+no blend padding and no fallback grid. Whether the rows align across the four
+columns is the user's check on `crop-strip.png`, and a misalignment reopens the
+twelve-sheet fallback.
 
 ### Tab directory
 
@@ -315,7 +332,7 @@ the skill's own:
   `<devicelayouts>` block is not added.
 - New worksheet names carry a `LP - ` prefix so the new sheet set can be listed
   by prefix and the byte-identity check below can exclude it.
-- The three new dashboard-to-dashboard action sources and the two new goal
+- The three new dashboard-to-dashboard action sources and the three new goal
   calculations are the only additions outside the new dashboard and its
   worksheets.
 - Publish target is a temp project the user names, `GPA-monitor-temp`
@@ -332,7 +349,7 @@ Build:
 - Both skill checkers pass against the untouched base first, then against every
   edit with the base as reference.
 - Byte identity of the five existing dashboards: the edited `.twb` with the
-  `Landing Page` dashboard, every `LP - ` worksheet, the two new calculations
+  `Landing Page` dashboard, every `LP - ` worksheet, the three new calculations
   and the new actions removed diffs empty against the base. One attribute is
   exempt: the default view is the dashboard window that carries
   `maximized='true'`, so that marker moves from the `Gradebook Teacher View`
@@ -364,7 +381,7 @@ Only the user can check:
 
 - Desktop opens the `.twbx` without a content-model refusal.
 - Every Go to Sheet action lands on the right tab. A render cannot click.
-- The two external links resolve, and each help-guide slot reads
+- The three GPA roster links resolve, and each help-guide slot reads
   `Help guide: coming soon` with no action behind it.
 - `p_Academic_Year` set on `Landing Page` carries to Home, Schools and the
   Monitor.
@@ -381,7 +398,7 @@ needs the user's click.
 - The region strip misaligns across four sources with different region sets.
   Mitigation is the fallback grid layout named above; the spec requires
   alignment, not a particular construction.
-- The two new goal calculations drift from the originals if the originals are
+- The three new goal calculations drift from the originals if the originals are
   edited later. Mitigation is naming them after the originals with a `(region)`
   suffix and a comment in the calculation pointing at the source.
 - Home's BAN grid and the launch tiles show the same numbers by design, and both

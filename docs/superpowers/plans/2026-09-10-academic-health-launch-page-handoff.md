@@ -44,12 +44,11 @@ The file to open in Desktop and publish is:
 /workspaces/teamster/.claude/scratch/tableau/lp/final.twbx
 ```
 
-It is 28,390,025 bytes. Task 8 verified two things about it. First, the `.twb`
-inside the package is byte-identical to the edited `out.twb` on disk, so nothing
-was translated on the way into the zip and no bare LF line endings survive.
-Second, every other entry in the package — the extract and the images — was
-copied straight from the `.twbx` downloaded from Production, and the entry
-checksums match that donor one for one. Only the `.twb` entry differs.
+It is 28,390,025 bytes. Two things were checked on it. The packaged `.twb`
+equals the edited `out.twb` byte for byte, so nothing was translated on the way
+into the zip and no bare LF line endings survive. And every other entry in the
+package — the extract and the images — matches the production donor `.twbx` by
+CRC, one for one. Only the `.twb` entry differs.
 
 ## Production
 
@@ -62,8 +61,10 @@ rollback is itself a production publish, and it stays with you.
 ## The numbers
 
 Every tile was read against the BAN it clones, on a throwaway probe copy, with
-parameters at their defaults (`p_Region` = `All`). The values are network
-aggregates; no student-level data appears here or on the page.
+every parameter left at its default: `p_Region` = `All`, `Grade view` = `11`,
+`GPA basis` = `Projected EOY`, `Health basis` = `Excluding comments`,
+`p_Marking_Period` = `Y1`. The values are network aggregates; no student-level
+data appears here or on the page.
 
 | Measure                  | Tile sheet                   | Tile value                | Source sheet                          | Source value              | Equal |
 | ------------------------ | ---------------------------- | ------------------------- | ------------------------------------- | ------------------------- | ----- |
@@ -147,11 +148,29 @@ first if Desktop or the server objects.
   definitions block and the coverage grid is explicit and each rendered line is
   asserted to be at most 110 characters. Whether Tableau would have wrapped them
   acceptably is unknown.
+- The strip values themselves. Only the region row set behind each of the four
+  strip columns was checked. No strip value was compared against Home with
+  `p_Region` set to each region in turn, nor against the Monitor at Camden and
+  Newark, which is what the spec's verification list asks for.
 - The shortfall calculation's nonzero branch. `LP Students still needed (org)`
   read 0 against a source that also read 0, because the org currently sits above
   goal, so the equality passed without exercising the arithmetic. To exercise
-  it, re-run `test_zz_lp_numbers.py` with `opts.parameter("Grade view", "9")`, a
-  grade that may sit below goal. This is an optional check, not a known defect.
+  it, in this order:
+  1. Copy
+     `docs/tableau-xml/lessons/2026-09-10-landing-page/scripts/test_zz_lp_numbers.py`
+     back into `tests/`.
+  2. Run `repack_probe.py` first. It builds the probe `.twbx` with the thirteen
+     sheets unhidden, which is the only way a worksheet is queryable.
+  3. Run the test once with `opts.parameter("Grade view", "9")` added to the CSV
+     options, a grade that may sit below goal, and confirm the probe is deleted
+     afterwards.
+
+  This is an optional check, not a known defect.
+
+- The region variant of the same calculation.
+  `LP Students still needed (region)` read 0 for both Camden and Newark, so its
+  arithmetic is exactly as unexercised as the org variant's, and the same re-run
+  covers it.
 
 ## What only you can check
 
@@ -203,7 +222,7 @@ from Desktop carries embedded credentials the way it always has.
 
 ## Deliberate follow-ups
 
-Four things were left out on purpose.
+Five things were left out on purpose.
 
 1. **Launch page entry, at production publish time.** The staff launch page
    still points at `Academic Health Home`, and it should keep doing so until the
@@ -215,7 +234,7 @@ Four things were left out on purpose.
    "…and student course grades, opening on a landing page that routes to every
    tab." `status` stays `verified`, because the URL is live at that moment and
    `needs-review` would take the whole entry off the page. Then run
-   `uv run --group docs pytest tests/launch -q` and expect 59 passed.
+   `uv run --group docs pytest tests/launch -q` and expect all tests to pass.
 2. **Help-guide URLs.** Five `LP - Guide *` sheets ship reading
    `Help guide: coming soon`, with no action behind them. Going live is a label
    change on each sheet plus one URL action per sheet.
@@ -224,4 +243,12 @@ Four things were left out on purpose.
    does not ship.
 4. **The Miami footnote.** The strip carries a footnote saying Miami is not yet
    in any measure on the page. When Miami rows arrive in the sources the strip
-   picks them up on its own, and the footnote is removed by hand.
+   picks them up on its own, and the footnote is removed by hand. Its second
+   sentence in the shipped workbook reads "Paterson has no high school, so its
+   cumulative GPA cell is blank"; if the render shows no blank cell, reword it
+   in Desktop at publish time to say the cumulative column has no Paterson row.
+5. **`LP Gap to goal (region)`.** Ruling 18: the calculation
+   (`Calculation_7700000000000000002`) is defined at datasource level but
+   referenced by no sheet. Removing it, or wiring it onto the strip, is a
+   follow-up. It stays for now because removing it would mean rebuilding and
+   republishing the review copy.

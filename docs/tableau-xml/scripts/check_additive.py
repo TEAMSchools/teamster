@@ -14,12 +14,24 @@ import difflib
 import re
 import sys
 
+MARKER = " maximized='true'"
+
 
 def strip_elements(text: str, pattern: str) -> tuple[str, int]:
     """Remove whole elements matching a regex; the regex must consume the
     element from its leading indentation through its trailing newline."""
     new, n = re.subn(pattern, "", text, flags=re.S)
     return new, n
+
+
+def maximized_windows(text: str) -> list[str]:
+    """Names of the <window> elements whose opening tag carries the marker."""
+    names = []
+    for tag in re.findall(r"<window [^>]*>", text):
+        if MARKER in tag:
+            m = re.search(r"name='([^']*)'", tag)
+            names.append(m.group(1) if m else "<unnamed window>")
+    return names
 
 
 def main() -> int:
@@ -39,16 +51,44 @@ def main() -> int:
     cp = re.escape(a.calc_prefix)
     ap = re.escape(a.action_prefix)
 
+    # the one sanctioned edit to an existing element is the default-view
+    # marker, which moves between dashboard windows. Check it BEFORE any
+    # stripping: the "dashboard-window" pattern below removes the window that
+    # is supposed to carry it, so after the strip a file whose marker was
+    # deleted outright and a file whose marker sits on some other dashboard
+    # both look indistinguishable from a correct one.
+    edited_max = maximized_windows(edited)
+    base_max = maximized_windows(base)
+    target_window = re.search(
+        rf"<window class='dashboard'[^>]*name='{db}'[^>]*>", edited
+    )
+    if (
+        edited.count(MARKER) != 1
+        or base.count(MARKER) != 1
+        or target_window is None
+        or MARKER not in target_window.group(0)
+    ):
+        print(
+            "FAIL: default-view marker. Expected exactly one maximized window "
+            f"in each file, the edited one on '{a.dashboard}'. "
+            f"edited: {edited.count(MARKER)} on {edited_max}; "
+            f"base: {base.count(MARKER)} on {base_max}."
+        )
+        return 1
+
     removed = {}
-    # "worksheets" must run before "calcs": a worksheet's own
+    # The patterns are order-independent. "calcs" in particular does not depend
+    # on "worksheets" having run first: a worksheet's own
     # datasource-dependencies carry the same calc name as a SELF-CLOSING
-    # <column .../> reference (12-space indent here), which the calcs pattern
-    # below must never touch. calcs is scoped to the datasource-level
-    # definition instead: six-space indent, and its opening tag must NOT be
-    # self-closing ([^/>] immediately before the closing '>'), so a reference
-    # column can never satisfy it even after worksheets is stripped.
+    # <column .../> reference (12-space indent here), and calcs is scoped to
+    # the datasource-level definition instead — six-space indent at the start
+    # of a line, and an opening tag that must NOT be self-closing ([^/>]
+    # immediately before the closing '>') — so a reference column can never
+    # satisfy it, stripped or not.
     patterns = {
         "worksheets": rf"[ \t]*<worksheet name='{sp}[^']*'>.*?</worksheet>\r?\n",
+        # requires name to be the LAST attribute on the opening tag; if it is
+        # not, this misses loudly (stripped count 0, plus a diff), not silently
         "dashboard": rf"[ \t]*<dashboard [^>]*name='{db}'>.*?</dashboard>\r?\n",
         "dashboard-window": rf"[ \t]*<window class='dashboard'[^>]*name='{db}'[^>]*>.*?</window>\r?\n",
         "sheet-windows": rf"[ \t]*<window class='worksheet'[^>]*name='{sp}[^']*'[^>]*>.*?</window>\r?\n",
@@ -60,17 +100,10 @@ def main() -> int:
         edited, n = strip_elements(edited, pat)
         removed[label] = n
 
-    # the one sanctioned edit to an existing element: the default-view marker
-    # moves between dashboard windows. Normalize it out on both sides, and
-    # require that the edited file still has exactly one.
-    if (
-        edited.count(" maximized='true'") not in (0, 1)
-        or base.count(" maximized='true'") != 1
-    ):
-        print("FAIL: expected exactly one maximized window in each file")
-        return 1
-    edited = edited.replace(" maximized='true'", "")
-    base = base.replace(" maximized='true'", "")
+    # the marker was checked above; normalize it out on both sides so the
+    # remainder can be compared byte for byte.
+    edited = edited.replace(MARKER, "")
+    base = base.replace(MARKER, "")
 
     print("stripped:", removed)
     if edited == base:

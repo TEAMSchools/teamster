@@ -702,11 +702,13 @@ itself, and the sheets keep a region instance for other encodings);
 **not** the instance. The single guard would therefore have written a second
 `<column ... name='[region]' />` into the two sheets that need only the
 instance. Do this instead: guard each line on its own `name='[...]'` probe, and
-insert at the sorted position rather than after the opening tag — Tableau writes
-the children of `<datasource-dependencies>` in plain ASCII order of `name`,
-columns and column-instances interleaved, and rewrites that order on every save,
-so inserting in order keeps a hand-edited sheet diffable against a Desktop
-re-save.
+insert the region lines at their sorted position rather than after the opening
+tag — Tableau writes the children of `<datasource-dependencies>` in plain ASCII
+order of `name`, columns and column-instances interleaved, and rewrites that
+order on every save, so inserting in order keeps a hand-edited sheet diffable
+against a Desktop re-save. The claim covers only those inserted region lines:
+the calc swaps that came later replace an element on the line it already
+occupies, and were not re-sorted.
 
 ### A `[usr:...:qk]` swap cannot be a `count()==1` literal edit
 
@@ -1566,24 +1568,24 @@ relied on.
 
 ### A dashboard's CSV is the first sheet's CSV on REST 3.25
 
-The brief assumed `populate_csv` on a dashboard view returns one CSV per sheet
-on that dashboard, citing REST 3.30. This server is 2025.1.9 at REST API 3.25,
-and a dashboard view's `populate_csv` returns a single CSV: the data of the
-dashboard's first sheet, with no delimiter or second header to mark where
-another sheet would begin. So "fetch the four dashboards and compare their
+**Verified.** The brief assumed `populate_csv` on a dashboard view returns one
+CSV per sheet on that dashboard, citing REST 3.30. This server is 2025.1.9 at
+REST API 3.25, and a dashboard view's `populate_csv` returns a single CSV: the
+data of the dashboard's first sheet, with no delimiter or second header to mark
+where another sheet would begin. So "fetch the four dashboards and compare their
 sheets" is not a plan that survives contact with this version. The comparison
 has to address each worksheet as its own view.
 
 ### `hidden_views` can only hide more views, never reveal one
 
-The controller's ruling assumed the REST publish decides view visibility purely
-from the `hidden_views` list, so that omitting a sheet from that list would make
-it live even though `<windows>` marks it `hidden='true'`. It does not. A window
-carrying `hidden='true'` is not in the publishable set at all; `hidden_views` is
-applied to what the workbook already offers, and a name that is not on offer is
-simply ignored. The first probe published with all thirteen sheets omitted from
-`hidden_views` and came back with six views — the six dashboards, exactly the
-same set as the review copy:
+**Verified.** The controller's ruling assumed the REST publish decides view
+visibility purely from the `hidden_views` list, so that omitting a sheet from
+that list would make it live even though `<windows>` marks it `hidden='true'`.
+It does not. A window carrying `hidden='true'` is not in the publishable set at
+all; `hidden_views` is applied to what the workbook already offers, and a name
+that is not on offer is simply ignored. The first probe published with all
+thirteen sheets omitted from `hidden_views` and came back with six views — the
+six dashboards, exactly the same set as the review copy:
 
 ```text
 LIVE will be [... 19 names ...]
@@ -1602,16 +1604,16 @@ first miss.
 
 ### To query a hidden sheet, unhide it in the XML and publish a separate package
 
-The workaround that does work: build a throwaway package whose `<windows>`
-entries for the sheets under test have `hidden='true'` stripped, publish that,
-query it, delete it. `repack_probe.py` does the strip by locating each
-`<window class='worksheet' hidden='true' ... name='<name>'>` element by name,
-removing only that element's `hidden` attribute, and asserting exactly one match
-per name — `hidden='true'` occurs 158 times in this workbook and only 13 of them
-are the windows in question, so a blind global replace would have unhidden
-seventy-odd sheets. Then rebuild the `.twbx` by copying every zip entry across
-and substituting the edited `.twb` bytes, and verify the packaged bytes match
-what you wrote before publishing.
+**Verified.** The workaround that does work: build a throwaway package whose
+`<windows>` entries for the sheets under test have `hidden='true'` stripped,
+publish that, query it, delete it. `repack_probe.py` does the strip by locating
+each `<window class='worksheet' hidden='true' ... name='<name>'>` element by
+name, removing only that element's `hidden` attribute, and asserting exactly one
+match per name — `hidden='true'` occurs 158 times in this workbook and only 13
+of them are the windows in question, so a blind global replace would have
+unhidden seventy-odd sheets. Then rebuild the `.twbx` by copying every zip entry
+across and substituting the edited `.twb` bytes, and verify the packaged bytes
+match what you wrote before publishing.
 
 The probe is a separate package from the review copy on purpose. The review copy
 the user looks at keeps its own visibility; the probe carries the sheet-level
@@ -1619,30 +1621,30 @@ exposure and is deleted the moment the numbers are read.
 
 ### An equality where both sides are zero is a weak check, and should say so
 
-`LP Students still needed (org)` and `Students still needed` both return `0`, so
-the pair compares equal. They compare equal because the org is currently above
-goal (measured 413, at 3.0+ 200 = 48.4% against a 45% goal proportion), not
-because the org-only calc's arithmetic was exercised. A shortfall calc that
-returned a constant zero would pass this check identically. Recorded as a caveat
-in `render-notes.md` rather than reported as a clean pass: re-check when the org
-sits below goal.
+**Verified.** `LP Students still needed (org)` and `Students still needed` both
+return `0`, so the pair compares equal. They compare equal because the org is
+currently above goal (measured 413, at 3.0+ 200 = 48.4% against a 45% goal
+proportion), not because the org-only calc's arithmetic was exercised. A
+shortfall calc that returned a constant zero would pass this check identically.
+Recorded as a caveat in `render-notes.md` rather than reported as a clean pass:
+re-check when the org sits below goal.
 
 ### `% at 3.0+` exports unformatted on both sides, which is inherited, not broken
 
-Three of the four tile measures export percent-formatted (`69%`, `8%`, `15%`);
-`% at 3.0+` exports as `0.484261501`. The source BAN exports the same way, so
-the tile inherited the field format from its clone source and the clone is
-faithful. It does mean the number the user sees on the tile comes from the mark
-label's own format, which no CSV can confirm — only the crop.
+**Verified.** Three of the four tile measures export percent-formatted (`69%`,
+`8%`, `15%`); `% at 3.0+` exports as `0.484261501`. The source BAN exports the
+same way, so the tile inherited the field format from its clone source and the
+clone is faithful. It does mean the number the user sees on the tile comes from
+the mark label's own format, which no CSV can confirm — only the crop.
 
 ### Images cannot reach the model in this harness, so the visual list is a hand-off
 
-`check-output.sh` redacts every PNG and JPG at any size, so the brief's "crop
-and `Read`" step is not available to the agent — halving the image does not
-help, because the redaction is by content type, not by size. The crops were
-produced anyway (seven files, 2732 px wide, from a 2732 x 3000 render that is
-exactly 2x the 1366 x 1500 grid `crop_lp.py` assumes) and every visual check is
-named in `render-notes.md` against the crop that shows it.
+**Verified.** `check-output.sh` redacts every PNG and JPG at any size, so the
+brief's "crop and `Read`" step is not available to the agent — halving the image
+does not help, because the redaction is by content type, not by size. The crops
+were produced anyway (seven files, 2732 px wide, from a 2732 x 3000 render that
+is exactly 2x the 1366 x 1500 grid `crop_lp.py` assumes) and every visual check
+is named in `render-notes.md` against the crop that shows it.
 
 ### The numbers, verbatim
 
@@ -1820,3 +1822,34 @@ packaged twb == out.twb: True
 Seven entries, one differing checksum, and that one is the `.twb` the build
 edited. `zipfile.ZipInfo.CRC` is read from the archive's own directory, so this
 costs nothing to compute and does not decompress the 28 MB extract.
+
+## 2026-09-10, final review fixes
+
+### The default-view guard has to run before the stripping, not after
+
+**Verified.** `check_additive.py` counted `maximized='true'` after the
+`dashboard-window` pattern had already removed the window that carries it, and
+it accepted a count of `0` or `1`. That passes two broken files: one whose
+marker was deleted outright, and one whose marker was moved to another
+dashboard. After the strip both look exactly like a correct file, because the
+correct file's marker is inside the window the strip removes. The guard now runs
+before any stripping and requires three things — exactly one marker in the
+edited file, exactly one in the base, and the edited one inside the
+`<window class='dashboard' ... name='<the --dashboard argument>' ...>` opening
+tag — and prints both counts and the window names it found when it fails. Proved
+on the shipped file and on two mutants of it, built under
+`.claude/scratch/tableau/lp/tmp-review/` and deleted afterwards:
+
+```text
+=== control out.twb -> exit 0
+stripped: {'worksheets': 19, 'dashboard': 1, 'dashboard-window': 1, 'sheet-windows': 19, 'nav-actions': 9, 'url-actions': 3, 'calcs': 3}
+OK: remainder is byte-identical to base
+=== mutant A: marker removed -> exit 1
+FAIL: default-view marker. Expected exactly one maximized window in each file, the edited one on 'Landing Page'. edited: 0 on []; base: 1 on ['Academic Health Home'].
+=== mutant B: marker moved to Gradebook Teacher View -> exit 1
+FAIL: default-view marker. Expected exactly one maximized window in each file, the edited one on 'Landing Page'. edited: 1 on ['Gradebook Teacher View']; base: 1 on ['Academic Health Home'].
+```
+
+The control's stripped dict is unchanged from the Task 8 run, so the guard costs
+nothing the additive proof was already buying. Both mutants pass the old guard,
+which is what made it worth replacing.

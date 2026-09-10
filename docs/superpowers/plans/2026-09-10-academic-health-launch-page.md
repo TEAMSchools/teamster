@@ -1726,6 +1726,9 @@ rm -f /workspaces/teamster/tests/test_zz_lp_numbers.py
 
 - [ ] **Step 1: Read the launch page guide, then edit the links entry**
 
+_Superseded by ruling 17 during execution: the entry is left unchanged in this
+branch and repointed on publish day; see the hand-off._
+
 Read `docs/guides/launch-page-guide.md` for the `url` rules, then change the
 entry's `url` from
 `https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome?:embed=y`

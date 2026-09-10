@@ -100,6 +100,12 @@ windows by the same prefix, `nav-action` and `action` elements by name prefix,
 datasource columns by calculation-name prefix) and requires the remainder to be
 byte-identical to the base.
 
+The default view is exempt from that byte identity — the `maximized='true'`
+marker is normalized out of both files — but before any stripping the checker
+requires exactly one marker in each file and requires the edited file's to sit
+on the `--dashboard` window, so a marker that was deleted outright or left on
+another tab fails with both counts and the window names it found.
+
 ```bash
 uv run python check_additive.py <edited.twb> <base.twb> --sheet-prefix "LP - " \
   --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_
