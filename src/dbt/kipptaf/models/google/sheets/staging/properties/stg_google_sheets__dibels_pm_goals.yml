@@ -39,35 +39,76 @@ models:
                 severity: error
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
       - name: region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: admin_season
         data_type: string
+        description: >-
+          The PM season the goal governs, BOY->MOY or MOY->EOY. Derived from the
+          benchmark administration the cohort average was taken from, so a BOY
+          benchmark sets the BOY->MOY goals.
       - name: assessment_grade
         data_type: string
+        description: Grade level of the assessment administered.
       - name: assessment_grade_int
         data_type: int64
+        description: Assessment grade as an integer, K mapped to 0.
       - name: measure_standard
         data_type: string
+        description:
+          The individual measure evaluated -- Reading Fluency (ORF) and Reading
+          Accuracy (ORF-Accu) are separate standards under one code.
       - name: starting_words
         data_type: int64
+        description:
+          Where the cohort starts -- the average benchmark score for this
+          measure across students who were Below or Well Below Benchmark on the
+          previous composite.
       - name: round_number
         data_type: int64
+        description:
+          The PM round. Round numbers run consecutively across the year rather
+          than restarting each season.
       - name: pm_goal_include
         data_type: boolean
+        description:
+          Null means a real tested round; non-null marks a scaffold row that
+          keeps the trajectory continuous across a round the measure was not
+          tested in.
       - name: pm_goal_criteria
         data_type: string
+        description:
+          How the round's measure codes combine. AND requires every code; NULL
+          is the OR criteria, letting one complete code satisfy the round.
       - name: pm_round_days
         data_type: int64
+        description: In-session school days in this round's window.
       - name: benchmark_goal
         data_type: float64
+        description:
+          Amplify's published grade-level standard for the season, unpadded.
       - name: required_growth_words
         data_type: int64
+        description:
+          The gap the cohort owes for the season -- benchmark_goal_padded minus
+          starting_words.
       - name: pm_days
         data_type: int64
+        description: Total in-session school days across the season's PM rounds.
       - name: daily_growth_rate
         data_type: float64
+        description: Words of growth owed per school day.
       - name: round_growth_words_goal
         data_type: int64
+        description:
+          This round's share of the season's growth, proportional to its school
+          days. The season's first round also carries starting_words.
       - name: cumulative_growth_words
         data_type: float64
+        description:
+          The running target a score is compared against -- the level the cohort
+          should have reached by the end of this round.

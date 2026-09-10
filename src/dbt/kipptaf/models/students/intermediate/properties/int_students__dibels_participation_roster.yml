@@ -60,6 +60,8 @@ models:
             source_column: academic_year
       - name: region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
@@ -100,10 +102,18 @@ models:
           is joined.
       - name: assessment_type
         data_type: string
+        description:
+          Whether the row counts a Benchmark administration or a PM round.
       - name: admin_season
         data_type: string
+        description:
+          For a Benchmark row the administration -- BOY, MOY or EOY. For a PM
+          row the PM season, BOY->MOY or MOY->EOY.
       - name: round_number
         data_type: int64
+        description:
+          The round, from the expectation gate. Round numbers run consecutively
+          across the year rather than restarting each season.
       - name: expected_row_count
         data_type: int64
         description: >-

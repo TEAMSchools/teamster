@@ -3,42 +3,75 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
       - name: region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: assessment_grade
         data_type: string
+        description: Grade level of the assessment administered.
       - name: assessment_grade_int
         data_type: int64
+        description: Assessment grade as an integer, K mapped to 0.
       - name: period
         data_type: string
+        description:
+          The benchmark administration the goal applies to -- BOY, MOY or EOY.
       - name: benchmark_goal_season
         data_type: string
+        description:
+          The administration Amplify's published standard is drawn from.
       - name: school
         data_type: string
+        description: School name the goal applies to.
       - name: grade_goal
         data_type: float64
+        description:
+          Share of students at this grade expected to score At or Above
+          Benchmark.
       - name: grade_range_goal
         data_type: float64
+        description:
+          The same goal expressed for the grade range rather than a single
+          grade.
       - name: n_admin_season_school_gl_all
         data_type: int64
+        description: Students at the school in this grade and administration.
       - name: n_admin_season_school_gl_at_above
         data_type: int64
+        description: Students at the school scoring At or Above Benchmark.
       - name: n_admin_season_school_gl_bl_wb
         data_type: int64
+        description:
+          Students at the school scoring Below or Well Below Benchmark.
       - name: n_admin_season_region_gl_all
         data_type: int64
+        description: Students in the region in this grade and administration.
       - name: n_admin_season_region_gl_at_above
         data_type: int64
+        description: Students in the region scoring At or Above Benchmark.
       - name: n_admin_season_region_gl_bl_wb
         data_type: int64
+        description:
+          Students in the region scoring Below or Well Below Benchmark.
       - name: n_admin_season_school_gl_at_above_expected
         data_type: float64
+        description:
+          Students the school's goal implies should score At or Above Benchmark.
       - name: n_admin_season_region_gl_at_above_expected
         data_type: float64
+        description:
+          Students the region's goal implies should score At or Above Benchmark.
       - name: n_admin_season_school_gl_at_above_gap
         data_type: float64
+        description:
+          Distance between the school's At or Above count and its goal.
       - name: n_admin_season_region_gl_at_above_gap
         data_type: float64
+        description:
+          Distance between the region's At or Above count and its goal.
       - name: grade_goal_iep
         data_type: float64
         description: >
