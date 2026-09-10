@@ -1149,7 +1149,7 @@ dashboards, where it is the check that a new tab moved nothing.
 ### `<actions>` children are grouped by kind; the tail anchor breaks the group
 
 **Verified by counting base.twb.** Inside `<actions>` the base holds 14
-`<action>`, then 2 `<nav-action>`, then 7 `<edit-parameter-action>`, in that
+`<action>`, then 2 `<nav-action>`, then 6 `<edit-parameter-action>`, in that
 order with no interleaving — the order Desktop writes and almost certainly the
 content model, the same class of ordering that produced D2E8DA72 on `<pane>`
 children earlier in this build. The brief's
@@ -1160,7 +1160,7 @@ end of its OWN group — the URL actions before
 `<nav-action caption='Open Teacher' ...>`, the nav-actions before
 `<edit-parameter-action caption='Close panel' ...>` — and verify the grouping
 after the build by listing the direct children in file order
-(`17 action, 11 nav-action, 7 edit-parameter-action`). A tail anchor is safe
+(`17 action, 11 nav-action, 6 edit-parameter-action`). A tail anchor is safe
 only in an element whose children are all one tag.
 
 ### An element absent from the workbook is an element the manifest has not declared
@@ -1359,3 +1359,92 @@ point of running the mutant without `--baseline`.
 46 zones, ids 1 to 46, no duplicate. 22 sheet zones, each named once: the 19
 `LP - ` sheets and the three `Links - GPA Roster - <Region>` sheets. 22
 viewpoints in the new window, one per sheet zone.
+
+### Task 7 fix round: headings, the window-uuid barrier, the URL escape
+
+**Ruling 14, and three reviewer minors.** The controller answered the open
+headings question: each long-copy text zone opens with a bold 11 pt heading run
+and a `<run>Æ&#10;</run>` break, out of the zone's existing height, not added to
+it. `heading_run()` writes it with no `fontname`, so the coverage heading
+inherits the zone's regular face while every grid line under it keeps
+`fontname='Courier New'` — a run carrying its own face is what makes one
+mixed-typeface text zone possible. Definitions now runs 21 lines in 400 px and
+coverage 12 in 220 px; `task7` asserts both heading strings as a bold
+`fontsize='11'` run, exactly once each.
+
+**A lazy `.*?` under `re.S` needs a barrier at the element close.**
+`read_window_uuids()` matched
+`<window class='dashboard'[^>]*name='TAB'.*?<simple-id uuid='([^']*)' />` with
+nothing stopping the lazy any at `</window>`. Every dashboard window in
+`base.twb` carries its own trailing `simple-id`, so the match never crossed —
+but a target window that lost one would have picked up the NEXT window's uuid
+and pointed a header button at the wrong tab, with the build, the assertion and
+every checker still green, because the uuid it found is a real uuid. Proved on a
+two-window fixture whose first window has no `simple-id`: the old pattern
+returns `{NEXT-WINDOW-UUID}`, the barriered `(?:(?!</window>).)*?` form returns
+`None`. Do this instead: when a lazy any spans from one element's opening tag to
+a child deep inside it, spell the close tag as a tempered barrier rather than
+trusting the input to close first — and make the plan-comparison RAISE. The old
+code printed a NOTE on a uuid that disagreed with the plan and carried on with
+what it found, which is the wrong default for a value that silently reroutes
+navigation; it now raises, the same way `read_roster_urls()` does.
+
+**Interpolating an external value into an attribute means escaping it.** The
+three roster URLs went into `expression='{url}'` raw. None of the three carries
+an `&` today, so the file was well-formed and `ET.fromstring()` passed — but a
+Google Sheets URL with a second query parameter would have produced `&` in an
+attribute and broken the parse at the next build, and the same `esc()` every
+other interpolated string in this script goes through was one call away. Do this
+instead: route every interpolated value through `esc()` at the point it enters
+markup, including values read out of the workbook itself, and do not treat "the
+current data happens to be safe" as a reason to skip it.
+
+**Corrected count.** The earlier entry said the base holds 7
+`<edit-parameter-action>` and the finished file 17 / 11 / 7. Counted again over
+the `<actions>` element in both files: the base holds 14 `<action>`, 2
+`<nav-action>` and **6** `<edit-parameter-action>`, and `out.twb` reads 17 / 11
+/ **6**. The grouping conclusion is unchanged; the number was wrong.
+
+### Verbatim run output, fix round
+
+```text
+build rc=0
+add_dashboard: +35613 bytes
+add_actions: +4490 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (2083925 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+PASS task5
+PASS task6
+PASS task7
+
+additive rc=0
+stripped: {'worksheets': 19, 'dashboard': 1, 'dashboard-window': 1, 'sheet-windows': 19, 'nav-actions': 9, 'url-actions': 3, 'calcs': 3}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+
+geometry [Landing Page] rc=0
+  Mode: without baseline (absolute bounds)
+  OK: geometry consistent in 'Landing Page'
+geometry [Academic Health Home] rc=0
+geometry [Academic Health Schools] rc=0
+geometry [Cumulative GPA Monitor] rc=0
+geometry [Gradebook School Rollup] rc=0
+geometry [Gradebook Teacher View] rc=0
+```
+
+The mutation proof was re-run unchanged after the fixes: `CONTROL_OK`, then
+`mutant geometry rc=1` with `FAIL zone 14 (horz) gap is 24707, expected 0-3000`.
+The two heading runs add 254 bytes to the dashboard and no zones, so the ids are
+the same 1 to 46.
+
+Barrier proof, on a fixture whose first window has no `simple-id`:
+
+```text
+old lazy-any regex  -> {NEXT-WINDOW-UUID}
+barriered regex     -> None
+```

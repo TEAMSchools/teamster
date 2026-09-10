@@ -482,6 +482,16 @@ def task7(t: str) -> None:
     ):
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert count(t, rf"<param name='sheet' value='{re.escape(tab)}' />") >= 1, tab
+    # controller ruling 14: each long-copy text zone opens with its heading
+    for heading in ("What the terms mean", "Where each tab has data"):
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert (
+            count(
+                d,
+                rf"<run bold='true'[^>]*fontsize='11'[^>]*>{re.escape(heading)}</run>",
+            )
+            == 1
+        ), heading
     # text zones carry no tokens
     for tz in re.findall(r"<zone [^>]*type-v2='text'.*?</zone>", d, re.S):
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check

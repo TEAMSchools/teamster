@@ -1515,6 +1515,25 @@ def cards(y: int, depth: int) -> str:
     )
 
 
+#: Controller ruling 14. Each of the two long-copy text zones opens with a
+#: bold 11 pt heading run and a break, taken out of the zone's existing
+#: height rather than added to it: definitions runs 21 lines in a 400 px zone
+#: and coverage 12 in a 220 px one.
+DEF_HEADING = "What the terms mean"
+COV_HEADING = "Where each tab has data"
+HEADING_SIZE = 11
+
+
+def heading_run(text: str) -> str:
+    """The zone's own heading. No `fontname`, so it inherits the zone's
+    regular face -- which is what keeps the coverage heading out of Courier
+    while every grid line below it stays monospaced."""
+    return (
+        f"<run bold='true' fontcolor='{NAVY}' fontsize='{HEADING_SIZE}'>"
+        f"{esc(text)}</run>\r\n" + TEXT_BR
+    )
+
+
 #: The spec's definitions table, verbatim. Each entry is the term and its
 #: sentence split into visual lines: a tall text zone's wrap behaviour has not
 #: been probed in this corpus, so every line break is explicit and no line
@@ -1595,7 +1614,7 @@ DEFINITIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
 
 
 def definitions(y: int, depth: int) -> str:
-    runs = []
+    runs = [heading_run(DEF_HEADING)]
     for i, (term, lines) in enumerate(DEFINITIONS):
         if i:
             runs.append(TEXT_BR)
@@ -1651,7 +1670,7 @@ def coverage(y: int, depth: int) -> str:
         )
     lines.append("")
     lines.extend(COV_NOTES)
-    runs = []
+    runs = [heading_run(COV_HEADING)]
     for i, line in enumerate(lines):
         if i:
             runs.append(TEXT_BR)
@@ -1808,17 +1827,26 @@ def build_dashboard(t: str) -> tuple[str, str]:
 
 
 def read_window_uuids(t: str) -> None:
-    """The five target window uuids, from the file rather than the plan."""
+    """The five target window uuids, read from the file and checked.
+
+    `(?:(?!</window>).)*?` rather than `.*?` under re.S: a plain lazy any
+    crosses `</window>`, so a target window that ever lost its own trailing
+    `<simple-id>` would silently pick up the NEXT window's uuid and the five
+    header buttons would point at the wrong tabs with nothing failing."""
     for tab in WIN:
         m = re.search(
-            rf"<window class='dashboard'[^>]*name='{re.escape(tab)}'.*?<simple-id uuid='([^']*)' />\r\n    </window>",
+            rf"<window class='dashboard'[^>]*name='{re.escape(tab)}'"
+            r"(?:(?!</window>).)*?"
+            r"<simple-id uuid='([^']*)' />\r\n    </window>",
             t,
             re.S,
         )
         if not m:
             raise RuntimeError(f"window uuid for {tab}")
         if m.group(1) != WIN[tab]:
-            print(f"  NOTE {tab}: base uuid {m.group(1)} differs from the plan")
+            raise RuntimeError(
+                f"window uuid for {tab} is {m.group(1)}, the plan says {WIN[tab]}"
+            )
         WIN[tab] = m.group(1)
 
 
@@ -1906,7 +1934,7 @@ def add_actions(t: str) -> str:
     <action caption='GPA Roster {region} (Landing Page)' name='[LP_Link_{region}]'>
       <activation type='on-select' />
       <source dashboard='Landing Page' type='sheet' worksheet='Links - GPA Roster - {region}' />
-      <link caption='' expression='{url}' />
+      <link caption='' expression='{esc(url)}' />
     </action>
 """)
         for region, url in ROSTER.items()
