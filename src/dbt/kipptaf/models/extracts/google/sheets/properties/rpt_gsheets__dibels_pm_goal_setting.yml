@@ -1,37 +1,132 @@
 models:
   - name: rpt_gsheets__dibels_pm_goal_setting
+    description: >-
+      Calculates the internal method's progress-monitoring goals, one row per
+      region, grade, PM season, measure and round.
+
+      Nobody sets these numbers. The goal is derived from the cohort itself:
+      take the students who scored Below or Well Below Benchmark on the previous
+      benchmark composite, average their benchmark scores per measure, and that
+      average is where the cohort starts. The distance from there to the padded
+      grade-level target is the growth the cohort owes, and each round takes a
+      share of it proportional to its school days.
+
+      That framing matters for anyone reading a goal and wondering who chose it.
+      T&L owns the schedule — which rounds exist, their dates, which measures
+      each round tests, and which cohort tests them — and that lives in the
+      Expected Assessments sheet and `reporting__terms`. This model owns the
+      numbers, and it computes them rather than transcribing them.
+
+      Because the goal is derived from the cohort, it moves as scores arrive and
+      it differs year to year: a lower-scoring cohort produces a lower starting
+      average and therefore a lower bar. That is why the output is frozen. The
+      calculated rows are copy-pasted into a Google Sheet that becomes
+      `stg_google_sheets__dibels_pm_goals`, and every downstream evaluation
+      reads the frozen copy rather than this model. This model also reads only
+      `current_academic_year`, so it is a live worksheet for the year being set
+      up, not a history.
+
+      The contrast with Amplify's aimline is structural, not cosmetic. This is
+      one line per cohort — every Below or Well Below student at a grade and
+      measure is held to the same target. Amplify's aimline is one line per
+      student, drawn from that student's own starting score. A student can be on
+      pace against the cohort while off their own aimline, and neither number is
+      wrong; they answer different questions. Do not treat a gap between the two
+      methods as a reconciliation defect.
     columns:
       - name: academic_year
         data_type: int64
+        description: >-
+          Starting calendar year of the school year. Always
+          `current_academic_year` — this model computes the year being set up
+          and keeps no history.
       - name: region
         data_type: string
+        description:
+          The city form of the region — Newark, Camden, Miami, Paterson.
       - name: admin_season
         data_type: string
+        description: >-
+          The PM season the goal governs, BOY->MOY or MOY->EOY. Derived from the
+          benchmark administration the cohort average was taken from, so a BOY
+          benchmark sets the BOY->MOY goals.
       - name: assessment_grade
         data_type: string
+        description: Grade level of the assessment administered.
       - name: assessment_grade_int
         data_type: int64
+        description: Assessment grade as integer (K mapped to 0).
       - name: measure_standard
         data_type: string
+        description: >-
+          The measure the goal applies to, at the grain targets are set on —
+          Reading Fluency (ORF) and Reading Accuracy (ORF-Accu) get separate
+          goals. Composite is excluded; it gates eligibility rather than
+          carrying a growth target.
       - name: starting_words
         data_type: float64
+        description: >-
+          Where the cohort starts — the average benchmark score for this measure
+          across students who were Below or Well Below Benchmark on the previous
+          composite. Averaged over their BENCHMARK score, not a PM probe, and
+          rounded to a whole number.
       - name: round_number
         data_type: int64
+        description: >-
+          The PM round, from the expectation gate. Round numbers run
+          consecutively across the year rather than restarting each season.
       - name: pm_goal_include
         data_type: boolean
+        description: >-
+          Passed through from the expectation gate. Null means the round is a
+          real tested round; non-null marks a scaffold row that exists so the
+          trajectory stays continuous across a round the measure was not tested
+          in. Consumers filter to null.
       - name: pm_goal_criteria
         data_type: string
+        description: >-
+          How the round's measures combine when a student is evaluated — AND
+          requires every measure code, anything else requires one. Set by T&L,
+          and AND network-wide for every K-8 round from SY26-27.
       - name: pm_round_days
         data_type: int64
+        description: >-
+          In-session school days in this round's window. The numerator of the
+          round's share of the season's growth.
       - name: benchmark_goal
         data_type: float64
+        description: >-
+          The grade-level target for the season, padded by 3 words. The padding
+          is applied here, so this column is already the padded figure — do not
+          add it again downstream.
       - name: required_growth_words
         data_type: float64
+        description: >-
+          The gap the cohort owes for the season — padded benchmark_goal minus
+          starting_words. Rounded independently of its inputs, so it can differ
+          from that subtraction by half a word.
       - name: pm_days
         data_type: int64
+        description: >-
+          Total in-session school days across the season's PM rounds. The
+          denominator that turns required_growth_words into a per-round share.
       - name: daily_growth_rate
         data_type: float64
+        description: >-
+          Words of growth owed per school day — required_growth_words divided by
+          pm_days. Reported for transparency; the round target is computed from
+          the day counts directly rather than from this rate.
       - name: round_growth_words_goal
         data_type: float64
+        description: >-
+          This round's share of the season's growth, proportional to its school
+          days. The season's first round also carries starting_words, so its
+          value is a level rather than an increment.
       - name: cumulative_growth_words
         data_type: float64
+        description: >-
+          The running target a score is actually compared against — the level
+          the cohort should have reached by the end of this round. A running sum
+          of round_growth_words_goal, except that the season's last round is set
+          to benchmark_goal outright so the trajectory lands exactly on the
+          grade-level target rather than on an accumulated approximation.

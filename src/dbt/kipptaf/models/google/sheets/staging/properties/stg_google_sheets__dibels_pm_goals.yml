@@ -1,5 +1,21 @@
 models:
   - name: stg_google_sheets__dibels_pm_goals
+    description: >-
+      The frozen snapshot of the internal method's progress-monitoring goals,
+      and the copy every evaluation reads.
+
+      These rows are calculated by `rpt_gsheets__dibels_pm_goal_setting` and
+      then copy-pasted by hand into the Google Sheet behind this model. The
+      freeze is the point, not an accident of process: the goal is derived from
+      the cohort's own average benchmark score, so it moves as scores arrive.
+      Pasting it fixes the year's goals once they are set.
+
+      Consequences for anyone reading this model. It is not live — a value here
+      can lag the calculation, and the calculation is the thing to re-run if the
+      two disagree. It carries history, unlike the goal-setting model, which
+      computes `current_academic_year` only. And `Benchmark_Goal` is already
+      padded by 3 words; the padding happens in the calculation, so never add it
+      again here or downstream.
     columns:
       - name: Academic_Year
         data_type: int64

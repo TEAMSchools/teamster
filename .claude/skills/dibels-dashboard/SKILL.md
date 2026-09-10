@@ -1555,6 +1555,106 @@ what isolated it -- the internal gate and internal eligibility joined to the
 AIMLINE source reproduces the aimline numbers exactly (4,476 students, 35,546
 slots), which proves the gate is innocent.
 
+### Nobody sets the internal PM goals -- they are derived from the cohort
+
+**Do not describe the internal PM goal as something T&L chose.** Verified
+against `rpt_gsheets__dibels_pm_goal_setting`: it averages the BENCHMARK score
+per measure across students who were Below or Well Below Benchmark on the
+previous composite, and that average is the cohort's starting point. The
+distance from there to the padded grade-level target is the growth owed, split
+across rounds by school days.
+
+Confirmed numerically: recomputing `starting_words` from
+`int_amplify__all_assessments` matches the frozen AY2025 goals sheet on 183 of
+184 grade/region/season/measure combinations, average absolute difference 0.01
+words. The single mismatch is consistent with the eligible population shifting
+by one enrollment change since the freeze.
+
+**The ownership split, because it is easy to state backwards:**
+
+| Owner | Decides                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------ |
+| T&L   | Which rounds exist, their dates, the measures each round tests, the cohort that tests them |
+| Us    | Every number -- starting point, growth owed, per-round running target                      |
+
+That is why transcribing T&L's PM Rounds doc is load-bearing work and the goal
+numbers are not: the schedule exists nowhere else, and the goals are computed.
+
+**Two things this explains.** The freeze exists because a cohort-derived goal
+moves as scores arrive and differs year to year, so a weaker cohort lowers its
+own bar -- pasting into `stg_google_sheets__dibels_pm_goals` fixes the year once
+set, and the goal-setting model reads `current_academic_year` only. And it is
+the real reason aimline is structurally different rather than
+differently-sourced: ours is one line per COHORT, Amplify's is one line per
+STUDENT off their own starting score. A student can be on pace against the
+cohort while off their own aimline. **Neither number is wrong and a gap between
+the two methods is not a reconciliation defect.**
+
+Two doc errors this corrected, in case they resurface: the reference page said
+the calculation averaged the **composite** score (it excludes Composite and
+averages each measure; the composite only gates eligibility), and it called the
+column `average_starting_words` (it is `starting_words`).
+
+### The internal PM evaluation is four questions, and only one is method-specific
+
+Useful when building or reviewing the aimline sibling, because it says exactly
+how much transfers.
+
+`int_amplify__pm_met_criteria` asks, per measure, in order:
+
+1. Did the score reach this round's running level? (`cumulative_growth_words`)
+2. Did every measure standard under the `measure_name_code` pass -- so met ORF
+   requires both Fluency and Accuracy?
+3. Did every skill the round tested pass? (`pm_goal_criteria`, `AND` = `min()`)
+4. Was the student tested on everything the round expected?
+   (`completed_test_round`)
+
+And separately, never feeding that rollup: `met_admin_benchmark_goal`, which
+asks "already at grade level" rather than "on pace".
+
+**Only question 1 is method-specific.** Amplify supplies `aimline_status`
+directly instead of us building a running target from school days. The skill
+pairing, the round rollup, the participation gate and the at-grade-level verdict
+are all method-agnostic -- which is why the aimline sibling is smaller than this
+model rather than a parallel copy of it.
+
+The meaning of question 1 does change, though, even where the mechanics do not:
+"on pace" stops meaning "keeping up with peers who started where you did" and
+starts meaning "keeping up with yourself."
+
+**T&L's four reporting categories are those two verdicts combined, with the
+at-grade-level one winning outright:**
+
+| Label                      | Rule                                              |
+| -------------------------- | ------------------------------------------------- |
+| On Track & Meeting Aimline | at grade level -- regardless of what on-pace says |
+| Meeting Aimline, Off-Track | on pace, not yet at grade level                   |
+| Below Aimline              | neither                                           |
+| Not Tested                 | the participation gate                            |
+
+That first row is a rider from T&L's own definition -- "if a student is meeting
+benchmark but not aimline, they should still be in this category" -- so it is a
+priority cascade, NOT a 2x2 intersection. Getting that wrong puts a
+benchmark-meeting student in Below Aimline.
+
+### Two inert quirks in met_pm_round_overall_criteria
+
+Neither is worth fixing, but both look like bugs on a cold read.
+
+**There is no OR branch.** The final `case` handles `'AND'` and `null`; anything
+else returns 0, so an `OR` round scores 0 even when `met_pm_round_criteria` is
+
+1. Measured on AY2025: zero rows carry `'OR'`, and T&L set `AND` network-wide
+   for every K-8 round from SY26-27, so this can only ever have applied to
+   history.
+
+**The null branch skips the participation gate,** unlike the `'AND'` branch, and
+that is deliberate. `pm_goal_criteria` governs how multiple EXPECTED measures
+combine; a null-criteria round has no multi-measure requirement, so a valid
+score counts without checking whether every probe was finished. Unexpected
+probes are already excluded upstream by the expectation gate, so a null round is
+genuinely criteria-free rather than a data gap.
+
 ### The PM branches cannot match prod's row count, and should not
 
 Do not treat a PM row-count difference against prod as a regression to fix. The

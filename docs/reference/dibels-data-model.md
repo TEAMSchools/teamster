@@ -1001,11 +1001,66 @@ using the same collective-average methodology. In AY 2025–2026 the data team
 automated her process via `rpt_gsheets__dibels_pm_goal_setting`. The methodology
 did not change — only the calculation moved into dbt.
 
+#### How it works, in plain terms
+
+A student is progress-monitored because their last benchmark composite said they
+are behind. The internal method asks one question of every PM score: **is this
+student closing the gap fast enough to reach grade level by the next
+benchmark?**
+
+**Nobody sets the goal — it is derived from the cohort.** Take the students who
+scored Below or Well Below Benchmark on the previous composite, average their
+benchmark scores per measure, and that average is where the cohort starts. The
+distance from there to the padded grade-level target is the growth the cohort
+owes, and each round takes a share of it proportional to its school days. So
+every round carries a running level: "by round 3 you should be here."
+
+**Who decides what** is worth being precise about, because a reader looking at a
+goal will reasonably ask who chose it:
+
+| Owner | Decides                                                                                       | Where it lives                                           |
+| ----- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| T&L   | Which rounds exist, their dates, which measures each round tests, and which cohort tests them | Expected Assessments sheet, `reporting__terms`           |
+| Us    | The numbers — starting point, growth owed, per-round targets                                  | `rpt_gsheets__dibels_pm_goal_setting`, frozen to a sheet |
+
+Evaluation then asks three nested questions, each narrower than the last, and
+one gate:
+
+1. **Per measure** — did the score reach this round's running level?
+2. **Per skill** — some skills are two measures. ORF is fluency _and_ accuracy;
+   NWF is letter sounds _and_ decoding. The skill counts as met only if both
+   are.
+3. **Per round** — did the student meet every skill the round tested?
+4. **Participation** — even with good scores, skipping a measure the round
+   expected means the round does not count.
+
+Running alongside all of that is a **separate verdict on a different question**:
+`met_admin_benchmark_goal` asks not "on pace" but "already there" — did the
+score reach the actual grade-level benchmark. It never feeds the round rollup.
+So each measure carries two independent verdicts, and only the first is rolled
+up.
+
+**Why the goal is frozen.** Because it is derived from the cohort, it moves as
+scores arrive and it differs year to year — a lower-scoring cohort produces a
+lower starting average and therefore a lower bar. Copy-pasting the calculated
+rows into a sheet is what stops the year's goals drifting once set, which is
+also why the goal-setting model reads `current_academic_year` only and keeps no
+history.
+
+**Why aimline is structurally different, not just differently-sourced.** This is
+one line per cohort: every Below or Well Below student at a grade and measure is
+held to the same target. Amplify's aimline is one line per student, drawn from
+that student's own starting score. A student can be on pace against the cohort
+while off their own aimline, and neither number is wrong — they answer different
+questions. Do not treat a gap between the two methods as a reconciliation
+defect.
+
 #### What the calculation produces
 
-`rpt_gsheets__dibels_pm_goal_setting` takes the average BOY (or MOY) composite
-score for probe-eligible (Below/Well Below) students and works out, per region ×
-grade × measure × round:
+`rpt_gsheets__dibels_pm_goal_setting` averages each MEASURE's benchmark score —
+not the composite, which only gates eligibility — across probe-eligible
+(Below/Well Below) students, and works out, per region × grade × measure ×
+round:
 
 - **`pm_round_days`** — School days before plus during a round, used to
   proportion the round's share of total PM growth.
@@ -1013,23 +1068,25 @@ grade × measure × round:
   MOY→EOY).
 - **`benchmark_goal`** — Amplify's published word goal for the measure by end of
   admin, padded by **+3 words** and rounded to the nearest tenth.
-- **`average_starting_words`** — Average score for Below/Well Below students on
-  the given measure at the start of the PM season, rounded to the nearest
-  integer.
-- **`required_growth_words`** — `benchmark_goal − average_starting_words` (the
-  +3 padding is already embedded in `benchmark_goal`), rounded to the nearest
+- **`starting_words`** — Average score for Below/Well Below students on the
+  given measure at the start of the PM season, rounded to the nearest integer.
+  Named `starting_words` in the model, not `average_starting_words`.
+- **`required_growth_words`** — `benchmark_goal − starting_words` (the +3
+  padding is already embedded in `benchmark_goal`), rounded to the nearest
   integer. Total words a student must grow by end of admin to meet the padded
   Amplify goal.
 - **`daily_growth_rate`** — `required_growth_words / pm_days`, rounded to 2
   decimal places. Words per school day a student must gain to reach the
   end-of-admin (EOA) goal.
 - **`round_growth_words_goal`** — Round 1:
-  `(pm_round_days × required_growth_words / pm_days) + average_starting_words`.
-  Round 2+: same formula without adding `average_starting_words` (starting
-  baseline is not re-added in subsequent rounds).
-- **`cumulative_growth_words`** — Running cumulative target by round. This is
-  the actual score threshold compared against a student's score in
-  `int_amplify__pm_met_criteria`.
+  `(pm_round_days × required_growth_words / pm_days) + starting_words`. Round
+  2+: same formula without adding `starting_words` (the starting baseline is not
+  re-added in subsequent rounds).
+- **`cumulative_growth_words`** — Running cumulative target by round, and the
+  actual threshold a score is compared against in
+  `int_amplify__pm_met_criteria`. The season's LAST round is set to
+  `benchmark_goal` outright rather than an accumulated sum, so the trajectory
+  lands exactly on the grade-level target.
 - **`benchmark_goal`**, **`pm_goal_include`**, **`pm_goal_criteria`** — passed
   through from `int_google_sheets__dibels_pm_expectations`.
 
