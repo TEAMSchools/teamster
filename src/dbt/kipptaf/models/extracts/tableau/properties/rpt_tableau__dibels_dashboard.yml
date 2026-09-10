@@ -10,6 +10,16 @@ models:
       assert false for a fact the data does not carry, so Miami stays out until
       Focus supplies a placement field or Ops confirms a mapping. Ratified on
       #4996.
+
+      The three `*_status` columns — `measure_standard_goal_status`,
+      `admin_benchmark_goal_status`, `pm_round_status` — are labelled twins of
+      the `met_*` flags beside them, so the dashboard's goal-type selector can
+      pick a column instead of converting a flag. They are PM-only and null on
+      every Benchmark row. On PM rows they are never null, because
+      `int_amplify__pm_met_criteria` carries scored rows only and this model
+      coalesces the resulting gap to `Not Tested` — a student who was expected
+      to test and was not. So a null here means a Benchmark row, and nothing
+      else.
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -203,6 +213,12 @@ models:
         data_type: int64
       - name: met_pm_round_overall_criteria
         data_type: int64
+      - name: measure_standard_goal_status
+        data_type: string
+      - name: admin_benchmark_goal_status
+        data_type: string
+      - name: pm_round_status
+        data_type: string
       - name: expected_round_number
         data_type: string
       - name: schedule_student_grade_level

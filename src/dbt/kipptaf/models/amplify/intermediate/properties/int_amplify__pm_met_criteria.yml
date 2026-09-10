@@ -150,13 +150,23 @@ models:
         description: >-
           1 when the score reaches benchmark_goal, else 0 — at grade level
           rather than on pace. Independent of met_measure_standard_goal, and a
-          student can meet either without the other.
+          student can meet either without the other. The two converge in the
+          season's last round, where cumulative_growth_words is set to
+          benchmark_goal outright.
+
+          Recomputed every round and not latched — a student who clears the
+          standard in one round and dips below it in the next reads 1 then 0. It
+          is also a leaf — nothing in this model aggregates it, and the whole
+          met/not-met chain runs on met_measure_standard_goal alone.
       - name: met_measure_name_code_goal
         data_type: int64
         description: >-
           1 when every measure standard under this measure_name_code met its
-          growth goal, else 0. This is what makes met ORF require both Reading
-          Fluency and Reading Accuracy.
+          growth goal, else 0. Only NWF and ORF carry more than one standard —
+          NWF is Letter Sounds plus Decoding, ORF is Reading Fluency plus
+          Reading Accuracy — so this is what stops a partial pass on either one
+          from counting. For the single-standard codes it copies
+          met_measure_standard_goal through.
       - name: met_pm_round_criteria
         data_type: int64
         description: >-
@@ -182,3 +192,46 @@ models:
           a valid score counts without checking that every probe was finished.
           Unexpected probes are already excluded upstream by the expectation
           gate.
+      - name: measure_standard_goal_status
+        data_type: string
+        description: >-
+          met_measure_standard_goal as a label rather than a flag — Met or Not
+          Met. A labelled twin of the flag, carrying no logic the flag does not
+          already have, so that the dashboard's goal-type selector can pick
+          between the three status columns instead of converting each numeric
+          flag itself. Round Incomplete never applies to it — a single measure
+          standard in a single round cannot be partly finished — though the
+          extract adds Not Tested to all three status columns.
+      - name: admin_benchmark_goal_status
+        data_type: string
+        description: >-
+          met_admin_benchmark_goal as a label rather than a flag — Met or Not
+          Met. The twin of the flag, for the same reason as
+          measure_standard_goal_status, and per round rather than latched, since
+          the flag it labels is.
+      - name: pm_round_status
+        data_type: string
+        description: >-
+          The round verdict as three states rather than two — Met, Not Met, or
+          Round Incomplete. met_pm_round_overall_criteria carries the same
+          verdict as a 0/1 flag, where 0 means both "did not meet" and "could
+          not be evaluated"; this column separates them so a consumer can report
+          an unfinished round as unmeasurable instead of as a failure.
+
+          Round Incomplete is narrower than "the student did not finish the
+          round", because a missing measure only matters when it could still
+          have changed the answer. Under AND a single failed measure settles the
+          round no matter what is missing, so a student who failed something
+          they did sit is Not Met. Under the null (OR) criteria the reverse
+          holds — a single pass settles it, so an incomplete round is
+          unmeasurable only when everything sat was missed. Keying this off
+          met_pm_round_overall_criteria = 0 instead of met_pm_round_criteria
+          overstates Round Incomplete roughly fourfold.
+
+          A fourth state, Not Tested, does not and cannot appear here — this
+          model holds scored rows only, so a student who was expected to test
+          and was not has no row at all. rpt_tableau__dibels_dashboard drives
+          from the expectation gate instead, and coalesces the resulting gap to
+          Not Tested. Keep the two distinct in reporting. Not Tested means no
+          probe was sat for this measure in this round; Round Incomplete means
+          some were and some were not, which is why the round cannot be scored.

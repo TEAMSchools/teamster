@@ -105,6 +105,9 @@ select
     null as met_measure_name_code_goal,
     null as met_pm_round_criteria,
     null as met_pm_round_overall_criteria,
+    null as measure_standard_goal_status,
+    null as admin_benchmark_goal_status,
+    null as pm_round_status,
 
     cast(a.round_number as string) as expected_round_number,
 
@@ -281,6 +284,17 @@ select
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
+    -- int_amplify__pm_met_criteria holds scored rows only, so a student who was
+    -- expected to test and did not has no row there and arrives null. Naming that
+    -- state here keeps every PM row carrying a real label, which leaves null on
+    -- these three columns meaning one thing only: a Benchmark row.
+    coalesce(
+        pm.measure_standard_goal_status, 'Not Tested'
+    ) as measure_standard_goal_status,
+    coalesce(
+        pm.admin_benchmark_goal_status, 'Not Tested'
+    ) as admin_benchmark_goal_status,
+    coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
 
     cast(e.round_number as string) as expected_round_number,
 
