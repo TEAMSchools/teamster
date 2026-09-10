@@ -230,14 +230,9 @@ models:
         description: >-
           Description of the root (top-level) standard in the Illuminate
           standards hierarchy. Populated only where an Illuminate standard row
-          resolves a parent standard; null for Illuminate group rows, which have
-          no root-standard concept. Has no vendor or state equivalent — the
-          vendor and state branches of the final SELECT hardcode this column
-          NULL directly, independent of any hierarchy decision. (For i-Ready
-          specifically, the parent of its comprehension domains,
-          comprehension_overall, is excluded from the fact outright to avoid
-          double-counting the proficiency measure — a related but separate
-          reason vendor rows never carry a root description.)
+          resolves a parent standard. Null everywhere else: Illuminate group
+          rows, and every vendor and state row, which have no root-standard
+          concept.
 
       - name: is_replacement
         data_type: boolean

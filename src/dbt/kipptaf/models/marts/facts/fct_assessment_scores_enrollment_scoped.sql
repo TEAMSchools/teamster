@@ -317,9 +317,9 @@ with
     -- response_type_code joins the partition because domain rows deliberately
     -- share module_code with the subject-level anchor; without it all domains
     -- plus the anchor collapse to one row. NULL groups cleanly for anchors.
-    -- Verified 2026-08-28: this partition still collapses 319,380 of 1,572,858
-    -- eligible domain rows, 95.8% of which are fiscal-year re-pulls differing
-    -- only in academic_year -- the intended #4387 behavior.
+    -- Even with the discriminator the partition still collapses a large share
+    -- of domain rows. Nearly all of that is the #4387 fiscal-year re-pull,
+    -- where the duplicate rows differ only in academic_year, and is intended.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -365,9 +365,9 @@ with
 
     -- This dedupe is permanent, not a workaround for #4388. STAR records each
     -- sitting under its own assessment_id, and students genuinely retest the
-    -- same subject on the same day -- 144 rows as of 2026-09-01 -- so the fact
-    -- grain (which carries no attempt dimension) is coarser than staging on
-    -- purpose. scale_score desc keeps the best sitting.
+    -- same subject on the same day, so the fact grain (which carries no
+    -- attempt dimension) is coarser than staging on purpose. scale_score desc
+    -- keeps the best sitting.
     -- partition_by deliberately omits academic_year: a physical test pulled
     -- under two fiscal-year partitions has the same test_date but a differing
     -- pull-derived academic_year, so keying on academic_year would keep both
@@ -392,9 +392,9 @@ with
         }}
     ),
 
-    -- Unique at the (student, year, period, date, measure_standard) grain --
-    -- re-verified 2026-08-28 at the widened grain: 313,268 rows, 313,268
-    -- distinct eight-input keys. No dedupe needed.
+    -- Already unique at the (student, year, period, date, measure_standard)
+    -- grain, so no dedupe here. The unique test on assessment_score_key is
+    -- what holds that.
     dibels_scores as (
         select
             student_number,
