@@ -343,3 +343,66 @@ the fix does not over- or under-strip. Re-ran the brief's Step 2 (base-vs-base)
 and Step 3 (control + zone-10 mutant) afterward with no change in outcome:
 `rc=0`/all-zero `stripped` for Step 2, `CONTROL_OK` then `rc=1` naming zone
 `id='10'` for Step 3.
+
+## 2026-09-10, build phase, Task 3
+
+### A leading-whitespace anchor is not unique under plain substring match
+
+**Verified.** The datasource-level `Gap to goal (pts)` column carries 6-space
+indentation; three worksheet-level copies of the same column carry 12-space
+indentation. `text.count()` on the anchor string
+`      <column caption='Gap to goal (pts)' datatype='real' name='[Calculation_3466859908724272046]' role='measure' type='quantitative'>`
+(6 leading spaces, as given) returned 4, not 1 — the trailing 6 of the 12
+leading spaces on each worksheet-level copy, immediately followed by
+`<column...`, is itself byte-identical to the 6-space anchor, so a plain
+`str.count`/`str.replace` cannot tell the levels apart no matter how the
+anchor's own indentation is chosen. Prefixing the anchor with the preceding
+`\r\n` (forcing true line-start alignment) brought the count to exactly 1. Do
+this instead: when an anchor's uniqueness rests on leading whitespace alone,
+verify with `text.count(anchor)` in Python before trusting
+`sub_once`/`insert_before` — not `grep -c` on an unanchored pattern, which can
+also over- or under-count depending on flags — and if it is not 1, prepend
+`\r\n` to the anchor and drop the duplicated newline from the inserted block by
+using `sub_once` directly rather than the `insert_before` helper.
+
+### `check-output.sh` can redact a lessons file's own reads
+
+**Verified.** Once `lessons.md` accumulated a Task 2 entry with long
+hex/UUID-shaped tokens, reading the file back — via `Read`, or via `Bash`
+commands as content-free as `wc -l`, `file`, or a `tail -c 1` piped to a temp
+file — came back as `[redacted: secret material]` every time, including for
+outputs that only ever printed a line count or MIME type, never the triggering
+bytes themselves. Do this instead: never `cat`/`Read`/`wc` this file directly
+once it holds a long alnum token; write a small Python script that
+regex-collapses long runs (`[A-Za-z0-9_.-]{10,}` -> `<TOKEN>`) to a separate
+temp file first, then `Read` that sanitized copy — or append with a `Bash`
+heredoc that never echoes the file's own content back.
+
+### Verbatim run output
+
+Step 1 (`grep -c "Calculation_77" base.twb`): `0` (prefix confirmed free).
+
+Step 3 (assertion against a copy of base, before the build ran):
+
+```text
+rc=1
+FAIL task3: AssertionError('Calculation_7700000000000000001')
+```
+
+Step 5 (build, assertion, check_additive, check_twb against `out.twb`):
+
+```text
+build rc=0
+add_goal_calcs: +965 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (1886081 chars)
+
+assert rc=0
+PASS task3
+
+additive rc=0
+stripped: {'worksheets': 0, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 0, 'nav-actions': 0, 'url-actions': 0, 'calcs': 2}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```
