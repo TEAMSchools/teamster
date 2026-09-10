@@ -92,6 +92,22 @@ asserts the packaged bytes are identical to the source and that no bare LF was
 introduced. An earlier version flattened 27,000 CRLF endings on every repack and
 nobody noticed, because the file on disk stayed correct.
 
+## `check_additive.py`
+
+For an edit whose contract is "additive only". Strips every element the edit was
+allowed to add (worksheets by name prefix, one dashboard and its window, hidden
+windows by the same prefix, `nav-action` and `action` elements by name prefix,
+datasource columns by calculation-name prefix) and requires the remainder to be
+byte-identical to the base.
+
+```bash
+uv run python check_additive.py <edited.twb> <base.twb> --sheet-prefix "LP - " \
+  --dashboard "Landing Page" --calc-prefix Calculation_77 --action-prefix LP_
+```
+
+Prove it has teeth the same way as the others: `mutate.py set-attr` on any zone
+of an existing dashboard must make it fail.
+
 ## `tsc_session.py`
 
 Template for download, publish and render. Copy it to `tests/test_zz_*.py`, fill
