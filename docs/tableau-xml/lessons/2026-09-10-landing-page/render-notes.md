@@ -274,3 +274,18 @@ present and no ellipsis.
 Tiles 69%, 8%, 48.4%, 14%; strips 58/74/52, 16/6/4, 48.5/48.4, 3/19/6 — the same
 values `numbers.md` records against production revision 26. No calculation,
 field or filter changed this round, only label composition and geometry.
+
+## 2026-09-10 guide links
+
+The Gradebook School Rollup and Gradebook Teacher View cards now link to the
+published help article. Both point at the same guide, which covers the two tabs
+together:
+`https://teamschools.zendesk.com/hc/en-us/articles/43377104764567-Gradebook-Health-Dashboard-Guide`
+
+Each slot reads `Help guide: Gradebook Health Dashboard Guide`, with the article
+name underlined in the workbook's link blue (`#57c0e9`, the same treatment as
+the GPA Roster links). Confirmed on a render. The other three cards still read
+`Help guide: coming soon`.
+
+**Not verified:** that the links open. A URL action fires on click and no render
+can show a click, so this needs a human on the live review copy.

@@ -51,10 +51,16 @@ Ruling check: no fix contradicts a ruling in the SDD ledger.
 import re
 import xml.etree.ElementTree as ET  # trunk-ignore(bandit/B405): parse-only well-formedness check on a file we wrote
 from pathlib import Path
+from xml.sax.saxutils import escape as _escape
 
 LP = Path("/workspaces/teamster/.claude/scratch/tableau/lp")
 BASE = LP / "base.twb"
 OUT = LP / "out.twb"
+
+
+def xml_escape(s: str) -> str:
+    return _escape(s, {"'": "&apos;", '"': "&quot;"})
+
 
 GRADES_DS = "federated.1ikycy21f3ow4k1eazzbx1iah2yl"
 NAVY = "#001e62"
@@ -403,6 +409,85 @@ def set_default_view(text: str) -> str:
     if text.count(MARKER) != 1:
         raise RuntimeError("default-view marker not left exactly once")
     return text
+
+
+# ----------------------------------------------------- guide links (round 4)
+
+#: The published help article for the two gradebook tabs. Both cards point at
+#: the same guide: it covers the rollup and the teacher view together.
+GRADEBOOK_GUIDE_URL = (
+    "https://teamschools.zendesk.com/hc/en-us/articles/"
+    "43377104764567-Gradebook-Health-Dashboard-Guide"
+)
+
+#: guide sheet -> (action name, action caption)
+GUIDE_LINKS = {
+    "LP - Guide Rollup": ("LP_Link_Guide_Rollup", "Gradebook health guide from Rollup"),
+    "LP - Guide Teacher": (
+        "LP_Link_Guide_Teacher",
+        "Gradebook health guide from Teacher View",
+    ),
+}
+
+#: The link idiom this workbook already uses, taken from the roster-link
+#: sheets: bright blue, underlined, on the navy card background.
+LINK_BLUE = "#57c0e9"
+GUIDE_PALE = "#b9c7e6"
+
+
+def link_guide_slot(block: str) -> str:
+    """Turn a `Help guide: coming soon` placeholder into a live link.
+
+    The slot keeps its pale italic lead-in and gains an underlined blue run
+    for the article, matching `Links - GPA Roster - *`. The whole sheet is
+    the click target -- a URL action fires on selecting the mark, not on the
+    run -- which is how the roster links already behave.
+    """
+    return sub_once(
+        block,
+        f"<run fontcolor='{GUIDE_PALE}' fontsize='8' italic='true'>"
+        "Help guide: coming soon</run>",
+        f"<run fontcolor='{GUIDE_PALE}' fontsize='8' italic='true'>Help guide: </run>"
+        f"<run fontcolor='{LINK_BLUE}' fontsize='8' underline='true'>"
+        "Gradebook Health Dashboard Guide</run>",
+    )
+
+
+def add_guide_links(text: str) -> str:
+    """Style the two gradebook guide slots as links and give each a URL action.
+
+    The actions go immediately after the last existing `LP_` URL action.
+    `<actions>` children are grouped by kind in this file -- nav-actions in
+    one run, plain actions in another -- and appending at the tail of the
+    block would split the group, so the anchor is the last sibling of the
+    same kind rather than the end of `<actions>`.
+    """
+    for sheet in GUIDE_LINKS:
+        text = edit_worksheet(text, sheet, link_guide_slot)
+
+    existing = list(
+        re.finditer(
+            r"[ \t]*<action [^>]*name='\[LP_[^\]]*\]'>.*?</action>\r\n", text, re.S
+        )
+    )
+    if len(existing) != 3:
+        raise RuntimeError(
+            f"expected 3 existing LP_ url-actions, found {len(existing)}"
+        )
+    last = existing[-1]
+
+    url = xml_escape(GRADEBOOK_GUIDE_URL)
+    blocks = ""
+    for sheet, (name, caption) in GUIDE_LINKS.items():
+        blocks += (
+            f"    <action caption='{xml_escape(caption)}' name='[{name}]'>\r\n"
+            "      <activation type='on-select' />\r\n"
+            "      <source dashboard='Landing Page' type='sheet'"
+            f" worksheet='{xml_escape(sheet)}' />\r\n"
+            f"      <link caption='' expression='{url}' />\r\n"
+            "    </action>\r\n"
+        )
+    return text[: last.end()] + blocks + text[last.end() :]
 
 
 # ------------------------------------------------- layout round: zone surgery
@@ -782,6 +867,7 @@ STEPS = (
     ("fix_grade_grade", fix_grade_grade),
     ("drop_header_buttons_and_add_roster", drop_header_buttons_and_add_roster),
     ("side_by_side_reference", side_by_side_reference),
+    ("add_guide_links", add_guide_links),
     ("relayout_vertical", relayout_vertical),
     ("set_default_view", set_default_view),
 )

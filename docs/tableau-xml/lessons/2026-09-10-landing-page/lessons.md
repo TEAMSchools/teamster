@@ -2174,3 +2174,39 @@ normalised by the formatter to the literal `Æ`, so a later scripted edit that
 searches for the escape sequence finds nothing and silently does not apply. Cost
 one round. Search for the literal character, or read the current file text
 rather than assuming what you last wrote.
+
+## 2026-09-10, guide links
+
+### Wiring a placeholder guide slot is two edits, in two different places
+
+**Verified by render (appearance) and unverified by click.** The five
+`LP - Guide <tab>` sheets were built as placeholders reading
+`Help guide: coming soon`. Turning one into a live link needs both halves, and
+neither is enough alone:
+
+1. The `<customized-label>` run, restyled to the workbook's own link idiom —
+   `fontcolor='#57c0e9' underline='true'`, copied from `Links - GPA Roster - *`
+   rather than invented. The pale italic `Help guide: ` lead-in stays as its own
+   run.
+2. An `<action>` carrying `<link caption='' expression='<url>' />`, scoped
+   `<source dashboard='Landing Page' type='sheet' worksheet='LP - Guide …' />`.
+
+The second one has a placement rule: `<actions>` children are grouped by kind in
+this file, nav-actions in one run and plain actions in another, so a new URL
+action is inserted after the LAST existing sibling of its own kind, never at the
+tail of the block. The insertion asserts it found exactly the three roster
+actions first, so a change in the group's shape fails loudly.
+
+Two things worth knowing about the result:
+
+- **The whole sheet is the click target, not the underlined run.** A URL action
+  fires on selecting the mark, so the underline is a visual convention, not the
+  hit area. Same as the roster links.
+- **A render cannot confirm the link works.** It shows the styling and the text;
+  whether the action opens the article needs a human click on the live copy.
+  `check_additive` confirms the action exists and is scoped to the right sheet,
+  which is as far as static checking goes.
+
+`check_additive` now reports `url-actions: 5` on the edited side against `3` on
+the base. That difference is the point of the change, and the remainder outside
+the landing page is still byte-identical.

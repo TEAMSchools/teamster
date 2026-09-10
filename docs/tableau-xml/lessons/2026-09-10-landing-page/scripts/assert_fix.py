@@ -285,6 +285,44 @@ def check(text: str) -> list[str]:
         if gap != want:
             bad(f"geometry zone {zid}: flow gap {gap}, expected {want}")
 
+    # ---- guide links: the two gradebook slots are live, the other three
+    # still say "coming soon", and both point at the published article
+    guide_url = (
+        "https://teamschools.zendesk.com/hc/en-us/articles/"
+        "43377104764567-Gradebook-Health-Dashboard-Guide"
+    )
+    linked = {
+        "LP - Guide Rollup": "LP_Link_Guide_Rollup",
+        "LP - Guide Teacher": "LP_Link_Guide_Teacher",
+    }
+    for sheet, action in linked.items():
+        lab = label(ws(text, sheet))
+        if "coming soon" in lab:
+            bad(f"G {sheet}: still a coming-soon placeholder")
+        if "underline='true'" not in lab or "#57c0e9" not in lab:
+            bad(f"G {sheet}: link run is not styled like the roster links")
+        m = re.search(
+            r"<action [^>]*name='\[" + action + r"\]'>(.*?)</action>", text, re.S
+        )
+        if m is None:
+            bad(f"G {sheet}: no url-action {action}")
+            continue
+        body = m.group(1)
+        if f"worksheet='{sheet}'" not in body:
+            bad(f"G {action}: source is not {sheet}")
+        if f"expression='{guide_url}'" not in body:
+            bad(f"G {action}: link expression is not the published guide")
+        if "dashboard='Landing Page'" not in body:
+            bad(f"G {action}: not scoped to the Landing Page dashboard")
+    for sheet in ("LP - Guide Home", "LP - Guide Schools", "LP - Guide Monitor"):
+        if "coming soon" not in label(ws(text, sheet)):
+            bad(
+                f"G {sheet}: placeholder changed, only the two gradebook cards were asked for"
+            )
+    nlinks = len(re.findall(r"<action [^>]*name='\[LP_Link_[^\]]*\]'", text))
+    if nlinks != 5:
+        bad(f"G {nlinks} LP_Link url-actions, expected 5 (3 roster + 2 guide)")
+
     # ---- default view opens on the page under review
     marks = re.findall(r"<window [^>]*maximized='true'[^>]*>", text)
     if len(marks) != 1 or "name='Landing Page'" not in marks[0]:

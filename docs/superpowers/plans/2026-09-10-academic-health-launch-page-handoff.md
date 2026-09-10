@@ -43,6 +43,19 @@ Removing the buttons freed enough header width that the title no longer needs
 the smaller font: it is back at 16 pt and still untruncated, in a zone that went
 from about 397 px to about 832 px.
 
+### Guide links
+
+The **Gradebook School Rollup** and **Gradebook Teacher View** cards now link to
+the published help article — both to the same guide, since it covers the two
+tabs together. Each slot reads `Help guide: Gradebook Health Dashboard Guide`,
+with the article name underlined in the same blue the GPA Roster links use. The
+other three cards still read `Help guide: coming soon`.
+
+Worth knowing: the whole guide slot is the click target, not just the underlined
+words — that is how the roster links already behave. And a render can show the
+styling but not a click, so **please try both links on the review copy**; that
+is the one part of this I cannot verify.
+
 ### Shrink round
 
 Three more adjustments after that:
@@ -123,7 +136,7 @@ The file to open in Desktop and publish is:
 /workspaces/teamster/.claude/scratch/tableau/lp/final.twbx
 ```
 
-It is 28,390,561 bytes (rebuilt from revision 26). Two things were checked on
+It is 28,390,691 bytes (rebuilt from revision 26). Two things were checked on
 it. The packaged `.twb` equals the edited `out.twb` byte for byte, so nothing
 was translated on the way into the zip and no bare LF line endings survive. And
 every other entry in the package — the extract and the images — matches the
