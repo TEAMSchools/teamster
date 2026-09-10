@@ -1561,3 +1561,171 @@ reassignment) required a second `pytest` invocation to get a clean pass and a
 written `review-meta.txt`; the second invocation's `Overwrite` publish landed on
 the same luid as the first, confirming the idempotency the retry design already
 relied on.
+
+## 2026-09-10, build phase, Task 9
+
+### A dashboard's CSV is the first sheet's CSV on REST 3.25
+
+The brief assumed `populate_csv` on a dashboard view returns one CSV per sheet
+on that dashboard, citing REST 3.30. This server is 2025.1.9 at REST API 3.25,
+and a dashboard view's `populate_csv` returns a single CSV: the data of the
+dashboard's first sheet, with no delimiter or second header to mark where
+another sheet would begin. So "fetch the four dashboards and compare their
+sheets" is not a plan that survives contact with this version. The comparison
+has to address each worksheet as its own view.
+
+### `hidden_views` can only hide more views, never reveal one
+
+The controller's ruling assumed the REST publish decides view visibility purely
+from the `hidden_views` list, so that omitting a sheet from that list would make
+it live even though `<windows>` marks it `hidden='true'`. It does not. A window
+carrying `hidden='true'` is not in the publishable set at all; `hidden_views` is
+applied to what the workbook already offers, and a name that is not on offer is
+simply ignored. The first probe published with all thirteen sheets omitted from
+`hidden_views` and came back with six views — the six dashboards, exactly the
+same set as the review copy:
+
+```text
+LIVE will be [... 19 names ...]
+PUBLISHED: 79aeaa71-25f8-4fd8-a97d-bb39f81e740b into GPA-monitor-temp
+PROBE_LIVE_VIEWS ['Academic Health Home', 'Academic Health Schools',
+ 'Cumulative GPA Monitor', 'Gradebook School Rollup',
+ 'Gradebook Teacher View', 'Landing Page']
+RuntimeError: probe has no live view named 'LP - Tile Y1 GPA'
+```
+
+The `LIVE will be` gate printed nineteen names and passed, because it was
+checking the agent's intent rather than the server's answer. A gate on the
+_request_ cannot catch a field the server ignores. The check that caught it was
+looking up each sheet in `populate_views(item)` afterwards and raising on the
+first miss.
+
+### To query a hidden sheet, unhide it in the XML and publish a separate package
+
+The workaround that does work: build a throwaway package whose `<windows>`
+entries for the sheets under test have `hidden='true'` stripped, publish that,
+query it, delete it. `repack_probe.py` does the strip by locating each
+`<window class='worksheet' hidden='true' ... name='<name>'>` element by name,
+removing only that element's `hidden` attribute, and asserting exactly one match
+per name — `hidden='true'` occurs 158 times in this workbook and only 13 of them
+are the windows in question, so a blind global replace would have unhidden
+seventy-odd sheets. Then rebuild the `.twbx` by copying every zip entry across
+and substituting the edited `.twb` bytes, and verify the packaged bytes match
+what you wrote before publishing.
+
+The probe is a separate package from the review copy on purpose. The review copy
+the user looks at keeps its own visibility; the probe carries the sheet-level
+exposure and is deleted the moment the numbers are read.
+
+### An equality where both sides are zero is a weak check, and should say so
+
+`LP Students still needed (org)` and `Students still needed` both return `0`, so
+the pair compares equal. They compare equal because the org is currently above
+goal (measured 413, at 3.0+ 200 = 48.4% against a 45% goal proportion), not
+because the org-only calc's arithmetic was exercised. A shortfall calc that
+returned a constant zero would pass this check identically. Recorded as a caveat
+in `render-notes.md` rather than reported as a clean pass: re-check when the org
+sits below goal.
+
+### `% at 3.0+` exports unformatted on both sides, which is inherited, not broken
+
+Three of the four tile measures export percent-formatted (`69%`, `8%`, `15%`);
+`% at 3.0+` exports as `0.484261501`. The source BAN exports the same way, so
+the tile inherited the field format from its clone source and the clone is
+faithful. It does mean the number the user sees on the tile comes from the mark
+label's own format, which no CSV can confirm — only the crop.
+
+### Images cannot reach the model in this harness, so the visual list is a hand-off
+
+`check-output.sh` redacts every PNG and JPG at any size, so the brief's "crop
+and `Read`" step is not available to the agent — halving the image does not
+help, because the redaction is by content type, not by size. The crops were
+produced anyway (seven files, 2732 px wide, from a 2732 x 3000 render that is
+exactly 2x the 1366 x 1500 grid `crop_lp.py` assumes) and every visual check is
+named in `render-notes.md` against the crop that shows it.
+
+### The numbers, verbatim
+
+| Measure                  | Tile sheet                   | Tile value  | Source sheet                          | Source value | Equal |
+| ------------------------ | ---------------------------- | ----------- | ------------------------------------- | ------------ | ----- |
+| % Y1 GPA at or above 3.0 | `LP - Tile Y1 GPA`           | 69%         | `Y1 Landing - BAN Network ≥3.0`       | 69%          | yes   |
+| % Y1 Failing 2 or more   | `LP - Tile Course Failures`  | 8%          | `Y1 Landing - BAN Network Failing ≥2` | 8%           | yes   |
+| % at 3.0+                | `LP - Tile Cumulative GPA`   | 0.484261501 | `GPA - BAN % 3.0+`                    | 0.484261501  | yes   |
+| % healthy                | `LP - Tile Gradebook Health` | 15%         | `BAN Network`                         | 15%          | yes   |
+| Students still needed    | `LP - Tile Cumulative GPA`   | 0           | `GPA - BAN Students needed`           | 0            | yes   |
+
+All five equal as parsed numbers at default parameters (`p_Region` = `All`).
+
+### The strip row sets
+
+| Strip sheet                   | Regions                  | Values                                 |
+| ----------------------------- | ------------------------ | -------------------------------------- |
+| `LP - Strip Y1 GPA`           | Camden, Newark, Paterson | Camden 58%; Newark 74%; Paterson 52%   |
+| `LP - Strip Course Failures`  | Camden, Newark, Paterson | Camden 16%; Newark 6%; Paterson 4%     |
+| `LP - Strip Cumulative GPA`   | Camden, Newark           | Camden 0.484848485; Newark 0.484076433 |
+| `LP - Strip Gradebook Health` | Camden, Newark, Paterson | Camden 3%; Newark 20%; Paterson 6%     |
+
+The three MS/HS strips share the region set; the cumulative strip is a strict
+subset. The four-sheet construction stands and the twelve-clone fallback is not
+implemented. Whether the cumulative column pads a blank Paterson row or slides
+its two rows up is a pixel question the user's reading of `crop-strip.png`
+decides.
+
+### The probe delete worked
+
+`server.workbooks.delete(luid)` succeeded and a re-list of the project by
+`tsc.Pager(server.workbooks)` no longer contained the luid: `PROBE_DELETED`.
+Nothing was left behind in `GPA-monitor-temp` beyond the Task 8 review copy.
+
+### Checks left to the user
+
+`####` in any tile; clipped or ellipsised card text; a blank title or caption
+line; a literal `[federated` or `[Parameters]` token; overlapping zones; strip
+row alignment across the four columns; the Q1 render's tile titles reading `Q1`;
+Courier grid alignment; the 130 px year control; the 120 px button captions. Two
+need the live review copy rather than a still: hovering a guide slot showing no
+tooltip, and the `tabdoc:goto-sheet` buttons and `nav-action` clicks landing on
+the right tabs.
+
+### Verbatim run output
+
+```text
+HIDING 10 sheets: ['GPA - BAN Avg cum GPA', 'GPA - Equity Gender', 'GPA - Equity IEP', 'GPA - Equity MLL', 'GPA - Equity Race', 'Goal vs Actual by Grade', 'Sheet 69', 'Tooltip - category reasons', 'Tooltip - failures by grade', 'Y1 Schools - Teacher Grade Distro']
+LIVE will be ['Academic Health Home', 'Academic Health Schools', 'BAN Network', 'Cumulative GPA Monitor', 'GPA - BAN % 3.0+', 'GPA - BAN Students needed', 'Gradebook School Rollup', 'Gradebook Teacher View', 'LP - Strip Course Failures', 'LP - Strip Cumulative GPA', 'LP - Strip Gradebook Health', 'LP - Strip Y1 GPA', 'LP - Tile Course Failures', 'LP - Tile Cumulative GPA', 'LP - Tile Gradebook Health', 'LP - Tile Y1 GPA', 'Landing Page', 'Y1 Landing - BAN Network Failing ≥2', 'Y1 Landing - BAN Network ≥3.0']
+PUBLISHED: 79aeaa71-25f8-4fd8-a97d-bb39f81e740b into GPA-monitor-temp
+PROBE_LIVE_VIEWS [the same 19 names]
+COMPARE % Y1 GPA at or above 3.0: tile='69%'(0.69) source='69%'(0.69) -> yes
+COMPARE % Y1 Failing 2 or more: tile='8%'(0.08) source='8%'(0.08) -> yes
+COMPARE % at 3.0+: tile='0.484261501'(0.484261501) source='0.484261501'(0.484261501) -> yes
+COMPARE % healthy: tile='15%'(0.15) source='15%'(0.15) -> yes
+COMPARE Students still needed: tile='0'(0.0) source='0'(0.0) -> yes
+STRIP LP - Strip Y1 GPA: regions=['Camden', 'Newark', 'Paterson']
+STRIP LP - Strip Course Failures: regions=['Camden', 'Newark', 'Paterson']
+STRIP LP - Strip Cumulative GPA: regions=['Camden', 'Newark']
+STRIP LP - Strip Gradebook Health: regions=['Camden', 'Newark', 'Paterson']
+STRIP_SETS same_three=True base=['Camden', 'Newark', 'Paterson'] cum=['Camden', 'Newark'] subset=True
+PROBE_DELETED
+1 passed in 50.60s
+```
+
+Repack of the probe package:
+
+```text
+hidden='true' windows: 158 -> 145 (removed 13)
+probe.twbx: 28.4 MB; twb entry Academic & Gradebook Health Suite.twb
+packaged .twb byte-identical to the edited source
+```
+
+Crops:
+
+```text
+wrote header / tiles / strip / cards / definitions / coverage / links
+render-landing-page.png (2732, 3000)
+crop-header.png (2732, 192) 57939 bytes
+crop-tiles.png (2732, 456) 85641 bytes
+crop-strip.png (2732, 356) 88538 bytes
+crop-cards.png (2732, 476) 176788 bytes
+crop-definitions.png (2732, 816) 249039 bytes
+crop-coverage.png (2732, 456) 54834 bytes
+crop-links.png (2732, 344) 13064 bytes
+```
