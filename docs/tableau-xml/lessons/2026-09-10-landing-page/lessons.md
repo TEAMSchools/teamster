@@ -2008,3 +2008,85 @@ publish script write the render to disk (`view.image` bytes), crop it to the
 region under test with Pillow, re-encode as a small JPEG, and `Read` that —
 those went through every time. Worth adding to Charlie's fix: skip the whole
 image block, `media_type` included, not just its `data` field.
+
+## 2026-09-10, layout round: header, roster links, reference blocks
+
+Three changes after the first render review: drop the five header nav buttons
+(the tab cards below already navigate, so the header was a second copy of the
+same affordance), move the GPA Roster links into the header where the other four
+views in this workbook put them, and set the two reference text blocks side by
+side.
+
+### A dashboard text zone centres its content vertically
+
+**Verified by measurement on a render.** The first attempt put both text zones
+directly in one horizontal container 696 px tall. Both blocks rendered floating
+in the middle of their zones and out of line with each other:
+
+| Zone          | Content height | Zone height | Content started | Predicted by centring |
+| ------------- | -------------- | ----------- | --------------- | --------------------- |
+| definitions   | 338 px         | 696 px      | 179 px down     | (696-338)/2 = 179     |
+| coverage grid | 157 px         | 696 px      | 269 px down     | (696-157)/2 = 269     |
+
+Both match to within 5 px, so a `type-v2='text'` zone centres its content on the
+cross axis. Nothing in the XML says so and nothing errors — it just looks like
+someone left a gap. Do this instead: give a text zone a height close to its own
+content and park the slack in a sibling empty zone, rather than letting one tall
+zone hold both. Two blocks line up with each other only when their residual
+centring offsets match, which means sizing each zone to its own content plus the
+SAME margin, not to the same absolute height.
+
+### `<zone-style>` matches a `<zone` prefix, so depth counting needs a lookahead
+
+**Verified.** Brace-matching a `<zone>` element with
+`re.compile(r"<zone\b[^>]*?(/?)>|</zone>")` never terminates: `\b` sits happily
+between `zone` and `-style`, so every `<zone-style>` counts as another zone open
+and the depth never returns to zero. `<zone(?=[ >])` fixes it. Worth having
+because a nested zone tree cannot be edited safely with non-greedy `.*?</zone>`
+— that stops at the first close, which is the wrong one for any container.
+
+### `fixed-size` is content size; the cached `w`/`h` add the margins
+
+**Verified against every zone in this dashboard.** On a 1366x1500 fixed canvas
+the 98828-unit content column is 1349 px (73.25 u/px) and the full height is
+1500 px (66.667 u/px). A zone whose `zone-style` carries `margin 4` measures
+`fixed-size` as CONTENT and its cached size adds both margins — 586 units
+horizontally, 533 vertically. A flow CONTAINER carries no margin, so its cached
+size is exactly `fixed-size x scale`:
+
+| Zone                      | fixed-size | cached  | check                   |
+| ------------------------- | ---------- | ------- | ----------------------- |
+| logo (margin 4)           | 167 px     | w=12811 | 167x73.25 + 586 = 12819 |
+| year control (margin 4)   | 130 px     | w=10103 | 130x73.25 + 586 = 10109 |
+| Miami footnote (margin 4) | 20 px      | h=1866  | 20x66.667 + 533 = 1866  |
+| Header (container)        | 80 px      | h=5333  | 80x66.667 = 5333        |
+| Tiles (container)         | 220 px     | h=14667 | 220x66.667 = 14667      |
+
+Get this wrong and every sibling's `x` is off by 586 units, which is a sub-pixel
+overlap that no checker and no render will show you.
+
+### Copy a sibling dashboard's block verbatim; invention loses the details
+
+**Verified.** The roster-links container was taken byte for byte from
+`Academic Health Home` and only its ids and geometry rewritten. Two details a
+hand-built copy would have got wrong: the `GPA Roster` label is
+`fontcolor='#b9c7e6'`, a pale blue chosen for the navy header — the body copy of
+the same label in the old footer position was `#001e62`, which on the navy
+header would have been invisible — and the three link zones carry no
+`fixed-size` at all, sizing instead through
+`<layout-cache fixed-size-h='20' fixed-size-w='60' type-h='fixed' type-w='fixed' />`.
+One thing NOT to copy: that container is 240 px against three 4978-unit links
+needing 14934, so it ships with 2646 units of slack inside its own flow. Fine
+where it already renders, but a container this build creates should close
+exactly, so the copy was cut to 204 px.
+
+### A duplicated edit block silently shadows the version you are editing
+
+**Verified, self-inflicted.** A scripted edit inserted the whole layout section
+twice. Python bound the LATER definition, so a rewrite applied to the first copy
+changed nothing and the run produced byte-identical output — the same
+`-2506 bytes` step delta as the previous run, which is exactly the signal that
+looks like success. It was caught by dumping the zone tree from the OUTPUT and
+seeing the old structure. Do this instead: when an edit to a build script
+produces an unchanged byte delta, `grep -c` the function name before believing
+the edit ran.

@@ -19,12 +19,35 @@ byte-identical to revision 26.
 | 1   | `####` on all four tiles and three of four strips          | 69%, 8%, 48.4%, 14%; strips 58/74/52, 16/6/4, 48.5/48.4, 3/19/6 |
 | 2   | navy healthy-gradebooks tile and strip                     | white, matching the other three                                 |
 | 3   | `Grade Grade 11` in the cumulative titles                  | `Grade 11 · …`                                                  |
-| 4   | header clipped to `Academic & Gradebook Health \| Landi..` | full title, at 12 pt                                            |
+| 4   | header clipped to `Academic & Gradebook Health \| Landi..` | full title, back at its design size of 16 pt                    |
 | 5   | tiles read `of students`, count missing (found this round) | `of 5,275 students`, `of 5,322 students`                        |
 
 All five confirmed on a server render of the review copy, not inferred from the
 XML. Detail and root causes are in
 `docs/tableau-xml/lessons/2026-09-10-landing-page/render-notes.md`.
+
+### Layout changes on top of the fixes
+
+Three more changes after you reviewed the fixed render, also confirmed on a
+render:
+
+- **The five header nav buttons are gone.** The tab cards below already navigate
+  to the same five tabs, so the header row was a second copy of the same thing.
+- **The GPA Roster links moved into the header**, in the same position and the
+  same construction the other four views in this workbook use. The block was
+  copied from `Academic Health Home` rather than rebuilt.
+- **"What the terms mean" and "Where each tab has data" now sit side by side**
+  in one horizontal container, directly under the tab cards.
+
+Removing the buttons freed enough header width that the title no longer needs
+the smaller font: it is back at 16 pt and still untruncated, in a zone that went
+from about 397 px to about 832 px.
+
+One consequence worth a look when you open it: about 290 px of blank now sits
+below the reference blocks. The canvas is a fixed 1366x1500, so tightening it
+means recomputing every vertical measurement against a shorter canvas. Say the
+word and I will either do that or spend the space by giving the region strips
+their second line back.
 
 **Two decisions left to you.**
 
@@ -88,12 +111,11 @@ The file to open in Desktop and publish is:
 /workspaces/teamster/.claude/scratch/tableau/lp/final.twbx
 ```
 
-It is 28,390,793 bytes (rebuilt this round from revision 26). Two things were
-checked on it. The packaged `.twb` equals the edited `out.twb` byte for byte, so
-nothing was translated on the way into the zip and no bare LF line endings
-survive. And every other entry in the package — the extract and the images —
-matches the production donor `.twbx` by CRC, one for one. Only the `.twb` entry
-differs.
+It is 28,390,529 bytes (rebuilt from revision 26). Two things were checked on
+it. The packaged `.twb` equals the edited `out.twb` byte for byte, so nothing
+was translated on the way into the zip and no bare LF line endings survive. And
+every other entry in the package — the extract and the images — matches the
+production donor `.twbx` by CRC, one for one. Only the `.twb` entry differs.
 
 ## Production
 

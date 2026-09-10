@@ -168,3 +168,61 @@ the equalities hold.
   requested monospace font is not installed on the server.
 - **The shortfall calc's nonzero branch.** Still 0 == 0 (org above goal), so
   still unexercised; parked in #5247 per ruling 16.
+
+## 2026-09-10 layout round: header, roster links, reference blocks
+
+Three changes requested after reviewing the fixed render, all confirmed on a
+server render of the review copy.
+
+| Change                 | Was                                                               | Now                                                                              |
+| ---------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| header nav buttons     | five `tabdoc:goto-sheet` buttons, duplicating the tab cards below | removed; the cards are the only navigation                                       |
+| GPA Roster links       | a `Links` row at the foot of the page                             | a `Roster links` container in the header, the same idiom as the other four views |
+| definitions + coverage | two full-width blocks stacked, 27200 + 15200 units                | one `Reference` horizontal container, two columns                                |
+
+The freed header width also retired the round-2 font fix for defect 4. The title
+was cut to 12 pt only because 29059 units (~397 px) could not hold it at 16 pt;
+with the buttons gone the zone is 60980 units (~832 px) and the title is back at
+its design size of 16 pt, untruncated.
+
+Zone tree after the change, all flow containers closing exactly:
+
+```text
+46 vert                                   h=98934
+  9  [Header] horz          fixed=80      h=5333
+     1  bitmap logo         fixed=167     w=12811
+     2  LP - Title                        w=60980
+     3  paramctrl P2        fixed=130     w=10103
+     50 [Roster links] vert fixed=204     w=14934
+        51 text label       fixed=22      h=2000
+        52 horz                           h=3333
+           53/54/55  Links - GPA Roster - Newark / Camden / Paterson
+  14 [Tiles] horz           fixed=220     h=14667
+  19 [Regions] horz         fixed=150     h=10000
+  20 Miami footnote         fixed=20      h=1866
+  36 [Directory] horz       fixed=220     h=14667
+  60 [Reference] horz       fixed=696     h=46400
+     61 vert                fixed=780     w=57721
+        37 definitions      fixed=380     h=25867
+        62 empty                          h=20533
+     63 vert                              w=41107
+        38 coverage grid    fixed=199     h=13800
+        64 empty                          h=32600
+  45 empty                                h=6001
+```
+
+The two-pass part was the reference container: see the lessons entry on text
+zones centring their content vertically. The first attempt put both text zones
+straight into the horizontal container and they rendered floating in the middle
+of it, out of line with each other.
+
+### Left over
+
+About 290 px of blank sits below the reference blocks now that the Links row is
+gone and the two text blocks share a row. The page is a fixed 1366x1500 canvas,
+so shortening it means recomputing every vertical unit against a new canvas
+height — not done, and not necessary for correctness. Two ways to spend that
+space instead if wanted: raise the dashboard's fixed height down to about 1210
+px, or give the region strips their second line back (the weekly delta and the
+teacher denominator, dropped in the `####` fix because a 3-row band at 150 px
+could not hold two lines).

@@ -349,30 +349,295 @@ def fix_grade_grade(text: str) -> str:
     )
 
 
-# --------------------------------------------------- D4: header truncation
+# ------------------------------------------------------ default-view marker
 
 
-def fix_header_title(text: str) -> str:
-    """`LP - Title`'s two 16 pt mark-label runs -> 12 pt.
+def set_default_view(text: str) -> str:
+    """Move the single `maximized='true'` marker onto the Landing Page window.
 
-    14 pt still clipped to `Academic & Gradebook Health | Landing P..` on the
-    round-1 render, so this takes the second step down rather than reflowing
-    all eight header zones to widen the title.
+    Production revision 26 carries it on `Gradebook Teacher View`; the review
+    copy has to open on the page under review. Generic: strips the one
+    existing marker wherever it sits, then sets it on the target.
+    """
+    n = text.count(MARKER)
+    if n != 1:
+        raise RuntimeError(f"expected exactly 1 maximized marker in base, found {n}")
+    text = text.replace(MARKER, "")
+    m = re.search(
+        r"<window class='dashboard'[^>]*name='" + re.escape(TARGET_DASHBOARD) + r"'",
+        text,
+    )
+    if not m:
+        raise RuntimeError(f"no dashboard window named {TARGET_DASHBOARD!r}")
+    old = m.group(0)
+    new = old.replace(
+        "<window class='dashboard'", "<window class='dashboard'" + MARKER, 1
+    )
+    text = sub_once(text, old, new)
+    if text.count(MARKER) != 1:
+        raise RuntimeError("default-view marker not left exactly once")
+    return text
+
+
+# ------------------------------------------------- layout round: zone surgery
+#
+# Three changes asked for after the first render review:
+#   L1  drop the five header nav buttons -- the tab cards below already
+#       navigate, so the header row was a second copy of the same thing
+#   L2  move the GPA Roster links into the header, where the other four views
+#       in this workbook put them
+#   L3  put "What the terms mean" and "Where each tab has data" side by side
+#
+# Geometry. The canvas is fixed 1366x1500 and zone units are 1/100000 of it,
+# so 100000 vertical units = 1500 px (66.667 u/px) and the 98828-unit content
+# column = 1349 px (73.25 u/px). A zone whose `zone-style` carries
+# `margin 4` measures `fixed-size` as CONTENT, and its cached w/h add the two
+# 4 px margins: 586 units horizontally, 533 vertically. Flow CONTAINERS carry
+# no margin, so for them cached size is exactly fixed-size x scale. Verified
+# against every existing zone in this dashboard: logo 167 px -> 12811,
+# param 130 -> 10103, button 120 -> 9371, header 80 px -> 5333, tiles 220 ->
+# 14667.
+
+UX = 73.25  # horizontal units per pixel, inside the 98828-unit column
+UY = 100000 / 1500  # vertical units per pixel
+MARGIN_X = 586  # a `margin 4` zone's two horizontal margins, in units
+CONTENT_W = 98828
+
+ZONE_RX = re.compile(r"<zone(?=[ >])[^>]*?(/?)>|</zone>")
+
+
+def zone_block(text: str, marker: str) -> str:
+    """The complete `<zone>` element containing `marker`, brace-matched.
+
+    `<zone-style>` must not count as a zone open, hence the `(?=[ >])`
+    lookahead; without it the depth never returns to zero.
+    """
+    i = text.index(marker)
+    start = text.rindex("<zone ", 0, i)
+    depth, pos = 0, start
+    while True:
+        m = ZONE_RX.search(text, pos)
+        if m is None:
+            raise RuntimeError(f"unbalanced zones around {marker!r}")
+        if m.group(0).startswith("</zone"):
+            depth -= 1
+        elif m.group(1) != "/":
+            depth += 1
+        pos = m.end()
+        if depth == 0:
+            return text[start:pos]
+
+
+def set_zone_attrs(block: str, zone_id: str, **attrs: str) -> str:
+    """Rewrite named attributes on the `<zone>` opening tag with this id.
+
+    Raw string swaps are not safe here: a flow container and its first child
+    legitimately share identical `w`/`x`/`y` text, so an anchor that looks
+    unique matches twice. Addressing the tag by id and editing attributes in
+    place is the only form that stays unambiguous.
+    """
+    m = re.search(r"<zone (?=[^>]*\bid='" + re.escape(zone_id) + r"')[^>]*>", block)
+    if m is None:
+        raise RuntimeError(f"no zone with id={zone_id!r}")
+    tag = m.group(0)
+    new = tag
+    for k, v in attrs.items():
+        k = k.replace("_", "-")
+        pat = r"\b" + re.escape(k) + r"='[^']*'"
+        if not re.search(pat, new):
+            raise RuntimeError(f"zone {zone_id} has no attribute {k!r}")
+        new = re.sub(pat, f"{k}='{v}'", new, count=1)
+    if new == tag:
+        raise RuntimeError(f"zone {zone_id}: attribute rewrite was a no-op")
+    return block[: m.start()] + new + block[m.end() :]
+
+
+def reindent(block: str, delta: int) -> str:
+    """Shift every line of a CRLF block by `delta` spaces (first line bare)."""
+    lines = block.split("\r\n")
+    out = [lines[0]]
+    for ln in lines[1:]:
+        if not ln.strip():
+            out.append(ln)
+        elif delta >= 0:
+            out.append(" " * delta + ln)
+        else:
+            out.append(ln[-delta:] if ln.startswith(" " * -delta) else ln)
+    return "\r\n".join(out)
+
+
+def dashboard(text: str) -> str:
+    m = re.search(r"<dashboard[^>]*name='Landing Page'.*?</dashboard>", text, re.S)
+    if not m:
+        raise RuntimeError("Landing Page dashboard not found")
+    return m.group(0)
+
+
+def edit_dashboard(text: str, fn) -> str:
+    before = dashboard(text)
+    after = fn(before)
+    if after == before:
+        raise RuntimeError("dashboard edit was a no-op")
+    return sub_once(text, before, after)
+
+
+def drop_header_buttons_and_add_roster(text: str) -> str:
+    """L1 + L2, plus the width they free.
+
+    The five nav buttons are 9371 units each (46855 total). 14934 of that goes
+    to a `Roster links` container copied from `Academic Health Home` -- the
+    same 240 px vertical container, label over three link sheets, that the
+    other four views use -- and the remaining 31921 goes to the title zone,
+    the only flexible child in the header row.
+
+    Widening the title is also the real fix for the truncation that the first
+    round patched by dropping the font to 12 pt: 29059 units (~397 px) could
+    not hold the string at 16 pt, 60980 (~832 px) holds it comfortably. So the
+    title goes back to its design size and `fix_header_title` is gone.
     """
 
-    def fn(b: str) -> str:
-        b = sub_once(
-            b,
-            "<run bold='true' fontalignment='0' fontsize='16'>",
-            "<run bold='true' fontalignment='0' fontsize='12'>",
+    def fn(d: str) -> str:
+        # --- the five buttons
+        pat = (
+            r"[ \t]*<zone fixed-size='120'[^>]*type-v2='dashboard-object'[^>]*>"
+            r".*?</zone>\r\n"
         )
-        return sub_once(
-            b,
-            "<run fontalignment='0' fontsize='16'>",
-            "<run fontalignment='0' fontsize='12'>",
+        d, n = re.subn(pat, "", d, flags=re.S)
+        if n != 5:
+            raise RuntimeError(f"removed {n} header buttons, expected 5")
+
+        # --- the roster container, taken verbatim from Academic Health Home
+        #     and re-indented from its 14-space nest to this header's 12
+        src = zone_block(
+            dashboard_of(BASE_TEXT, "Academic Health Home"),
+            "friendly-name='Roster links'",
+        )
+        roster = reindent(src, -2)
+        # ids: the Landing Page dashboard tops out at 46
+        for old, new in (
+            ("id='710'", "id='50'"),
+            ("id='711'", "id='51'"),
+            ("id='712'", "id='52'"),
+            ("id='713'", "id='53'"),
+            ("id='714'", "id='54'"),
+            ("id='715'", "id='55'"),
+        ):
+            roster = sub_once(roster, old, new)
+        # geometry, in this dashboard's scale rather than Academic Health
+        # Home's: that header is 6667 units tall, this one is 5333. The label
+        # keeps its 22 px fixed-size, which with its two 4 px margins is
+        # 22*66.667 + 533 = 2000 units, leaving 3333 for the link row.
+        # Academic Health Home's container is 240 px against three 4978-unit
+        # links that need only 14934, so it ships with 2646 units of trailing
+        # slack inside the flow. Copying that would put a gap in a container
+        # this build created, so the width is cut to exactly the three links:
+        # 14934 units, 204 px. The 2646 goes to the title with the rest.
+        roster = set_zone_attrs(
+            roster, "50", fixed_size="204", h="5333", w="14934", x="84480", y="533"
+        )
+        roster = set_zone_attrs(roster, "51", h="2000", w="14934", x="84480", y="533")
+        roster = set_zone_attrs(roster, "52", h="3333", w="14934", x="84480", y="2533")
+        for zid, x in (("53", "84480"), ("54", "89458"), ("55", "94436")):
+            roster = set_zone_attrs(roster, zid, h="3333", w="4978", x=x, y="2533")
+
+        # --- widen the title, shift the year control, append the container
+        d = sub_once(
+            d,
+            "<zone h='5333' id='2' name='LP - Title' show-caption='true' show-title='false' w='29059' x='13397' y='533'>",
+            "<zone h='5333' id='2' name='LP - Title' show-caption='true' show-title='false' w='60980' x='13397' y='533'>",
+        )
+        d = sub_once(d, "w='10103' x='42456' y='533'>", "w='10103' x='74377' y='533'>")
+        anchor = "            <zone-style>\r\n              <format attr='border-color' value='#000000' />\r\n              <format attr='border-style' value='none' />\r\n              <format attr='border-width' value='0' />\r\n              <format attr='background-color' value='#001e62' />\r\n            </zone-style>\r\n"
+        return sub_once(d, anchor, "            " + roster + "\r\n" + anchor)
+
+    return edit_dashboard(text, fn)
+
+
+def side_by_side_reference(text: str) -> str:
+    """L3: put the definitions and coverage blocks side by side, and delete
+    the Links row now that the roster links live in the header.
+
+    A dashboard text zone CENTRES its content vertically. Verified on the
+    first attempt at this layout: both blocks were dropped down their zone by
+    exactly half the leftover -- the definitions text measured 338 px of
+    content in a 696 px zone and started 179 px down, the coverage grid 157 px
+    of content and started 269 px down -- so the two blocks did not line up
+    with each other and both floated well below the cards above them. Nothing
+    in the XML says so and nothing errors.
+
+    So each block gets its own vertical column: a text zone sized close to its
+    own content, then an empty spacer for the rest of the height. Sized so
+    the residual centring offset is the same 21 px in both columns, which is
+    what actually makes the two headings line up.
+
+    The vertical budget is unchanged from the stacked version: the container
+    still spans y=47066..93466, so the trailing empty zone and the outer flow
+    zone need no edit. The slack that removing the Links row freed sits
+    inside the two columns as page whitespace.
+    """
+
+    def fn(d: str) -> str:
+        defs = zone_block(d, "id='37'")
+        cov = zone_block(d, "id='38'")
+        links = zone_block(d, "friendly-name='Links'")
+
+        # both text zones drop two indent levels deeper: container > column
+        new_defs = reindent(defs, 4)
+        new_defs = sub_once(
+            new_defs,
+            "<zone fixed-size='400' forceUpdate='true' h='27200' id='37'"
+            " is-fixed='true' type-v2='text' w='98828' x='586' y='47066'>",
+            "<zone fixed-size='380' forceUpdate='true' h='25867' id='37'"
+            " is-fixed='true' type-v2='text' w='57721' x='586' y='47066'>",
+        )
+        new_cov = reindent(cov, 4)
+        new_cov = sub_once(
+            new_cov,
+            "<zone fixed-size='220' forceUpdate='true' h='15200' id='38'"
+            " is-fixed='true' type-v2='text' w='98828' x='586' y='74266'>",
+            "<zone fixed-size='199' forceUpdate='true' h='13800' id='38'"
+            " is-fixed='true' type-v2='text' w='41107' x='58307' y='47066'>",
         )
 
-    return edit_worksheet(text, "LP - Title", fn)
+        def spacer(zid: str, h: int, w: int, x: int, y: int) -> str:
+            return (
+                f"              <zone h='{h}' id='{zid}' type-v2='empty'"
+                f" w='{w}' x='{x}' y='{y}'>\r\n"
+                "                <zone-style>\r\n"
+                "                  <format attr='border-color' value='#000000' />\r\n"
+                "                  <format attr='border-style' value='none' />\r\n"
+                "                  <format attr='border-width' value='0' />\r\n"
+                "                  <format attr='margin' value='4' />\r\n"
+                "                </zone-style>\r\n"
+                "              </zone>"
+            )
+
+        container = (
+            "          <zone fixed-size='696' friendly-name='Reference' h='46400'"
+            " id='60' is-fixed='true' param='horz' type-v2='layout-flow'"
+            " w='98828' x='586' y='47066'>\r\n"
+            "            <zone fixed-size='780' h='46400' id='61' is-fixed='true'"
+            " param='vert' type-v2='layout-flow' w='57721' x='586' y='47066'>\r\n"
+            "              "
+            + new_defs
+            + "\r\n"
+            + spacer("62", 20533, 57721, 586, 72933)
+            + "\r\n"
+            "            </zone>\r\n"
+            "            <zone h='46400' id='63' param='vert' type-v2='layout-flow'"
+            " w='41107' x='58307' y='47066'>\r\n"
+            "              "
+            + new_cov
+            + "\r\n"
+            + spacer("64", 32600, 41107, 58307, 60866)
+            + "\r\n"
+            "            </zone>\r\n"
+            "          </zone>"
+        )
+        d = sub_once(d, "          " + defs + "\r\n          " + cov, container)
+        return sub_once(d, "          " + links + "\r\n", "")
+
+    return edit_dashboard(text, fn)
 
 
 # ------------------------------------------------------ default-view marker
@@ -414,13 +679,29 @@ STEPS = (
     ("fix_strip_failures", fix_strip_failures),
     ("fix_strip_gradebook", fix_strip_gradebook),
     ("fix_grade_grade", fix_grade_grade),
-    ("fix_header_title", fix_header_title),
+    ("drop_header_buttons_and_add_roster", drop_header_buttons_and_add_roster),
+    ("side_by_side_reference", side_by_side_reference),
     ("set_default_view", set_default_view),
 )
 
 
+def dashboard_of(text: str, name: str) -> str:
+    m = re.search(
+        r"<dashboard[^>]*name='" + re.escape(name) + r"'.*?</dashboard>", text, re.S
+    )
+    if not m:
+        raise RuntimeError(f"dashboard not found: {name!r}")
+    return m.group(0)
+
+
+#: Set by main() so the roster-links donor can be read from the untouched base.
+BASE_TEXT = ""
+
+
 def main() -> None:
+    global BASE_TEXT
     text = BASE.read_text(encoding="utf-8", newline="")
+    BASE_TEXT = text
     start = len(text)
     for name, fn in STEPS:
         before = len(text)
