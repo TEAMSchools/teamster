@@ -1733,12 +1733,26 @@ meet every measure, which is why every row is now `AND`.
 
 **Consequences for `met_pm_round_overall_criteria`.** Its `case` has an `'AND'`
 branch and a null branch, and that is complete -- there is no third value to
-handle. The null branch deliberately skips `completed_test_round`, because
-`pm_goal_criteria` governs how multiple EXPECTED measures combine and a
-null-criteria round has no multi-measure requirement: a valid score counts
-without checking every probe was finished. Unexpected probes are already
-excluded upstream by the expectation gate, so a null round is genuinely
-criteria-free rather than a data gap.
+handle.
+
+The null branch skips `completed_test_round` for a reason that is logical rather
+than stylistic. A round's met/not-met cannot be computed at all for a student
+who did not finish it -- **unless the criteria is OR**:
+
+- `AND` needs every measure, so a skipped measure leaves the result
+  **indeterminate**. There is no way to know whether the student would have met
+  it, so the round cannot be credited.
+- Null (OR) needs any measure, so one passing measure settles the round. What
+  was skipped cannot change the answer.
+
+Measured on AY2025, among students whose round criteria passed but who did not
+complete the round: **374 `AND` rows score 0, and 222 null rows score 1.** Do
+not "simplify" the gate away -- it is load-bearing under `AND`.
+
+Worth carrying into any reporting conversation: those 374 are not failures, they
+are **unmeasurable**, reported as failures because the flag is binary. With
+`AND` network-wide from SY26-27 that population only grows, which is why T&L's
+categories keep _Not Tested_ separate from _Below_ rather than folding it in.
 
 An earlier version of this section called the missing `'OR'` branch an inert
 gap, on the evidence that zero AY2025 rows carry `'OR'`. That was literally true

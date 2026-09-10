@@ -1475,6 +1475,29 @@ The most conservative overall flag:
 two branches are exhaustive — the `case`'s `else` is unreachable rather than a
 missing `'OR'` branch.
 
+#### Why completion gates AND but not OR
+
+`completed_test_round` exists because a round's met/not-met cannot be computed
+at all for a student who did not finish it — and whether that is true depends on
+the criteria:
+
+- **`AND` needs every measure.** A student who skipped one has an
+  _indeterminate_ result: there is no way to know whether they would have met
+  the missing measure, so the round cannot be credited.
+- **NULL (OR) needs any measure.** One passing measure settles the round. What
+  the student skipped cannot change the answer, so completeness is irrelevant.
+
+Both cases occur, and the asymmetry is visible in the data. On AY2025, among
+students whose round criteria passed but who did not complete the round: 374
+`AND` rows score 0, and 222 NULL rows score 1.
+
+Two things follow. The gate is a logical necessity under `AND`, not conservatism
+bolted on — so do not "simplify" it away. And those 374 rows are not failures;
+they are **unmeasurable**, reported as failures because the flag is binary. With
+`AND` network-wide from SY26-27 that population can only grow, which is exactly
+why the aimline reporting categories keep _Not Tested_ separate from _Below_
+rather than folding one into the other.
+
 The NULL case does **not** require `completed_test_round` — this is intentional.
 `pm_goal_criteria` controls the AND/OR pass logic across measures that were
 **expected** to be tested in a given round. When it is NULL, the round has no

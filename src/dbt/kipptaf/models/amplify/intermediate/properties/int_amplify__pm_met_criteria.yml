@@ -131,6 +131,15 @@ models:
           from the participation roster. The roster owns this because it is the
           model that turns an expected-but-absent measure into a row;
           int_amplify__all_assessments carries scored rows only.
+
+          It exists because a round's met/not-met cannot be computed at all for
+          a student who did not finish it — under AND, at least. A skipped
+          measure leaves an AND round indeterminate, since there is no way to
+          know whether the student would have met it, so the round cannot be
+          credited. Under NULL (the OR criteria) one passing measure settles the
+          round and completeness is irrelevant. That is why
+          met_pm_round_overall_criteria gates on this in the AND branch and not
+          the NULL one.
       - name: met_measure_standard_goal
         data_type: int64
         description: >-
