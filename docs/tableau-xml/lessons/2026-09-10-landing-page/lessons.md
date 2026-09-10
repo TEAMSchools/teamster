@@ -243,3 +243,47 @@ confirmed present by name) gained two action filters and `credit_type` /
 `region` columns per the owner's publish notes relayed by the coordinator; not
 independently re-derived from the XML in this task, only the sheet names and the
 `Calculation_76` count were.
+
+## 2026-09-10, build phase, Task 2
+
+### The checker's own base-against-base run cost a `uv` venv build, not the regex
+
+**Verified.** The first `check_additive.py base.twb base.twb ...` invocation ran
+past the 120s foreground timeout and had to finish in the background; the output
+showed `uv` spending 2m35s building a fresh `.venv` and installing 233 packages
+(`Installed 233 packages in 2m 35s`) before Python ever started, not the 1.9 MB
+regex sweep. Do the first `uv run` of a session as a throwaway or background
+call so a real timeout isn't confused with a slow checker.
+
+### Text-surgery stripping is exact: three real runs, one pass one fail
+
+**Verified.** Base-against-base:
+
+```text
+rc=0
+stripped: {'worksheets': 0, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 0, 'nav-actions': 0, 'url-actions': 0, 'calcs': 0}
+OK: remainder is byte-identical to base
+```
+
+Control mutant (`mutate.py ... control`): `cmp` reported no difference, printed
+`CONTROL_OK`. Mutant (`mutate.py ... set-attr 10 show-title true` on
+`Gradebook School Rollup`) against the checker:
+
+```text
+rc=1
+stripped: {'worksheets': 0, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 0, 'nav-actions': 0, 'url-actions': 0, 'calcs': 0}
+```
+
+with a diff whose first line was `@@ -23742,5 +23742,5 @@` followed by a line
+naming `<zone ... id='10' name='BAN Network' show-title='false' ...>` on the
+base side and `show-title='true'` on the edited side. The checker does not
+confuse an unrelated zone attribute flip with a sanctioned addition — the
+`stripped` dict stayed all-zero (nothing matched the LP-prefixed patterns) and
+the byte comparison alone caught it.
+
+### Nothing else surprised
+
+No other trap surfaced in this task: the brief's zone-id-10 claim (`BAN Network`
+inside `Gradebook School Rollup`) matched the diff exactly, and the argument
+names in Step 1's `argparse` block needed no adjustment against the brief's
+example invocation.
