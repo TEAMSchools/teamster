@@ -163,20 +163,35 @@ cubes:
         description: >-
           Count of scored responses — excludes not_taken rows (no response
           recorded). COUNT(*) over the unique PK (assessment_score_key),
-          filtered to response_type != 'not_taken' — additive, so
+          filtered to response_type IS DISTINCT FROM 'not_taken' — additive, so
           pre-aggregations roll it up to any grain. Expected effect: global
-          unfiltered pct_proficient moves from 45.80% to 49.54% (measured on
-          this branch), since the ~1.07M not_taken rows (no response, so never
-          proficient) no longer inflate the denominator.
+          unfiltered pct_proficient moves from 45.66% to 48.24%, and the
+          Illuminate-only rate from 46.17% to 49.73% (measured 2026-09-10 on a
+          local dev server, this branch's cube model over this branch's fact),
+          since the ~940k not_taken rows (no response, so never proficient) no
+          longer inflate the denominator.
         type: count
         public: true
         # Forces joins to student_assessments and regions so all proficiency
         # measures share one CTE, enabling side-by-side queries without
         # BigQuery's "query too complex" multi-CTE fan-out error.
+        #
+        # IS DISTINCT FROM, never !=, on response_type — here and in the five
+        # other measures below. The two agree once the fact is rebuilt, because
+        # the rebuilt fact coalesces response_type to a non-null token. They
+        # disagree while the OLD fact is still in place, where response_type is
+        # null on every non-Illuminate row: `null != 'not_taken'` is null, not
+        # true, so a plain != drops the row. Measured 2026-09-10 against the
+        # then-current prod fact: DIBELS, i-Ready, STAR and all five NJ/FL
+        # state sources each read exactly 0 — 1.32M rows, silently, no error.
+        # Cube Cloud deploys on merge and the fact rebuilds hours later, so
+        # that window is real; a rollback re-opens it in the other direction.
+        # IS DISTINCT FROM keeps the null rows counted, which is their old
+        # behavior, and makes the two deploys order-independent.
         filters:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
-          - sql: "{CUBE}.response_type != 'not_taken'"
+          - sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 
       - name: count_students
         description: >-
@@ -202,7 +217,7 @@ cubes:
         filters:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
-          - sql: "{CUBE}.response_type != 'not_taken'"
+          - sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 
       - name: pct_proficient
         description: >-
@@ -291,7 +306,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
-          - sql: "{CUBE}.response_type != 'not_taken'"
+          - sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 
       - name: _count_scores_formative
         description: >-
@@ -303,7 +318,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
-          - sql: "{CUBE}.response_type != 'not_taken'"
+          - sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 
       - name: pct_proficient_formative
         description: >-
@@ -330,7 +345,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} = 'CRQ'"
-          - sql: "{CUBE}.response_type != 'not_taken'"
+          - sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 
       - name: _count_scores_crq
         description: >-
@@ -342,7 +357,7 @@ cubes:
           - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
           - sql: "{student_assessments.module_type} = 'CRQ'"
-          - sql: "{CUBE}.response_type != 'not_taken'"
+          - sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 
       - name: pct_proficient_crq
         description: >-
