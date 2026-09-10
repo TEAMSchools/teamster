@@ -33,9 +33,7 @@ with
     ),
 
     powerschool_filtered as (
-        select p.*,
-        from {{ ref("stg_powerschool__students") }} as p
-        where p._dbt_source_project != 'kippmiami'
+        select p.*, from {{ ref("stg_powerschool__students") }} as p
     )
 
 select *,

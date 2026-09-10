@@ -24,7 +24,6 @@
             from {{ ref("stg_powerschool__students") }}
             where
                 student_number not in (select t.student_number, from {{ this }} as t)
-                and _dbt_source_project != 'kippmiami'
                 and dob is not null
                 and first_name is not null
                 and last_name is not null
