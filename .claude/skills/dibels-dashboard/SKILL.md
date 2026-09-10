@@ -1719,6 +1719,100 @@ benchmark but not aimline, they should still be in this category" -- so it is a
 priority cascade, NOT a 2x2 intersection. Getting that wrong puts a
 benchmark-meeting student in Below Aimline.
 
+### Disabling a PM test: which column, and why the goals must be rebuilt
+
+**Tell the user this before touching anything.** Two different columns, for two
+different situations, and they behave differently in the goal chain.
+
+**One measure not tested in a round -> `pm_goal_include`.** It exists on BOTH
+Expected Assessments (either range) and the frozen
+`src_google_sheets__dibels__pm_goals` sheet, and the two must agree. Nothing
+keeps them in sync: `int_amplify__pm_met_criteria` drives from the frozen sheet
+and filters `g.pm_goal_include is null`, while the scores reaching it came
+through the gate's own filter. Disagree and a round is either evaluated when it
+was meant to be disabled or dropped when it was meant to count, with no error
+either way.
+
+**The whole round cancelled -> `assessment_include`.** This one is NOT on the
+goals sheet, and the goal chain cannot see it:
+`int_google_sheets__dibels_pm_expectations` does not project the column at all,
+so `rpt_gsheets__dibels_pm_goal_setting` still counts a cancelled round's school
+days into `pm_days` and still emits a goal row for it. Regenerating the sheet
+does not change that — it reproduces the same goals. Downstream consumers DO
+filter `assessment_include is null`, so the cancelled round vanishes from the
+dashboard and the roster while the trajectory stays scaled as though it had
+happened.
+
+So a cancelled round leaves the season's goals slightly too gradual, and fixing
+that is a decision, not a patch: it means teaching `pm_expectations` to project
+and filter the column, which changes whether a cancelled round bounds the
+season. Watch the trap when doing it — `WHERE` is evaluated before window
+functions, so filtering in the same `SELECT` that computes `min_pm_round` /
+`max_pm_round` silently redefines the season's first and last round (measured on
+AY2025: 675 rows shifted on `min`, 1,386 on `max`). That was reverted once
+already in this PR for exactly that reason. Raise it with academics rather than
+deciding it as a side effect.
+
+**Either way the goals sheet is rebuilt in full, never cell-edited.** Disabling
+a measure changes `min_pm_round` / `max_pm_round` for the season, which decides
+which round carries `starting_words` and which is pinned to
+`benchmark_goal_padded`; every round's share of the growth is proportional to
+its school days out of the season total. Removing one rescales every goal in
+that season, not just its own row.
+
+Procedure:
+
+1. Set the right column on Expected Assessments — `pm_goal_include` for one
+   measure, `assessment_include` for the whole round — on the internal range,
+   the by-levels range, or both, matching where the test actually runs.
+2. Re-run `rpt_gsheets__dibels_pm_goal_setting` and replace the WHOLE current
+   academic year in the PM goals sheet with its output. Not a patch of the
+   affected rows.
+3. Verify the pasted `pm_goal_include` values match Expected Assessments row for
+   row before trusting any downstream number.
+4. For a cancelled round, say plainly that the goals still include it, and that
+   changing that is the open academics question above.
+
+The model computes `current_academic_year` only, so it cannot regenerate a prior
+year. A disable applied retroactively to a closed year has no source of truth to
+rebuild from and should be refused rather than hand-edited.
+
+### The aimline sibling is built -- two traps and four assumptions
+
+`int_amplify__pm_met_criteria_aimline` mirrors the internal model stage for
+stage. Only the first stage differs: `met_aimline_goal` translates Amplify's
+`aimline_status` instead of comparing a score to a cohort target. Inputs are
+`int_amplify__all_assessments` (`model_type = 'Aimline'`, which now carries
+`aimline_status` and `goal`), the by-levels gate for `pm_goal_criteria` and
+`benchmark_goal`, and the roster's Aimline rows for completion.
+
+**Trap 1 -- the by-levels gate needs the cohort level.** It is split by
+`measure_standard_level`, and on an Aimline row `overall_probe_eligible` carries
+that level (Below Benchmark / Well Below Benchmark), not the `'Yes'` an Internal
+row carries. Join without it and every row doubles. The gate is unique on (year,
+region, grade, admin_season, round_number, expected_measure_standard,
+measure_standard_level) -- 2,108 of 2,108 -- so with it there is no fan-out.
+
+**Trap 2 -- `met_aimline_goal` is nullable on purpose.** Amplify publishes no
+status on a share of probes even where a goal is present, so the rollups treat
+null as unknown, not as a miss. Do not "fix" it to 0. `avg(...) = 1` would
+silently credit a code with an unpublished standard, which is why the code and
+round rollups use countif-plus-min/max instead of the internal model's avg.
+
+**Four assumptions are baked in**, each moving reported numbers if wrong, all
+listed in the model's yml: `benchmark_goal` padded +3 to match the internal
+method; unpublished status as its own category rather than folded into Below
+Aimline; a skipped round passed over by the streak rather than breaking it; and
+the On Track label applied to students at grade level who are below their
+aimline. That last one is T&L's own rule and their own label, and the label
+misdescribes the subset -- worth raising when they revisit the vocabulary.
+
+**Not done:** the sibling is not wired into `rpt_tableau__dibels_dashboard`.
+That needs a third UNION branch, or an `assessment_type` discriminator on the
+existing PM branch. Validated on AY2025 in dev: 36,486 rows, exact grain, all
+six tests pass, 21 rows lost to the roster join (five Newark students, in the
+yml).
+
 ### The met/not-met flags have labelled twins, and the workbook needs a change
 
 `int_amplify__pm_met_criteria` emits three `*_status` strings beside its flags:

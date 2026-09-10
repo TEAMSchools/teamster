@@ -1113,11 +1113,29 @@ stg_google_sheets__dibels_goals_long
 int_google_sheets__dibels_pm_expectations      internal chain
   └─ g.grade_level_standard as benchmark_goal
 rpt_gsheets__dibels_pm_goal_setting
-  └─ e.benchmark_goal + 3        ← the padding, applied once, here
+  ├─ benchmark_goal              ← the published standard, reported unchanged
+  └─ benchmark_goal + 3          ← as benchmark_goal_padded, the pad applied once
 frozen sheet → stg_google_sheets__dibels_pm_goals
 int_amplify__pm_met_criteria
-  └─ met_admin_benchmark_goal = score ≥ benchmark_goal
+  └─ met_admin_benchmark_goal = score ≥ benchmark_goal_padded
 ```
+
+**The two figures are separate columns from SY26-27 on.** `benchmark_goal` is
+Amplify's published standard; `benchmark_goal_padded` is that standard plus
+academics' 3-word planning buffer, and it is what every calculation and the
+at-grade-level verdict read. Both are reported through the goal-setting model,
+the frozen sheet, both criteria models and the dashboard, so a reader can see
+the real standard beside the bar a student is held to.
+
+Until SY26-27 there was one column: the bare name held the padded figure and the
+published standard was not reported anywhere. The sheet was backfilled when the
+two split, so `benchmark_goal_padded` is populated on every year and consumers
+need no fallback. It carries a `not_null` test at the staging model, because the
+column is hand-pasted and `if(score >= null, 1, 0)` returns 0 — an omitted paste
+would read as nobody meeting the standard rather than failing the build.
+
+Padding is academics' planning buffer, not a property of the assessment. Naming
+it in the column is what lets a reader tell the two apart.
 
 The `matching_pm_season` mapping is what makes "on pace" mean anything: a
 BOY→MOY round is measured against the **MOY** standard — the next benchmark's
@@ -1158,14 +1176,15 @@ round:
 - **`pm_days`** — Total school days across the full PM admin season (BOY→MOY or
   MOY→EOY).
 - **`benchmark_goal`** — Amplify's published word goal for the measure by end of
-  admin, padded by **+3 words** and rounded to the nearest tenth.
+  admin, unpadded. Reported, not used in any calculation.
+- **`benchmark_goal_padded`** — the same goal plus **+3 words**, rounded to the
+  nearest tenth. This is the figure every calculation below reads.
 - **`starting_words`** — Average score for Below/Well Below students on the
   given measure at the start of the PM season, rounded to the nearest integer.
   Named `starting_words` in the model, not `average_starting_words`.
-- **`required_growth_words`** — `benchmark_goal − starting_words` (the +3
-  padding is already embedded in `benchmark_goal`), rounded to the nearest
-  integer. Total words a student must grow by end of admin to meet the padded
-  Amplify goal.
+- **`required_growth_words`** — `benchmark_goal_padded − starting_words`,
+  rounded to the nearest integer. Total words a student must grow by end of
+  admin to meet the padded Amplify goal.
 - **`daily_growth_rate`** — `required_growth_words / pm_days`, rounded to 2
   decimal places. Words per school day a student must gain to reach the
   end-of-admin (EOA) goal.
@@ -1569,31 +1588,75 @@ that appear in `stg_google_sheets__dibels_expected_assessments` — unexpected
 probes are already excluded upstream — so NULL rounds are genuinely
 criteria-free, not data-entry gaps.
 
-#### AY 2026–2027 refactor
+#### The aimline sibling: `int_amplify__pm_met_criteria_aimline`
 
-The three-CTE structure and AND/OR aggregation logic stay. The changes:
+Built, not planned. The aimline method is evaluated by its own model rather than
+a branch in the internal one, because `cumulative_growth_words` has no aimline
+equivalent — and the split turned out to cost little, since only one stage of
+the chain is actually method-specific.
 
-- Goal spine: `stg_google_sheets__dibels_pm_goals` →
-  `int_google_sheets__dibels_expected_assessments` (for `pm_goal_criteria`) +
-  aimline file (for per-student `aimline_status`)
-- `cumulative_growth_words` score comparison → `aimline_status = 'At or Above'`
-  check
-- `met_admin_benchmark_goal` — score ≥ `benchmark_goal` (the Amplify
-  end-of-admin target padded by +3 words from the PM goals sheet). In AY
-  2026–2027 it will compare against the aimline `goal` field directly.
+What differs is the first stage alone. The internal method computes a cohort
+target and compares a score to it; the aimline method reads Amplify's published
+verdict, so `met_aimline_goal` translates `aimline_status` rather than computing
+anything. `pm_goal_criteria` and `benchmark_goal` come from the by-levels gate
+instead of the frozen goals sheet. Everything downstream — the measure_name_code
+pairing, the AND/OR round rollup, the completion gate, `pm_round_status` —
+mirrors the internal model line for line.
 
-  The **goal** is season-level: `benchmark_goal` is the same number in every
-  round of the season, unlike `cumulative_growth_words`, which climbs. The
-  **flag** is not — it is a plain row-level comparison recomputed each round,
-  with no window function and no `max()` across rounds, so it returns to 0 when
-  a later score dips back below the standard. On AY2025, 2,499 of 18,715 student
-  × measure × seasons met the benchmark in some round and not in another, and
-  595 met it in an earlier round and then not in a later one.
+Two things the sibling needs that the internal model does not:
 
-  Per-round is the intended behavior, so read the column as "at grade level in
-  this round" rather than "has reached grade level yet". The phrase _north star_
-  invites the latched reading and the column does not carry it — a student
-  clearing the standard in round 2 says nothing about their round 3 row.
+- **The cohort level as a join key.** The by-levels gate is split by
+  `measure_standard_level`, and on an Aimline row `overall_probe_eligible`
+  carries that level (Below Benchmark / Well Below Benchmark) rather than the
+  `'Yes'` an Internal row carries. Join without it and the gate matches both
+  cohorts, doubling every row.
+- **A third truth value.** Amplify publishes no `aimline_status` on a share of
+  probes even where a goal is present, so `met_aimline_goal` is nullable by
+  design and the rollups treat null as unknown rather than as a miss. This
+  generalises the completion asymmetry: under `AND` one miss settles the round
+  however much is unknown, under the null (OR) criteria one pass does, and only
+  where neither has happened is the round unresolved — reported as
+  `No Aimline Status`.
+
+`aimline_category` carries T&L's four reporting categories, testing
+at-grade-level first per their rule that a student meeting benchmark but not
+aimline still counts as On Track. `missed_aimline_consecutive` is the
+two-rounds-in-a-row signal, counted among the rounds the student actually sat.
+
+Four assumptions are baked in pending T&L confirmation, each of which moves
+reported numbers: `benchmark_goal` is padded +3 to match the internal method
+rather than left as Amplify publishes it; an unpublished status is its own
+category rather than folded into Below Aimline; a skipped round is passed over
+by the streak rather than breaking it; and the On Track label is applied to
+students at grade level who are below their aimline, which the label itself
+misdescribes. They are listed in the model's properties yml.
+
+On AY2025 the model produces 36,486 rows on an exact grain, from 36,507 aimline
+rows in `all_assessments` — the 21-row loss is five Newark students, documented
+in the yml.
+
+#### `met_admin_benchmark_goal` is per round, not latched
+
+Both models carry it, and it means the same thing in both: score ≥
+`benchmark_goal`, the Amplify end-of-admin target padded by +3 words. The
+internal method takes the padded figure from the frozen goals sheet; the sibling
+applies the padding itself over the by-levels gate's unpadded standard, so that
+the two agree. The sibling also carries Amplify's per-student `goal` column, but
+only for transparency — the aimline verdict comes from `aimline_status`, not
+from comparing a score to `goal`.
+
+The **goal** is season-level: `benchmark_goal` is the same number in every round
+of the season, unlike `cumulative_growth_words`, which climbs. The **flag** is
+not — it is a plain row-level comparison recomputed each round, with no window
+function and no `max()` across rounds, so it returns to 0 when a later score
+dips back below the standard. On AY2025, 2,499 of 18,715 student × measure ×
+seasons met the benchmark in some round and not in another, and 595 met it in an
+earlier round and then not in a later one.
+
+Per-round is the intended behavior, so read the column as "at grade level in
+this round" rather than "has reached grade level yet". The phrase _north star_
+invites the latched reading and the column does not carry it — a student
+clearing the standard in round 2 says nothing about their round 3 row.
 
 ---
 
