@@ -1777,14 +1777,17 @@ The model computes `current_academic_year` only, so it cannot regenerate a prior
 year. A disable applied retroactively to a closed year has no source of truth to
 rebuild from and should be refused rather than hand-edited.
 
-### The aimline sibling is built -- two traps and four assumptions
+### The aimline sibling, and the three traps in it
 
 `int_amplify__pm_met_criteria_aimline` mirrors the internal model stage for
 stage. Only the first stage differs: `met_aimline_goal` translates Amplify's
 `aimline_status` instead of comparing a score to a cohort target. Inputs are
 `int_amplify__all_assessments` (`model_type = 'Aimline'`, which now carries
-`aimline_status` and `goal`), the by-levels gate for `pm_goal_criteria` and
-`benchmark_goal`, and the roster's Aimline rows for completion.
+`aimline_status`, `goal` and `met_aimline_goal` -- the translation lives there
+so every consumer reads one flag), the by-levels gate for `pm_goal_criteria`,
+`benchmark_goal` and the previous EXPECTED round, and the roster's Aimline rows
+for completion. It is wired into `rpt_tableau__dibels_dashboard` as a third
+UNION branch, told apart by `model_type`.
 
 **Trap 1 -- the by-levels gate needs the cohort level.** It is split by
 `measure_standard_level`, and on an Aimline row `overall_probe_eligible` carries
@@ -1799,19 +1802,38 @@ null as unknown, not as a miss. Do not "fix" it to 0. `avg(...) = 1` would
 silently credit a code with an unpublished standard, which is why the code and
 round rollups use countif-plus-min/max instead of the internal model's avg.
 
-**Four assumptions are baked in**, each moving reported numbers if wrong, all
-listed in the model's yml: `benchmark_goal` padded +3 to match the internal
-method; unpublished status as its own category rather than folded into Below
-Aimline; a skipped round passed over by the streak rather than breaking it; and
-the On Track label applied to students at grade level who are below their
-aimline. That last one is T&L's own rule and their own label, and the label
-misdescribes the subset -- worth raising when they revisit the vocabulary.
+**Trap 3 -- the streak runs over EXPECTED rounds, not sat ones.** T&L define
+two-in-a-row as "two consecutive rounds that they were supposed to test on", so
+`previous_expected_round` is a `lag()` over the gate, and the model self-joins
+the student's row for that round. A measure the schedule tests in rounds 1 and 3
+only streaks across round 2 correctly; where the student was expected and
+absent, it falls back to their last recorded verdict. A plain `lag()` over
+scored rows gets both cases wrong in opposite directions. T&L dropped the
+three-in-a-row variant.
 
-**Not done:** the sibling is not wired into `rpt_tableau__dibels_dashboard`.
-That needs a third UNION branch, or an `assessment_type` discriminator on the
-existing PM branch. Validated on AY2025 in dev: 36,486 rows, exact grain, all
-six tests pass, 21 rows lost to the roster join (five Newark students, in the
-yml).
+**Decisions that are T&L's, not ours** -- do not "correct" them:
+
+- `benchmark_goal` is UNPADDED here, and padded on the internal method.
+  Academics keep the 3-word buffer for the internal trajectory and not for
+  aimline, so the two methods' `met_admin_benchmark_goal` are three words apart
+  by design -- 9,117 aimline rows meet the unpadded standard against 5,758 that
+  would meet the padded one. Never union or compare the two columns.
+- `Not Tested` overrides every other category, because they define it at the
+  round: not tested on one or more of the round's expected measures means Not
+  Tested for the whole round, including the measures they did sit.
+- `Meeting Aimline, On-Track` fires on the benchmark alone, per their rule that
+  a student meeting benchmark but not aimline still belongs there. The label
+  overstates what it checks; that is their wording.
+- `No Aimline Status` is the fifth category their four omit. Academics chose to
+  show the score and flag the missing target rather than hide the row or call it
+  Not Tested.
+- `aimline_value_by_date` is not to be used -- academics are waiting on a
+  definition from KIPP Foundation. Do not reach for it to fill a missing status,
+  and do not derive the verdict from `goal` either: that is the season-end
+  target and reproduces `aimline_status` on only five rows in six.
+
+Validated on AY2025 in dev: 36,486 rows, exact grain, six tests pass, 21 rows
+lost to the roster join (five Newark students, in the yml).
 
 ### The met/not-met flags have labelled twins, and the workbook needs a change
 
@@ -1842,14 +1864,19 @@ WHEN 'Met Benchmark Goal' THEN [Admin Benchmark Goal Status]
 END
 ```
 
-Two things to watch. The existing No Data alias is on the NULL member, and PM
-rows are no longer null -- repoint it to `Not Tested`. And check whether any
-sheet aggregates the selector as a measure (an `AVG()` met-rate); converting it
-to a string breaks that sheet, so if one exists, add the string version as a
-second calc for Colour and leave the numeric one for measures. The workbook's
-datasource is embedded, and Tableau's VizQL Data Service returns 500 on embedded
-sources, so the MCP cannot read the calculated fields -- this has to be checked
-in Desktop.
+**Also outstanding, and more urgent: every PM view must now filter
+`model_type`.** The dashboard has a third branch for the aimline method, so both
+methods emit rows for the same student and any unfiltered PM view double-counts.
+Nothing in the workbook filters it yet.
+
+Two things to watch on the selector itself. The existing No Data alias is on the
+NULL member, and PM rows are no longer null -- repoint it to `Not Tested`. And
+check whether any sheet aggregates the selector as a measure (an `AVG()`
+met-rate); converting it to a string breaks that sheet, so if one exists, add
+the string version as a second calc for Colour and leave the numeric one for
+measures. The workbook's datasource is embedded, and Tableau's VizQL Data
+Service returns 500 on embedded sources, so the MCP cannot read the calculated
+fields -- this has to be checked in Desktop.
 
 ### The OR criteria is spelled NULL, and it is live on history
 

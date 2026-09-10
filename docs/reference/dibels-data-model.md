@@ -1618,18 +1618,33 @@ Two things the sibling needs that the internal model does not:
   where neither has happened is the round unresolved — reported as
   `No Aimline Status`.
 
-`aimline_category` carries T&L's four reporting categories, testing
-at-grade-level first per their rule that a student meeting benchmark but not
-aimline still counts as On Track. `missed_aimline_consecutive` is the
-two-rounds-in-a-row signal, counted among the rounds the student actually sat.
+`aimline_category` carries T&L's reporting categories, taken from their PM
+guidance document: **Meeting Aimline, On-Track**, **Meeting Aimline,
+Off-Track**, **Below Aimline**, **Not Tested**, and a fifth, **No Aimline
+Status**, for the rows their four do not cover.
 
-Four assumptions are baked in pending T&L confirmation, each of which moves
-reported numbers: `benchmark_goal` is padded +3 to match the internal method
-rather than left as Amplify publishes it; an unpublished status is its own
-category rather than folded into Below Aimline; a skipped round is passed over
-by the streak rather than breaking it; and the On Track label is applied to
-students at grade level who are below their aimline, which the label itself
-misdescribes. They are listed in the model's properties yml.
+The cascade tests in that order, and two things about it are T&L's decisions
+rather than ours. `Not Tested` comes first and overrides the rest, because they
+define it at the round and not the row — a student not tested on one or more of
+the round's expected measures is Not Tested for that round, including on the
+measures they did sit. It is the same `completed_test_round` gate the internal
+method applies, surfaced as a category. And `Meeting Aimline, On-Track` fires on
+the benchmark alone, per their written rule that a student meeting benchmark but
+not aimline still belongs there, so the label overstates what it checks; that
+wording is theirs, recorded so nobody 'corrects' it.
+
+`No Aimline Status` exists because academics chose, when asked, to show the
+score and flag the missing target rather than hide the row or call it Not
+Tested. Those students were tested, so Not Tested would be false, and Below
+Aimline would report a non-failure as a failure.
+
+`missed_aimline_consecutive` is the two-rounds-in-a-row signal, per measure and
+within one PM season. Consecutive means consecutive among the rounds the student
+was SUPPOSED to sit — `previous_expected_round` comes from the expectation gate,
+not from a lag over scored rows — so a measure the schedule tests in rounds 1
+and 3 only streaks across round 2 correctly. Where the student was expected in a
+round and missed it, the streak falls back to their last recorded verdict, so an
+absence does not break a run either. T&L dropped the three-in-a-row variant.
 
 On AY2025 the model produces 36,486 rows on an exact grain, from 36,507 aimline
 rows in `all_assessments` — the 21-row loss is five Newark students, documented
@@ -1637,13 +1652,27 @@ in the yml.
 
 #### `met_admin_benchmark_goal` is per round, not latched
 
-Both models carry it, and it means the same thing in both: score ≥
-`benchmark_goal`, the Amplify end-of-admin target padded by +3 words. The
-internal method takes the padded figure from the frozen goals sheet; the sibling
-applies the padding itself over the by-levels gate's unpadded standard, so that
-the two agree. The sibling also carries Amplify's per-student `goal` column, but
-only for transparency — the aimline verdict comes from `aimline_status`, not
-from comparing a score to `goal`.
+Both models carry it, but **they do not mean the same thing**, and academics
+chose that deliberately. The internal method compares against
+`benchmark_goal_padded`, Amplify's standard plus their 3-word planning buffer,
+taken from the frozen goals sheet. The aimline sibling compares against the
+unpadded standard: the pad exists to make a cohort trajectory land slightly
+above the bar, and the aimline method builds no trajectory, so they keep the pad
+on the internal method and not on this one.
+
+The consequence is that the same student at the same score can read at grade
+level on the aimline method and not on the internal one, three words apart —
+measured on AY2025, 9,117 aimline rows meet the unpadded standard against 5,758
+that would meet the padded one. Intended, not a reconciliation defect, but the
+two columns must not be compared or unioned as though they answered one
+question.
+
+The sibling also carries Amplify's per-student `goal`, the season-end target,
+for context only. Do not derive the aimline verdict from it: Amplify evaluates a
+probe against its own trajectory, so comparing a score to `goal` reproduces
+`aimline_status` on only about five rows in six. `aimline_status` is the only
+aimline field the model uses. The source carries a further aimline column whose
+derivation is undocumented, and academics have said not to use it.
 
 The **goal** is season-level: `benchmark_goal` is the same number in every round
 of the season, unlike `cumulative_growth_words`, which climbs. The **flag** is
@@ -1662,15 +1691,20 @@ clearing the standard in round 2 says nothing about their round 3 row.
 
 ### Final extract: `rpt_tableau__dibels_dashboard`
 
-The model is a two-branch `UNION ALL` — one row per enrolled student × expected
-measure standard per administration round. Both branches share the same
+The model is a three-branch `UNION ALL` — one row per enrolled student ×
+expected measure standard per administration round. All three share the same
 enrollment spine and the same output column list (fields not applicable to a
 branch are set to `null`).
 
+**`model_type` tells them apart** — `BM`, `Internal`, `Aimline`. Both PM methods
+run K-8 in parallel, so any view that counts PM rows must filter it or every
+eligible student is counted once per method. This is the same hazard
+`int_amplify__all_assessments` carries, and for the same reason.
+
 #### Enrollment spine
 
-Both branches start from `int_extracts__student_enrollments_subjects` filtered
-to:
+All three branches start from `int_extracts__student_enrollments_subjects`
+filtered to:
 
 - `iready_subject = 'Reading'` — Reading ELA students only
 - `enroll_status in (0, 2, 3)` — active enrollment
@@ -1689,7 +1723,7 @@ to:
 All PM goal fields (`average_starting_words`, `pm_round_days`, `benchmark_goal`,
 etc.) and all `met_*` flags are hardcoded `null` in BM rows.
 
-#### PM branch
+#### PM branch, Internal method
 
 | Join                 | Model                                               | Type  | Effect if no match                                                                          |
 | -------------------- | --------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
@@ -1710,6 +1744,43 @@ they are (a) probe-eligible with a composite benchmark score **and** (b) have a
 corresponding row in the frozen PM goals sheet. This is stricter than the BM
 branch, where the Foundation goals join is LEFT and does not filter students
 out.
+
+#### PM branch, Aimline method
+
+| Join                 | Model                                                       | Type  | Effect if no match                                              |
+| -------------------- | ----------------------------------------------------------- | ----- | --------------------------------------------------------------- |
+| Eligibility + cohort | `int_amplify__benchmark_student_summary`                    | INNER | Student is **excluded** — needs `rn_pm_eligibility = 1`         |
+| Expected PM schedule | `int_google_sheets__dibels__expected_assessments_by_levels` | INNER | Must be in the schedule for the student's own cohort level      |
+| ELA course schedule  | `base_powerschool__course_enrollments`                      | LEFT  | Teacher / section columns are NULL                              |
+| Actual PM scores     | `int_amplify__all_assessments` (`model_type = 'Aimline'`)   | LEFT  | Score columns are NULL (student did not test that round)        |
+| Completion flags     | `int_students__dibels_participation_roster` (Aimline)       | LEFT  | Completion columns are NULL                                     |
+| Met-goal flags       | `int_amplify__pm_met_criteria_aimline`                      | LEFT  | Aimline flags are NULL, and `aimline_category` reads Not Tested |
+
+`int_amplify__benchmark_student_summary` does two jobs here. It is the
+eligibility gate, replacing the internal branch's composite join, and it
+supplies `overall_aimline_composite_level` — the cohort key the by-levels gate
+is split on. Join the gate without that predicate and it matches Below and Well
+Below alike, doubling every row.
+
+The internal method's own goal columns are `null` on this branch. Aimline builds
+no cohort trajectory, so it carries no day counts, no `starting_words` and no
+growth target, and its `benchmark_goal` comes from the gate unpadded. The five
+aimline-only columns — `aimline_cohort_level`, `aimline_status`,
+`met_aimline_goal`, `missed_aimline_consecutive`, `aimline_category` — are
+`null` on the other two branches in turn.
+
+**AY2026 resolves here and not on the internal branch.** The internal branch
+inner-joins the frozen PM goals sheet, which has no SY26-27 rows yet, so it
+produces nothing for the current year; aimline needs no frozen sheet and
+produces 30,363 rows. On AY2025 the two methods produce the same 44,860 rows
+over the same 4,706 students — correct rather than duplicated, because the
+by-levels sheet is a per-cohort copy of the internal sheet that year, so
+filtering to a student's own cohort reproduces the internal row set.
+
+Known and not fixed: 7 exact-duplicate AY2026 aimline rows, from the enrollment
+stint date predicate matching two overlapping stints. The Internal branch has
+the same defect on 2 rows, so fixing it means changing the shared predicate on
+both.
 
 ---
 
