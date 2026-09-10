@@ -1,48 +1,98 @@
 models:
   - name: int_amplify__pm_met_criteria
+    description: >-
+      Evaluates a progress-monitoring round against the internal method's custom
+      goals, one row per student per round per measure standard.
+
+      Internal method only. `cumulative_growth_words` comes from
+      `stg_google_sheets__dibels_pm_goals`, the frozen snapshot of goals the
+      internal method computes by spreading a cohort's required growth across a
+      round from school-day counts. Amplify's aimline method supplies a
+      per-student target instead and has no equivalent of any column here, so it
+      is evaluated by its own sibling model rather than a branch in this one.
+
+      Two filters keep that scope and are load-bearing rather than cosmetic.
+      `int_amplify__all_assessments` and
+      `int_students__dibels_participation_roster` each carry a row per data
+      method now, so the roster join matches on `model_type` and the score side
+      filters to `Internal`. Without both, a student's Internal and Aimline rows
+      join to each other and every row multiplies.
+
+      The rollup runs in three stages. Each measure standard is scored against
+      its cumulative growth target, then rolled up per `measure_name_code` so
+      that a code composed of several standards requires all of them — this is
+      what makes "met ORF" mean both Reading Fluency and Reading Accuracy. Then
+      the codes are combined per round by `pm_goal_criteria`, `AND` requiring
+      every code and anything else requiring one. T&L set `AND` network-wide for
+      every K-8 round from SY26-27, so the OR path applies to history only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            # region and assessment_grade_int are omitted deliberately: both are
+            # functionally determined by the student, and including grade would
+            # let a mid-year grade change admit two rows for one evaluated
+            # measure instead of failing.
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - admin_season
+              - round_number
+              - measure_standard
     columns:
       - name: academic_year
         data_type: int64
         description:
           Starting calendar year of the school year, extracted from school_year
           (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: region
         data_type: string
+        description:
+          The city form of the region — Newark, Camden, Miami, Paterson.
       - name: admin_season
         data_type: string
+        description: >-
+          The PM season the round belongs to, BOY->MOY or MOY->EOY. Named
+          admin_season because it joins the expectation gate's column of that
+          name; it is not a benchmark season.
       - name: assessment_grade
         data_type: string
         description: Grade level of the assessment administered.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: assessment_grade
       - name: assessment_grade_int
         data_type: int64
         description: Assessment grade as integer (K mapped to 0).
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: assessment_grade_int
       - name: measure_standard
         data_type: string
+        description: >-
+          The individual measure evaluated, at the grain the goals sheet sets
+          targets on — for example Reading Fluency (ORF) and Reading Accuracy
+          (ORF-Accu) are separate standards under one measure_name_code.
       - name: round_number
         data_type: int64
+        description: >-
+          The PM round, from the expectation gate. Round numbers run
+          consecutively across the year rather than restarting each season.
       - name: benchmark_goal
         data_type: int64
+        description: >-
+          The score that puts the student at grade level for the season, from
+          the frozen goals sheet. Distinct from the growth target — it answers
+          "at grade level yet" rather than "on pace".
       - name: round_growth_words_goal
         data_type: int64
+        description: The growth this round alone is expected to produce.
       - name: cumulative_growth_words
         data_type: int64
+        description: >-
+          The running growth target through this round, and what
+          met_measure_standard_goal compares against. The internal method
+          derives it by spreading a cohort's required growth across the season's
+          rounds using school-day counts.
       - name: pm_goal_criteria
         data_type: string
+        description: >-
+          How the round's measure codes combine — AND requires every code, and
+          anything else requires one. T&L set AND network-wide for every K-8
+          round from SY26-27.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
@@ -58,49 +108,57 @@ models:
         description:
           Short measure abbreviation extracted from the expanded measure name
           parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: measure_name_code
       - name: measure_standard_score
         data_type: float64
-        description: Raw assessment score, cast from the source score column.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: measure_standard_score
+        description: >-
+          The score evaluated, from int_amplify__all_assessments. Where a
+          student sat several probes in a round, this is the best score for the
+          measure, later probe winning a same-day tie.
       - name: start_date
         data_type: date
         description:
-          The start date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: start_date
+          First day of the PM round window, from the expectation gate.
       - name: end_date
         data_type: date
-        description:
-          The end date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: end_date
+        description: Last day of the PM round window, from the expectation gate.
       - name: completed_test_round
         data_type: boolean
+        description: >-
+          Whether the student was tested on every measure the round expected,
+          from the participation roster. The roster owns this because it is the
+          model that turns an expected-but-absent measure into a row;
+          int_amplify__all_assessments carries scored rows only.
       - name: met_measure_standard_goal
         data_type: int64
+        description: >-
+          1 when the score reaches cumulative_growth_words for this measure
+          standard, else 0.
       - name: met_admin_benchmark_goal
         data_type: int64
+        description: >-
+          1 when the score reaches benchmark_goal, else 0 — at grade level
+          rather than on pace. Independent of met_measure_standard_goal, and a
+          student can meet either without the other.
       - name: met_measure_name_code_goal
         data_type: int64
+        description: >-
+          1 when every measure standard under this measure_name_code met its
+          growth goal, else 0. This is what makes met ORF require both Reading
+          Fluency and Reading Accuracy.
       - name: met_pm_round_criteria
         data_type: int64
+        description: >-
+          The round-level rollup of met_measure_name_code_goal, combined by
+          pm_goal_criteria — the minimum across codes under AND, the maximum
+          otherwise.
       - name: met_pm_round_overall_criteria
         data_type: int64
-        description:
-          Categorical mapping of completed_test_round, met_pm_round_criteria,
-          pm_goal_criteria.
+        description: >-
+          met_pm_round_criteria gated on participation, so a round only counts
+          as met when the student was also tested on everything it expected.
+
+          Two known gaps, both confined to history now that T&L set AND
+          network-wide. There is no OR branch, so an OR round returns 0 even
+          when met_pm_round_criteria is 1; and the branch for a null
+          pm_goal_criteria does not require completed_test_round, unlike the AND
+          branch.

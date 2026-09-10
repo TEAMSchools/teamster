@@ -49,7 +49,13 @@ with
             and a.assessment_grade_int = p.grade_level
             and a.period = p.admin_season
             and a.round_number = p.round_number
-        where g.pm_goal_include is null
+            and a.model_type = p.model_type
+        -- this model evaluates the internal method only: cumulative_growth_words
+        -- comes from the custom goals sheet, which has no aimline equivalent.
+        -- Both filters are load-bearing -- the roster and all_assessments each
+        -- carry a row per method now, so without them a student's Internal and
+        -- Aimline rows match each other.
+        where g.pm_goal_include is null and a.model_type = 'Internal'
     ),
 
     met_measure_code_goal as (
