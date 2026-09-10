@@ -448,6 +448,21 @@ met — meaning students were told they missed a goal they had actually hit, and
 that propagated up through `met_measure_name_code_goal` to the round-level
 met/not-met on the dashboard.
 
+#### And separately, prod's PM completion gate never fires
+
+Every progress-monitoring row in the prod participation roster carries
+`completed_test_round = false` — all 39,981 of them across `BOY->MOY` and
+`MOY->EOY`, with not one `true`. Only the Benchmark seasons have true rows. So
+in prod an `AND` round can never be credited, whatever the student scored:
+`met_pm_round_overall_criteria` gates on a column that is false everywhere, and
+the only 1s prod reports come through the null (OR) branch, which skips the
+gate.
+
+The refactored roster fixes it, producing 15,078 true Internal PM rows on the
+same year. That makes the `AND` gate fire for the first time, so PM round
+attainment will rise against prod — a corrected number, not a regression, and
+worth telling T&L before they compare the two.
+
 **The rule to take from it: a dedup step belongs to exactly one grain.** If a
 CTE unions grains and then ranks, one side's sort key is meaningless on the
 other and nothing fails. Dedup before the union, or split the model. Extracting
@@ -1445,6 +1460,13 @@ completion status. Two binary goal flags per student × measure standard:
 - `met_admin_benchmark_goal = 1` if score ≥ `benchmark_goal` (the absolute
   benchmark threshold for the season, regardless of PM round)
 
+The two answer different questions — on pace versus at grade level — so a
+student can meet the growth goal for several rounds while still below the
+standard. They converge in the season's LAST round by construction, because
+`rpt_gsheets__dibels_pm_goal_setting` sets `cumulative_growth_words` to
+`benchmark_goal` outright when `is_max_round`. Seeing the two flags agree in a
+final round is expected, not a bug.
+
 **`met_measure_code_goal`** — Collapses across measure standards within a
 `measure_name_code` group. NWF (Nonsense Word Fluency), for example, has two
 standards always tested together — `met_measure_name_code_goal = 1` only when
@@ -1475,6 +1497,43 @@ The most conservative overall flag:
 two branches are exhaustive — the `case`'s `else` is unreachable rather than a
 missing `'OR'` branch.
 
+#### Labelled twins: the three `*_status` columns
+
+`met_pm_round_overall_criteria` is a 0/1 flag whose 0 carries two meanings —
+"did not meet" and "could not be evaluated" — so the model also emits
+`pm_round_status`, which separates them into `Met`, `Not Met` and
+`Round Incomplete`. Two sibling columns label the other two flags for symmetry:
+`measure_standard_goal_status` and `admin_benchmark_goal_status`, each `Met` or
+`Not Met`. They exist so the dashboard's goal-type selector can pick a column
+rather than convert a flag, which keeps the judgment in SQL and out of a
+workbook calculation.
+
+`Round Incomplete` is narrower than "the round was unfinished", because a
+missing measure only matters where it could still have changed the answer. Under
+`AND` one failed measure settles the round however much is missing; under the
+null (OR) criteria one passing measure does. So the label keys on
+`met_pm_round_criteria`, not on `met_pm_round_overall_criteria` — keying on the
+latter would sweep in every incomplete round that had already failed a measure
+it did sit, and overstate `Round Incomplete` roughly fourfold. On AY2025 it is
+375 rows of 35,524.
+
+`Round Incomplete` applies only to the round-level column. A measure standard
+that has a row was scored, so its own verdict is never indeterminate;
+incompleteness is a property of a set of measures, which is why the two twins
+have no third value. On all 374 `AND` `Round Incomplete` rows the standard twin
+reads `Met` — necessarily, since a passing `min()` across codes forces every
+standard to 1 — so the two views state different true things about the same row
+rather than contradicting each other.
+
+The fourth state, `Not Tested`, cannot come from this model: it holds scored
+rows only, so a student expected to test and not tested has no row here at all.
+`rpt_tableau__dibels_dashboard` drives from the expectation gate instead and
+coalesces the resulting null to `Not Tested` — 26,352 PM rows on AY2025. That
+leaves null on those three columns meaning one thing only: a Benchmark row.
+Three of the 26,352 have a score but no evaluation, from an eligibility mismatch
+between the score row and the composite row, and are labelled `Not Tested` along
+with the rest.
+
 #### Why completion gates AND but not OR
 
 `completed_test_round` exists because a round's met/not-met cannot be computed
@@ -1493,10 +1552,12 @@ students whose round criteria passed but who did not complete the round: 374
 
 Two things follow. The gate is a logical necessity under `AND`, not conservatism
 bolted on — so do not "simplify" it away. And those 374 rows are not failures;
-they are **unmeasurable**, reported as failures because the flag is binary. With
-`AND` network-wide from SY26-27 that population can only grow, which is exactly
-why the aimline reporting categories keep _Not Tested_ separate from _Below_
-rather than folding one into the other.
+they are **unmeasurable**. `met_pm_round_overall_criteria` cannot say so,
+because 0 means both "did not meet" and "could not be evaluated", which is why
+`pm_round_status` exists alongside it and labels them `Round Incomplete`. With
+`AND` network-wide from SY26-27 that population can only grow, which is also why
+the aimline reporting categories keep _Not Tested_ separate from _Below_ rather
+than folding one into the other.
 
 The NULL case does **not** require `completed_test_round` — this is intentional.
 `pm_goal_criteria` controls the AND/OR pass logic across measures that were
@@ -1518,10 +1579,21 @@ The three-CTE structure and AND/OR aggregation logic stay. The changes:
 - `cumulative_growth_words` score comparison → `aimline_status = 'At or Above'`
   check
 - `met_admin_benchmark_goal` — score ≥ `benchmark_goal` (the Amplify
-  end-of-admin target padded by +3 words from the PM goals sheet). This is an
-  absolute season-level threshold, not a round-by-round target — a student who
-  reaches it at any round has already hit the full-season standard. In AY
+  end-of-admin target padded by +3 words from the PM goals sheet). In AY
   2026–2027 it will compare against the aimline `goal` field directly.
+
+  The **goal** is season-level: `benchmark_goal` is the same number in every
+  round of the season, unlike `cumulative_growth_words`, which climbs. The
+  **flag** is not — it is a plain row-level comparison recomputed each round,
+  with no window function and no `max()` across rounds, so it returns to 0 when
+  a later score dips back below the standard. On AY2025, 2,499 of 18,715 student
+  × measure × seasons met the benchmark in some round and not in another, and
+  595 met it in an earlier round and then not in a later one.
+
+  Per-round is the intended behavior, so read the column as "at grade level in
+  this round" rather than "has reached grade level yet". The phrase _north star_
+  invites the latched reading and the column does not carry it — a student
+  clearing the standard in round 2 says nothing about their round 3 row.
 
 ---
 

@@ -1476,6 +1476,15 @@ Average understatement 10.25 points. Every flip went not-met to met: students
 were told they missed a goal they had hit, and it propagated through
 `met_measure_name_code_goal` to the round-level met/not-met on the dashboard.
 
+**Separately, prod's PM completion gate never fires.** Every PM row in the prod
+participation roster is `completed_test_round = false` -- all 39,981 across
+`BOY->MOY` and `MOY->EOY`, not one `true`; only Benchmark seasons have true
+rows. So prod can never credit an `AND` round whatever the student scored, and
+its only 1s come through the null (OR) branch, which skips the gate. The
+refactored roster produces 15,078 true Internal PM rows, so the gate fires for
+the first time and PM attainment rises against prod. Corrected, not regressed --
+say so before anyone compares the two.
+
 **The rule: if a CTE unions grains and then ranks, one side's sort key is
 meaningless on the other and nothing fails.** Dedup before the union, or split
 the model. Extracting the Benchmark half is what gave PM its own `max_score`,
@@ -1679,7 +1688,11 @@ how much transfers.
    (`completed_test_round`)
 
 And separately, never feeding that rollup: `met_admin_benchmark_goal`, which
-asks "already at grade level" rather than "on pace".
+asks "at grade level" rather than "on pace". Read it as _at grade level in this
+round_, not _has reached grade level_ -- it is recomputed per round and does not
+latch, so it drops back to 0 when a later score dips (AY2025: 595 student x
+measure x seasons met it in an earlier round and not in a later one). That is
+intended; the sibling's at-grade-level verdict is per round too.
 
 **Only question 1 is method-specific.** Amplify supplies `aimline_status`
 directly instead of us building a running target from school days. The skill
@@ -1705,6 +1718,44 @@ That first row is a rider from T&L's own definition -- "if a student is meeting
 benchmark but not aimline, they should still be in this category" -- so it is a
 priority cascade, NOT a 2x2 intersection. Getting that wrong puts a
 benchmark-meeting student in Below Aimline.
+
+### The met/not-met flags have labelled twins, and the workbook needs a change
+
+`int_amplify__pm_met_criteria` emits three `*_status` strings beside its flags:
+`pm_round_status` (`Met` / `Not Met` / `Round Incomplete`),
+`measure_standard_goal_status` and `admin_benchmark_goal_status` (`Met` /
+`Not Met`). `rpt_tableau__dibels_dashboard` passes all three through and
+coalesces the untested gap to `Not Tested`, so on a PM row they are never null
+and null now means one thing only -- a Benchmark row.
+
+They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
+and "could not be evaluated". `Round Incomplete` keys on
+`met_pm_round_criteria`, NOT on the overall flag -- under `AND` a measure the
+student sat and failed settles the round however much is missing, so keying on
+the overall flag overstates it about fourfold. 375 rows of 35,524 on AY2025.
+
+**The workbook is the other half of this and is not done.** The Literacy
+Dashboard's `PM - Met Goal Selector` is a CASE returning one of the three
+numeric flags, coloured null / 0 / 1 as No Data / Not Met / Met. To surface the
+new state, point each branch at the matching `*_status` column so the calc
+returns strings and carries no logic:
+
+```text
+CASE [PM - Met Goal Parameter]
+WHEN 'Met Overall Goal'   THEN [PM Round Status]
+WHEN 'Met Standard Goal'  THEN [Measure Standard Goal Status]
+WHEN 'Met Benchmark Goal' THEN [Admin Benchmark Goal Status]
+END
+```
+
+Two things to watch. The existing No Data alias is on the NULL member, and PM
+rows are no longer null -- repoint it to `Not Tested`. And check whether any
+sheet aggregates the selector as a measure (an `AVG()` met-rate); converting it
+to a string breaks that sheet, so if one exists, add the string version as a
+second calc for Colour and leave the numeric one for measures. The workbook's
+datasource is embedded, and Tableau's VizQL Data Service returns 500 on embedded
+sources, so the MCP cannot read the calculated fields -- this has to be checked
+in Desktop.
 
 ### The OR criteria is spelled NULL, and it is live on history
 
@@ -1750,9 +1801,11 @@ complete the round: **374 `AND` rows score 0, and 222 null rows score 1.** Do
 not "simplify" the gate away -- it is load-bearing under `AND`.
 
 Worth carrying into any reporting conversation: those 374 are not failures, they
-are **unmeasurable**, reported as failures because the flag is binary. With
-`AND` network-wide from SY26-27 that population only grows, which is why T&L's
-categories keep _Not Tested_ separate from _Below_ rather than folding it in.
+are **unmeasurable**. `met_pm_round_overall_criteria` cannot say so -- 0 means
+both "did not meet" and "could not be evaluated" -- so `pm_round_status` sits
+beside it and labels them `Round Incomplete`. With `AND` network-wide from
+SY26-27 that population only grows, which is why T&L's categories keep _Not
+Tested_ separate from _Below_ rather than folding it in.
 
 An earlier version of this section called the missing `'OR'` branch an inert
 gap, on the evidence that zero AY2025 rows carry `'OR'`. That was literally true
