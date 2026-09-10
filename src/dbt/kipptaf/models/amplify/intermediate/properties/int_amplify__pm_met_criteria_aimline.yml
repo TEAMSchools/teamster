@@ -40,18 +40,13 @@ models:
       unresolved.
 
       Assumptions taken pending T&L confirmation, each of which changes reported
-      numbers if wrong. The verdict is taken against `benchmark_goal_padded` —
-      the standard plus academics' 3-word buffer — to match the internal method,
-      whose frozen sheet already carries the pad; both figures are reported, so
-      taking the verdict against the unpadded standard instead is a one-word
-      change, and it would make this model the more generous of the two. An
-      unpublished status is reported as its own category rather than folded into
-      Below Aimline, because folding it would report a non-failure as a failure.
-      The consecutive-miss streak counts rounds the student actually sat,
-      passing over a skipped round rather than breaking the streak. And
-      `aimline_category` puts at-grade-level ahead of the aimline verdict, per
-      T&L's rule that a student meeting benchmark but not aimline still counts
-      as On Track.
+      numbers if wrong. An unpublished status is reported as its own category
+      rather than folded into Below Aimline, because folding it would report a
+      non-failure as a failure. The consecutive-miss streak counts rounds the
+      student actually sat, passing over a skipped round rather than breaking
+      the streak. And `aimline_category` puts at-grade-level ahead of the
+      aimline verdict, per T&L's rule that a student meeting benchmark but not
+      aimline still counts as On Track.
 
       Known population loss. 21 of 36,507 aimline rows on AY2025 do not survive
       the roster join — five students, all Newark. Two are absent from the
@@ -78,28 +73,41 @@ models:
       - name: aimline_category
         data_type: string
         description: >-
-          T&L's reporting category for the row — On Track & Meeting Aimline,
-          Meeting Aimline Off-Track, Below Aimline, or No Aimline Status.
+          T&L's reporting category for the row, per measure standard — Meeting
+          Aimline On-Track, Meeting Aimline Off-Track, Below Aimline, Not
+          Tested, or No Aimline Status. Their definitions, from the PM guidance
+          document, in the order the case tests them.
 
-          The cascade tests at-grade-level first, so a student who has reached
-          the benchmark lands in On Track whatever their own aimline says. That
-          is T&L's rule and it is deliberate, but note that the label then
-          misdescribes the subset it captures — a student at grade level and
-          below their aimline reads On Track & Meeting Aimline while not meeting
-          the aimline. Worth renaming to plain On Track when T&L revisits the
-          vocabulary.
+          Not Tested comes first and overrides everything else, because T&L
+          define it at the round rather than the row — a student not tested on
+          one or more of the measures the round expected is Not Tested for that
+          round, including on the measures they did sit. It is the same
+          completed_test_round gate the internal method applies, surfaced as a
+          category instead of a separate status. A student who sat nothing in
+          the round has no row here at all, and the reporting extract names
+          those.
 
-          Not Tested is not a value here. This model holds scored rows only, so
-          a student expected to test and not tested has no row; that state is
-          named in the reporting extract, as it is for the internal sibling.
+          Meeting Aimline, On-Track is at or above both the aimline and the
+          benchmark. T&L add that a student meeting benchmark but not aimline
+          belongs here too, so the case tests the benchmark alone and the label
+          slightly overstates what it checks. That is their wording and their
+          rule, recorded here so nobody 'corrects' it.
+
+          Meeting Aimline, Off-Track is at or above the aimline but not the
+          benchmark. Below Aimline is below the aimline. No Aimline Status is
+          the fifth value their four do not cover — the probe was sat, and
+          Amplify published no verdict, so neither Below Aimline nor Not Tested
+          is true of it. Academics chose to show the score and flag the missing
+          target rather than hide the row or call it Not Tested.
         data_tests:
           - not_null
           - accepted_values:
               arguments:
                 values:
-                  - On Track & Meeting Aimline
+                  - Meeting Aimline, On-Track
                   - Meeting Aimline, Off-Track
                   - Below Aimline
+                  - Not Tested
                   - No Aimline Status
       - name: pm_round_status
         data_type: string
@@ -155,6 +163,9 @@ models:
           the by-levels expectation gate is split on. Read from
           `int_amplify__all_assessments.overall_probe_eligible`, which carries
           the level rather than an eligibility flag on Aimline rows.
+        config:
+          meta:
+            contains_pii: true
       - name: round_number
         data_type: int64
         description: >-
@@ -163,20 +174,42 @@ models:
       - name: benchmark_goal
         data_type: numeric
         description: >-
-          The score that puts the student at grade level for the season —
-          Amplify's published standard from the by-levels gate, padded by 3
-          words here so it matches the internal method, whose frozen sheet is
-          padded once during goal setting. The padding is applied in this model,
-          so do not add it again downstream.
+          Amplify's published grade-level standard for the season, as the
+          by-levels gate carries it, and the bar met_admin_benchmark_goal
+          compares against.
+
+          Unpadded, unlike the internal method. Academics keep the 3-word
+          planning buffer for the internal method, whose frozen sheet carries it
+          in benchmark_goal_padded, and do not want it here — the pad exists to
+          make a cohort trajectory land slightly above the standard, and this
+          method builds no trajectory. The consequence is that the two methods'
+          met_admin_benchmark_goal are 3 words apart, so the same student at the
+          same score can read at grade level on this method and not on the
+          internal one. That is intended, not a reconciliation defect, but it
+          means the two columns must not be compared or unioned as though they
+          answered one question. Measured on AY2025: 9,117 rows meet the
+          unpadded standard against 5,758 that would meet the padded one.
       - name: goal
         data_type: numeric
         description: >-
-          The aimline target the probe was measured against, drawn from the
-          student's own starting score. The per-student counterpart to the
-          internal method's cumulative_growth_words, and the reason the two
-          methods can disagree about one student without either being wrong.
-          Carried for transparency — the verdict comes from Amplify's
-          aimline_status, not from comparing a score to this column.
+          Amplify's season-end aimline target for the student, drawn from their
+          own starting score. The per-student counterpart to the internal
+          method's benchmark target, and the reason the two methods can disagree
+          about one student without either being wrong. Carried for context,
+          because the season-end figure is a real number a school leader may
+          want.
+
+          Do NOT derive the aimline verdict by comparing a score to this column.
+          It is a season-end target and Amplify evaluates a probe against its
+          own trajectory, so the comparison reproduces aimline_status on only
+          about five rows in six. aimline_status is the only aimline field this
+          model uses, and the only one it should. The source carries a further
+          aimline column; how Amplify derives it is not documented or understood
+          here, and academics have said not to use it — so it is not a route to
+          filling a missing status either.
+        config:
+          meta:
+            contains_pii: true
       - name: pm_goal_criteria
         data_type: string
         description: >-
@@ -205,6 +238,9 @@ models:
           The score evaluated. Where a student sat several probes in a round
           this is the best score for the measure, chosen upstream in
           int_amplify__all_assessments.
+        config:
+          meta:
+            contains_pii: true
       - name: start_date
         data_type: date
         description:
@@ -228,6 +264,9 @@ models:
         description: >-
           Amplify's verdict as published — At or Above, Below, or null. Carried
           through so a reader can tell an absent verdict from a translated one.
+        config:
+          meta:
+            contains_pii: true
       - name: met_aimline_goal
         data_type: int64
         description: >-
@@ -239,8 +278,8 @@ models:
       - name: met_admin_benchmark_goal
         data_type: int64
         description: >-
-          1 when the score reaches benchmark_goal_padded — at grade level rather
-          than on pace. Independent of met_aimline_goal, and a student can meet
+          1 when the score reaches benchmark_goal — at grade level rather than
+          on pace. Independent of met_aimline_goal, and a student can meet
           either without the other. Recomputed every round and not latched, so a
           student who clears the standard and later dips reads 1 then 0. Null
           only where the gate publishes no standard for the measure at that
@@ -269,6 +308,15 @@ models:
           only when the student was also tested on everything it expected. An
           unresolved round reports 0 here, which is why pm_round_status exists
           alongside it — this column cannot distinguish a miss from an unknown.
+      - name: previous_expected_round
+        data_type: int64
+        description: >-
+          The round this measure was previously expected to be tested in for
+          this cohort, from the expectation gate rather than from the student's
+          own history. Null in a season's first expected round. Carried so a
+          reader can audit missed_aimline_consecutive rather than trust it, and
+          so the distinction between an expected round and a sat one stays
+          visible.
       - name: previous_met_aimline_goal
         data_type: int64
         description: >-
@@ -278,11 +326,20 @@ models:
       - name: missed_aimline_consecutive
         data_type: int64
         description: >-
-          1 when this round and the previous one both fell below the aimline for
-          this measure — T&L's two-in-a-row signal.
+          1 when this round and the round this measure was previously expected
+          in both fell below the aimline — T&L's two-in-a-row signal. Per
+          measure and within one PM season, as they define it.
 
-          Consecutive means consecutive among the rounds the student actually
-          sat. A skipped round is passed over rather than breaking the streak,
-          on the reasoning that a probe nobody administered is not evidence of
-          improvement. An unknown previous verdict does not start a streak, so
-          this is a floor on the real figure rather than an estimate of it.
+          Consecutive means consecutive among the rounds the student was
+          SUPPOSED to sit, not the rounds they did sit, which is why
+          previous_expected_round comes from the expectation gate rather than
+          from a lag over scored rows. Their example is the case that separates
+          the two: ORF tested in rounds 1 and 3 only. Round 2 was expected, so
+          rounds 1 and 3 are not consecutive and there is no streak — where a
+          lag over scored rows would have treated them as adjacent and counted
+          one.
+
+          A round the student was expected to sit but did not therefore breaks a
+          streak, and an unpublished verdict does not start one. Both make this
+          a floor on the real figure rather than an estimate of it. T&L dropped
+          the three-in-a-row variant.

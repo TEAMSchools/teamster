@@ -1,4 +1,25 @@
 with
+    expected_rounds as (
+        select
+            *,
+
+            lag(round_number) over (
+                partition by
+                    academic_year,
+                    region,
+                    grade,
+                    admin_season,
+                    measure_standard_level,
+                    expected_measure_standard
+                order by round_number
+            ) as previous_expected_round,
+
+        from {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }}
+        -- filtered before the window deliberately: a cancelled or scaffold round
+        -- is not one anyone was expected to sit, so it must not break a streak
+        where assessment_include is null and pm_goal_include is null
+    ),
+
     aimline_scores as (
         select
             a.academic_year,
@@ -12,39 +33,22 @@ with
             a.student_number,
             a.aimline_status,
             a.goal,
+            a.met_aimline_goal,
+            a.period as admin_season,
+            a.overall_probe_eligible as measure_standard_level,
 
             e.pm_goal_criteria,
             e.start_date,
             e.end_date,
+            e.benchmark_goal,
+            e.previous_expected_round,
 
             p.completed_test_round,
             p.completed_test_round_int,
 
-            a.period as admin_season,
-
-            -- on an Aimline row this column carries the composite level, not
-            -- 'Yes' -- it is the cohort key the by-levels gate is split on
-            a.overall_probe_eligible as measure_standard_level,
-
-            e.benchmark_goal,
-
-            -- padded to match the internal method, whose frozen sheet carries
-            -- the pad already. Both methods' met_admin_benchmark_goal therefore
-            -- answer the same question.
-            e.benchmark_goal + 3 as benchmark_goal_padded,
-
-            -- null is a real third value: Amplify publishes no verdict on about
-            -- a sixth of probes, and that is not a miss
-            case
-                when a.aimline_status = 'At or Above'
-                then 1
-                when a.aimline_status = 'Below'
-                then 0
-            end as met_aimline_goal,
-
         from {{ ref("int_amplify__all_assessments") }} as a
         inner join
-            {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }} as e
+            expected_rounds as e
             on a.academic_year = e.academic_year
             and a.region = e.region
             and a.assessment_grade_int = e.grade
@@ -52,8 +56,6 @@ with
             and a.round_number = e.round_number
             and a.measure_standard = e.expected_measure_standard
             and a.overall_probe_eligible = e.measure_standard_level
-            and e.assessment_include is null
-            and e.pm_goal_include is null
         inner join
             {{ ref("int_students__dibels_participation_roster") }} as p
             on a.academic_year = p.academic_year
@@ -66,14 +68,50 @@ with
         where a.assessment_type = 'PM' and a.model_type = 'Aimline'
     ),
 
+    with_previous as (
+        select
+            c.*,
+
+            p.met_aimline_goal as previous_expected_met_aimline_goal,
+
+            lag(c.met_aimline_goal) over (
+                partition by
+                    c.academic_year,
+                    c.student_number,
+                    c.admin_season,
+                    c.measure_standard
+                order by c.round_number
+            ) as previous_sat_met_aimline_goal,
+
+        from aimline_scores as c
+        left join
+            aimline_scores as p
+            on c.academic_year = p.academic_year
+            and c.student_number = p.student_number
+            and c.admin_season = p.admin_season
+            and c.measure_standard = p.measure_standard
+            and c.previous_expected_round = p.round_number
+    ),
+
+    previous_verdict as (
+        select
+            *,
+
+            coalesce(
+                previous_expected_met_aimline_goal, previous_sat_met_aimline_goal
+            ) as previous_met_aimline_goal,
+
+        from with_previous
+    ),
+
     measure_flags as (
         select
             *,
 
             case
-                when benchmark_goal_padded is null
+                when benchmark_goal is null
                 then null
-                when measure_standard_score >= benchmark_goal_padded
+                when measure_standard_score >= benchmark_goal
                 then 1
                 else 0
             end as met_admin_benchmark_goal,
@@ -96,15 +134,13 @@ with
                     student_number
             ) as code_min_met,
 
-        from aimline_scores
+        from previous_verdict
     ),
 
     code_goal as (
         select
             *,
 
-            -- a missed standard settles the code however many are unpublished;
-            -- only an otherwise-clean code is left indeterminate
             case
                 when code_min_met = 0
                 then 0
@@ -139,10 +175,6 @@ with
         select
             *,
 
-            -- the same asymmetry the completion gate rests on, applied to an
-            -- unpublished verdict instead of an unsat probe: under AND a single
-            -- miss settles the round, under the null (OR) criteria a single pass
-            -- does, and only where neither has happened is the round unknown
             case
                 when pm_goal_criteria = 'AND' and round_min_met = 0
                 then 0
@@ -174,15 +206,6 @@ with
                 else 1
             end as met_pm_round_overall_criteria,
 
-            -- consecutive among the rounds the student actually sat: a skipped
-            -- round is passed over rather than breaking the streak, because a
-            -- probe nobody administered is not evidence of improvement
-            lag(met_aimline_goal) over (
-                partition by
-                    academic_year, student_number, admin_season, measure_standard
-                order by round_number
-            ) as previous_met_aimline_goal,
-
         from round_criteria
     )
 
@@ -196,7 +219,6 @@ select
     measure_standard_level,
     round_number,
     benchmark_goal,
-    benchmark_goal_padded,
     goal,
     pm_goal_criteria,
     student_number,
@@ -212,6 +234,7 @@ select
     met_measure_name_code_goal,
     met_pm_round_criteria,
     met_pm_round_overall_criteria,
+    previous_expected_round,
     previous_met_aimline_goal,
 
     if(
@@ -232,12 +255,11 @@ select
         else 'Not Met'
     end as pm_round_status,
 
-    -- T&L's reporting categories. At grade level outranks the aimline verdict
-    -- deliberately: a student who has arrived is On Track whatever their own
-    -- trajectory says.
     case
+        when not completed_test_round
+        then 'Not Tested'
         when met_admin_benchmark_goal = 1
-        then 'On Track & Meeting Aimline'
+        then 'Meeting Aimline, On-Track'
         when met_aimline_goal = 1
         then 'Meeting Aimline, Off-Track'
         when met_aimline_goal = 0

@@ -31,6 +31,7 @@ select
     s.mtss_enrollment,
 
     'Benchmark' as assessment_type,
+    'BM' as model_type,
 
     a.start_date as expected_start_date,
     a.end_date as expected_end_date,
@@ -109,6 +110,11 @@ select
     null as measure_standard_goal_status,
     null as admin_benchmark_goal_status,
     null as pm_round_status,
+    null as aimline_cohort_level,
+    null as aimline_status,
+    null as met_aimline_goal,
+    null as missed_aimline_consecutive,
+    null as aimline_category,
 
     cast(a.round_number as string) as expected_round_number,
 
@@ -210,6 +216,7 @@ select
     s.mtss_enrollment,
 
     'PM' as assessment_type,
+    'Internal' as model_type,
 
     e.start_date as expected_start_date,
     e.end_date as expected_end_date,
@@ -297,6 +304,11 @@ select
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
     coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+    null as aimline_cohort_level,
+    null as aimline_status,
+    null as met_aimline_goal,
+    null as missed_aimline_consecutive,
+    null as aimline_category,
 
     cast(e.round_number as string) as expected_round_number,
 
@@ -376,6 +388,213 @@ left join
     and rs.model_type = 'Internal'
 left join
     {{ ref("int_amplify__pm_met_criteria") }} as pm
+    on e.academic_year = pm.academic_year
+    and e.grade = pm.assessment_grade_int
+    and e.admin_season = pm.admin_season
+    and e.round_number = pm.round_number
+    and e.expected_measure_standard = pm.measure_standard
+    and s.student_number = pm.student_number
+where
+    s.iready_subject = 'Reading'
+    and not s.is_self_contained
+    and not s.is_out_of_district
+    and s.enroll_status in (0, 2, 3)
+
+union all
+
+select
+    s._dbt_source_relation,
+    s.academic_year,
+    s.academic_year_display,
+    s.district,
+    s.state,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.studentid,
+    s.student_number,
+    s.student_name,
+    s.grade_level as grade_level_int,
+    s.is_out_of_district,
+    s.gender,
+    s.ethnicity,
+    s.is_homeless,
+    s.iep_status,
+    s.is_504,
+    s.lep_status,
+    s.lunch_status,
+    s.gifted_and_talented,
+    s.enroll_status,
+    s.advisory,
+    s.cohort,
+    s.hos,
+    s.nj_student_tier,
+    s.is_tutoring as tutoring_nj,
+    s.is_sipps,
+    s.mtss_enrollment,
+
+    'PM' as assessment_type,
+    'Aimline' as model_type,
+
+    e.start_date as expected_start_date,
+    e.end_date as expected_end_date,
+    e.admin_season as expected_test,
+    e.month_round as expected_month_round,
+    e.grade as expected_grade_level_int,
+    e.expected_measure_name_code,
+    e.expected_measure_name,
+    e.expected_measure_standard,
+
+    null as admin_goal_season,
+    null as admin_goal,
+    null as admin_goal_grade_range,
+    null as n_admin_season_school_gl_all,
+    null as n_admin_season_school_gl_at_above,
+    null as n_admin_season_school_gl_bl_wb,
+    null as n_admin_season_school_gl_at_above_expected,
+    null as n_admin_season_school_gl_at_above_gap,
+    null as n_admin_season_region_gl_all,
+    null as n_admin_season_region_gl_at_above,
+    null as n_admin_season_region_gl_bl_wb,
+    null as n_admin_season_region_gl_at_above_expected,
+    null as n_admin_season_region_gl_at_above_gap,
+
+    e.grade as grade_level,
+    e.grade_level_text as expected_grade_level,
+
+    null as average_starting_words,
+    null as pm_round_days,
+    null as pm_days,
+
+    e.benchmark_goal,
+
+    null as benchmark_goal_padded,
+    null as required_growth_words,
+    null as daily_growth_rate,
+    null as round_growth_words_goal,
+    null as goal,
+
+    c.students_student_number as schedule_student_number,
+    c.cc_teacherid as teacherid,
+    c.teacher_lastfirst as teacher_name,
+    c.courses_course_name as course_name,
+    c.cc_course_number as course_number,
+    c.cc_section_number as section_number,
+
+    a.student_number as mclass_student_number,
+    a.assessment_grade,
+    a.period,
+    a.client_date,
+    a.start_date,
+    a.end_date,
+    a.measure_name,
+    a.measure_name_code,
+    a.measure_standard,
+    a.measure_standard_score,
+    a.measure_standard_level,
+    a.measure_standard_level_int,
+    a.measure_percentile,
+    a.measure_semester_growth,
+    a.measure_year_growth,
+
+    r.boy_composite,
+    r.moy_composite,
+    r.eoy_composite,
+
+    null as aggregated_measure_standard_level,
+    null as foundation_measure_standard_level,
+
+    rs.expected_row_count,
+    rs.actual_row_count,
+    rs.completed_test_round,
+    rs.completed_test_round_int,
+
+    null as met_measure_standard_goal,
+
+    pm.met_admin_benchmark_goal,
+    pm.met_measure_name_code_goal,
+    pm.met_pm_round_criteria,
+    pm.met_pm_round_overall_criteria,
+
+    null as measure_standard_goal_status,
+    null as admin_benchmark_goal_status,
+
+    coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+
+    r.overall_aimline_composite_level as aimline_cohort_level,
+
+    pm.aimline_status,
+    pm.met_aimline_goal,
+    pm.missed_aimline_consecutive,
+
+    coalesce(pm.aimline_category, 'Not Tested') as aimline_category,
+
+    cast(e.round_number as string) as expected_round_number,
+
+    right(c.courses_course_name, 1) as schedule_student_grade_level,
+
+    if(c.students_student_number = s.student_number, 1, 0) as scheduled,
+
+from {{ ref("int_extracts__student_enrollments_subjects") }} as s
+inner join
+    {{ ref("int_amplify__benchmark_student_summary") }} as r
+    on s.academic_year = r.academic_year
+    and s.student_number = r.student_number
+    and s.grade_level = r.assessment_grade_int
+    and r.rn_pm_eligibility = 1
+inner join
+    {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }} as e
+    on s.academic_year = e.academic_year
+    and s.region = e.region
+    and s.grade_level = e.grade
+    and r.matching_season = e.admin_season
+    and r.overall_aimline_composite_level = e.measure_standard_level
+    and (
+        e.start_date between s.entrydate and s.exitdate
+        or e.end_date between s.entrydate and s.exitdate
+    )
+    and e.assessment_include is null
+    and e.pm_goal_include is null
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as c
+    on s.academic_year = c.cc_academic_year
+    and s.schoolid = c.cc_schoolid
+    and s.student_number = c.students_student_number
+    and s._dbt_source_project = c._dbt_source_project
+    and c.rn_course_number_year = 1
+    and not c.is_dropped_section
+    and c.cc_section_number not like '%SC%'
+    and c.courses_course_name in (
+        'ELA GrK',
+        'ELA K',
+        'ELA Gr1',
+        'ELA Gr2',
+        'ELA Gr3',
+        'ELA Gr4',
+        'ELA Gr5',
+        'ELA Gr6',
+        'ELA Gr7',
+        'ELA Gr8'
+    )
+left join
+    {{ ref("int_amplify__all_assessments") }} as a
+    on e.academic_year = a.academic_year
+    and e.admin_season = a.period
+    and e.round_number = a.round_number
+    and e.expected_measure_standard = a.measure_standard
+    and s.student_number = a.student_number
+    and a.model_type = 'Aimline'
+left join
+    {{ ref("int_students__dibels_participation_roster") }} as rs
+    on e.academic_year = rs.academic_year
+    and e.grade = rs.grade_level
+    and e.admin_season = rs.admin_season
+    and e.round_number = rs.round_number
+    and s.student_number = rs.student_number
+    and rs.model_type = 'Aimline'
+left join
+    {{ ref("int_amplify__pm_met_criteria_aimline") }} as pm
     on e.academic_year = pm.academic_year
     and e.grade = pm.assessment_grade_int
     and e.admin_season = pm.admin_season
