@@ -113,8 +113,18 @@ with
             -- unrecorded day leaves daily_code null, which is exactly how
             -- PowerSchool encodes it.
             if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
+
+            fcw.week_start_monday,
+            fcw.week_end_sunday,
+            fcw.week_number_academic_year,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
+        left join
+            {{ ref("int_focus__calendar_week") }} as fcw
+            on ad.schoolid = fcw.schoolid
+            and ad.academic_year = fcw.academic_year
+            and ad.school_date between fcw.week_start_monday and fcw.week_end_sunday
+            and ad._dbt_source_project = fcw._dbt_source_project
         -- One row. See int_students__sis_cutover for why the boundary is a
         -- floor derived from recorded attendance rather than from Focus row
         -- presence: int_focus__attendance_daily scaffolds a present-by-default
@@ -167,9 +177,9 @@ with
             t.semester,
             t.term,
 
-            cw.week_start_monday,
-            cw.week_end_sunday,
-            cw.week_number_academic_year,
+            mem.week_start_monday,
+            mem.week_end_sunday,
+            mem.week_number_academic_year,
 
             abs(mem.attendancevalue - 1) as is_absent,
 
@@ -235,12 +245,7 @@ with
             and mem.calendardate between t.term_start_date and t.term_end_date
             and mem._dbt_source_project = t._dbt_source_project
             and t.term is not null
-        inner join
-            {{ ref("int_students__calendar_week") }} as cw
-            on mem.yearid = cw.yearid
-            and mem.schoolid = cw.schoolid
-            and mem.calendardate between cw.week_start_monday and cw.week_end_sunday
-            and mem._dbt_source_project = cw._dbt_source_project
+        where mem.week_start_monday is not null
     ),
 
     anchors as (
