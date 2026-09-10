@@ -37,12 +37,6 @@ with
 
             c.administered_date,
 
-            -- assessment_date_key: the date used for academic-year / calendar
-            -- rollups -- administration date where present (internal/college),
-            -- else the student's test date. State/vendor administrations span a
-            -- window and carry no single administration date, so the join to
-            -- dim_dates must key on this to resolve academic_year for them
-            -- (#4546).
             coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
 
             cast(null as numeric) as scale_score,
@@ -297,16 +291,16 @@ with
     ),
 
     -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test, so
-    -- same-day retests and fiscal-year re-pull duplicates reach this model.
-    -- Remove this dedupe when staging is fixed.
+    -- students who retest the same subject on the same day arrive as separate
+    -- rows. Remove this dedupe when staging is fixed.
     --
     -- Two things the partition key gets right and would be easy to "fix"
-    -- wrong. It omits academic_year, because a re-pull repeats one sitting
-    -- under a second fiscal-year partition with the same test_date but a
-    -- different pull-derived academic_year, and keying on it keeps both
-    -- (#4546). It includes response_type_code, because domain rows share
+    -- wrong. It includes response_type_code, because domain rows share
     -- module_code with the subject-level anchor, and without it every domain
-    -- and its anchor collapse into one row.
+    -- and its anchor collapse into one row. It omits academic_year, which
+    -- guards the fiscal-year re-pull of #4388 -- fixed, but structural and
+    -- due to recur each July 1, so adding academic_year here would let a
+    -- re-pulled sitting through as two rows.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -350,11 +344,11 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- Permanent, not a workaround for #4388: STAR records each sitting under
-    -- its own assessment_id and students genuinely retest the same subject on
-    -- the same day, so this grain is coarser than staging on purpose.
-    -- scale_score desc keeps the best sitting. academic_year is omitted from
-    -- the partition for the same #4546 reason as i-Ready above.
+    -- Permanent, not a workaround for #4388 (which is fixed): STAR records
+    -- each sitting under its own assessment_id and students genuinely retest
+    -- the same subject on the same day, so this grain is coarser than staging
+    -- on purpose. scale_score desc keeps the best sitting. academic_year is
+    -- omitted from the partition as the same July-1 guard as i-Ready above.
     star_scores as (
         {{
             dbt_utils.deduplicate(
@@ -615,8 +609,6 @@ select
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
-    -- state administrations carry no administration date; test_date is the
-    -- calendar date used for academic-year rollups (#4546)
     su.test_date as assessment_date_key,
 
     su.scale_score,
@@ -708,8 +700,6 @@ select
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
-    -- vendor administrations carry no administration date; test_date is the
-    -- calendar date used for academic-year rollups (#4546)
     va.test_date as assessment_date_key,
 
     va.scale_score,
