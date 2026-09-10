@@ -1,7 +1,7 @@
 with
     pm_rounds as (
         select
-            s.schoolcity as region,
+            c.schoolcity as region,
 
             t.academic_year,
             t.name as term_name,
@@ -10,20 +10,15 @@ with
 
             count(distinct c.date_value) as pm_round_days,
 
-        from {{ ref("stg_powerschool__schools") }} as s
-        inner join
-            {{ ref("stg_powerschool__calendar_day") }} as c
-            on s.school_number = c.schoolid
-            and c.insession = 1
-            and s._dbt_source_project = c._dbt_source_project
+        from {{ ref("int_powerschool__calendar_day") }} as c
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as t
-            on s.schoolcity = t.region
+            on c.schoolcity = t.region
             and c.date_value between t.start_date and t.end_date
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
-        where s.state_excludefromreporting = 0
-        group by s.schoolcity, t.academic_year, t.name, round_number
+        where c.insession = 1
+        group by c.schoolcity, t.academic_year, t.name, round_number
     ),
 
     pm_rounds_agg as (

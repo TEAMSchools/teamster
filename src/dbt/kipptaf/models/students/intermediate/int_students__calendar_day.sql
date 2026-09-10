@@ -13,12 +13,11 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- LEFT JOIN: `stg_powerschool__terms` carries only `isyearrec` = 1 windows,
-    -- and some real calendar days fall outside every window — mostly August
-    -- pre-service dates, plus a 15-day Paterson gap. An INNER JOIN silently
-    -- dropped those days from this model and from `dim_school_calendars`, which
-    -- reads it directly. `yearid` is null for a day with no covering term, and
-    -- nothing downstream requires it or `academic_year` to be non-null.
+    -- yearid comes from the package's int_powerschool__calendar_day, a left
+    -- join to the isyearrec = 1 term window. Some real calendar days fall
+    -- outside every window (August pre-service dates, a 15-day Paterson gap);
+    -- their yearid and academic_year are null, and nothing downstream requires
+    -- either to be non-null.
     powerschool_dated as (
         select
             cd._dbt_source_relation,
@@ -31,23 +30,17 @@ with
             cd.date_value,
             cd.date_value as school_date,
 
-            t.yearid,
+            cd.yearid,
 
             cd.insession = 1 as is_in_session,
             cd.membershipvalue > 0 as is_in_membership,
-        from {{ ref("stg_powerschool__calendar_day") }} as cd
-        left join
-            {{ ref("stg_powerschool__terms") }} as t
-            on cd.schoolid = t.schoolid
-            and cd.date_value between t.firstday and t.lastday
-            and cd._dbt_source_project = t._dbt_source_project
-            and t.isyearrec = 1
-        -- stg_powerschool__calendar_day NULLs date_value for pre-2000 sentinel
-        -- rows (a handful of PowerSchool junk records). The old INNER JOIN
-        -- incidentally dropped them (BETWEEN against NULL is never true); the
-        -- LEFT JOIN above no longer does, so drop them explicitly -- they were
-        -- never real calendar days.
-        where cd.date_value is not null
+        from {{ ref("int_powerschool__calendar_day") }} as cd
+        -- PowerSchool carries a handful of pre-2000 sentinel junk rows. The old
+        -- source (kipptaf's stg_powerschool__calendar_day) nulled their
+        -- date_value and this model dropped the nulls; the package's
+        -- int_powerschool__calendar_day passes them through, so drop them by
+        -- date here instead -- they were never real calendar days.
+        where cd.date_value >= date '2000-01-01'
     ),
 
     -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,

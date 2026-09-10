@@ -1,12 +1,4 @@
 with
-    -- dcid >= 1 is the placeholder filter. See the model description for why
-    -- student_number is the join key.
-    powerschool_students as (
-        select id as studentid, student_number, _dbt_source_project,
-        from {{ ref("stg_powerschool__students") }}
-        where dcid >= 1
-    ),
-
     powerschool_conformed as (
         select
             gt._dbt_source_relation,
@@ -25,14 +17,13 @@ with
             gt.total_credit_hours_y1,
             gt.grade_avg_term,
             gt.grade_avg_y1,
+            gt.students_student_number as student_number,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
             gc.cumulative_y1_gpa_projected,
             gc.earned_credits_cum,
             gc.potential_credits_cum,
-
-            ps.student_number,
 
             -- PowerSchool's yearid is academic_year - 1990. gpa_term carries no
             -- academic_year of its own, and the Focus branch has no yearid, so
@@ -47,14 +38,6 @@ with
             on gt.studentid = gc.studentid
             and gt.schoolid = gc.schoolid
             and gt._dbt_source_project = gc._dbt_source_project
-        -- left, not inner: an inner join would silently drop any GPA row whose
-        -- student fails the dcid >= 1 placeholder filter, changing the NJ
-        -- population. Measured at zero such rows, but the join type is what
-        -- guarantees it stays that way.
-        left join
-            powerschool_students as ps
-            on gt.studentid = ps.studentid
-            and gt._dbt_source_project = ps._dbt_source_project
     ),
 
     focus_conformed as (
