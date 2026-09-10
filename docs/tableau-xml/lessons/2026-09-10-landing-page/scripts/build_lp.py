@@ -52,10 +52,69 @@ def element(text: str, open_pat: str, close_tag: str) -> str:
 
 
 # ---------------------------------------------------------------- task 3
+#: The datasource-level calcs this build adds to the goals source, in the order
+#: they are written. Each is one of the workbook's own goal calcs with the
+#: `p_Region` branch resolved: the 001/002 pair to the region goal (so a region
+#: row compares against its own goal) and 003 to the org goal (Controller
+#: Ruling 10: a network tile must not follow a parameter another tab controls).
+#: Formulas are stored XML-escaped, exactly as they land in the file.
+LP_CALCS: tuple[tuple[str, str, str], ...] = (
+    (
+        "Calculation_7700000000000000001",
+        "LP Students still needed (region)",
+        "// LP copy of [Students still needed] with the p_Region branch removed&#10;"
+        "IF [Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10;"
+        "   &gt;= AVG([gpa_goal_proportion_region])&#10;"
+        "THEN 0&#10;"
+        "ELSE ROUND(AVG([gpa_goal_proportion_region]) * [Calculation_4693780698737655073])&#10;"
+        "     - [Calculation_9485136151529756033]&#10;"
+        "END",
+    ),
+    (
+        "Calculation_7700000000000000002",
+        "LP Gap to goal (region)",
+        "// LP copy of [Gap to goal (pts)] with the p_Region branch removed&#10;"
+        "([Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10;"
+        " - AVG([gpa_goal_proportion_region])) * 100",
+    ),
+    (
+        "Calculation_7700000000000000003",
+        "LP Students still needed (org)",
+        "// LP copy of [Students still needed] with the p_Region branch removed&#10;"
+        "IF [Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10;"
+        "   &gt;= AVG([gpa_goal_proportion_org])&#10;"
+        "THEN 0&#10;"
+        "ELSE ROUND(AVG([gpa_goal_proportion_org]) * [Calculation_4693780698737655073])&#10;"
+        "     - [Calculation_9485136151529756033]&#10;"
+        "END",
+    ),
+)
+LP_CALC_BY_NAME = {name: (cap, formula) for name, cap, formula in LP_CALCS}
+#: the region-goal shortfall (strip sheets) and the org-goal one (network tile)
+LP_NEEDED_REGION = "Calculation_7700000000000000001"
+LP_NEEDED_ORG = "Calculation_7700000000000000003"
+
+
+def lp_calc_column(name: str, indent: int) -> str:
+    """One LP calc as a `<column>` element at the requested indentation.
+
+    The same calc is written twice at different depths: once at the
+    datasource level (6 spaces) and once inside the worksheet that uses it
+    (12 spaces), which is how every other calc in base.twb is carried."""
+    caption, formula = LP_CALC_BY_NAME[name]
+    pad = " " * indent
+    return (
+        f"{pad}<column caption='{caption}' datatype='real' name='[{name}]' "
+        f"role='measure' type='quantitative'>\r\n"
+        f"{pad}  <calculation class='tableau' formula='{formula}' />\r\n"
+        f"{pad}</column>\r\n"
+    )
+
+
 def add_goal_calcs(t: str) -> str:
-    """Two region-goal variants of the existing goal pair, on the goals source.
-    The originals read the org or region goal by p_Region; these read the
-    region goal only, so a region row compares against its own goal.
+    """The LP_CALCS variants of the existing goal pair, on the goals source.
+    The originals read the org or region goal by p_Region; these resolve that
+    branch at build time.
 
     The datasource-level column carries 6-space indentation; the worksheet-level
     copies carry 12-space indentation. A plain-substring anchor on just the
@@ -69,16 +128,7 @@ def add_goal_calcs(t: str) -> str:
         "name='[Calculation_3466859908724272046]' role='measure' type='quantitative'>"
     )
     anchor = "\r\n" + anchor_line
-    block = crlf(
-        """
-      <column caption='LP Students still needed (region)' datatype='real' name='[Calculation_7700000000000000001]' role='measure' type='quantitative'>
-        <calculation class='tableau' formula='// LP copy of [Students still needed] with the p_Region branch removed&#10;IF [Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10;   &gt;= AVG([gpa_goal_proportion_region])&#10;THEN 0&#10;ELSE ROUND(AVG([gpa_goal_proportion_region]) * [Calculation_4693780698737655073])&#10;     - [Calculation_9485136151529756033]&#10;END' />
-      </column>
-      <column caption='LP Gap to goal (region)' datatype='real' name='[Calculation_7700000000000000002]' role='measure' type='quantitative'>
-        <calculation class='tableau' formula='// LP copy of [Gap to goal (pts)] with the p_Region branch removed&#10;([Calculation_9485136151529756033] / [Calculation_4693780698737655073]&#10; - AVG([gpa_goal_proportion_region])) * 100' />
-      </column>
-"""
-    )
+    block = "".join(lp_calc_column(name, 6) for name, _cap, _f in LP_CALCS)
     return sub_once(t, anchor, "\r\n" + block + anchor_line)
 
 
@@ -370,6 +420,15 @@ def add_tile_failures(t: str) -> str:
 #: <datasource-dependencies>. Copying the calc alone breaks it.
 NEEDED_CALC = "Calculation_5262281088199017638"
 NEEDED_INST = f"[usr:{NEEDED_CALC}:qk]"
+#: Controller Ruling 10. `Students still needed` branches on
+#: `[Parameters].[Parameter 3]` (p_Region). The tile drops its region filter,
+#: but a Tableau parameter is workbook-global: a user who sets p_Region on the
+#: Cumulative GPA Monitor would silently switch the NETWORK tile's shortfall to
+#: a region goal, with nothing on the tile saying so. The tile therefore reads
+#: the org-goal copy instead, and every reference the tile carries -- column
+#: definition, column-instance, text encoding, mark-label token and the
+#: `#,##0` format line -- is repointed to it.
+ORG_INST = f"[usr:{LP_NEEDED_ORG}:qk]"
 #: the inputs of NEEDED_CALC's formula, in the order the source declares them
 NEEDED_INPUTS = (
     ("Measured (projected)", "Calculation_4693780698737655073"),
@@ -395,20 +454,25 @@ def one_line(src: str, pattern: str, what: str) -> str:
 
 
 def needed_lines(t: str) -> dict[str, str]:
-    """Every line the cumulative tile has to borrow, keyed for readability."""
+    """Every line the cumulative tile has to borrow, keyed for readability.
+
+    Ruling 10: the calc itself is NOT borrowed -- it is the org-goal copy
+    written at worksheet depth. The instance and the number format ARE
+    borrowed, so their attribute spelling stays whatever the donor sheet uses,
+    with only the calc name repointed."""
     src = worksheet_block(t, "GPA - BAN Students needed")
     out = {
-        "calc": paired_column(src, NEEDED_CALC),
+        "calc": "\r\n" + lp_calc_column(LP_NEEDED_ORG, 12).rstrip("\r\n"),
         "inst": one_line(
             src,
             rf"\r\n            <column-instance column='\[{NEEDED_CALC}\]'[^>]*/>",
             "column-instance",
-        ),
+        ).replace(NEEDED_CALC, LP_NEEDED_ORG),
         "format": one_line(
             src,
             rf"\r\n            <format attr='text-format' field='\[{re.escape(GOAL_DS)}\]\.\[usr:{NEEDED_CALC}:qk\]'[^>]*/>",
             "text-format rule",
-        ),
+        ).replace(NEEDED_CALC, LP_NEEDED_ORG),
     }
     for _caption, name in NEEDED_INPUTS:
         out[name] = paired_column(src, name)
@@ -434,7 +498,7 @@ def add_tile_cumulative(t: str) -> str:
     # Ruling 9: the headline % follows [Parameter 11] through Cum GPA
     # (unweighted); the borrowed count is hard-wired to the projected columns,
     # so the run says so, mirroring the Monitor's own "always projected".
-    still = f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'><![CDATA[<[{GOAL_DS}].{NEEDED_INST}> students still needed (projected)]]></run>"
+    still = f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'><![CDATA[<[{GOAL_DS}].{ORG_INST}> students still needed (projected)]]></run>"
     edits = [
         (
             "<worksheet name='LP - Tile Cumulative GPA'>\r\n      <table>",
@@ -476,7 +540,7 @@ def add_tile_cumulative(t: str) -> str:
             (
                 pct_text,
                 pct_text
-                + f"\r\n              <text column='[{GOAL_DS}].{NEEDED_INST}' />",
+                + f"\r\n              <text column='[{GOAL_DS}].{ORG_INST}' />",
             ),
         ]
     drop_filter(
@@ -497,10 +561,21 @@ def assert_closure(block: str, name: str) -> None:
     The invariant every worksheet in base.twb satisfies (250/250 calc
     definitions). Checked here because the cumulative tile is the one clone
     that imports a calculation its source sheet never carried.
+
+    A `//` comment line is not code: the LP calcs open with
+    `// LP copy of [Students still needed] ...`, and scanning the raw formula
+    reads that caption as a field reference and fails on a sheet that is in
+    fact closed. Comment lines are dropped before the scan. Formula newlines
+    are the XML entity `&#10;`, not a real newline.
     """
     declared = set(re.findall(r"<column(?:-instance)? [^>]*name='\[([^\]]*)\]'", block))
     for formula in re.findall(r"<calculation class='tableau' formula='([^']*)'", block):
-        for ref in re.findall(r"\[([A-Za-z_][A-Za-z0-9_ ]*)\]", formula):
+        code = "&#10;".join(
+            line
+            for line in formula.split("&#10;")
+            if not line.lstrip().startswith("//")
+        )
+        for ref in re.findall(r"\[([A-Za-z_][A-Za-z0-9_ ]*)\]", code):
             if ref in ("Parameters",) or ref in declared:
                 continue
             raise RuntimeError(f"[{name}] calc references undeclared field [{ref}]")
@@ -528,6 +603,209 @@ def add_tile_gradebook(t: str) -> str:
     return add_window(t, "LP - Tile Gradebook Health")
 
 
+# ---------------------------------------------------------------- task 5: strips
+REGION_COL_LINE = (
+    "            <column caption='Region' datatype='string' name='[region]' "
+    "role='dimension' type='nominal' />"
+)
+REGION_INST_LINE = (
+    "            <column-instance column='[region]' derivation='None' "
+    "name='[none:region:nk]' pivot='key' type='nominal' />"
+)
+
+
+def insert_dep_sorted(w: str, name: str, ds: str, line: str, key: str) -> str:
+    """Add one dependency line to a worksheet's <datasource-dependencies>.
+
+    Tableau writes the children of that element in plain ASCII order of their
+    `name='[...]'`, columns and column-instances interleaved, and rewrites the
+    order on every save. Inserting at the sorted position keeps a hand-edited
+    sheet byte-comparable with one Desktop has re-saved, which is what makes a
+    later diff of the file readable."""
+    dep = element(
+        w,
+        rf"\r\n          <datasource-dependencies datasource='{re.escape(ds)}'>",
+        "          </datasource-dependencies>",
+    )
+    pos = None
+    for m in re.finditer(
+        r"\r\n            <column(?:-instance)? [^>]*name='\[([^\]]*)\]'", dep
+    ):
+        if m.group(1) > key:
+            pos = m.start()
+            break
+    if pos is None:
+        pos = dep.rindex("\r\n          </datasource-dependencies>")
+    return sub_once(w, dep, dep[:pos] + "\r\n" + line + dep[pos:])
+
+
+def set_title(w: str, name: str, run: str) -> str:
+    """Replace the single <title> run with a static header run."""
+    w, n = re.subn(
+        r"(<title>\r\n          <formatted-text>\r\n)            <run [^>]*>.*?</run>"
+        r"(\r\n          </formatted-text>\r\n        </title>)",
+        lambda m: f"{m.group(1)}            {run}{m.group(2)}",
+        w,
+        count=1,
+        flags=re.S,
+    )
+    if n != 1:
+        raise RuntimeError(f"[{name}] title run: matched {n}, wanted 1")
+    return w
+
+
+def set_label(w: str, name: str, runs: list[str]) -> str:
+    """Replace the whole mark label with `runs`, one per line.
+
+    Field tokens only resolve in a mark label when the sheet declares the
+    column-instance they name, so every token is checked against the sheet's
+    own dependencies before it is written."""
+    body = "                " + BRK.join(runs)
+    for tok in re.findall(r"\[((?:usr|none):[^\]]*)\]", body):
+        if f"name='[{tok}]'" not in w:
+            raise RuntimeError(f"[{name}] label token [{tok}] is not declared")
+    w, n = re.subn(
+        r"(<customized-label>\r\n              <formatted-text>\r\n).*?"
+        r"(\r\n              </formatted-text>\r\n            </customized-label>)",
+        lambda m: m.group(1) + body + m.group(2),
+        w,
+        count=1,
+        flags=re.S,
+    )
+    if n != 1:
+        raise RuntimeError(f"[{name}] customized-label: matched {n}, wanted 1")
+    return w
+
+
+def strip_from_tile(
+    t: str,
+    tile: str,
+    name: str,
+    ds: str,
+    title_run: str,
+    label_runs: list[str],
+    extra: list[tuple[str, str]] | None = None,
+) -> str:
+    """One region strip: the matching tile, cloned, with region on rows.
+
+    Cloning the tile rather than the tile's own source means the region
+    filters are already gone and the <layout-options> are already there. The
+    strip then differs from the tile in four ways: region on rows (no explicit
+    sort, so Tableau's default ascending order applies), a short static header
+    instead of the tile's parameter-bearing title, no caption (a strip column
+    has no room for one), and a two-line label."""
+    edits = [
+        ("\r\n        <rows />", f"\r\n        <rows>[{ds}].[none:region:nk]</rows>"),
+        *(extra or []),
+    ]
+    t = clone_worksheet(t, tile, name, edits)
+    w0 = worksheet_block(t, name)
+    # Task 4's apply_drop_filters removes a dropped filter's column-instance
+    # and, for a calculated filter, that calc's <column>. Two of the four tiles
+    # therefore reach here without the region instance, and any tile could in
+    # principle reach here without the [region] column, so each is re-added
+    # only when it is missing.
+    w = w0
+    if "name='[region]'" not in w:
+        w = insert_dep_sorted(w, name, ds, REGION_COL_LINE, "region")
+    if "name='[none:region:nk]'" not in w:
+        w = insert_dep_sorted(w, name, ds, REGION_INST_LINE, "none:region:nk")
+    w = set_title(w, name, title_run)
+    w = cut_once(
+        w, r"\r\n        <caption>.*?\r\n        </caption>", f"{name} caption"
+    )
+    w = set_label(w, name, label_runs)
+    assert_closure(w, name)
+    if "<aggregation value='true' />" not in w:
+        raise RuntimeError(f"[{name}] lost <aggregation>")
+    t = sub_once(t, w0, w)
+    return add_window(t, name)
+
+
+def cumulative_strip_edits(t: str) -> list[tuple[str, str]]:
+    """Repoint the cumulative strip from the org shortfall to the region one.
+
+    The tile reads `LP Students still needed (org)`; a per-region row has to
+    compare against its own region's goal, so every one of the tile's four
+    references to the org calc is swapped for the region calc. Each swap is a
+    literal the clone carries exactly once, so clone_worksheet asserts it."""
+    tile = worksheet_block(t, "LP - Tile Cumulative GPA")
+    org_def = paired_column(tile, LP_NEEDED_ORG)
+    region_def = "\r\n" + lp_calc_column(LP_NEEDED_REGION, 12).rstrip("\r\n")
+    swaps = [(org_def, region_def)]
+    for pattern, what in (
+        (
+            rf"\r\n            <column-instance column='\[{LP_NEEDED_ORG}\]'[^>]*/>",
+            "column-instance",
+        ),
+        (
+            rf"\r\n            <format attr='text-format' field='\[{re.escape(GOAL_DS)}\]\.\[usr:{LP_NEEDED_ORG}:qk\]'[^>]*/>",
+            "text-format rule",
+        ),
+        (
+            rf"\r\n              <text column='\[{re.escape(GOAL_DS)}\]\.\[usr:{LP_NEEDED_ORG}:qk\]' />",
+            "text encoding",
+        ),
+    ):
+        line = one_line(tile, pattern, what)
+        swaps.append((line, line.replace(LP_NEEDED_ORG, LP_NEEDED_REGION)))
+    return swaps
+
+
+def add_strips(t: str) -> str:
+    t = strip_from_tile(
+        t,
+        "LP - Tile Y1 GPA",
+        "LP - Strip Y1 GPA",
+        GRADES_DS,
+        f"<run {TITLE_STYLE}>Y1 GPA at or above 3.0</run>",
+        [
+            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GRADES_DS}].[usr:Calculation_4005670422403850240:qk]>]]></run>",
+            f"<run fontname='Tableau Light' fontsize='10'><![CDATA[(<[{GRADES_DS}].[usr:Calculation_1000000000000000011:qk]> vs. 1 wk)]]></run>",
+        ],
+    )
+    t = strip_from_tile(
+        t,
+        "LP - Tile Course Failures",
+        "LP - Strip Course Failures",
+        GRADES_DS,
+        f"<run {TITLE_STYLE}>Failing 2 or more</run>",
+        [
+            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GRADES_DS}].[usr:Calculation_4005670422403997698:qk]>]]></run>",
+            f"<run fontname='Tableau Light' fontsize='10'><![CDATA[(<[{GRADES_DS}].[usr:Calculation_1000000000000000013:qk]> vs. 1 wk)]]></run>",
+        ],
+    )
+    # the goals source carries no weekly comparison, so the second line is the
+    # region shortfall instead of a delta
+    t = strip_from_tile(
+        t,
+        "LP - Tile Cumulative GPA",
+        "LP - Strip Cumulative GPA",
+        GOAL_DS,
+        f"<run {TITLE_STYLE}>Cumulative GPA at or above 3.0</run>",
+        [
+            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GOAL_DS}].[usr:Calculation_9335003396903351453:qk]>]]></run>",
+            f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'><![CDATA[<[{GOAL_DS}].[usr:{LP_NEEDED_REGION}:qk]> still needed (region goal)]]></run>",
+        ],
+        extra=cumulative_strip_edits(t),
+    )
+    # the gradebook sheet paints its own #001e62 table background, so its mark
+    # label runs stay white; the title sits outside that shading, which is why
+    # the tile's own title is the grey TITLE_STYLE and the strip's matches it
+    t = strip_from_tile(
+        t,
+        "LP - Tile Gradebook Health",
+        "LP - Strip Gradebook Health",
+        GB_DS,
+        f"<run {TITLE_STYLE}>Healthy gradebooks</run>",
+        [
+            f"<run fontcolor='#ffffff' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GB_DS}].[usr:Calculation_1052997927363244036:qk]>]]></run>",
+            f"<run fontcolor='#ffffff' fontname='Tableau Light' fontsize='10'><![CDATA[of <[{GB_DS}].[usr:Calculation_1052997927363395589:nk]> teachers]]></run>",
+        ],
+    )
+    return t
+
+
 STEPS = [
     add_goal_calcs,
     add_title,
@@ -535,6 +813,7 @@ STEPS = [
     add_tile_failures,
     add_tile_cumulative,
     add_tile_gradebook,
+    add_strips,
 ]
 
 

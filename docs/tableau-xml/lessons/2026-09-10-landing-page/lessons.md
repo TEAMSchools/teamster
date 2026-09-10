@@ -636,3 +636,169 @@ OK: remainder is byte-identical to base
 check_twb rc=0
 out.twb: CLEAN
 ```
+
+## 2026-09-10, build phase, Task 5
+
+### Dropping a region filter does not detach a tile from `p_Region`
+
+**Verified.** `LP - Tile Cumulative GPA` borrowed `Students still needed`
+(`Calculation_5262281088199017638`), whose formula branches on
+`[Parameters].[Parameter 3]` (`p_Region`) in two places:
+
+```text
+AVG(IF [Parameters].[Parameter 3] = "All"
+    THEN [gpa_goal_proportion_org]
+    ELSE [gpa_goal_proportion_region]
+    END)
+```
+
+Task 4 dropped the tile's own region _filter_, which is what makes the tile a
+network number, and the tile has no parameter control of its own. But a Tableau
+parameter is workbook-global and its current value is a property of the
+workbook, not of the sheet that shows the control: a user who sets `p_Region` to
+Newark on the Cumulative GPA Monitor tab silently reprices the landing page
+tile's shortfall against Newark's goal, with nothing on the tile saying so.
+Removing a filter removes a _filter_; it does not remove a dependency the
+formula carries. Do this instead (Controller Ruling 10): enumerate every
+`[Parameters].[...]` reference inside every calc a clone carries, not just the
+ones in `<filter>`, and for each one either surface the parameter in the title
+or resolve the branch at build time into a variant the clone owns. Here a third
+datasource-level calc was added, `Calculation_7700000000000000003` /
+`LP Students still needed (org)`, identical to the original with the whole
+`AVG(IF ... END)` expression replaced by `AVG([gpa_goal_proportion_org])` in
+both places, and the tile was repointed to it in all five places it referenced
+the original: the worksheet-level `<column>` definition, the
+`<column-instance>`, the `<text column=...>` encoding, the mark-label CDATA
+token and the `#,##0` `<format attr='text-format'>` line. `assert_lp.py` now
+asserts the tile contains `Calculation_7700000000000000003` and not
+`Calculation_5262281088199017638`, and that the 003 formula contains neither
+`Parameter 3` nor `gpa_goal_proportion_region`.
+
+### A `//` comment in a formula reads as a field reference
+
+**Verified.** `assert_closure()` collects `[Field]` tokens out of the raw
+`formula='...'` attribute. The LP calcs open with
+`// LP copy of [Students still needed] with the p_Region branch removed`, so the
+first build after Ruling 10 — the first time an LP calc was written at worksheet
+depth rather than only at the datasource — failed with
+`[LP - Tile Cumulative GPA] calc references undeclared field [Students still needed]`
+on a sheet that was in fact closed. Do this instead: split the formula on the
+XML entity `&#10;` (formula newlines are entities, not real newlines) and drop
+any line whose stripped form starts with `//` before scanning for references.
+The closure invariant itself was never violated; only the checker was wrong, and
+a checker that cries wolf on a correct sheet is the failure mode that gets
+checkers disabled.
+
+### Two of the four tiles already carry the region instance; all four carry the column
+
+**Inferred from the file, then verified.** The brief's `strip_from_tile` re-adds
+the `[region]` `<column>` and the `[none:region:nk]` `<column-instance>`
+together, guarded by a single `if` on the instance. On this base that is wrong
+in both directions. Measured on `out.twb` after Task 4: `LP - Tile Y1 GPA` and
+`LP - Tile Course Failures` carry **both** (their dropped filter was on the
+calculated `Region Filter`, `Calculation_4005670422414364681`, not on `region`
+itself, and the sheets keep a region instance for other encodings);
+`LP - Tile Cumulative GPA` and `LP - Tile Gradebook Health` carry the column but
+**not** the instance. The single guard would therefore have written a second
+`<column ... name='[region]' />` into the two sheets that need only the
+instance. Do this instead: guard each line on its own `name='[...]'` probe, and
+insert at the sorted position rather than after the opening tag — Tableau writes
+the children of `<datasource-dependencies>` in plain ASCII order of `name`,
+columns and column-instances interleaved, and rewrites that order on every save,
+so inserting in order keeps a hand-edited sheet diffable against a Desktop
+re-save.
+
+### A `[usr:...:qk]` swap cannot be a `count()==1` literal edit
+
+**Verified.** The brief's `extra` list for the cumulative strip is
+`("[usr:Calculation_5262281088199017638:qk]", "[usr:Calculation_7700000000000000001:qk]")`,
+passed to `clone_worksheet`, which asserts every edit anchor matches exactly
+once. The instance token appears **four** times in that tile — the
+`<column-instance>`'s own `name`, the `<format attr='text-format'>` field, the
+`<text column=...>` encoding and the mark-label CDATA — plus the calc name
+appears twice more (the `<column>` definition and the instance's `column`
+attribute), six occurrences of the identifier in all. The edit raises rather
+than silently repointing one of them. Do this instead: swap whole lines, not
+identifiers. `cumulative_strip_edits()` reads the four lines out of the tile
+with `paired_column()` / `one_line()` and pairs each with
+`line.replace(LP_NEEDED_ORG, LP_NEEDED_REGION)`, so each swap is a literal the
+clone carries exactly once and `clone_worksheet`'s own assertion still covers
+it. The `<column>` definition is not swapped by string replacement at all: it is
+regenerated from `LP_CALCS` at 12-space indentation, so the region variant's
+caption and formula come from one source of truth rather than from an edited
+copy of the org variant.
+
+### The brief's label edits and its stated interface disagree
+
+**Inferred.** The brief's Interfaces section requires "a two-line label: value,
+then the one-week delta where the source has one", and Step 2's prose repeats
+"the label cut to two lines". Its `add_strips` code only swaps the tile's header
+run to a shorter string and leaves the other four or five runs in place — a
+six-line label repeated on every region row. The prose was taken as the
+requirement and the code's replacement strings were taken as the exact header
+text, which now goes in the worksheet `<title>` instead: a per-row header
+repeated three or four times down a narrow strip says nothing the column header
+does not. Resulting labels: value then `(<Δ> vs. 1 wk)` on the two grades
+strips; value then `<N> still needed (region goal)` on the cumulative strip (the
+goals source has no weekly comparison, and the region shortfall is the number a
+region lead acts on); value then `of <N> teachers` on the gradebook strip.
+Flagged rather than silently resolved: if the reviewer wants the tile's full
+label stack on the strips, the change is one argument per call.
+
+### The strip title is static, which loses the cumulative tile's grade token
+
+**Verified, unresolved.** Ruling 8 requires a tile title to name every parameter
+that narrows its number. `LP - Strip Cumulative GPA` clones
+`LP - Tile Cumulative GPA` and therefore keeps the `Grade filter` calc
+(`[grade_level] = [Parameters].[Parameter 10]`), but the instruction for this
+task is a short static header with no parameter token, so the strip's title is
+`Cumulative GPA at or above 3.0` and does not say which grade. That is safe only
+if the strip is laid out adjacent to the tile, whose title does carry
+`Grade <[Parameters].[Parameter 10]>`. Whoever builds the dashboard zones must
+either keep the two together or put the grade back in the strip header.
+
+### Verbatim run output
+
+Step 1 (assertion added first, run against the Task 4 `out.twb`):
+
+```text
+assert rc=1
+FAIL task3: AssertionError('Calculation_7700000000000000003')
+FAIL task4: AssertionError()
+FAIL task5: AssertionError('LP - Strip Y1 GPA')
+```
+
+`task3` fails on the missing 003 column, `task4` on the raised
+`len(added) == 18` simple-id count (9 LP worksheets, each with a window), and
+`task5` on the first missing strip — all three expected before the build lands.
+
+Step 3 (build, assertion, `check_additive`, `check_twb` against `out.twb`):
+
+```text
+build rc=0
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+add_goal_calcs: +1521 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +12965 bytes
+add_tile_gradebook: +8652 bytes
+add_strips: +51660 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (1997630 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+PASS task5
+
+additive rc=0
+stripped: {'worksheets': 9, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 9, 'nav-actions': 0, 'url-actions': 0, 'calcs': 3}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```
+
+`add_tile_cumulative` is 197 bytes smaller than in Task 4: the borrowed
+`Students still needed` definition is replaced by the generated 003 one, whose
+`p_Region` branch is gone.
