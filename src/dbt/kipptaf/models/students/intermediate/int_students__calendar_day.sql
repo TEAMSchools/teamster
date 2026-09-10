@@ -107,12 +107,11 @@ with
         where cd.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list schoolid in different
--- positions, which would silently align schoolid with insession.
--- Both branches enumerate their columns: BigQuery fixes a view's column
--- list at create time and Dagster rebuilds a view only when its raw SQL
--- changes, so a `select *` branch never picks up a column added upstream.
+-- `union all` matches columns by POSITION, so both branches list the same
+-- 13 columns in the same order. Enumerating also fixes the view's column list:
+-- BigQuery sets it at create time and Dagster rebuilds a view only when its
+-- raw SQL changes, so a `select *` branch never picks up a column added
+-- upstream.
 select
     _dbt_source_relation,
     _dbt_source_project,
@@ -129,7 +128,7 @@ select
     academic_year,
 from powerschool_conformed
 
-full union all corresponding
+union all
 
 select
     _dbt_source_relation,

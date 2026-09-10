@@ -134,9 +134,6 @@ with
             and p.rn = 1
     )
 
--- The branches differ in width on purpose: `full union all corresponding`
--- null-fills the PowerSchool-only columns on the Focus branch.
--- trunk-ignore(sqlfluff/AM07): corresponding null-fills the narrower branch
 select
     _dbt_source_relation,
     dcid,
@@ -175,23 +172,44 @@ select
     academic_year,
 from powerschool_joined
 
-full union all corresponding
+union all
 
+-- Positional union: this list mirrors the PowerSchool branch column for column,
+-- with a typed null where Focus has no equivalent.
 select
     _dbt_source_relation,
-    _dbt_source_project,
-    schoolid,
-    academic_year,
+    cast(null as int64) as dcid,
     `name`,
-    abbreviation,
     firstday,
     lastday,
+    abbreviation,
+    cast(null as string) as importmap,
+    cast(null as string) as terminfo_guid,
+    cast(null as string) as psguid,
+    cast(null as string) as ip_address,
+    cast(null as string) as whomodifiedtype,
+    cast(null as timestamp) as transaction_date,
+    cast(null as int64) as id,
+    cast(null as int64) as noofdays,
+    cast(null as float64) as yearlycredithrs,
+    cast(null as int64) as termsinyear,
+    cast(null as int64) as portion,
+    cast(null as int64) as autobuildbin,
     isyearrec,
-    yearid,
+    cast(null as int64) as periods_per_day,
+    cast(null as int64) as days_per_cycle,
+    cast(null as int64) as attendance_calculation_code,
+    cast(null as int64) as sterms,
+    cast(null as int64) as suppresspublicview,
+    cast(null as int64) as whomodifiedid,
     fiscal_year,
     term,
     term_start_date,
     term_end_date,
     semester,
     is_current_term,
+    schoolid,
+    yearid,
+    _dbt_source_project,
+    academic_year,
 from focus_conformed
