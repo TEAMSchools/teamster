@@ -29,7 +29,10 @@ models:
         data_type: float64
       - name: week_start_monday
         data_type: date
+        description: Monday of the calendar week containing calendardate.
       - name: week_end_sunday
         data_type: date
+        description: Sunday of the calendar week containing calendardate.
       - name: week_number_academic_year
         data_type: int64
+        description: 1-based week index within the school's academic year.
