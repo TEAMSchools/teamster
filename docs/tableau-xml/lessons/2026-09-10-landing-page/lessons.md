@@ -912,3 +912,138 @@ out.twb: CLEAN
 
 `add_strips` grows 165 bytes: the longer cumulative header and the four-line
 `element='header'` style rule, less what the smaller font sizes save.
+
+## 2026-09-10, build phase, Task 6
+
+### A prefix-wide count in an earlier task's assertion is a tripwire for the next
+
+**Verified.** `task4` ends with a file-wide sweep of `<worksheet name='LP - …'>`
+and `<window … name='LP - …'>` blocks and asserts `len(added) == 18` — nine LP
+worksheets, each with a window. The pattern is not scoped to Task 4's own five
+sheets, so the ten sheets Task 6 adds turned that into 38 and `task4` failed on
+work it does not own, in a task whose brief only mentions `task6`. Do this
+instead: when an assertion counts everything matching a build-wide prefix, say
+in its comment that the number is a running total for the whole build and expect
+to raise it in every later task — or scope the regex to the sheets that task
+owns. The count is now `38` with the comment naming all four sheet families
+(title, 4 tiles, 4 strips, 5 cards, 5 guides).
+
+### One `element='cell'` rule per pane: insert on one source, convert on the other
+
+**Verified.** Controller ruling 13 asks for a left-aligned cell rule "inserted
+before the existing `<style-rule element='mark'>`" on every card body and guide
+sheet, but the two clone sources differ: `Y1 Landing - Title` has no
+`element='cell'` rule at all (byte-counted: 0), while
+`Links - GPA Roster - Newark` already carries one with
+`<format attr='text-align' value='center' />` (byte-counted: 1). Inserting a
+left rule before the mark rule on the roster clone would have put it _before_
+the centred rule that already sits there, and the later rule for the same
+element wins — a left rule that renders centred, with no error anywhere. Do this
+instead: branch on whether the element already has a rule (insert when it does
+not, convert the existing `value` when it does) and assert the END STATE —
+exactly one `element='cell'` rule, `value='left'`, and zero `text-align`
+`center` — rather than asserting the edit. `body_style()` in `build_lp.py` does
+the branch; `task6` asserts the end state on all ten sheets.
+
+### Take the semantics from a ruling, the bytes from the file
+
+**Verified.** Ruling 13 quoted the new cell rule with its `<format>` line at 14
+spaces and its `</style-rule>` at 12. The workbook writes pane-level style rules
+at 14, their `<format>` children at 16 and the closing tag back at 14 —
+confirmed against the roster sheet's own centred cell rule, which is the same
+element at the same depth. Following the quoted bytes would have left one
+element indented two spaces shallower than every sibling and reindented on the
+owner's next Desktop save, which is exactly the noise that makes a later diff
+unreadable. Do this instead: read a hand-written snippet in a ruling or brief
+for what it says, not for how it is spaced, and copy indentation from the
+nearest existing element of the same kind in the file.
+
+### The 2026-09-10 13:40 republish's roster filters, counted before relying on them
+
+**Verified.** Task 1 recorded from the owner's publish notes that the three
+`Links - GPA Roster - <Region>` sheets gained action filters, without deriving
+it from the XML. Counted directly this task on `Links - GPA Roster - Newark`:
+three `<filter class='categorical' …>…</filter>` elements — the cross-source
+`[none:school:nk]` filter targeting the grades source, plus
+`[Action (Credit Type,Region,School)]` and `[Action (Region,School)]`, both
+crossjoin group filters carrying the same `user:ui-action-filter='[Action3_…]'`
+— and four `<slices>` columns, of which three go and `[Exclude ES]` stays. Do
+this instead: pair a removal count (`n < 3` raises) with an assertion on the end
+state — the `<slices>` element reduced to exactly one `<column>`, and that
+column `[Exclude ES]` — because a count alone passes just as happily when a
+fourth filter appears in a later republish and only three of four are cut.
+
+### `mark-labels-cull` inherited from a clone source, the second time
+
+**Verified.** Both Task 6 clone sources ship
+`<format attr='mark-labels-cull' value='true' />` (byte-counted: 1 each), the
+same attribute that blanked the Task 5 strips. A card label is about ten runs
+across seven rendered lines and a guide label one; a culled label on a Text mark
+does not clip, it renders the cell blank, so a culled card would have shipped as
+an empty navy rectangle. Do this instead: treat `mark-labels-cull` as something
+a clone always resets rather than something to check per sheet — `body_style()`
+turns it off unconditionally, and `task6` asserts one `false` and zero `true` on
+every one of the ten sheets, so no later clone of a card can reintroduce it
+quietly.
+
+### Orphaned dependency columns are the guide sheets' accepted residue
+
+**Inferred, not render-verified.** Stripping every filter from the guide clones
+leaves `[credit_type]` (with its four aliases), `[region]`, `[school]`,
+`[school_level]` and the `[none:school:nk]` instance declared in
+`<datasource-dependencies>` with nothing referencing them, the same residue Task
+4's tile clones left and the same call the controller made then.
+`assert_closure()` still passes because no `<calculation>` in the sheet names
+them — the guide's only calc is the literal `&apos;Newark&apos;` — and
+`check_twb` reports CLEAN, but neither of those proves Desktop is happy about an
+unused declaration; only the Task 9 render will. Do this instead: keep the
+residue (removing declarations is the change that has broken clones before), and
+treat "the closure checker passes" as evidence the sheet is internally
+consistent, not as evidence Desktop will open it.
+
+### Verbatim run output
+
+```text
+build rc=0
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+add_goal_calcs: +1521 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +12965 bytes
+add_tile_gradebook: +8652 bytes
+add_strips: +51825 bytes
+add_cards: +26300 bytes
+add_guides: +19492 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (2043587 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+PASS task5
+PASS task6
+
+additive rc=0
+stripped: {'worksheets': 19, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 19, 'nav-actions': 0, 'url-actions': 0, 'calcs': 3}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```
+
+Before the build step, against the Task 5 `out.twb`:
+
+```text
+assert rc=1
+PASS task3
+PASS task4
+PASS task5
+FAIL task6: AssertionError('missing worksheet LP - Card Home')
+```
+
+`add_cards` is 26300 bytes for five 4.8 KB clones of a 4.2 KB source: the card
+copy is longer than the two title runs it replaces, and dropping
+`<layout-options>` gives back about 300 bytes. `add_guides` is 19492 for five
+3.5 KB clones of a 6.7 KB source — the three filters, three slice columns, the
+goals dependency block and the six-run tooltip together are about half the
+source sheet.

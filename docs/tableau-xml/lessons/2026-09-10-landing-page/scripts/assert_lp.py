@@ -147,9 +147,10 @@ def task4(t: str) -> None:
             # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
             assert len(found) == 1, blk[:60]
             added.append(found[0])
-    # 9 LP worksheets (title, 4 tiles, 4 strips), each with its own window
+    # 19 LP worksheets (title, 4 tiles, 4 strips, 5 cards, 5 guides), each
+    # with its own window
     # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
-    assert len(added) == 18, len(added)
+    assert len(added) == 38, len(added)
     # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert len(added) == len(set(added)), "duplicate simple-id among the additions"
     for uid in added:
@@ -252,7 +253,133 @@ def task5(t: str) -> None:
     )
 
 
-CHECKS = [task3, task4, task5]
+CARDS = ["Home", "Schools", "Monitor", "Rollup", "Teacher"]
+#: the tab each directory card points at, as the underlined first run reads
+CARD_TABS = {
+    "Home": "Academic Health Home",
+    "Schools": "Academic Health Schools",
+    "Monitor": "Cumulative GPA Monitor",
+    "Rollup": "Gradebook School Rollup",
+    "Teacher": "Gradebook Teacher View",
+}
+#: the two tabs whose card says so because the tab shows student names
+CARD_NAMES = {"Schools", "Monitor"}
+
+
+def task6(t: str) -> None:
+    for c in CARDS:
+        blocks = {}
+        for kind in ("Card", "Guide"):
+            name = f"LP - {kind} {c}"
+            ws = re.search(
+                rf"<worksheet name='{re.escape(name)}'>.*?</worksheet>", t, re.S
+            )
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert ws, f"missing worksheet {name}"
+            w = ws.group(0)
+            blocks[kind] = w
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert "<filter " not in w, f"{name} carries a filter"
+            label = re.search(r"<customized-label>.*?</customized-label>", w, re.S)
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert label, f"{name} has no mark label"
+            # a parameter token never resolves inside a mark label
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert "[Parameters]" not in label.group(0), name
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert "<repository-location" not in w, name
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert count(w, r"<simple-id uuid=") == 1, name
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert (
+                count(
+                    t,
+                    rf"<window class='worksheet' hidden='true' name='{re.escape(name)}'",
+                )
+                == 1
+            ), name
+            # Ruling 13: a culled label vanishes rather than clipping, and a
+            # card label is about ten lines, so culling is off everywhere.
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert count(w, r"<format attr='mark-labels-cull' value='false' />") == 1, (
+                name
+            )
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert count(w, r"<format attr='mark-labels-cull' value='true' />") == 0, (
+                name
+            )
+            # Ruling 13: multi-line body copy is left-aligned, never centred
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert (
+                count(
+                    w,
+                    r"<style-rule element='cell'>\s*<format attr='text-align' value='left' />",
+                )
+                == 1
+            ), name
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert count(w, r"<format attr='text-align' value='center' />") == 0, name
+        card = blocks["Card"]
+        # no title, no caption: the dashboard zone frames the card
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert "<layout-options>" not in card, c
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert f">{CARD_TABS[c]}</run>" in card, c
+        for field in ("Grain: ", "Scope: ", "Built for: "):
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert f">{field}</run>" in card, f"{c} {field}"
+        card_label = re.search(
+            r"<customized-label>.*?</customized-label>",
+            card,
+            re.S,
+            # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
+        ).group(0)
+        # 5 line breaks, 6 when the card carries the student-names warning
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(card_label, r"<run>Æ&#10;</run>") == (
+            6 if c in CARD_NAMES else 5
+        ), c
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert ("Shows student names" in card) == (c in CARD_NAMES), c
+        g = blocks["Guide"]
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert "Help guide: coming soon" in g, c
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert "underline='true'" not in g, c
+        # the placeholder has nothing to say on hover
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert "<customized-tooltip>" not in g, c
+        # the goals source went with the cross-source school filter
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert GOAL_DS not in g, c
+        # exactly one slice survives: the workbook-wide [Exclude ES] set
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert (
+            count(
+                g,
+                rf"<slices>\s*<column>\[{re.escape(GRADES_DS)}\]\.\[Exclude ES\]</column>\s*</slices>",
+            )
+            == 1
+        ), c
+    schools = re.search(
+        r"<worksheet name='LP - Card Schools'>.*?</worksheet>",
+        t,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
+    ).group(0)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert "Shows student names" in schools
+    home = re.search(
+        r"<worksheet name='LP - Card Home'>.*?</worksheet>",
+        t,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
+    ).group(0)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert "Shows student names" not in home
+
+
+CHECKS = [task3, task4, task5, task6]
 
 if __name__ == "__main__":
     text = load()

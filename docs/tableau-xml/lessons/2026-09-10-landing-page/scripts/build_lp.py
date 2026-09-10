@@ -840,6 +840,234 @@ def add_strips(t: str) -> str:
     return t
 
 
+# ---------------------------------------------------------------- task 6: cards
+#: One directory card per tab in the suite. `tab` is the tab's own name, so the
+#: card's first line reads as the label a user will look for in the tab strip;
+#: `names` marks the two tabs that put student names on screen.
+CARD_COPY = {
+    "Home": dict(
+        tab="Academic Health Home",
+        q="How is this year's weighted GPA and course-failure picture moving, by school, school level and subject?",
+        grain="School",
+        scope="MS and HS. Camden, Newark, Paterson",
+        built="Regional and school leaders",
+        names=False,
+    ),
+    "Schools": dict(
+        tab="Academic Health Schools",
+        q="Where is failure concentrated by teacher, and which students near the 2.0 and 3.0 cusps need office hours?",
+        grain="School, teacher, student",
+        scope="MS and HS",
+        built="School leaders, APs, counselors",
+        names=True,
+    ),
+    "Monitor": dict(
+        tab="Cumulative GPA Monitor",
+        q="Are HS cohorts on track for the unweighted cumulative GPA goal by year end, and who sits just below 3.0?",
+        grain="Grade, school, student",
+        scope="HS only. Camden and Newark",
+        built="KIPP Forward, HS leaders",
+        names=True,
+    ),
+    "Rollup": dict(
+        tab="Gradebook School Rollup",
+        q="What share of teachers have healthy gradebooks, by school and manager?",
+        grain="School, manager, teacher",
+        scope="MS and HS. Camden, Newark, Paterson MS",
+        built="School leaders, instructional coaches",
+        names=False,
+    ),
+    "Teacher": dict(
+        tab="Gradebook Teacher View",
+        q="What does my own gradebook need before the quarter closes?",
+        grain="Teacher, section",
+        scope="Your own sections",
+        built="Teachers",
+        names=False,
+    ),
+}
+
+#: A card label is one run per line, so a hard break is its own run. Unlike
+#: BRK (which is spliced BETWEEN two runs on one source line) this form is a
+#: whole line, indentation and trailing CRLF included.
+BR = "                <run>Æ&#10;</run>\r\n"
+
+
+def esc(s: str) -> str:
+    """Card copy -> run text. Attribute quoting in this file is single, and
+    the source's own tooltip runs spell an apostrophe `&apos;`, so `'` is
+    escaped too rather than left bare."""
+    return (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("'", "&apos;")
+    )
+
+
+def card_label(c: dict) -> str:
+    """The whole mark label for one directory card, as run lines.
+
+    No field or parameter token appears anywhere in it: the card is static
+    copy, and a token a sheet does not declare renders as literal text."""
+    lines = [
+        f"                <run fontcolor='#57c0e9' fontname='Tableau Semibold' fontsize='12' underline='true'>{esc(c['tab'])}</run>\r\n",
+        BR,
+        f"                <run fontcolor='#ffffff' fontname='Tableau Regular' fontsize='9'>{esc(c['q'])}</run>\r\n",
+        BR,
+        BR,
+        "                <run fontcolor='#b9c7e6' fontname='Tableau Semibold' fontsize='8'>Grain: </run>\r\n",
+        f"                <run fontcolor='#ffffff' fontsize='8'>{esc(c['grain'])}</run>\r\n",
+        BR,
+        "                <run fontcolor='#b9c7e6' fontname='Tableau Semibold' fontsize='8'>Scope: </run>\r\n",
+        f"                <run fontcolor='#ffffff' fontsize='8'>{esc(c['scope'])}</run>\r\n",
+        BR,
+        "                <run fontcolor='#b9c7e6' fontname='Tableau Semibold' fontsize='8'>Built for: </run>\r\n",
+        f"                <run fontcolor='#ffffff' fontsize='8'>{esc(c['built'])}</run>\r\n",
+    ]
+    if c["names"]:
+        lines += [
+            BR,
+            "                <run fontcolor='#f28e2b' fontname='Tableau Semibold' fontsize='8'>Shows student names</run>\r\n",
+        ]
+    return "".join(lines).rstrip("\r\n")
+
+
+CULL_ON = "<format attr='mark-labels-cull' value='true' />"
+CULL_OFF = "<format attr='mark-labels-cull' value='false' />"
+MARK_RULE = "\r\n              <style-rule element='mark'>"
+CELL_LEFT = (
+    "\r\n              <style-rule element='cell'>"
+    "\r\n                <format attr='text-align' value='left' />"
+    "\r\n              </style-rule>"
+)
+CELL_CENTER_FMT = "\r\n                <format attr='text-align' value='center' />"
+CELL_LEFT_FMT = "\r\n                <format attr='text-align' value='left' />"
+
+
+def body_style(w: str) -> str:
+    r"""Ruling 13, applied to every card body and guide sheet.
+
+    Two changes, both on the pane's own <style>:
+
+    - `mark-labels-cull` off. Both clone sources ship it ON, and on a Text
+      mark a culled label does not clip -- the cell renders blank. A card
+      label is about ten lines, so culling it is a silent blank card.
+    - a left-aligned cell rule. The Title clone has no cell rule at all, so
+      one is inserted before the existing mark rule (the order Tableau writes
+      them in). The roster clone already carries a CENTRED one; a second rule
+      for the same element would be shadowed by the later one, so that rule is
+      converted in place instead of a second being added. Either way the sheet
+      ends with exactly one `element='cell'` rule, aligned left.
+
+    The inserted rule uses the file's own 14/16/14 indentation -- the same
+    bytes Desktop writes for the roster's centred rule -- so a later diff
+    against a Desktop re-save stays readable.
+    """
+    w = sub_once(w, CULL_ON, CULL_OFF)
+    if "<style-rule element='cell'>" in w:
+        w = sub_once(w, CELL_CENTER_FMT, CELL_LEFT_FMT)
+    else:
+        w = insert_before(w, MARK_RULE, CELL_LEFT)
+    return w
+
+
+def add_cards(t: str) -> str:
+    """Five directory cards, cloned from `Y1 Landing - Title`.
+
+    The Title sheet is already a static text mark with no filters; the
+    `Sheet Card - expectations` alternative carries two action filters bound
+    to the Teacher View that would all have to be stripped."""
+    old_label = (
+        "                <run bold='true' fontalignment='0' fontsize='16'>Academic Health</run>\r\n"
+        "                <run fontalignment='0' fontsize='16'> | Home</run>"
+    )
+    for key, c in CARD_COPY.items():
+        name = f"LP - Card {key}"
+        t = clone_worksheet(t, "Y1 Landing - Title", name, [(old_label, card_label(c))])
+        w = worksheet_block(t, name)
+        # the Title sheet's <layout-options> holds a caption and nothing else;
+        # a card sits in a framed dashboard zone that wants neither a sheet
+        # title nor a caption above the copy.
+        w2 = cut_once(
+            w,
+            r"      <layout-options>.*?</layout-options>\r\n",
+            f"{name} layout-options",
+        )
+        w2 = body_style(w2)
+        assert_closure(w2, name)
+        t = sub_once(t, w, w2)
+        t = add_window(t, name)
+    return t
+
+
+def add_guides(t: str) -> str:
+    """Five help-guide slots, cloned from `Links - GPA Roster - Newark`.
+
+    Placeholder state, deliberately: one muted italic run, no underline and no
+    URL action, so nothing on the dashboard looks clickable before the guides
+    exist. Task 10 fills them in."""
+    old_label = (
+        "                <run fontcolor='#57c0e9' underline='true'>&lt;</run>\r\n"
+        f"                <run fontcolor='#57c0e9' underline='true'>[{GRADES_DS}].[none:Calculation_7500000000000000001:nk]</run>\r\n"
+        "                <run fontcolor='#57c0e9' underline='true'>&gt;</run>"
+    )
+    new_label = "                <run fontcolor='#b9c7e6' fontsize='8' italic='true'>Help guide: coming soon</run>"
+    for key in CARD_COPY:
+        name = f"LP - Guide {key}"
+        t = clone_worksheet(
+            t, "Links - GPA Roster - Newark", name, [(old_label, new_label)]
+        )
+        w = worksheet_block(t, name)
+        # Drop EVERY filter and every slice except [Exclude ES]. The base
+        # republished 2026-09-10 13:40 UTC added two action filters to the
+        # roster sheets on top of their cross-source school filter, and a
+        # placeholder that nothing points at needs none of the three.
+        w2, n = re.subn(
+            r"          <filter class='categorical' [^>]*>.*?</filter>\r\n",
+            "",
+            w,
+            flags=re.S,
+        )
+        if n < 3:
+            raise RuntimeError(f"{name}: dropped {n} filters, wanted at least 3")
+        w2, n = re.subn(
+            rf"            <column>(?!\[{re.escape(GRADES_DS)}\]\.\[Exclude ES\])[^<]*</column>\r\n",
+            "",
+            w2,
+        )
+        if n < 1:
+            raise RuntimeError(f"{name}: no slice entries dropped")
+        # end state, not just the removal count: one slice, the workbook-wide set
+        sl = element(w2, r"\r\n          <slices>", "          </slices>")
+        if sl.count("<column>") != 1 or "[Exclude ES]" not in sl:
+            raise RuntimeError(f"{name}: slices did not reduce to [Exclude ES]")
+        # the cross-source filter was the only use of the goals source here
+        w2 = cut_once(
+            w2,
+            rf"          <datasource-dependencies datasource='{re.escape(GOAL_DS)}'>.*?</datasource-dependencies>\r\n",
+            f"{name} goals dependencies",
+        )
+        w2 = sub_once(
+            w2,
+            f"            <datasource caption='rpt_tableau__gpa_goal_progress (kipptaf_tableau)' name='{GOAL_DS}' />\r\n",
+            "",
+        )
+        # drop the roster tooltip; the placeholder has nothing to say on hover
+        w2 = cut_once(
+            w2,
+            r"            <customized-tooltip>.*?</customized-tooltip>\r\n",
+            f"{name} tooltip",
+        )
+        w2 = body_style(w2)
+        assert_closure(w2, name)
+        if GOAL_DS in w2:
+            raise RuntimeError(f"{name}: the goals source is still referenced")
+        t = sub_once(t, w, w2)
+        t = add_window(t, name)
+    return t
+
+
 STEPS = [
     add_goal_calcs,
     add_title,
@@ -848,6 +1076,8 @@ STEPS = [
     add_tile_cumulative,
     add_tile_gradebook,
     add_strips,
+    add_cards,
+    add_guides,
 ]
 
 
