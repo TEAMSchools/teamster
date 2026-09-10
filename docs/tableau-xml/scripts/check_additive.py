@@ -40,7 +40,13 @@ def main() -> int:
     ap = re.escape(a.action_prefix)
 
     removed = {}
-    # order matters only for readability; each pattern is independent
+    # "worksheets" must run before "calcs": a worksheet's own
+    # datasource-dependencies carry the same calc name as a SELF-CLOSING
+    # <column .../> reference (12-space indent here), which the calcs pattern
+    # below must never touch. calcs is scoped to the datasource-level
+    # definition instead: six-space indent, and its opening tag must NOT be
+    # self-closing ([^/>] immediately before the closing '>'), so a reference
+    # column can never satisfy it even after worksheets is stripped.
     patterns = {
         "worksheets": rf"[ \t]*<worksheet name='{sp}[^']*'>.*?</worksheet>\r?\n",
         "dashboard": rf"[ \t]*<dashboard [^>]*name='{db}'>.*?</dashboard>\r?\n",
@@ -48,7 +54,7 @@ def main() -> int:
         "sheet-windows": rf"[ \t]*<window class='worksheet'[^>]*name='{sp}[^']*'[^>]*>.*?</window>\r?\n",
         "nav-actions": rf"[ \t]*<nav-action [^>]*name='\[{ap}[^\]]*\]'>.*?</nav-action>\r?\n",
         "url-actions": rf"[ \t]*<action [^>]*name='\[{ap}[^\]]*\]'>.*?</action>\r?\n",
-        "calcs": rf"[ \t]*<column [^>]*name='\[{cp}\d+\]'[^>]*>.*?</column>\r?\n",
+        "calcs": rf"(?<=\n)      <column [^>]*name='\[{cp}\d+\]'[^>]*[^/>]>.*?</column>\r?\n",
     }
     for label, pat in patterns.items():
         edited, n = strip_elements(edited, pat)

@@ -287,3 +287,59 @@ No other trap surfaced in this task: the brief's zone-id-10 claim (`BAN Network`
 inside `Gradebook School Rollup`) matched the diff exactly, and the argument
 names in Step 1's `argparse` block needed no adjustment against the brief's
 example invocation.
+
+### The `calcs` pattern was order-dependent and untested, exactly as reviewed
+
+**Verified.** Review caught it because a real `Calculation_77…` definition has a
+`</column>` closer, but a _reference_ to that same calc inside a worksheet's
+`datasource-dependencies` is a self-closing `<column .../>`, and the original
+`calcs` regex's `[^>]*>` matched either shape. It was masked only by dict
+iteration order (`worksheets` stripped first) and was never exercised, since the
+real base has zero `Calculation_77` occurrences
+(`grep -c "Calculation_77" base.twb` is 0). Fixed by requiring the char before
+the opening tag's `>` not be `/` (`[^>]*[^/>]>`) and scoping the match to
+datasource-level indentation (a `(?<=\n)` lookbehind plus a literal six-space
+prefix, confirmed against `base.twb`: 94 datasource-level `<column>` definitions
+at 6-space indent inside `rpt_tableau__gpa_goal_progress` alone, versus 16
+self-closing 12-space references inside the `BAN Network` worksheet). `^` alone
+would not have worked: `strip_elements` only passes `re.S` to `re.subn`, not
+`re.M`, so an unescaped `^` matches only the start of the whole file, not each
+line — a lookbehind on `\n` was required instead.
+
+Proved with two temporary fixtures built from `base.twb` (deleted after use,
+never committed): fixture-a added only a fake datasource-level
+`Calculation_7700000000000000009` definition inside
+`rpt_tableau__gpa_goal_progress`; fixture-b added, on top of that, a fake
+self-closing reference to the same name inside `BAN Network`'s
+`datasource-dependencies` (an existing worksheet — a real, non-additive
+mutation). First attempt at building fixture-a corrupted the file: inserting at
+`text.index("</datasource>", ...)` splices before the literal tag, not before
+its line's leading indentation, so the existing 4-space indent bled into the
+inserted block and the closing tag lost its own — fixed by inserting at
+`text.rfind("\n", 0, tag_index) + 1` instead.
+
+```text
+fixture-a (datasource-level definition only) vs base:
+rc=0
+stripped: {'worksheets': 0, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 0, 'nav-actions': 0, 'url-actions': 0, 'calcs': 1}
+OK: remainder is byte-identical to base
+
+fixture-b (definition + self-closing reference in BAN Network) vs base:
+rc=1
+stripped: {'worksheets': 0, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 0, 'nav-actions': 0, 'url-actions': 0, 'calcs': 1}
+FAIL: 8 diff lines; first 60:
+--- base
++++ edited-minus-additions
+@@ -10915,4 +10915,5 @@
+           </datasources>
+           <datasource-dependencies datasource='Parameters'>
++            <column caption='T' datatype='real' name='[Calculation_7700000000000000009]' role='measure' type='quantitative' />
+             <column caption='Health basis' datatype='string' name='[Parameter 1 1]' param-domain-type='list' role='measure' type='nominal' value='&quot;Excluding comments&quot;'>
+```
+
+The `calcs` count stayed `1` in both (the legitimate definition was still
+stripped correctly) and the diff named only the single inserted reference line —
+the fix does not over- or under-strip. Re-ran the brief's Step 2 (base-vs-base)
+and Step 3 (control + zone-10 mutant) afterward with no change in outcome:
+`rc=0`/all-zero `stripped` for Step 2, `CONTROL_OK` then `rc=1` naming zone
+`id='10'` for Step 3.
