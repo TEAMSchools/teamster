@@ -1485,6 +1485,64 @@ Corollary for reviewers: when you see `order by <col> desc` in a window over a
 UNION, check that `<col>` is populated in every branch. A `null as <col>`
 literal in any branch is the tell.
 
+### The aimline branch reports nothing for Miami before AY2026 -- id mismatch
+
+**This was the unexplained 961-row gap between the two PM methods on AY2025. It
+is a bug, not a design difference, and it is total for Miami.**
+
+| Region   | Internal rows / students | Aimline rows / students |
+| -------- | ------------------------ | ----------------------- |
+| Camden   | 8,686 / 1,111            | 8,686 / 1,111           |
+| Newark   | 23,502 / 2,983           | 23,502 / 2,983          |
+| Paterson | 3,358 / 382              | 3,358 / 382             |
+| Miami    | 961 / 420                | **0 / 0**               |
+
+Three regions match exactly. Miami loses every row.
+
+**Cause.** `int_amplify__mclass__pm_student_summary` resolves the student id
+through the `focus_student_number` macro (`src/dbt/kipptaf/macros/utils.sql`),
+which adds 8,400,000,000 to a kippmiami id for `academic_year <= 2025`.
+`int_amplify__mclass__pm_student_summary_aimline` does not apply it, so it
+passes Amplify's raw 6-digit id straight through. Measured on AY2025: Miami ids
+are 10 digits and every one of the 5,503 internal rows starts `8400`, against 6
+digits on the aimline side. `int_amplify__benchmark_student_summary` keys on the
+network number, so every Miami PM row fails that join in the aimline branch.
+
+The tell is that the two sources look identical until you compare id SETS. Both
+carry 67,984 AY2025 rows, 7,861 students, 8 measures, and identical per-region
+row counts -- Miami 5,503 rows / 978 students on both sides. A full outer join
+on `student_primary_id` is what exposes it: 978 Miami students resolve as
+"internal only" and the same 978 as "aimline only". Compare sets, not counts.
+
+**Fix.** Apply `focus_student_number` in
+`int_amplify__mclass__pm_student_summary_aimline` the way the internal model
+does. That model already carries `academic_year` and `_dbt_source_project`, the
+macro's other two arguments. Note it changes the model's surrogate-key inputs
+and grain, so rebuild and re-verify the full chain.
+
+**Scope is historical only.** The macro offsets `year <= 2025`, so from AY2026
+Miami's raw id already IS the network number and the two sides align without
+help. AY2026 cannot confirm that yet -- it has zero tested PM rows in either
+method, since no PM scores have landed. So the bug bites any AY2025-and-earlier
+Miami aimline reporting and should stop mattering going forward, which is
+exactly the kind of thing to re-check rather than assume once SY26-27 scores
+arrive.
+
+**Do not chase this through the gates or the eligibility rule.** Ruled out by
+measurement, in this order: expectations are identical (both methods 55,591
+expected measures on AY2025, same 24,594 roster rows); gate coverage at
+`(region, grade, admin_season)` is identical, zero rows on either side of a full
+outer join; the two eligibility predicates select the same 9,405 benchmark rows,
+because `overall_probe_eligible = 'Yes'` and
+`overall_aimline_composite_level in ('Below Benchmark', 'Well Below Benchmark')`
+are the same condition and the gate's `measure_standard_level` carries exactly
+those two values; and the score-side filter
+`enrollment_grade = assessment_grade and assessment_grade is not null` passes
+67,896 rows / 7,861 students in both sources. Swapping one variable at a time is
+what isolated it -- the internal gate and internal eligibility joined to the
+AIMLINE source reproduces the aimline numbers exactly (4,476 students, 35,546
+slots), which proves the gate is innocent.
+
 ### The PM branches cannot match prod's row count, and should not
 
 Do not treat a PM row-count difference against prod as a regression to fix. The

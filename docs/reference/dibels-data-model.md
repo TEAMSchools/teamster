@@ -454,6 +454,41 @@ other and nothing fails. Dedup before the union, or split the model. Extracting
 the Benchmark half is what gave PM its own `max_score` and made a PM-meaningful
 sort key possible at all.
 
+#### Known defect: the aimline branch reports nothing for Miami before AY2026
+
+`int_amplify__mclass__pm_student_summary` resolves the student id through the
+`focus_student_number` macro, which adds 8,400,000,000 to a kippmiami id for
+`academic_year <= 2025` — the Focus migration mapping.
+`int_amplify__mclass__pm_student_summary_aimline` does not apply it and passes
+Amplify's raw 6-digit id through. `int_amplify__benchmark_student_summary` keys
+on the network number, so every Miami PM row fails that join in the aimline
+branch and Miami reports zero.
+
+| Region   | Internal rows / students | Aimline rows / students |
+| -------- | ------------------------ | ----------------------- |
+| Camden   | 8,686 / 1,111            | 8,686 / 1,111           |
+| Newark   | 23,502 / 2,983           | 23,502 / 2,983          |
+| Paterson | 3,358 / 382              | 3,358 / 382             |
+| Miami    | 961 / 420                | 0 / 0                   |
+
+Measured on AY2025. The three NJ regions match exactly; Miami's 961 rows for 420
+students are the whole of what was previously logged here as an unexplained gap
+between the two methods.
+
+The two sources are indistinguishable by counts — both carry 67,984 AY2025 rows,
+7,861 students, 8 measures, and identical per-region totals including Miami's
+5,503 rows for 978 students. Only comparing id SETS exposes it: the same 978
+Miami students appear on one side of a full outer join and again on the other.
+
+The fix is to apply `focus_student_number` in the aimline model as the internal
+model does; it already carries the macro's other two arguments. That changes the
+model's surrogate-key inputs, so the chain needs a rebuild and re-verification.
+
+Scope is historical. The macro offsets only `year <= 2025`, so from AY2026
+Miami's raw id already is the network number and the two sides should align
+unaided — unconfirmed, because AY2026 has no tested PM rows in either method
+yet. Re-check once SY26-27 scores land rather than assuming.
+
 #### A student's two grade columns can disagree, and that is not fixable
 
 On a PM row, `assessment_grade` comes from the score side (the grade the probe
