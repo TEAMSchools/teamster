@@ -99,3 +99,29 @@ x 1500 design grid `crop_lp.py` assumes, so each box scales cleanly.
 | `crop-definitions.png` | 2732 x 816 | 249039 |
 | `crop-coverage.png`    | 2732 x 456 | 54834  |
 | `crop-links.png`       | 2732 x 344 | 13064  |
+
+## Render path restored (2026-09-10, after commit 574ee50d2)
+
+The output scanner now skips the base64 carrier of image blocks. Both paths
+verified: `Read` on a stored PNG and `mcp__tableau__get-view-image` on the
+review copy return pixels. A fresh 1366x1500 render of the review copy's Landing
+Page is identical to the 17:56 stored render, so everything below is current,
+and none of it was visible to the CSV checks in `numbers.md`.
+
+What the render shows that the XML and CSV checks did not:
+
+- All four tile numbers render as `####` overflow. Three of the four region
+  strips (Y1 GPA, failures, healthy gradebooks) also overflow; the cumulative
+  strip renders `48.5%` / `48.4%` correctly. The value is right in the CSV, so
+  this is a label width or number-format problem in the text marks, not data.
+- The healthy-gradebooks tile and strip carry a navy fill inherited from the
+  Rollup sheets they were cloned from; region labels there are navy on navy.
+- The cumulative tile and strip titles read `Grade Grade 11`: the title text
+  already says `Grade` and the parameter value carries it too.
+- The header title truncates to `Academic & Gradebook Health | Landi..` at the
+  configured font size and width.
+- The coverage grid renders in a serif monospace fallback (Courier-like); the
+  font asked for is not on the server.
+
+Lesson for the skill: a CSV-equals-source check proves the number, not the
+pixel. Run a server render on every review-copy publish and read it.
