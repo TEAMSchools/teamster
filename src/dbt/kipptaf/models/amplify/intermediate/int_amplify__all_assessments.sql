@@ -171,9 +171,10 @@ with
             -- competes with their AY2025 round 1 for the same measure and one
             -- real score is dropped. model_type keeps the two methods from
             -- ranking against each other. assessment_grade_int and period are
-            -- here for the same reason as on rn_pm_eligibility below: each
-            -- sitting is its own administration, so two grades in one round
-            -- would otherwise collide and the lower score be dropped, silently.
+            -- here for the same reason rn_pm_eligibility carries them in
+            -- int_amplify__benchmark_student_summary: each sitting is its own
+            -- administration, so two grades in one round would otherwise
+            -- collide and the lower score be dropped, silently.
             row_number() over (
                 partition by
                     academic_year,
