@@ -640,7 +640,15 @@ def insert_dep_sorted(w: str, name: str, ds: str, line: str, key: str) -> str:
 
 
 def set_title(w: str, name: str, run: str) -> str:
-    """Replace the single <title> run with a static header run."""
+    """Replace the single <title> run.
+
+    A parameter token in a <title> whose parameter the sheet does not declare
+    renders as literal text, so every `[Parameters].[...]` the run carries is
+    checked against the clone's own Parameters dependencies first -- the same
+    guard the cumulative TILE step applies."""
+    for param in re.findall(r"\[Parameters\]\.\[([^\]]*)\]", run):
+        if f"name='[{param}]'" not in w:
+            raise RuntimeError(f"[{name}] title names undeclared parameter [{param}]")
     w, n = re.subn(
         r"(<title>\r\n          <formatted-text>\r\n)            <run [^>]*>.*?</run>"
         r"(\r\n          </formatted-text>\r\n        </title>)",
@@ -728,7 +736,11 @@ def cumulative_strip_edits(t: str) -> list[tuple[str, str]]:
     The tile reads `LP Students still needed (org)`; a per-region row has to
     compare against its own region's goal, so every one of the tile's four
     references to the org calc is swapped for the region calc. Each swap is a
-    literal the clone carries exactly once, so clone_worksheet asserts it."""
+    literal the clone carries exactly once, so clone_worksheet asserts it.
+
+    The FIFTH reference site, the mark-label token, is not swapped here:
+    set_label() rewrites the whole label and writes LP_NEEDED_REGION directly
+    from add_strips' label_runs. Change one and check the other."""
     tile = worksheet_block(t, "LP - Tile Cumulative GPA")
     org_def = paired_column(tile, LP_NEEDED_ORG)
     region_def = "\r\n" + lp_calc_column(LP_NEEDED_REGION, 12).rstrip("\r\n")
@@ -760,8 +772,8 @@ def add_strips(t: str) -> str:
         GRADES_DS,
         f"<run {TITLE_STYLE}>Y1 GPA at or above 3.0</run>",
         [
-            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GRADES_DS}].[usr:Calculation_4005670422403850240:qk]>]]></run>",
-            f"<run fontname='Tableau Light' fontsize='10'><![CDATA[(<[{GRADES_DS}].[usr:Calculation_1000000000000000011:qk]> vs. 1 wk)]]></run>",
+            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='12'><![CDATA[<[{GRADES_DS}].[usr:Calculation_4005670422403850240:qk]>]]></run>",
+            f"<run fontname='Tableau Light' fontsize='8'><![CDATA[(<[{GRADES_DS}].[usr:Calculation_1000000000000000011:qk]> vs. 1 wk)]]></run>",
         ],
     )
     t = strip_from_tile(
@@ -771,8 +783,8 @@ def add_strips(t: str) -> str:
         GRADES_DS,
         f"<run {TITLE_STYLE}>Failing 2 or more</run>",
         [
-            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GRADES_DS}].[usr:Calculation_4005670422403997698:qk]>]]></run>",
-            f"<run fontname='Tableau Light' fontsize='10'><![CDATA[(<[{GRADES_DS}].[usr:Calculation_1000000000000000013:qk]> vs. 1 wk)]]></run>",
+            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='12'><![CDATA[<[{GRADES_DS}].[usr:Calculation_4005670422403997698:qk]>]]></run>",
+            f"<run fontname='Tableau Light' fontsize='8'><![CDATA[(<[{GRADES_DS}].[usr:Calculation_1000000000000000013:qk]> vs. 1 wk)]]></run>",
         ],
     )
     # the goals source carries no weekly comparison, so the second line is the
@@ -782,16 +794,30 @@ def add_strips(t: str) -> str:
         "LP - Tile Cumulative GPA",
         "LP - Strip Cumulative GPA",
         GOAL_DS,
-        f"<run {TITLE_STYLE}>Cumulative GPA at or above 3.0</run>",
+        # Ruling 11: this strip keeps the tile's Grade filter
+        # ([grade_level] = [Parameters].[Parameter 10]), so its header has to
+        # say which grade -- the one strip title that is not static. set_title
+        # asserts the clone declares [Parameter 10] before writing the token.
+        f"<run {TITLE_STYLE}><![CDATA[Grade <[Parameters].[Parameter 10]> · cumulative GPA at or above 3.0]]></run>",
         [
-            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GOAL_DS}].[usr:Calculation_9335003396903351453:qk]>]]></run>",
-            f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'><![CDATA[<[{GOAL_DS}].[usr:{LP_NEEDED_REGION}:qk]> still needed (region goal)]]></run>",
+            f"<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='12'><![CDATA[<[{GOAL_DS}].[usr:Calculation_9335003396903351453:qk]>]]></run>",
+            f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='8'><![CDATA[<[{GOAL_DS}].[usr:{LP_NEEDED_REGION}:qk]> still needed (region goal)]]></run>",
         ],
         extra=cumulative_strip_edits(t),
     )
     # the gradebook sheet paints its own #001e62 table background, so its mark
     # label runs stay white; the title sits outside that shading, which is why
-    # the tile's own title is the grey TITLE_STYLE and the strip's matches it
+    # the tile's own title is the grey TITLE_STYLE and the strip's matches it.
+    # Ruling 12: the tile had no row headers, the strip does, and that same
+    # background now sits behind the region names -- so the sheet-level style
+    # gets the white `color` rule that `Y1 Landing - Title` uses on
+    # element='worksheet', scoped here to element='header'.
+    gb_style_anchor = "\r\n        <style>\r\n          <style-rule element='table'>"
+    gb_header_rule = (
+        "\r\n          <style-rule element='header'>"
+        "\r\n            <format attr='color' value='#ffffff' />"
+        "\r\n          </style-rule>"
+    )
     t = strip_from_tile(
         t,
         "LP - Tile Gradebook Health",
@@ -799,8 +825,16 @@ def add_strips(t: str) -> str:
         GB_DS,
         f"<run {TITLE_STYLE}>Healthy gradebooks</run>",
         [
-            f"<run fontcolor='#ffffff' fontname='Tableau Semibold' fontsize='16'><![CDATA[<[{GB_DS}].[usr:Calculation_1052997927363244036:qk]>]]></run>",
-            f"<run fontcolor='#ffffff' fontname='Tableau Light' fontsize='10'><![CDATA[of <[{GB_DS}].[usr:Calculation_1052997927363395589:nk]> teachers]]></run>",
+            f"<run fontcolor='#ffffff' fontname='Tableau Semibold' fontsize='12'><![CDATA[<[{GB_DS}].[usr:Calculation_1052997927363244036:qk]>]]></run>",
+            f"<run fontcolor='#ffffff' fontname='Tableau Light' fontsize='8'><![CDATA[of <[{GB_DS}].[usr:Calculation_1052997927363395589:nk]> teachers]]></run>",
+        ],
+        extra=[
+            (
+                gb_style_anchor,
+                "\r\n        <style>"
+                + gb_header_rule
+                + "\r\n          <style-rule element='table'>",
+            )
         ],
     )
     return t

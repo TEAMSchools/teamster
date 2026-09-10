@@ -802,3 +802,113 @@ out.twb: CLEAN
 `add_tile_cumulative` is 197 bytes smaller than in Task 4: the borrowed
 `Students still needed` definition is replaced by the generated 003 one, whose
 `p_Region` branch is gone.
+
+## 2026-09-10, build phase, Task 5 fix round
+
+### Size a mark label against the row band, not against the tile it was cloned from
+
+**Verified by arithmetic, not by render.** The strip sheets took their label run
+sizes straight from the tiles they clone — 16pt for the value, 10pt for the
+second line. A tile is one mark in a 170px zone; a strip divides the same zone
+between a footnote and one row per region. About 130px of pane over three
+regions is roughly 43px a row, and a 16pt line renders about 26px against a 10pt
+line's about 16px, so 42px of text plus cell padding is already over budget with
+Camden, Newark and Paterson, and further over the moment Miami's fourth row
+lands. Three of the four strips also inherit
+`<format attr='mark-labels-cull' value='true' />` from their tile, and on a Text
+mark in a table a culled label does not clip — the cell renders **blank**, which
+reads as missing data rather than as a layout problem. Do this instead: size a
+cloned label against the row band of the sheet it is going into, not against the
+sheet it came from, and treat `mark-labels-cull` as a silent failure mode rather
+than a graceful one. All four strips now carry `fontsize='12'` on the value run
+and `fontsize='8'` on the second line, fonts and colours unchanged, and `task5`
+asserts exactly one of each and zero `fontsize='16'` or `fontsize='10'` inside
+every strip's `<customized-label>` — so the tile sizes cannot creep back in
+through a later copy-paste.
+
+### A clone that keeps a parameter-driven filter needs the parameter in its title, strip or not
+
+**Verified.** Task 5's instruction was a short static header on every strip, on
+the grounds that a strip column has no room for a long title. That is right for
+three of them and wrong for `LP - Strip Cumulative GPA`, which clones a tile
+carrying `Grade filter` (`[grade_level] = [Parameters].[Parameter 10]`): a
+grade-filtered number under a header that cannot say which grade is a number
+nobody can check. Controller Ruling 11 overrides the static-title rule for that
+one sheet; its header is now the single CDATA run
+`Grade <[Parameters].[Parameter 10]> · cumulative GPA at or above 3.0`. Do this
+instead: make the "does this title name every parameter that narrows the number"
+test (Ruling 8) a property of the sheet's filters, not of the sheet's size — and
+enforce it in code. `set_title()` now pulls every `[Parameters].[...]` token out
+of the run it is about to write and raises unless the clone declares that
+parameter, because an undeclared parameter token renders as literal text rather
+than failing loudly. `task5` requires the token on the cumulative strip and
+forbids `[Parameters].` on the other three.
+
+### A worksheet background that was invisible on a tile appears behind row headers on a strip
+
+**Verified.** `LP - Tile Gradebook Health` paints
+`<style-rule element='table'><format attr='background-color' value='#001e62' />`
+and reads perfectly well: it is a single mark with white label runs and no row
+headers at all. The strip puts `region` on rows, which creates row headers
+inside that same shaded table, so the region names would render in the default
+dark header colour on navy. Nothing in the XML changed to cause it — adding rows
+changed what the existing rule covers. Do this instead: when a clone gains a
+shelf its source did not have, re-read the source's `<style>` rules for ones
+whose scope silently widens. Ruling 12: the strip's sheet-level `<style>` gains
+
+```text
+<style-rule element='header'>
+  <format attr='color' value='#ffffff' />
+</style-rule>
+```
+
+copying the `attr='color'` form `Y1 Landing - Title` already uses on
+`element='worksheet'`, inserted before the existing `element='table'` rule with
+a one-match anchor (the sheet-level `<style>` is at 8-space indentation; the
+pane-level one at 12, so the CRLF-prefixed anchor separates them). The tile's
+own style block is untouched — verified by diffing both sheets in the output.
+
+### A repointed calc has five reference sites, and one of them is not in the swap list
+
+**Verified.** `cumulative_strip_edits()` swaps four lines to move the strip from
+`Calculation_7700000000000000003` to `...001`: the `<column>` definition, the
+`<column-instance>`, the `<format attr='text-format'>` line and the
+`<text column=...>` encoding. The fifth site, the mark-label CDATA token, is
+never in that list because `set_label()` rewrites the whole label from
+`add_strips`' `label_runs` and writes `LP_NEEDED_REGION` directly. Both halves
+are correct today and the assertion catches a mismatch (`...003` must not appear
+in the strip, `...001` must), but the two live 60 lines apart with nothing
+connecting them. Do this instead: when one edit path owns some of a symbol's
+reference sites and another path owns the rest, say so in a comment at both
+ends. `cumulative_strip_edits()`' docstring now names `set_label()` as the owner
+of the fifth site.
+
+### Verbatim run output, fix round
+
+```text
+build rc=0
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+add_goal_calcs: +1521 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +12965 bytes
+add_tile_gradebook: +8652 bytes
+add_strips: +51825 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (1997795 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+PASS task5
+
+additive rc=0
+stripped: {'worksheets': 9, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 9, 'nav-actions': 0, 'url-actions': 0, 'calcs': 3}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```
+
+`add_strips` grows 165 bytes: the longer cumulative header and the four-line
+`element='header'` style rule, less what the smaller font sizes save.

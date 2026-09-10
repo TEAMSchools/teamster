@@ -158,11 +158,13 @@ def task4(t: str) -> None:
 
 
 def task5(t: str) -> None:
-    for name, ds in (
-        ("LP - Strip Y1 GPA", GRADES_DS),
-        ("LP - Strip Course Failures", GRADES_DS),
-        ("LP - Strip Cumulative GPA", GOAL_DS),
-        ("LP - Strip Gradebook Health", GB_DS),
+    # the cumulative strip keeps the tile's Grade filter, so Ruling 11 puts
+    # [Parameter 10] in its header; the other three headers stay static
+    for name, ds, param_title in (
+        ("LP - Strip Y1 GPA", GRADES_DS, False),
+        ("LP - Strip Course Failures", GRADES_DS, False),
+        ("LP - Strip Cumulative GPA", GOAL_DS, True),
+        ("LP - Strip Gradebook Health", GB_DS, False),
     ):
         ws = re.search(rf"<worksheet name='{re.escape(name)}'>.*?</worksheet>", t, re.S)
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
@@ -181,10 +183,17 @@ def task5(t: str) -> None:
         head = re.search(r"<title>.*?</title>", w, re.S)
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert head, name
-        # a static header: a parameter token would render but says nothing
-        # useful in a one-line strip header
-        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
-        assert "[Parameters]." not in head.group(0), name
+        if param_title:
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert "[Parameters].[Parameter 10]" in head.group(0), name
+            # the token only resolves if the sheet declares the parameter
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert "name='[Parameter 10]'" in w, name
+        else:
+            # a static header: a parameter token says nothing useful in a
+            # one-line strip header
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert "[Parameters]." not in head.group(0), name
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert "<aggregation value='true' />" in w, name
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
@@ -197,6 +206,14 @@ def task5(t: str) -> None:
         assert label, name
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert count(label.group(0), r"<run>Æ&#10;</run>") == 1, name
+        # the row band is roughly 43px; 12pt over 8pt fits, 16pt over 10pt
+        # does not, and a culled label on a Text mark leaves the cell blank
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(label.group(0), r"fontsize='12'") == 1, name
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(label.group(0), r"fontsize='8'") == 1, name
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(label.group(0), r"fontsize='(?:16|10)'") == 0, name
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert (
             count(
@@ -217,6 +234,22 @@ def task5(t: str) -> None:
     assert "Calculation_7700000000000000003" not in cum
     # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "Calculation_5262281088199017638" not in cum
+    gb = re.search(
+        r"<worksheet name='LP - Strip Gradebook Health'>.*?</worksheet>",
+        t,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
+    ).group(0)
+    # Ruling 12: the sheet paints #001e62 on element='table', which now sits
+    # behind the region row headers as well as the pane
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert (
+        count(
+            gb,
+            r"<style-rule element='header'>\s*<format attr='color' value='#ffffff' />",
+        )
+        == 1
+    )
 
 
 CHECKS = [task3, task4, task5]
