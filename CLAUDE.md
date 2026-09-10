@@ -133,8 +133,15 @@ accept a subagent's self-report without the checks there.
   checksum. A misread is far likelier than a rewriting pipeline.
 - On the native VS Code build, Grep and Glob are absent as tools; search with
   `rg`/`grep` via Bash. When the system prompt asks for Bash-first work (auto
-  mode), follow it. Otherwise use Read/Edit/Write for file I/O and Bash only for
-  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`.
+  mode), follow it for searching and for running things — but never to READ a
+  file that carries path-scoped rules. `.claude/rules/*.md` load on a
+  Read/Edit/Write path match and never on a Bash command string, so `cat` on
+  anything under `src/dbt/` or `src/cube/`, or on a filename matching
+  `*college_assessment*`, `*fresh_*` or `*gradebook_audit*`, skips the
+  conventions governing the edit you are about to make. Bash cannot accomplish
+  that job, so the auto-mode instruction does not cover it: use Read. Otherwise
+  use Read/Edit/Write for file I/O and Bash only for `git`, `uv run`, `gh`,
+  `docker`, `trunk`, `ls`.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
 - After any call that creates or updates a resource with string fields (issue
