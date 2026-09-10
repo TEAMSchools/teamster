@@ -8,6 +8,17 @@ models:
       Each row is linked to an assessment administration (via
       assessment_administration_key) and to the student's resolved section
       enrollment (via student_section_enrollment_key and enrollment_resolution).
+
+      Vendor breakdown rows sit alongside the summary row, not in place of it.
+      DIBELS contributes one row per subtest next to the Composite. i-Ready
+      contributes one row per domain next to the subject-level row, with two
+      exclusions: domains i-Ready marks 'Not Assessed', and
+      comprehension_overall. That last one is the rollup parent of
+      comprehension_literature and comprehension_informational_text, and the
+      proficiency measures built on this table are additive, so keeping it would
+      count the comprehension construct three times. A domain with a grade-level
+      placement but no scale score is kept — the placement is the primary domain
+      signal, so filtering on a non-null scale_score drops real rows.
     config:
       materialized: table
       meta:

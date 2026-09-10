@@ -212,19 +212,11 @@ with
     ),
 
     -- Domain-level rows. module_code stays the subject, for the same
-    -- FK-resolution reason as DIBELS above.
-    --
-    -- 'Not Assessed' is i-Ready's explicit not-administered marker and is
-    -- excluded. comprehension_overall is excluded as the rollup parent of
-    -- comprehension_literature and comprehension_informational_text -- Cube's
-    -- proficiency measures are additive, so retaining it would triple-count the
-    -- comprehension construct.
-    --
-    -- A domain with a placement but no scale score IS retained: the grade-level
-    -- placement is the primary domain signal.
-    --
-    -- No 'relative_placement is not null' predicate here: int_iready__domain_unpivot
-    -- enforces it upstream as its documented inclusion rule (#4709).
+    -- FK-resolution reason as DIBELS above. What the two exclusions below mean
+    -- for a reader of this table is on the model description; the reason there
+    -- is no third one is here: int_iready__domain_unpivot already enforces
+    -- 'relative_placement is not null' as its documented inclusion rule
+    -- (#4709), so repeating it would be redundant, not defensive.
     iready_domain_scores_raw as (
         select
             student_id as student_number,
