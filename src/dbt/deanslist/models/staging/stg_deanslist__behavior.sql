@@ -1,12 +1,9 @@
 with
-    -- `dbt_utils.deduplicate` compiles on BigQuery to
-    -- `array_agg(original order by ... limit 1)[offset(0)]`, which pushes the whole
-    -- 39-column row through the shuffle as a struct. `qualify row_number()` picks
-    -- the same row for a fraction of the slot time.
-    deduplicate as (
-        select *,
+    -- dbt_utils.deduplicate array_aggs the whole row and costs 5x here (#5216)
+    row_numbered as (
+        select
+            *, row_number() over (partition by dlsaid order by _file_name desc) as rn,
         from {{ source("deanslist", "src_deanslist__behavior") }}
-        qualify row_number() over (partition by dlsaid order by _file_name desc) = 1
     ),
 
     transformations as (
@@ -42,8 +39,8 @@ with
             nullif(studentmiddlename, '') as student_middle_name,
             nullif(studentlastname, '') as student_last_name,
             nullif(`weight`, '') as `weight`,
-        from deduplicate
-        where not is_deleted or is_deleted is null
+        from row_numbered
+        where rn = 1 and (not is_deleted or is_deleted is null)
     )
 
 select
