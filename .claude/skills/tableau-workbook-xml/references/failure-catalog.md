@@ -82,12 +82,13 @@ was simply in the wrong units for a 0 to 1 axis, with its probe, is in
 
 ## Data reads wrong
 
-| Symptom                                                      | Cause                                                                 |
-| ------------------------------------------------------------ | --------------------------------------------------------------------- |
-| A parameter action fires and nothing changes                 | A blanket replace rewrote the parameter's `<member>` domain           |
-| A pop-out never opens; clicks corrupt an unrelated parameter | A merge deleted the boolean parameter and left every reference behind |
-| Viz-in-tooltip stops working                                 | A merge deleted the tooltip worksheet and kept both references        |
-| Bars move with a control but labels and colours do not       | Encodings on one sheet resolve through different calcs; see below     |
+| Symptom                                                       | Cause                                                                                                             |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| A parameter action fires and nothing changes                  | A blanket replace rewrote the parameter's `<member>` domain                                                       |
+| A pop-out never opens; clicks corrupt an unrelated parameter  | A merge deleted the boolean parameter and left every reference behind                                             |
+| Viz-in-tooltip stops working                                  | A merge deleted the tooltip worksheet and kept both references                                                    |
+| Bars move with a control but labels and colours do not        | Encodings on one sheet resolve through different calcs; see below                                                 |
+| A sheet inside a panel stays empty until another action fires | Its saved action-filter state is `ui-enumeration='inclusive'` over `empty-level` members: an empty set; see below |
 
 That last one is a reasoning failure, not a mechanical one. On one panel the bar
 length resolved through a parameter-aware calculation while the mark label and
@@ -97,35 +98,54 @@ labelled `+11.4pp` in green. The analysis that missed it traced only the bar.
 **Trace every encoding on a sheet (rows, columns, text, colour, size, tooltip),
 not just the one that looks like the measure.**
 
+The empty panel hid for months because its sheet was a 9px sliver. Production's
+saved state for one action's target filter on that sheet was
+`crossjoin … user:ui-enumeration='inclusive'` over two `empty-level` members,
+while the file's other 26 stored action states were `user:ui-enumeration='all'`
+over `level-members`. Rewriting the one block to the unrestricted form made the
+sheet render 40 rows with no selection; the closed render stayed byte-identical.
+**A sheet that has been invisible can carry a saved state nobody has seen.**
+Grep every sheet you wire an action to for `user:ui-action-filter`, read the
+stored state, and render the sheet alone or in the forced-open state and require
+rows before trusting its default.
+
 ## Tooling and process
 
-| Symptom                                             | Cause                                                                                    |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Workbook truncated to a fraction of its size        | Loop variable shadowed an outer regex match object                                       |
-| Whole file shows as changed in a diff               | `read_text(encoding="utf-8")` flattened CRLF to LF                                       |
-| Published workbook is a few hundred kilobytes       | `include_extract=False` on download                                                      |
-| Download lands at `name.twbx.twbx`                  | `tableauserverclient` appends the extension to `filepath`                                |
-| An exit code is reported as `0` or `120` wrongly    | Read through a pipeline; `$?` was `tail`'s status or a SIGPIPE artifact                  |
-| Extract refresh fails with `403180` after a publish | The workbook has no extract (live connection); not a credential failure. Verified, #5230 |
-| A commit lands on the wrong branch                  | A failed command short-circuited a chained `cd`; use `git -C` always                     |
+| Symptom                                                             | Cause                                                                                      |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Workbook truncated to a fraction of its size                        | Loop variable shadowed an outer regex match object                                         |
+| Whole file shows as changed in a diff                               | `read_text(encoding="utf-8")` flattened CRLF to LF                                         |
+| Published workbook is a few hundred kilobytes                       | `include_extract=False` on download                                                        |
+| Download lands at `name.twbx.twbx`                                  | `tableauserverclient` appends the extension to `filepath`                                  |
+| An exit code is reported as `0` or `120` wrongly                    | Read through a pipeline; `$?` was `tail`'s status or a SIGPIPE artifact                    |
+| Extract refresh fails with `403180` after a publish                 | The workbook has no extract (live connection); not a credential failure. Verified, #5230   |
+| A commit lands on the wrong branch                                  | A failed command short-circuited a chained `cd`; use `git -C` always                       |
+| Restore point reported as revision `9` of `24`                      | `populate_revisions` returns `revision_number` as strings; cast to `int` before `max()`    |
+| `check_twb.py --ref` flags `preference`, `refresh`, `refresh-event` | `--ref` was an older pull; those are Tableau's own new elements. `--ref` the fresh base    |
+| A heredoc writing the `tsc_session.py` template is denied           | The PreToolUse hook matches the template's credential lines; `cp` it or use the Write tool |
 
 ## The tests themselves
 
 The most expensive category, because everything reports success.
 
-| Symptom                                                                             | Cause                                                                                   |
-| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Geometry checker passes the exact bug it was written for                            | Per-child tolerance; 900 units × 5 children exceeded the 4,445-unit defect              |
-| Geometry checker false-positives on production                                      | An absolute tolerance tight enough for one container is wrong for another               |
-| Structure assertion passes a duplicated zone                                        | A parent map overwritten in document order hid the stale entry                          |
-| Structure assertion passes a re-parented zone                                       | It checked existence and type, never parentage                                          |
-| Structure assertion passes a reordered zone                                         | No sibling-order check                                                                  |
-| Structure assertion passes a card nested inside a card                              | Only leaf zones were pinned; the containers never were                                  |
-| Assertion checks presence, not position                                             | Searching a whole block for a token, rather than asserting the run sequence             |
-| `populate_csv` on a dashboard returned 0 rows and read as a working permission gate | The control also returned 0; a dashboard view yields no crosstab. Verified, #5230       |
-| Length guard passes an edit that changed nothing                                    | A same-length replacement moves the byte total by 0; count the strings. Verified, #5230 |
+| Symptom                                                                             | Cause                                                                                                                  |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Geometry checker passes the exact bug it was written for                            | Per-child tolerance; 900 units × 5 children exceeded the 4,445-unit defect                                             |
+| Geometry checker false-positives on production                                      | An absolute tolerance tight enough for one container is wrong for another                                              |
+| Structure assertion passes a duplicated zone                                        | A parent map overwritten in document order hid the stale entry                                                         |
+| Structure assertion passes a re-parented zone                                       | It checked existence and type, never parentage                                                                         |
+| Structure assertion passes a reordered zone                                         | No sibling-order check                                                                                                 |
+| Structure assertion passes a card nested inside a card                              | Only leaf zones were pinned; the containers never were                                                                 |
+| Assertion checks presence, not position                                             | Searching a whole block for a token, rather than asserting the run sequence                                            |
+| `populate_csv` on a dashboard returned 0 rows and read as a working permission gate | The control also returned 0; a dashboard view yields no crosstab. Verified, #5230                                      |
+| Length guard passes an edit that changed nothing                                    | A same-length replacement moves the byte total by 0; count the strings. Verified, #5230                                |
+| Assertion fails the untouched base: `<encodings>` children not alphabetical         | Tableau writes them in shelf order (`color, lod, lod, tooltip…, text`); assert the insert position, not a global order |
+| Assertion fails the untouched base: floating zone not under the `layout-basic` root | Floating containers are top-level siblings of the root                                                                 |
+| A mutant makes the assertion crash with `IndexError`                                | Non-zero exit, but no check is named; guard list indexing so every failure is a named FAIL line                        |
 
-Every one of those was found by building a mutant and running the assertion
+The last three fail in the other direction: a correct file, a wrong test. An
+assertion that fails on the untouched base is wrong, and the fix is to the test.
+Every one of the others was found by building a mutant and running the assertion
 against it. Make that a step, not an afterthought:
 `docs/tableau-xml/scripts/mutate.py` does the zone surgery; for anything outside
 a dashboard's zones, hand-write the broken variant.

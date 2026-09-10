@@ -94,11 +94,31 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
 - **A new image or shape reference publishes blank if the asset is not in the
   donor archive.** Probe: list the donor's entries before adding a
   `type-v2='bitmap'` zone.
+- **`<format attr='size'>` in a `Shape` mark's style-rule may set the shape
+  size.** The corpus carries values from 0.87 to 14.5. A copied close-button
+  sheet with no size format rendered a small, legible bold × in a 60px box
+  (Verified). That the attribute enlarges it is unprobed. Probe: set
+  `value='3'`, publish to scratch, render, count the shape's pixels.
 - **A stale `fixed-size` may look right in a render and wrong in Desktop.** The
   source verified only that Desktop may re-solve the layout on open. The margin
   to subtract is the container's own baseline gap from the geometry table, not a
   constant. Probe: hand the owner one resized zone with and without the updated
   `fixed-size` and ask which opens correctly.
+
+## Actions
+
+- **`on-empty='none'` on a filter action may mean "Show no values".** Only
+  `none` occurs in the local corpus (109 times). Two saved target states differ
+  by exactly that parameter: the action with `on-empty='none'` persists its
+  target filter as `crossjoin … ui-enumeration='inclusive'` over `empty-level`
+  members, an empty set, which blanked the target sheet until the action fired
+  (Verified, [failure-catalog.md](failure-catalog.md)); an action with no
+  `on-empty` persists `level-members` over the whole level, everything. That
+  reads as `none` = "Show no values" and absent = "Leave the filter", with the
+  third dropdown value, "Show all values", unobserved. Probe: on a scratch copy
+  in Desktop, set each of the three values on one action, save, and diff the
+  `on-empty` parameter. Until then, when a clear should show all rows, hand the
+  dropdown to the owner in web authoring.
 
 ## Process
 
@@ -108,9 +128,11 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
   `.twb`; diff it against the base. This is the one oracle that outranks every
   checker here. The skill cannot run Desktop; the owner can.
 - **`check_geometry.py` may false-positive on floating objects**, which
-  legitimately overlap tiled siblings. Running both checkers against the
-  untouched base before any edit (loop step 1) is what separates a checker bug
-  from a workbook bug.
+  legitimately overlap tiled siblings. Not seen yet: it passed a dashboard with
+  two top-level floating containers and failed a one-zone mutant of the same
+  file ([layout-and-zones.md](layout-and-zones.md)). Running both checkers
+  against the untouched base before any edit (loop step 1) is still what
+  separates a checker bug from a workbook bug.
 - **Cross-workbook parameter collisions may merge rather than delete.** The
   observed symptom (references pointing at an id now owned by an unrelated
   parameter) fits a merge on name and datatype as well as a deletion. The

@@ -57,7 +57,9 @@ Verified in #5230 across 13 publishes on REST API 3.25 with
   of the **overwrite target** (not a scratch copy); subtract the sheets this
   edit deliberately added. `<worksheets>` and `<dashboards>` list every sheet
   whether publishable or not and are the wrong source. Pass the result as
-  `hidden_views` on the `WorkbookItem`.
+  `hidden_views` on the `WorkbookItem`. Verified again on a second workbook: 15
+  publishable minus 5 live gave 10 to hide, and the copy came up with exactly
+  production's 5 live views.
 - **Embedded connection credentials.** A publish without a `connections=[...]`
   list drops them. The scratch copy hides this because the packaged extract
   still renders; the owner sees a failing refresh or a credential prompt later.
@@ -75,9 +77,11 @@ Verified in #5230 across 13 publishes on REST API 3.25 with
 - **Revision number.** Every Overwrite on this site created a revision (131 to
   132, 107 to 108, 45 to 46, 100 to 101). Call `populate_revisions` on the
   target before publishing and record the current number in the hand-over so the
-  owner has a restore point they apply themselves from the Server UI. That is
-  the owner's action, not yours: a restore on production is a production change
-  and needs the same two confirmations as a publish.
+  owner has a restore point they apply themselves from the Server UI.
+  `revision_number` comes back as a string, so `max()` picks `"9"` over `"24"`;
+  cast to `int` first (Verified). That is the owner's action, not yours: a
+  restore on production is a production change and needs the same two
+  confirmations as a publish.
 - **Refresh schedules and permissions.** Not established. A refresh was already
   queued after several Overwrites, which suggests the schedule survived, but
   nobody listed tasks before and after; the probe in
@@ -129,7 +133,16 @@ for label, pat in (("worksheets", r"<worksheet name='([^']*)'"),
 
 A pure extract refresh changes only `<datasources>`; worksheets and dashboards
 stay byte-identical. Anything else is a design change to understand before
-building on it.
+building on it. Between two pulls a day apart the base gained a sheet and a
+tooltip sheet, swapped a logo asset, renumbered `<devicelayouts>` ids, un-hid a
+window, and pointed `<repository-location>` at a `ZZ-REVIEW…` name: the owner
+had promoted a review copy. The target dashboard's `<zones>` were
+byte-identical, so the layout map survived; check that before reusing one.
+
+Pass the fresh base, not the older pull, as `--ref` to `check_twb.py`. Against
+an older pull, Tableau's own new elements (`preference`, `refresh`,
+`refresh-event`) are reported as absent from the reference, which is noise. The
+older pull as `--ref` answers one question only: what the owner changed.
 
 ## Write the assertion before the edit
 
@@ -218,6 +231,10 @@ cp docs/tableau-xml/scripts/tsc_session.py tests/test_zz_tableau.py
 uv run pytest tests/test_zz_tableau.py -s
 rm tests/test_zz_tableau.py
 ```
+
+Copy the template with `cp` or the Write tool. A Bash heredoc that writes the
+template's lines is denied by the PreToolUse hook: its credential lines match
+the hook's patterns (Verified, one denied call).
 
 ## Sessions and jobs
 

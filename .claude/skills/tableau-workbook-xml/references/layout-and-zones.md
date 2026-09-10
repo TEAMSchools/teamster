@@ -24,6 +24,11 @@ pixels_wide = w / 100000 * 1366
 
 At 900px tall, 1 pixel is about 111 units.
 
+A recipe's pixel positions can contradict its own intent. "Directly under the
+band bars" at `y=280` would have covered the bottom 52px of a card that ends at
+338px. Convert every recipe coordinate to units, check it against the existing
+zone map, build to the intent, and report the deviation in the hand-over.
+
 ## Containers do not sum to their children
 
 **Verified, and it produced two arithmetic errors before it was understood.** A
@@ -165,6 +170,62 @@ Two structural points:
   so something can absorb slack. In the corpus, every working strip pairs a
   fixed text zone with a flexible sibling. A strip where every child is fixed
   was unprecedented and is worth avoiding.
+
+## Floating containers
+
+**Verified** by a depth trace and by render. A floating zone is a top-level
+child of `<zones>`, a sibling of the `layout-basic` root that follows it, not a
+descendant. An assertion that expected the Tableau-authored floating container
+under the root failed a correct file. A new floating panel goes after the last
+top-level zone, before `</zones>`.
+
+A container shown and hidden by dynamic zone visibility carries
+`hidden-by-user='true'` on the zone **and on every descendant** in the saved
+file. Copied that way, the panel rendered hidden at the parameter's `false` and
+shown at `true`. The binding is a node pair in the existing `<datagraph>`: its
+`dashboard-zone-visibility-node` names the zone id and a `dashboard-identifier`
+that is the `<dashboard>` element's `<simple-id>`, not the `<window>`'s. The two
+differ, and the render toggled only with the dashboard's.
+
+`check_geometry.py --baseline` passed a dashboard carrying two floating
+containers (one Tableau-authored, one added) and failed a one-zone mutant of the
+same file, so floating siblings did not false-positive it in this corpus.
+
+## Removing a sibling from a flow
+
+**Verified.** Deleting a fixed-width child from a horizontal flow is a cascade,
+not a one-zone edit. Removing a 659-unit sliver from the right of one row meant
+widening 15 zones down the surviving column: 4 vertical containers, 5 rows and 3
+flexible leaves each `w +659`, and 3 fixed right-hand leaves `x +659`, so that
+every container's parent-minus-children gap kept its baseline value. Write the
+cascade as a table of `(zone id, attribute, old, new)`, apply each row as an
+exactly-once substitution, and assert each once. `check_geometry.py --baseline`
+reports a missed row as a gap pair (`zone 37 gap 659, zone 36 gap -659`).
+
+## Adding a filter card
+
+**Verified by render**: the card appeared in the strip with the strip's gap
+unchanged, and every differing pixel between the two publishes lay inside the
+strip. That picking a value filters the sheets is **Inferred**; a render cannot
+click.
+
+A dashboard filter card is three elements per filtered sheet plus one zone:
+
+- In each sheet's `<view>`: a
+  `<filter class='categorical' column='…' filter-group='N'>` holding a
+  `level-members` groupfilter, a `<column-instance>` in that sheet's
+  `<datasource-dependencies>`, and a `<column>` in `<slices>`. Filters and
+  column-instances are sorted, slices are not
+  ([content-models.md](content-models.md)); anchor each insert on the neighbour
+  that will follow it rather than computing a sort.
+- `filter-group` is a workbook-wide integer: the fresh base's max plus one.
+- One `type-v2='filter'` zone whose `name` is any one of the filtered sheets.
+- Guard "instance not yet referenced" per sheet, not per workbook: another sheet
+  may already use the same instance legitimately.
+
+A `distribute-evenly` strip does not re-solve its stored geometry on Server.
+Adding a ninth child means re-tiling every child's `w` and `x` by hand
+(`8 × 10981 + 10980 = 98828` across the strip) or the geometry check fails.
 
 ## Editing the right copy of the tree
 
