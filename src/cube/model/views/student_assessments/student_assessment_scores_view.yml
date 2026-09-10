@@ -6,15 +6,21 @@ views:
       (one row per student x assessment x administration x response type) and
       aggregate breakdowns in a single view. pct_proficient (mastery rate) is
       the source-agnostic headline; scale_score is null for internal rows and
-      percent_correct is null for state and vendor rows. response_type /
-      response_type_code carry the standard/skill breakdown (Illuminate only).
-      State and vendor administrations have no single administered date, so the
-      Date members (academic_year, academic_year_label, date_day, month_number,
-      month_name) resolve for every source but are scoped by different dates per
-      source: the administration date for Illuminate/college, the student's
-      completion (test) date for state/vendor. A cross-source date cut (e.g.
-      "scores in May") therefore mixes those two date concepts. Contains direct
-      student identifiers — see access_policy for PII gating.
+      percent_correct is null for state and vendor rows. response_type is
+      non-nullable with four values: not_taken, overall, group, standard.
+      overall is the summary row for every source (Illuminate, NJ/FL state,
+      i-Ready, DIBELS, STAR) and is the only cross-source filter that yields one
+      row per sitting; group now covers vendor breakdowns too (i-Ready domains,
+      DIBELS subtests), not just Illuminate reporting groups; standard remains
+      Illuminate-only; not_taken is an Illuminate assessment the student was
+      expected to take but has no recorded response. State and vendor
+      administrations have no single administered date, so the Date members
+      (academic_year, academic_year_label, date_day, month_number, month_name)
+      resolve for every source but are scoped by different dates per source: the
+      administration date for Illuminate/college, the student's completion
+      (test) date for state/vendor. A cross-source date cut (e.g. "scores in
+      May") therefore mixes those two date concepts. Contains direct student
+      identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: student_assessment_scores
