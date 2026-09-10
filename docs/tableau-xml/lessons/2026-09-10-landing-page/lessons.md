@@ -150,3 +150,96 @@ built through the skill:
 ignore hint and the commit chain stops. This log lives under
 `docs/tableau-xml/lessons/` for that reason. Check `git check-ignore -v <path>`
 before choosing a directory name for durable notes.
+
+## 2026-09-10, build phase, Task 1
+
+### One live session per PAT: concurrent `tableau-mcp-server` processes invalidate a `tableauserverclient` sign-in mid-run
+
+**Verified.** Three `tableau-mcp-server` node processes were alive on this
+machine, all authenticating with the same Tableau personal access token
+(confirmed by `ps -eo pid,etimes,cmd`, ages roughly 56, 30 and 12 minutes at
+diagnosis time; still three processes, older, when re-checked from this
+session). Tableau allows one live session per token, so every MCP (re)sign-in
+invalidated whatever session the throwaway pytest test held. Symptoms across
+three consecutive attempts of the _same, unchanged_ script: attempt 1 raised
+`FailedSignInError`
+(`401002: Unauthorized Access - Invalid authentication credentials were provided`)
+at `server.auth.sign_in` itself; attempts 2 and 3 raised
+`NotSignedInError: Missing site ID. You must sign in first.` from inside the
+`with sign_in(...):` block, once from `populate_views`'s `baseurl` property.
+None of this was a rotated or bad credential. Fix: wrap every server interaction
+in a fresh `with server.auth.sign_in(auth):` block, retried up to 3x with a 5s
+sleep, catching `NotSignedInError`, `FailedSignInError`, and
+`ServerResponseError` with `code == "401002"`. Structural fix, not just retries:
+never run two `tableauserverclient` scripts (a throwaway pytest and a live MCP
+server) at once against the same PAT.
+
+### A download whose session was invalidated mid-stream can still land intact on disk
+
+**Verified.** Before the retry fix was added, one of the failed pytest attempts
+still fully wrote `base.twbx` (29,799,451 bytes) and the unpacked `base.twb` to
+`$lp` — the HTTP download had apparently already started streaming before the
+session was invalidated, and completed anyway; the in-process exception came
+later (in the `wb.views` access, see next entry), after the bytes were already
+safely on disk. Do not assume a file is corrupt or partial just because the
+script that wrote it raised — check its size against the expected floor and, for
+anything meant to stand in for a live pull, verify it against the server's own
+`updatedAt` before trusting or discarding it. Here that check was
+`wb.updated_at` == `2026-09-10 13:40:42+00:00`, matching the owner's confirmed
+republish time.
+
+### `wb.views` is a lazy fetcher bound by `populate_views()`; it cannot be read after the sign-in block exits
+
+**Verified.** `server.auth.sign_in(auth)`'s context manager signs out of the
+server on `__exit__` (its own docstring: "Creates a context manager that will
+sign out of the server upon exit"). `workbooks.populate_views(wb)` does not
+eagerly fetch — it binds `wb._views` to a callable, and the `.views` property
+(`workbook_item.py`) invokes that callable, making a live HTTP call, on _every_
+access. The brief's original script read `v.name for v in wb.views` in the
+`meta` list, built after the `with` block had already closed and signed out —
+this fails deterministically with `NotSignedInError`, independent of the
+concurrent-PAT issue above (it only didn't surface earlier because the
+concurrency bug failed the test first, before reaching that line). Fix: capture
+`view_names = [v.name for v in wb.views]` _inside_ the `with sign_in(...):`
+block, alongside `populate_views`/`populate_revisions`, and use the plain list
+afterward. `wb.updated_at`, `wb.show_tabs`, `wb.default_view_id`, and
+`wb.revisions` are plain/already-consumed attributes and were fine to read
+outside the block (the code already dereferenced `wb.revisions` inside the block
+for `revision`, so this held by construction).
+
+### The owner's 2026-09-10 13:40:42 UTC production republish
+
+**Verified**, from a byte-for-byte diff of the fresh `base.twb` against this
+morning's `aghs.twb` copy (08:17 UTC) using the brief's four regex `DIFF`
+checks, and from `grep` against the fresh `base.twb`. Verbatim `DIFF` output:
+
+```text
+DIFF worksheets: removed=[] added=['Y1 Schools - Roster Close']
+DIFF dashboards: removed=[] added=[]
+DIFF parameters: removed=[] added=['[Parameter 15]']
+DIFF actions: removed=[] added=['Band to roster']
+```
+
+Verbatim `base-meta.txt`:
+
+```text
+revision=25
+updated_at=2026-09-10 13:40:42+00:00
+show_tabs=True
+default_view_id=e3f30b9d-e3aa-4342-9f00-21d0080eff53
+live_views=Academic Health Home|Academic Health Schools|Cumulative GPA Monitor|Gradebook School Rollup|Gradebook Teacher View
+```
+
+Beyond the diff lines: the default-view marker
+(`<window class='dashboard' maximized='true' name='Academic Health Home'>`,
+confirmed by grep at `base.twb:24548`) moved onto Academic Health Home, matching
+this log's earlier "default view is the `maximized='true'` window" lesson and
+`wb.default_view_id` above resolving to that dashboard's view id.
+`Calculation_76…` names are now taken — `grep -c "Calculation_76" base.twb`
+returns 27 — so any new hidden calc this build adds must start numbering from
+`Calculation_77…` to avoid a collision. The three
+`Links - GPA Roster - <Region>` sheets (`Camden`, `Newark`, `Paterson`,
+confirmed present by name) gained two action filters and `credit_type` /
+`region` columns per the owner's publish notes relayed by the coordinator; not
+independently re-derived from the XML in this task, only the sheet names and the
+`Calculation_76` count were.
