@@ -121,11 +121,17 @@ def apply_drop_filters(block: str, drops: list[tuple[str, str]], name: str) -> s
 
     The filter element's form varies (filter-group attribute or not, one-line
     groupfilter or a nested union), so it is matched by regex, not a literal.
+    The opening tag ends `(?<!/)>` because base.twb also holds 6 SELF-CLOSING
+    categorical filters: a plain `[^>]*>` matches through their `/>` and the
+    following `.*?</filter>` then runs on to the NEXT filter's close, silently
+    deleting an unrelated filter. `[^>]*[^/>]>` is not equivalent here -- a
+    filter with no attribute after `column='...'` has `>` immediately after the
+    quote and would stop matching. selftest_drop_filters() proves both halves.
     """
     for ds, inst in drops:
         block = cut_once(
             block,
-            rf"\r\n          <filter class='categorical' column='\[{re.escape(ds)}\]\.\[{re.escape(inst)}\]'[^>]*>.*?</filter>",
+            rf"\r\n          <filter class='categorical' column='\[{re.escape(ds)}\]\.\[{re.escape(inst)}\]'[^>]*(?<!/)>.*?</filter>",
             f"[{name}] filter {inst}",
         )
         slice_line = f"\r\n            <column>[{ds}].[{inst}]</column>"
@@ -151,6 +157,46 @@ def apply_drop_filters(block: str, drops: list[tuple[str, str]], name: str) -> s
                     f"[{name}] {calc.group(1)} still referenced after the drop"
                 )
     return block
+
+
+def selftest_drop_filters() -> None:
+    """A self-closing filter next to a paired one: neither is eaten by mistake.
+
+    Regression proof for the `(?<!/)>` guard. Without it the SELF-CLOSING
+    filter's opening tag matches (`[^>]*>` runs through its `/>`), the
+    following `.*?</filter>` runs on to the NEXT filter's close, and one
+    substitution silently deletes two filters. With the guard the self-closing
+    filter simply does not match, so cut_once raises instead of corrupting.
+    base.twb holds 6 self-closing categorical filters.
+    """
+    block = crlf("""
+          <filter class='categorical' column='[DS].[none:keep:nk]' filter-group='3' />
+          <filter class='categorical' column='[DS].[none:go:nk]' filter-group='4'>
+            <groupfilter function='level-members' level='[none:go:nk]' />
+          </filter>
+          <slices>
+            <column>[DS].[none:go:nk]</column>
+          </slices>
+            <column-instance column='[go]' derivation='None' name='[none:go:nk]' pivot='key' type='nominal' />
+""")
+    keep = (
+        "<filter class='categorical' column='[DS].[none:keep:nk]' filter-group='3' />"
+    )
+    out = apply_drop_filters(block, [("DS", "none:go:nk")], "selftest")
+    if "[none:go:nk]" in out:
+        raise RuntimeError("selftest: the paired filter was not removed")
+    if out.count(keep) != 1:
+        raise RuntimeError("selftest: the self-closing filter was destroyed")
+    try:
+        apply_drop_filters(block, [("DS", "none:keep:nk")], "selftest")
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("selftest: a self-closing filter was matched and cut")
+    print(
+        "selftest_drop_filters: paired filter removed, self-closing filter "
+        "intact, self-closing target refused"
+    )
 
 
 def clone_worksheet(
@@ -315,35 +361,80 @@ def add_tile_failures(t: str) -> str:
     return add_window(t, "LP - Tile Course Failures")
 
 
-#: `Students still needed` is not a dependency of `GPA - BAN % 3.0+`. These two
-#: lines are lifted verbatim from `GPA - BAN Students needed` at build time so
-#: the copy cannot drift from the source.
-NEEDED_INST = "[usr:Calculation_5262281088199017638:qk]"
+#: `Students still needed` and its whole input closure are absent from
+#: `GPA - BAN % 3.0+`. Every line below is lifted verbatim from
+#: `GPA - BAN Students needed` at build time so the copies cannot drift.
+#: Dependency-closure invariant (holds for all 250 worksheet-local calc
+#: definitions across base.twb, zero exceptions): every field a worksheet's
+#: <column> calculation references is itself declared in that worksheet's
+#: <datasource-dependencies>. Copying the calc alone breaks it.
+NEEDED_CALC = "Calculation_5262281088199017638"
+NEEDED_INST = f"[usr:{NEEDED_CALC}:qk]"
+#: the inputs of NEEDED_CALC's formula, in the order the source declares them
+NEEDED_INPUTS = (
+    ("Measured (projected)", "Calculation_4693780698737655073"),
+    ("At 3.0+ (projected)", "Calculation_9485136151529756033"),
+)
+NEEDED_FIELDS = ("gpa_goal_proportion_org", "gpa_goal_proportion_region")
 
 
-def needed_lines(t: str) -> tuple[str, str]:
-    src = worksheet_block(t, "GPA - BAN Students needed")
-    col = element(
+def paired_column(src: str, name: str) -> str:
+    """One `<column ...>...</column>` block, verbatim, without its newline."""
+    return element(
         src,
-        r"\r\n            <column caption='Students still needed' [^>]*>",
+        rf"\r\n            <column [^>]*name='\[{re.escape(name)}\]'[^>]*(?<!/)>",
         "            </column>\r\n",
     ).rstrip("\r\n")
-    inst = re.search(
-        r"\r\n            <column-instance column='\[Calculation_5262281088199017638\]'[^>]*/>",
-        src,
-    )
-    if not inst:
-        raise RuntimeError("no Students-still-needed column-instance to copy")
-    return col, inst.group(0)
+
+
+def one_line(src: str, pattern: str, what: str) -> str:
+    m = re.search(pattern, src)
+    if not m:
+        raise RuntimeError(f"no {what} to copy from GPA - BAN Students needed")
+    return m.group(0)
+
+
+def needed_lines(t: str) -> dict[str, str]:
+    """Every line the cumulative tile has to borrow, keyed for readability."""
+    src = worksheet_block(t, "GPA - BAN Students needed")
+    out = {
+        "calc": paired_column(src, NEEDED_CALC),
+        "inst": one_line(
+            src,
+            rf"\r\n            <column-instance column='\[{NEEDED_CALC}\]'[^>]*/>",
+            "column-instance",
+        ),
+        "format": one_line(
+            src,
+            rf"\r\n            <format attr='text-format' field='\[{re.escape(GOAL_DS)}\]\.\[usr:{NEEDED_CALC}:qk\]'[^>]*/>",
+            "text-format rule",
+        ),
+    }
+    for _caption, name in NEEDED_INPUTS:
+        out[name] = paired_column(src, name)
+    for field in NEEDED_FIELDS:
+        out[field] = one_line(
+            src,
+            rf"\r\n            <column caption='[^']*' datatype='real' name='\[{field}\]'[^>]*/>",
+            field,
+        )
+    return out
 
 
 def add_tile_cumulative(t: str) -> str:
+    # Ruling 8: the clone keeps the source's Grade filter
+    # ([grade_level] = [Parameters].[Parameter 10]), so the title names the
+    # grade rather than implying the tile covers every HS grade. Both tokens
+    # are parameters, which resolve in a <title> and nowhere else.
     lo = layout_options(
-        f"            <run {TITLE_STYLE}><![CDATA[Unweighted cumulative GPA · <[Parameters].[Parameter 11]> · high schools only]]></run>",
-        "HS students with a cumulative GPA.",
+        f"            <run {TITLE_STYLE}><![CDATA[Grade <[Parameters].[Parameter 10]> · unweighted cumulative GPA · <[Parameters].[Parameter 11]>]]></run>",
+        "HS students in the grade selected on the Cumulative GPA Monitor.",
     )
     value = "<run fontcolor='#001e62' fontname='Tableau Semibold' fontsize='30'><![CDATA[<[federated.0n798br073i5kb170j6l90uiv50a].[usr:Calculation_9335003396903351453:qk]>]]></run>"
-    still = f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'><![CDATA[<[{GOAL_DS}].{NEEDED_INST}> students still needed]]></run>"
+    # Ruling 9: the headline % follows [Parameter 11] through Cum GPA
+    # (unweighted); the borrowed count is hard-wired to the projected columns,
+    # so the run says so, mirroring the Monitor's own "always projected".
+    still = f"<run fontcolor='#8c8c8c' fontname='Tableau Light' fontsize='10'><![CDATA[<[{GOAL_DS}].{NEEDED_INST}> students still needed (projected)]]></run>"
     edits = [
         (
             "<worksheet name='LP - Tile Cumulative GPA'>\r\n      <table>",
@@ -355,16 +446,33 @@ def add_tile_cumulative(t: str) -> str:
         ),
         (value, value + BRK + still),
     ]
-    # the clone lacks the Students-still-needed dependency: add the column, its
-    # instance and the text encoding before the label references it.
+    # the clone lacks the Students-still-needed dependency: add the calc, its
+    # four inputs, its instance, its number format and the text encoding
+    # before the label references it. Each is one asserted count()==1 edit.
     if NEEDED_INST not in worksheet_block(t, "GPA - BAN % 3.0+"):
-        col_line, inst_line = needed_lines(t)
+        src = needed_lines(t)
         at3_col = "\r\n            <column caption='At 3.0+' datatype='integer' name='[Calculation_5286411607457784114]' role='measure' type='quantitative'>"
         at3_inst = "\r\n            <column-instance column='[Calculation_5286411607457784114]' derivation='User' name='[usr:Calculation_5286411607457784114:qk]' pivot='key' type='quantitative' />"
         pct_text = f"\r\n              <text column='[{GOAL_DS}].[usr:Calculation_9335003396903351453:qk]' />"
+        pct_fmt = f"\r\n            <format attr='text-format' field='[{GOAL_DS}].[usr:Calculation_9335003396903351453:qk]' value='*0.0%' />"
+        year_col = "\r\n            <column caption='Academic Year' datatype='integer' name='[academic_year]' role='dimension' type='quantitative' />"
+        grade_col = "\r\n            <column caption='Grade Level' datatype='integer' name='[grade_level]' role='measure' type='quantitative' />"
+        needed_open = src["calc"].split("\r\n")[1]
         edits += [
-            (at3_col, col_line + at3_col),
-            (at3_inst, inst_line + at3_inst),
+            # the calc itself, before the At 3.0+ column (source ordering)
+            (at3_col, src["calc"] + at3_col),
+            # Measured (projected), immediately before the calc that reads it
+            (
+                "\r\n" + needed_open,
+                src["Calculation_4693780698737655073"] + "\r\n" + needed_open,
+            ),
+            # At 3.0+ (projected), where the source keeps it: before academic_year
+            (year_col, src["Calculation_9485136151529756033"] + year_col),
+            # the two goal-proportion fields, before grade_level
+            (grade_col, src["gpa_goal_proportion_org"] + grade_col),
+            (grade_col, src["gpa_goal_proportion_region"] + grade_col),
+            (at3_inst, src["inst"] + at3_inst),
+            (pct_fmt, pct_fmt + src["format"]),
             (
                 pct_text,
                 pct_text
@@ -375,7 +483,27 @@ def add_tile_cumulative(t: str) -> str:
         edits, GOAL_DS, "none:Calculation_5742832717263693013:nk"
     )  # Region filter (goals source)
     t = clone_worksheet(t, "GPA - BAN % 3.0+", "LP - Tile Cumulative GPA", edits)
+    clone = worksheet_block(t, "LP - Tile Cumulative GPA")
+    # Ruling 8: the title names [Parameter 10], so the clone must declare it.
+    if clone.count("name='[Parameter 10]'") != 1:
+        raise RuntimeError("LP - Tile Cumulative GPA does not declare [Parameter 10]")
+    assert_closure(clone, "LP - Tile Cumulative GPA")
     return add_window(t, "LP - Tile Cumulative GPA")
+
+
+def assert_closure(block: str, name: str) -> None:
+    """Every field a worksheet calc references must be declared in the sheet.
+
+    The invariant every worksheet in base.twb satisfies (250/250 calc
+    definitions). Checked here because the cumulative tile is the one clone
+    that imports a calculation its source sheet never carried.
+    """
+    declared = set(re.findall(r"<column(?:-instance)? [^>]*name='\[([^\]]*)\]'", block))
+    for formula in re.findall(r"<calculation class='tableau' formula='([^']*)'", block):
+        for ref in re.findall(r"\[([A-Za-z_][A-Za-z0-9_ ]*)\]", formula):
+            if ref in ("Parameters",) or ref in declared:
+                continue
+            raise RuntimeError(f"[{name}] calc references undeclared field [{ref}]")
 
 
 def add_tile_gradebook(t: str) -> str:
@@ -411,6 +539,7 @@ STEPS = [
 
 
 def main() -> None:
+    selftest_drop_filters()
     t = BASE.read_text(encoding="utf-8", newline="")
     if "\r\n" not in t:
         raise RuntimeError("base is not CRLF; stop")
@@ -418,6 +547,7 @@ def main() -> None:
         before = len(t)
         t = step(t)
         print(f"{step.__name__}: +{len(t) - before} bytes")
+    # trunk-ignore(bandit/B314): parse-only well-formedness check on a file we just wrote
     ET.fromstring(t.encode("utf-8"))  # well-formed or raise
     OUT.write_text(t, encoding="utf-8", newline="")
     print(f"wrote {OUT} ({len(t)} chars)")

@@ -524,3 +524,115 @@ OK: remainder is byte-identical to base
 check_twb rc=0
 out.twb: CLEAN
 ```
+
+## 2026-09-10, build phase, Task 4 fix round
+
+### A worksheet declares the whole input closure of every calc it carries
+
+**Verified.** Copying a calculated field between worksheets is not a two-line
+job. Audited every `<worksheet>` in `base.twb` with a script that collects the
+`name='[...]'` of each `<column>` / `<column-instance>` in the sheet and then
+resolves every `[Field]` reference inside every
+`<calculation class='tableau' formula='...'>` in the same sheet: **633
+worksheet-local calc definitions across 70 worksheets, zero references to an
+undeclared field.** The first Task 4 build broke that invariant exactly once:
+`LP - Tile Cumulative GPA` carried the borrowed
+`Calculation_5262281088199017638` (`Students still needed`) whose formula reads
+`Calculation_4693780698737655073`, `Calculation_9485136151529756033`,
+`gpa_goal_proportion_org` and `gpa_goal_proportion_region`, none of them
+declared in the clone. Do this instead: when lifting a calc into a sheet that
+never carried it, lift its transitive input closure and its
+`<style-rule element='cell'>` `text-format` line too, each as its own
+`count()==1` edit at the position the donor sheet keeps it, and re-run the
+closure audit on the clone. `build_lp.py` now does this in `assert_closure()`,
+called on the tile right after it is cloned, so the invariant is enforced at
+build time instead of being noticed in review. The rebuilt `out.twb` audits at
+680 definitions across 75 worksheets, still zero undeclared references.
+
+### `[^>]*>` matches straight through a self-closing tag
+
+**Verified.** The filter-removal regex opened with
+`<filter class='categorical' column='...'[^>]*>` and closed with `.*?</filter>`.
+`base.twb` holds 6 self-closing categorical filters
+(`<filter class='categorical' column='...' filter-group='3' />`). For one of
+those the `[^>]*` runs through the `/`, the `>` of `/>` satisfies the
+opening-tag match, and `.*?</filter>` then runs on to the **next** filter's
+close — one substitution, two filters gone, no error. Demonstrated on a
+two-filter synthetic:
+
+```text
+UNGUARDED [^>]*>: subs=1, filters left=0
+GUARDED [^>]*(?<!/)>: subs=0, filters left=2
+```
+
+Do this instead: end the opening-tag match with `[^>]*(?<!/)>`. Note that the
+`[^>]*[^/>]>` form used for calc columns is **not** interchangeable here: a
+filter with no attribute after `column='...'` has `>` immediately after the
+quote, and `[^/>]` would have nothing to consume. With the lookbehind the
+self-closing filter simply does not match, so `cut_once` raises instead of
+corrupting the sheet. `selftest_drop_filters()` runs at the top of `main()` and
+proves all three halves on a synthetic block — the paired filter is removed, the
+self-closing neighbour survives, and asking to drop the self-closing one raises:
+
+```text
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+```
+
+### A cloned tile inherits every workbook-global parameter its source reads
+
+**Verified.** `LP - Tile Cumulative GPA` clones `GPA - BAN % 3.0+`, which
+carries a `Grade filter` calc (`[grade_level] = [Parameters].[Parameter 10]`).
+`[Parameter 10]` (`Grade view`, default `Grade 11`) has a visible control on the
+Cumulative GPA Monitor tab, and Tableau parameters are workbook-global, so a
+user changing the grade on that tab silently rescopes the landing-page tile. The
+first draft's title said `high schools only`, which was simply untrue: the tile
+shows one grade. Do this instead: before writing a tile title, list every
+`[Parameters].[...]` the clone's filters and calcs read and make sure the title
+names each one that narrows the number, or drop the filter. Here the filter
+stays (the tile mirrors the Monitor BAN it clones, and the goals are per grade)
+and the title carries both tokens —
+`Grade <[Parameters].[Parameter 10]> · unweighted cumulative GPA · <[Parameters].[Parameter 11]>`
+— with the caption naming where the control lives. The build asserts
+`[Parameter 10]` is declared in the clone before it puts the token in the title;
+a parameter token in a `<title>` whose parameter the sheet does not declare
+renders as literal text.
+
+### The live scratch scripts and the committed copies drift silently
+
+**Verified.** Task 3 added six `trunk-ignore` lines to the committed
+`assert_lp.py` and one to `build_lp.py` (`bandit/B314` above `ET.fromstring`)
+but never copied the hook-formatted files back to `$lp/`. Task 4 then copied
+`$lp/` **over** the committed copies, deleting every suppression, and
+`trunk check --force --no-fix` went from clean to 21 security and 6 lint
+findings — while the Task 4 report claimed the opposite, because the check had
+been run before the commit hook reformatted the files and never after. Do this
+instead: treat the copy-back step as part of the commit, not an afterthought —
+`cp` the committed files to `$lp/`, `cmp` them, and re-run the build from the
+copied-back scripts. Then run the repo's trunk command on the committed files
+**after** the commit and paste the final summary line into the report, rather
+than reporting a pre-commit run.
+
+### Verbatim run output, fix round
+
+```text
+build rc=0
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+add_goal_calcs: +965 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +13162 bytes
+add_tile_gradebook: +8652 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (1945611 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+
+additive rc=0
+stripped: {'worksheets': 5, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 5, 'nav-actions': 0, 'url-actions': 0, 'calcs': 2}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```

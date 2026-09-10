@@ -20,16 +20,24 @@ def task3(t: str) -> None:
         rf"<datasource caption='[^']*' inline='true' name='{GOAL_DS}'.*?</datasource>",
         t,
         re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
     ).group(0)
     for name, cap in (
         ("Calculation_7700000000000000001", "LP Students still needed \\(region\\)"),
         ("Calculation_7700000000000000002", "LP Gap to goal \\(region\\)"),
     ):
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert count(ds, rf"<column caption='{cap}' [^>]*name='\[{name}\]'") == 1, name
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert count(t, rf"\[{name}\]") >= 1
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "gpa_goal_proportion_region" in ds
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "Parameter 3" not in re.search(
-        r"name='\[Calculation_7700000000000000001\]'.*?</column>", ds, re.S
+        r"name='\[Calculation_7700000000000000001\]'.*?</column>",
+        ds,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
     ).group(0)
 
 
@@ -42,11 +50,16 @@ def task4(t: str) -> None:
         "LP - Tile Gradebook Health",
     ):
         ws = re.search(rf"<worksheet name='{re.escape(name)}'>.*?</worksheet>", t, re.S)
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert ws, f"missing worksheet {name}"
         w = ws.group(0)
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert "<repository-location" not in w, name
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert "<aggregation value='true' />" in w, name
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert count(w, r"<simple-id uuid=") == 1, name
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert (
             count(
                 t, rf"<window class='worksheet' hidden='true' name='{re.escape(name)}'"
@@ -54,25 +67,42 @@ def task4(t: str) -> None:
             == 1
         ), name
     y1 = re.search(
-        r"<worksheet name='LP - Tile Y1 GPA'>.*?</worksheet>", t, re.S
+        r"<worksheet name='LP - Tile Y1 GPA'>.*?</worksheet>",
+        t,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
     ).group(0)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "Calculation_4005670422414364681" not in y1  # Region Filter gone
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "[none:hos:nk]" not in y1 and "[none:school_level:nk]" not in y1
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert (
         "<layout-options>" in y1 and "[Parameters].[Parameter 4]" in y1
     )  # MP in title
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "<Data Update Time>" in y1
     gb = re.search(
-        r"<worksheet name='LP - Tile Gradebook Health'>.*?</worksheet>", t, re.S
+        r"<worksheet name='LP - Tile Gradebook Health'>.*?</worksheet>",
+        t,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
     ).group(0)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert (
         "[none:region:nk]' filter-group" not in gb
         and "[none:school:nk]' filter-group" not in gb
     )
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "[Parameters].[Parameter 1 1]" in re.search(
-        r"<layout-options>.*?</layout-options>", gb, re.S
+        r"<layout-options>.*?</layout-options>",
+        gb,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
     ).group(0)
+    # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
     title = re.search(r"<worksheet name='LP - Title'>.*?</worksheet>", t, re.S).group(0)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert "Landing Page" in title and "| Home" not in title
     # every simple-id this build added is fresh and used exactly once. A
     # file-wide uniqueness check cannot be used: 22 sheets in the untouched
@@ -84,11 +114,15 @@ def task4(t: str) -> None:
     ):
         for blk in re.findall(pat, t, re.S):
             found = re.findall(r"<simple-id uuid='([^']*)'", blk)
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
             assert len(found) == 1, blk[:60]
             added.append(found[0])
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert len(added) == 10, len(added)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
     assert len(added) == len(set(added)), "duplicate simple-id among the additions"
     for uid in added:
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
         assert t.count(uid) == 1, f"simple-id {uid} reused"
 
 
