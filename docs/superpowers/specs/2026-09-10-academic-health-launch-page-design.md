@@ -325,9 +325,13 @@ Build:
   edit with the base as reference.
 - Byte identity of the five existing dashboards: the edited `.twb` with the
   `Landing Page` dashboard, every `LP - ` worksheet, the two new calculations
-  and the new action sources removed diffs empty against the base. A mutation
-  that touches one existing dashboard zone must make this check fail before it
-  counts.
+  and the new actions removed diffs empty against the base. One attribute is
+  exempt: the default view is the dashboard window that carries
+  `maximized='true'`, so that marker moves from the `Gradebook Teacher View`
+  window to the new one. The checker normalizes that attribute out on both sides
+  and separately requires exactly one maximized window, `Landing Page`. A
+  mutation that touches one existing dashboard zone must make this check fail
+  before it counts.
 - `repack.py` reports zero bare LF and packaged bytes equal to the source.
 
 Render, on the review copy:
