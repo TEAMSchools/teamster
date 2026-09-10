@@ -337,6 +337,11 @@ left join
         'ELA Gr7',
         'ELA Gr8'
     )
+-- this branch is the INTERNAL method's: it reads the internal expectation gate,
+-- the frozen custom goals sheet and int_amplify__pm_met_criteria. Both joins
+-- below now carry a row per data method, so without model_type each one matches
+-- Internal AND Aimline -- measured at exactly 2 rows per group on every group,
+-- compounding to 4x across the pair.
 left join
     {{ ref("int_amplify__all_assessments") }} as a
     on e.academic_year = a.academic_year
@@ -344,6 +349,7 @@ left join
     and e.round_number = a.round_number
     and e.expected_measure_standard = a.measure_standard
     and s.student_number = a.student_number
+    and a.model_type = 'Internal'
 left join
     {{ ref("int_students__dibels_participation_roster") }} as rs
     on e.academic_year = rs.academic_year
@@ -351,6 +357,7 @@ left join
     and e.admin_season = rs.admin_season
     and e.round_number = rs.round_number
     and s.student_number = rs.student_number
+    and rs.model_type = 'Internal'
 left join
     {{ ref("int_amplify__pm_met_criteria") }} as pm
     on e.academic_year = pm.academic_year
