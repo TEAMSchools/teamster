@@ -10,30 +10,51 @@ compares against a captured baseline rather than trusting the revert.
 
 ## What this change did
 
-Commits on `anthonygwalters/feat/claude-assessment-strand-scores`, in
-implementation order:
+The change ships as **two pull requests merged in order**, not one. That split
+is deliberate and it is what this runbook's ordering depends on. See _Why two
+merges_ below for the reason.
 
-1. `91189e19b` — passes `illuminate_subject` through
-   `int_iready__domain_unpivot`
-1. `1814afb10` — adds DIBELS subtest rows and the discriminator plumbing for an
-   8th surrogate-key input, to `fct_assessment_scores_enrollment_scoped`
-1. `e8945d877` — adds i-Ready domain rows to the same fact
-1. `b6abb3a76` — unifies `response_type` across every assessment source
-1. `6a1f73277` and `6cce6dee0` — document the unified `response_type` vocabulary
-   and the fact/upstream YAML
-1. `78a8539d0` and `4d02fd27b` — update the Cube pre-aggregation and view
-   description
-1. `6f0528531` and `e137b2144` — update the Cube knowledge-base files
+1. **The dbt PR** (#4710, branch
+   `anthonygwalters/feat/claude-assessment-strand-scores`) — the fact model, the
+   i-Ready domain unpivot, both properties files, and this plan/spec/baseline
+   set. It adds the DIBELS subtest and i-Ready domain rows and makes
+   `response_type` non-nullable. It changes no Cube file, so no measure
+   definition moves with it.
+1. **The Cube PR** (branch
+   `cristinabaldor/feat/claude-assessment-strand-scores-cube`, based on the dbt
+   branch) — `student_assessment_scores.yml`,
+   `student_assessment_scores_view.yml`, and the three
+   `src/cube/mcp/project_knowledge/` files. It excludes `not_taken` from the
+   proficiency measures, renames the pre-aggregation, and carries the claude.ai
+   Project merge gate.
 
-Two other commits on the branch are **not** part of the implementation and must
-**not** be reverted: `a9f529336` (the pre-change baseline capture — the file
-this runbook verifies against) and `ab89e53f5` (a plan-doc edit). Both are
-docs-only commits with no effect on any built table or Cube model.
+Both merge squashed, so each lands on `main` as exactly one commit. Record the
+two squash SHAs at merge time — this runbook calls them `<cube-squash>` and
+`<dbt-squash>`, and every command below needs them. The individual branch
+commits are not reachable from `main` after a squash merge.
+
+**Why two merges.** Cube Cloud redeploys automatically on merge to `main`, while
+the fact rebuilds hours later on the Dagster schedule, so a single merge always
+puts the new Cube model in front of the old fact for a period. Measured
+2026-09-10 on a local dev server, the new Cube model against the then-current
+production fact returned exactly 0 for DIBELS, i-Ready, STAR and all five NJ/FL
+state sources — 1.32M rows, silently. Merging the dbt half first, letting the
+fact rebuild, then merging the Cube half removes that window: the renamed
+pre-aggregation gets built against the correct fact on its very first build.
+
+The measure filters additionally use `IS DISTINCT FROM 'not_taken'` rather than
+`!= 'not_taken'`, so a null `response_type` counts rather than vanishing. That
+guard is what makes the ordering recoverable rather than merely correct, and it
+matters most **here** — a rollback re-introduces the null-`response_type` fact
+while the Cube model may still be deployed, which is the same window from the
+other side.
 
 Net effect on production, relative to the `a9f529336` baseline:
 
-- `fct_assessment_scores_enrollment_scoped` gained roughly 252,300 DIBELS
-  subtest rows and roughly 1,139,444 i-Ready domain rows.
+- `fct_assessment_scores_enrollment_scoped` gained roughly 269,600 DIBELS
+  subtest rows and roughly 1,207,200 i-Ready domain rows (counted 2026-09-10 on
+  a dev-schema build of the branch; the 2026-08-28 estimates of 252,300 and
+  1,139,444 predate the i-Ready FY27 partitions landing on 2026-09-01).
 - `response_type` became non-nullable across four values (`standard`, `group`,
   `overall`, `not_taken`); every row that was previously `NULL` became `overall`
   or `not_taken`.
@@ -44,8 +65,11 @@ Net effect on production, relative to the `a9f529336` baseline:
   4th hash input flipped from `rr.response_type` (NULL) to
   `coalesce(rr.response_type, 'not_taken')`. Both are a pure key-value change,
   not a new/removed row.
-- Cube's proficiency measures now exclude `not_taken` rows. Illuminate
-  `pct_proficient` moved from 45.80% (baseline) to 49.54%.
+- Cube's proficiency measures now exclude `not_taken` rows. Measured 2026-09-10
+  on a local dev server, global unfiltered `pct_proficient` moved from 45.66% to
+  48.24%, and the Illuminate-only rate from 46.17% to 49.73%. The 45.80% →
+  49.54% pair recorded on 2026-08-28 was Illuminate-only rather than global, and
+  has drifted since; use the pairs above.
 - The Cube pre-aggregation was renamed from `proficiency_rollup` to
   `proficiency_rollup_v2`.
 - Three files under `src/cube/mcp/project_knowledge/` changed
@@ -59,26 +83,39 @@ Net effect on production, relative to the `a9f529336` baseline:
 
 ## Rollback steps
 
-The `git revert` (step 1) and `git show <sha>^:...` (step 3) commands below name
-individual commit SHAs, which are reachable from `main` only if the PR was
-merged with a merge commit — per the root `CLAUDE.md`, PRs are squash merged, so
-if that's what happened here, every command below fails with `bad object`;
-revert the single squash commit instead, and read prior file versions from that
-squash commit's parent (`git show <squash-sha>^:<path>`).
+Every command below names `<cube-squash>` and `<dbt-squash>`, the two squash
+commits the merges produced. Find them on `main` with
+`git log --oneline --grep '#4710'` and by the Cube PR's number, or from each
+PR's merge event. If either merge was landed with a merge commit rather than a
+squash, use that merge commit's SHA in the same positions.
 
-1. **Revert the implementation commits.** From `main` (post-merge), revert the
-   ten implementation commits listed above, in reverse order, ending with
-   `91189e19b`:
+**Revert the Cube merge before the dbt merge.** The reverse of the merge order
+is not a preference here: reverting the dbt half first restores a fact whose
+`response_type` is null on every non-Illuminate row while the Cube measures are
+still live, which is the same window the split exists to avoid. The
+`IS DISTINCT FROM` guard keeps that from zeroing anything, but the
+pre-aggregation still holds new-vocabulary partitions over old-vocabulary data
+until it rebuilds. Reverting the Cube half first avoids the state entirely.
+
+1. **Revert the Cube merge**, then the dbt merge, in that order:
 
    ```bash
-   git revert --no-commit e137b2144 6f0528531 4d02fd27b 78a8539d0 \
-     6cce6dee0 6a1f73277 b6abb3a76 e8945d877 1814afb10 91189e19b
-   git commit -m "revert: back out strand-level-scores change (Refs #4708)"
+   git revert --no-commit <cube-squash>
+   git commit -m "revert: back out strand-scores Cube changes (Refs #4708)"
+   git revert --no-commit <dbt-squash>
+   git commit -m "revert: back out strand-scores fact changes (Refs #4708)"
    ```
 
-   Do not revert `a9f529336` or `ab89e53f5` — they carry the baseline this
-   runbook checks against and the plan-doc trail; reverting them destroys the
-   evidence needed for step 5.
+   Two commits, not one — they can be raised as two PRs, and the Cube revert can
+   ship alone if the fact turns out to be fine. Merge the Cube revert and let
+   Cube Cloud redeploy before merging the dbt revert.
+
+   Reverting the dbt merge also reverts this runbook, the spec, the plan and the
+   baseline capture, since all four ship in the dbt PR. **Take copies of
+   `docs/superpowers/plans/2026-08-28-strand-scores-baseline.md` and this file
+   before running the dbt revert** — step 5 verifies against the baseline, and
+   the revert removes it from the tree. Reading them back out of the reverted
+   commit works too (`git show <dbt-squash>:<path>`), but only if you know to.
 
 1. **Rebuild the fact table fully**, not incrementally, so no stale post-change
    rows survive a partial refresh:
@@ -96,15 +133,16 @@ squash commit's parent (`git show <squash-sha>^:<path>`).
 
 1. **Restore the prior claude.ai Project knowledge and instructions.** This is
    two distinct mechanisms, not one — do not treat it as "re-upload three
-   files." The prior (pre-change) content for all three files is the parent of
-   `6f0528531`. Retrieve all three, saving each to a file:
+   files." All three files ship in the **Cube** PR, so their prior (pre-change)
+   content is the parent of `<cube-squash>`. Retrieve all three, saving each to
+   a file:
 
    ```bash
-   git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md \
+   git show <cube-squash>^:src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md \
      > assessment-cube-orchestrator.md
-   git show 6f0528531^:src/cube/mcp/project_knowledge/assessment-cube-reference.md \
+   git show <cube-squash>^:src/cube/mcp/project_knowledge/assessment-cube-reference.md \
      > assessment-cube-reference.md
-   git show 6f0528531^:src/cube/mcp/project_knowledge/README.md \
+   git show <cube-squash>^:src/cube/mcp/project_knowledge/README.md \
      > README.md
    ```
 
@@ -135,17 +173,22 @@ squash commit's parent (`git show <squash-sha>^:<path>`).
    — it is not run by CI or by merging the revert PR. See the merge-gate section
    below for why this step's timing matters as much as the step itself.
 
-1. **Rename the pre-aggregation back**, so Cube treats it as a new
-   pre-aggregation and forces a clean rebuild rather than reusing partitions
-   built under the `_v2` definition:
+1. **Confirm the pre-aggregation rebuilt under its old name.** Reverting the
+   Cube merge already restores `proficiency_rollup_v2 -> proficiency_rollup` in
+   `src/cube/model/cubes/student_assessments/student_assessment_scores.yml`, so
+   there is no rename to make by hand — that was a separate step only while the
+   two halves shipped as one PR. The rename still does its job on the way back:
+   Cube treats `proficiency_rollup` as a new pre-aggregation and builds it
+   clean, rather than reusing partitions built under the `_v2` definition.
 
-   ```text
-   proficiency_rollup_v2 -> proficiency_rollup
-   ```
-
-   in `src/cube/model/cubes/student_assessments/student_assessment_scores.yml`.
-   Confirm the rebuild completes (see the pre-aggregation assertion below)
-   before treating the rollback as done.
+   What does need checking is the **timing**. Do not treat the rollback as done
+   until the rebuild completes (see the pre-aggregation assertion below). Until
+   it does, queries are served from whatever `proficiency_rollup` partitions
+   already exist, which are the pre-change ones — correct for a rollback, but
+   only by coincidence, and mixed with freshly-built partitions as the refresh
+   sweeps. Every measure read goes through this pre-aggregation rather than the
+   fact (verified 2026-09-10 via the Cube `/sql` endpoint), so a green fact
+   table is not evidence that consumers see rolled-back numbers.
 
 1. **Assert the restored table against the captured baseline**, using
    `docs/superpowers/plans/2026-08-28-strand-scores-baseline.md` — see the next
