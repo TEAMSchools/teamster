@@ -19,7 +19,9 @@ account with domain-wide delegation. Provides batch methods:
 
 **Retry pattern**: All `.execute()` calls (both `_list` and batch methods) are
 wrapped via the module-level `_retryable_execute(request)` factory +
-`backoff(fn=..., retry_on=(_TransientHttpError,))`. Never use bare
+`_backoff(fn)`, which retries `_TransientHttpError` 6 times with delays of 1, 2,
+4, 8, 16, 32s (63s total, enough to outlast a per-minute 429). Do not call
+`dagster.backoff` directly: its defaults give up after 1.5s. Never use bare
 `errors.HttpError` — 4xx client errors must not be retried. Transient codes:
 `{429, 500, 502, 503, 504}`.
 

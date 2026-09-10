@@ -77,21 +77,20 @@ with
         where _dbt_source_project = 'kippmiami' and studentid is not null
     ),
 
-    /* The archive was rebuilt with student_number 8400-prefixed to the Focus
-       id (#5012), so the roster's Focus student_number joins it directly.
-       studentid still comes from here because gpa_cumulative keys on it.
-       schoolid comes along to keep the gpa_cumulative join single-rowed --
-       323 Miami students have more than one row there. */
+    /* gpa_cumulative is one row per student per school, and 323 Miami students
+       have more than one row. The student's primary school in the archive's
+       last year picks the row, the same school the retired students table
+       carried as the student's current school. student_number is the archive's
+       8400-prefixed value, so the Focus roster joins it directly. */
     ps_xwalk as (
         select
-            stu.student_number as ps_student_number,
-            stu.id as ps_studentid,
-            stu.schoolid,
+            se.student_number as ps_student_number,
+            se.schoolid,
 
             ply.academic_year as ps_last_academic_year,
-        from {{ ref("stg_powerschool__students") }} as stu
-        cross join ps_last_academic_year as ply
-        where stu._dbt_source_project = 'kippmiami'
+        from {{ ref("base_powerschool__student_enrollments") }} as se
+        inner join ps_last_academic_year as ply on se.academic_year = ply.academic_year
+        where se._dbt_source_project = 'kippmiami' and se.rn_year = 1
     ),
 
     /* gpa_y1 is PowerSchool-only. Keep the is_current filter and join THIS
@@ -217,7 +216,7 @@ left join
     and pada._dbt_source_project = 'kippmiami'
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as pgc
-    on px.ps_studentid = pgc.studentid
+    on px.ps_student_number = pgc.students_student_number
     and px.schoolid = pgc.schoolid
     and pgc._dbt_source_project = 'kippmiami'
     and e.academic_year - 1 = px.ps_last_academic_year

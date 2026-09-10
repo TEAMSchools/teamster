@@ -30,16 +30,10 @@ with
         -- round trip -- and it made the join depend on the unprefix rule
         -- holding, which is not a property this join needs.
         left join current_stint as e on s.student_id = e.student_number
-    ),
-
-    powerschool_filtered as (
-        select p.*,
-        from {{ ref("stg_powerschool__students") }} as p
-        where p._dbt_source_project != 'kippmiami'
     )
 
 select *,
-from powerschool_filtered
+from {{ ref("stg_powerschool__students") }}
 
 full union all corresponding
 
