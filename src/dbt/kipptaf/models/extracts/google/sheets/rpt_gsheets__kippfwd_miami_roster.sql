@@ -89,11 +89,8 @@ with
 
             ply.academic_year as ps_last_academic_year,
         from {{ ref("base_powerschool__student_enrollments") }} as se
-        cross join ps_last_academic_year as ply
-        where
-            se._dbt_source_project = 'kippmiami'
-            and se.academic_year = ply.academic_year
-            and se.rn_year = 1
+        inner join ps_last_academic_year as ply on se.academic_year = ply.academic_year
+        where se._dbt_source_project = 'kippmiami' and se.rn_year = 1
     ),
 
     /* gpa_y1 is PowerSchool-only. Keep the is_current filter and join THIS

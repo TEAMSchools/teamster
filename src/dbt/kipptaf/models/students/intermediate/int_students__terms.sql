@@ -106,12 +106,10 @@ with
             and p.abbreviation = q.term
             and p._dbt_source_project = q._dbt_source_project
             and p.rn = 1
-    ),
-
-    powerschool_conformed as (select *, from powerschool_joined)
+    )
 
 select *,
-from powerschool_conformed
+from powerschool_joined
 
 full union all corresponding
 
