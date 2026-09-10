@@ -1,6 +1,8 @@
 """Dump dashboard zone trees (text, sheets, nav) from downloaded .twb files."""
 
 import sys
+
+# trunk-ignore(bandit/B405): parse-only read of a workbook we downloaded ourselves
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -31,6 +33,7 @@ def walk(zone: ET.Element, depth: int, out: list[str]) -> None:
 
 
 def dump(slug: str, dashboards: set[str]) -> None:
+    # trunk-ignore(bandit/B314): parse-only read of a workbook we downloaded ourselves
     root = ET.parse(SRC / f"{slug}.twb").getroot()
     ws_titles = {}
     for ws in root.iter("worksheet"):

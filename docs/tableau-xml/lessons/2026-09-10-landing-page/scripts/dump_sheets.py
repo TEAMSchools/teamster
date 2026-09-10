@@ -2,6 +2,8 @@
 
 import re
 import sys
+
+# trunk-ignore(bandit/B405): parse-only read of a workbook we downloaded ourselves
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -15,6 +17,7 @@ def text_of(el: ET.Element | None) -> str:
 
 
 def main(slug: str, pattern: str) -> None:
+    # trunk-ignore(bandit/B314): parse-only read of a workbook we downloaded ourselves
     root = ET.parse(SRC / f"{slug}.twb").getroot()
     rx = re.compile(pattern)
     for ws in root.iter("worksheet"):
@@ -29,9 +32,9 @@ def main(slug: str, pattern: str) -> None:
         lits = []
         for col in ws.iter("column"):
             calc = col.find("calculation")
-            if calc is not None and calc.get("formula", "").startswith('"'):
-                lits.append(calc.get("formula")[:300])
-        rows = [c.get("column") for c in ws.iter("rows")]
+            formula = calc.get("formula", "") if calc is not None else ""
+            if formula.startswith('"'):
+                lits.append(formula[:300])
         print(f"\n## {name}")
         if title:
             print(f"title: {title!r}")
