@@ -1595,6 +1595,75 @@ the calculation averaged the **composite** score (it excludes Composite and
 averages each measure; the composite only gates eligibility), and it called the
 column `average_starting_words` (it is `starting_words`).
 
+### benchmark_goal is Amplify's published standard, and it can be missing
+
+`benchmark_goal` is not ours. It is Amplify's official DIBELS grade-level
+standard for a (grade, measure standard, admin), and it travels a long way:
+
+```text
+sheet: src_google_sheets__dibels__goals_long
+  -> grade_level_standard, per grade / measure_standard / admin_season
+stg_google_sheets__dibels_goals_long
+  -> adds matching_pm_season (MOY -> BOY->MOY, EOY -> MOY->EOY) and grade_level
+int_google_sheets__dibels_pm_expectations        (internal chain)
+  -> g.grade_level_standard as benchmark_goal
+rpt_gsheets__dibels_pm_goal_setting
+  -> e.benchmark_goal + 3        <- the padding is applied HERE, once
+frozen sheet -> stg_google_sheets__dibels_pm_goals
+int_amplify__pm_met_criteria
+  -> met_admin_benchmark_goal = score >= benchmark_goal
+```
+
+**The `matching_pm_season` mapping is the whole idea of "on pace" in three lines
+of staging.** A BOY->MOY round is measured against the **MOY** standard -- the
+NEXT benchmark's bar, not the one the student just sat. Do not "fix" a join that
+looks off by one season; that offset is the point.
+
+**The two chains reach `goals_long` through different column pairs, and they do
+agree.** `pm_expectations` joins `e.admin_season = g.matching_pm_season`; the
+by-levels gate joins `e.matching_bm_season = g.admin_season` -- one maps
+forward, the other back. Verified on AY2025: 378 (year, region, grade, measure,
+season) combinations compared, **zero** disagreements, and the 10 null cases
+coincide on both sides. Re-run that check if `matching_bm_season` on the
+by-levels sheet is ever hand-edited, because a disagreement would make the two
+methods pull different benchmark goals for the same student with nothing
+failing.
+
+**A null `benchmark_goal` is correct data, and it reads as failing.** Amplify
+publishes no standard for a measure at a grade where that measure is not given
+-- NWF is not a grade-4 measure, WRF is not a grade-4/5 measure, ORF Accuracy is
+not a Kinder measure. The blank in `goals_long` is right; the gate's LEFT join
+turns it into null; and **`if(score >= null, 1, 0)` returns 0, not null**, so a
+student reads as failing a bar that does not exist for them.
+
+Two populations, and only one matters. Measured on AY2025:
+
+| Rows                                  | Null goal     | Which                                              |
+| ------------------------------------- | ------------- | -------------------------------------------------- |
+| Scaffold (`pm_goal_include` non-null) | 28 of 284     | G4 NWF Letter Sounds + Decoding, Newark and Camden |
+| Live rounds, internal gate            | **15 of 452** | **Miami only** -- G0 ORF Accuracy, G4-5 WRF        |
+| Live rounds, by-levels gate           | **30 of 938** | the same 15, doubled across the two cohorts        |
+
+The scaffold rows are harmless -- consumers filter `pm_goal_include is null`
+anyway. The live rounds are the real exposure and they are **entirely Miami**,
+whose measure progression comes from its own tab in T&L's PM Rounds doc.
+
+Reach by surface:
+
+| Surface                        | Null `benchmark_goal` |
+| ------------------------------ | --------------------- |
+| Frozen goals sheet, AY2025     | 0 of 444              |
+| `int_amplify__pm_met_criteria` | 0 of 36,484           |
+| By-levels gate, AY2025         | 30 of 938             |
+| By-levels gate, AY2026         | 0 of 1,170            |
+
+So the internal method never sees one, while **the aimline sibling reads the
+by-levels gate directly and would**. Those students could never be classified On
+Track whatever they scored. AY2026 is clean, so testing this year would not
+surface it. **Handle a null `benchmark_goal` explicitly in the sibling** rather
+than letting `if()` collapse it to 0, and settle with T&L whether such a student
+is On Track, excluded, or a distinct state.
+
 ### The internal PM evaluation is four questions, and only one is method-specific
 
 Useful when building or reviewing the aimline sibling, because it says exactly

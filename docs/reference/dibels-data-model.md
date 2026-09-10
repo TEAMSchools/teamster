@@ -1055,6 +1055,53 @@ while off their own aimline, and neither number is wrong — they answer differe
 questions. Do not treat a gap between the two methods as a reconciliation
 defect.
 
+#### Where `benchmark_goal` comes from
+
+`benchmark_goal` is not a KTAF number. It is Amplify's official DIBELS
+grade-level standard for a (grade, measure standard, admin), and both PM chains
+reach it from the same sheet:
+
+```text
+src_google_sheets__dibels__goals_long          Amplify's published standards
+  └─ grade_level_standard, per grade / measure_standard / admin_season
+stg_google_sheets__dibels_goals_long
+  └─ adds matching_pm_season (MOY → BOY→MOY, EOY → MOY→EOY) and grade_level
+int_google_sheets__dibels_pm_expectations      internal chain
+  └─ g.grade_level_standard as benchmark_goal
+rpt_gsheets__dibels_pm_goal_setting
+  └─ e.benchmark_goal + 3        ← the padding, applied once, here
+frozen sheet → stg_google_sheets__dibels_pm_goals
+int_amplify__pm_met_criteria
+  └─ met_admin_benchmark_goal = score ≥ benchmark_goal
+```
+
+The `matching_pm_season` mapping is what makes "on pace" mean anything: a
+BOY→MOY round is measured against the **MOY** standard — the next benchmark's
+bar, not the one the student just sat. A join that looks off by one season is
+correct.
+
+The aimline chain reaches the same sheet through
+`int_google_sheets__dibels__expected_assessments_by_levels`, but joins the other
+direction (`e.matching_bm_season = g.admin_season` rather than
+`e.admin_season = g.matching_pm_season`). The two are equivalent on AY2025 — 378
+combinations compared, zero disagreements, the 10 null cases coinciding — but
+they are different expressions, so a hand-edit to `matching_bm_season` on the
+by-levels sheet could make the two methods pull different goals for the same
+student with nothing failing.
+
+!!! warning "A null benchmark goal is correct data, and it reads as failing"
+Amplify publishes no standard for a measure at a grade where that measure is not
+given — NWF is not a grade-4 measure, WRF is not a grade-4/5 measure, ORF
+Accuracy is not a Kinder measure. The blank is right, but the LEFT join turns it
+into null and `if(score >= null, 1, 0)` returns **0**, so the student reads as
+not at grade level rather than as having no standard. On AY2025 the live-round
+cases are entirely Miami (G0 ORF Accuracy, G4–5 WRF) — 15 rows in the internal
+gate, 30 in the by-levels gate once doubled across cohorts — plus 28 on grade-4
+NWF scaffold rows that consumers filter out anyway. The frozen goals sheet
+carries none, so the internal method never sees one; an aimline consumer reading
+the by-levels gate directly would, and AY2026 is clean so this year's data would
+not reveal it.
+
 #### What the calculation produces
 
 `rpt_gsheets__dibels_pm_goal_setting` averages each MEASURE's benchmark score —
