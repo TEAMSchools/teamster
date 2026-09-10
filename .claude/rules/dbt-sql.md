@@ -133,6 +133,13 @@ wins: its test-tiering advice ("avoid liberal `not_null` /
 `config.where`-scoped warn tests, its example SQL is non-BigQuery dialect, and
 validation/profiling goes through BigQuery MCP, not `dbt show`.
 
+- **ANSI SQL or a dbt macro first; BigQuery syntax only where it adds
+  capability.** When standard SQL or an installed macro produces the same
+  result, use it. Reach for a BigQuery-only form
+  (`full union all corresponding`, `qualify`, `select * except`, `group by all`)
+  only when it does something the standard form cannot. Example: two enumerated
+  UNION branches take a positional `union all` with `cast(null as <type>)`
+  padding, not `full union all corresponding`.
 - **Before writing or editing any inline SQL comment, stop and ask: would this
   survive as a properties.yml `description:` instead?** A comment explaining
   rationale, background, or what/why a model computes belongs in the properties
