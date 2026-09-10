@@ -1,4 +1,4 @@
-# Keep 8 Miami history unions, drop 12, delete `exclude_frozen`
+# Keep 11 Miami history unions, drop 9, delete `exclude_frozen`
 
 Design for #5193, the last open child of #5012. Brainstormed 2026-09-10. Counts
 measured on `main` at `77977d0430` and in prod BigQuery the same day; re-measure
@@ -6,11 +6,13 @@ before each PR.
 
 ## Decision
 
-kipptaf keeps Miami's PowerSchool history for two things only: stored grades and
-attendance, plus the package intermediates computed from them. Every other
-`source("kippmiami_powerschool", ...)` call goes. The archive dataset
-`kippmiami_powerschool` becomes a permanent history source for 8 tables, and
-#5012 step 4 ("remove all 33 calls") is revised to say so.
+kipptaf keeps Miami's PowerSchool history for three things: stored grades,
+attendance, and the course enrollments both of them hang off, plus the package
+intermediates computed from them. Course enrollments are never ported to Focus,
+so dropping them would orphan every Miami grade and attendance row from its
+section. Every other `source("kippmiami_powerschool", ...)` call goes. The
+archive dataset `kippmiami_powerschool` becomes a permanent history source for
+11 tables, and #5012 step 4 ("remove all 33 calls") is revised to say so.
 
 The rule behind the split is the one #5228 established: joins between
 PowerSchool tables happen in the shared `powerschool` package, and kipptaf
@@ -26,41 +28,47 @@ calls, 0 literals and 2 calls are dead today. The rest are live business rules:
 this feed does not serve Miami.
 
 `exclude_frozen` and its var are deleted. The 7 call sites still needed after
-the drops become inline `!= 'kippmiami'` literals, the form the other 42 already
+the drops become inline `!= 'kippmiami'` literals, the form the other 43 already
 use.
 
 ## The 20 remaining unions
 
-### Keep, 8
+### Keep, 11
 
-| Chain         | Union                                   | kipptaf readers |
-| ------------- | --------------------------------------- | --------------- |
-| Stored grades | `stg_powerschool__storedgrades`         | 14              |
-| Stored grades | `base_powerschool__final_grades`        | 11              |
-| Stored grades | `int_powerschool__final_grades_rollup`  | 2               |
-| Stored grades | `int_powerschool__gpa_term`             | 16              |
-| Stored grades | `int_powerschool__gpa_cumulative`       | 8               |
-| Attendance    | `int_powerschool__ps_adaadm_daily_ctod` | 1               |
-| Attendance    | `int_powerschool__ada`                  | 1               |
-| Attendance    | `int_powerschool__attendance_streak`    | 1               |
+| Chain              | Union                                       | kipptaf readers |
+| ------------------ | ------------------------------------------- | --------------- |
+| Stored grades      | `stg_powerschool__storedgrades`             | 14              |
+| Stored grades      | `base_powerschool__final_grades`            | 11              |
+| Stored grades      | `int_powerschool__final_grades_rollup`      | 2               |
+| Stored grades      | `int_powerschool__gpa_term`                 | 16              |
+| Stored grades      | `int_powerschool__gpa_cumulative`           | 8               |
+| Attendance         | `int_powerschool__ps_adaadm_daily_ctod`     | 1               |
+| Attendance         | `int_powerschool__ada`                      | 1               |
+| Attendance         | `int_powerschool__attendance_streak`        | 1               |
+| Course enrollments | `int_powerschool__course_enrollments_union` | 1               |
+| Course enrollments | `int_powerschool__sections_union`           | 1               |
+| Course enrollments | `stg_powerschool__courses`                  | 4               |
 
 `fct_grades_term`, `fct_grades_gpa`, and `fct_grades_category` read
 `int_students__final_grades`, `int_students__gpa`, and
-`int_students__category_grades`, none of which touch a dropped union. The
-attendance denominators are computed in the package
-(`int_powerschool__ps_adaadm_daily_ctod` from `ps_membership_reg`), so no
-calendar union is needed for them.
+`int_students__category_grades`. The attendance denominators are computed in the
+package (`int_powerschool__ps_adaadm_daily_ctod` from `ps_membership_reg`), so
+no calendar union is needed for them.
 
-### Drop, 12
+`sections_union` and `courses` stay because the enrollment history needs its
+dimensions: Cube's `student_section_enrollments` joins `course_sections` and
+`courses`, and `dim_course_sections` keys `course_key` on course number plus
+project. The 135 course numbers behind the 3,433 Miami history sections exist
+only in the archive.
 
-| Union                                                                                                                                  | Why                                                                                                                                                                                                                                                                             | Effect on kipptaf readers                                                                                                       |
-| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `stg_powerschool__schools`                                                                                                             | `int_students__schools` already carries Focus Miami schools under the same `school_number` values, with `name`, `abbreviation`, `school_level`, `location_key`, and project. The archive adds only the `Graduated Students` pseudo-school and lacks the 3 newest Focus schools. | 5 repoints, 6 literals and 3 calls die                                                                                          |
-| `stg_powerschool__courses`                                                                                                             | Internal-join input. `storedgrades` carries `course_name` natively and `base_powerschool__final_grades` carries course attributes from the package join.                                                                                                                        | 1 literal dies; `int_students__courses` PS branch shrinks to NJ                                                                 |
-| `int_powerschool__sections_union`, `int_powerschool__course_enrollments_union`                                                         | Schedule history, not on the list. The 3,433 Miami history sections leave `dim_course_sections`; their 135 course numbers exist only in the archive, so `courses` cannot drop without them.                                                                                     | 2 dead `not (kippmiami and year >= cutover)` branches in `int_students__course_sections` and `int_students__course_enrollments` |
-| `stg_powerschool__assignmentscore`                                                                                                     | Gradebook, not on the list.                                                                                                                                                                                                                                                     | 2 literals die                                                                                                                  |
-| `int_powerschool__teachers`, `stg_powerschool__sectionteacher`, `stg_powerschool__roledef`                                             | Section-teacher join that `base_powerschool__sections` already performs in the package.                                                                                                                                                                                         | none; readers run NJ-only                                                                                                       |
-| `stg_powerschool__calendar_day`, `int_powerschool__calendar_day`, `int_powerschool__calendar_week`, `int_powerschool__calendar_rollup` | Calendar is an input to attendance, not a product of it. After PR 1 nothing in kipptaf needs Miami calendar history.                                                                                                                                                            | `dim_school_calendars` loses Miami AY2025-and-earlier days                                                                      |
+### Drop, 9
+
+| Union                                                                                                                                  | Why                                                                                                                                                                                                                                                                             | Effect on kipptaf readers                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `stg_powerschool__schools`                                                                                                             | `int_students__schools` already carries Focus Miami schools under the same `school_number` values, with `name`, `abbreviation`, `school_level`, `location_key`, and project. The archive adds only the `Graduated Students` pseudo-school and lacks the 3 newest Focus schools. | 5 repoints, 6 literals and 3 calls die                     |
+| `stg_powerschool__assignmentscore`                                                                                                     | Gradebook, not on the list.                                                                                                                                                                                                                                                     | 2 literals die                                             |
+| `int_powerschool__teachers`, `stg_powerschool__sectionteacher`, `stg_powerschool__roledef`                                             | Section-teacher join that `base_powerschool__sections` already performs in the package, so the kept `sections_union` carries the teacher.                                                                                                                                       | none; readers run NJ-only                                  |
+| `stg_powerschool__calendar_day`, `int_powerschool__calendar_day`, `int_powerschool__calendar_week`, `int_powerschool__calendar_rollup` | Calendar is an input to attendance, not a product of it. After PR 1 nothing in kipptaf needs Miami calendar history.                                                                                                                                                            | `dim_school_calendars` loses Miami AY2025-and-earlier days |
 
 The one real dependency on the calendar chain is
 `int_students__attendance_daily`, which inner-joins
@@ -90,15 +98,16 @@ PR 1b removes the package from `kippmiami` again, as #5208 did. The tables stay.
 
 One branch. Everything below compiles together because `union_relations`
 intersects columns at run time and the removed relations have no kipptaf-only
-columns (verified for `schools` and `courses`; check `sources-kippmiami.yml`
-column lists for the other 10 before deleting).
+columns (verified for `schools`; check `sources-kippmiami.yml` column lists for
+the other 8 before deleting).
 
 - `int_students__attendance_daily`: read the 3 week fields from `mem`, drop the
   `int_students__calendar_week` join.
-- 12 unions: delete the `source("kippmiami_powerschool", ...)` line.
-- `sources-kippmiami.yml`: keep the 8 history tables. Description: "archive,
-  permanent history source for stored grades and attendance; rebuilt once from
-  the frozen externals with the 8400 prefix and AY2025 bound".
+- 9 unions: delete the `source("kippmiami_powerschool", ...)` line.
+- `sources-kippmiami.yml`: keep the 11 history tables. Description: "archive,
+  permanent history source for stored grades, attendance, and course
+  enrollments; rebuilt once from the frozen externals with the 8400 prefix and
+  AY2025 bound".
 - 5 `schools` readers repoint to `int_students__schools`:
   `int_assessments__academic_goals`,
   `int_google_sheets__topline_aggregate_goals`,
@@ -120,21 +129,21 @@ column lists for the other 10 before deleting).
   `storedgrades` keeps Miami. While touched, this model and
   `rpt_clever__sections` switch from `base_powerschool__*` wrappers to the
   `int_students__*` models they alias.
-- Dead literals deleted, 9: `rpt_illuminate__roles` L23, `rpt_illuminate__sites`
+- Dead literals deleted, 8: `rpt_illuminate__roles` L23, `rpt_illuminate__sites`
   L42, `int_tableau__fresh_enrollment_scaffold` L16, `rpt_parentsquare__staff`
   L10, `rpt_parentsquare__schools` L36, `int_students__schools` L22,
-  `rpt_illuminate__courses` L30,
   `int_powerschool__gradebook_assignment_scores_rollup` L43,
   `rpt_deanslist__missing_assignments` L13.
-- Dead branches deleted, 2: the
-  `not (_dbt_source_project = 'kippmiami' and year >= fay.min_academic_year)`
-  predicates in `int_students__course_sections` and
-  `int_students__course_enrollments`, and the `fay` CTE if nothing else reads
-  it.
 - Docs: revision note on `2026-09-08-miami-powerschool-retirement-design.md` and
   a comment on #5012 rewriting steps 4 and 5.
 
-## Filters that stay, 49
+The `not (_dbt_source_project = 'kippmiami' and year >= fay.min_academic_year)`
+predicates in `int_students__course_sections` and
+`int_students__course_enrollments` stay. The archive's AY2025 bound makes them
+redundant, but they guard the cutover seam on unions that remain, and removing
+them is not this issue's job.
+
+## Filters that stay, 50
 
 All are business rules, not archive leftovers. Recorded here so the next reader
 does not re-triage them.
@@ -146,6 +155,7 @@ does not re-triage them.
   Focus Miami rows: 10 ParentSquare (Newark-only vendor),
   `rpt_illuminate__terms`, `int_extracts__gradebook_audit_student_flags`,
   `rpt_tableau__gradebook_audit`.
+- 1 `rpt_illuminate__courses` on the kept `courses` union.
 - 6 staff `dagster_code_location != 'kippmiami'` in Illuminate and ParentSquare,
   plus the 5 Clever staff gates inlined from the macro.
 - 2 Clever inlined gates on conformed student and section models.
@@ -164,8 +174,10 @@ PR 2, before opening:
   worktree, per `dbt-local-dev`.
 - `fct_student_attendance_daily` keeps 793,259 Miami rows at
   `academic_year <= 2025`. Fewer means the week join lost rows.
-- Every kipptaf reader of the 12 dropped unions returns 0 rows at
-  `_dbt_source_project = 'kippmiami'`, except readers of the 8 kept unions and
+- `dim_course_sections` keeps 3,433 Miami rows at `terms_academic_year <= 2025`,
+  every one with a non-null `course_key` match in `dim_courses`.
+- Every kipptaf reader of the 9 dropped unions returns 0 rows at
+  `_dbt_source_project = 'kippmiami'`, except readers of the 11 kept unions and
   the conformed `int_students__*` models, whose Miami counts match prod.
 - The 6 `rpt_clever__*` models are row-identical to prod for
   `_dbt_source_project != 'kippmiami'`.
