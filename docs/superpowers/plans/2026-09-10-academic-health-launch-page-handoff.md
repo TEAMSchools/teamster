@@ -86,6 +86,13 @@ The three MS/HS strips carry the same three regions. The cumulative strip
 carries Camden and Newark only, a strict subset of the other three, because
 Paterson has no high school.
 
+The strip shipped as four worksheets side by side, one per source, each with
+region on rows. The spec allowed a fallback — twelve small sheets, one per
+region row per source, laid out as a grid — and it was not built. The cumulative
+sheet has no Paterson row because Paterson has no high school, so if
+`crop-strip.png` shows that column's rows sitting out of line with the other
+three, that is the signal to rebuild the strip as the fallback grid.
+
 ## What is verified, and how
 
 ### Verified by data
@@ -166,14 +173,19 @@ every image, so no render or crop ever reached it. The crops are on disk in
 | The 120 px button captions fitting their buttons                                                  | `crop-links.png`                      |
 | Coverage-line text and its wrap                                                                   | `crop-coverage.png`                   |
 
-And these, which need Desktop or the live review copy:
+And these, which no still image can answer.
 
-- Desktop opens `final.twbx` without a content-model refusal.
+### On the review copy in the browser
+
 - Every button and every card click lands on the right tab.
 - The three GPA roster links resolve.
 - `p_Academic_Year` set on `Landing Page` carries to Home, Schools and the
   Monitor.
 - Hovering a help-guide slot shows no tooltip.
+
+### In Tableau Desktop with the `.twbx`
+
+- Desktop opens `final.twbx` without a content-model refusal.
 
 ## Device layouts
 
