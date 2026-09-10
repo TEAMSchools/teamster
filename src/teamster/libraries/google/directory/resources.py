@@ -37,6 +37,15 @@ def _backoff(fn: Callable[[], dict]) -> dict:
     ``dagster.backoff``'s defaults (4 retries, delays from 0.1s) give up after
     1.5s, inside the same rate-limit window that produced the 429. Delays of
     1, 2, 4, 8, 16, 32s total 63s, past a per-minute ``rateLimitExceeded``.
+
+    Args:
+        fn: Zero-arg callable from :func:`_retryable_execute`.
+
+    Returns:
+        The response dict from the first successful call.
+
+    Raises:
+        _TransientHttpError: If all 7 attempts fail.
     """
     return backoff(
         fn=fn,
