@@ -58,7 +58,7 @@ jobs:
       # output.result='skip' which is used to skip other steps in this workflow.
       - name: Pre-run checks
         id: prerun
-        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@cae603f266c260efc0a7b9e71a72cbcbca70aa9d # v1.13.21
 
   build:
     needs:
