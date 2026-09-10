@@ -1093,6 +1093,828 @@ def add_guides(t: str) -> str:
     return t
 
 
+# ---------------------------------------------------------------- task 7: geometry
+#: One pixel of the 1366 x 1500 canvas in Tableau's 100000-unit zone space. A
+#: zone's `fixed-size` is the PIXEL size along its parent's flow axis; `w`/`h`
+#: are the unit sizes, and the two have to agree or the render drifts from the
+#: XML.
+W_UNIT = 100000 / 1366
+H_UNIT = 100000 / 1500
+_zone_id = [0]
+
+
+def zid() -> int:
+    _zone_id[0] += 1
+    return _zone_id[0]
+
+
+def px_w(px: float) -> int:
+    return round(px * W_UNIT)
+
+
+def px_h(px: float) -> int:
+    return round(px * H_UNIT)
+
+
+def attrs(a: dict) -> str:
+    """`k='v'` pairs in the plain ASCII order Tableau writes them in.
+
+    Every zone tag in base.twb has its attributes sorted (`fixed-size`,
+    `forceUpdate`, `friendly-name`, `h`, `id`, `is-fixed`, `is-scaled`,
+    `mode`, `name`, `param`, `show-caption`, `show-title`, `type-v2`, `w`,
+    `x`, `y`), so building the tag from a dict and sorting keeps a hand-built
+    zone byte-comparable with one Desktop has re-saved. Attribute order is
+    semantically irrelevant; diff readability is the whole point."""
+    return " ".join(f"{k}='{v}'" for k, v in sorted(a.items()))
+
+
+STYLE_NONE = (
+    "<zone-style>\r\n"
+    "  <format attr='border-color' value='#000000' />\r\n"
+    "  <format attr='border-style' value='none' />\r\n"
+    "  <format attr='border-width' value='0' />\r\n"
+    "  <format attr='margin' value='4' />\r\n"
+    "</zone-style>\r\n"
+)
+
+
+def indent(block: str, n: int) -> str:
+    pad = " " * n
+    return "".join(
+        pad + line if line.strip() else line for line in block.splitlines(keepends=True)
+    )
+
+
+def zone(a: dict, inner: str, depth: int, style: str = STYLE_NONE) -> str:
+    """One `<zone>`; children first, the container's own style last.
+
+    Content model, verified in references/content-models.md:
+    `(formatted-text, layout-cache?, zone, flipboard, zone-style?)`. Putting
+    `<zone-style>` before the child zones is rejected by Desktop."""
+    pad = " " * depth
+    return (
+        f"{pad}<zone {attrs(a)}>\r\n{inner}{indent(style, depth + 2)}{pad}</zone>\r\n"
+    )
+
+
+def fixed(a: dict, fixed_px: int | None) -> dict:
+    if fixed_px:
+        a["fixed-size"] = fixed_px
+        a["is-fixed"] = "true"
+    return a
+
+
+#: Every sheet zone on this dashboard gets the plain cell layout-cache. The
+#: roster zones on Home carry `fixed-size-h/-w` instead; a fixed cache pins
+#: the sheet to a pixel box that the flow container is already deciding.
+SHEET_CACHE = (
+    "<layout-cache cell-count-h='1' cell-count-w='1' type-h='cell' type-w='cell' />\r\n"
+)
+
+
+def sheet_zone(
+    name: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    depth: int,
+    *,
+    title: bool = False,
+    caption: bool = False,
+    fixed_px: int | None = None,
+) -> str:
+    a = fixed(
+        {
+            "h": h,
+            "id": zid(),
+            "name": name,
+            "show-caption": str(caption).lower(),
+            "show-title": str(title).lower(),
+            "w": w,
+            "x": x,
+            "y": y,
+        },
+        fixed_px,
+    )
+    return zone(a, " " * (depth + 2) + SHEET_CACHE, depth)
+
+
+def text_zone(
+    runs: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    depth: int,
+    fixed_px: int | None = None,
+    bg: str | None = None,
+) -> str:
+    a = fixed(
+        {
+            "forceUpdate": "true",
+            "h": h,
+            "id": zid(),
+            "type-v2": "text",
+            "w": w,
+            "x": x,
+            "y": y,
+        },
+        fixed_px,
+    )
+    inner = (
+        " " * (depth + 2)
+        + "<formatted-text>\r\n"
+        + indent(runs, depth + 4)
+        + " " * (depth + 2)
+        + "</formatted-text>\r\n"
+    )
+    style = (
+        STYLE_NONE
+        if not bg
+        else STYLE_NONE.replace(
+            "</zone-style>",
+            f"  <format attr='background-color' value='{bg}' />\r\n</zone-style>",
+        )
+    )
+    return zone(a, inner, depth, style)
+
+
+def button_zone(
+    caption: str,
+    target_window_uuid: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    depth: int,
+    fixed_px: int,
+) -> str:
+    """A navigation button, in the shape this workbook's own buttons carry.
+
+    The four Tableau-written buttons in base.twb hold exactly `<caption>`,
+    `<button-caption-font-style>` and `<format attr='background-color'>` per
+    `<button-visual-state>`. `<tooltip-text>` -- which the brief's form adds --
+    appears nowhere in this workbook (byte-counted: 0) and the manifest
+    declares only `BasicButtonObject` and `BasicButtonObjectTextSupport`, so an
+    undeclared element risks `no declaration found for element 'tooltip-text'`
+    on open and would make `check_twb --ref base.twb` report an unknown
+    element. Omitted; the caption is the label either way."""
+    a = {
+        "fixed-size": fixed_px,
+        "h": h,
+        "id": zid(),
+        "is-fixed": "true",
+        "type-v2": "dashboard-object",
+        "w": w,
+        "x": x,
+        "y": y,
+    }
+    inner = indent(
+        crlf(f"""
+<button action='tabdoc:goto-sheet window-id=&quot;{target_window_uuid}&quot;' button-type='text'>
+  <button-visual-state>
+    <caption>{esc(caption)}</caption>
+    <button-caption-font-style fontcolor='#ffffff' fontname='Tableau Bold' fontsize='10' />
+    <format attr='background-color' value='#333333' />
+  </button-visual-state>
+</button>
+"""),
+        depth + 2,
+    )
+    return zone(a, inner, depth)
+
+
+def empty_zone(x: int, y: int, w: int, h: int, depth: int) -> str:
+    return zone(
+        {"h": h, "id": zid(), "type-v2": "empty", "w": w, "x": x, "y": y}, "", depth
+    )
+
+
+def flow(
+    param: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    depth: int,
+    children: str,
+    fixed_px: int | None = None,
+    bg: str | None = None,
+    name: str | None = None,
+) -> str:
+    a = fixed(
+        {
+            "h": h,
+            "id": zid(),
+            "param": param,
+            "type-v2": "layout-flow",
+            "w": w,
+            "x": x,
+            "y": y,
+        },
+        fixed_px,
+    )
+    if name:
+        a["friendly-name"] = name
+    style = (
+        "<zone-style>\r\n"
+        "  <format attr='border-color' value='#000000' />\r\n"
+        "  <format attr='border-style' value='none' />\r\n"
+        "  <format attr='border-width' value='0' />\r\n"
+        + (f"  <format attr='background-color' value='{bg}' />\r\n" if bg else "")
+        + "</zone-style>\r\n"
+    )
+    return zone(a, children, depth, style)
+
+
+# ---------------------------------------------------------------- task 7: the page
+ROOT_X, ROOT_W = 586, 98828
+ROOT_Y, ROOT_H = px_h(8), 100000 - 2 * px_h(8)
+NAVY = "#001e62"
+
+#: target window uuids, re-read from base.twb by read_window_uuids()
+WIN = {
+    "Academic Health Home": "{0AC26311-199E-49CE-9660-25C6B2FCF0C8}",
+    "Academic Health Schools": "{73F774A6-1C5F-4D0D-A201-1444AD0D3D59}",
+    "Cumulative GPA Monitor": "{ADAF5834-6C69-47A2-8FED-EBF0C9A782FC}",
+    "Gradebook School Rollup": "{3F237DC3-54DD-4F2D-8E5C-EB1C7DE8FC10}",
+    "Gradebook Teacher View": "{8248DE6A-1111-444E-8496-6E843188D9A6}",
+}
+#: tab order, which is the header button order
+TABS = tuple(WIN)
+BUTTON_CAPTION = {
+    "Academic Health Home": "Home",
+    "Academic Health Schools": "School View",
+    "Cumulative GPA Monitor": "GPA Monitor",
+    "Gradebook School Rollup": "Gradebook Rollup",
+    "Gradebook Teacher View": "Teacher View",
+}
+CARD_KEYS = tuple(CARD_COPY)
+CARD_TARGET = {k: str(c["tab"]) for k, c in CARD_COPY.items()}
+TILE_TARGET = {
+    "LP - Tile Y1 GPA": "Academic Health Home",
+    "LP - Tile Course Failures": "Academic Health Schools",
+    "LP - Tile Cumulative GPA": "Cumulative GPA Monitor",
+    "LP - Tile Gradebook Health": "Gradebook School Rollup",
+}
+REGIONS = ("Newark", "Camden", "Paterson")
+ROSTER_SHEETS = [f"Links - GPA Roster - {r}" for r in REGIONS]
+LP_SHEETS = [
+    "LP - Title",
+    "LP - Tile Y1 GPA",
+    "LP - Tile Course Failures",
+    "LP - Tile Cumulative GPA",
+    "LP - Tile Gradebook Health",
+    "LP - Strip Y1 GPA",
+    "LP - Strip Course Failures",
+    "LP - Strip Cumulative GPA",
+    "LP - Strip Gradebook Health",
+] + [f"LP - {k} {c}" for k in ("Card", "Guide") for c in CARD_KEYS]
+
+#: a line break inside a dashboard text zone. BR is the same run at the mark
+#: label's 16-space indent; here indent() supplies the padding.
+TEXT_BR = "<run>Æ&#10;</run>\r\n"
+
+
+def header(y: int, depth: int) -> str:
+    h = px_h(80)
+    x = ROOT_X
+    logo_w, year_w, btn_w = px_w(167), px_w(130), px_w(120)
+    title_w = ROOT_W - logo_w - year_w - len(TABS) * btn_w
+    parts = [
+        zone(
+            {
+                "fixed-size": 167,
+                "h": h,
+                "id": zid(),
+                "is-fixed": "true",
+                "is-scaled": "1",
+                "param": "Image/CMO_logo_whiteOrange.png",
+                "type-v2": "bitmap",
+                "w": logo_w,
+                "x": x,
+                "y": y,
+            },
+            "",
+            depth + 2,
+        )
+    ]
+    x += logo_w
+    parts.append(sheet_zone("LP - Title", x, y, title_w, h, depth + 2, caption=True))
+    x += title_w
+    parts.append(
+        zone(
+            {
+                "custom-title": "true",
+                "fixed-size": 130,
+                "h": h,
+                "id": zid(),
+                "is-fixed": "true",
+                "mode": "compact",
+                "param": "[Parameters].[Parameter 2]",
+                "type-v2": "paramctrl",
+                "w": year_w,
+                "x": x,
+                "y": y,
+            },
+            " " * (depth + 4)
+            + "<formatted-text>\r\n"
+            + " " * (depth + 6)
+            + "<run>Academic Year</run>\r\n"
+            + " " * (depth + 4)
+            + "</formatted-text>\r\n",
+            depth + 2,
+        )
+    )
+    x += year_w
+    for tab in TABS:
+        parts.append(
+            button_zone(BUTTON_CAPTION[tab], WIN[tab], x, y, btn_w, h, depth + 2, 120)
+        )
+        x += btn_w
+    return flow(
+        "horz",
+        ROOT_X,
+        y,
+        ROOT_W,
+        h,
+        depth,
+        "".join(parts),
+        fixed_px=80,
+        bg=NAVY,
+        name="Header",
+    )
+
+
+def _row(names: list[str], y: int, h: int, depth: int, **kw) -> str:
+    """Sheet zones side by side, the last one taking the width remainder."""
+    w = ROOT_W // len(names)
+    parts, x = [], ROOT_X
+    for i, name in enumerate(names):
+        ww = w if i < len(names) - 1 else ROOT_X + ROOT_W - x
+        parts.append(sheet_zone(name, x, y, ww, h, depth, **kw))
+        x += ww
+    return "".join(parts)
+
+
+def tiles(y: int, depth: int) -> str:
+    h = px_h(220)
+    body = _row(list(TILE_TARGET), y, h, depth + 2, title=True, caption=True)
+    return flow("horz", ROOT_X, y, ROOT_W, h, depth, body, fixed_px=220, name="Tiles")
+
+
+def region_strip(y: int, depth: int) -> str:
+    h = px_h(150)
+    names = [n.replace("Tile", "Strip") for n in TILE_TARGET]
+    body = _row(names, y, h, depth + 2, title=True)
+    return flow("horz", ROOT_X, y, ROOT_W, h, depth, body, fixed_px=150, name="Regions")
+
+
+#: Controller ruling 2. The strip's region rows are the only place a reader
+#: learns which regions are in the sources at all, so the sentence that says
+#: why Miami is absent sits directly under it, with the Paterson HS caveat
+#: that the cumulative column raises.
+FOOTNOTE = (
+    "Miami is not yet in any measure on this page. It joins when Focus gradebook "
+    "data is onboarded. Paterson has no high school, so its cumulative GPA cell is blank."
+)
+
+
+def footnote(y: int, depth: int) -> str:
+    runs = (
+        f"<run fontcolor='#8c8c8c' fontsize='8' italic='true'>{esc(FOOTNOTE)}</run>\r\n"
+    )
+    return text_zone(runs, ROOT_X, y, ROOT_W, px_h(20), depth, fixed_px=20)
+
+
+def cards(y: int, depth: int) -> str:
+    """Five navy panels, each a card body over its 24 px guide slot."""
+    h, body_h, guide_h = px_h(220), px_h(196), px_h(24)
+    w = ROOT_W // len(CARD_KEYS)
+    parts, x = [], ROOT_X
+    for i, key in enumerate(CARD_KEYS):
+        ww = w if i < len(CARD_KEYS) - 1 else ROOT_X + ROOT_W - x
+        inner = sheet_zone(
+            f"LP - Card {key}", x, y, ww, body_h, depth + 4
+        ) + sheet_zone(
+            f"LP - Guide {key}", x, y + body_h, ww, guide_h, depth + 4, fixed_px=24
+        )
+        parts.append(flow("vert", x, y, ww, h, depth + 2, inner, bg=NAVY))
+        x += ww
+    return flow(
+        "horz",
+        ROOT_X,
+        y,
+        ROOT_W,
+        h,
+        depth,
+        "".join(parts),
+        fixed_px=220,
+        name="Directory",
+    )
+
+
+#: The spec's definitions table, verbatim. Each entry is the term and its
+#: sentence split into visual lines: a tall text zone's wrap behaviour has not
+#: been probed in this corpus, so every line break is explicit and no line
+#: exceeds DEF_LINE_MAX rendered characters, term prefix included.
+DEF_LINE_MAX = 110
+DEFINITIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "Y1 GPA",
+        (
+            "Weighted, current year only, quarter to date. The GPA on Home, School View and the two Y1 tiles.",
+        ),
+    ),
+    (
+        "Cumulative GPA",
+        (
+            "Unweighted, every high school year on record. The GPA on the Monitor and the cumulative tile.",
+            "The two GPAs are never interchangeable.",
+        ),
+    ),
+    (
+        "Weighted versus unweighted",
+        (
+            "An unweighted GPA scores every course on the same scale,",
+            "topping out at 4.33 for an A+. An A in AP Biology counts the same as an A in regular Biology.",
+            "A weighted GPA gives honors and AP courses a bump above that for the same letter grade.",
+            "Y1 GPA on this suite is weighted. Cumulative GPA is unweighted, so a student's cumulative",
+            "number will usually read lower than their Y1 number, and that is expected, not an error.",
+        ),
+    ),
+    (
+        "Projected versus on the books",
+        (
+            "The Monitor's basis switch. On the books is the cumulative GPA from posted",
+            "grades today. Projected carries this year's in-progress grades to year end. The tile uses projected.",
+        ),
+    ),
+    (
+        "Marking period",
+        (
+            "Q1 through Q4 are quarter grades. Y1 is the running year grade. Home's default is Y1.",
+        ),
+    ),
+    (
+        "Failing",
+        (
+            "A course whose Y1 letter grade is an F. The failures tile counts students with 2 or more.",
+        ),
+    ),
+    (
+        "Healthy gradebook",
+        (
+            "A teacher with no flag on any of their sections this quarter. The two bases differ by one",
+            "flag: excluding comments ignores the below-70-without-comment flag until quarter close.",
+            "The tile uses excluding comments.",
+        ),
+    ),
+    (
+        "The three gradebook flags",
+        (
+            "Not enough assignments entered against the expectation for the category.",
+            "A grade above 100. A grade below 70 with no comment.",
+        ),
+    ),
+    (
+        "Goal",
+        (
+            "The share of students expected at or above 3.0 cumulative, set per network, region and",
+            "school in the GPA goals source.",
+        ),
+    ),
+    (
+        "Can still reach 3.0",
+        (
+            "A student below 3.0 whose GPA needed to get there is within the grade scale.",
+        ),
+    ),
+)
+
+
+def definitions(y: int, depth: int) -> str:
+    runs = []
+    for i, (term, lines) in enumerate(DEFINITIONS):
+        if i:
+            runs.append(TEXT_BR)
+        runs.append(
+            f"<run bold='true' fontcolor='{NAVY}' fontsize='9'>{esc(term)}  </run>\r\n"
+        )
+        for j, line in enumerate(lines):
+            if j:
+                runs.append(TEXT_BR)
+            runs.append(f"<run fontcolor='#333333' fontsize='9'>{esc(line)}</run>\r\n")
+            rendered = len(term) + 2 + len(line) if j == 0 else len(line)
+            if rendered > DEF_LINE_MAX:
+                raise RuntimeError(
+                    f"definitions line {rendered} chars: {term}/{line[:40]!r}"
+                )
+    return text_zone("".join(runs), ROOT_X, y, ROOT_W, px_h(400), depth, fixed_px=400)
+
+
+#: The spec's coverage grid, verbatim, as of 2026-09-10.
+COV_COLS = ("Home", "Schools", "Monitor", "Rollup", "Teacher View")
+COV_ROWS: tuple[tuple[str, tuple[bool, ...]], ...] = (
+    ("Camden MS", (True, True, False, True, True)),
+    ("Camden HS", (True, True, True, True, True)),
+    ("Newark MS", (True, True, False, True, True)),
+    ("Newark HS", (True, True, True, True, True)),
+    ("Paterson MS", (True, True, False, True, True)),
+    ("Paterson HS", (False, False, False, False, False)),
+    ("Miami", (False, False, False, False, False)),
+)
+COV_NOTES = (
+    "Paterson HS: no high school.",
+    "Miami: not in the suite until Focus gradebook data is onboarded.",
+)
+COV_LABEL_W, COV_COL_W = 14, 9
+
+
+def coverage(y: int, depth: int) -> str:
+    """The coverage grid: a monospaced text zone, not a worksheet.
+
+    Space padding only aligns if the runs render in a fixed-pitch face, hence
+    `fontname='Courier New'` on every run; the zone is one text object, so a
+    single face applies to the whole grid."""
+    lines = [
+        " " * COV_LABEL_W
+        + "".join(c.ljust(COV_COL_W) for c in COV_COLS[:-1])
+        + COV_COLS[-1]
+    ]
+    for label, marks in COV_ROWS:
+        lines.append(
+            label.ljust(COV_LABEL_W)
+            + "".join(("●" if m else "—").ljust(COV_COL_W) for m in marks[:-1])
+            + ("●" if marks[-1] else "—")
+        )
+    lines.append("")
+    lines.extend(COV_NOTES)
+    runs = []
+    for i, line in enumerate(lines):
+        if i:
+            runs.append(TEXT_BR)
+        runs.append(
+            f"<run fontname='Courier New' fontsize='9'>{esc(line)}</run>\r\n"
+            if line
+            else ""
+        )
+    return text_zone("".join(runs), ROOT_X, y, ROOT_W, px_h(220), depth, fixed_px=220)
+
+
+def links(y: int, depth: int) -> str:
+    """The roster strip: a label, the three existing link sheets, a spacer.
+
+    Home styles the same label `#b9c7e6` because it sits on the navy header;
+    this strip is on the page's white ground, so the label takes the navy."""
+    h = px_h(60)
+    label_w, sheet_w = px_w(100), px_w(60)
+    x = ROOT_X
+    parts = [
+        text_zone(
+            f"<run bold='true' fontcolor='{NAVY}' fontsize='8'>GPA Roster</run>\r\n",
+            x,
+            y,
+            label_w,
+            h,
+            depth + 2,
+            fixed_px=100,
+        )
+    ]
+    x += label_w
+    for region in REGIONS:
+        parts.append(
+            sheet_zone(
+                f"Links - GPA Roster - {region}",
+                x,
+                y,
+                sheet_w,
+                h,
+                depth + 2,
+                fixed_px=60,
+            )
+        )
+        x += sheet_w
+    parts.append(empty_zone(x, y, ROOT_X + ROOT_W - x, h, depth + 2))
+    return flow(
+        "horz", ROOT_X, y, ROOT_W, h, depth, "".join(parts), fixed_px=60, name="Links"
+    )
+
+
+#: (builder, pixel height) top to bottom. The heights sum to 1370 px; the
+#: root's usable 1484 px (1500 less the 8 px inset top and bottom) leaves a
+#: 114 px spacer, which is also the root flow's one non-fixed child.
+PAGE = (
+    (header, 80),
+    (tiles, 220),
+    (region_strip, 150),
+    (footnote, 20),
+    (cards, 220),
+    (definitions, 400),
+    (coverage, 220),
+    (links, 60),
+)
+
+
+def parameter2_dependencies(t: str) -> str:
+    """The dashboard-level `[Parameter 2]` block, copied from Home.
+
+    Home is the attested dashboard-level form for a `p_Academic_Year`
+    paramctrl: it carries the `<aliases>` AND the `<members>` that a
+    `param-domain-type='list'` control needs to populate its dropdown. The
+    worksheet-level copy on the tiles carries the aliases only."""
+    home = element(
+        t,
+        r"\r\n    <dashboard [^>]*name='Academic Health Home'>",
+        "    </dashboard>\r\n",
+    )
+    dep = element(
+        home,
+        r"\r\n      <datasource-dependencies datasource='Parameters'>",
+        "      </datasource-dependencies>\r\n",
+    )
+    col = element(
+        dep,
+        r"\r\n        <column [^>]*name='\[Parameter 2\]'[^>]*(?<!/)>",
+        "        </column>\r\n",
+    )
+    if "<members>" not in col or "<aliases>" not in col:
+        raise RuntimeError("Home's [Parameter 2] block lost its aliases or members")
+    return (
+        "      <datasource-dependencies datasource='Parameters'>"
+        + col
+        + "      </datasource-dependencies>\r\n"
+    )
+
+
+def build_dashboard(t: str) -> tuple[str, str]:
+    """Return (dashboard element, dashboard window element)."""
+    _zone_id[0] = 0
+    depth = 8
+    y = ROOT_Y
+    body = []
+    for fn, px in PAGE:
+        body.append(fn(y, depth + 2))
+        y += px_h(px)
+    spacer_h = ROOT_Y + ROOT_H - y
+    if spacer_h != px_h(114):
+        raise RuntimeError(f"spacer is {spacer_h}, wanted {px_h(114)}")
+    body.append(empty_zone(ROOT_X, y, ROOT_W, spacer_h, depth + 2))
+    root = flow("vert", ROOT_X, ROOT_Y, ROOT_W, ROOT_H, depth, "".join(body))
+    dashboard = (
+        crlf(f"""
+    <dashboard enable-sort-zone-taborder='true' name='Landing Page'>
+      <style />
+      <size maxheight='1500' maxwidth='1366' minheight='1500' minwidth='1366' sizing-mode='fixed' />
+      <datasources>
+        <datasource name='Parameters' />
+        <datasource caption='rpt_tableau__student_course_grades+ (kipptaf_tableau)' name='{GRADES_DS}' />
+        <datasource caption='rpt_tableau__gpa_goal_progress (kipptaf_tableau)' name='{GOAL_DS}' />
+        <datasource caption='rpt_tableau__gradebook_audit (kipptaf_tableau)' name='{GB_DS}' />
+      </datasources>
+""")
+        + parameter2_dependencies(t)
+        + crlf("""
+      <zones>
+""")
+        + root
+        + crlf(f"""
+      </zones>
+      <simple-id uuid='{new_uuid()}' />
+    </dashboard>
+""")
+    )
+    viewpoints = "".join(
+        f"        <viewpoint name='{esc(n)}'>\r\n"
+        f"          <zoom type='entire-view' />\r\n"
+        f"        </viewpoint>\r\n"
+        for n in sorted(LP_SHEETS + ROSTER_SHEETS)
+    )
+    window = (
+        crlf("""
+    <window class='dashboard' maximized='true' name='Landing Page'>
+      <viewpoints>
+""")
+        + viewpoints
+        + crlf(f"""
+      </viewpoints>
+      <active id='-1' />
+      <simple-id uuid='{new_uuid()}' />
+    </window>
+""")
+    )
+    return dashboard, window
+
+
+def read_window_uuids(t: str) -> None:
+    """The five target window uuids, from the file rather than the plan."""
+    for tab in WIN:
+        m = re.search(
+            rf"<window class='dashboard'[^>]*name='{re.escape(tab)}'.*?<simple-id uuid='([^']*)' />\r\n    </window>",
+            t,
+            re.S,
+        )
+        if not m:
+            raise RuntimeError(f"window uuid for {tab}")
+        if m.group(1) != WIN[tab]:
+            print(f"  NOTE {tab}: base uuid {m.group(1)} differs from the plan")
+        WIN[tab] = m.group(1)
+
+
+ROSTER = {
+    "Newark": "https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0",
+    "Camden": "https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0",
+    "Paterson": "https://docs.google.com/spreadsheets/d/13j1khv49eSxTFUJGxbgQKnjvmUhYTgH-SshZr5NWCbU/edit?gid=0#gid=0",
+}
+
+
+def read_roster_urls(t: str) -> None:
+    """The roster URLs, from the base's own Home actions, not from the plan."""
+    for region in ROSTER:
+        m = re.search(
+            rf"<action caption='GPA Roster {region} \(Academic Health Home\)'[^>]*>.*?"
+            r"<link caption='[^']*' expression='([^']*)' />",
+            t,
+            re.S,
+        )
+        if not m:
+            raise RuntimeError(f"no Home roster action for {region}")
+        if m.group(1) != ROSTER[region]:
+            raise RuntimeError(f"roster URL for {region} differs from the plan")
+
+
+def add_dashboard(t: str) -> str:
+    read_window_uuids(t)
+    read_roster_urls(t)
+    dashboard, window = build_dashboard(t)
+    t = insert_before(t, "  </dashboards>\r\n", dashboard)
+    # the base's <windows> tag carries source-height='114'; anchor on the tag
+    # as found rather than on a guessed spelling
+    windows_tag = re.search(r"  <windows[^>]*>\r\n", t)
+    if not windows_tag:
+        raise RuntimeError("no <windows> opening tag")
+    t = insert_after(t, windows_tag.group(0), window)
+    # move the default-view marker off whichever existing window carries it
+    # (the one sanctioned edit to an existing element). The base of 2026-09-10
+    # 13:40 UTC has it on Academic Health Home.
+    if t.count(" maximized='true'") != 2:
+        raise RuntimeError("expected exactly one pre-existing maximized window")
+    t = re.sub(
+        r"(<window class='dashboard') maximized='true' (name='(?!Landing Page)[^']*')",
+        r"\1 \2",
+        t,
+        count=1,
+    )
+    if t.count(" maximized='true'") != 1:
+        raise RuntimeError("default-view marker move failed")
+    return t
+
+
+def nav_action(n: int, source_sheet: str, target: str) -> str:
+    return crlf(f"""
+    <nav-action caption='LP {n:02d} {esc(source_sheet)} to {esc(target)}' name='[LP_Nav_{n:02d}_{uuid.uuid4().hex.upper()}]'>
+      <activation type='on-select' />
+      <source dashboard='Landing Page' type='sheet' worksheet='{esc(source_sheet)}' />
+      <params>
+        <param name='sheet' value='{esc(target)}' />
+      </params>
+    </nav-action>
+""")
+
+
+#: base.twb groups <actions> children by kind -- every <action>, then every
+#: <nav-action>, then every <edit-parameter-action> -- which is what Desktop
+#: writes and very likely the content model. Inserting before </actions> would
+#: put an <action> after the <edit-parameter-action> block; each new element
+#: goes at the end of its OWN group instead.
+FIRST_NAV_ACTION = "    <nav-action caption='Open Teacher' name='[Action18_A5B48E9807DE44888A395CF989A57E39]'>"
+FIRST_PARAM_ACTION = "    <edit-parameter-action caption='Close panel' name='[Action13_EAD260FCB5F84BAAB48B5C74E92D9862]'>"
+
+
+def add_actions(t: str) -> str:
+    navs = []
+    n = 0
+    for key, target in CARD_TARGET.items():
+        n += 1
+        navs.append(nav_action(n, f"LP - Card {key}", target))
+    for sheet, target in TILE_TARGET.items():
+        n += 1
+        navs.append(nav_action(n, sheet, target))
+    urls = [
+        crlf(f"""
+    <action caption='GPA Roster {region} (Landing Page)' name='[LP_Link_{region}]'>
+      <activation type='on-select' />
+      <source dashboard='Landing Page' type='sheet' worksheet='Links - GPA Roster - {region}' />
+      <link caption='' expression='{url}' />
+    </action>
+""")
+        for region, url in ROSTER.items()
+    ]
+    t = insert_before(t, FIRST_NAV_ACTION, "".join(urls))
+    return insert_before(t, FIRST_PARAM_ACTION, "".join(navs))
+
+
 STEPS = [
     add_goal_calcs,
     add_title,
@@ -1103,6 +1925,8 @@ STEPS = [
     add_strips,
     add_cards,
     add_guides,
+    add_dashboard,
+    add_actions,
 ]
 
 

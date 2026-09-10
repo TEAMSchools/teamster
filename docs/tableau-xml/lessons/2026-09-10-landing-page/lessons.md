@@ -1127,3 +1127,235 @@ OK: remainder is byte-identical to base
 check_twb rc=0
 out.twb: CLEAN
 ```
+
+## 2026-09-10, build phase, Task 7
+
+### `check_geometry --baseline` aborts on a dashboard the baseline never had
+
+**Verified.** The brief's Step 5 and Step 6 both call
+`check_geometry.py out.twb "Landing Page" --baseline base.twb`, expecting `rc=0`
+on the clean file and `rc=1` on the reparent mutant. `Landing Page` is not in
+`base.twb`, so `extract_gaps()` raises `StopIteration`, `main()` catches it and
+calls `sys.exit("dashboard 'Landing Page' not found in baseline ...")` — exit 1
+before one zone is read. Step 5 would have read as a geometry failure and Step
+6's `rc=1` would have been the same abort, i.e. a mutation proof that passes
+whether or not the mutation broke anything. Do this instead: check a dashboard
+the baseline does not contain WITHOUT `--baseline`. The absolute-bounds mode
+(every flow container's parent-minus-children gap in 0-3000) is the only mode
+that applies to a new dashboard, and it is the mode the mutant has to fail in
+for the proof to be worth running. Keep `--baseline` for the five pre-existing
+dashboards, where it is the check that a new tab moved nothing.
+
+### `<actions>` children are grouped by kind; the tail anchor breaks the group
+
+**Verified by counting base.twb.** Inside `<actions>` the base holds 14
+`<action>`, then 2 `<nav-action>`, then 7 `<edit-parameter-action>`, in that
+order with no interleaving — the order Desktop writes and almost certainly the
+content model, the same class of ordering that produced D2E8DA72 on `<pane>`
+children earlier in this build. The brief's
+`insert_before(t, "  </actions>\r\n", ...)` appends at the END of the element,
+which would have put three `<action>` and nine `<nav-action>` after the
+`<edit-parameter-action>` block. Do this instead: insert each new element at the
+end of its OWN group — the URL actions before
+`<nav-action caption='Open Teacher' ...>`, the nav-actions before
+`<edit-parameter-action caption='Close panel' ...>` — and verify the grouping
+after the build by listing the direct children in file order
+(`17 action, 11 nav-action, 7 edit-parameter-action`). A tail anchor is safe
+only in an element whose children are all one tag.
+
+### An element absent from the workbook is an element the manifest has not declared
+
+**Verified.** The brief's `button_zone` puts a `<tooltip-text>` inside each
+`<button-visual-state>`. `<tooltip-text>` appears **0** times in `base.twb`, and
+the workbook's `<document-format-change-manifest>` declares `BasicButtonObject`,
+`BasicButtonObjectTextSupport`, `NavigationAction` and
+`VizInTooltipHideWorksheet` and nothing else button-shaped — exactly the
+situation `check_twb`'s feature check exists for
+(`no declaration found for element 'x'`), and `check_unknown` would have
+reported it against the reference as well. The four Tableau-written buttons in
+this workbook carry `<caption>`, `<button-caption-font-style>` and
+`<format attr='background-color'>` per visual state, nothing more. Do this
+instead: before copying an element form quoted from ANOTHER workbook, count the
+element in the target workbook and look for its feature in the target's
+manifest; when either comes back empty, drop the element rather than the
+manifest entry. The five header buttons ship caption-only, which is all the
+label needs.
+
+### The dashboard-level parameter block comes from a dashboard, not a worksheet
+
+**Verified.** The brief specifies the
+`<datasource-dependencies datasource='Parameters'>` block for `[Parameter 2]`
+copied from `LP - Tile Y1 GPA` and re-indented. The worksheet-level copy carries
+`<aliases>` but no `<members>`; the copy inside the `Academic Health Home`
+DASHBOARD — which drives the same `p_Academic_Year` compact paramctrl this page
+adds — carries both, and a `param-domain-type='list'` control populates its
+dropdown from `<members>`. Copying the worksheet form would have shipped a year
+control with an empty list, which nothing in the toolchain checks. Do this
+instead: copy a dashboard-level element from a dashboard that already does the
+same job, and assert the copy still contains the children that make it work
+(`parameter2_dependencies()` raises if `<aliases>` or `<members>` is missing).
+
+### `repository-location` is omitted from a never-published dashboard
+
+**Inferred, not schema-verified.** All five existing dashboards open with
+`<repository-location derived-from='https://tableau.kipp.org/...' />`, which
+records where Server last published that sheet. `references/content-models.md`
+lists a verified model for `worksheet`, `view`, `pane` and `zone` but none for
+`dashboard`, so whether the element is optional there is not established from
+the corpus. `Landing Page` has never been published, so there is no URL to
+write, and every clone in Tasks 4 to 6 already drops the worksheet-level
+`repository-location` for the same reason and passes `check_twb`. Do this
+instead: omit it and let Server write it on the first publish; if Desktop
+refuses the file with a dashboard content-model error at the Task 9 render, that
+is the first thing to add back.
+
+### A tall text zone's wrap behaviour is still unprobed, so every break is explicit
+
+**Inferred, not render-verified.** This corpus has only short dashboard text
+zones, and the one clipping observation on record is the Task 5 strip, which
+clipped rather than wrapped. The definitions zone is 1350 px wide and 400 px
+tall and holds ten entries whose sentences run to 380 characters. Rather than
+bet on wrapping, every visual line is its own `<run>` with an explicit
+`<run>Æ&#10;</run>` between them, and `definitions()` raises if any rendered
+line — bold term prefix included — exceeds 110 characters; the longest built
+is 109. The coverage grid takes the same bet twice over: it pads with spaces and
+sets `fontname='Courier New'` on every run, so its alignment depends both on the
+run text keeping its leading spaces and on `●` (U+25CF) and `—` (U+2014) being
+fixed-pitch in that face. Do this instead: keep the explicit breaks and the
+length assertion, and put "does the Courier grid line up, and does the
+definitions zone clip at 20 lines" on the Task 9 render checklist as two named
+questions rather than a general look-over.
+
+### Zone geometry: `fixed-size` is pixels, `w`/`h` are units, and both are stated
+
+**Verified.** A zone carries its size twice — `fixed-size` in pixels along its
+parent's flow axis, `w`/`h` in the 100000-unit canvas space — and nothing checks
+that they agree. At 1366 x 1500 one pixel is `100000/1366` units wide and
+`100000/1500` units tall, so every size in this build goes through
+`px_w()`/`px_h()` and the pixel figure that feeds `fixed-size` is the same
+number that feeds the rounding. The children of a flow container must then sum
+EXACTLY to the container along its flow axis; `check_geometry` tolerates a gap
+up to 3000 units, which is 41 px of silent drift, so the last child in every row
+and column takes the remainder (`ROOT_X + ROOT_W - x`) rather than a rounded
+share. Measured on the finished file: all 11 flow containers have gap 0 and
+every child starts exactly where the previous one ended. Do this instead: give
+the last child the remainder, verify gap == 0 rather than "within tolerance",
+and keep one non-fixed child per flow container — here the 114 px
+`type-v2='empty'` spacer at the foot of the root column, which is the root's
+only child without `is-fixed='true'`.
+
+### Verbatim run output
+
+Before the build step, against the Task 6 `out.twb`:
+
+```text
+assert rc=1
+PASS task3
+PASS task4
+PASS task5
+PASS task6
+FAIL task7: AssertionError('dashboard')
+```
+
+After:
+
+```text
+build rc=0
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+add_goal_calcs: +1521 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +12965 bytes
+add_tile_gradebook: +8652 bytes
+add_strips: +51825 bytes
+add_cards: +26300 bytes
+add_guides: +19727 bytes
+add_dashboard: +35359 bytes
+add_actions: +4490 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (2083671 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+PASS task5
+PASS task6
+PASS task7
+
+additive rc=0
+stripped: {'worksheets': 19, 'dashboard': 1, 'dashboard-window': 1, 'sheet-windows': 19, 'nav-actions': 9, 'url-actions': 3, 'calcs': 3}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+
+geometry [Landing Page] rc=0
+  Mode: without baseline (absolute bounds)
+  OK: geometry consistent in 'Landing Page'
+
+geometry [Academic Health Home] rc=0
+  Mode: with baseline /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+  OK: geometry consistent in 'Academic Health Home'
+
+geometry [Academic Health Schools] rc=0
+  Mode: with baseline /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+  OK: geometry consistent in 'Academic Health Schools'
+
+geometry [Cumulative GPA Monitor] rc=0
+  Mode: with baseline /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+  OK: geometry consistent in 'Cumulative GPA Monitor'
+
+geometry [Gradebook School Rollup] rc=0
+  Mode: with baseline /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+  OK: geometry consistent in 'Gradebook School Rollup'
+
+geometry [Gradebook Teacher View] rc=0
+  Mode: with baseline /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+  OK: geometry consistent in 'Gradebook Teacher View'
+```
+
+Rejected `--baseline` run on the new dashboard, kept because the exit code is a
+tool precondition and not a geometry verdict:
+
+```text
+geometry [Landing Page, --baseline] rc=1
+dashboard 'Landing Page' not found in baseline /workspaces/teamster/.claude/scratch/tableau/lp/base.twb
+```
+
+### Mutation proof
+
+```text
+  wrote ctrl2.twb: control  (byte-identical -- surgery is lossless)
+CONTROL_OK
+
+  wrote mut-2.twb: reparent 10 1
+mutant geometry rc=1
+  FAIL zone 14 (horz) gap is 24707, expected 0-3000
+  Mode: without baseline (absolute bounds)
+1 geometry failures in 'Landing Page'
+```
+
+Zone 10 is `LP - Tile Y1 GPA`; zone 1 is the header logo bitmap; zone 14 is the
+`Tiles` row it was moved out of, which drops from four children to three and
+loses exactly one tile's 24707 units. `check_geometry` catches it in
+absolute-bounds mode, which is the mode a new dashboard is checked in — the
+point of running the mutant without `--baseline`.
+
+### Zone tree, as built
+
+```text
+46 vert   root, 98934u tall, 9 children, gap 0
+  9  horz Header  80px   logo 167px | LP - Title (flex) | year 130px | 5 x 120px button
+  14 horz Tiles   220px  4 tile sheets
+  19 horz Regions 150px  4 strip sheets
+  20 text         20px   Miami / Paterson HS footnote
+  36 horz Directory 220px 5 vert panels, each card body 196px over guide 24px
+  37 text         400px  definitions, 10 terms over 20 lines
+  38 text         220px  coverage grid, Courier New 9pt, header + 7 rows + 2 notes
+  44 horz Links   60px   label 100px | 3 roster sheets 60px | empty (flex)
+  45 empty        114px  the root's one non-fixed child
+```
+
+46 zones, ids 1 to 46, no duplicate. 22 sheet zones, each named once: the 19
+`LP - ` sheets and the three `Links - GPA Roster - <Region>` sheets. 22
+viewpoints in the new window, one per sheet zone.

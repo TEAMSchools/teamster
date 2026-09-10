@@ -384,7 +384,111 @@ def task6(t: str) -> None:
     assert "Shows student names" not in home
 
 
-CHECKS = [task3, task4, task5, task6]
+def task7(t: str) -> None:
+    d = re.search(r"<dashboard [^>]*name='Landing Page'>.*?</dashboard>", t, re.S)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert d, "dashboard"
+    d = d.group(0)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert (
+        "<size maxheight='1500' maxwidth='1366' minheight='1500' minwidth='1366' sizing-mode='fixed' />"
+        in d
+    )
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert "<devicelayouts" not in d
+    for name in (
+        [f"LP - {k} {c}" for k in ("Card", "Guide") for c in CARDS]
+        + [
+            "LP - Title",
+            "LP - Tile Y1 GPA",
+            "LP - Tile Course Failures",
+            "LP - Tile Cumulative GPA",
+            "LP - Tile Gradebook Health",
+            "LP - Strip Y1 GPA",
+            "LP - Strip Course Failures",
+            "LP - Strip Cumulative GPA",
+            "LP - Strip Gradebook Health",
+        ]
+        + [f"Links - GPA Roster - {r}" for r in ("Newark", "Camden", "Paterson")]
+    ):
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(d, rf"<zone [^>]*name='{re.escape(name)}'") == 1, name
+    for tile in (
+        "LP - Tile Y1 GPA",
+        "LP - Tile Course Failures",
+        "LP - Tile Cumulative GPA",
+        "LP - Tile Gradebook Health",
+    ):
+        z = re.search(
+            rf"<zone [^>]*name='{re.escape(tile)}'[^>]*>",
+            d,
+            # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
+        ).group(0)
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert "show-title='true'" in z and "show-caption='true'" in z, tile
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert count(d, r"tabdoc:goto-sheet window-id=") == 5
+    for wid in (
+        "{0AC26311-199E-49CE-9660-25C6B2FCF0C8}",
+        "{73F774A6-1C5F-4D0D-A201-1444AD0D3D59}",
+        "{ADAF5834-6C69-47A2-8FED-EBF0C9A782FC}",
+        "{3F237DC3-54DD-4F2D-8E5C-EB1C7DE8FC10}",
+        "{8248DE6A-1111-444E-8496-6E843188D9A6}",
+    ):
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert wid in d, wid
+    ids = re.findall(r"<zone [^>]*\bid='(\d+)'", d)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert len(ids) == len(set(ids)), "duplicate zone id"
+    # window: first, and lists every LP sheet as a viewpoint
+    win = re.search(
+        r"<windows[^>]*>\r\n(.*?)</window>",
+        t,
+        re.S,
+        # trunk-ignore(pyright/reportOptionalMemberAccess): a miss here is a genuine bug to surface
+    ).group(1)
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert "class='dashboard' maximized='true' name='Landing Page'" in win, (
+        "Landing Page window is not first or not the default view"
+    )
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert count(t, r" maximized='true'") == 1, "exactly one maximized window"
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert re.search(r"maximized='true' name='(?!Landing Page)", t) is None
+    for name in [f"LP - {k} {c}" for k in ("Card", "Guide") for c in CARDS] + [
+        "Links - GPA Roster - Newark",
+        "Links - GPA Roster - Camden",
+        "Links - GPA Roster - Paterson",
+    ]:
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(win, rf"<viewpoint name='{re.escape(name)}'>") == 1, name
+    # actions
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert count(t, r"<nav-action caption='LP [^']*' name='\[LP_Nav_") == 9
+    # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+    assert (
+        count(
+            t,
+            r"<action caption='GPA Roster [A-Za-z]+ \(Landing Page\)' name='\[LP_Link_",
+        )
+        == 3
+    )
+    for tab in (
+        "Academic Health Home",
+        "Academic Health Schools",
+        "Cumulative GPA Monitor",
+        "Gradebook School Rollup",
+        "Gradebook Teacher View",
+    ):
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert count(t, rf"<param name='sheet' value='{re.escape(tab)}' />") >= 1, tab
+    # text zones carry no tokens
+    for tz in re.findall(r"<zone [^>]*type-v2='text'.*?</zone>", d, re.S):
+        # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+        assert "[Parameters]" not in tz and "federated." not in tz
+
+
+CHECKS = [task3, task4, task5, task6, task7]
 
 if __name__ == "__main__":
     text = load()
