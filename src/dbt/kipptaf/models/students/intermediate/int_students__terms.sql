@@ -132,8 +132,6 @@ with
             and p.abbreviation = q.term
             and p._dbt_source_project = q._dbt_source_project
             and p.rn = 1
-    ),
-
     )
 
 -- The branches differ in width on purpose: `full union all corresponding`
