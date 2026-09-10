@@ -494,6 +494,35 @@ the call is a no-op — unconfirmed, because AY2026 has no tested PM rows in
 either method yet. Re-check once SY26-27 scores land rather than assuming, and
 do not remove the call because the current year does not need it.
 
+#### Every consumer must name its `model_type`
+
+`int_amplify__all_assessments` changed grain: it emits one row per data method
+(`BM` / `Internal` / `Aimline`). A consumer that does not filter `model_type`
+either double-counts or is correct only by accident, and it fails silently — no
+error, no failing test, just multiplied rows.
+
+Three consumers needed fixing, measured on AY2025:
+
+| Consumer                              | Had                       | Effect                                      |
+| ------------------------------------- | ------------------------- | ------------------------------------------- |
+| `rpt_tableau__dibels_dashboard` PM    | nothing                   | 4× — 2× on the score join, 2× on the roster |
+| `int_amplify__pm_met_criteria`        | nothing                   | 72,970 rows from 17,004 distinct score keys |
+| `rpt_gsheets__dibels_pm_goal_setting` | `period in ('BOY','MOY')` | none yet, one coincidence away              |
+
+There is no partial version of the bug. The PM score attach has exactly two rows
+per (year, season, round, measure, student) on **all** 36,507 groups, and the
+roster two per (year, grade, season, round, student) on **all** 24,594 — so an
+unscoped join doubles everywhere or not at all.
+
+The remaining consumers are safe, but each for a reason it does not state: an
+`assessment_type` filter (the marts, `bm_goals_calculations`), a
+`measure_standard = 'Composite'` filter that PM rows never satisfy (`mtss_rti`,
+`kippmiami_payout_roster`, `student_enrollments_subjects`,
+`dibels_benchmark_weekly`), or benchmark seasons never equalling PM seasons
+(`BOY` against `BOY->MOY`, which is what protects the dashboard's own BM
+branch). None of that is careless — they all predate `model_type` — but when you
+touch one, state the scope rather than trust the coincidence.
+
 #### A student's two grade columns can disagree, and that is not fixable
 
 On a PM row, `assessment_grade` comes from the score side (the grade the probe

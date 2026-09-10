@@ -1724,6 +1724,64 @@ score counts without checking whether every probe was finished. Unexpected
 probes are already excluded upstream by the expectation gate, so a null round is
 genuinely criteria-free rather than a data gap.
 
+### all_assessments changed grain -- every consumer must NAME its model_type
+
+**The highest-value thing to check when touching anything downstream of
+`int_amplify__all_assessments`.** It now emits one row per data method (`BM` /
+`Internal` / `Aimline`), so a consumer that does not filter `model_type` either
+double-counts or is correct only by accident.
+
+Three consumers broke on this and were fixed on the aimline branch. All three
+failed silently -- no error, no failing test, just multiplied rows:
+
+| Consumer                              | What it had               | Effect                                                            |
+| ------------------------------------- | ------------------------- | ----------------------------------------------------------------- |
+| `rpt_tableau__dibels_dashboard` PM    | nothing                   | **4x** -- 2x on the score join, 2x on roster                      |
+| `int_amplify__pm_met_criteria`        | nothing                   | 72,970 rows from 17,004 distinct score keys                       |
+| `rpt_gsheets__dibels_pm_goal_setting` | `period in ('BOY','MOY')` | one coincidence from averaging PM into a benchmark starting score |
+
+Measured precisely rather than estimated: on AY2025 the PM score attach has
+**exactly 2 rows per (year, season, round, measure, student) on 36,507 of 36,507
+groups**, and the roster **2 per (year, grade, season, round, student) on 24,594
+of 24,594**. There is no partial version of this bug -- if a join is unscoped it
+doubles, everywhere.
+
+**Every remaining consumer is safe for a reason it does not state.** That is the
+part to internalise, because each of these is one refactor from breaking:
+
+| How it survives                                                  | Which                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Filters `assessment_type` explicitly                             | `rpt_gsheets__dibels_bm_goals_calculations`, `dim_assessments`, `dim_assessment_administrations`, `fct_assessment_scores_enrollment_scoped`                                    |
+| Filters `measure_standard = 'Composite'`, which PM never carries | `int_extracts__student_enrollments_subjects`, `rpt_tableau__mtss_rti`, `rpt_gsheets__mtss_rti`, `rpt_gsheets__kippmiami_payout_roster`, `int_topline__dibels_benchmark_weekly` |
+| Benchmark seasons never equal PM seasons (`BOY` vs `BOY->MOY`)   | the dashboard's own BM branch, and its composite read                                                                                                                          |
+| `overall_probe_eligible` is null on EOY rows                     | the EOY exclusion in `pm_goal_setting`                                                                                                                                         |
+
+None of those was left unscoped carelessly -- they predate `model_type`. But
+"correct because a composite filter happens to exclude PM" is not a design, and
+the fix when you touch one is to state the scope, not to rely on the coincidence
+holding.
+
+**How to audit it in one command:**
+
+```bash
+cd src/dbt/kipptaf
+for f in $(grep -rl int_amplify__all_assessments models --include=*.sql \
+           | grep -v 'int_amplify__all_assessments.sql'); do
+  printf '%-3s %-3s  %s\n' "$(grep -c assessment_type "$f")" \
+    "$(grep -c model_type "$f")" "${f#models/}"
+done | sort -k2 -n
+```
+
+A zero in the second column is not automatically a bug -- check what else scopes
+it -- but it is always worth reading.
+
+**Corollary for the aimline sibling:** it reads `all_assessments` too, and it
+must say `model_type = 'Aimline'` rather than infer it from whichever column
+happens to be null on the internal method. `overall_probe_eligible` will not
+serve: it is `'Yes'` on every Internal PM row and the composite level on every
+Aimline one, so it discriminates -- until someone changes what the aimline
+branch projects into it.
+
 ### The PM branches cannot match prod's row count, and should not
 
 Do not treat a PM row-count difference against prod as a regression to fix. The
