@@ -1425,11 +1425,65 @@ Two things the LEFT-join version taught, both still worth knowing:
   produced each column.
 
 `max_score` now partitions on
-`academic_year, student_number, model_type, round_number, expected_measure_standard`.
-**`academic_year` is load-bearing**: round numbers restart every year, so
-without it a student's AY2026 round 1 competes with their AY2025 round 1 for the
-same measure and one real score is dropped. `model_type` keeps the two methods
-from ranking against each other.
+`academic_year, student_number, model_type, round_number, expected_measure_standard`
+and orders by `measure_standard_score desc, client_date desc`. **`academic_year`
+is load-bearing**: round numbers restart every year, so without it a student's
+AY2026 round 1 competes with their AY2025 round 1 for the same measure and one
+real score is dropped. `model_type` keeps the two methods from ranking against
+each other.
+
+### A dedup step belongs to exactly one grain
+
+The highest-value lesson in this whole refactor. It sat in prod for years,
+produced no error, and understated real student outcomes.
+
+Prod's `assessments_scores` unioned all three branches -- mCLASS Benchmark, DDS
+Benchmark, PM -- into one CTE. A single `max_score` ranked the whole union and
+the final `SELECT` split it back apart by `assessment_type`. **One dedup step,
+two different kinds of row.**
+
+Its sort key was `measure_standard_level_int desc`, which is correct for
+Benchmark (the column holds 1-4; keep the highest level for the slot). The PM
+branch writes `null as measure_standard_level_int` -- PM has no level -- so on
+every PM row the sort had nothing to sort by and the pick among a student's
+probes was whatever BigQuery reached first. `partition by surrogate_key` had the
+same defect: it means the benchmark summary's key on one side, the PM model's
+key on the other.
+
+**Nobody chose a null sort key for PM.** They chose one for Benchmark, and PM
+was in the same CTE. That is the shape to watch for.
+
+It deduped PM at all only by accident:
+`int_amplify__mclass__pm_student_summary`'s surrogate key omits `probe_number`
+and `client_date`, so it collides across a student's probes -- 67,984 AY2025
+rows against 33,917 distinct keys. **That collision is still there**, so never
+partition, join, or count on that model's `surrogate_key` expecting one row per
+probe. It also invalidates the obvious diagnostic:
+`count(distinct surrogate_key) < count(*)` does NOT prove fan-out here, and
+using it that way mis-read 1,352 genuine multi-probe rounds as gate duplication
+during this session.
+
+Measured on AY2025, every effect in one direction:
+
+| Effect                                             | Rows  |
+| -------------------------------------------------- | ----- |
+| Round-measure slots holding more than one probe    | 1,352 |
+| Reported score lower than the student's best       | 634   |
+| `met_measure_standard_goal` flipped not-met to met | 139   |
+| `met_admin_benchmark_goal` flipped not-met to met  | 85    |
+
+Average understatement 10.25 points. Every flip went not-met to met: students
+were told they missed a goal they had hit, and it propagated through
+`met_measure_name_code_goal` to the round-level met/not-met on the dashboard.
+
+**The rule: if a CTE unions grains and then ranks, one side's sort key is
+meaningless on the other and nothing fails.** Dedup before the union, or split
+the model. Extracting the Benchmark half is what gave PM its own `max_score`,
+which is what made a PM-meaningful sort key possible at all.
+
+Corollary for reviewers: when you see `order by <col> desc` in a window over a
+UNION, check that `<col>` is populated in every branch. A `null as <col>`
+literal in any branch is the tell.
 
 ### The PM branches cannot match prod's row count, and should not
 

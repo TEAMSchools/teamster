@@ -402,11 +402,57 @@ Two consequences worth knowing before reading any count:
   the filter consolidates the gate from three places to one rather than changing
   a reported number.
 - `max_score` partitions on
-  `academic_year, student_number, model_type, round_number, expected_measure_standard`.
-  `academic_year` is load-bearing: round numbers restart every year, so without
-  it a student's AY2026 round 1 competes with their AY2025 round 1 for the same
-  measure and one real score is dropped. `model_type` keeps the two methods from
-  ranking against each other.
+  `academic_year, student_number, model_type, round_number, expected_measure_standard`
+  and orders by `measure_standard_score desc, client_date desc` — the best score
+  for a measure in a round, later probe winning a same-day tie. `academic_year`
+  is load-bearing: round numbers restart every year, so without it a student's
+  AY2026 round 1 competes with their AY2025 round 1 for the same measure and one
+  real score is dropped. `model_type` keeps the two methods from ranking against
+  each other.
+
+#### The bug the split fixed: one dedup step over a union of two grains
+
+Worth reading before touching any `row_number()` in this chain, because the
+defect was invisible for years and produced no error.
+
+Before the split, `assessments_scores` unioned all three branches — mCLASS
+Benchmark, DDS Benchmark, and PM — into one CTE. A single `max_score` then
+ranked that whole union, and the final `SELECT` split it back apart by
+`assessment_type`. One dedup step, two different kinds of row.
+
+Its sort key was `measure_standard_level_int desc`. That is a sensible rule for
+Benchmark, where the column holds 1-4 and "keep the highest level for this slot"
+is what you want. **The PM branch writes `null as measure_standard_level_int`**
+— PM has no level — so the same key arrived meaningless on every PM row and the
+pick among a student's probes was whatever BigQuery reached first. The partition
+had the same problem: `surrogate_key` means the benchmark summary's key on one
+side and the PM model's key on the other.
+
+It deduped PM at all only by accident.
+`int_amplify__mclass__pm_student_summary`'s surrogate key omits `probe_number`
+and `client_date`, so it collides across a student's probes — 67,984 AY2025 rows
+against 33,917 distinct keys. Partitioning by a colliding key is what put
+multiple probes in one partition for an arbitrary sort to choose from.
+
+Measured consequences on AY2025, all in one direction:
+
+| Effect                                             | Rows  |
+| -------------------------------------------------- | ----- |
+| Round-measure slots holding more than one probe    | 1,352 |
+| Reported score lower than the student's best       | 634   |
+| `met_measure_standard_goal` flipped not-met to met | 139   |
+| `met_admin_benchmark_goal` flipped not-met to met  | 85    |
+
+Average understatement was 10.25 points, and every single flip went not-met to
+met — meaning students were told they missed a goal they had actually hit, and
+that propagated up through `met_measure_name_code_goal` to the round-level
+met/not-met on the dashboard.
+
+**The rule to take from it: a dedup step belongs to exactly one grain.** If a
+CTE unions grains and then ranks, one side's sort key is meaningless on the
+other and nothing fails. Dedup before the union, or split the model. Extracting
+the Benchmark half is what gave PM its own `max_score` and made a PM-meaningful
+sort key possible at all.
 
 #### A student's two grade columns can disagree, and that is not fixable
 
