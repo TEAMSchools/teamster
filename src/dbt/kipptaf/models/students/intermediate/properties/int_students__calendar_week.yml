@@ -5,8 +5,8 @@ models:
     description: >-
       SIS-neutral school weeks across the network -- the successor to
       int_powerschool__calendar_week, which stays a pure PowerSchool union. The
-      PowerSchool branch is year-scoped so the frozen Miami archive keeps
-      serving the years Focus does not cover; Focus serves AY2026 forward.
+      PowerSchool branch is NJ-only; Miami rows come from Focus from the cutover
+      year forward, and no Miami calendar history before AY2026 is kept (#5193).
       Focus's internal school id is crosswalked to the network school number
       here.
     data_tests:

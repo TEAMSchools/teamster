@@ -17,6 +17,7 @@ with
         where
             not is_prestart
             and worker_status_code != 'Terminated'
+            -- Miami rosters into Clever from Focus, not from this feed
             and home_work_location_dagster_code_location != 'kippmiami'
 
         union all

@@ -245,6 +245,9 @@ with
             and mem.calendardate between t.term_start_date and t.term_end_date
             and mem._dbt_source_project = t._dbt_source_project
             and t.term is not null
+        -- Membership days outside any calendar week have no week fields. The
+        -- former inner join to calendar_week dropped them; this keeps the row
+        -- set identical (#5193).
         where mem.week_start_monday is not null
     ),
 

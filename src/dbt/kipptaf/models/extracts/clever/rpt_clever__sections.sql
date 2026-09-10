@@ -12,6 +12,7 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         where
             sr.assignment_status != 'Terminated'
+            -- Miami rosters into Clever from Focus, not from this feed
             and sr.home_work_location_dagster_code_location != 'kippmiami'
             and sr.job_title in (
                 'Director of Campus Operations',

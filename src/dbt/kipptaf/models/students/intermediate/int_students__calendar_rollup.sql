@@ -35,16 +35,13 @@ with
         inner join focus_schools as fs on cr.schoolid = fs.focus_school_id
         -- One row. See int_students__sis_cutover for why the boundary is a
         -- floor derived from recorded attendance rather than from Focus row
-        -- presence. Required, not belt-and-braces: without it Focus's
-        -- pre-cutover rows would land beside PowerSchool's real rows for the
-        -- same Miami school-years and break this model's own grain test.
+        -- presence. Focus's calendar before the cutover year is a scaffold,
+        -- not the network's calendar of record, and the network keeps no
+        -- Miami calendar days before AY2026 (#5193).
         cross join {{ ref("int_students__sis_cutover") }} as c
         where cr.academic_year >= c.focus_start_academic_year
     )
 
--- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
--- #5012), so every archive row is a pre-Focus year and needs no cutover
--- predicate. The Focus branch above still floors at the cutover year.
 select
     _dbt_source_relation,
     schoolid,

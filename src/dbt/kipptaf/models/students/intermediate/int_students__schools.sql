@@ -14,12 +14,10 @@ with
         inner join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on s.school_number = loc.focus_school_id
-    ),
-
-    powerschool_schools as (select *, from {{ ref("stg_powerschool__schools") }})
+    )
 
 select *,
-from powerschool_schools
+from {{ ref("stg_powerschool__schools") }}
 
 full union all corresponding
 

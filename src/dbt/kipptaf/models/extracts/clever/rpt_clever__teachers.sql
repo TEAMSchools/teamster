@@ -23,6 +23,7 @@ where
     and worker_status_code != 'Terminated'
     and employee_number is not null
     and home_work_location_powerschool_school_id is not null
+    -- Miami rosters into Clever from Focus, not from this feed
     and home_work_location_dagster_code_location != 'kippmiami'
 
 union all
