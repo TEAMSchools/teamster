@@ -114,13 +114,13 @@ accept a subagent's self-report without the checks there.
 
 ## Tooling
 
-- Read a file under `src/dbt/` or `src/cube/` with Read, never `cat`. Same for a
-  filename matching `*college_assessment*`, `*fresh_*` or `*gradebook_audit*`.
-  Those paths carry `.claude/rules/*.md`, which load on a Read/Edit/Write path
-  match and never on a Bash command string — `cat` returns the file and silently
-  drops the conventions governing the edit you are about to make. Auto mode's
-  Bash-first instruction does not override this. It scopes itself to work Bash
-  can accomplish, and this is work Bash cannot accomplish.
+- Open a file under `src/dbt/` or `src/cube/` with the Read tool, never `cat`.
+  Same for a filename matching `*college_assessment*`, `*fresh_*` or
+  `*gradebook_audit*`. Those paths carry `.claude/rules/*.md`, which load on a
+  Read/Edit/Write path match and never on a Bash command string — `cat` returns
+  the file and silently drops the conventions governing the edit you are about
+  to make. Auto mode's Bash-first instruction does not override this: it scopes
+  itself to work Bash can accomplish, and this is work Bash cannot.
 - Use Read/Edit/Write for all other file I/O, and Bash for `git`, `uv run`,
   `gh`, `docker`, `trunk`, `ls`. On the native VS Code build Grep and Glob are
   absent as tools, so search with `rg`/`grep` via Bash.
