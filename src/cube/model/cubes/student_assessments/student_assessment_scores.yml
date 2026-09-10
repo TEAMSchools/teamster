@@ -88,8 +88,15 @@ cubes:
 
       - name: is_mastery
         description: >-
-          TRUE if the student met the mastery/proficiency threshold for this
-          assessment.
+          TRUE if the student met the mastery or proficiency threshold for this
+          assessment. The threshold is per source, and they are not the same
+          bar: an at-or-above-grade-level placement for i-Ready, the measure's
+          own benchmark level for DIBELS, the performance band for Illuminate,
+          and the state achievement level for NJSLA, NJGPA and FAST. This is
+          what pct_proficient counts, so a cross-source proficiency rate is
+          comparing different definitions. Null on the DIBELS subtests whose
+          benchmark level is not set upstream, which sit in the denominator
+          without entering the numerator.
         sql: is_mastery
         type: boolean
         public: true
