@@ -426,20 +426,33 @@ monitoring at another. Do not "fix" it by sourcing both columns from one side:
 - Both from the benchmark side keeps the row coherent with its expectations, but
   discards the grade the probe was actually sat at.
 
-**It settles at the reporting layer, which is why neither choice matters much.**
+**The dashboard is unaffected. The participation roster is not.** These two
+consumers join the grade differently, and an earlier version of this section
+said the mismatch "settles at the reporting layer" without making the
+distinction — that was too broad.
+
 `rpt_tableau__dibels_dashboard`'s PM branch drives off the student's enrollment
 record: it joins `int_extracts__student_enrollments_subjects` to
 `int_google_sheets__dibels_pm_expectations` on `s.grade_level = e.grade`, so the
 **enrolled** grade decides which expectations the student is held to. The score
 is then attached with a LEFT JOIN on year, season, round, measure and student
 number — with no grade predicate at all. So whichever grade the PM row carries,
-the score still lands on the enrolled-grade expectation row. The two grade
-columns on the PM row never reach the dashboard's grade logic.
+the score still lands on the enrolled-grade expectation row, and the two grade
+columns never reach the dashboard's grade logic.
 
-The only practical consequence is internal: these rows key to a different grade
-than the pre-split model did, so a prod-versus-branch row comparison will always
-show them as branch-only. That is expected. Confirm the count is still tiny
-before treating it as a finding.
+`int_students__dibels_participation_roster` does put the grade in the score
+join, as `s.grade_level = a.assessment_grade_int`. A PM row keyed to the
+benchmark grade therefore fails to match a student enrolled at the probe grade,
+and `actual_row_count` reads 0 where the pre-split model read the real count.
+Measured on AY2025: one row, Newark grade 4, BOY→MOY round 2, prod 2 against 0.
+`completed_test_round` is `false` on both sides there, so no reported outcome
+moves — but the count is understated, and a round where every measure landed at
+the other grade is the shape that produces it.
+
+The remaining consequence is internal: these rows key to a different grade than
+the pre-split model did, so a prod-versus-branch row comparison will always show
+them as branch-only. That is expected. Confirm the count is still tiny before
+treating it as a finding.
 
 #### Computed fields
 

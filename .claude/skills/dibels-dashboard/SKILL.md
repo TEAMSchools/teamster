@@ -1459,18 +1459,28 @@ expected measures that came from grade 3's gate row. Both from the benchmark
 side keeps the row coherent with its expectations, but discards the grade the
 probe was actually sat at.
 
-**It settles at the reporting layer anyway.** The dashboard's PM branch drives
-off the student's enrollment record --
-`int_extracts__student_enrollments_subjects` joined to
-`int_google_sheets__dibels_pm_expectations` on `s.grade_level = e.grade` -- so
-the ENROLLED grade decides which expectations the student is held to. The score
-is attached with a LEFT JOIN on year, season, round, measure and student number,
-**with no grade predicate at all**. Whichever grade the PM row carries, the
-score lands on the enrolled-grade expectation row. The two grade columns never
-reach the dashboard's grade logic.
+**The dashboard is unaffected; the participation roster is not.** An earlier
+version of this section said it "settles at the reporting layer" full stop. That
+was too broad -- the two consumers join the grade differently.
 
-The only consequence is internal: these rows key to a different grade than prod
-does, so a prod-versus-branch comparison always shows them as branch-only.
+`rpt_tableau__dibels_dashboard`'s PM branch drives off the student's enrollment
+record -- `int_extracts__student_enrollments_subjects` joined to
+`int_google_sheets__dibels_pm_expectations` on `s.grade_level = e.grade` -- so
+the ENROLLED grade decides which expectations the student is held to, and the
+score is attached with a LEFT JOIN on year, season, round, measure and student
+number, **with no grade predicate at all**. Whichever grade the PM row carries,
+the score lands on the enrolled-grade expectation row.
+
+`int_students__dibels_participation_roster` DOES put grade in its score join
+(`s.grade_level = a.assessment_grade_int`), so a PM row keyed to the benchmark
+grade misses a student enrolled at the probe grade and `actual_row_count`
+reads 0. Measured on AY2025: one row, Newark grade 4, BOY->MOY round 2, prod 2
+against 0. `completed_test_round` is false on both sides, so nothing reported
+moves -- the count is just understated. Expect it when every measure in a round
+landed at the other grade.
+
+The remaining consequence is internal: these rows key to a different grade than
+prod does, so a prod-versus-branch comparison always shows them as branch-only.
 Confirm the count is still tiny, then move on.
 
 What _must_ match prod is the Benchmark half. That was verified byte-for-byte:
