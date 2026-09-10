@@ -17,7 +17,7 @@ with
         where
             not is_prestart
             and worker_status_code != 'Terminated'
-            and {{ exclude_frozen("home_work_location_dagster_code_location") }}
+            and home_work_location_dagster_code_location != 'kippmiami'
 
         union all
 
@@ -37,7 +37,7 @@ with
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
         where
-            {{ exclude_frozen("dagster_code_location") }}
+            dagster_code_location != 'kippmiami'
             -- int_people__temp_staff gates on idauto_status and the AD account
             -- flag, neither of which flips on offboarding. A populated
             -- idauto_person_term_date is the only termination signal it carries.
@@ -54,9 +54,7 @@ with
                 _dbt_source_relation, r'(kipp\w+)_'
             ) as dagster_code_location,
         from {{ ref("stg_powerschool__schools") }}
-        where
-            state_excludefromreporting = 0
-            and {{ exclude_frozen("_dbt_source_project") }}
+        where state_excludefromreporting = 0
     ),
 
     assignments as (

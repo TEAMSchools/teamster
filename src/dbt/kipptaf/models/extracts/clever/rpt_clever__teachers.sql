@@ -23,7 +23,7 @@ where
     and worker_status_code != 'Terminated'
     and employee_number is not null
     and home_work_location_powerschool_school_id is not null
-    and {{ exclude_frozen("home_work_location_dagster_code_location") }}
+    and home_work_location_dagster_code_location != 'kippmiami'
 
 union all
 
@@ -46,7 +46,7 @@ select
     null as `password`,
 from {{ ref("int_people__temp_staff") }}
 where
-    {{ exclude_frozen("dagster_code_location") }}
+    dagster_code_location != 'kippmiami'
     -- int_people__temp_staff gates on idauto_status and the AD account flag,
     -- neither of which flips on offboarding. A populated
     -- idauto_person_term_date is the only termination signal it carries.
