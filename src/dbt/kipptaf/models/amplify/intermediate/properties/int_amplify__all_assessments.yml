@@ -1,5 +1,22 @@
 models:
   - name: int_amplify__all_assessments
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            # assessment_grade_int is IN the key here, unlike on the criteria
+            # models where it is deliberately left out. A student can be assessed
+            # at two grades inside one benchmark window and each sitting is its
+            # own administration, so grade is part of this model's grain rather
+            # than a mid-year change to catch -- without it, 5 of 409,906 AY2025
+            # rows collide.
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - model_type
+              - period
+              - round_number
+              - measure_standard
+              - assessment_grade_int
     columns:
       - name: academic_year
         data_type: int64

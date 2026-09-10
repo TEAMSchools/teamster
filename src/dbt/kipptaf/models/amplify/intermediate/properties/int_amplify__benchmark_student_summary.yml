@@ -74,6 +74,9 @@ models:
           overall_aimline_composite_level to the by-levels range's cohort
           column. The two run over the same student population wherever both
           expectation ranges cover the year.
+        config:
+          meta:
+            contains_pii: true
       - name: overall_aimline_composite_level
         data_type: string
         description: >
@@ -92,6 +95,9 @@ models:
           EOY row, where no PM season starts. Neither joins to a cohort row, so
           the distinction does not change any result, but it keeps the column
           out of null-handling in every consumer.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         data_type: int64
         description: >
@@ -102,6 +108,9 @@ models:
       - name: student_number
         data_type: int64
         description: The student's SIS number.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_grade
         data_type: string
         description: >
@@ -154,11 +163,17 @@ models:
           Reading Accuracy is a percentage of words read correctly, Reading
           Fluency is words per minute, Maze is a comprehension question count.
           Do not aggregate across measures.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_standard_level
         data_type: string
         description: >
           Benchmark level for this measure -- Above, At, Below or Well Below
           Benchmark. NA on rows carried for structure rather than scoring.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_standard_level_int
         data_type: int64
         description: >
@@ -169,6 +184,9 @@ models:
         description: >
           National norm percentile at the time of testing. A point-in-time
           standing, not a growth measure.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_semester_growth
         data_type: string
         description: >
@@ -176,12 +194,18 @@ models:
           Well Below Average through Well Above Average. Null on a BOY row,
           which has nothing to grow from. Tracks percentile movement rather than
           raw score, so a rising raw score can still read Below Average.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_year_growth
         data_type: string
         description: >
           Amplify's growth classification across the full year, populated on EOY
           rows. A third comparison, distinct from the semester one -- do not
           conflate them.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_type
         data_type: string
         description: Benchmark on every row here, from the expectation gate.
@@ -210,19 +234,35 @@ models:
           MOY->EOY on a MOY row, null on EOY. Joins the expectation gate's
           admin_season, which is how a benchmark composite reaches the PM rounds
           it gates.
+      # composite_by_window pivots with max(measure_standard_level) keyed on
+      # (academic_year, student_number) only, so a student assessed at two grades
+      # inside one benchmark window has these three columns blended across both
+      # sittings. Carried over unchanged from the pre-split model. Measured on
+      # the current data: 1 student-window of 62,380 has two grades, and its
+      # levels agree, so nothing is blended today -- but both PM eligibility
+      # gates read these columns, so re-measure before assuming it stays inert.
       - name: boy_composite
         data_type: string
         description: >
           The student's BOY composite level, repeated on every row for the year.
           No data when they have no BOY composite.
+        config:
+          meta:
+            contains_pii: true
       - name: moy_composite
         data_type: string
         description:
           The student's MOY composite level, same shape as boy_composite.
+        config:
+          meta:
+            contains_pii: true
       - name: eoy_composite
         data_type: string
         description:
           The student's EOY composite level, same shape as boy_composite.
+        config:
+          meta:
+            contains_pii: true
       - name: boy_probe_eligible
         data_type: string
         description: >
@@ -249,12 +289,18 @@ models:
         description: >
           The level collapsed to At/Above versus Below/Well Below. The coarser
           of the two rollups, used by the padded dashboard goal columns.
+        config:
+          meta:
+            contains_pii: true
       - name: foundation_measure_standard_level
         data_type: string
         description: >
           The level collapsed to At/Above, Below, or Well Below. Keeps Well
           Below separate so it reconciles against the Foundation goal types,
           which the two-way split cannot.
+        config:
+          meta:
+            contains_pii: true
       - name: actual_row_count
         data_type: int64
         description: >

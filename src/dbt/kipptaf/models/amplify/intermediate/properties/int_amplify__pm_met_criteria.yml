@@ -129,6 +129,9 @@ models:
           The score evaluated, from int_amplify__all_assessments. Where a
           student sat several probes in a round, this is the best score for the
           measure, later probe winning a same-day tie.
+        config:
+          meta:
+            contains_pii: true
       - name: start_date
         data_type: date
         description:

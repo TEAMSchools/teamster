@@ -135,8 +135,16 @@ models:
       - name: assessment_type
         data_type: string
         description: >
-          Benchmark or PM, authored on the sheet rather than derived from
-          admin_season. PM on every row here.
+          Authored on the sheet rather than derived from admin_season. PM on
+          every row here, and tested rather than trusted: Benchmark is never by
+          levels, and Benchmark rows reaching this range once doubled dashboard
+          rows and inflated participation expected counts with nothing failing.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [PM]
+              config:
+                severity: error
       - name: matching_bm_season
         data_type: string
         description: >
