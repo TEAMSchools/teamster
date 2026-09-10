@@ -83,6 +83,10 @@ with
 
             fs.schoolid,
 
+            fcw.week_start_monday,
+            fcw.week_end_sunday,
+            fcw.week_number_academic_year,
+
             -- See powerschool_conformed's is_focus_source for why this is an
             -- explicit flag rather than a studentid-null proxy.
             true as is_focus_source,
@@ -113,10 +117,6 @@ with
             -- unrecorded day leaves daily_code null, which is exactly how
             -- PowerSchool encodes it.
             if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
-
-            fcw.week_start_monday,
-            fcw.week_end_sunday,
-            fcw.week_number_academic_year,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
         left join
@@ -172,14 +172,13 @@ with
             mem.attendancevalue,
             mem.potential_attendancevalue,
             mem.membershipvalue,
+            mem.week_start_monday,
+            mem.week_end_sunday,
+            mem.week_number_academic_year,
 
             t.academic_year,
             t.semester,
             t.term,
-
-            mem.week_start_monday,
-            mem.week_end_sunday,
-            mem.week_number_academic_year,
 
             abs(mem.attendancevalue - 1) as is_absent,
 
