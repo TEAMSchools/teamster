@@ -75,6 +75,7 @@ with
             s.sections_no_of_students,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
+            s.school_level,
 
             t.`quarter`,
             t.semester,
@@ -86,8 +87,6 @@ with
             t.first_day_school_year,
             t.last_day_school_year,
             t.days_in_quarter,
-
-            s.school_level,
 
             {{ extract_region("s") }} as region,
 

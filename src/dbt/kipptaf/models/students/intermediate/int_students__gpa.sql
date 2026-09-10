@@ -17,14 +17,13 @@ with
             gt.total_credit_hours_y1,
             gt.grade_avg_term,
             gt.grade_avg_y1,
+            gt.students_student_number as student_number,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
             gc.cumulative_y1_gpa_projected,
             gc.earned_credits_cum,
             gc.potential_credits_cum,
-
-            gt.students_student_number as student_number,
 
             -- PowerSchool's yearid is academic_year - 1990. gpa_term carries no
             -- academic_year of its own, and the Focus branch has no yearid, so
