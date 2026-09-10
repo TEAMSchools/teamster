@@ -16,14 +16,10 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    powerschool_filtered as (
-        select p.*,
-        from {{ ref("stg_powerschool__schools") }} as p
-        where p._dbt_source_project != 'kippmiami'
-    )
+    powerschool_schools as (select *, from {{ ref("stg_powerschool__schools") }})
 
 select *,
-from powerschool_filtered
+from powerschool_schools
 
 full union all corresponding
 
