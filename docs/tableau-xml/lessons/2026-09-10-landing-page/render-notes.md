@@ -125,3 +125,46 @@ What the render shows that the XML and CSV checks did not:
 
 Lesson for the skill: a CSV-equals-source check proves the number, not the
 pixel. Run a server render on every review-copy publish and read it.
+
+## 2026-09-10 render-fix round: all four defects closed
+
+Base is production **revision 26** (2026-09-10 20:02:27 UTC), which already
+contained the landing page — the owner published the review copy to production
+before the defects were fixed. `fix_lp.py` patches that base; `build_lp.py` is
+historical from here, because it adds a page to a workbook that has none.
+
+Two publish-and-render rounds. Review copy
+`55cac48f-15d0-4048-b219-bb8dfbf39700` in GPA-monitor-temp, rendered through
+`get-view-image` and read as cropped JPEGs.
+
+| #   | Defect                                  | Fix                                                                                                                                                                                         | Confirmed on render |
+| --- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| 1   | `####` on 4 tiles and 3 strips          | shorter label stacks: two trend lines dropped from the Y1 and failures tiles, 30 pt -> 22 pt and 42 pt -> 24 pt values, headings 13 pt -> 11 pt, strips reduced to a single 12 pt value run | round 1             |
+| 1b  | tiles read `of students`, count missing | the denominator instance was on Tooltip only; added a `<text>` encoding                                                                                                                     | round 2             |
+| 2   | navy healthy-gradebooks tile and strip  | dropped the inherited `element='table'` navy background and ruling 12's white `element='header'` rule; recoloured every `#ffffff` run to the navy-on-white palette                          | round 1             |
+| 3   | `Grade Grade 11`                        | dropped the literal `Grade ` before `[Parameters].[Parameter 10]`, whose aliases already read `Grade 11`                                                                                    | round 1             |
+| 4   | header clipped to `Landi..`             | title runs 16 pt -> 12 pt (14 pt still clipped to `Landing P..` in round 1)                                                                                                                 | round 2             |
+
+Values read off the round-2 render, all matching the regenerated `numbers.md`:
+
+- Tiles: 69%, 8%, 48.4%, 14%; `of 5,275 students`, `of 5,322 students`,
+  `0 students still needed (projected)`, `52 of 363 teachers`.
+- Strips: Y1 GPA Camden 58% / Newark 74% / Paterson 52%; failures 16% / 6% / 4%;
+  cumulative Camden 48.5% / Newark 48.4%; healthy gradebooks 3% / 19% / 6%.
+
+`numbers.md` was regenerated against revision 26 on a fresh PROBE copy (deleted
+afterwards): all five tile-vs-source pairs equal. Two values moved from the
+2026-09-10 18:19 table because the extract refreshed with the owner's publish —
+`% healthy` 15% -> 14%, gradebook strip Newark 20% -> 19% — on both sides, so
+the equalities hold.
+
+### Still not verified by this round
+
+- **Desktop opens the package.** Only the owner opening `final.twbx` proves it;
+  Server accepted the publish, which proves nothing about Desktop.
+- **Hover and click.** Tooltips on the guide slots, the `tabdoc:goto-sheet`
+  buttons and the nav actions still need a human in the live review copy.
+- **The coverage grid's serif fallback.** Unchanged and still cosmetic: the
+  requested monospace font is not installed on the server.
+- **The shortfall calc's nonzero branch.** Still 0 == 0 (org above goal), so
+  still unexercised; parked in #5247 per ruling 16.

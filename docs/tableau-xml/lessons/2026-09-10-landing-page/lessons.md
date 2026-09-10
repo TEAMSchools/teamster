@@ -1883,3 +1883,128 @@ protected file, so the owner applies it. Two regression cases belong in
 `tests/hooks/test_fp_corpus.sh`: an MCP image block and a Read image block, each
 with a 300-char base64 payload, asserted clean with `expect_allow_raw` against
 the output hook path variable the helpers define.
+
+## 2026-09-10, render-fix round (production revision 26 base)
+
+### The page shipped to production before the defects were fixed, so the build had to rebase
+
+**Verified.** The owner published the review copy to production at 20:02:27 UTC
+as revision 26, and revision 26 therefore contains all 19 `LP - ` sheets, the
+`Landing Page` dashboard, the 12 actions and the three `Calculation_77` calcs —
+with every one of the four render defects. It is not reachable by staff:
+`list-views` on the production workbook returns 5 views, and `Landing Page` is
+not among them. Three consequences, none of which the hand-off anticipated:
+
+- `build_lp.py` cannot be re-run. It is an ADDITIVE script: it clones sheets
+  into a workbook that does not have them. Against a base that already has them
+  it would duplicate every sheet name. The work becomes a PATCH script
+  (`fix_lp.py`) over the shipped page.
+- The old base cannot be reused either. Between revisions 25 and 26 the owner
+  also changed four Gradebook Teacher View sheets (`Teacher sections panel`,
+  `Teacher sections panel eyebrow`, `Tooltip - category reasons`,
+  `Your sections grid`). Rebuilding from revision 25 would have silently
+  reverted them.
+- The extract moved with it. `% healthy` went 15% -> 14% and the gradebook
+  strip's Newark cell 20% -> 19% between the two pulls. A recorded numbers table
+  is a snapshot, not an oracle; re-run the tile-vs-source comparison rather than
+  diffing against yesterday's numbers.
+
+Do this instead: before resuming any workbook build, re-pull production and diff
+the worksheet, dashboard, parameter, action and calc inventories against your
+base. `test_zz_lp_repull.py` does it in one run and also hashes the clone
+sources.
+
+### `check_additive.py` has to strip BOTH sides once the addition has shipped
+
+**Verified.** The checker stripped the `LP - ` elements from the edited file
+only and compared the remainder to the base. That is right while the base
+predates the addition and wrong the moment the addition is published into the
+base: every LP element then reads as a deletion, and the checker fails on a
+correct edit. Fixed by stripping the same patterns from both files and printing
+both counts, which is backward compatible (a base without the elements yields
+all-zero counts and identical behaviour) and asks the better question anyway: is
+everything OUTSIDE these elements byte-identical? On this edit both sides strip
+`{'worksheets': 19, 'dashboard': 1, 'dashboard-window': 1, 'sheet-windows': 19, 'nav-actions': 9, 'url-actions': 3, 'calcs': 3}`
+and the remainder matches — which is also the proof that the owner's four
+Teacher View sheets survived.
+
+### `####` is a vertical-fit failure, and the diagnostic is the variant that works
+
+**Verified by render.** All four tiles and three of four region strips printed
+`####`; the cumulative strip printed `48.5%` correctly. The tempting reads —
+number format, label width, a missing font, `mark-labels-cull` — are all wrong,
+and each one is contradicted by a sheet in the same file:
+
+| Hypothesis                 | Killed by                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| number format              | no `text-format` on any of the four strips                                         |
+| font missing on the server | the good strip uses the same `Tableau Semibold` / `Tableau Light`                  |
+| `mark-labels-cull`         | the cumulative TILE has no cull rule and still printed `####`                      |
+| cell style / text-align    | the cumulative tile and strip have identical style blocks, one fails and one works |
+
+What actually separates them is how much vertical space one mark gets. The
+cumulative strip is the only strip with two region rows instead of three (no
+Paterson high school), so its rows are ~65 px against ~43 px, and it is the only
+one whose 12 pt + 8 pt stack fits. The tiles all carry either an extra label
+line or an oversized value run (30 pt, 42 pt) relative to the source BANs they
+were cloned from, which render fine at 16 pt in five lines.
+
+Do this instead: when one instance of a cloned pattern renders and another does
+not, diff the SPACE each one gets before diffing its formatting. And take the
+skill's catalog entry literally — removing a `<run>` line fixes `####`, growing
+the box does not — so shorten the label rather than resize the zone, which also
+leaves dashboard geometry untouched and `check_geometry` trivially clean.
+
+### A mark label renders a field only if that field is on the Text shelf
+
+**Verified by render, four cases in one image.** After the `####` fix the Y1 and
+failures tiles read `of students` — the denominator ran as an empty gap, with no
+error, no `####`, and no literal token. The two tiles that printed every number
+(`LP - Tile Cumulative GPA`, `LP - Tile Gradebook Health`) have every field
+their label references in `<encodings>` as `<text column=...>`. The two that did
+not have the count on `<tooltip column=...>` only:
+
+| Sheet                        | Label field                       | Shelf        | Rendered                  |
+| ---------------------------- | --------------------------------- | ------------ | ------------------------- |
+| `LP - Tile Cumulative GPA`   | `Calculation_7700000000000000003` | text         | `0 students still needed` |
+| `LP - Tile Gradebook Health` | `Calculation_1052997927363395589` | text         | `52 of 363 teachers`      |
+| `LP - Tile Y1 GPA`           | `Calculation_1000000000000000021` | tooltip only | `of students`             |
+| `LP - Tile Course Failures`  | `Calculation_1000000000000000024` | tooltip only | `of students`             |
+
+Adding a `<text>` encoding for the same instance fixed both
+(`of 5,275 students`, `of 5,322 students`); the instance stays on Tooltip as
+well, because the `<customized-tooltip>` references it too and a field may sit
+on both shelves. This is the same failure shape as the skill's parameter-token
+entry — blank, not loud — and it belongs beside it: **a `<customized-label>` run
+resolves a `[datasource].[usr:...]` token only when that instance is also a
+`<text>` encoding on the same pane.** A CSV check cannot see it, because the
+value is in the data either way; only a render can.
+
+### Desktop normalises a hand-built `.twb` on save, and the diff is legible
+
+**Verified** by diffing our `out.twb` against the production revision 26 the
+owner published from it. Desktop dropped orphan `<column>` declarations left by
+filter removal (the "accepted residue" of Task 6), dropped zone attributes at
+their default (`show-title='true'`, `show-caption='false'`), dropped a redundant
+`fontsize='10'` from five nav-button captions, dropped empty `<zone-style>`
+border blocks, re-solved every flow zone's `x`/`w`/`h`, and added a
+`<repository-location>` to the dashboard pointing at the workbook it was
+downloaded from — in this case the ZZ-REVIEW copy, which is how you can tell the
+production publish came from the review copy rather than from `final.twbx`. None
+of it changed behaviour. Useful corollary: a hand-built file that Desktop has
+opened and saved is a free second opinion on which of your elements were
+redundant.
+
+### The output scanner still mangles image results, intermittently
+
+**Verified.** Commit `574ee50d2` skips the base64 carrier of image blocks, and
+one `get-view-image` at 500x550 did come back with pixels. Four later calls at
+500x550, 520x570 and 480x530 came back as `media removed — rejected by API` with
+`⛔ ... redacted by check-output.sh`, and the API's complaint names the media
+type, not the data: the scanner is replacing the `media_type` string
+(`image/png`) with `[redacted: secret material]`, which invalidates the block
+even though the base64 survives. The reliable path this session was to let the
+publish script write the render to disk (`view.image` bytes), crop it to the
+region under test with Pillow, re-encode as a small JPEG, and `Read` that —
+those went through every time. Worth adding to Charlie's fix: skip the whole
+image block, `media_type` included, not just its `data` field.

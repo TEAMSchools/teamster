@@ -96,16 +96,27 @@ def main() -> int:
         "url-actions": rf"[ \t]*<action [^>]*name='\[{ap}[^\]]*\]'>.*?</action>\r?\n",
         "calcs": rf"(?<=\n)      <column [^>]*name='\[{cp}\d+\]'[^>]*[^/>]>.*?</column>\r?\n",
     }
+    # Strip from BOTH files, not just the edited one. When the base predates
+    # the addition its counts are all 0 and this is identical to stripping the
+    # edited side alone. When the addition has since been published INTO the
+    # base -- the landing page reached production in revision 26 -- the base
+    # carries the same elements, and a one-sided strip would report every one
+    # of them as a deletion. Stripping both sides keeps the question the same
+    # in either case: is everything OUTSIDE these elements byte-identical?
+    removed_base = {}
     for label, pat in patterns.items():
         edited, n = strip_elements(edited, pat)
         removed[label] = n
+        base, nb = strip_elements(base, pat)
+        removed_base[label] = nb
 
     # the marker was checked above; normalize it out on both sides so the
     # remainder can be compared byte for byte.
     edited = edited.replace(MARKER, "")
     base = base.replace(MARKER, "")
 
-    print("stripped:", removed)
+    print("stripped from edited:", removed)
+    print("stripped from base:  ", removed_base)
     if edited == base:
         print("OK: remainder is byte-identical to base")
         return 0

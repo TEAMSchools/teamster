@@ -1,5 +1,49 @@
 # Landing page hand-off: Academic & Gradebook Health Suite
 
+## Status, 2026-09-10 render-fix round
+
+The landing page is **already in the production workbook**. You published the
+review copy to Production at 20:02 UTC as **revision 26**, which carried the
+page in with all four render defects on it. It is not reachable by staff:
+production serves five views and `Landing Page` is not one of them.
+
+Those four defects are now fixed, plus a fifth found while checking. The fixes
+are built on revision 26, so your own revision-25-to-26 edits to four Gradebook
+Teacher View sheets (`Teacher sections panel`, `Teacher sections panel eyebrow`,
+`Tooltip - category reasons`, `Your sections grid`) are carried forward, not
+reverted. `check_additive` proves every sheet outside the landing page is
+byte-identical to revision 26.
+
+| #   | Defect                                                     | Now reads                                                       |
+| --- | ---------------------------------------------------------- | --------------------------------------------------------------- |
+| 1   | `####` on all four tiles and three of four strips          | 69%, 8%, 48.4%, 14%; strips 58/74/52, 16/6/4, 48.5/48.4, 3/19/6 |
+| 2   | navy healthy-gradebooks tile and strip                     | white, matching the other three                                 |
+| 3   | `Grade Grade 11` in the cumulative titles                  | `Grade 11 · …`                                                  |
+| 4   | header clipped to `Academic & Gradebook Health \| Landi..` | full title, at 12 pt                                            |
+| 5   | tiles read `of students`, count missing (found this round) | `of 5,275 students`, `of 5,322 students`                        |
+
+All five confirmed on a server render of the review copy, not inferred from the
+XML. Detail and root causes are in
+`docs/tableau-xml/lessons/2026-09-10-landing-page/render-notes.md`.
+
+**Two decisions left to you.**
+
+1. **Default tab.** Revision 26 opens the workbook on `Gradebook Teacher View`
+   (revision 25 opened on `Academic Health Home`; the change came in with your
+   publish). `final.twbx` currently opens on `Landing Page`, which is what the
+   spec intends and what let the review copy be rendered. If you would rather
+   ship the fixes without launching the page, say so and it is a one-attribute
+   change before you publish.
+2. **Whether to make `Landing Page` a visible view.** It is hidden on production
+   today. Publishing `final.twbx` as-is keeps whatever visibility you set at
+   publish time; making it visible is the actual launch, and pairs with the
+   `docs/launch/links.yml` repoint in #5247.
+
+One cosmetic leftover, unchanged: the production dashboard carries a
+`repository-location` pointing at the ZZ-REVIEW copy, a side effect of
+publishing from the review copy's file rather than from `final.twbx`. Tableau
+rewrites it on the next publish; nothing to do.
+
 ## What was built
 
 A new `Landing Page` dashboard was added to the Academic & Gradebook Health
@@ -44,21 +88,33 @@ The file to open in Desktop and publish is:
 /workspaces/teamster/.claude/scratch/tableau/lp/final.twbx
 ```
 
-It is 28,390,025 bytes. Two things were checked on it. The packaged `.twb`
-equals the edited `out.twb` byte for byte, so nothing was translated on the way
-into the zip and no bare LF line endings survive. And every other entry in the
-package — the extract and the images — matches the production donor `.twbx` by
-CRC, one for one. Only the `.twb` entry differs.
+It is 28,390,793 bytes (rebuilt this round from revision 26). Two things were
+checked on it. The packaged `.twb` equals the edited `out.twb` byte for byte, so
+nothing was translated on the way into the zip and no bare LF line endings
+survive. And every other entry in the package — the extract and the images —
+matches the production donor `.twbx` by CRC, one for one. Only the `.twb` entry
+differs.
 
 ## Production
 
-The production workbook was at revision 25 before any of this work, and it is
-still at revision 25. Nothing in this build touched it.
+The production workbook was at revision 25 when this work started. It is now at
+**revision 26** (2026-09-10 20:02:27 UTC), published by you, and that revision
+already contains the landing page. Revision 25 is the restore point that
+predates the page entirely; revision 26 is the one that predates these fixes.
+
+Nothing in this round touched Production. The review copy in `GPA-monitor-temp`
+is the only thing the agent published to.
 
 Publishing to Production is your action, not the agent's. So is any rollback: a
 rollback is itself a production publish, and it stays with you.
 
 ## The numbers
+
+Re-run 2026-09-10 against revision 26 on a fresh probe copy, which was deleted
+afterwards. All five pairs are equal. Two values moved from the first run
+because the extract refreshed with your publish — `% healthy` 15% to 14%, and
+the gradebook strip's Newark cell 20% to 19% — on both sides of the comparison,
+so the equalities hold.
 
 Every tile was read against the BAN it clones, on a throwaway probe copy, with
 every parameter left at its default: `p_Region` = `All`, `Grade view` = `11`,
@@ -71,7 +127,7 @@ data appears here or on the page.
 | % Y1 GPA at or above 3.0 | `LP - Tile Y1 GPA`           | 69% (0.69)                | `Y1 Landing - BAN Network ≥3.0`       | 69% (0.69)                | yes   |
 | % Y1 Failing 2 or more   | `LP - Tile Course Failures`  | 8% (0.08)                 | `Y1 Landing - BAN Network Failing ≥2` | 8% (0.08)                 | yes   |
 | % at 3.0+                | `LP - Tile Cumulative GPA`   | 0.484261501 (0.484261501) | `GPA - BAN % 3.0+`                    | 0.484261501 (0.484261501) | yes   |
-| % healthy                | `LP - Tile Gradebook Health` | 15% (0.15)                | `BAN Network`                         | 15% (0.15)                | yes   |
+| % healthy                | `LP - Tile Gradebook Health` | 14% (0.14)                | `BAN Network`                         | 14% (0.14)                | yes   |
 | Students still needed    | `LP - Tile Cumulative GPA`   | 0 (0.0)                   | `GPA - BAN Students needed`           | 0 (0.0)                   | yes   |
 
 Region strips:
@@ -81,7 +137,7 @@ Region strips:
 | `LP - Strip Y1 GPA`           | Camden, Newark, Paterson | Camden=58%; Newark=74%; Paterson=52%   |
 | `LP - Strip Course Failures`  | Camden, Newark, Paterson | Camden=16%; Newark=6%; Paterson=4%     |
 | `LP - Strip Cumulative GPA`   | Camden, Newark           | Camden=0.484848485; Newark=0.484076433 |
-| `LP - Strip Gradebook Health` | Camden, Newark, Paterson | Camden=3%; Newark=20%; Paterson=6%     |
+| `LP - Strip Gradebook Health` | Camden, Newark, Paterson | Camden=3%; Newark=19%; Paterson=6%     |
 
 The three MS/HS strips carry the same three regions. The cumulative strip
 carries Camden and Newark only, a strict subset of the other three, because
@@ -89,10 +145,10 @@ Paterson has no high school.
 
 The strip shipped as four worksheets side by side, one per source, each with
 region on rows. The spec allowed a fallback — twelve small sheets, one per
-region row per source, laid out as a grid — and it was not built. The cumulative
-sheet has no Paterson row because Paterson has no high school, so if
-`crop-strip.png` shows that column's rows sitting out of line with the other
-three, that is the signal to rebuild the strip as the fallback grid.
+region row per source, laid out as a grid — and it was not built. That question
+is now settled by a render rather than left open: the cumulative column's two
+rows sit taller than the other three columns' rows rather than sliding out of
+line, so the four-sheet construction stands and the fallback is not needed.
 
 ## What is verified, and how
 
