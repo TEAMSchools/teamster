@@ -149,11 +149,14 @@ with
         select
             *,
 
-            -- keeps the last probe a student sat in a round. academic_year is
-            -- load-bearing: round numbers restart every year, so without it a
-            -- student's AY2026 round 1 competes with their AY2025 round 1 for
-            -- the same measure and one real score is dropped. model_type keeps
-            -- the two methods from ranking against each other.
+            -- keeps a student's best score for a measure in a round, with the
+            -- later probe winning a same-day tie. Deliberately NOT ordered by
+            -- probe_number: that is Amplify's own numbering and does not align
+            -- with our PM rounds. academic_year is load-bearing -- round numbers
+            -- restart every year, so without it a student's AY2026 round 1
+            -- competes with their AY2025 round 1 for the same measure and one
+            -- real score is dropped. model_type keeps the two methods from
+            -- ranking against each other.
             row_number() over (
                 partition by
                     academic_year,
@@ -161,7 +164,7 @@ with
                     model_type,
                     round_number,
                     expected_measure_standard
-                order by probe_number desc, client_date desc
+                order by measure_standard_score desc, client_date desc
             ) as rn_highest,
 
         from pm_scores
