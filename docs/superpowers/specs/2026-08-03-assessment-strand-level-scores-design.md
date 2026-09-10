@@ -468,13 +468,21 @@ Literally true and materially misleading — the Cube layer needs four edits.
   already in the rollup, so it costs close to zero added rows.
 - **Filter `not_taken` out of the proficiency measures.** `count_scores`,
   `_sum_proficient`, and the formative and CRQ pairs gain
-  `{CUBE}.response_type != 'not_taken'`. Today `count_scores` is documented as a
-  "Scored-response count" but includes 1,073,422 rows with no response, and
-  `_sum_proficient`'s `IF(is_mastery, 1, 0)` turns their NULL into 0 — so an
-  untaken test currently counts as a non-proficient result. Expected effect on
-  the global unfiltered `pct_proficient`: roughly 45.4% → 49.0%, larger on
-  Illuminate-only cuts. This is a deliberate metric change and the single most
-  visible consequence of this work.
+  `{CUBE}.response_type IS DISTINCT FROM 'not_taken'`. **[revised]** This said
+  `!= 'not_taken'` as designed and shipped that way until 2026-09-10, when a
+  dev-server validation found it null-unsafe: against a fact whose
+  `response_type` is still null on non-Illuminate rows, `null != 'not_taken'` is
+  null, not true, so DIBELS, i-Ready, STAR and all five NJ/FL state sources read
+  exactly 0 — 1.32M rows, silently. `IS DISTINCT FROM` counts them, which is
+  their pre-change behaviour, and makes the dbt and Cube merges
+  order-independent in both directions including rollback. Do not simplify it
+  back. Today `count_scores` is documented as a "Scored-response count" but
+  includes 1,073,422 rows with no response, and `_sum_proficient`'s
+  `IF(is_mastery, 1, 0)` turns their NULL into 0 — so an untaken test currently
+  counts as a non-proficient result. Expected effect on the global unfiltered
+  `pct_proficient`: roughly 45.4% → 49.0%, larger on Illuminate-only cuts. This
+  is a deliberate metric change and the single most visible consequence of this
+  work.
 - **Rewrite the `proficiency_rollup` functional-determination comment.** It
   claims `response_type` and `response_type_description` are determined by
   `response_type_code` with "zero added rows". That is false today — Illuminate
@@ -586,12 +594,19 @@ could not fail. Corrected:
   which named a column the fact does not have and compared a rate that reads 0%
   in both the success and failure cases. The test is `warn` severity, so pull it
   with `get_job_run_error(warning_only=true)`.
-- **Per-source before/after counts.** **[revised]** The draft asserted that the
-  count of `response_type is null` rows must be unchanged; under unification
-  that count goes to zero. The replacement: `count(response_type = 'overall')`
-  after must equal `count(response_type is null)` before, **per
-  `score_source`**, and `count(response_type = 'not_taken')` must equal
-  1,073,422.
+- **Per-source before/after counts.** **[revised twice]** The draft asserted
+  that the count of `response_type is null` rows must be unchanged; under
+  unification that count goes to zero. The first replacement made the `overall`
+  half baseline-relative but left the `not_taken` half as the literal 1,073,422
+  — the same defect, one bullet down. Both halves are now baseline-relative:
+  `count(response_type = 'overall')` after must equal
+  `count(response_type is null)` before **per `score_source`**, and
+  `count(response_type = 'not_taken')` after must equal Illuminate's
+  `response_type is null` count in the same baseline capture. Never a typed
+  literal: that population shrinks through the year as students sit the
+  assessments they were assigned, so any number written here is wrong by the
+  time it is read. Measured 2026-09-10 it was 939,982, against the 1,073,422
+  recorded on 2026-08-28 — 12% in thirteen days.
 - **Adding `illuminate_subject` and the unit test.**
   `unit_iready_domain_unpivot_placement_scale_score` has twelve `expect` rows.
   The `given` block is `format: sql` and must gain the column or the model fails
@@ -635,6 +650,13 @@ reconciliation is not read as a defect.
 - Fixing the null `measure_standard_level_int` on 5,565 DIBELS subtest rows.
 
 ## Known dependency: i-Ready ingestion
+
+**Resolved 2026-09-01 — the rest of this section is the state as of 2026-08-28
+and is kept as the record of why the design reads as it does.** Both regions
+materialized on the 2026 partition on 2026-09-01, and
+`int_iready__domain_unpivot` holds FY27 rows. #4951 was closed unmerged, so it
+is no longer the tracking PR. Nothing in the design depended on the stall being
+open.
 
 Verified in Dagster on 2026-08-28: `kippmiami/iready/diagnostic_results` and
 `kippnewark/iready/diagnostic_results` both last materialized **2026-07-18**.

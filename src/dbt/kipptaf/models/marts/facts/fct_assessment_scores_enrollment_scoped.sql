@@ -21,11 +21,9 @@ with
 
             rr.date_taken as test_date,
 
-            -- int_assessments__scaffold is the "expected to take" grain and
-            -- response_rollup LEFT JOINs responses onto it, so a NULL
-            -- response_type is a deliberate assigned-but-not-taken record,
-            -- not a join defect. It gets its own token so the population is
-            -- addressable and response_type stays non-nullable.
+            -- Null here is a real assigned-but-not-taken record, not a join
+            -- defect: response_rollup LEFT JOINs responses onto the scaffold's
+            -- "expected to take" grain.
             coalesce(rr.response_type, 'not_taken') as response_type,
 
             to_json_string(rr.assessment_ids) as assessment_ids_json,
@@ -205,12 +203,9 @@ with
             and completion_date is not null
     ),
 
-    -- Domain-level rows. module_code stays the subject, for the same
-    -- FK-resolution reason as DIBELS above. What the two exclusions below mean
-    -- for a reader of this table is on the model description; the reason there
-    -- is no third one is here: int_iready__domain_unpivot already enforces
-    -- 'relative_placement is not null' as its documented inclusion rule
-    -- (#4709), so repeating it would be redundant, not defensive.
+    -- Domain-level rows. module_code stays the subject, same FK-resolution
+    -- reason as DIBELS above. No 'relative_placement is not null' predicate
+    -- because int_iready__domain_unpivot already enforces it (#4709).
     iready_domain_scores_raw as (
         select
             student_id as student_number,
@@ -234,10 +229,9 @@ with
             cast(scale_score as numeric) as scale_score,
             cast(null as numeric) as national_percentile,
 
-            -- Same threshold stg_iready__diagnostic_results applies at subject
-            -- level (overall_relative_placement_int >= 4). No per-domain ordinal
-            -- column exists upstream, so the two at-or-above labels are tested
-            -- directly. Guarded by an accepted_values test on relative_placement.
+            -- Matched on labels, not an ordinal, because no per-domain
+            -- equivalent of overall_relative_placement_int exists upstream. The
+            -- accepted_values test on relative_placement guards the strings.
             relative_placement
             in ('Early On Grade Level', 'Mid or Above Grade Level') as is_mastery,
         from {{ ref("int_iready__domain_unpivot") }}

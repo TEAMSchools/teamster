@@ -599,8 +599,15 @@ Add to `count_scores`, `_sum_proficient`, `_sum_proficient_formative`,
 `_count_scores_formative`, `_sum_proficient_crq` and `_count_scores_crq`:
 
 ```yaml
-- sql: "{CUBE}.response_type != 'not_taken'"
+- sql: "{CUBE}.response_type IS DISTINCT FROM 'not_taken'"
 ```
+
+`IS DISTINCT FROM`, not `!=`. Against a fact whose `response_type` is still null
+on non-Illuminate rows, `null != 'not_taken'` evaluates to null rather than true
+and the row is dropped — measured 2026-09-10, that read exactly 0 for DIBELS,
+i-Ready, STAR and all five NJ/FL state sources, 1.32M rows, with no error. The
+null-safe form keeps their pre-change behaviour and makes the two merges
+order-independent.
 
 Update `count_scores`' description to say it counts scored responses and
 excludes not-taken rows. Expected effect on the global unfiltered
@@ -770,9 +777,10 @@ Refs #4708"
 
 Carried from the spec, recorded so a reviewer does not read them as omissions:
 
-- The i-Ready ingestion stall (both regions last materialized 2026-07-18,
-  pending the FY27 export renames in PR #4951). The i-Ready half ships against a
-  source not currently ingesting current-year data.
+- ~~The i-Ready ingestion stall (both regions last materialized 2026-07-18,
+  pending the FY27 export renames in PR #4951).~~ **Resolved 2026-09-01**: both
+  regions materialized on the 2026 partition, and `int_iready__domain_unpivot`
+  holds FY27 rows. #4951 was closed unmerged and no longer tracks it.
 - The 5,565 DIBELS subtest rows with a null `measure_standard_level_int`.
   Documented, not fixed.
 - `int_assessments__resolved_section_enrollments` still filters DIBELS to
