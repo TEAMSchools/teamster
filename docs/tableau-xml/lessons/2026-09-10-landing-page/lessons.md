@@ -406,3 +406,121 @@ OK: remainder is byte-identical to base
 check_twb rc=0
 out.twb: CLEAN
 ```
+
+## 2026-09-10, build phase, Task 4
+
+### The brief's file-wide `simple-id` uniqueness assertion is false in the base
+
+**Verified.** The task-4 assertion ended with
+`ids = re.findall(...); assert len(ids) == len(set(ids))`. It failed on the
+first build with `AssertionError('duplicate simple-id')` — and it fails on
+`base.twb` too: of 150 `simple-id` values, 22 appear twice, every one of them a
+`<worksheet name='X'>` and its own `<window class='worksheet' name='X'>` sharing
+a uuid (`GPA - BAN % 3.0+`, `GPA - BAN Students needed`, and 20 more). That is a
+shape Tableau itself writes, not corruption, and no clone can make it go away.
+Do this instead: never assert a global invariant an untouched base does not
+already satisfy. Scope the check to what the build added — collect the uuid
+inside each `LP - ` worksheet and each `LP - ` window, assert there are exactly
+ten, that they are pairwise distinct, and that each occurs exactly once in the
+whole file. That is strictly stronger for the additions (it catches a clone that
+kept its source's uuid, which is the real failure mode) and it is true.
+
+### Deleting a filter does not delete the field from the worksheet
+
+**Verified.** The brief's `apply_drop_filters` removed the `<filter>` element
+and the `<slices>` line. Its own assertion then required
+`"Calculation_4005670422414364681" not in y1` and `"[none:hos:nk]" not in y1`.
+Both still matched: a filtered column-instance is carried in four places, not
+two — the `<filter>`, the `<slices>` line, a `<column-instance .../>` line in
+the worksheet's `datasource-dependencies`, and, when the instance wraps a
+calculated field, that calc's own `<column>...</column>` definition inside the
+same dependencies block. Do this instead: strip all four, in that order, and
+after removing a calc's definition assert the bare calc name no longer occurs
+anywhere in the clone — that assertion is what proves nothing else in the sheet
+still referenced it, which is the only reason removing the definition is safe.
+
+### A cloned element must not carry its own leading newline
+
+**Verified.** Line-anchoring an element regex with a leading `\r\n` (the Task 3
+lesson) makes the captured block start with that `\r\n`, and the block already
+ends with one. Feeding that block to `insert_after(t, src, src + new)` then
+emits `</worksheet>\r\n\r\n    <worksheet`, a blank line that
+`check_additive.py` reports as a diff because its strip pattern
+(`[ \t]*<worksheet ...>.*?</worksheet>\r?\n`) consumes only one newline. Do this
+instead: keep the `\r\n` in the search pattern for uniqueness, then drop the
+first two characters from the returned block (`blk[2:]`) so the clone starts at
+its own indentation. Same rule for every removal regex: match `\r\n` + the line,
+replace with the empty string, and consume no trailing newline, so the
+surrounding lines close up exactly.
+
+### Every anchor the brief quoted still matched the 2026-09-10 13:40 base
+
+**Verified.** Checked all nine quoted strings with `text.count()` scoped to the
+source worksheet block before running the build — the three title runs, the four
+mark-label first runs, the `Region Filter` calc id
+(`Calculation_4005670422414364681`, grades source) and the `Region filter` calc
+id (`Calculation_5742832717263693013`, goals source). Each returned exactly 1.
+Three of them return 2 or 3 when counted against the whole file
+(`% At/Above 3.0` and `% Failing 2+` return 3, `Academic Health` returns 2,
+because the MS/HS/Network BAN variants share label text), so the count must be
+taken on the clone, never on the file. No anchor had to be changed.
+
+### The cumulative tile's borrowed calc arrives without its own dependencies
+
+**Inferred.** `GPA - BAN % 3.0+` does not carry `Students still needed`
+(`Calculation_5262281088199017638`), so the brief's conditional branch applied:
+copy its `<column>` and `<column-instance>` lines verbatim from
+`GPA - BAN Students needed` and add one `<text column=...>` encoding — three
+insertions, each asserted to match once. The copied calc's formula references
+four fields (`Calculation_9485136151529756033`,
+`Calculation_4693780698737655073`, `gpa_goal_proportion_org`,
+`gpa_goal_proportion_region`) that the source sheet lists in its own
+`datasource-dependencies` and the clone does not, and the source's `<style>`
+text-format for that instance (`#,##0`) was not copied either, so a real-typed
+count may render with decimals. Both were left alone because the brief specified
+exactly three insertions. Do this instead: when borrowing a calculated field
+between worksheets, copy the whole transitive dependency closure and its
+`text-format` rule, or verify in Desktop that Tableau rebuilds the manifest on
+open before treating a three-line copy as complete.
+
+### Verbatim run output
+
+Step 1 (assertion against the Task 3 `out.twb`, before the task-4 build):
+
+```text
+assert rc=1
+PASS task3
+FAIL task4: AssertionError('missing worksheet LP - Title')
+```
+
+First build (before the uuid assertion was rescoped):
+
+```text
+assert rc=1
+PASS task3
+FAIL task4: AssertionError('duplicate simple-id')
+```
+
+Step 5 (build, assertion, check_additive, check_twb against `out.twb`):
+
+```text
+build rc=0
+add_goal_calcs: +965 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +12052 bytes
+add_tile_gradebook: +8652 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (1944501 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+
+additive rc=0
+stripped: {'worksheets': 5, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 5, 'nav-actions': 0, 'url-actions': 0, 'calcs': 2}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```
