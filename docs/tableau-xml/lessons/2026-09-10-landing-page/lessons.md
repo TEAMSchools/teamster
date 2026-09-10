@@ -1853,3 +1853,33 @@ FAIL: default-view marker. Expected exactly one maximized window in each file, t
 The control's stripped dict is unchanged from the Task 8 run, so the guard costs
 nothing the additive proof was already buying. Both mutants pass the old guard,
 which is what made it worth replacing.
+
+## 2026-09-10, root cause of the render redaction
+
+### Why no image reached the model: the output scanner's entropy heuristic on raw base64
+
+**Verified.** `check-output.sh` builds one string from every string leaf of the
+tool result, strips only `data:...;base64,...` URIs, then redacts the whole
+result if any run of `[A-Za-z0-9+/=_-]{120,}` is left that is not pure hex. An
+image tool result carries its base64 payload as a bare `data` string (MCP:
+`{type:"image", data, mimeType}`; Read:
+`{type:"image", source:{type: "base64", media_type, data}}`), never as a `data:`
+URI, and base64 is mixed case, so every render of any size trips it. The
+heuristic dates from 2026-06-03 (`7b089acef`). It only started biting on
+2026-09-03, when `a83666391` made the PostToolUse redaction actually apply
+(before that the hook emitted `permissionDecision`, which PostToolUse ignores).
+Today's `ad716e4d9` on `origin/main` (skip single-case runs) does not cover
+base64. All four commits are Charlie Bini's.
+
+The fix is not a rollback. It is an exclusion: drop the `data` payload of
+`type: "image"` blocks before scanning, leave every other string in place. A
+scratch copy of the hook with that change passed all 10 suites in
+`tests/hooks/run_all.sh`; a 300-byte random image payload passed through in both
+the MCP and Read shapes, and the same base64 inside a `type: "text"` block was
+still redacted. The patched block and the probe harness are
+`.claude/scratch/check-output.patched.sh` and
+`.claude/scratch/hook-patch-proof.sh` on the build Codespace; the hook is a
+protected file, so the owner applies it. Two regression cases belong in
+`tests/hooks/test_fp_corpus.sh`: an MCP image block and a Read image block, each
+with a 300-char base64 payload, asserted clean with `expect_allow_raw` against
+the output hook path variable the helpers define.
