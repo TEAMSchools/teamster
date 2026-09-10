@@ -74,9 +74,21 @@ models:
       - name: benchmark_goal
         data_type: int64
         description: >-
-          The score that puts the student at grade level for the season, from
-          the frozen goals sheet. Distinct from the growth target — it answers
-          "at grade level yet" rather than "on pace".
+          Amplify's published grade-level standard for the season, unpadded,
+          from the frozen goals sheet. Reported so a reader can see the real
+          standard; it is not the bar the verdict uses.
+      - name: benchmark_goal_padded
+        data_type: int64
+        description: >-
+          The standard plus academics' 3-word planning buffer, and the bar
+          met_admin_benchmark_goal compares against. Distinct from the growth
+          target — it answers "at grade level yet" rather than "on pace".
+
+          The two were one column until SY26-27, holding the padded figure under
+          the bare name; the sheet was backfilled when they split, so this
+          column is populated on every year and needs no fallback. It carries a
+          not_null test at the staging model, because a hand-paste that omitted
+          it would make every comparison read 0 rather than fail.
       - name: round_growth_words_goal
         data_type: int64
         description: The growth this round alone is expected to produce.
@@ -148,10 +160,10 @@ models:
       - name: met_admin_benchmark_goal
         data_type: int64
         description: >-
-          1 when the score reaches benchmark_goal, else 0 — at grade level
-          rather than on pace. Independent of met_measure_standard_goal, and a
-          student can meet either without the other. The two converge in the
-          season's last round, where cumulative_growth_words is set to
+          1 when the score reaches benchmark_goal_padded, else 0 — at grade
+          level rather than on pace. Independent of met_measure_standard_goal,
+          and a student can meet either without the other. The two converge in
+          the season's last round, where cumulative_growth_words is set to
           benchmark_goal outright.
 
           Recomputed every round and not latched — a student who clears the

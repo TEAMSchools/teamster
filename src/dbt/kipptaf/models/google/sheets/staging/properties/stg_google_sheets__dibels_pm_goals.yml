@@ -12,42 +12,62 @@ models:
 
       Consequences for anyone reading this model. It is not live — a value here
       can lag the calculation, and the calculation is the thing to re-run if the
-      two disagree. It carries history, unlike the goal-setting model, which
-      computes `current_academic_year` only. And `Benchmark_Goal` is already
-      padded by 3 words; the padding happens in the calculation, so never add it
-      again here or downstream.
+      two disagree. And it carries history, unlike the goal-setting model, which
+      computes `current_academic_year` only.
+
+      `benchmark_goal` and `benchmark_goal_padded` split what used to be a
+      single column holding the padded figure under the bare name.
+      `benchmark_goal` is now Amplify's published grade-level standard and
+      `benchmark_goal_padded` is that standard plus academics' 3-word planning
+      buffer — the figure every calculation reads and the bar the at-grade-level
+      verdict compares against. Both years already on the sheet were backfilled,
+      so consumers read the padded column directly and need no fallback.
+
+      `benchmark_goal_padded` carries a `not_null` test for that reason. It is a
+      hand-pasted column, and a paste that omits it would otherwise make every
+      at-grade-level comparison read 0 — `if(score >= null, 1, 0)` returns 0,
+      not null. Failing the build is the intended behaviour.
     columns:
-      - name: Academic_Year
+      - name: benchmark_goal_padded
+        data_type: float64
+        description: >-
+          Amplify's grade-level standard plus academics' 3-word planning buffer.
+          The bar every downstream at-grade-level verdict compares against.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
         data_type: int64
-      - name: Region
+      - name: region
         data_type: string
-      - name: Admin_Season
+      - name: admin_season
         data_type: string
-      - name: Assessment_Grade
+      - name: assessment_grade
         data_type: string
-      - name: Assessment_Grade_Int
+      - name: assessment_grade_int
         data_type: int64
-      - name: Measure_Standard
+      - name: measure_standard
         data_type: string
-      - name: Starting_Words
+      - name: starting_words
         data_type: int64
-      - name: Round_Number
+      - name: round_number
         data_type: int64
-      - name: PM_Goal_Include
+      - name: pm_goal_include
         data_type: boolean
-      - name: PM_Goal_Criteria
+      - name: pm_goal_criteria
         data_type: string
-      - name: PM_Round_Days
+      - name: pm_round_days
         data_type: int64
-      - name: Benchmark_Goal
+      - name: benchmark_goal
         data_type: float64
-      - name: Required_Growth_Words
+      - name: required_growth_words
         data_type: int64
-      - name: PM_Days
+      - name: pm_days
         data_type: int64
-      - name: Daily_Growth_Rate
+      - name: daily_growth_rate
         data_type: float64
-      - name: Round_Growth_Words_Goal
+      - name: round_growth_words_goal
         data_type: int64
-      - name: Cumulative_Growth_Words
+      - name: cumulative_growth_words
         data_type: float64

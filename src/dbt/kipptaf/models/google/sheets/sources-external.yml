@@ -113,9 +113,9 @@ sources:
                 - dibels
                 - expected_assessments
         columns:
-          - name: Academic_Year
+          - name: academic_year
             data_type: int64
-          - name: Region
+          - name: region
             data_type: string
           - name: Grade
             data_type: int64
@@ -125,11 +125,11 @@ sources:
             data_type: string
           - name: Subject_Area
             data_type: string
-          - name: Measure_Standard
+          - name: measure_standard
             data_type: string
           - name: Test_Code
             data_type: string
-          - name: Admin_Season
+          - name: admin_season
             data_type: string
           - name: Month_Round
             data_type: string
@@ -141,9 +141,9 @@ sources:
             data_type: string
           - name: Assessment_Include
             data_type: boolean
-          - name: PM_Goal_Include
+          - name: pm_goal_include
             data_type: boolean
-          - name: PM_Goal_Criteria
+          - name: pm_goal_criteria
             data_type: string
       - name: src_google_sheets__dibels__expected_assessments_by_levels
         external:
@@ -293,8 +293,50 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_pm_goals
+            sheet_range: src_google_sheets__dibels__pm_goals
             skip_leading_rows: 1
+        # declared explicitly rather than autodetected: Benchmark_Goal_Padded is
+        # null on every pre-SY26-27 row, and autodetect drops an all-null column
+        # -- which would fail the staging model's contracted select *. Order
+        # matches the sheet, which matches rpt_gsheets__dibels_pm_goal_setting's
+        # output order, since the rows are pasted from it.
+        columns:
+          - name: academic_year
+            data_type: int64
+          - name: region
+            data_type: string
+          - name: admin_season
+            data_type: string
+          - name: assessment_grade
+            data_type: string
+          - name: assessment_grade_int
+            data_type: int64
+          - name: measure_standard
+            data_type: string
+          - name: starting_words
+            data_type: int64
+          - name: round_number
+            data_type: int64
+          - name: pm_goal_include
+            data_type: boolean
+          - name: pm_goal_criteria
+            data_type: string
+          - name: pm_round_days
+            data_type: int64
+          - name: benchmark_goal
+            data_type: float64
+          - name: benchmark_goal_padded
+            data_type: float64
+          - name: required_growth_words
+            data_type: int64
+          - name: pm_days
+            data_type: int64
+          - name: daily_growth_rate
+            data_type: float64
+          - name: round_growth_words_goal
+            data_type: int64
+          - name: cumulative_growth_words
+            data_type: float64
         config:
           meta:
             dagster:
@@ -1350,9 +1392,9 @@ sources:
             sheet_range: src_google_sheets__iready_expected_assessments
             skip_leading_rows: 1
         columns:
-          - name: Academic_Year
+          - name: academic_year
             data_type: int64
-          - name: Region
+          - name: region
             data_type: string
           - name: Assessment_Type
             data_type: string
@@ -1370,7 +1412,7 @@ sources:
             data_type: string
           - name: Test_Code
             data_type: string
-          - name: Admin_Season
+          - name: admin_season
             data_type: string
           - name: Month_Round
             data_type: string
@@ -1551,7 +1593,7 @@ sources:
         columns:
           - name: Name
             data_type: STRING
-          - name: Region
+          - name: region
             data_type: STRING
           - name: PowerSchool_School_ID
             data_type: INT64

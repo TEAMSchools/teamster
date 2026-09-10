@@ -135,6 +135,8 @@ models:
         data_type: int64
       - name: benchmark_goal
         data_type: float64
+      - name: benchmark_goal_padded
+        data_type: float64
       - name: required_growth_words
         data_type: int64
       - name: daily_growth_rate

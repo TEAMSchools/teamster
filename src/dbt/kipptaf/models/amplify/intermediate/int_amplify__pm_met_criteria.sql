@@ -22,13 +22,11 @@ with
             p.completed_test_round,
             p.completed_test_round_int,
 
+            g.benchmark_goal_padded,
+
             if(
                 a.measure_standard_score >= g.cumulative_growth_words, 1, 0
             ) as met_measure_standard_goal,
-
-            if(
-                a.measure_standard_score >= g.benchmark_goal, 1, 0
-            ) as met_admin_benchmark_goal,
 
         from {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
         inner join
@@ -61,6 +59,10 @@ with
     met_measure_code_goal as (
         select
             *,
+
+            if(
+                measure_standard_score >= benchmark_goal_padded, 1, 0
+            ) as met_admin_benchmark_goal,
 
             if(
                 avg(met_measure_standard_goal) over (
@@ -128,6 +130,7 @@ select
     measure_standard,
     round_number,
     benchmark_goal,
+    benchmark_goal_padded,
     round_growth_words_goal,
     cumulative_growth_words,
     pm_goal_criteria,

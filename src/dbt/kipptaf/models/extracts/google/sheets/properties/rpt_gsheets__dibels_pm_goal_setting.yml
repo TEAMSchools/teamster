@@ -99,13 +99,27 @@ models:
       - name: benchmark_goal
         data_type: float64
         description: >-
-          The grade-level target for the season, padded by 3 words. The padding
-          is applied here, so this column is already the padded figure — do not
-          add it again downstream.
+          Amplify's published grade-level standard for the season, exactly as it
+          arrives from `goals_long` — no padding. Reported so a reader can see
+          the real standard beside the padded figure a student is held to. It is
+          not what any calculation here uses.
+      - name: benchmark_goal_padded
+        data_type: float64
+        description: >-
+          The same standard plus a 3-word planning buffer, and the figure every
+          calculation in this model reads — the season's growth requirement, the
+          last round's cumulative target, and downstream the at-grade-level
+          verdict. The pad is applied once, in `scores_and_days`, so never add
+          it again.
+
+          Padding is academics' planning buffer, not a property of the
+          assessment. Splitting it out from benchmark_goal is what lets a reader
+          tell the two apart; before this the padded figure was reported under
+          the bare name and the real standard was not reported at all.
       - name: required_growth_words
         data_type: float64
         description: >-
-          The gap the cohort owes for the season — padded benchmark_goal minus
+          The gap the cohort owes for the season — benchmark_goal_padded minus
           starting_words. Rounded independently of its inputs, so it can differ
           from that subtraction by half a word.
       - name: pm_days
@@ -131,5 +145,5 @@ models:
           The running target a score is actually compared against — the level
           the cohort should have reached by the end of this round. A running sum
           of round_growth_words_goal, except that the season's last round is set
-          to benchmark_goal outright so the trajectory lands exactly on the
-          grade-level target rather than on an accumulated approximation.
+          to benchmark_goal_padded outright so the trajectory lands exactly on
+          the padded target rather than on an accumulated approximation.
