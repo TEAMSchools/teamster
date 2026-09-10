@@ -145,8 +145,10 @@ them is not this issue's job.
 
 ## Filters that stay, 50
 
-All are business rules, not archive leftovers. Recorded here so the next reader
-does not re-triage them.
+All are business rules, not archive leftovers. Miami does not use Illuminate,
+DeansList, Branching Minds, ParentSquare, or Clever, so every vendor-feed filter
+below is a scope rule for a vendor Miami never had. Recorded here so the next
+reader does not re-triage them.
 
 - 27 `region != 'Miami'` on `int_extracts__student_enrollments` and its
   descendants: NJ-only Tableau reports, Google Sheets feeds, Illuminate, DIBELS,
