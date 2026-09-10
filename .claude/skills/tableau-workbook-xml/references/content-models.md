@@ -29,10 +29,10 @@ Adding an element means adding its manifest entry.
 
 The manifest is per workbook, so a refusal is too. "Desktop refuses dynamic zone
 visibility" was true of one lineage whose manifest lacked `DatagraphCoreV1`; the
-merged successor, saved by Desktop 2025.1.9, declared all four features and
-carried a Tableau-authored datagraph (Verified from the manifest). Before ruling
-a feature out, grep the target's manifest for it, and grep again whenever the
-base lineage changes: a merge or a promoted review copy is a lineage change.
+merged successor declared all four features and carried a Tableau-authored
+datagraph (observed in the file). Before ruling a feature out, grep the target's
+manifest for it, and grep again whenever the base lineage changes: a merge or a
+promoted review copy is a lineage change.
 
 ### Insert into the manifest. Never regenerate it
 
@@ -77,19 +77,15 @@ passes it. Check for an existing one before inserting.
 
 ### Encodings
 
-**Verified** on an untouched base. `<encodings>` children are in shelf order,
-not alphabetical: one sheet reads `color, lod, lod, tooltip ×7, text`. An
-assertion that required sorted children failed the unedited file. Insert a new
-`<lod>` right after the last existing `<lod>`, else right after `<color>`, and
-assert that position rather than a global order.
-
-A parameter action's source value sits on Detail: a constant calculated field
-(`Panel open` = TRUE) as a `<lod>` on the source sheet, declared in that sheet's
-`<datasource-dependencies>` as both `<column>` and `<column-instance>`. A
-one-value field cannot split the mark partition, so the percent-of-total trap in
-[layout-and-zones.md](layout-and-zones.md) does not apply; the closed render
-matched production. The owner's click on the review copy opened and closed the
-panel, which verifies the action, the datagraph binding and the zone together.
+Observed in the file: `<encodings>` children have no fixed order. One untouched
+base holds 31 distinct child sequences, among them
+`color, lod, tooltip ×7, text`, `text, color`, and
+`color, text, tooltip, tooltip, tooltip, lod, tooltip`; `text` alone is the
+commonest. An assertion that required sorted children failed the unedited file.
+Insert a new `<lod>` after the last existing `<lod>`, else after `<color>`, else
+as the first child, and assert that position rather than any global order. The
+parameter-action constant that goes on Detail this way is in
+[layout-and-zones.md](layout-and-zones.md).
 
 ### Worksheet
 

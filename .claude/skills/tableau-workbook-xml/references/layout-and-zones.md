@@ -118,8 +118,11 @@ one-string edit.
 doubled the axis to 200%. Percent-of-total is a table calculation over the mark
 partition, and Detail changes that partition. The source project put tooltip
 fields on the **Tooltip** shelf instead and reserved Detail for cases where the
-grain change is the intent. That Tooltip leaves the partition alone is
-**Inferred**; the probe is in [unverified-warnings.md](unverified-warnings.md).
+grain change is the intent. Tooltip-shelf fields (an `attr:` dimension and a
+plain count, on a percent-of-total sheet) left the render byte-identical
+(Verified), and a one-value constant on Detail also left the axis alone. The
+probe in [unverified-warnings.md](unverified-warnings.md) stays open for a
+many-valued dimension on Tooltip.
 
 ## Copying a card pattern
 
@@ -171,61 +174,126 @@ Two structural points:
   fixed text zone with a flexible sibling. A strip where every child is fixed
   was unprecedented and is worth avoiding.
 
-## Floating containers
+## A floating panel driven by a parameter action
 
-**Verified** by a depth trace and by render. A floating zone is a top-level
-child of `<zones>`, a sibling of the `layout-basic` root that follows it, not a
-descendant. An assertion that expected the Tableau-authored floating container
-under the root failed a correct file. A new floating panel goes after the last
-top-level zone, before `</zones>`.
+**Verified** by render (hidden at the parameter's `false`, shown at `true`) and
+by the owner's click (a band opened the panel, the × closed it), which together
+verify the zone, the datagraph binding and the two actions. Every fragment below
+is from the built file; the ids and GUIDs are the parts to swap.
 
-A container shown and hidden by dynamic zone visibility carries
-`hidden-by-user='true'` on the zone **and on every descendant** in the saved
-file. Copied that way, the panel rendered hidden at the parameter's `false` and
-shown at `true`. The binding is a node pair in the existing `<datagraph>`: its
-`dashboard-zone-visibility-node` names the zone id and a `dashboard-identifier`
-that is the `<dashboard>` element's `<simple-id>`, not the `<window>`'s. The two
-differ, and the render toggled only with the dashboard's.
+A floating zone is a top-level child of `<zones>`, a sibling of the
+`layout-basic` root that follows it, never a descendant. Nothing on the tag says
+"floating"; the position in the tree does. A new panel goes after the last
+top-level zone, before `</zones>`. A container shown and hidden by dynamic zone
+visibility carries `hidden-by-user='true'` on itself **and on every descendant**
+in the saved file:
 
-`check_geometry.py --baseline` passed a dashboard carrying two floating
-containers (one Tableau-authored, one added) and failed a one-zone mutant of the
-same file, so floating siblings did not false-positive it in this corpus.
+```xml
+<zone friendly-name='Band Roster' h='61555' hidden-by-user='true' id='800' param='vert' type-v2='layout-flow' w='98828' x='586' y='37556'>
+  <zone fixed-size='30' h='3333' hidden-by-user='true' id='801' is-fixed='true' param='horz' type-v2='layout-flow' w='98828' x='586' y='37556'>
+    <zone forceUpdate='true' h='3333' hidden-by-user='true' id='802' type-v2='text' w='94436' x='586' y='37556'>…</zone>
+    <zone fixed-size='60' h='3333' hidden-by-user='true' id='803' is-fixed='true' name='Y1 Schools - Roster Close' show-title='false' w='4392' x='95022' y='37556'>…</zone>
+  </zone>
+  <zone h='58222' hidden-by-user='true' id='804' name='Y1 Schools - Grades Roster' show-title='false' w='98828' x='586' y='40889'>…</zone>
+</zone>
+```
+
+The binding is a node pair added to the workbook's existing `<datagraph>`, plus
+one `<edge>` and two `<pair>` entries under `<node-execution-subgraphs>`, all
+with fresh GUIDs. `dashboard-identifier` is the `<dashboard>` element's
+`<simple-id>`, not the `<window>`'s; the two differ, and the build used the
+dashboard's:
+
+```xml
+<single-value-field-node fieldname='[Parameters].[Parameter 15]' fieldname-input-guid='…' node-guid='…' value-output-guid='OUT' />
+<dashboard-zone-visibility-node dashboard-identifier='{1FABAC57-…}' node-guid='…' visibility-input-guid='IN' zone-id='800' />
+<!-- under <edges> -->
+<edge from='OUT' to='IN' />
+```
+
+The open and close actions are `<edit-parameter-action>` elements, not
+`<action>`. The source value is a constant calculated field (`TRUE` to open,
+`FALSE` to close) on the source sheet's Detail shelf, declared in that sheet's
+`<datasource-dependencies>` as `<column>` and `<column-instance>`:
+
+```xml
+<edit-parameter-action caption='Open roster from band' name='[Action_Panel01]'>
+  <activation type='on-select' />
+  <source dashboard='Academic Health Schools' type='sheet' worksheet='Y1 Schools - GPA Distribution' />
+  <agg-type type='attr' />
+  <clear-option type='do-nothing' value='b:false' />
+  <params>
+    <param name='source-field' value='[federated.…].[none:Calculation_7600000000000000101:nk]' />
+    <param name='target-parameter' value='[Parameters].[Parameter 15]' />
+  </params>
+</edit-parameter-action>
+```
+
+Two consequences of that constant on Detail. It has one value, so it does not
+split the mark partition: the percent-of-total source sheet kept its axis and
+bars in the closed render, re-laid only by a 9px widening (Verified). It does
+show in the sheet's automatic tooltip as `Panel open: True` unless the sheet
+carries a `<customized-tooltip>` (Inferred; the hover is pending).
+
+The close button is a one-mark sheet: `<mark class='Shape' />`, a single `<lod>`
+of the `FALSE` constant, `<format attr='shape' value=':filled/times' />`, and a
+`<view>` of only `datasources`, `datasource-dependencies` and `aggregation`
+([content-models.md](content-models.md)).
+
+`check_geometry.py` skips every `hidden-by-user` zone, so nothing above is
+geometry-checked. The panel's rectangle against the zone map is your own
+assertion; the open-state render is the check.
 
 ## Removing a sibling from a flow
 
-**Verified.** Deleting a fixed-width child from a horizontal flow is a cascade,
-not a one-zone edit. Removing a 659-unit sliver from the right of one row meant
-widening 15 zones down the surviving column: 4 vertical containers, 5 rows and 3
-flexible leaves each `w +659`, and 3 fixed right-hand leaves `x +659`, so that
-every container's parent-minus-children gap kept its baseline value. Write the
-cascade as a table of `(zone id, attribute, old, new)`, apply each row as an
-exactly-once substitution, and assert each once. `check_geometry.py --baseline`
-reports a missed row as a gap pair (`zone 37 gap 659, zone 36 gap -659`).
+**Verified.** Deleting a fixed-width child from a flow is a cascade, not a
+one-zone edit. Every container and flexible leaf in the surviving column grows
+by the removed width; every fixed leaf to its right shifts by it; every
+container's parent-minus-children gap stays at its baseline value. Removing a
+659-unit sliver meant 15 zones: 12 `w +659` and 3 `x +659`. Write the cascade as
+a table of `(zone id, attribute, old, new)`, apply each row as an exactly-once
+substitution, and assert each once. A missed row shows in
+`check_geometry.py --baseline` as a gap pair
+(`zone 37 gap 659, zone 36 gap -659`).
 
 ## Adding a filter card
 
 **Verified by render**: the card appeared in the strip with the strip's gap
 unchanged, and every differing pixel between the two publishes lay inside the
 strip. That picking a value filters the sheets is **Inferred**; a render cannot
-click.
+click. Fragments are from the built file.
 
-A dashboard filter card is three elements per filtered sheet plus one zone:
+Three elements in each filtered sheet's `<view>`, each inserted before the
+neighbour that will follow it (filters and column-instances are sorted by column
+string, slices are not; [content-models.md](content-models.md)):
 
-- In each sheet's `<view>`: a
-  `<filter class='categorical' column='…' filter-group='N'>` holding a
-  `level-members` groupfilter, a `<column-instance>` in that sheet's
-  `<datasource-dependencies>`, and a `<column>` in `<slices>`. Filters and
-  column-instances are sorted, slices are not
-  ([content-models.md](content-models.md)); anchor each insert on the neighbour
-  that will follow it rather than computing a sort.
-- `filter-group` is a workbook-wide integer: the fresh base's max plus one.
-- One `type-v2='filter'` zone whose `name` is any one of the filtered sheets.
-- Guard "instance not yet referenced" per sheet, not per workbook: another sheet
-  may already use the same instance legitimately.
+```xml
+<filter class='categorical' column='[federated.…].[none:credit_type:nk]' filter-group='18'>
+  <groupfilter function='level-members' level='[none:credit_type:nk]' user:ui-enumeration='all' user:ui-marker='enumerate' />
+</filter>
+<!-- under <datasource-dependencies> -->
+<column-instance column='[credit_type]' derivation='None' name='[none:credit_type:nk]' pivot='key' type='nominal' />
+<!-- under <slices> -->
+<column>[federated.…].[none:credit_type:nk]</column>
+```
 
-A `distribute-evenly` strip does not re-solve its stored geometry on Server.
-Adding a ninth child means re-tiling every child's `w` and `x` by hand
-(`8 × 10981 + 10980 = 98828` across the strip) or the geometry check fails.
+`filter-group` is a workbook-wide integer: the fresh base's max plus one. Guard
+"instance not yet referenced" per sheet, not per workbook; another sheet may
+already use the same instance.
+
+One zone in the strip; `param` carries the column instance and `name` any one of
+the filtered sheets:
+
+```xml
+<zone h='6666' id='712' mode='checkdropdown' name='Y1 Schools - School Grade Distro' param='[federated.…].[none:credit_type:nk]' type-v2='filter' values='database' w='10980' x='88434' y='7556'>…</zone>
+```
+
+A strip with `layout-strategy-id='distribute-evenly'` does not re-solve its
+stored geometry on Server. Re-tile every child by hand: each `w` is
+`floor(inner / n)`, with one extra unit on `inner mod n` of the children, where
+`inner` is the strip's `w` minus its baseline gap; each `x` is cumulative from
+the strip's `x`. Nine children in a 98828-unit strip with gap 0 are eight at
+10981 and one at 10980. Anything else fails the geometry check.
 
 ## Editing the right copy of the tree
 

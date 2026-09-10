@@ -52,9 +52,11 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
 
 ## Layout and formatting
 
-- **A dimension on Tooltip may change the mark grain the same way Detail did.**
-  The source verified only that a `<lod>` on Detail doubled a percent-of-total
-  axis. Probe: move the identical field from `<lod>` to the Tooltip encoding on
+- **A many-valued dimension on Tooltip may change the mark grain the way Detail
+  did.** Narrowed: an `attr:` dimension and a plain count on the Tooltip shelf
+  of a percent-of-total sheet left the render byte-identical (Verified,
+  [layout-and-zones.md](layout-and-zones.md)). Probe for the remaining case:
+  move the identical many-valued field from `<lod>` to the Tooltip encoding on
   the same sheet, publish to scratch, render, read the axis maximum.
 - **The reference line that rendered at `2.0` may have resolved correctly.** A
   raw GPA goal plotted on a 0 to 1 percent axis lands at 200%. Probe: point
@@ -95,10 +97,11 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
   donor archive.** Probe: list the donor's entries before adding a
   `type-v2='bitmap'` zone.
 - **`<format attr='size'>` in a `Shape` mark's style-rule may set the shape
-  size.** The corpus carries values from 0.87 to 14.5. A copied close-button
-  sheet with no size format rendered a small, legible bold × in a 60px box
-  (Verified). That the attribute enlarges it is unprobed. Probe: set
-  `value='3'`, publish to scratch, render, count the shape's pixels.
+  size.** Shape marks in the base carry 0.87 and 2; the 14.5 values are on
+  Square and Text marks. A copied close-button sheet with no size format
+  rendered a small, legible bold × in a 60px box (Verified). That the attribute
+  enlarges it is unprobed. Probe: set `value='3'`, publish to scratch, render,
+  count the shape's pixels.
 - **A stale `fixed-size` may look right in a render and wrong in Desktop.** The
   source verified only that Desktop may re-solve the layout on open. The margin
   to subtract is the container's own baseline gap from the geometry table, not a
@@ -107,18 +110,19 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
 
 ## Actions
 
-- **`on-empty='none'` on a filter action may mean "Show no values".** Only
-  `none` occurs in the local corpus (109 times). Two saved target states differ
-  by exactly that parameter: the action with `on-empty='none'` persists its
-  target filter as `crossjoin … ui-enumeration='inclusive'` over `empty-level`
-  members, an empty set, which blanked the target sheet until the action fired
-  (Verified, [failure-catalog.md](failure-catalog.md)); an action with no
-  `on-empty` persists `level-members` over the whole level, everything. That
-  reads as `none` = "Show no values" and absent = "Leave the filter", with the
-  third dropdown value, "Show all values", unobserved. Probe: on a scratch copy
-  in Desktop, set each of the three values on one action, save, and diff the
-  `on-empty` parameter. Until then, when a clear should show all rows, hand the
-  dropdown to the owner in web authoring.
+- **`<param name='on-empty' value='none' />` on a filter action may mean "Show
+  no values".** `none` is the only value observed: twice in the base, and in
+  every other workbook on hand. The one action carrying it owns one stored
+  target state, the `empty-level` form that blanked its sheet
+  ([failure-catalog.md](failure-catalog.md), "Data reads wrong"); the one action
+  without it owns 15 states, all `level-members`; 24 further states name actions
+  a merge deleted and fit neither. Two actions is thin evidence for `none` =
+  "Show no values" and absent = "Leave the filter", and "Show all values" is
+  unobserved. If it holds, rewriting a stored `empty-level` state fixes the
+  default only until the next deselect. Probe: on a scratch copy in Desktop, set
+  each of the three values on one action, save, and diff the `on-empty` param.
+  Until then, when a clear should show all rows, hand the dropdown to the owner
+  in web authoring.
 
 ## Process
 
@@ -127,12 +131,11 @@ every line as a hypothesis. Do not cite this file as evidence; run the probe.
   the owner to make the change in Desktop on a scratch copy, save, and send the
   `.twb`; diff it against the base. This is the one oracle that outranks every
   checker here. The skill cannot run Desktop; the owner can.
-- **`check_geometry.py` may false-positive on floating objects**, which
-  legitimately overlap tiled siblings. Not seen yet: it passed a dashboard with
-  two top-level floating containers and failed a one-zone mutant of the same
-  file ([layout-and-zones.md](layout-and-zones.md)). Running both checkers
-  against the untouched base before any edit (loop step 1) is still what
-  separates a checker bug from a workbook bug.
+- **`check_geometry.py` may false-positive on visible floating objects**, which
+  legitimately overlap tiled siblings. Unexercised: the two floating containers
+  in this corpus are `hidden-by-user`, and the script skips those entirely.
+  Running both checkers against the untouched base before any edit (loop step 1)
+  is what separates a checker bug from a workbook bug.
 - **Cross-workbook parameter collisions may merge rather than delete.** The
   observed symptom (references pointing at an id now owned by an unrelated
   parameter) fits a merge on name and datatype as well as a deletion. The

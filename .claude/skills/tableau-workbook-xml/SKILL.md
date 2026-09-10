@@ -5,12 +5,12 @@ description:
   Desktop refuses to open a file Server published (`no declaration found for
   element`, `missing elements in content model`, `not allowed for content
   model`, `D2E8DA72`); a render shows `####`, blank or literal placeholder text,
-  a clipped caption, a 200% percent-of-total axis, overlapping zones, or a sheet
-  inside a panel that stays empty until a click; a hand-edited .twb or .twbx is
-  about to be repacked, published, republished or rolled back with
-  tableauserverclient; or you are hand-editing tooltips, titles, captions,
-  mark-label text, dashboard zones, filter cards, floating panels, parameter
-  actions, number formats, or copying an element between workbooks."
+  a clipped caption, a 200% percent-of-total axis, overlapping zones, or a panel
+  sheet empty with nothing selected; a hand-edited .twb or .twbx is about to be
+  repacked, published, republished or rolled back with tableauserverclient; or
+  you are hand-editing tooltips, titles, captions, mark-label text, dashboard
+  zones, parameter actions, number formats, or copying an element between
+  workbooks."
 ---
 
 # tableau-workbook-xml
@@ -44,9 +44,10 @@ hover or a click cannot be rendered; say so and ask a human.
    passed something broken: a geometry checker with 4,500 units of tolerance
    against a 4,445-unit bug, a structure assertion that passed a duplicated, a
    re-parented, and a reordered zone. The other direction happens too: an
-   assertion that demanded an order Tableau never writes (alphabetical
-   `<encodings>` children, a floating zone under the `layout-basic` root) failed
-   a correct file. An assertion that fails on the untouched base is wrong.
+   assertion that demanded an order or a nesting Tableau does not keep failed a
+   correct file. A checker or an invariant that fails on the untouched base is
+   wrong; only the step-2 assertion of the finished state is meant to fail
+   there.
 
 ## The loop
 
@@ -84,10 +85,11 @@ gets no secrets). Read exit codes with a redirect, never through a pipe.
    byte-exactly; the tooltips in this corpus used bare `&#10;` instead. Traps:
    [references/formatting.md](references/formatting.md).
 4. **Check.** `--ref` and `--baseline` are the untouched base from step 1, never
-   an earlier edit of your own and never an older pull: against last week's
-   base, Tableau's own new elements (`preference`, `refresh`, `refresh-event`)
-   read as unknown. Run `check_geometry.py` once per dashboard that contains an
-   edited zone; it checks only the one you name.
+   an earlier edit of your own and never an older pull. Run `check_geometry.py`
+   once per dashboard that contains an edited zone. It checks only the one you
+   name, and it skips every `hidden-by-user` zone, so a panel driven by dynamic
+   zone visibility is covered only by your own assertion and the open-state
+   render.
 
    ```bash
    uv run python docs/tableau-xml/scripts/check_twb.py out.twb --ref base.twb >/tmp/o1 2>&1; rc1=$?
@@ -133,12 +135,11 @@ gets no secrets). Read exit codes with a redirect, never through a pipe.
    or ellipsised text, a legend or axis missing entries, a blank line where text
    should be, a literal `[federated…]` token, and overlapping zones. Sample
    pixels to assert colour. A render-API parameter set bypasses the domain check
-   a real click performs, and a render cannot show a hover or a click. It can
-   show a panel's default state: for a sheet inside a parameter-driven panel,
-   render the open state and require the sheet's rows, not just the panel
-   chrome; a stored action-filter state can leave it empty (By symptom). If the
-   edit touched a row-level-security calculation, your own render proves nothing
-   when your token sees every row: run the differential probe in
+   a real click performs, and a render cannot show a hover or a click. For a
+   sheet inside a parameter-driven panel, render the open state and require
+   rows, not just the panel chrome. If the edit touched a row-level-security
+   calculation, your own render proves nothing when your token sees every row:
+   run the differential probe in
    [references/build-workflow.md](references/build-workflow.md).
 8. **Hand over** the `.twbx` plus the scratch copy, and delete the throwaway
    test file. Report what was verified, what was inferred, which regions you
@@ -169,8 +170,7 @@ table: [references/content-models.md](references/content-models.md).
   declare `x`. Insert the entry; never rebuild the manifest. The refusal is per
   workbook, not per Desktop build: before ruling a feature out because one
   workbook refused it, grep the target's own manifest. A merged or promoted base
-  may already declare it (Verified: the merged Academic Health workbook declared
-  all four dynamic-zone-visibility features its predecessor lacked).
+  may already declare it.
 - **`missing elements in content model`.** A hand-built worksheet lacks
   `<simple-id>`, or its `<view>` lacks `<aggregation>`. Clone the skeleton from
   a working sheet.
@@ -198,14 +198,14 @@ Renders blank or literal. Matrix, examples, and the open question:
   `[datasource].[instance]` strings. Ask a human to hover.
 - **Text in a dashboard text zone does not resolve.** It never does (Verified).
   Move it to a worksheet title or caption.
-- **A sheet inside a panel is empty with nothing selected.** A stored
-  action-filter state on that sheet excludes every row until another action
-  fires: a `<filter>` carrying `user:ui-action-filter` with
-  `user:ui-enumeration='inclusive'` over `empty-level` members (Verified).
-  Rewrite that block to the unrestricted `level-members` form the workbook's
-  other stored action states use. Before wiring an action to any sheet, grep it
-  for `user:ui-action-filter` and read the state; a sheet that has been a sliver
-  or a hidden zone can carry a state nobody has seen.
+- **A panel sheet is empty with nothing selected.** A stored action-filter state
+  on that sheet excludes every row: a `<groupfilter>` carrying
+  `user:ui-action-filter` with `user:ui-enumeration='inclusive'` over
+  `empty-level` members (Verified). Rewrite it to the `level-members` form.
+  Before and after, and the `on-empty` caveat that decides whether the fix
+  survives a deselect:
+  [references/failure-catalog.md](references/failure-catalog.md), "Data reads
+  wrong".
 
 Layout. Numbers, their measurement conditions, and the card idiom:
 [references/layout-and-zones.md](references/layout-and-zones.md).
@@ -223,14 +223,14 @@ Layout. Numbers, their measurement conditions, and the card idiom:
   `check_geometry.py --baseline`.
 - **Percent-of-total axis reads 200%.** A `<lod>` on Detail changed the mark
   grain (Verified). The shipped fix put the field on Tooltip (Inferred safe).
-- **Adding a floating panel, or removing a zone from a flow.** A floating
-  container is a top-level child of `<zones>`, a sibling of the `layout-basic`
-  root; a dynamic-zone-visibility subtree carries `hidden-by-user='true'` on
-  every zone. Removing a fixed-width sibling from a flow is a cascade across the
-  surviving column, written as a table and asserted row by row.
-- **Adding a filter card.** Three elements per filtered sheet plus one zone,
-  `filter-group` from the fresh base's max plus one, and a `distribute-evenly`
-  strip's stored `w`/`x` re-tiled by hand.
+- **Adding a floating panel on a parameter.** A top-level sibling of the
+  `layout-basic` root, and the visibility node's `dashboard-identifier` is the
+  `<dashboard>`'s `<simple-id>`, not the `<window>`'s. Recipe with the XML in
+  the reference.
+- **Removing a zone from a flow.** A cascade down the surviving column, asserted
+  row by row: recipe in the reference.
+- **Adding a filter card.** Three elements per filtered sheet plus one zone:
+  recipe in the reference.
 
 Formats and edits: [references/formatting.md](references/formatting.md).
 
@@ -239,9 +239,9 @@ Formats and edits: [references/formatting.md](references/formatting.md).
   Desktop.
 - **Parameter action fires, nothing changes.** A blanket replace rewrote the
   `<member>` domain. Every substitution asserts one match.
-- **Inserting a `<lod>` or a filter.** `<encodings>` children are in shelf
-  order, not alphabetical; `<filter>` and `<column-instance>` elements are
-  sorted by column string. Anchor on the neighbour, assert the position:
+- **Inserting a `<lod>` or a filter.** `<encodings>` children have no fixed
+  order; `<filter>` and `<column-instance>` elements are sorted by column
+  string. Anchor on the neighbour, assert the position:
   [references/content-models.md](references/content-models.md).
 
 Process: [references/build-workflow.md](references/build-workflow.md) and
@@ -252,8 +252,6 @@ Process: [references/build-workflow.md](references/build-workflow.md) and
 - **Whole-file diff, `.twbx.twbx`, tiny download, wrong exit code.** CRLF
   flattened by `read_text`; `filepath` gets an extension appended;
   `include_extract=False`; status read through a pipe.
-- **Restore point reported as revision 9 of 24.** `populate_revisions` returns
-  `revision_number` as strings; cast to `int` before `max()`.
 
 Everything observed, with exact error strings and numbers:
 [references/failure-catalog.md](references/failure-catalog.md). Risks a Tableau
@@ -277,7 +275,9 @@ All in `docs/tableau-xml/scripts/`; the README there has per-check tables.
   `uv run python docs/tableau-xml/scripts/check_geometry.py <twb> "<dashboard>" --baseline <base.twb>`.
   One dashboard per run. Catches visible sibling zones that overlap, a flow
   container whose parent-minus-children gap differs from the baseline's, and a
-  top-level `layout-basic` zone not spanning the 100000-unit canvas.
+  top-level `layout-basic` zone not spanning the 100000-unit canvas. Skips
+  `hidden-by-user` zones and everything under them, so a dynamic-zone-visibility
+  panel is never checked.
 - **`mutate.py`**:
   `uv run python docs/tableau-xml/scripts/mutate.py <src> <out> "<dashboard>" <op> [args]`.
   Builds a broken zone copy (`duplicate`, `reparent`, `move-after`, `swap`,

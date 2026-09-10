@@ -57,9 +57,7 @@ Verified in #5230 across 13 publishes on REST API 3.25 with
   of the **overwrite target** (not a scratch copy); subtract the sheets this
   edit deliberately added. `<worksheets>` and `<dashboards>` list every sheet
   whether publishable or not and are the wrong source. Pass the result as
-  `hidden_views` on the `WorkbookItem`. Verified again on a second workbook: 15
-  publishable minus 5 live gave 10 to hide, and the copy came up with exactly
-  production's 5 live views.
+  `hidden_views` on the `WorkbookItem`.
 - **Embedded connection credentials.** A publish without a `connections=[...]`
   list drops them. The scratch copy hides this because the packaged extract
   still renders; the owner sees a failing refresh or a credential prompt later.
@@ -133,11 +131,11 @@ for label, pat in (("worksheets", r"<worksheet name='([^']*)'"),
 
 A pure extract refresh changes only `<datasources>`; worksheets and dashboards
 stay byte-identical. Anything else is a design change to understand before
-building on it. Between two pulls a day apart the base gained a sheet and a
-tooltip sheet, swapped a logo asset, renumbered `<devicelayouts>` ids, un-hid a
-window, and pointed `<repository-location>` at a `ZZ-REVIEW…` name: the owner
-had promoted a review copy. The target dashboard's `<zones>` were
-byte-identical, so the layout map survived; check that before reusing one.
+building on it. Before reusing a layout map from an earlier pull, diff the
+target dashboard's `<zones>` byte for byte: a promoted review copy changed
+sheets, a logo asset, `<devicelayouts>` ids, a window's `hidden` flag and
+`<repository-location>` between two pulls a day apart, and left `<zones>`
+intact.
 
 Pass the fresh base, not the older pull, as `--ref` to `check_twb.py`. Against
 an older pull, Tableau's own new elements (`preference`, `refresh`,
@@ -161,6 +159,11 @@ line endings enough to break a regex-based assertion on an _unmutated_ file.
 Resolve field references by caption at runtime rather than hard-coding instance
 strings, so a transcription slip fails loudly instead of rendering a literal
 token.
+
+For a worksheet edit, give the assertion the input file as a second argument and
+require every worksheet you did not name to be byte-identical, and the bytes
+before `<worksheets>` and after `</worksheets>` unchanged. It caught a mutant
+that touched a different sheet.
 
 ## Reading exit codes
 
@@ -285,6 +288,10 @@ direction:
   overwrote the other parameter's value.
 - **A worksheet used only as a viz-in-tooltip was deleted** while both
   references to it were kept, breaking the tooltips that depended on it.
+- **Deleted actions left their stored target states behind.** 24 of the 40
+  `user:ui-action-filter` states in the merged file name actions absent from
+  `<actions>`, and 10 of those are the `empty-level` form that excludes every
+  row ([failure-catalog.md](failure-catalog.md), "Data reads wrong").
 
 After any merge, diff the worksheet list **and** the parameter list against both
 sources before publishing. In this corpus Tableau renamed on some collisions and

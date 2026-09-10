@@ -82,32 +82,54 @@ was simply in the wrong units for a 0 to 1 axis, with its probe, is in
 
 ## Data reads wrong
 
-| Symptom                                                       | Cause                                                                                                             |
-| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| A parameter action fires and nothing changes                  | A blanket replace rewrote the parameter's `<member>` domain                                                       |
-| A pop-out never opens; clicks corrupt an unrelated parameter  | A merge deleted the boolean parameter and left every reference behind                                             |
-| Viz-in-tooltip stops working                                  | A merge deleted the tooltip worksheet and kept both references                                                    |
-| Bars move with a control but labels and colours do not        | Encodings on one sheet resolve through different calcs; see below                                                 |
-| A sheet inside a panel stays empty until another action fires | Its saved action-filter state is `ui-enumeration='inclusive'` over `empty-level` members: an empty set; see below |
+| Symptom                                                      | Cause                                                                                                                  |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| A parameter action fires and nothing changes                 | A blanket replace rewrote the parameter's `<member>` domain                                                            |
+| A pop-out never opens; clicks corrupt an unrelated parameter | A merge deleted the boolean parameter and left every reference behind                                                  |
+| Viz-in-tooltip stops working                                 | A merge deleted the tooltip worksheet and kept both references                                                         |
+| Bars move with a control but labels and colours do not       | Encodings on one sheet resolve through different calcs; see below                                                      |
+| A panel sheet is empty with nothing selected                 | Its saved action-filter state is `user:ui-enumeration='inclusive'` over `empty-level` members: an empty set; see below |
 
-That last one is a reasoning failure, not a mechanical one. On one panel the bar
-length resolved through a parameter-aware calculation while the mark label and
-the colour resolved through projected-only calculations. Setting the control to
-the other basis moved the bars and left the labels, producing a near-zero bar
-labelled `+11.4pp` in green. The analysis that missed it traced only the bar.
-**Trace every encoding on a sheet (rows, columns, text, colour, size, tooltip),
-not just the one that looks like the measure.**
+The bars-and-labels row is a reasoning failure, not a mechanical one. On one
+panel the bar length resolved through a parameter-aware calculation while the
+mark label and the colour resolved through projected-only calculations. Setting
+the control to the other basis moved the bars and left the labels, producing a
+near-zero bar labelled `+11.4pp` in green. The analysis that missed it traced
+only the bar. **Trace every encoding on a sheet (rows, columns, text, colour,
+size, tooltip), not just the one that looks like the measure.**
 
-The empty panel hid for months because its sheet was a 9px sliver. Production's
-saved state for one action's target filter on that sheet was
-`crossjoin … user:ui-enumeration='inclusive'` over two `empty-level` members,
-while the file's other 26 stored action states were `user:ui-enumeration='all'`
-over `level-members`. Rewriting the one block to the unrestricted form made the
-sheet render 40 rows with no selection; the closed render stayed byte-identical.
-**A sheet that has been invisible can carry a saved state nobody has seen.**
-Grep every sheet you wire an action to for `user:ui-action-filter`, read the
-stored state, and render the sheet alone or in the forced-open state and require
-rows before trusting its default.
+The empty-panel row: nobody had seen the sheet's default because it was a 9px
+sliver. Its stored state for one action's target filter was the `empty-level`
+form. Rewriting that one `<groupfilter>` to the `level-members` form made the
+sheet render 40 rows with no selection, and the closed render stayed
+byte-identical. Before and after, from the file:
+
+```xml
+<filter class='categorical' column='[federated.…].[Action (Letter Band,Teacher Name)]'>
+  <groupfilter function='crossjoin' user:ui-action-filter='[Action1_…]' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate'>
+    <groupfilter function='empty-level' member='[Calculation_…]' />
+    <groupfilter function='empty-level' member='[teacher_name]' />
+  </groupfilter>
+</filter>
+```
+
+```xml
+<filter class='categorical' column='[federated.…].[Action (Letter Band,Teacher Name)]'>
+  <groupfilter function='crossjoin' user:ui-action-filter='[Action1_…]' user:ui-enumeration='all' user:ui-marker='enumerate'>
+    <groupfilter function='level-members' level='[Calculation_…]' />
+    <groupfilter function='level-members' level='[teacher_name]' />
+  </groupfilter>
+</filter>
+```
+
+The base holds 40 such states: 29 `level-members`, 11 `empty-level`, and 24 of
+the 40 name actions a merge had deleted. **A sheet that has been invisible can
+carry a saved state nobody has seen.** Before wiring an action to a sheet, grep
+it for `user:ui-action-filter` and read each state; then render the sheet alone
+or in the forced-open state and require rows. The rewrite fixes the default
+state only: if the action carries `on-empty` `none`, a deselect may blank the
+sheet again at runtime. Hypothesis and probe:
+[unverified-warnings.md](unverified-warnings.md), "Actions".
 
 ## Tooling and process
 
@@ -128,27 +150,26 @@ rows before trusting its default.
 
 The most expensive category, because everything reports success.
 
-| Symptom                                                                             | Cause                                                                                                                  |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Geometry checker passes the exact bug it was written for                            | Per-child tolerance; 900 units × 5 children exceeded the 4,445-unit defect                                             |
-| Geometry checker false-positives on production                                      | An absolute tolerance tight enough for one container is wrong for another                                              |
-| Structure assertion passes a duplicated zone                                        | A parent map overwritten in document order hid the stale entry                                                         |
-| Structure assertion passes a re-parented zone                                       | It checked existence and type, never parentage                                                                         |
-| Structure assertion passes a reordered zone                                         | No sibling-order check                                                                                                 |
-| Structure assertion passes a card nested inside a card                              | Only leaf zones were pinned; the containers never were                                                                 |
-| Assertion checks presence, not position                                             | Searching a whole block for a token, rather than asserting the run sequence                                            |
-| `populate_csv` on a dashboard returned 0 rows and read as a working permission gate | The control also returned 0; a dashboard view yields no crosstab. Verified, #5230                                      |
-| Length guard passes an edit that changed nothing                                    | A same-length replacement moves the byte total by 0; count the strings. Verified, #5230                                |
-| Assertion fails the untouched base: `<encodings>` children not alphabetical         | Tableau writes them in shelf order (`color, lod, lod, tooltip…, text`); assert the insert position, not a global order |
-| Assertion fails the untouched base: floating zone not under the `layout-basic` root | Floating containers are top-level siblings of the root                                                                 |
-| A mutant makes the assertion crash with `IndexError`                                | Non-zero exit, but no check is named; guard list indexing so every failure is a named FAIL line                        |
+| Symptom                                                                             | Cause                                                                                           |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Geometry checker passes the exact bug it was written for                            | Per-child tolerance; 900 units × 5 children exceeded the 4,445-unit defect                      |
+| Geometry checker false-positives on production                                      | An absolute tolerance tight enough for one container is wrong for another                       |
+| Structure assertion passes a duplicated zone                                        | A parent map overwritten in document order hid the stale entry                                  |
+| Structure assertion passes a re-parented zone                                       | It checked existence and type, never parentage                                                  |
+| Structure assertion passes a reordered zone                                         | No sibling-order check                                                                          |
+| Structure assertion passes a card nested inside a card                              | Only leaf zones were pinned; the containers never were                                          |
+| Assertion checks presence, not position                                             | Searching a whole block for a token, rather than asserting the run sequence                     |
+| `populate_csv` on a dashboard returned 0 rows and read as a working permission gate | The control also returned 0; a dashboard view yields no crosstab. Verified, #5230               |
+| Length guard passes an edit that changed nothing                                    | A same-length replacement moves the byte total by 0; count the strings. Verified, #5230         |
+| Assertion fails the untouched base: `<encodings>` children not alphabetical         | They have no fixed order; assert the insert position, not a global order                        |
+| Assertion fails the untouched base: floating zone not under the `layout-basic` root | Floating containers are top-level siblings of the root                                          |
+| A mutant makes the assertion crash with `IndexError`                                | Non-zero exit, but no check is named; guard list indexing so every failure is a named FAIL line |
 
-The last three fail in the other direction: a correct file, a wrong test. An
-assertion that fails on the untouched base is wrong, and the fix is to the test.
-Every one of the others was found by building a mutant and running the assertion
-against it. Make that a step, not an afterthought:
-`docs/tableau-xml/scripts/mutate.py` does the zone surgery; for anything outside
-a dashboard's zones, hand-write the broken variant.
+The two `untouched base` rows fail in the other direction: a correct file, a
+wrong test, and the fix is to the test. Every other row was found by building a
+mutant and running the assertion against it. Make that a step, not an
+afterthought: `docs/tableau-xml/scripts/mutate.py` does the zone surgery; for
+anything outside a dashboard's zones, hand-write the broken variant.
 
 ## The two reasoning failures worth naming
 
