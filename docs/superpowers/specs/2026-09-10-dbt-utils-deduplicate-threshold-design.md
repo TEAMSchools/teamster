@@ -144,14 +144,21 @@ lower bound on dedup input.
 
 ### Candidates
 
-| Node                                                    | 7-day slot hours | Disposition                                   |
-| ------------------------------------------------------- | ---------------: | --------------------------------------------- |
-| `int_assessments__resolved_section_enrollments`         |            16.74 | Size the dedup CTE; rewrite if it clears 1M   |
-| `fct_assessment_scores_enrollment_scoped`               |            12.91 | Size the dedup CTE; rewrite if it clears 1M   |
-| `int_assessments__scaffold`                             |             7.08 | Size the dedup CTE; rewrite if it clears 1M   |
-| `stg_illuminate__dna_assessments__students_assessments` |             1.03 | 4.16M rows, measured. Passes both conditions  |
-| `stg_schoolmint_grow__observations`                     |             9.97 | 125k rows, measured. **Fails the gate; skip** |
-| Everything else                                         |                — | No                                            |
+Five dedup sites, not three: `int_assessments__resolved_section_enrollments` and
+`fct_assessment_scores_enrollment_scoped` each dedup twice. Each site is sized
+independently and gets its own disposition — the two per model can (and do)
+disagree.
+
+| Model                                                   | Input CTE              | 7-day slot hours | dedup_input_rows | Disposition         |
+| ------------------------------------------------------- | ---------------------- | ---------------: | ---------------: | ------------------- |
+| `int_assessments__resolved_section_enrollments`         | `internal_anchored`    |            16.74 |        2,709,411 | `rewrite`           |
+| `int_assessments__resolved_section_enrollments`         | `all_candidates`       |            16.74 |        2,678,052 | `rewrite`           |
+| `fct_assessment_scores_enrollment_scoped`               | `iready_scores_raw`    |            12.91 |          273,791 | `measured, skipped` |
+| `fct_assessment_scores_enrollment_scoped`               | `star_scores_raw`      |            12.91 |            8,128 | `measured, skipped` |
+| `int_assessments__scaffold`                             | `internal_assessments` |             7.08 |        2,931,688 | `rewrite`           |
+| `stg_illuminate__dna_assessments__students_assessments` | —                      |             1.03 |  4.16M, measured | `rewrite`           |
+| `stg_schoolmint_grow__observations`                     | —                      |             9.97 |   125k, measured | `measured, skipped` |
+| Everything else                                         | —                      |                — |                — | No                  |
 
 `stg_deanslist__behavior` is excluded: #5249 already rewrote it and merged.
 
