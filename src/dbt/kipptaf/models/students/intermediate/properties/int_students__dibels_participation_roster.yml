@@ -1,14 +1,52 @@
 models:
   - name: int_students__dibels_participation_roster
+    description: >-
+      Expected-versus-actual DIBELS testing per student per round, for all three
+      data models that run in parallel K-8: Benchmark, the in-house PM goal
+      method, and Amplify's aimline. One row per student per round per model.
+
+      The two expectation gates are appended as the driving table --
+      int_google_sheets__dibels_expected_assessments for Benchmark and the
+      internal PM method,
+      int_google_sheets__dibels__expected_assessments_by_levels for aimline.
+      expected_row_count is computed in those gates rather than here, so the
+      cohort partition aimline needs lives next to the column that causes it.
+      Enrolled students are joined next, matching the gate's expected grade to
+      the enrolled grade, and int_amplify__all_assessments is joined last for
+      what was actually tested.
+
+      The three models gate eligibility three different ways -- Benchmark gates
+      nothing, the internal method wants probe-eligible students, aimline wants
+      a cohort match against measure_standard_level. Rather than one UNION
+      branch per rule, both sides carry a single eligibility_key that resolves
+      all three to one equality. On the gate side that key is the literal All
+      for Benchmark, Yes for internal PM, and the cohort for aimline. On the
+      student side, student_expectations fans each student into the seven
+      (model, season) slots they could owe testing for, each carrying that
+      slot's own value -- All, their BOY or MOY probe-eligible flag, or their
+      BOY or MOY composite. A student whose composite is At or Above Benchmark,
+      or who has no benchmark row, matches no aimline gate row, and a student
+      who is not probe-eligible matches no internal PM row. Both are intended.
+
+      Not Tested lives here rather than in int_amplify__all_assessments, which
+      carries scored rows only. This model manufactures the absence by counting
+      the gate's rows for a round against the scores that exist.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
+            # matches the rn partition exactly. model_type is required now that
+            # both PM methods are emitted, and grade_level because a student can
+            # change grade mid-season and each grade carries its own
+            # expectations. completed_test_round was in this list and should not
+            # have been -- a derived flag cannot disambiguate a grain.
             combination_of_columns:
               - academic_year
+              - region
               - student_number
+              - grade_level
+              - model_type
               - admin_season
               - round_number
-              - completed_test_round
     columns:
       - name: academic_year
         data_type: int64
@@ -50,6 +88,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: enroll_status
+      - name: model_type
+        data_type: string
+        description: >-
+          Which data model the row's expectation came from: BM for Benchmark,
+          Internal for the in-house PM goal method, Aimline for Amplify's
+          per-student aimline. All three run K-8 in parallel, so any consumer
+          counting participation must filter or group by this column, or a
+          student is counted once per method. Matches
+          int_amplify__all_assessments model_type, which is how the score side
+          is joined.
       - name: assessment_type
         data_type: string
       - name: admin_season
@@ -58,10 +106,41 @@ models:
         data_type: int64
       - name: expected_row_count
         data_type: int64
+        description: >-
+          How many measures the student owes for this round, passed through from
+          the expectation gate that produced the row. On the aimline gate it is
+          scoped to the student's own cohort, since the two cohorts can be
+          expected on different measures.
       - name: actual_row_count
         data_type: int64
+        description: >-
+          How many measures the student was actually scored on for this round,
+          from int_amplify__all_assessments, zero when nothing matched. Scoped
+          to this row's model_type, so the two PM methods do not count each
+          other.
       - name: completed_test_round
         data_type: boolean
+        description: >-
+          True when actual_row_count reaches expected_row_count. Benchmark rows
+          have three additional fallbacks -- a student holding a composite for
+          the season counts as complete even without every measure. Those
+          fallbacks can only fire on a Benchmark row, since a PM row's
+          admin_season is BOY to MOY or MOY to EOY rather than a single season.
+      - name: participation_group
+        data_type: string
+        description: >-
+          Combo on the rows making up the blended view academics asked to see --
+          every Benchmark row, the internal method for K-2, and aimline for
+          grades 3-8 -- and Not Combo on the alternates, meaning aimline K-2 and
+          internal 3-8. Filter to Combo in Tableau for one coherent
+          participation rate across the network without double-counting a
+          student who is expected under both PM methods.
+
+          The K-2 versus 3-8 boundary is a reporting choice, hardcoded in this
+          model rather than driven from the sheet. Moving it means editing this
+          case expression. It reads the ENROLLED grade level, not the assessed
+          grade, so a student assessed at a different grade mid-year is grouped
+          by where they are enrolled.
       - name: completed_test_round_int
         data_type: int64
         description: Conditional on completed_test_round.

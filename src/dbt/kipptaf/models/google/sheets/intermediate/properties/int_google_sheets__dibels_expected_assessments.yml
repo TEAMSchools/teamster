@@ -132,3 +132,13 @@ models:
         description: >
           Highest round number in the row's season, on the same partition as
           min_pm_round. Marks where a season's trajectory ends.
+      - name: expected_row_count
+        description: >
+          How many measures a student at this grade owes for this round, per
+          year, region, grade, season and round. A countif rather than a count,
+          because this model deliberately does not filter its own
+          assessment_include / pm_goal_include columns -- a WHERE here would run
+          before min_pm_round and max_pm_round and silently redefine them. So
+          every row survives and only the live ones are counted. Read this
+          rather than re-deriving it; the participation roster used to compute
+          its own copy.

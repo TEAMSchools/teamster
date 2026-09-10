@@ -55,6 +55,14 @@ select
         order by m.round_number desc
     ) as max_pm_round,
 
+    -- how many measures a student at this grade owes for this round. countif,
+    -- not count, because this model deliberately does not filter its own
+    -- soft-delete columns: filtering here would run before the window
+    -- functions above and silently redefine min_pm_round / max_pm_round.
+    countif(m.assessment_include is null and m.pm_goal_include is null) over (
+        partition by m.academic_year, m.region, m.grade, m.admin_season, m.round_number
+    ) as expected_row_count,
+
 from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as m
 left join
     terms as t

@@ -59,6 +59,19 @@ select
         order by e.round_number desc
     ) as max_pm_round,
 
+    -- as on the internal gate, plus measure_standard_level: the two cohorts can
+    -- be expected on different measures, so a shared partition would charge a
+    -- Below Benchmark student for Well Below's rounds too
+    countif(e.assessment_include is null and e.pm_goal_include is null) over (
+        partition by
+            e.academic_year,
+            e.region,
+            e.grade,
+            e.admin_season,
+            e.round_number,
+            e.measure_standard_level
+    ) as expected_row_count,
+
 from {{ ref("stg_google_sheets__dibels__expected_assessments_by_levels") }} as e
 left join
     terms as t

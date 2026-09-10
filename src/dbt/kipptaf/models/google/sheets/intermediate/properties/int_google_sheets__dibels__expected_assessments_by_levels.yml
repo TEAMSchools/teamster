@@ -90,6 +90,13 @@ models:
           Highest round number in the row's season, on the same partition as
           min_pm_round. Marks the end of the season without implying a growth
           trajectory -- aimline has none.
+      - name: expected_row_count
+        description: >
+          How many measures a student in this cohort at this grade owes for this
+          round. Same countif construction as on the internal gate and for the
+          same reason, plus measure_standard_level in the partition: the two
+          cohorts can be expected on different measures, so a shared partition
+          would charge a Below Benchmark student for Well Below's rounds too.
       - name: month_round
         description: >
           Month label for the round, hand-written on the sheet rather than
