@@ -146,23 +146,40 @@ def shrink_heading(block: str) -> str:
     )
 
 
-def strip_second_label_line(block: str) -> str:
-    """Reduce a strip's mark label to its single value run.
+def inline_detail_run(block: str, fontcolor: str | None = None) -> str:
+    """Move a strip's second label line onto the same row as its value.
 
-    A three-region strip gives each mark about 43 px; a 12 pt value over an
-    8 pt second line does not fit, and Tableau prints `####` for the whole
-    cell rather than dropping the second line itself. The second line's
-    content (the weekly delta, the teacher denominator) is on the tile above
-    and in the tooltip, so nothing is lost that the page does not already say.
+    The `####` fix cut these strips to a single value run because a 12 pt
+    value stacked over an 8 pt detail line does not fit a ~43 px row band.
+    Side by side on one line it does: the constraint was always vertical, and
+    a three-region column is 337 px wide against about 130 px of text.
+
+    Drops the break run and gives the detail run a two-space separator, so
+    the row reads `58%  (-4.0pp vs. 1 wk)`. Every field these runs reference
+    is already a `<text>` encoding on its pane -- checked for all four
+    strips -- so they resolve rather than printing an empty gap.
     """
+    color = f"fontcolor='{fontcolor}' " if fontcolor else ""
     pat = (
-        r"\r\n\s*<run>Æ&#10;</run>"
-        r"\r\n\s*<run fontname='Tableau Light' fontsize='8'>"
-        r"<!\[CDATA\[.*?\]\]></run>"
+        r"\r\n\s*<run>\u00c6&#10;</run>"
+        r"\r\n(\s*)<run " + re.escape(color) + r"fontname='Tableau Light' fontsize='8'>"
+        r"<!\[CDATA\[(.*?)\]\]></run>"
     )
-    new, n = re.subn(pat, "", block, flags=re.S)
+    m = re.search(pat, block, flags=re.S)
+    if m is None:
+        raise RuntimeError(f"no stacked detail run to inline (color={fontcolor!r})")
+    replacement = (
+        "\r\n"
+        + m.group(1)
+        + "<run "
+        + color
+        + "fontname='Tableau Light' fontsize='8'><![CDATA[  "
+        + m.group(2)
+        + "]]></run>"
+    )
+    new, n = re.subn(pat, lambda _: replacement, block, flags=re.S)
     if n != 1:
-        raise RuntimeError(f"strip second-line pattern matched {n} times, expected 1")
+        raise RuntimeError(f"detail-run pattern matched {n} times, expected 1")
     return new
 
 
@@ -232,15 +249,23 @@ def fix_tile_cumulative(text: str) -> str:
 
 def fix_strip_y1(text: str) -> str:
     return edit_worksheet(
-        text, "LP - Strip Y1 GPA", lambda b: no_cull(strip_second_label_line(b))
+        text, "LP - Strip Y1 GPA", lambda b: no_cull(inline_detail_run(b))
     )
 
 
 def fix_strip_failures(text: str) -> str:
     return edit_worksheet(
+        text, "LP - Strip Course Failures", lambda b: no_cull(inline_detail_run(b))
+    )
+
+
+def fix_strip_cumulative(text: str) -> str:
+    """The one strip that never showed `####`, because it has two region rows
+    rather than three. Inlined anyway so all four columns read alike."""
+    return edit_worksheet(
         text,
-        "LP - Strip Course Failures",
-        lambda b: no_cull(strip_second_label_line(b)),
+        "LP - Strip Cumulative GPA",
+        lambda b: no_cull(inline_detail_run(b, fontcolor=GREY)),
     )
 
 
@@ -319,17 +344,18 @@ def fix_strip_gradebook(text: str) -> str:
             "<run fontcolor='#ffffff' fontname='Tableau Semibold' fontsize='12'>",
             f"<run fontcolor='{NAVY}' fontname='Tableau Semibold' fontsize='12'>",
         )
-        # this strip's second line is `of <N> teachers`, not the `vs. 1 wk`
-        # shape the other two carry, so it needs its own pattern
-        pat = (
-            r"\r\n\s*<run>Æ&#10;</run>"
-            r"\r\n\s*<run fontcolor='#ffffff' fontname='Tableau Light' fontsize='8'>"
-            r"<!\[CDATA\[.*?\]\]></run>"
+        # The detail run reads `of <N> teachers`, but that field already
+        # returns "52 of 363" -- on the tile the same field is written
+        # without the leading `of`. Stacked and then dropped it never showed;
+        # inline it rendered `3% of 3 of 95 teachers`. Match the tile.
+        b = sub_once(b, "CDATA[of <[federated.", "CDATA[<[federated.")
+        # its detail run is still white at this point; recolour, then inline
+        b = sub_once(
+            b,
+            "<run fontcolor='#ffffff' fontname='Tableau Light' fontsize='8'>",
+            f"<run fontcolor='{GREY}' fontname='Tableau Light' fontsize='8'>",
         )
-        b2, n = re.subn(pat, "", b, flags=re.S)
-        if n != 1:
-            raise RuntimeError(f"gradebook strip second line matched {n}, expected 1")
-        return no_cull(b2)
+        return no_cull(inline_detail_run(b, fontcolor=GREY))
 
     return edit_worksheet(text, "LP - Strip Gradebook Health", fn)
 
@@ -557,23 +583,19 @@ def side_by_side_reference(text: str) -> str:
     """L3: put the definitions and coverage blocks side by side, and delete
     the Links row now that the roster links live in the header.
 
-    A dashboard text zone CENTRES its content vertically. Verified on the
-    first attempt at this layout: both blocks were dropped down their zone by
-    exactly half the leftover -- the definitions text measured 338 px of
-    content in a 696 px zone and started 179 px down, the coverage grid 157 px
-    of content and started 269 px down -- so the two blocks did not line up
-    with each other and both floated well below the cards above them. Nothing
-    in the XML says so and nothing errors.
+    A dashboard text zone CENTRES its content vertically. Verified by
+    measurement: with both blocks in one 696 px container the definitions'
+    338 px of content started 179 px down and the coverage grid's 157 px
+    started 269 px down, exactly half the leftover in each case, so the two
+    headings did not line up and both floated below the cards.
 
-    So each block gets its own vertical column: a text zone sized close to its
-    own content, then an empty spacer for the rest of the height. Sized so
-    the residual centring offset is the same 21 px in both columns, which is
-    what actually makes the two headings line up.
+    So the container is sized to the taller block and the shorter one gets
+    its own column with a spacer beneath it, chosen so BOTH end up with the
+    same residual centring offset. That equal offset is what actually aligns
+    the two headings; equal zone heights would not.
 
-    The vertical budget is unchanged from the stacked version: the container
-    still spans y=47066..93466, so the trailing empty zone and the outer flow
-    zone need no edit. The slack that removing the Links row freed sits
-    inside the two columns as page whitespace.
+    Geometry here is written for the 1500 px canvas; `relayout_vertical`
+    rewrites every vertical number afterwards for the final canvas height.
     """
 
     def fn(d: str) -> str:
@@ -581,13 +603,12 @@ def side_by_side_reference(text: str) -> str:
         cov = zone_block(d, "id='38'")
         links = zone_block(d, "friendly-name='Links'")
 
-        # both text zones drop two indent levels deeper: container > column
-        new_defs = reindent(defs, 4)
+        new_defs = reindent(defs, 2)
         new_defs = sub_once(
             new_defs,
             "<zone fixed-size='400' forceUpdate='true' h='27200' id='37'"
             " is-fixed='true' type-v2='text' w='98828' x='586' y='47066'>",
-            "<zone fixed-size='380' forceUpdate='true' h='25867' id='37'"
+            "<zone fixed-size='780' forceUpdate='true' h='24800' id='37'"
             " is-fixed='true' type-v2='text' w='57721' x='586' y='47066'>",
         )
         new_cov = reindent(cov, 4)
@@ -595,42 +616,26 @@ def side_by_side_reference(text: str) -> str:
             new_cov,
             "<zone fixed-size='220' forceUpdate='true' h='15200' id='38'"
             " is-fixed='true' type-v2='text' w='98828' x='586' y='74266'>",
-            "<zone fixed-size='199' forceUpdate='true' h='13800' id='38'"
+            "<zone fixed-size='183' forceUpdate='true' h='12733' id='38'"
             " is-fixed='true' type-v2='text' w='41107' x='58307' y='47066'>",
         )
-
-        def spacer(zid: str, h: int, w: int, x: int, y: int) -> str:
-            return (
-                f"              <zone h='{h}' id='{zid}' type-v2='empty'"
-                f" w='{w}' x='{x}' y='{y}'>\r\n"
-                "                <zone-style>\r\n"
-                "                  <format attr='border-color' value='#000000' />\r\n"
-                "                  <format attr='border-style' value='none' />\r\n"
-                "                  <format attr='border-width' value='0' />\r\n"
-                "                  <format attr='margin' value='4' />\r\n"
-                "                </zone-style>\r\n"
-                "              </zone>"
-            )
-
         container = (
-            "          <zone fixed-size='696' friendly-name='Reference' h='46400'"
+            "          <zone fixed-size='372' friendly-name='Reference' h='24800'"
             " id='60' is-fixed='true' param='horz' type-v2='layout-flow'"
             " w='98828' x='586' y='47066'>\r\n"
-            "            <zone fixed-size='780' h='46400' id='61' is-fixed='true'"
-            " param='vert' type-v2='layout-flow' w='57721' x='586' y='47066'>\r\n"
-            "              "
-            + new_defs
-            + "\r\n"
-            + spacer("62", 20533, 57721, 586, 72933)
-            + "\r\n"
-            "            </zone>\r\n"
-            "            <zone h='46400' id='63' param='vert' type-v2='layout-flow'"
+            "            " + new_defs + "\r\n"
+            "            <zone h='24800' id='63' param='vert' type-v2='layout-flow'"
             " w='41107' x='58307' y='47066'>\r\n"
-            "              "
-            + new_cov
-            + "\r\n"
-            + spacer("64", 32600, 41107, 58307, 60866)
-            + "\r\n"
+            "              " + new_cov + "\r\n"
+            "              <zone h='12067' id='64' type-v2='empty' w='41107'"
+            " x='58307' y='59799'>\r\n"
+            "                <zone-style>\r\n"
+            "                  <format attr='border-color' value='#000000' />\r\n"
+            "                  <format attr='border-style' value='none' />\r\n"
+            "                  <format attr='border-width' value='0' />\r\n"
+            "                  <format attr='margin' value='4' />\r\n"
+            "                </zone-style>\r\n"
+            "              </zone>\r\n"
             "            </zone>\r\n"
             "          </zone>"
         )
@@ -640,34 +645,129 @@ def side_by_side_reference(text: str) -> str:
     return edit_dashboard(text, fn)
 
 
-# ------------------------------------------------------ default-view marker
+#: The dashboard's vertical layout, in PIXELS, after every change in this
+#: script. The canvas shrinks to fit it: the Links row is gone, the two
+#: reference blocks share a row instead of stacking, and the header drops to
+#: 60 px. `relayout_vertical` turns this into units and rewrites every y/h.
+#:
+#:   id -> (height px, [child ids])   height None = fills its parent
+CANVAS_W = 1366
+CANVAS_H = 1130  # was 1500
+OUTER_MARGIN = 8  # the outer flow zone's top and bottom inset
+MARGIN_V = 8  # a `margin 4` zone's two vertical margins
+
+#: Outer vertical flow, in order, with each row's total height in pixels.
+ROWS = (
+    ("9", 60),  # Header  (was 80)
+    ("14", 220),  # Tiles
+    ("19", 150),  # Regions
+    ("20", 28),  # Miami footnote: fixed-size 20 + margins
+    ("36", 220),  # Directory
+    ("60", 420),  # Reference: 21 lines of definitions plus centring slack
+    ("45", 16),  # trailing spacer
+)
+
+#: Zones that simply fill their parent's height (every horizontal row's
+#: children, and the columns of a horizontal container).
+FILL = {
+    "9": ["1", "2", "3", "50"],
+    "14": ["10", "11", "12", "13"],
+    "19": ["15", "16", "17", "18"],
+    "36": ["23", "26", "29", "32", "35"],
+    "60": ["37", "63"],
+}
+
+#: Vertical sub-stacks: parent -> [(child id, height px or None to fill)].
+STACKS = {
+    "50": [("51", 30), ("52", None)],  # roster label over the three links
+    "23": [("21", None), ("22", 32)],  # card over guide slot
+    "26": [("24", None), ("25", 32)],
+    "29": [("27", None), ("28", 32)],
+    "32": [("30", None), ("31", 32)],
+    "35": [("33", None), ("34", 32)],
+    "63": [("38", 211), ("64", None)],  # coverage grid over its spacer
+}
+
+#: Children of a vertical sub-stack row that fill it (the three roster links).
+STACK_FILL = {"52": ["53", "54", "55"]}
+
+#: Rows whose own `fixed-size` this script rewrites (the ones whose height it
+#: changes). The rest keep the pixel height they already had, so their
+#: `fixed-size` is already right and must not be touched.
+VFIXED_ROWS = {"9", "60"}
+
+#: Same, for zones inside a vertical sub-stack.
+VFIXED_STACK = {"38"}
 
 
-def set_default_view(text: str) -> str:
-    """Move the single `maximized='true'` marker onto the Landing Page window.
+def relayout_vertical(text: str) -> str:
+    """Rewrite every vertical measurement for a shorter canvas.
 
-    Production revision 26 carries it on `Gradebook Teacher View`; the review
-    copy has to open on the page under review. Generic: strips the one
-    existing marker wherever it sits, then sets it on the target.
+    Zone units are always 1/100000 of the canvas, so shortening the canvas
+    does NOT change any unit value on its own -- it changes what a unit is
+    worth in pixels, which silently breaks every `fixed-size` in the file.
+    Every vertical `y` and `h` therefore has to be recomputed from the
+    intended pixel heights, which is what ROWS/FILL/STACKS declare. Widths
+    are untouched: the canvas is still 1366 px wide.
     """
-    n = text.count(MARKER)
-    if n != 1:
-        raise RuntimeError(f"expected exactly 1 maximized marker in base, found {n}")
-    text = text.replace(MARKER, "")
-    m = re.search(
-        r"<window class='dashboard'[^>]*name='" + re.escape(TARGET_DASHBOARD) + r"'",
-        text,
-    )
-    if not m:
-        raise RuntimeError(f"no dashboard window named {TARGET_DASHBOARD!r}")
-    old = m.group(0)
-    new = old.replace(
-        "<window class='dashboard'", "<window class='dashboard'" + MARKER, 1
-    )
-    text = sub_once(text, old, new)
-    if text.count(MARKER) != 1:
-        raise RuntimeError("default-view marker not left exactly once")
-    return text
+    uy = 100000 / CANVAS_H
+
+    def u(px: float) -> int:
+        return round(px * uy)
+
+    def fn(d: str) -> str:
+        d = sub_once(
+            d,
+            "<size maxheight='1500' maxwidth='1366' minheight='1500' minwidth='1366'"
+            " sizing-mode='fixed' />",
+            f"<size maxheight='{CANVAS_H}' maxwidth='{CANVAS_W}'"
+            f" minheight='{CANVAS_H}' minwidth='{CANVAS_W}' sizing-mode='fixed' />",
+        )
+        top = u(OUTER_MARGIN)
+        total = 100000 - 2 * top
+        d = set_zone_attrs(d, "46", h=str(total), y=str(top))
+
+        # Each row is rounded to whole units independently, so the last one
+        # takes the remainder rather than its own rounding -- otherwise the
+        # column is off by a unit or two and the flow no longer closes.
+        heights = [u(px) for _, px in ROWS[:-1]]
+        heights.append(total - sum(heights))
+        want_last = u(ROWS[-1][1])
+        if abs(heights[-1] - want_last) > len(ROWS):
+            raise RuntimeError(
+                f"trailing row absorbed {heights[-1]} units, wanted about {want_last}"
+            )
+
+        y = top
+        for (zid, px), h in zip(ROWS, heights, strict=True):
+            d = set_zone_attrs(d, zid, h=str(h), y=str(y))
+            if zid in VFIXED_ROWS:
+                d = set_zone_attrs(d, zid, fixed_size=str(px))
+            for kid in FILL.get(zid, []):
+                d = set_zone_attrs(d, kid, h=str(h), y=str(y))
+            for parent in (zid, *FILL.get(zid, [])):
+                if parent not in STACKS:
+                    continue
+                ky = y
+                fixed = sum(p for _, p in STACKS[parent] if p is not None)
+                for kid, kpx in STACKS[parent]:
+                    kh = u(kpx) if kpx is not None else h - u(fixed)
+                    d = set_zone_attrs(d, kid, h=str(kh), y=str(ky))
+                    if kid in VFIXED_STACK and kpx is not None:
+                        # a `margin 4` zone measures fixed-size as content,
+                        # so its two 8 px of margin come off first
+                        d = set_zone_attrs(d, kid, fixed_size=str(kpx - MARGIN_V))
+                    for gk in STACK_FILL.get(kid, []):
+                        d = set_zone_attrs(d, gk, h=str(kh), y=str(ky))
+                    ky += kh
+                if ky != y + h:
+                    raise RuntimeError(f"stack {parent} sums to {ky - y}, not {h}")
+            y += h
+        if y != top + total:
+            raise RuntimeError(f"rows end at {y}, expected {top + total}")
+        return d
+
+    return edit_dashboard(text, fn)
 
 
 STEPS = (
@@ -677,10 +777,12 @@ STEPS = (
     ("fix_tile_gradebook", fix_tile_gradebook),
     ("fix_strip_y1", fix_strip_y1),
     ("fix_strip_failures", fix_strip_failures),
+    ("fix_strip_cumulative", fix_strip_cumulative),
     ("fix_strip_gradebook", fix_strip_gradebook),
     ("fix_grade_grade", fix_grade_grade),
     ("drop_header_buttons_and_add_roster", drop_header_buttons_and_add_roster),
     ("side_by_side_reference", side_by_side_reference),
+    ("relayout_vertical", relayout_vertical),
     ("set_default_view", set_default_view),
 )
 

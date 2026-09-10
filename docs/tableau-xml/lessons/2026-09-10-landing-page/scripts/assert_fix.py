@@ -150,21 +150,24 @@ def check(text: str) -> list[str]:
         sizes = [int(s) for s in re.findall(r"fontsize='(\d+)'", lab)]
         if max(sizes) > cap:
             bad(f"D1 {name}: largest label run {max(sizes)}pt, expected <= {cap}")
-    for name in (
-        "LP - Strip Y1 GPA",
-        "LP - Strip Course Failures",
-        "LP - Strip Gradebook Health",
-    ):
+    # All four strips: value plus its detail on ONE line. The stack is what
+    # printed ####; side by side it fits, so the detail comes back rather
+    # than staying dropped.
+    for name in STRIPS:
         lab = label(ws(text, name))
-        n = len(value_runs(lab))
-        if n != 1:
-            bad(f"D1 {name}: {n} label runs, expected 1 (single value line)")
-    # the cumulative strip already rendered correctly: it must NOT be touched
-    cum = label(ws(text, "LP - Strip Cumulative GPA"))
-    if len(value_runs(cum)) != 2:
-        bad("D1 LP - Strip Cumulative GPA: the working strip was modified")
-    if "still needed (region goal)" not in cum:
-        bad("D1 LP - Strip Cumulative GPA: second line lost")
+        runs = value_runs(lab)
+        if len(runs) != 2:
+            bad(f"D1 {name}: {len(runs)} label runs, expected 2 (value + detail)")
+        if "\u00c6&#10;" in lab:
+            bad(f"D1 {name}: detail run is still on its own line")
+        if runs and "fontsize='12'" not in runs[0]:
+            bad(f"D1 {name}: value run is not 12pt")
+        if len(runs) > 1 and "fontsize='8'" not in runs[1]:
+            bad(f"D1 {name}: detail run is not 8pt")
+        if len(runs) > 1 and "CDATA[  " not in runs[1]:
+            bad(f"D1 {name}: detail run has no separator before it")
+    if "still needed (region goal)" not in label(ws(text, "LP - Strip Cumulative GPA")):
+        bad("D1 LP - Strip Cumulative GPA: detail text lost")
     # no sheet may still cull its labels (a culled label blanks, not clips)
     for name in TILES + STRIPS:
         if "mark-labels-cull' value='true'" in ws(text, name):
@@ -209,6 +212,33 @@ def check(text: str) -> list[str]:
     if "id='2'" in hdr and "w='60980'" not in zone_open(hdr, "2"):
         bad(f"D4 title zone not widened: {zone_open(hdr, '2')[:120]}")
 
+    # ---- header height and the shortened canvas
+    if "fixed-size='60'" not in zone_open(d, "9"):
+        bad(f"header is not 60px: {zone_open(d, '9')[:120]}")
+    size = re.search(r"<size[^>]*sizing-mode='fixed'[^>]*/>", d)
+    ch = int(re.search(r"maxheight='(\d+)'", size.group(0)).group(1)) if size else 0
+    if not size:
+        bad("no fixed <size> on the dashboard")
+    elif ch >= 1500:
+        bad(f"canvas still {ch}px; the layout changes should have shortened it")
+    # every vertical unit must be consistent with whatever canvas is declared
+    if ch:
+        uy = 100000 / ch
+        for zid, px in (
+            ("9", 60),
+            ("14", 220),
+            ("19", 150),
+            ("36", 220),
+            ("60", 420),
+        ):
+            m = re.search(r"\bh='(\d+)'", zone_open(d, zid))
+            if m is None:
+                bad(f"zone {zid} missing, cannot check its height")
+                continue
+            want = round(px * uy)
+            if int(m.group(1)) != want:
+                bad(f"zone {zid}: h={m.group(1)} but {px}px on a {ch} canvas is {want}")
+
     # ---- L1: no nav buttons anywhere on the dashboard
     nbuttons = len(re.findall(r"type-v2='dashboard-object'", d))
     if nbuttons:
@@ -237,6 +267,9 @@ def check(text: str) -> list[str]:
         for zid in ("37", "38"):
             if f"id='{zid}'" not in ref:
                 bad(f"L3 zone {zid} is not inside the Reference container")
+        for dead in ("61", "62"):
+            if f"id='{dead}'" in ref:
+                bad(f"L3 stale wrapper zone {dead} survives")
 
     # ---- flow-container gaps: unchanged for zones the base already had,
     # zero for the containers this build created. A gap that grows is the

@@ -226,3 +226,51 @@ space instead if wanted: raise the dashboard's fixed height down to about 1210
 px, or give the region strips their second line back (the weekly delta and the
 teacher denominator, dropped in the `####` fix because a 3-row band at 150 px
 could not hold two lines).
+
+## 2026-09-10 shrink round: 60 px header, inline deltas, 1130 px canvas
+
+| Change                       | Was                       | Now                                                          |
+| ---------------------------- | ------------------------- | ------------------------------------------------------------ |
+| header height                | 80 px                     | 60 px                                                        |
+| strip detail (delta / count) | dropped in the `####` fix | inline at 8 pt to the right of the value, on all four strips |
+| canvas height                | 1500 px                   | **1130 px**                                                  |
+
+The strip detail came back because the `####` constraint was only ever vertical.
+A 12 pt value over an 8 pt line does not fit a ~43 px row band; the same pair
+side by side occupies about 130 px of a 337 px column. All four strips now read
+like `58%  (-9.4pp vs. 1 wk)`, `3%  3 of 95 teachers`,
+`48.5%  0 still needed (region goal)`.
+
+One wording bug surfaced by making that text visible again: the gradebook strip
+said `of <field> teachers` while the field already returns `52 of 363`, so it
+rendered `3% of 3 of 95 teachers`. Corrected to match the tile.
+
+### Canvas arithmetic
+
+Zone units are 1/100000 of the canvas, so shortening it rewrites nothing by
+itself and silently invalidates every `fixed-size`. `relayout_vertical` declares
+the layout in pixels and regenerates every vertical `y`/`h`:
+
+| Row             | px  | units (1130 canvas) |
+| --------------- | --- | ------------------- |
+| outer margin    | 8   | 708                 |
+| Header          | 60  | 5310                |
+| Tiles           | 220 | 19469               |
+| Regions         | 150 | 13274               |
+| Miami footnote  | 28  | 2478                |
+| Directory       | 220 | 19469               |
+| Reference       | 420 | 37168               |
+| trailing spacer | 16  | 1416                |
+
+Two passes on the Reference height. At 372 px the definitions block clipped — 21
+lines of mixed 9 pt and 11 pt text, which measures about 347 px but does not fit
+a 364 px content box. Tableau marked the cut with a trailing ellipsis after
+`school in the GPA goals source…` and still left visible space below it, because
+it drops whole lines. 420 px fits, with the closing `Can still reach 3.0` line
+present and no ellipsis.
+
+### Values on the render, unchanged
+
+Tiles 69%, 8%, 48.4%, 14%; strips 58/74/52, 16/6/4, 48.5/48.4, 3/19/6 — the same
+values `numbers.md` records against production revision 26. No calculation,
+field or filter changed this round, only label composition and geometry.

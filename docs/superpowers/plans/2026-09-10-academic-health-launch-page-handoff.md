@@ -43,11 +43,23 @@ Removing the buttons freed enough header width that the title no longer needs
 the smaller font: it is back at 16 pt and still untruncated, in a zone that went
 from about 397 px to about 832 px.
 
-One consequence worth a look when you open it: about 290 px of blank now sits
-below the reference blocks. The canvas is a fixed 1366x1500, so tightening it
-means recomputing every vertical measurement against a shorter canvas. Say the
-word and I will either do that or spend the space by giving the region strips
-their second line back.
+### Shrink round
+
+Three more adjustments after that:
+
+- **The header is 60 px** instead of 80.
+- **The region strips carry their detail again**, inline at 8 pt to the right of
+  each number rather than stacked under it: `58%  (-9.4pp vs. 1 wk)`,
+  `3%  3 of 95 teachers`. The `####` problem was only ever vertical, and the
+  pair fits side by side in a 337 px column with room to spare. This also caught
+  a wording bug that had never been visible: the gradebook strip read
+  `of <field> teachers` while the field already returns `52 of 363`, so it
+  rendered `3% of 3 of 95 teachers`. It now matches the tile.
+- **The page is 1130 px tall instead of 1500** — about 25% shorter. That is the
+  whole saving available from the layout changes without cutting content: the
+  header gave 20 px, the Links row 60 px, and pairing the two reference blocks
+  the rest. The definitions block sets the floor at 420 px; below that its last
+  line clips.
 
 **Two decisions left to you.**
 
@@ -111,7 +123,7 @@ The file to open in Desktop and publish is:
 /workspaces/teamster/.claude/scratch/tableau/lp/final.twbx
 ```
 
-It is 28,390,529 bytes (rebuilt from revision 26). Two things were checked on
+It is 28,390,561 bytes (rebuilt from revision 26). Two things were checked on
 it. The packaged `.twb` equals the edited `out.twb` byte for byte, so nothing
 was translated on the way into the zip and no bare LF line endings survive. And
 every other entry in the package — the extract and the images — matches the

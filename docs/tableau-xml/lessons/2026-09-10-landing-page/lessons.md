@@ -2090,3 +2090,87 @@ looks like success. It was caught by dumping the zone tree from the OUTPUT and
 seeing the old structure. Do this instead: when an edit to a build script
 produces an unchanged byte delta, `grep -c` the function name before believing
 the edit ran.
+
+## 2026-09-10, shrink round: 60 px header, inline deltas, 1130 px canvas
+
+### Shrinking a fixed canvas means recomputing every vertical measurement
+
+**Verified.** Zone geometry is always 1/100000 of the canvas, so changing
+`<size maxheight>` from 1500 to 1130 changes NO unit value on its own — it
+changes what a unit is worth in pixels, and every `fixed-size` in the file
+(which is in pixels) silently stops agreeing with the cached `h` beside it.
+Server renders from the cached values, so the page renders at the old
+proportions squashed into the new height; Desktop re-solves from `fixed-size`
+and gets something different again. The two only agree if you rewrite them
+together.
+
+Done here by declaring the layout in pixels and generating the units: `ROWS`
+gives each row of the outer vertical flow its height, `FILL` the children that
+inherit their parent's height, `STACKS` the vertical sub-stacks, and
+`relayout_vertical` turns the lot into units for whatever `CANVAS_H` says. Two
+details that matter:
+
+- **Round the rows independently and the column stops closing.** Seven rows each
+  rounded to whole units summed to 98519 against an outer zone of 98518. The
+  last row takes the remainder instead of its own rounding, with a guard that it
+  stayed within a unit or two of its intended pixels.
+- **Only rewrite `fixed-size` on the zones whose pixel height you changed.**
+  Everything else keeps the pixel height it already had, so its `fixed-size` is
+  already correct and touching it would introduce the very mismatch the exercise
+  is avoiding. `VFIXED_ROWS` / `VFIXED_STACK` name the three.
+
+### A text zone's content is taller than the arithmetic suggests
+
+**Verified twice, by render.** The definitions block is 21 lines mixing 9 pt and
+11 pt runs. Measured line spacing on a render is about 16.5 px, so 21 lines is
+about 347 px and a 372 px zone (364 px of content box) looks like a comfortable
+fit. It clipped: the last line vanished and Tableau printed its truncation
+ellipsis after `school in the GPA goals source…`. Raising the zone to 420 px
+fixed it.
+
+Two things worth carrying: **the ellipsis is the tell** — a clipped text zone
+does not just stop, it marks the cut, so grep the render for a trailing `…` you
+did not write. And **the clip leaves visible empty space below it**, because
+Tableau drops whole lines rather than part of one, so "there is still room under
+the text" does not mean "nothing was cut".
+
+### Stacked-then-dropped text hides its own wording bugs
+
+**Verified.** The gradebook strip's detail run read `of <field> teachers`, but
+that field already returns `52 of 363`. On the tile the same field is written
+without the leading `of`. The strip's version was wrong from the start and never
+visible: first the two-line label printed `####`, then the `####` fix dropped
+the line entirely. Putting it inline finally rendered it —
+`3% of 3 of 95 teachers`. Do this instead: when a fix makes previously invisible
+text visible, read that text as new work, because it has never been reviewed
+against a render.
+
+### The deltas fit on the row all along; the constraint was only vertical
+
+**Verified.** The `####` fix cut the strips to a bare value because a 12 pt
+value stacked over an 8 pt detail line does not fit a ~43 px row band. Side by
+side on the same line the pair fits easily: the column is 337 px wide and
+`58%  (-9.4pp vs. 1 wk)` is about 130 px. All four strips now carry their detail
+again. Worth remembering as the general move — when a label is too tall, try
+making it wider before deleting content from it.
+
+### The duplicate-block trap again, this time from a non-unique marker
+
+**Verified, self-inflicted, second occurrence.** A scripted edit did
+`t[:start] + new + t[end:]` where `end` came from
+`t.index("# ---- default-view marker")`. That comment appears three times in the
+file, so `end` resolved to the FIRST one, which sits BEFORE `start` — and the
+slice duplicated everything between them instead of replacing it. Python bound
+the later (stale) definitions and the run silently produced the old output. Do
+this instead: never slice on a marker without asserting it is unique, and finish
+any generated-file edit with a guard that every top-level `def` appears exactly
+once. That guard is now in the cleanup step and would have caught both
+occurrences.
+
+### `trunk fmt` rewrites `Æ` escapes to the literal character
+
+**Verified.** A pattern written as `r"Æ&#10;"` in a Python source file is
+normalised by the formatter to the literal `Æ`, so a later scripted edit that
+searches for the escape sequence finds nothing and silently does not apply. Cost
+one round. Search for the literal character, or read the current file text
+rather than assuming what you last wrote.
