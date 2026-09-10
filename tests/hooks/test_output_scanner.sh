@@ -85,12 +85,18 @@ check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_af
 echo ""
 echo -e "${YELLOW}PostToolUse: High-entropy string boundary (120 chars)${NC}"
 
-str_119=$(printf 'g%.0s' {1..119})
-str_120=$(printf 'g%.0s' {1..120})
-str_121=$(printf 'g%.0s' {1..121})
+# Mixed-case fixture: the heuristic skips single-case runs (identifiers/paths).
+str_120=$(printf 'gG%.0s' {1..60})
+str_119="${str_120:1}"
+str_121="${str_120}g"
 check_output "119-char string (under threshold)" clean "${str_119}"
 check_output "120-char string (at threshold)" deny "${str_120}"
 check_output "121-char string (over threshold)" deny "${str_121}"
+# Deterministic mixed-case base64 blob (~200 chars) — the real target shape.
+b64_blob=$(printf 'The quick brown fox jumps over the lazy dog 0123456789 %.0s' {1..3} | base64 -w0)
+check_output "mixed-case base64 blob over threshold" deny "blob ${b64_blob}"
+check_output "120 lowercase-only run is not a blob" clean "$(printf 'g%.0s' {1..120})"
+check_output "120 uppercase-only run is not a blob" clean "$(printf 'G%.0s' {1..120})"
 
 echo ""
 echo -e "${YELLOW}PostToolUse: Non-scanned tools${NC}"
@@ -112,7 +118,7 @@ expect_deny_exit0 "PostToolUse op:// deny exits 0" "${OUTPUT_HOOK}" \
 	"$(jq -n --arg c 'config: op://vault/item/field' \
 		'{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse high-entropy deny exits 0" "${OUTPUT_HOOK}" \
-	"$(jq -n --arg c "$(printf 'g%.0s' {1..120})" \
+	"$(jq -n --arg c "$(printf 'gG%.0s' {1..60})" \
 		'{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
@@ -125,7 +131,7 @@ echo -e "${YELLOW}PostToolUse: Schema regression (.tool_response is the real key
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_exit0 "scans .tool_response high-entropy string" "${OUTPUT_HOOK}" \
-	"$(jq -n --arg c "$(printf 'g%.0s' {1..200})" \
+	"$(jq -n --arg c "$(printf 'gG%.0s' {1..100})" \
 		'{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "scans .tool_response named pattern (op://)" "${OUTPUT_HOOK}" \
 	"$(jq -n --arg c "leaked: op://vault/item/field" \

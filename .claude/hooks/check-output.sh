@@ -99,9 +99,15 @@ fi
 
 # Heuristic: long high-entropy strings not already matched. Strip base64 image
 # data-URIs and ignore pure-hex runs (checksums/hashes) to cut false positives
-# (#29) while still catching opaque encoded-secret blobs.
+# (#29) while still catching opaque encoded-secret blobs. A run with no case
+# mix is an identifier, path, or hash, not an encoded blob: dot-free dbt paths
+# (target/compiled/kipptaf/models/<a>/<b>/tests/dbt_utils_unique_combination_o_<hex>)
+# reach 120 chars, while a random 120-char base64 string is single-case with
+# p = (38/64)^120 ~ 1e-27.
+# ponytail: case-mix test, not Shannon entropy; upgrade to an awk entropy
+# score (>5.0 bits/char) if a mixed-case identifier run false-positives.
 entropy_input=$(echo "${combined}" | sed -E 's#data:[^,[:space:]]*;base64,[A-Za-z0-9+/=]+##g')
 long_runs=$(echo "${entropy_input}" | grep -oE '[A-Za-z0-9+/=_-]{120,}' || true)
-if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$'; then
+if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$'; then
 	emit_redacted "⛔ Tool output contained a high-entropy string (possible encoded secret) — redacted by check-output.sh"
 fi
