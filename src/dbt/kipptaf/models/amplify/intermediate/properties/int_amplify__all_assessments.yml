@@ -113,6 +113,32 @@ models:
             source_column: total_number_of_probes
       - name: score_change
         data_type: numeric
+      - name: aimline_status
+        data_type: string
+        description: >-
+          Amplify's own verdict on whether the probe sat at or above the
+          student's individual aimline — At or Above, Below, or null. Populated
+          on Aimline rows only; null on every Internal and Benchmark row, so
+          null does not by itself mean Amplify withheld a verdict. Amplify
+          publishes no status on roughly a sixth of aimline probes even where a
+          goal is present, and those are not failures.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: aimline_status
+      - name: goal
+        data_type: numeric
+        description: >-
+          The aimline target this probe was measured against, drawn from the
+          student's own starting score rather than a cohort average. The
+          per-student counterpart to the internal method's
+          cumulative_growth_words. Aimline rows only.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: goal
       - name: boy_probe_eligible
         data_type: string
       - name: moy_probe_eligible

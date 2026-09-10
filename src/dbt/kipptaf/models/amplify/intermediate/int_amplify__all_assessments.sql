@@ -36,6 +36,11 @@ with
             p.total_number_of_probes,
             p.measure as measure_standard,
             p.measure_standard_score,
+
+            -- aimline-only, and typed for the same reason score_change is below
+            cast(null as string) as aimline_status,
+            cast(null as numeric) as goal,
+
             p.measure_standard_score_change as score_change,
 
             'Internal' as model_type,
@@ -108,6 +113,8 @@ with
             p.total_number_of_probes,
             p.measure as measure_standard,
             p.measure_standard_score,
+            p.aimline_status,
+            p.goal,
 
             -- the aimline source carries no score delta. Sits where branch 1's
             -- real column sits -- UNION ALL matches by position, not name.
@@ -201,6 +208,8 @@ select
     cast(null as int64) as probe_number,
     cast(null as int64) as total_number_of_probes,
     cast(null as numeric) as score_change,
+    cast(null as string) as aimline_status,
+    cast(null as numeric) as goal,
 
     boy_probe_eligible,
     moy_probe_eligible,
@@ -255,6 +264,13 @@ select
     s.probe_number,
     s.total_number_of_probes,
     s.score_change,
+
+    -- Amplify's own per-student verdict and the target behind it, null on every
+    -- Internal row. Carried here so the aimline evaluation reads score, round,
+    -- status and target from one model, and cannot assign a round differently
+    -- than this model already did.
+    s.aimline_status,
+    s.goal,
 
     s.boy_probe_eligible,
     s.moy_probe_eligible,

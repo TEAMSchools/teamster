@@ -1,0 +1,288 @@
+models:
+  - name: int_amplify__pm_met_criteria_aimline
+    description: >-
+      Evaluates a progress-monitoring round against Amplify's per-student
+      aimline, one row per student per round per measure standard. The sibling
+      of int_amplify__pm_met_criteria, which does the same job for the internal
+      method.
+
+      Only one stage differs between the two models. The internal method builds
+      a cohort target and compares a score to it; the aimline method reads
+      Amplify's own verdict, `aimline_status`, so `met_aimline_goal` is a value
+      translated rather than a target computed. Everything after that stage —
+      pairing measure standards into a measure_name_code, combining codes by
+      pm_goal_criteria, gating on round completion — is method-agnostic and
+      mirrors the internal model deliberately, so the two can be compared line
+      for line.
+
+      Three inputs, all filtered to the Aimline method. Scores, rounds,
+      `aimline_status` and `goal` come from `int_amplify__all_assessments` where
+      `model_type = 'Aimline'`, which is also what assigns a probe to a round;
+      reading them from one model rather than re-joining the mClass source is
+      what keeps this model from assigning a round differently than
+      all_assessments did. `pm_goal_criteria` and `benchmark_goal` come from the
+      by-levels expectation gate. Completion comes from the participation
+      roster's Aimline rows.
+
+      The by-levels gate is split by `measure_standard_level`, so the join needs
+      the student's composite level. On an Aimline row `overall_probe_eligible`
+      carries that level — Below Benchmark or Well Below Benchmark — rather than
+      the `'Yes'` an Internal row carries. Without it the gate matches both
+      cohorts and every row doubles.
+
+      Unlike the internal method, a verdict here can be genuinely absent.
+      Amplify publishes no `aimline_status` on a share of probes even where a
+      goal is present, so `met_aimline_goal` is nullable by design and the
+      rollups treat null as unknown rather than as a miss. That propagates the
+      same asymmetry the completion gate rests on: under AND a single miss
+      settles the round however much is unknown, under the null (OR) criteria a
+      single pass does, and only where neither has happened is the round left
+      unresolved.
+
+      Assumptions taken pending T&L confirmation, each of which changes reported
+      numbers if wrong. The verdict is taken against `benchmark_goal_padded` —
+      the standard plus academics' 3-word buffer — to match the internal method,
+      whose frozen sheet already carries the pad; both figures are reported, so
+      taking the verdict against the unpadded standard instead is a one-word
+      change, and it would make this model the more generous of the two. An
+      unpublished status is reported as its own category rather than folded into
+      Below Aimline, because folding it would report a non-failure as a failure.
+      The consecutive-miss streak counts rounds the student actually sat,
+      passing over a skipped round rather than breaking the streak. And
+      `aimline_category` puts at-grade-level ahead of the aimline verdict, per
+      T&L's rule that a student meeting benchmark but not aimline still counts
+      as On Track.
+
+      Known population loss. 21 of 36,507 aimline rows on AY2025 do not survive
+      the roster join — five students, all Newark. Two are absent from the
+      Aimline roster entirely, one is the documented mid-year grade change where
+      the score's grade and the roster's grade disagree, and two match on grade
+      but not on round, which happens when a student's composite level moves
+      between seasons and the two sides derive the expected rounds from
+      different levels. At 0.06% this is recorded rather than fixed; see the
+      grade-change note in the DIBELS reference.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            # region and assessment_grade_int are omitted for the same reason as
+            # on the internal sibling: both follow from the student, and
+            # including grade would let a mid-year grade change admit two rows
+            # for one evaluated measure instead of failing.
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - admin_season
+              - round_number
+              - measure_standard
+    columns:
+      - name: aimline_category
+        data_type: string
+        description: >-
+          T&L's reporting category for the row — On Track & Meeting Aimline,
+          Meeting Aimline Off-Track, Below Aimline, or No Aimline Status.
+
+          The cascade tests at-grade-level first, so a student who has reached
+          the benchmark lands in On Track whatever their own aimline says. That
+          is T&L's rule and it is deliberate, but note that the label then
+          misdescribes the subset it captures — a student at grade level and
+          below their aimline reads On Track & Meeting Aimline while not meeting
+          the aimline. Worth renaming to plain On Track when T&L revisits the
+          vocabulary.
+
+          Not Tested is not a value here. This model holds scored rows only, so
+          a student expected to test and not tested has no row; that state is
+          named in the reporting extract, as it is for the internal sibling.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - On Track & Meeting Aimline
+                  - Meeting Aimline, Off-Track
+                  - Below Aimline
+                  - No Aimline Status
+      - name: pm_round_status
+        data_type: string
+        description: >-
+          The round verdict as words rather than a flag — Met, Not Met, Round
+          Incomplete, or No Aimline Status. The counterpart of the internal
+          sibling's column of the same name, with one extra value: a round can
+          be unresolved here because Amplify published no verdict on a measure
+          that was needed to settle it.
+
+          Precedence is settled-first. A round the evidence settles reads Met or
+          Not Met even when something is missing, because under AND one miss
+          ends it and under the null (OR) criteria one pass does. Only an
+          unsettled round reaches the two unknown states, and an incomplete
+          round is named ahead of an unpublished status because finishing the
+          testing is the actionable half.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Met, Not Met, Round Incomplete, No Aimline Status]
+      - name: academic_year
+        data_type: int64
+        description:
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
+      - name: region
+        data_type: string
+        description:
+          The city form of the region — Newark, Camden, Miami, Paterson.
+      - name: admin_season
+        data_type: string
+        description: >-
+          The PM season the round belongs to, BOY->MOY or MOY->EOY. Named
+          admin_season because it joins the expectation gate's column of that
+          name; it is not a benchmark season.
+      - name: assessment_grade
+        data_type: string
+        description: Grade level of the assessment administered.
+      - name: assessment_grade_int
+        data_type: int64
+        description: Assessment grade as integer (K mapped to 0).
+      - name: measure_standard
+        data_type: string
+        description: >-
+          The individual measure evaluated — Reading Fluency (ORF) and Reading
+          Accuracy (ORF-Accu) are separate standards under one
+          measure_name_code.
+      - name: measure_standard_level
+        data_type: string
+        description: >-
+          The student's composite level at the benchmark that opened this PM
+          season, Below Benchmark or Well Below Benchmark, and the cohort key
+          the by-levels expectation gate is split on. Read from
+          `int_amplify__all_assessments.overall_probe_eligible`, which carries
+          the level rather than an eligibility flag on Aimline rows.
+      - name: round_number
+        data_type: int64
+        description: >-
+          The PM round, from the expectation gate. Round numbers run
+          consecutively across the year rather than restarting each season.
+      - name: benchmark_goal
+        data_type: numeric
+        description: >-
+          The score that puts the student at grade level for the season —
+          Amplify's published standard from the by-levels gate, padded by 3
+          words here so it matches the internal method, whose frozen sheet is
+          padded once during goal setting. The padding is applied in this model,
+          so do not add it again downstream.
+      - name: goal
+        data_type: numeric
+        description: >-
+          The aimline target the probe was measured against, drawn from the
+          student's own starting score. The per-student counterpart to the
+          internal method's cumulative_growth_words, and the reason the two
+          methods can disagree about one student without either being wrong.
+          Carried for transparency — the verdict comes from Amplify's
+          aimline_status, not from comparing a score to this column.
+      - name: pm_goal_criteria
+        data_type: string
+        description: >-
+          How the round's measure codes combine. AND requires every code. NULL
+          is the OR criteria, letting one complete code satisfy the round, and
+          is the only other value the column holds. Both are live on the
+          by-levels gate.
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
+      - name: measure_name_code
+        data_type: string
+        description: >-
+          Short measure abbreviation (e.g. 'ORF' from 'Reading Fluency (ORF)').
+          NWF and ORF are the only codes holding more than one standard.
+      - name: measure_standard_score
+        data_type: float64
+        description: >-
+          The score evaluated. Where a student sat several probes in a round
+          this is the best score for the measure, chosen upstream in
+          int_amplify__all_assessments.
+      - name: start_date
+        data_type: date
+        description:
+          First day of the PM round window, from the expectation gate.
+      - name: end_date
+        data_type: date
+        description: Last day of the PM round window, from the expectation gate.
+      - name: completed_test_round
+        data_type: boolean
+        description: >-
+          Whether the student was tested on every measure the round expected,
+          from the participation roster's Aimline rows. The roster owns this
+          because it is the model that turns an expected-but-absent measure into
+          a row; int_amplify__all_assessments carries scored rows only.
+      - name: completed_test_round_int
+        data_type: int64
+        description:
+          completed_test_round as 1/0, for aggregation in the BI layer.
+      - name: aimline_status
+        data_type: string
+        description: >-
+          Amplify's verdict as published — At or Above, Below, or null. Carried
+          through so a reader can tell an absent verdict from a translated one.
+      - name: met_aimline_goal
+        data_type: int64
+        description: >-
+          1 when Amplify placed the probe at or above the student's aimline, 0
+          when below, and null when Amplify published no verdict. The null is
+          the point: it is not a miss, and the rollups above treat it as
+          unknown. This is the one stage that differs from the internal sibling,
+          where the equivalent column compares a score to a cohort target.
+      - name: met_admin_benchmark_goal
+        data_type: int64
+        description: >-
+          1 when the score reaches benchmark_goal_padded — at grade level rather
+          than on pace. Independent of met_aimline_goal, and a student can meet
+          either without the other. Recomputed every round and not latched, so a
+          student who clears the standard and later dips reads 1 then 0. Null
+          only where the gate publishes no standard for the measure at that
+          grade, which does not occur in the rows this model keeps but is
+          guarded because `if(score >= null, 1, 0)` would otherwise return 0 and
+          report a missing standard as a failure.
+      - name: met_measure_name_code_goal
+        data_type: int64
+        description: >-
+          1 when every measure standard under this measure_name_code met its
+          aimline, 0 when any missed, null when none missed but at least one has
+          no published verdict. This is what makes met ORF require both Reading
+          Fluency and Reading Accuracy, and a miss settles the code however many
+          of its standards are unpublished.
+      - name: met_pm_round_criteria
+        data_type: int64
+        description: >-
+          The round-level rollup of met_measure_name_code_goal, combined by
+          pm_goal_criteria — the minimum across codes under AND, the maximum
+          otherwise — with null where the criteria cannot be settled from the
+          verdicts that were published.
+      - name: met_pm_round_overall_criteria
+        data_type: int64
+        description: >-
+          met_pm_round_criteria gated on participation, so a round counts as met
+          only when the student was also tested on everything it expected. An
+          unresolved round reports 0 here, which is why pm_round_status exists
+          alongside it — this column cannot distinguish a miss from an unknown.
+      - name: previous_met_aimline_goal
+        data_type: int64
+        description: >-
+          met_aimline_goal on this student's previous round for this measure
+          standard, within the season. Carried so a reader can audit
+          missed_aimline_consecutive rather than trust it.
+      - name: missed_aimline_consecutive
+        data_type: int64
+        description: >-
+          1 when this round and the previous one both fell below the aimline for
+          this measure — T&L's two-in-a-row signal.
+
+          Consecutive means consecutive among the rounds the student actually
+          sat. A skipped round is passed over rather than breaking the streak,
+          on the reasoning that a probe nobody administered is not evidence of
+          improvement. An unknown previous verdict does not start a streak, so
+          this is a floor on the real figure rather than an estimate of it.
