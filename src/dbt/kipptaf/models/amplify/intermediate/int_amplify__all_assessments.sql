@@ -176,6 +176,8 @@ with
                     academic_year,
                     student_number,
                     model_type,
+                    `period`,
+                    assessment_grade_int,
                     round_number,
                     expected_measure_standard
                 order by measure_standard_score desc, client_date desc
