@@ -1,12 +1,12 @@
 with
+    -- `dbt_utils.deduplicate` compiles on BigQuery to
+    -- `array_agg(original order by ... limit 1)[offset(0)]`, which pushes the whole
+    -- 39-column row through the shuffle as a struct. `qualify row_number()` picks
+    -- the same row for a fraction of the slot time.
     deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("deanslist", "src_deanslist__behavior"),
-                partition_by="dlsaid",
-                order_by="_file_name desc",
-            )
-        }}
+        select *,
+        from {{ source("deanslist", "src_deanslist__behavior") }}
+        qualify row_number() over (partition by dlsaid order by _file_name desc) = 1
     ),
 
     transformations as (
