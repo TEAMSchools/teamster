@@ -302,9 +302,8 @@ partition key. That packs the whole row into a struct, inflates the input
 shuffle, and pushes the aggregate past BigQuery's single-round-shuffle threshold
 — so the plan gains `Repartition` stages that a window function never emits.
 
-**Row count drives the penalty. Row width does not** — do not re-derive the
-width hypothesis. Measured on prod tables, macro against ranked column, output
-byte-identical in every pair (#5252):
+Do not re-derive the width hypothesis. Measured on prod tables, macro against
+ranked column, output byte-identical in every pair (#5252):
 
 |  Rows | Bytes/row | Macro / ranked slot time | Macro / ranked shuffle |
 | ----: | --------: | -----------------------: | ---------------------: |
@@ -313,17 +312,27 @@ byte-identical in every pair (#5252):
 |  125k |      3629 |                     2.2x |                   1.7x |
 |   18k |       195 |                     2.5x |         below 0.02 GiB |
 
-The widest table shows the smallest penalty; the narrowest shows the largest
-shuffle ratio.
+**The ranked form never lost at any size tested** — the widest table (125k
+bytes/row) shows the smallest penalty, which is the evidence for the row-width
+conclusion. But the numbers are NOT monotonic in row count (18k shows 2.5x, 125k
+shows 2.2x), and there is no measurement between 125k and 4.16M rows — the ~1M
+threshold below is interpolated across that 33x gap, not a measured inflection
+point. Below about 1M rows the ranked form still wins on every measurement, but
+the absolute saving is small enough that it doesn't repay the extra CTE.
 
 **The default stays `dbt_utils.deduplicate()`** — it is one call, and `QUALIFY`
 is banned here, so the window form always costs an extra CTE plus an `rn`
-column. **Above about 1M rows in the dedup input, use the ranked-column form
-instead:**
+column. Switch to the ranked-column form only when BOTH hold: the dedup input
+exceeds about 1M rows, AND the model costs at least 1 slot hour in the 7-day
+prod ranking. #5252 applied this gate across 116 `dbt_utils.deduplicate` callers
+and rewrote only 4 that cleared both bars — the rest were deliberately left on
+the macro. A caller that doesn't clear both bars stays on
+`dbt_utils.deduplicate()`; this is not license for a repo-wide sweep of the
+remaining callers.
 
 ```sql
 with
-    row_numbered as (
+    <input>_ranked as (
         select
             <columns>,
 
@@ -334,9 +343,15 @@ with
     )
 
 select <columns>,
-from row_numbered
+from <input>_ranked
 where rn = 1
 ```
+
+When `<input>` is a plain `select` (not a `UNION ALL`), inline the window
+directly into that CTE instead of adding a separate wrapper — no `_ranked` CTE
+needed. When `<input>` IS a `UNION ALL`, the window must sit in a separate CTE
+(named `<input>_ranked`) that reads the whole union — ranking inside each union
+branch separately ranks per-branch and breaks the tie-break.
 
 Two traps when converting:
 
@@ -346,6 +361,11 @@ Two traps when converting:
   changes which row wins.
 - Do not `select * except (rn)` to drop the helper column. Enumerate the output
   columns instead.
+- Don't carry the `(col is null) asc` NULL-ordering workaround (see
+  _dbt_utils.deduplicate `order_by` on BigQuery_ above) over into the ranked
+  form — that workaround exists because BigQuery rejects `nulls last` inside
+  `array_agg`, a macro-only constraint. A window function's `order by` takes
+  explicit `nulls last` directly.
 
 ### Don't inline CASE expressions in generate_surrogate_key
 

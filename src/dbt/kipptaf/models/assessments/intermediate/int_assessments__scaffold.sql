@@ -155,7 +155,7 @@ with
         from internal_assessments
     ),
 
-    deduplicate as (
+    internal_assessments_deduped as (
         select
             assessment_id,
             title,
@@ -210,7 +210,7 @@ select
 
     true as is_internal_assessment,
     false as is_replacement,
-from deduplicate as ia
+from internal_assessments_deduped as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on ia.illuminate_student_id = sa.student_id
