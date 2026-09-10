@@ -133,6 +133,10 @@ where it renders blank. Filters removed: the `Region Filter` calculation, `hos`
 and `school_level`, so each tile is network-wide regardless of what the user
 last set on Home.
 
+The cumulative tile also keeps the `Grade filter` and names the grade in its
+title, and its shortfall line reads the org-only calculation
+`LP Students still needed (org)` and is labelled projected.
+
 The two Y1 tiles show a live number from day one, the same way Home's BANs do.
 There is no empty-state rule. The gradebook tile's prior-quarter comparison has
 nothing to compare against during Q1 and stays blank until Q2, the same way a
@@ -185,11 +189,14 @@ the footnote is removed by hand.
 
 Five cards in one row, equal width, about 260 wide by 200 tall. Each card is a
 vertical container holding two worksheets. The upper worksheet is the card body,
-one text mark cloned from `Sheet Card - expectations`, about 176 tall, so the
-whole body is one click target for a Go to Sheet action. The lower worksheet is
-the help-guide link, one text mark cloned from `Links - GPA Roster - Newark`,
-about 24 tall. The mark labels are static strings; nothing in them resolves a
-field or parameter, because a parameter token in a mark label renders blank.
+one text mark cloned from `Y1 Landing - Title`, about 176 tall, so the whole
+body is one click target for a Go to Sheet action. `Sheet Card - expectations`
+is the card the page imitates, but it carries two action filters bound to the
+Teacher View, so the static `Y1 Landing - Title` mark is the cheaper clone
+source. The lower worksheet is the help-guide link, one text mark cloned from
+`Links - GPA Roster - Newark`, about 24 tall. The mark labels are static
+strings; nothing in them resolves a field or parameter, because a parameter
+token in a mark label renders blank.
 
 Card body anatomy, top to bottom: tab name styled as a link, the question the
 tab answers, `Grain:`, `Scope:`, `Built for:`, and on the two tabs that show
@@ -273,14 +280,15 @@ Coverage as of 2026-09-10:
 ### Links
 
 One strip at the bottom. The three existing `Links - GPA Roster - <Region>`
-worksheets are placed on the new dashboard as they are, and the three existing
-URL actions each gain the new dashboard as a source, the same way each of them
-already lists Home, Schools and the Monitor. Two further links, the grading
-policy and the assignment expectations sheet, are included only if the user
-supplies a shareable URL for each before the build starts. A link with no URL at
-build time is left out. No dead links ship, and no "request access" link,
-because there is no access gate. The per-tab Zendesk help guides are not in this
-strip; each lives on its own tab card, described above.
+worksheets are placed on the new dashboard as they are, and three new URL
+actions are added, one per region, named `GPA Roster <Region> (Landing Page)`,
+with the same expressions as the existing nine; the existing actions are not
+edited. Two further links, the grading policy and the assignment expectations
+sheet, are included only if the user supplies a shareable URL for each before
+the build starts. A link with no URL at build time is left out. No dead links
+ship, and no "request access" link, because there is no access gate. The per-tab
+Zendesk help guides are not in this strip; each lives on its own tab card,
+described above.
 
 ## Navigation and actions
 
@@ -329,9 +337,12 @@ Build:
   exempt: the default view is the dashboard window that carries
   `maximized='true'`, so that marker moves from the `Gradebook Teacher View`
   window to the new one. The checker normalizes that attribute out on both sides
-  and separately requires exactly one maximized window, `Landing Page`. A
-  mutation that touches one existing dashboard zone must make this check fail
-  before it counts.
+  and separately requires exactly one maximized window, `Landing Page`. On the
+  base captured at 2026-09-10 13:40 UTC the marker sat on
+  `Academic Health Home`, not on the Teacher View, so the build moves it from
+  whichever window carries it rather than from a named one. A mutation that
+  touches one existing dashboard zone must make this check fail before it
+  counts.
 - `repack.py` reports zero bare LF and packaged bytes equal to the source.
 
 Render, on the review copy:

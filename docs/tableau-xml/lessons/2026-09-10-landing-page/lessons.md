@@ -1729,3 +1729,94 @@ crop-definitions.png (2732, 816) 249039 bytes
 crop-coverage.png (2732, 456) 54834 bytes
 crop-links.png (2732, 344) 13064 bytes
 ```
+
+## 2026-09-10, build phase, Task 10
+
+### The launch catalog's `status` is a release switch, so a not-yet-live URL is `needs-review`
+
+**Verified from the guide and `README.md`.** `docs/guides/launch-page-guide.md`
+offers exactly two `status` values, and only `verified` entries render: "Setting
+`verified` is what puts the tool in front of staff — it is a release switch, not
+a quality note." Its "Taking a tool off the page" section names `needs-review`
+as the value for an entry that should stay in the file but not appear. There is
+no third "pending" state. So pointing the entry at a view that does not exist in
+Production yet means `needs-review`, and the consequence is that the whole entry
+— not just the new URL — drops off the page until the user publishes and someone
+flips it back. Two things make that safe to do in this pull request rather than
+deferring it: `groups.yml` carries `minimum_verified: 25` and the catalog holds
+39 verified entries, so 38 is well clear of the gate; and the alternative,
+leaving a `verified` entry pointing at a 404, is worse than a missing row.
+
+**Controller ruling 17 overturned that trade.** A `needs-review` entry does not
+degrade, it disappears: staff lose the working `Academic Health Home` link too,
+for however long the Production publish takes. So the entry keeps its live URL
+and `status: verified` in this pull request, and both edits — the URL and the
+description clause — move to the hand-off note as a follow-up to make on publish
+day. The status rule above still holds; only the timing changed. The general
+form: a release switch that gates the whole record, rather than the field you
+are changing, is not the place to stage a pending change.
+
+### `pytest tests/launch` needs `--group docs`, or three tests fail on a missing import
+
+**Verified.** The task brief's command was `uv run pytest tests/launch -q`. It
+runs, and fails:
+
+```text
+E       ModuleNotFoundError: No module named 'mkdocs'
+tests/launch/test_hook.py:27: ModuleNotFoundError
+3 failed, 56 passed in 1.26s
+```
+
+`tests/launch/test_hook.py` imports `docs/hooks.py`, which imports `mkdocs`, and
+`mkdocs` is in the `docs` dependency group rather than the default environment.
+The published guide's own Step 3 already says
+`uv run --group docs pytest tests/launch -v`; that command passes 59 of 59. Read
+the failure as a missing dependency group, not as a broken catalog — the 56 that
+pass are the catalog validation, and all three failures are the hook test.
+
+### A fresh worktree has no `dbt_packages`, so `dbt parse` fails before it parses
+
+**Verified.** First run in this worktree:
+
+```text
+Compilation Error
+  dbt found 2 package(s) specified in packages.yml, but only 0 package(s)
+  installed in dbt_packages. Run "dbt deps" to install package dependencies.
+```
+
+`dbt_packages/` is gitignored and is not carried into a new worktree, so
+`uv run dbt deps --project-dir <worktree>/src/dbt/kipptaf` has to run once
+before any `parse`, `compile` or `build` there. After `deps`, `dbt parse` exits
+0 ("Unable to do partial parsing because saved manifest not found. Starting full
+parse.") and the two added exposure refs resolve. Budget about 30 seconds for
+the full parse.
+
+### The output hook redacts this spec file whole, so edit it through a masking reader
+
+**Verified.** `Read` and `grep` on
+`docs/superpowers/specs/2026-09-10-academic-health-launch-page-design.md` return
+a single `[redacted: secret material]` line: something in the file — a window
+uuid or a long calculation name — trips `check-output.sh`'s high-entropy rule,
+and the hook replaces every string in the result, not just the offending token.
+The file is fine; the reader is the problem. Do this instead: print it through a
+filter that masks any token of 18 or more alphanumeric characters, then apply
+the edits with a script that asserts exactly one match per anchor. Both halves
+are needed — the mask makes the prose readable, and the one-match assertion
+replaces the eyeball check on the diff that the redaction makes impossible.
+
+### The hand-off's donor claim is checkable in six lines, so check it
+
+**Verified.** The claim "the extract came across untouched from Production" is
+worth a derived value rather than a repack script's own success message.
+Comparing `final.twbx` against `base.twbx` entry by entry:
+
+```text
+final.twbx bytes 28390025
+entry counts 7 7 names equal: True
+entries with differing CRC: ['Academic & Gradebook Health Suite.twb']
+packaged twb == out.twb: True
+```
+
+Seven entries, one differing checksum, and that one is the `.twb` the build
+edited. `zipfile.ZipInfo.CRC` is read from the archive's own directory, so this
+costs nothing to compute and does not decompress the 28 MB extract.
