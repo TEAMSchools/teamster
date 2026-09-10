@@ -61,7 +61,7 @@ with
             ) as es_attended,
 
             first_value(es_grad_school_abbreviation ignore nulls) over (
-                partition by student_number
+                partition by _dbt_source_project, student_number
                 order by exitdate desc
                 rows between unbounded preceding and unbounded following
             ) as es_graduated,
