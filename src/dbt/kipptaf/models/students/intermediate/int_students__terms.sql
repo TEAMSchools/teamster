@@ -81,10 +81,36 @@ with
     -- quarter survives as its own row and every raw-only column null-fills,
     -- which matches a row Focus never carried.
     powerschool_joined as (
+        -- Enumerated, not `p.* except`: BigQuery fixes a view's column list at
+        -- create time and Dagster rebuilds a view only when its raw SQL
+        -- changes, so a `*` here would never pick up a column added upstream.
         select
-            p.* except (
-                semester, rn, schoolid, yearid, academic_year, _dbt_source_project
-            ),
+            p._dbt_source_relation,
+            p.dcid,
+            p.name,
+            p.firstday,
+            p.lastday,
+            p.abbreviation,
+            p.importmap,
+            p.terminfo_guid,
+            p.psguid,
+            p.ip_address,
+            p.whomodifiedtype,
+            p.transaction_date,
+            p.id,
+            p.noofdays,
+            p.yearlycredithrs,
+            p.termsinyear,
+            p.portion,
+            p.autobuildbin,
+            p.isyearrec,
+            p.periods_per_day,
+            p.days_per_cycle,
+            p.attendance_calculation_code,
+            p.sterms,
+            p.suppresspublicview,
+            p.whomodifiedid,
+            p.fiscal_year,
 
             q.term,
             q.term_start_date,
@@ -112,10 +138,64 @@ with
         select *, from powerschool_joined where _dbt_source_project != 'kippmiami'
     )
 
-select *,
+-- The branches differ in width on purpose: `full union all corresponding`
+-- null-fills the PowerSchool-only columns on the Focus branch.
+-- trunk-ignore(sqlfluff/AM07): corresponding null-fills the narrower branch
+select
+    _dbt_source_relation,
+    dcid,
+    name,
+    firstday,
+    lastday,
+    abbreviation,
+    importmap,
+    terminfo_guid,
+    psguid,
+    ip_address,
+    whomodifiedtype,
+    transaction_date,
+    id,
+    noofdays,
+    yearlycredithrs,
+    termsinyear,
+    portion,
+    autobuildbin,
+    isyearrec,
+    periods_per_day,
+    days_per_cycle,
+    attendance_calculation_code,
+    sterms,
+    suppresspublicview,
+    whomodifiedid,
+    fiscal_year,
+    term,
+    term_start_date,
+    term_end_date,
+    semester,
+    is_current_term,
+    schoolid,
+    yearid,
+    _dbt_source_project,
+    academic_year,
 from powerschool_conformed
 
 full union all corresponding
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    schoolid,
+    academic_year,
+    `name`,
+    abbreviation,
+    firstday,
+    lastday,
+    isyearrec,
+    yearid,
+    fiscal_year,
+    term,
+    term_start_date,
+    term_end_date,
+    semester,
+    is_current_term,
 from focus_conformed

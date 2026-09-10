@@ -92,12 +92,13 @@ with
             cd.school_date as date_value,
             cd.school_date,
             cd.academic_year,
-            cd.academic_year - 1990 as yearid,
 
             1 as insession,
             cast(1 as float64) as membershipvalue,
             true as is_in_session,
             true as is_in_membership,
+
+            cd.academic_year - 1990 as yearid,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
         -- One row. See int_students__sis_cutover for why the boundary is a
@@ -116,10 +117,39 @@ with
 -- `full union all corresponding` matches columns by NAME. A plain `union all`
 -- matches by POSITION, and the two CTEs above list schoolid in different
 -- positions, which would silently align schoolid with insession.
-select *,
+-- Both branches enumerate their columns: BigQuery fixes a view's column
+-- list at create time and Dagster rebuilds a view only when its raw SQL
+-- changes, so a `select *` branch never picks up a column added upstream.
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    schoolid,
+    insession,
+    membershipvalue,
+    week_start_date,
+    week_end_date,
+    date_value,
+    school_date,
+    yearid,
+    is_in_session,
+    is_in_membership,
+    academic_year,
 from powerschool_conformed
 
 full union all corresponding
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    schoolid,
+    insession,
+    membershipvalue,
+    week_start_date,
+    week_end_date,
+    date_value,
+    school_date,
+    yearid,
+    is_in_session,
+    is_in_membership,
+    academic_year,
 from focus_conformed
