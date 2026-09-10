@@ -102,7 +102,10 @@ columns (verified for `schools`; check `sources-kippmiami.yml` column lists for
 the other 8 before deleting).
 
 - `int_students__attendance_daily`: read the 3 week fields from `mem`, drop the
-  `int_students__calendar_week` join.
+  `int_students__calendar_week` join. The Focus branch has no week columns of
+  its own, so `focus_conformed` gains a left join to `int_focus__calendar_week`
+  on Focus school id, academic year, and date range. Both branches then arrive
+  with week columns and the post-union join goes.
 - 9 unions: delete the `source("kippmiami_powerschool", ...)` line.
 - `sources-kippmiami.yml`: keep the 11 history tables. Description: "archive,
   permanent history source for stored grades, attendance, and course
