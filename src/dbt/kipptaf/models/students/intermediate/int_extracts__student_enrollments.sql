@@ -50,19 +50,19 @@ with
 
             first_value(ms_school_abbreviation ignore nulls) over (
                 partition by _dbt_source_project, student_number
-                order by exitdate desc
+                order by rn_all asc
                 rows between unbounded preceding and unbounded following
             ) as ms_attended,
 
             first_value(es_school_abbreviation ignore nulls) over (
                 partition by _dbt_source_project, student_number
-                order by exitdate desc
+                order by rn_all asc
                 rows between unbounded preceding and unbounded following
             ) as es_attended,
 
             first_value(es_grad_school_abbreviation ignore nulls) over (
                 partition by _dbt_source_project, student_number
-                order by exitdate desc
+                order by rn_all asc
                 rows between unbounded preceding and unbounded following
             ) as es_graduated,
 
