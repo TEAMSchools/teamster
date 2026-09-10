@@ -166,6 +166,8 @@ models:
             contains_pii: true
       - name: assessment_type
         data_type: string
+        description:
+          Whether the row is a Benchmark administration or a PM round.
       - name: model_type
         data_type: string
         description: >-
@@ -174,8 +176,6 @@ models:
           aimline. Both PM methods run K-8 in parallel, so any view that counts
           PM rows must filter this column or every eligible student is counted
           once per method.
-        description:
-          Whether the row is a Benchmark administration or a PM round.
       - name: expected_start_date
         data_type: date
         description:
@@ -479,6 +479,10 @@ models:
           where no evaluation exists.
       - name: pm_round_status
         data_type: string
+        description: >-
+          The round verdict as words -- Met, Not Met, Round Incomplete, or Not
+          Tested. Separates a round that could not be evaluated from one that
+          was failed.
       - name: aimline_cohort_level
         data_type: string
         description: >-
@@ -520,10 +524,6 @@ models:
         config:
           meta:
             contains_pii: true
-        description:
-          The round verdict as words -- Met, Not Met, Round Incomplete, or Not
-          Tested. Separates a round that could not be evaluated from one that
-          was failed.
       - name: expected_round_number
         data_type: string
         description: The expected PM round, as a string for the Tableau filter.
