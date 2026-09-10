@@ -319,6 +319,11 @@ def task6(t: str) -> None:
             ), name
             # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
             assert count(w, r"<format attr='text-align' value='center' />") == 0, name
+            # Deleting <customized-tooltip> restores Tableau's DEFAULT tooltip
+            # rather than silencing it; only tooltip-mode='none' turns the
+            # hover off. Asserted on the cards too, where it is inherited.
+            # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check
+            assert count(w, r"<tooltip-style tooltip-mode='none' />") == 1, name
         card = blocks["Card"]
         # no title, no caption: the dashboard zone frames the card
         # trunk-ignore(bandit/B101): this is a standalone assertion script; the assert IS the check

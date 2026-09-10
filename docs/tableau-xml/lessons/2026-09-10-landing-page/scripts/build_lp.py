@@ -1023,8 +1023,21 @@ def add_guides(t: str) -> str:
         # republished 2026-09-10 13:40 UTC added two action filters to the
         # roster sheets on top of their cross-source school filter, and a
         # placeholder that nothing points at needs none of the three.
+        #
+        # `[^>]*(?<!/)>` and the leading \r\n are the same two guards
+        # apply_drop_filters() carries, and for the same reasons:
+        # selftest_drop_filters() proves that without the negative lookbehind
+        # the opening-tag match runs straight through one of base.twb's 6
+        # SELF-CLOSING categorical filters and `.*?</filter>` then eats on to
+        # the NEXT filter's close, deleting two elements in one substitution.
+        # All three roster filters are paired today, so the bug would not fire
+        # -- and the `n < 3` count guard would not catch it if it did, because
+        # the run-on deletion lowers the match count rather than raising it.
+        # Every removal below is likewise \r\n-anchored at the line start
+        # instead of consuming the trailing newline: a 10-space-indented
+        # literal is a substring of a 12-space-indented one.
         w2, n = re.subn(
-            r"          <filter class='categorical' [^>]*>.*?</filter>\r\n",
+            r"\r\n          <filter class='categorical' [^>]*(?<!/)>.*?</filter>",
             "",
             w,
             flags=re.S,
@@ -1032,7 +1045,7 @@ def add_guides(t: str) -> str:
         if n < 3:
             raise RuntimeError(f"{name}: dropped {n} filters, wanted at least 3")
         w2, n = re.subn(
-            rf"            <column>(?!\[{re.escape(GRADES_DS)}\]\.\[Exclude ES\])[^<]*</column>\r\n",
+            rf"\r\n            <column>(?!\[{re.escape(GRADES_DS)}\]\.\[Exclude ES\])[^<]*</column>",
             "",
             w2,
         )
@@ -1045,19 +1058,31 @@ def add_guides(t: str) -> str:
         # the cross-source filter was the only use of the goals source here
         w2 = cut_once(
             w2,
-            rf"          <datasource-dependencies datasource='{re.escape(GOAL_DS)}'>.*?</datasource-dependencies>\r\n",
+            rf"\r\n          <datasource-dependencies datasource='{re.escape(GOAL_DS)}'>.*?</datasource-dependencies>",
             f"{name} goals dependencies",
         )
         w2 = sub_once(
             w2,
-            f"            <datasource caption='rpt_tableau__gpa_goal_progress (kipptaf_tableau)' name='{GOAL_DS}' />\r\n",
+            f"\r\n            <datasource caption='rpt_tableau__gpa_goal_progress (kipptaf_tableau)' name='{GOAL_DS}' />",
             "",
         )
-        # drop the roster tooltip; the placeholder has nothing to say on hover
+        # Drop the roster tooltip AND turn tooltips off. Deleting
+        # <customized-tooltip> alone does not silence the hover: it restores
+        # Tableau's DEFAULT tooltip, and the mark's text encoding is the
+        # cloned `'Newark'` calc, so every placeholder would pop
+        # `'Newark': Newark`. The roster source carries no <tooltip-style>
+        # element at all, so one is added in the position the card clones
+        # already have it (inherited from Y1 Landing - Title): straight after
+        # <cols />, the last child of <table>.
         w2 = cut_once(
             w2,
-            r"            <customized-tooltip>.*?</customized-tooltip>\r\n",
+            r"\r\n            <customized-tooltip>.*?</customized-tooltip>",
             f"{name} tooltip",
+        )
+        w2 = insert_after(
+            w2,
+            "\r\n        <cols />",
+            "\r\n        <tooltip-style tooltip-mode='none' />",
         )
         w2 = body_style(w2)
         assert_closure(w2, name)

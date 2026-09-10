@@ -1047,3 +1047,83 @@ copy is longer than the two title runs it replaces, and dropping
 3.5 KB clones of a 6.7 KB source — the three filters, three slice columns, the
 goals dependency block and the six-run tooltip together are about half the
 source sheet.
+
+## 2026-09-10, build phase, Task 6 fix round
+
+### Deleting a customized tooltip turns the DEFAULT tooltip back on
+
+**Verified.** `add_guides` removed `<customized-tooltip>` from the roster
+clones, which is what the brief asked for and what the assertion checked
+(`"<customized-tooltip>" not in g`). It does not silence the hover. A worksheet
+with no `<customized-tooltip>` falls back to Tableau's default tooltip unless a
+`<tooltip-style tooltip-mode='none' />` element says otherwise, and
+`Links - GPA Roster - Newark` carries no `<tooltip-style>` at all — the roster
+sheets want their tooltip. The guide mark's text encoding is the cloned
+`'Newark'` calc, so all five placeholders would have popped `'Newark': Newark`
+on hover, on a card whose visible text reads "Help guide: coming soon". The card
+clones never had the problem: they inherit
+`<tooltip-style tooltip-mode='none' />` from `Y1 Landing - Title`, the last
+child of `<table>` straight after `<cols />`. Do this instead: when a clone
+drops a customized tooltip, add the `tooltip-mode='none'` element in the same
+edit, and assert the POSITIVE — `<tooltip-style tooltip-mode='none' />` present
+exactly once — because an absence assertion passes on a sheet that still shows a
+tooltip. `task6` now asserts it on all ten sheets, cards included, where it is
+inherited rather than written.
+
+### A match-count guard cannot catch a regex that runs on
+
+**Verified by counting both forms over the whole base.** `add_guides` cut its
+filters with `r"          <filter class='categorical' [^>]*>.*?</filter>\r\n"` —
+the exact shape `apply_drop_filters()` was hardened against two tasks earlier,
+minus the `(?<!/)>` negative lookbehind that `selftest_drop_filters()` exists to
+prove necessary. Five of `base.twb`'s six self-closing categorical filters sit
+at the same 10-space indent as the paired ones, and for each of them the
+unguarded opening tag matches through its own `/>` and the following
+`.*?</filter>` runs on to the NEXT filter's close, deleting two elements in one
+substitution. The numbers, base-wide: the unguarded pattern matches **349**
+times and the guarded one matches **349** times as well — the run-on removes one
+match while adding it to another — but 5 of the spans differ and the unguarded
+form deletes 139188 bytes against the guarded form's 138616, 572 bytes of
+collateral. So the `if n < 3: raise` guard in `add_guides` could never have
+caught it: a run-on lowers the match count rather than raising it, and a lowered
+count still cleared the threshold. Nothing was actually corrupted — all three
+roster filters are paired, so the two forms agree on that sheet — but the safety
+came from the input, not from the code. Do this instead: when reusing a pattern
+the codebase has already hardened, copy the guard along with the shape, and read
+a count assertion as evidence about how many matches there were, never about
+where they ended. All four removals in `add_guides` are now `\r\n`-anchored at
+the line start (a 10-space-indented literal is a substring of a
+12-space-indented one) and the filter cut carries `(?<!/)>`; the trailing `\r\n`
+came off each pattern in exchange, so the byte count stays balanced and
+`add_guides` grew by exactly the five new `<tooltip-style>` lines, 5 × 47 = 235
+bytes.
+
+### Verbatim run output, fix round
+
+```text
+build rc=0
+selftest_drop_filters: paired filter removed, self-closing filter intact, self-closing target refused
+add_goal_calcs: +1521 bytes
+add_title: +4519 bytes
+add_tile_y1: +16444 bytes
+add_tile_failures: +16753 bytes
+add_tile_cumulative: +12965 bytes
+add_tile_gradebook: +8652 bytes
+add_strips: +51825 bytes
+add_cards: +26300 bytes
+add_guides: +19727 bytes
+wrote /workspaces/teamster/.claude/scratch/tableau/lp/out.twb (2043822 chars)
+
+assert rc=0
+PASS task3
+PASS task4
+PASS task5
+PASS task6
+
+additive rc=0
+stripped: {'worksheets': 19, 'dashboard': 0, 'dashboard-window': 0, 'sheet-windows': 19, 'nav-actions': 0, 'url-actions': 0, 'calcs': 3}
+OK: remainder is byte-identical to base
+
+check_twb rc=0
+out.twb: CLEAN
+```
