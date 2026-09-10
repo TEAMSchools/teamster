@@ -1485,10 +1485,13 @@ Corollary for reviewers: when you see `order by <col> desc` in a window over a
 UNION, check that `<col>` is populated in every branch. A `null as <col>`
 literal in any branch is the tell.
 
-### The aimline branch reports nothing for Miami before AY2026 -- id mismatch
+### Miami needs focus_student_number on the aimline PM model too -- FIXED
 
 **This was the unexplained 961-row gap between the two PM methods on AY2025. It
-is a bug, not a design difference, and it is total for Miami.**
+was a bug, not a design difference, and it was total for Miami. Fixed by
+applying the macro in `int_amplify__mclass__pm_student_summary_aimline`. The
+table below is the before state, kept so the symptom stays recognisable if it
+regresses.**
 
 | Region   | Internal rows / students | Aimline rows / students |
 | -------- | ------------------------ | ----------------------- |
@@ -1514,19 +1517,28 @@ row counts -- Miami 5,503 rows / 978 students on both sides. A full outer join
 on `student_primary_id` is what exposes it: 978 Miami students resolve as
 "internal only" and the same 978 as "aimline only". Compare sets, not counts.
 
-**Fix.** Apply `focus_student_number` in
-`int_amplify__mclass__pm_student_summary_aimline` the way the internal model
-does. That model already carries `academic_year` and `_dbt_source_project`, the
-macro's other two arguments. Note it changes the model's surrogate-key inputs
-and grain, so rebuild and re-verify the full chain.
+**The fix, and where it has to go.** `focus_student_number` is applied in the
+`enriched` CTE, taking `c.student_primary_id`, `c.academic_year` and
+`lc.location_dagster_code_location` -- the crosswalk column directly, not the
+`_dbt_source_project` alias derived in the same SELECT, since BigQuery has no
+lateral column aliases. It must NOT go in `combined` or earlier: the full outer
+join matches the two SFTP files on their shared raw id, so offsetting before
+that join breaks the merge. `c.* except (student_primary_id)` plus the re-add
+keeps the column name.
 
-**Scope is historical only.** The macro offsets `year <= 2025`, so from AY2026
-Miami's raw id already IS the network number and the two sides align without
-help. AY2026 cannot confirm that yet -- it has zero tested PM rows in either
-method, since no PM scores have landed. So the bug bites any AY2025-and-earlier
-Miami aimline reporting and should stop mattering going forward, which is
-exactly the kind of thing to re-check rather than assume once SY26-27 scores
-arrive.
+After the fix all four regions match between methods (Miami 961 rows / 420
+students on both), the aimline model still holds 67,984 AY2025 rows with 67,984
+distinct surrogate keys, the full outer join still merges 1:1 (0 rows with no
+base side, 2,986 base rows with no aimline goal as before), all 5,503 Miami rows
+carry the offset, and Benchmark stays byte-identical to prod.
+
+**The macro is year-scoped -- keep the call anyway.** It offsets `year <= 2025`,
+so from AY2026 Miami's raw id already IS the network number and the two sides
+align without help. AY2026 cannot confirm that yet -- it has zero tested PM rows
+in either method, since no PM scores have landed. Re-check once SY26-27 scores
+arrive rather than assuming, and do not remove the macro call on the grounds
+that the current year does not need it -- it is what makes the historical years
+join.
 
 **Do not chase this through the gates or the eligibility rule.** Ruled out by
 measurement, in this order: expectations are identical (both methods 55,591

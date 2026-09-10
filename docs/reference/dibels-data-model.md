@@ -454,15 +454,15 @@ other and nothing fails. Dedup before the union, or split the model. Extracting
 the Benchmark half is what gave PM its own `max_score` and made a PM-meaningful
 sort key possible at all.
 
-#### Known defect: the aimline branch reports nothing for Miami before AY2026
+#### Miami's id offset applies to both PM models
 
 `int_amplify__mclass__pm_student_summary` resolves the student id through the
 `focus_student_number` macro, which adds 8,400,000,000 to a kippmiami id for
 `academic_year <= 2025` — the Focus migration mapping.
-`int_amplify__mclass__pm_student_summary_aimline` does not apply it and passes
-Amplify's raw 6-digit id through. `int_amplify__benchmark_student_summary` keys
-on the network number, so every Miami PM row fails that join in the aimline
-branch and Miami reports zero.
+`int_amplify__mclass__pm_student_summary_aimline` now applies it too. It did
+not, and the table below is what that cost.
+`int_amplify__benchmark_student_summary` keys on the network number, so every
+Miami PM row fails that join in the aimline branch and Miami reports zero.
 
 | Region   | Internal rows / students | Aimline rows / students |
 | -------- | ------------------------ | ----------------------- |
@@ -480,14 +480,19 @@ The two sources are indistinguishable by counts — both carry 67,984 AY2025 row
 5,503 rows for 978 students. Only comparing id SETS exposes it: the same 978
 Miami students appear on one side of a full outer join and again on the other.
 
-The fix is to apply `focus_student_number` in the aimline model as the internal
-model does; it already carries the macro's other two arguments. That changes the
-model's surrogate-key inputs, so the chain needs a rebuild and re-verification.
+The macro is applied in the model's `enriched` CTE, reading the crosswalk's
+`location_dagster_code_location` directly rather than the `_dbt_source_project`
+alias derived in the same `SELECT`, since BigQuery has no lateral column
+aliases. It cannot go earlier: the full outer join between the two SFTP files
+matches on their shared raw id, so offsetting before that join breaks the merge.
+With it in place all four regions match between the two methods, and Benchmark
+is unchanged.
 
-Scope is historical. The macro offsets only `year <= 2025`, so from AY2026
-Miami's raw id already is the network number and the two sides should align
-unaided — unconfirmed, because AY2026 has no tested PM rows in either method
-yet. Re-check once SY26-27 scores land rather than assuming.
+The macro is year-scoped and the call should stay regardless. It offsets only
+`year <= 2025`, so from AY2026 Miami's raw id already is the network number and
+the call is a no-op — unconfirmed, because AY2026 has no tested PM rows in
+either method yet. Re-check once SY26-27 scores land rather than assuming, and
+do not remove the call because the current year does not need it.
 
 #### A student's two grade columns can disagree, and that is not fixable
 

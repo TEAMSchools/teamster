@@ -142,11 +142,24 @@ with
 
     enriched as (
         select
-            c.*,
+            c.* except (student_primary_id),
 
             lc.location_abbreviation as school,
             lc.location_powerschool_school_id as schoolid,
             lc.location_dagster_code_location as _dbt_source_project,
+
+            -- Miami's Focus migration offset, applied here rather than in the
+            -- combined CTE above so the full outer join still matches the two
+            -- SFTP files on their shared raw id. Without it every Miami PM row
+            -- misses int_amplify__benchmark_student_summary, which keys on the
+            -- network number, and the aimline method reports zero for Miami.
+            {{
+                focus_student_number(
+                    "c.student_primary_id",
+                    "c.academic_year",
+                    "lc.location_dagster_code_location",
+                )
+            }} as student_primary_id,
 
             -- the city form, matching int_amplify__mclass__pm_student_summary and
             -- the expectation gates. location_region is the long-form entity name
