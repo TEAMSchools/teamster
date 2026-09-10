@@ -1457,6 +1457,10 @@ across all measure codes for the student in that round:
 - `AND`: `min(met_measure_name_code_goal)` — every code must be met
 - else: `max(met_measure_name_code_goal)` — meeting any one code is enough
 
+"else" means **null**, which is the only other value the column ever holds —
+null _is_ the OR criteria. See `pm_goal_criteria` — AND/OR round logic below for
+the counts by year.
+
 #### Final flag: `met_pm_round_overall_criteria`
 
 The most conservative overall flag:
@@ -1465,7 +1469,11 @@ The most conservative overall flag:
 | ------------------ | ----------------------- | ---------------------- | ------ |
 | `'AND'`            | 1                       | `TRUE`                 | 1      |
 | `NULL`             | 1                       | any                    | 1      |
-| anything else      | any                     | any                    | 0      |
+| either             | 0                       | any                    | 0      |
+
+`'AND'` and `NULL` are the only values the column holds in any year, so those
+two branches are exhaustive — the `case`'s `else` is unreachable rather than a
+missing `'OR'` branch.
 
 The NULL case does **not** require `completed_test_round` — this is intentional.
 `pm_goal_criteria` controls the AND/OR pass logic across measures that were

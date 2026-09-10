@@ -90,9 +90,12 @@ models:
       - name: pm_goal_criteria
         data_type: string
         description: >-
-          How the round's measure codes combine — AND requires every code, and
-          anything else requires one. T&L set AND network-wide for every K-8
-          round from SY26-27.
+          How the round's measure codes combine. AND requires every code. NULL
+          is the OR criteria — it routes to max(), so one complete code
+          satisfies the round — and it is the only other value the column ever
+          holds, in any year. Academics used NULL to let a student pass by
+          meeting one complete set of measures rather than all of them; every
+          SY26-27 row is AND, so a student must now meet every measure.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.

@@ -85,9 +85,12 @@ models:
       - name: pm_goal_criteria
         data_type: string
         description: >-
-          How the round's measures combine when a student is evaluated — AND
-          requires every measure code, anything else requires one. Set by T&L,
-          and AND network-wide for every K-8 round from SY26-27.
+          How the round's measures combine when a student is evaluated, passed
+          through to the frozen sheet for int_amplify__pm_met_criteria. AND
+          requires every measure code; NULL is the OR criteria, letting one
+          complete code satisfy the round, and is the only other value the
+          column ever holds. Set by T&L, and AND network-wide for every K-8
+          round from SY26-27.
       - name: pm_round_days
         data_type: int64
         description: >-
