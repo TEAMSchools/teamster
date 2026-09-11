@@ -215,7 +215,11 @@ with
      * manager_subject_overlay does above. Information-preserving: every column
      * selected above is constant within (survey_id,
      * effective_survey_response_id) across all 2,559 archive submissions, so
-     * the order_by is an arbitrary but stable tiebreaker, not a business rule.
+     * the collapsed rows are identical and the order_by never actually breaks a
+     * tie -- it is there because the macro requires one, not as a business
+     * rule. If that constancy ever stops holding, this pick becomes arbitrary
+     * and the PK test will not catch it: it detects a re-fan, not a wrong
+     * value.
      */
     historic_archive_grain as (
         {{

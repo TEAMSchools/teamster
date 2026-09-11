@@ -360,7 +360,14 @@ Row counts move as a result: `fct_survey_submissions` 92,459 to 48,956, and
 `fct_survey_responses` 1,363,717 to 580,663. Both PK uniqueness tests now pass.
 Measurements in `docs/superpowers/plans/baseline-2026-09-11.md`.
 
-The cost claims in this document are unaffected — they are measured from test
-slot time, not row counts — but the conversion is no longer verifiable as a pure
-materialization change, and the row deltas above are the thing to check after
-deploy.
+The prod and CI slot-hour claims in this document still hold — they are measured
+from test slot time before the fix, and the fix does not change how often a test
+runs. The per-model build minutes are now slightly stale for the 2 fixed marts,
+since `fct_survey_responses` processes less than half its former row count and
+gains a `group by`. That moves its break-even and its CI-after estimate in the
+cheaper direction, and it is nightly with no break-even to clear, so no cadence
+decision changes. The 7-day follow-up re-measures all of it anyway.
+
+What did change is the row sets. The conversion is no longer verifiable as a
+pure materialization change, so the row deltas above — not just object type and
+slot hours — are what to check after deploy.
