@@ -1252,6 +1252,19 @@ practice even though it's asked at the org level.
   accurate number (84/181 = 46.4%) than the real course-enrollment count (87/157
   = 55.4%). The two aren't identical: 3 of the 87 real Algebra 1 enrollees have
   no matched EOC score at all (absence, exemption, etc.).
+- **Forward risk, flagged by the collection owner: `kippmiami_powerschool` is a
+  one-time, frozen resource, not a repeatable source.** It's the archive of
+  Miami's retired PowerSchool SIS, frozen at the final ODBC pull (2026-07-01) --
+  it will never gain a 2026-2027 school year. Next cycle's version of this same
+  survey (or anything else needing Miami course enrollment/schedule data for
+  2026-2027 onward) can't reuse this approach -- Miami is fully on Focus by
+  then, and Focus course/schedule data has no dbt staging model yet (the same
+  gap already noted for AP/Honors course tags above). Expect to have to ask
+  where Focus actually stores schedule/course data (the raw
+  `dagster_kippmiami_dlt_focus` tables, almost certainly, per the Focus
+  custom-field/table conventions in `src/dbt/focus/CLAUDE.md`) and build the
+  join fresh, rather than looking for a `kippmiami_powerschool` equivalent that
+  won't exist.
 
 ## Open questions for this skill (not yet answered)
 
