@@ -1,0 +1,71 @@
+models:
+  - name: int_surveys__survey_submissions
+    description: >-
+      Canonical submission grain for every survey the network runs. One row per
+      submission, across both the live Google Forms and Alchemer feed and the
+      historic Alchemer Manager Survey archive.
+
+      This model owns survey_submission_key. Both sources it reads are
+      question-grain, so each arm collapses to submission grain here rather than
+      in every consuming mart. Consumers select the key through; they do not
+      re-derive it.
+
+      The live arm carries every survey title, not only the titles the marts
+      currently model, so a new survey becomes available to a consumer without
+      touching this model.
+    columns:
+      - name: survey_submission_key
+        description: >-
+          Surrogate key derived from survey_id and survey_response_id. Primary
+          key. For the historic archive, survey_response_id is the deterministic
+          fallback described below, so the composition is identical across both
+          arms.
+        data_tests:
+          - unique
+
+      - name: survey_id
+        description: >-
+          Identifier of the survey itself — the Google Forms form id, the
+          stringified Alchemer survey id, or the literal
+          historic_alchemer_Manager_survey for the archive.
+
+      - name: survey_response_id
+        description: >-
+          Identifier of the individual submission. On the historic Manager
+          archive the source records no response id, so this carries the
+          deterministic fallback built from respondent, subject and reporting
+          term.
+
+      - name: survey_title
+        description:
+          Display title of the survey, as the source system records it.
+
+      - name: respondent_email
+        description: >-
+          Email the respondent submitted under. Null on the historic Manager
+          archive, which records no respondent email.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_employee_number
+        description: >-
+          Employee number of the respondent, resolved against the staff roster
+          at the time of submission. Null when the respondent could not be
+          matched to a staff record.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: date_submitted
+        description: Timestamp the respondent submitted the survey.
+
+      - name: academic_year
+        description: >-
+          Academic year the submission falls in, resolved from the reporting
+          terms sheet on the live arm and from the campaign on the archive.
+
+      - name: term_code
+        description: >-
+          Reporting term code the submission falls in, for example MGR1 or MGR2
+          on the Manager Survey.
