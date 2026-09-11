@@ -106,14 +106,52 @@ anything to protect.
 Every other guarantee in the design is downstream of this one, so it is the
 first thing built and the first thing verified.
 
-Prefer a **GCP Organization Policy constraint** denying cross-project IAM
-bindings over a bare absence of role grants. An absence is undone by one
-well-meaning IAM edit six months from now; a constraint refuses the edit. The
-design's strength is that it does not depend on the policies being correct, and
-a structural refusal keeps that property true over time.
+### The Organization Policy constraint may not be available
+
+The first draft of this spec preferred a **GCP Organization Policy constraint**
+denying cross-project IAM bindings, on the reasoning that an absence of role
+grants is undone by one well-meaning IAM edit six months from now, while a
+constraint refuses the edit.
+
+Whether that control exists here is unresolved. Two things were checked in the
+console on 2026-09-11:
+
+- `teamster-332318` shows **no organization** row on its IAM Settings page, so
+  it has no organization parent.
+- `cbaldor@apps.teamschools.org` sees no organizations when creating a project,
+  and cannot create one.
+
+Those two facts point in opposite directions, and the reconciliation matters.
+With no organization anywhere, creating a project needs no role at all — only a
+billing account — so the permission error implies an organization **does** exist
+for the `apps.teamschools.org` Workspace domain. The likely state: new projects
+created by a Workspace user land inside that organization, while
+`teamster-332318` predates it or was moved out.
+
+So the question is not "does an organization exist" but **where the sandbox
+project lands once someone with the right role creates it.** If it lands inside
+the organization, the constraint is available and should be applied. If it lands
+outside, it cannot be. Resolve this when the project is created, not before.
+
+### The substitute, and the primary control either way
+
+Do not wait on that resolution. Run the isolation check on a schedule as a
+Dagster asset check, not only at build time. A one-time proof answers "was it
+isolated when we built it"; a scheduled one answers "is it isolated now", which
+is the question that matters after an IAM edit nobody remembers making.
+
+Wire the check so a failure blocks the generator, the same way the drift gate in
+Piece 4 does. An isolation regression must stop synthetic-data writes, because
+at that point the sandbox's central guarantee is gone.
+
+Treat the Organization Policy constraint as a second layer to add if it turns
+out to be available, never as a replacement for the scheduled check. A
+constraint proves the binding cannot be created; the check proves the read
+actually fails. Those are different claims, and the design wants both.
 
 Acceptance: a test confirms the sandbox service account cannot read
-`teamster-332318.kipptaf_marts` at all.
+`teamster-332318.kipptaf_marts` at all, and that test runs on a schedule rather
+than once.
 
 ## Piece 2 — declare the coverage contract before generating data
 
@@ -349,6 +387,11 @@ distance. Nothing yet decides the threshold at which a bump becomes mandatory.
 trigger is unsettled: scheduled, or on MasterBorn's request, or on a drift
 threshold.
 
+**Where does the sandbox project land in the resource hierarchy?** Unknown until
+someone with `roles/resourcemanager.projectCreator` creates it. The answer
+decides whether an Organization Policy constraint can back up the isolation, per
+[Piece 1](#the-organization-policy-constraint-may-not-be-available).
+
 Inherited from the parent spec and still open: which features query when the
 user is absent, whether MasterBorn will commit in writing that results are never
 cached across users, how external users are provisioned in the Cube Cloud SAML
@@ -357,7 +400,9 @@ tenant, and whether the product wants REST or MCP.
 ## Testing strategy
 
 - **Isolation proof**: the sandbox service account cannot read
-  `teamster-332318.kipptaf_marts`. Runs before any data exists.
+  `teamster-332318.kipptaf_marts`. Runs before any data exists, and then on a
+  schedule, because an Organization Policy constraint may not be available to
+  enforce it structurally. A failure blocks the generator.
 - **Coverage assertion**: `scripts/sandbox_coverage.py` exits non-zero on any
   uncovered manifest cell.
 - **Catalog equality**: all 6 views resolve against the sandbox and match the
