@@ -94,16 +94,16 @@ the typed subfield (`.string_value` / `.array_string_value` / `.boolean_value`).
 
 dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
-1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
-(`dbt build` / `run`) need direct user authorization in the
-immediately-preceding turn — the same standard as `stage_external_sources`
-below; they are not unconditionally blocked (reported working on #5278 once
-authorized). Without that authorization, hand prod runs to the user.
-`dbt compile` / `parse --target prod` are NOT blocked (no warehouse write) — use
-them to validate model SQL/refs locally.
-`stage_external_sources --target staging` with `ext_full_refresh: true` also
-needs direct user authorization in the immediately-preceding turn
-(drops/recreates shared `zz_stg` tables), else hand off.
+1Password (BigQuery uses ADC, not the 1Password bootstrap). **Hand
+`--target prod` runs (`dbt build` / `run`) to the user.** They are reported to
+have worked once on #5278 with authorization in the immediately-preceding turn,
+but that is secondhand and unverified — a session that needs one should ask the
+user to run it rather than treat the report as permission. `dbt compile` /
+`parse --target prod` are NOT blocked (no warehouse write) — use them to
+validate model SQL/refs locally. `stage_external_sources --target staging` with
+`ext_full_refresh: true` also needs direct user authorization in the
+immediately-preceding turn (drops/recreates shared `zz_stg` tables), else hand
+off.
 
 Any shared-write dbt command can still be denied WITH authorization in hand, so
 shape the call for the classifier: put the shared write in its OWN Bash call,
