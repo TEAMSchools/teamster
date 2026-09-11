@@ -24,12 +24,14 @@ workbook, on two tabs:
   DeansList export.
 
 Open it here:
-<https://tableau.kipp.org/#/site/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome>
+<https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome>
 
 The same workbook holds the **Gradebook School Rollup** and **Gradebook Teacher
 View** tabs, which are about whether teachers' gradebooks are in good shape.
-Those have their own guide, the Gradebook Health Dashboard Guide. This guide
-covers the two Academic Health tabs and the **Landing Page** that links them.
+Those have their own guide, the
+[Gradebook Health Dashboard Guide](https://teamschools.zendesk.com/hc/en-us/articles/43377104764567-Gradebook-Health-Dashboard-Guide).
+This guide covers the two Academic Health tabs and the **Landing Page** that
+links them.
 
 > **Callout:** Elementary schools and Miami are not on this dashboard. Paterson
 > appears for middle school only. Cumulative GPA columns are high school only.
@@ -41,8 +43,9 @@ covers the two Academic Health tabs and the **Landing Page** that links them.
 ### When the data updates
 
 Both tabs refresh once a day, overnight. The title strip on each tab prints the
-exact time. If the stamp is from this morning, you are looking at grades entered
-through yesterday.
+exact time in Pacific time, three hours behind our schools. A stamp of 6:36 AM
+PST means 9:36 AM Eastern. If the stamp is from this morning, you are looking at
+grades entered through yesterday.
 
 > **Callout:** Entered today, visible tomorrow. A grade a teacher posts this
 > afternoon shows up on the dashboard tomorrow morning.
@@ -50,14 +53,18 @@ through yesterday.
 ### The two GPAs
 
 Every GPA number on these two tabs is the **Y1 GPA**: this year only, weighted,
-running from the start of the year to today. Honors and AP courses count for
-more. This is the GPA the 3.0 and 2.0 goals are set against.
+running from the start of the year to today. Weighted means an honors or AP
+course earns more grade points than a regular course for the same letter, so an
+A in AP Biology lifts the GPA more than an A in Biology. This is the GPA the 3.0
+and 2.0 goals are set against.
 
 The rosters also carry a **cumulative unweighted GPA**, which covers every high
-school year on record and scores every course the same. A student's cumulative
-number usually reads lower than their Y1 number. That is expected. The
-**Cumulative GPA Monitor** tab is built around the cumulative number and has its
-own guide.
+school year on record and scores every course on the same scale, topping out at
+an A+. This is the number colleges see on a transcript and the one that drives
+college matriculation, so it matters most for juniors and seniors. A student's
+cumulative number usually reads lower than their Y1 number. That is expected.
+The **Cumulative GPA Monitor** tab is built around the cumulative number and has
+its own guide.
 
 ### The Marking Period control
 
@@ -112,8 +119,9 @@ The header of each tab has three links, **Newark**, **Camden**, and
 **Paterson**, that open a Google Sheet for that region. Each sheet has one row
 per enrolled student with the four quarter GPAs side by side, the Y1 GPA, the
 cumulative GPA (unweighted, weighted, and projected), the student's advisory in
-the `team` column, ADA, and IEP and 504 status. Use it when you need the whole
-region in a spreadsheet rather than one school on screen.
+the `team` column, ADA, and IEP and 504 status. The sheets refresh nightly on
+the same schedule as the dashboard. Use one when you need the whole region in a
+spreadsheet rather than one school on screen.
 
 ---
 
