@@ -88,17 +88,25 @@ consumers and should stay promoted there rather than re-duplicated per model:
 Verify each of these before trusting a submission — none are hypothetical; all
 were found by reading the model SQL or querying prod directly this cycle.
 
-### `csgf_enrollment` under-reports Miami
+### `csgf_enrollment` under-reported Miami — resolved
 
-The model is driven by `stg_powerschool__schools`, a frozen PowerSchool-era
-Miami school catalog never updated after Miami's cutover to Focus as its SIS. As
-of this cycle: two Focus-marked-`(Closed)` schools (Sunrise, Liberty) still
-appear with every column null, and three schools with real enrolled Focus
-students are silently **missing** entirely (not null — absent rows) because the
-join to the stale catalog fails: KIPP Miami Tech (95 HS students), KIPP Legacy
-Elementary (173), KIPP Legacy Middle (32) — roughly 300 of Miami's ~1,755
-enrolled students. Owner is aware and fixing separately; confirm it's resolved
-before trusting this model's Miami rows.
+The model was driven by `stg_powerschool__schools`, a frozen PowerSchool-era
+Miami school catalog never updated after Miami's cutover to Focus as its SIS.
+Two Focus-marked-`(Closed)` schools (Sunrise, Liberty) still appeared with every
+column null, and three schools with real enrolled Focus students were silently
+**missing** entirely (not null — absent rows) because the join to the stale
+catalog failed: KIPP Miami Tech (95 HS students), KIPP Legacy Elementary (173),
+KIPP Legacy Middle (32) — roughly 300 of Miami's ~1,755 enrolled students. Fixed
+by this PR: added a `focus_schools` CTE (`int_focus__schools` filtered to
+`school_level is not null`, joined through
+`stg_google_sheets__people__locations`) unioned with the PowerSchool-sourced
+non-Miami schools. Verified all 5 real Miami schools now appear with correct
+enrollment/demographic/principal data, the 2 closed-school ghost rows are gone,
+and the 19 non-Miami rows are unchanged.
+
+**Still open**: `total_budgeted_enrollment` is NULL for every Miami school
+(existing schools included) — no Miami rows exist yet in the Google Sheet this
+column joins to. Not a dbt fix; needs whoever owns that sheet to add Miami.
 
 ### Miami's first HS is a forward risk for next cycle, not this one
 
@@ -125,16 +133,26 @@ PowerSchool-only gap somewhere in their lineage — not yet verified per-model.
 a different upstream (`stg_google_sheets__collegeboard__ap_course_crosswalk` and
 `int_assessments__ap_assessments.ap_course_name` respectively), and neither
 upstream's naming is guaranteed to match CSGF's official picklist for the
-current cycle. Confirmed mismatches for 2026-2027: "AP US History" → "AP United
+current cycle. Confirmed mismatches for 2026-2027, diffed against CSGF's real
+current AP course list pasted from the Portal task: "AP US History" → "AP United
 States History," "AP US Government and Politics" → "AP United States Government
-and Politics," "AP Pre-Calculus" → "AP Precalculus." Both models now carry an
-identical `case` remap for these — **update both together** whenever CSGF's list
-changes, or one model silently drifts from the other.
+and Politics," "AP Pre-Calculus" → "AP Precalculus," and 3 College Board "Studio
+Art" names → CSGF's current "Art and Design" naming ("AP Studio Art: 2-D Design
+Portfolio" → "AP 2-D Art and Design," "3-D Design Portfolio" → "3-D Art and
+Design," "Drawing Portfolio" → "AP Drawing"). Both models now carry an identical
+`case` remap for all 6 — **update both together** whenever CSGF's list changes,
+or one model silently drifts from the other. This duplication is a known,
+deliberate scope decision (flagged by `claude-review`, not centralized) — see
+Open Items.
 
-Separately, `csgf_hs_ap_offerings` pivots on a hardcoded list of AP course
-names, so a newly-offered course not yet added to the pivot's `IN` list drops
-out of the extract silently (no error). Confirm current AY coverage each cycle
-per the skill's checklist.
+`csgf_hs_ap_offerings` used to pivot on only 28 of CSGF's 43 real AP course
+columns, so a newly-offered course not on that list would drop out of the
+extract silently (no error). Fixed this cycle: the pivot now emits all 43
+columns, in CSGF's exact column order (confirmed against the live Portal task),
+so a straight copy/paste needs no reordering. The 11 courses/3 subscore columns
+KTAF has never offered or tested pivot to NULL for every row by construction —
+confirmed via direct query, not assumed. Still confirm current-AY coverage each
+cycle per the skill's checklist, since CSGF's list itself can change.
 
 ### School names need the same per-cycle check
 
