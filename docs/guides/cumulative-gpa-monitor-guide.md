@@ -9,12 +9,13 @@ README first). Lines beginning `> **Callout:**` are callouts; drop the word
 "Callout:" when rendering and use the Note style unless the text warns about a
 mistake, then use Warning. Italic lines beginning "Caption:" directly under an
 image are that image's caption; drop the word "Caption:". Image references point
-at `screenshots/` next to this file; upload each to Guide media and swap in the
-hosted URL. Put a table of contents after "What this dashboard does", linking to
-the four numbered sections, the two walkthroughs, Quick answers, and the
-Glossary. Student names are pixelated in every image that had them; do not
-re-crop. The screenshot manifest is a production note, not reader content.
-On-screen control names appear in bold exactly as the dashboard shows them.
+at the hosted `/guide-media/` URLs; the same files are in `screenshots/` next to
+this file under the names in the manifest. Put a table of contents after "What
+this dashboard does", linking to the four numbered sections, the two
+walkthroughs, Quick answers, and the Glossary. Student names are pixelated in
+every image that had them; do not re-crop. The screenshot manifest is a
+production note, not reader content. On-screen control names appear in bold
+exactly as the dashboard shows them.
 
 Prompt for Claude Design (paste as-is, with this file attached):
 
@@ -40,8 +41,8 @@ Rendering rules: a line beginning "> **Callout:**" is a callout; drop the word
 "Callout:" and use the Note style, except use Warning when the text warns about
 a mistake (the grade 9 on-the-books callout, the Grade view callout). An italic
 line beginning "Caption:" under an image is its caption; drop the word
-"Caption:". Every image reference points at screenshots/<file>; place each as a
-screenshot block with its caption, full width, no crop, no rounded corners.
+"Caption:". Every image reference is already a hosted /guide-media/ URL; place each as
+a screenshot block with its caption, full width, no crop, no rounded corners.
 Keep every Markdown table as a table. Numbered lists are step sequences, one
 action per step. Bold on-screen control names exactly as written. Keep the
 wording; do not paraphrase, shorten, or add emoji.
@@ -53,8 +54,7 @@ Links to keep live: the Tableau dashboard link and the suite guide. End with a
 "Related articles" list of the suite guide and the Academic Health Dashboard
 Guide.
 
-Output one HTML file ready to paste into the Zendesk article body, plus a list
-of the screenshot files in the order they appear.
+Output one HTML file ready to paste into the Zendesk article body.
 ```
 
 ---
@@ -73,7 +73,7 @@ It covers grades 9 through 12 at KHS, NCA, and NLH. Data refreshes overnight.
 The other tabs in the suite are described in the
 [Academic & Gradebook Health Suite guide](https://teamschools.zendesk.com/hc/en-us/articles/43413797842071-Academic-Gradebook-Health-Suite).
 
-![The Cumulative GPA Monitor](screenshots/01-cgm-full.png)
+![The Cumulative GPA Monitor](/guide-media/01M28MNP3J5ZVJMPTZNPS4KE91)
 
 _Caption: The whole tab. Controls across the top, four tiles, a goal row, then
 four charts. The default view is grade 11._
@@ -106,7 +106,7 @@ the books means last year's grades. By June the two numbers meet.
 
 ## 2. Set the controls
 
-![Header and controls](screenshots/02-cgm-header-controls.png)
+![Header and controls](/guide-media/01M28MNS9N581CAAEE1HP8RCWJ)
 
 _Caption: The title strip with the two panel buttons, and the five controls
 below it._
@@ -135,7 +135,7 @@ below it._
 
 ### The four tiles
 
-![Four tiles](screenshots/03-cgm-four-tiles.png)
+![Four tiles](/guide-media/01M28MNS4W6CA296XBE38ZFY58)
 
 _Caption: The four tiles for the grade chosen in **Grade view**. The grey line
 under each title says whether it follows the basis switch._
@@ -151,7 +151,7 @@ Hover a tile for the counts behind the percentage.
 
 ### The goal row
 
-![Goal row](screenshots/04-cgm-goal-row.png)
+![Goal row](/guide-media/01M28MNMDVSCN84S7YDBNX4HDH)
 
 _Caption: Gap to goal and students still needed, for the grade chosen in **Grade
 view**._
@@ -172,7 +172,7 @@ year's goals for cumulative 3.0+ are the same at every school.
 
 ### Band mix for the selected grade
 
-![Band mix, network](screenshots/05-cgm-band-mix-network.png)
+![Band mix, network](/guide-media/01M28MNSWP482TA4CZGY438JZH)
 
 _Caption: Two bars for the selected grade. The top bar is on the books today,
 the bottom bar is projected to year end. The circle shows the change in the 3.0+
@@ -189,7 +189,7 @@ the on-the-books share: this year's grades are helping.
 
 This panel shows both bars whatever **GPA basis** is set to.
 
-![Band mix for grade 9](screenshots/10-cgm-grade9-band-mix.png)
+![Band mix for grade 9](/guide-media/01M28MNMDNWA1Z5HVP9W4CJMH1)
 
 _Caption: The same panel with **Grade view** set to Grade 9 in the first weeks
 of school. The top bar is entirely red._
@@ -202,7 +202,7 @@ of school. The top bar is entirely red._
 
 ### Band mix by grade
 
-![Band mix by grade](screenshots/06-cgm-band-mix-by-grade.png)
+![Band mix by grade](/guide-media/01M28MNRE73QSNX5RNAGHZ4K7W)
 
 _Caption: The same five bands, one bar per grade, for all four grades. Follows
 the basis switch._
@@ -212,7 +212,7 @@ glance. The label above the chart says which basis it is showing.
 
 ### Percent at 3.0+ by grade
 
-![Percent at 3.0+ by grade](screenshots/07-cgm-pct-3-by-grade.png)
+![Percent at 3.0+ by grade](/guide-media/01M28MNN80G5A0HTM2G2QPGW2V)
 
 _Caption: One bar per grade with a grey tick at that grade's network goal. Green
 means at or above goal._
@@ -224,7 +224,7 @@ goal, the gap, and how many more students are needed.
 
 ### Gap to goal, school by grade
 
-![Gap to goal by school](screenshots/08-cgm-gap-by-school.png)
+![Gap to goal by school](/guide-media/01M28MNRFNBAK6V81RVQJ7AKXP)
 
 _Caption: One row per school and grade. The label is the gap to that school's
 goal in percentage points._
@@ -233,7 +233,7 @@ This is where a school leader finds their own rows. Green rows are at or above
 goal, red rows are below. The bar length is the share at 3.0+ on the chosen
 basis; the label and color are always projected.
 
-![Gap to goal for one school](screenshots/12-cgm-school-nca-gap-by-school.png)
+![Gap to goal for one school](/guide-media/01M28MNQT54ZT4M61VF1AR9XTT)
 
 _Caption: The same chart with **School** set to one school. The other schools
 drop out; the goal ticks stay._
@@ -246,7 +246,7 @@ drop out; the goal ticks stay._
 
 Click **Show Cusp Roster** in the top right. A panel covers the charts.
 
-![Cusp Roster open](screenshots/13-cgm-cusp-roster-open.png)
+![Cusp Roster open](/guide-media/01M28MNKVS2SS748KNNAYRG5YT)
 
 _Caption: The Cusp Roster for the grade chosen in **Grade view**. Names are
 pixelated in this guide._
@@ -255,7 +255,7 @@ The roster lists every student in the selected grade whose projected cumulative
 GPA is just under 3.0, between 2.75 and 2.99. These are the students a little
 extra support could move over the line by June.
 
-![Cusp Roster columns](screenshots/14-cgm-cusp-roster-panel.png)
+![Cusp Roster columns](/guide-media/01M28MNPCDY8NC458CQ2NM9VVG)
 
 _Caption: The roster columns. One row per student._
 
@@ -274,7 +274,7 @@ Hover a row for a short explanation of the last column.
 To narrow the list, set **School** before opening the roster. To see a different
 grade, change **Grade view**. Click **Hide Cusp Roster** to close it.
 
-![Cusp Roster for one school](screenshots/15-cgm-cusp-roster-one-school.png)
+![Cusp Roster for one school](/guide-media/01M28MNNHA55RQSR4NV7APEGGW)
 
 _Caption: The roster with **School** set to one school._
 
@@ -288,11 +288,11 @@ _Caption: The roster with **School** set to one school._
 Click **Show Trends** in the top right. A panel covers the charts with two
 history views.
 
-![Trends open](screenshots/16-cgm-trends-open.png)
+![Trends open](/guide-media/01M28MNPWG5A56G84FYKHQWZ0Y)
 
 _Caption: The Trends panel. A line chart on top, a band split below._
 
-![Trend by grade](screenshots/17-cgm-trend-by-grade.png)
+![Trend by grade](/guide-media/01M28MNQMKYQMZQFJV93DJ35YH)
 
 _Caption: One line per grade. Each point is the share of that grade that
 finished that school year at a 3.0 cumulative or better._
@@ -305,7 +305,7 @@ The lines are year-by-year snapshots, not the same students followed along. To
 follow a class, read diagonally: grade 9 in 2022, grade 10 in 2023, grade 11 in
 2024, grade 12 in 2025.
 
-![Splay over time](screenshots/18-cgm-splay-over-time.png)
+![Splay over time](/guide-media/01M28MNQ39PPH8CMW1S9KZSQ3V)
 
 _Caption: The five-band split for grade 11, one bar per closed year._
 
@@ -400,21 +400,21 @@ Files live in `screenshots/`. Rendered on September 11, 2026 from the
 documentation copy of the workbook. Student names are pixelated in 13, 14,
 and 15.
 
-| File                                  | Shows                                      |
-| ------------------------------------- | ------------------------------------------ |
-| `01-cgm-full.png`                     | Whole tab, defaults                        |
-| `02-cgm-header-controls.png`          | Title strip and controls                   |
-| `03-cgm-four-tiles.png`               | Four tiles                                 |
-| `04-cgm-goal-row.png`                 | Goal row                                   |
-| `05-cgm-band-mix-network.png`         | Band mix with change glyph                 |
-| `06-cgm-band-mix-by-grade.png`        | Band mix by grade                          |
-| `07-cgm-pct-3-by-grade.png`           | Percent at 3.0+ by grade                   |
-| `08-cgm-gap-by-school.png`            | Gap to goal by school and grade            |
-| `10-cgm-grade9-band-mix.png`          | Grade 9 band mix, on-the-books bar all red |
-| `12-cgm-school-nca-gap-by-school.png` | Gap chart filtered to one school           |
-| `13-cgm-cusp-roster-open.png`         | Cusp Roster over the tab                   |
-| `14-cgm-cusp-roster-panel.png`        | Cusp Roster columns                        |
-| `15-cgm-cusp-roster-one-school.png`   | Cusp Roster, one school                    |
-| `16-cgm-trends-open.png`              | Trends panel over the tab                  |
-| `17-cgm-trend-by-grade.png`           | Trend by grade                             |
-| `18-cgm-splay-over-time.png`          | Splay over time                            |
+| File                                  | Guide media                               | Shows                                      |
+| ------------------------------------- | ----------------------------------------- | ------------------------------------------ |
+| `01-cgm-full.png`                     | `/guide-media/01M28MNP3J5ZVJMPTZNPS4KE91` | Whole tab, defaults                        |
+| `02-cgm-header-controls.png`          | `/guide-media/01M28MNS9N581CAAEE1HP8RCWJ` | Title strip and controls                   |
+| `03-cgm-four-tiles.png`               | `/guide-media/01M28MNS4W6CA296XBE38ZFY58` | Four tiles                                 |
+| `04-cgm-goal-row.png`                 | `/guide-media/01M28MNMDVSCN84S7YDBNX4HDH` | Goal row                                   |
+| `05-cgm-band-mix-network.png`         | `/guide-media/01M28MNSWP482TA4CZGY438JZH` | Band mix with change glyph                 |
+| `06-cgm-band-mix-by-grade.png`        | `/guide-media/01M28MNRE73QSNX5RNAGHZ4K7W` | Band mix by grade                          |
+| `07-cgm-pct-3-by-grade.png`           | `/guide-media/01M28MNN80G5A0HTM2G2QPGW2V` | Percent at 3.0+ by grade                   |
+| `08-cgm-gap-by-school.png`            | `/guide-media/01M28MNRFNBAK6V81RVQJ7AKXP` | Gap to goal by school and grade            |
+| `10-cgm-grade9-band-mix.png`          | `/guide-media/01M28MNMDNWA1Z5HVP9W4CJMH1` | Grade 9 band mix, on-the-books bar all red |
+| `12-cgm-school-nca-gap-by-school.png` | `/guide-media/01M28MNQT54ZT4M61VF1AR9XTT` | Gap chart filtered to one school           |
+| `13-cgm-cusp-roster-open.png`         | `/guide-media/01M28MNKVS2SS748KNNAYRG5YT` | Cusp Roster over the tab                   |
+| `14-cgm-cusp-roster-panel.png`        | `/guide-media/01M28MNPCDY8NC458CQ2NM9VVG` | Cusp Roster columns                        |
+| `15-cgm-cusp-roster-one-school.png`   | `/guide-media/01M28MNNHA55RQSR4NV7APEGGW` | Cusp Roster, one school                    |
+| `16-cgm-trends-open.png`              | `/guide-media/01M28MNPWG5A56G84FYKHQWZ0Y` | Trends panel over the tab                  |
+| `17-cgm-trend-by-grade.png`           | `/guide-media/01M28MNQMKYQMZQFJV93DJ35YH` | Trend by grade                             |
+| `18-cgm-splay-over-time.png`          | `/guide-media/01M28MNQ39PPH8CMW1S9KZSQ3V` | Splay over time                            |
