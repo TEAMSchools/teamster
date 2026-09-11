@@ -361,6 +361,8 @@ exposures:
       - ref("rpt_tableau__gpa_goals")
       - ref("rpt_tableau__gpa_cumulative_year")
       - ref("rpt_tableau__student_course_grades")
+      - ref("rpt_tableau__gpa_goal_progress")
+      - ref("rpt_tableau__gradebook_audit")
     config:
       meta:
         dagster:
