@@ -342,6 +342,95 @@ decide what to cache. The parent spec says to leave pre-aggregations off until
 the partner reports a latency surprise. That surprise is now predicted rather
 than hypothetical, and it lands at repoint.
 
+### Nothing is anonymized — every value is fabricated
+
+Worth stating because the question comes up as "what do we anonymize." Nothing.
+No real row enters the generator at any point.
+
+De-identification starts from real records and removes identifiers, which
+carries re-identification risk, needs a stated risk threshold (the decision
+blocking [#4237](https://github.com/TEAMSchools/teamster/issues/4237)), and per
+PTAC is not achieved by removing direct identifiers alone. Fabrication carries
+none of that, which is the whole reason this is days of work rather than a
+governance project. The only thing read from production is **schema and
+codesets** — column names, types, nullability, and the distinct values of
+categorical fields. No rows.
+
+### Where the invented values come from
+
+The PII-shaped columns are concentrated in 2 tables: `dim_students` (11 columns)
+and `dim_staff` (16). Each class of field gets a different rule.
+
+**Names: realistic shape, unmistakably fake content.** Draw `first_name`,
+`last_name`, and `full_name` from a closed, committed list of invented names —
+not from a real-name library. The deciding reason is operational rather than
+legal: the partner will paste screenshots into bug reports. Plausible names make
+every screenshot a potential incident and put the burden on KTAF to prove that
+"Jayden Rodriguez, grade 3, Newark" is not a real child. Visibly synthetic names
+make screenshots free to share.
+
+Keep the character classes that break user interfaces, though, because that is
+the messiness the manifest wants: apostrophes, hyphens, diacritics,
+single-character surnames, and names long enough to overflow a column. Realism
+belongs in the shape, not the identity.
+
+Because the list is closed and committed, the canary idea generalizes: **any
+name in sandbox output that is not on the list is a contamination signal**, and
+that is mechanically checkable.
+
+**Birth dates: derived from grade, never independent.** A 3rd grader born in
+1998 breaks every age calculation downstream. Sample the enrolled grade first,
+then a `birth_date` inside the plausible window for that grade and academic
+year. Include a deliberate minority off-cohort — retained, accelerated, late
+entry — because those students are real and they are exactly the edge cases a
+kit gets wrong.
+
+**Identifiers: format-valid, from a reserved range.**
+`district_student_identifier`, `state_student_identifier`,
+`lea_student_identifier`, `salesforce_contact_id`, `staff_unique_id`. These must
+parse like the real thing — right length, right character set, right check-digit
+shape where one exists — so client code works unchanged at repoint. But draw
+them from a range production never issues. A sandbox identifier then cannot
+collide with a real one, and one appearing in the wrong system is immediately
+identifiable as fabricated.
+
+**Emails and phones: reserved namespaces, and one hard prohibition.**
+`work_email`, `google_email`, `personal_email`, `active_directory_username`,
+`personal_cell_phone`.
+
+**No fabricated address may use `@apps.teamschools.org`.** `google_email` is the
+identity-resolution key that `resolveAccess` matches on, and `canSwitchSqlUser`
+gates on that exact suffix. A synthetic row carrying a real-domain address is a
+real-looking credential in a system meant to contain none. Use a domain under
+`.invalid` — reserved by RFC 2606 and guaranteed never to resolve — so no mail
+can reach a fabricated person even by accident. Same principle for phones: the
+`555-01xx` block is reserved for fiction, so nobody ever dials a real number
+from a test fixture.
+
+**Categorical fields: derive the codeset from production, never transcribe it.**
+`gender_identity`, `race`, `is_hispanic`, `enrollment_status`. Every value the
+real codeset holds must appear, because a dropdown, a filter, and a group-by all
+have to see the full domain. The manifest generator extracts these during
+introspection; hardcoding them into the generator would go stale silently, the
+same failure the manifest exists to prevent.
+
+Proportions are a separate matter and need no real data — published state
+figures are enough, and are not PII.
+
+**The codesets are inconsistent, and that must be reproduced.** Measured on
+2026-09-11: `dim_staff.race` carries both
+`Black or African American (not Hispanic or Latino)` and
+`Black/African American`; `dim_staff.gender_identity` carries both `F`/`M` and
+`Cis Man`/`Cis Woman`. Two source systems, never reconciled. `dim_students.race`
+likewise mixes an ethnicity value (`Not Hispanic or Latino`) in among races.
+
+A generator that emits one canonical spelling per category would make the
+sandbox **cleaner than production** — the direction the fidelity rule forbids.
+The partner's grouping and filtering would then work in the sandbox and split
+into two buckets on real data. Emit the duplicates. This is the most concrete
+instance of the fidelity rule in the whole spec, and it is free: deriving the
+codeset rather than authoring it produces the duplicates automatically.
+
 ### What the generator actually produces
 
 **Avro files, staged to GCS, loaded into native BigQuery tables.** Not CSV, and
