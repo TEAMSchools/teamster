@@ -342,6 +342,62 @@ decide what to cache. The parent spec says to leave pre-aggregations off until
 the partner reports a latency surprise. That surprise is now predicted rather
 than hypothetical, and it lands at repoint.
 
+### What the generator actually produces
+
+**Avro files, staged to GCS, loaded into native BigQuery tables.** Not CSV, and
+not external tables. Both of those deserve their reason.
+
+**Avro over CSV, because the manifest is mostly about nulls.** All 230 columns
+are nullable and 183 of the 295 dimensions are strings, so the dataset's central
+assertion — at least 1 null and 1 non-null per column — lands almost entirely on
+string columns. In CSV, whether a field is `NULL` or the empty string depends on
+quoting: a bare empty field loads as `NULL`, a quoted `""` loads as an empty
+string. That distinction surviving 26M rows of generated output rests on nothing
+but quoting discipline, and if it slips, the coverage assertion passes while the
+data is wrong. That is precisely the silent failure this spec exists to prevent.
+Avro encodes null in the type, so the question cannot arise. It is also the
+house format — 286 `AVRO` declarations across the dbt source definitions — so
+the existing GCS tooling applies.
+
+**Native tables over external tables, diverging from the house pattern on
+purpose.** The repo stages Avro in GCS and reads it through BigQuery external
+tables created by dbt `stage_external_sources`. Three reasons that does not fit
+here:
+
+1. There is no dbt in the sandbox project, and nothing upstream for an external
+   source to be defined against.
+1. External-table metadata is cached (`metadata_cache_mode: MANUAL`,
+   `max_staleness`), and BigQuery's file listing lags an overwrite by minutes. A
+   regenerated dataset would serve stale rows for a while, which is
+   indistinguishable from a generator bug to anyone debugging it — the partner
+   included.
+1. Piece 4's fingerprint compares deployed schema, and Cube queries a 12.6M-row
+   fact repeatedly. Native tables are the right shape for both.
+
+**Schema is created explicitly, not inferred.** Derive each table's BigQuery
+schema from production `INFORMATION_SCHEMA.COLUMNS` — name, type, nullability —
+and create the table from that before loading. Letting BigQuery infer types from
+the Avro would make the drift fingerprint depend on inference matching
+production by luck; an explicit schema makes it match by construction.
+
+The fiddly part is logical types. 23 time dimensions and 45 numeric ones mean
+Avro's `date` / `timestamp-micros` / `decimal` annotations have to map exactly
+onto BigQuery `DATE` / `TIMESTAMP` / `NUMERIC`, or the fingerprint fails on
+types while every row looks fine. Budget for that rather than assuming it is
+free.
+
+So the deliverables, in build order:
+
+| Script                                    | Produces                                                                                  | Needs the sandbox? |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------ |
+| `sandbox_coverage_manifest.py`            | `coverage_manifest.yml` and the per-table BigQuery schemas, from production introspection | No                 |
+| `sandbox_generate.py --scale {tiny,full}` | Avro files in a local directory                                                           | No                 |
+| `sandbox_coverage.py`                     | Pass or fail against the manifest, reading the Avro directly                              | No                 |
+| The load step                             | GCS upload, `CREATE OR REPLACE TABLE`, `bq load`                                          | Yes                |
+
+Only the last one waits on the GCP project, and only it touches the warehouse —
+so it runs from a terminal or Dagster, never from an assistant session.
+
 ### Do not ship the partner a smaller dataset
 
 The obvious economy is to generate a fraction of production scale so the build
