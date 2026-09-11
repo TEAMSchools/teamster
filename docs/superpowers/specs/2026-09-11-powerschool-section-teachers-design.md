@@ -57,12 +57,15 @@ Counted against `kippmiami_powerschool` on 2026-09-11:
 
 3,423 sections, 387 teachers, AY2018 through AY2025.
 
-That 3,433 is the same count PR #5259 cites for Miami history sections, which it
+Those 3,423 sit inside the 3,433 Miami history sections PR #5259 cites, which it
 kept deliberately because dropping them would orphan every Miami grade and
-attendance row from its section. `dim_course_sections` still carries all of
-them. So Miami history sections currently exist with zero teacher rows against
-them, while `bridge_course_section_teachers.yml` still documents the full role
-set as present.
+attendance row from its section. The 10-section gap traces to a single teacher,
+across 2 schools, who has no `int_powerschool__teachers` record at the school
+each of those sections belongs to — verified against the archive, all 10.
+`dim_course_sections` still carries all 3,433. So Miami history sections
+currently exist with zero teacher rows against them, while
+`bridge_course_section_teachers.yml` still documents the full role set as
+present.
 
 Nothing reads the bridge yet — its only consumer is the Cube exposure, and
 `src/cube/` holds just a comment about a future bridge cube — so this is a
