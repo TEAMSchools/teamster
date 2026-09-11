@@ -87,8 +87,19 @@ Related: the
 guide covers the export from the Academic Health Schools tab.
 
 The **GPA Roster** links in every tab's header open a Google Sheet per region
-with one row per student: quarter GPAs, Y1 GPA, cumulative GPA, advisory, ADA,
-and IEP and 504 status.
+with one row per student: quarter GPAs, Y1 GPA, cumulative GPA (unweighted,
+weighted, and projected), advisory, ADA, and IEP and 504 status. The same sheets
+are on the Launch Page.
+
+- [GPA Roster: Newark](https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0),
+  grades 5 through 12
+- [GPA Roster: Camden](https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0),
+  grades 5 through 12
+- [GPA Roster: Paterson](https://docs.google.com/spreadsheets/d/13j1khv49eSxTFUJGxbgQKnjvmUhYTgH-SshZr5NWCbU/edit?gid=0#gid=0),
+  grades 5 through 8
+- [GPA Roster: Miami](https://docs.google.com/spreadsheets/d/1HsxearGC74LDySGx0QOZFkkH_HbsxmwzZ57Wi4vaZLg/edit?gid=0#gid=0),
+  grades 5 through 12. Term and Y1 GPA only, and not linked from the suite,
+  which does not yet include Miami.
 
 ## When everything refreshes
 
