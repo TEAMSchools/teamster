@@ -75,9 +75,9 @@ consistent with the sections the same archive decision preserved.
 
 ```sql
 select
-    sec.dcid as sections_dcid,
-    sec.id as sections_id,
-    sec.schoolid as sections_schoolid,
+    sec.sections_dcid,
+    sec.sections_id,
+    sec.sections_schoolid,
 
     st.id as sectionteacher_id,
     st.teacherid,
@@ -89,19 +89,40 @@ select
 
     cast(st.start_date as date) as effective_start_date,
     cast(st.end_date as date) as effective_end_date,
-from {{ ref("stg_powerschool__sections") }} as sec
+from {{ ref("base_powerschool__sections") }} as sec
 inner join
-    {{ ref("stg_powerschool__sectionteacher") }} as st on sec.id = st.sectionid
+    {{ ref("stg_powerschool__sectionteacher") }} as st
+    on sec.sections_id = st.sectionid
 inner join
     {{ ref("int_powerschool__teachers") }} as t
     on st.teacherid = t.id
-    and sec.schoolid = t.schoolid
+    and sec.sections_schoolid = t.schoolid
 inner join {{ ref("stg_powerschool__roledef") }} as r on st.roleid = r.id
 ```
 
-Grain is one row per `sectionteacher` row. Uniqueness test on
-`sectionteacher_id`. `role` is a BigQuery reserved word, so it takes backticks
-in the SQL and `quote: true` in the properties yml.
+Grain is one row per `sectionteacher` row that resolves to a section, a teacher
+and a role. Uniqueness test on `sectionteacher_id`. `role` is a BigQuery
+reserved word, so it takes backticks in the SQL and `quote: true` in the
+properties yml.
+
+### Sections come from `base_powerschool__sections`
+
+Both consumers already reach sections that way — the bridge directly, and
+`rpt_clever__sections` through `int_students__course_sections` to
+`int_powerschool__sections_union`. `base_powerschool__sections` inner-joins
+courses, terms and schools, so it is narrower than `stg_powerschool__sections`.
+
+Measured on Newark: sourcing from staging yields 52,540 rows against 51,945 from
+`base_`, a difference of 595 rows on 506 sections. Every one of those 506 drops
+for a missing course, none for a term or a school, and all fall in AY2004
+through AY2015 carrying retired mixed-case course numbers — `Span300`, `Sci200`,
+`Tec101`, `AGRI`. `dim_course_sections` excludes them for the same reason, so
+sourcing from staging would emit 595 orphan `course_section_key` values against
+the bridge's `relationships` test while adding no usable history.
+
+`base_powerschool__sections` uses `dbt_utils.star()`, which resolves its columns
+from BigQuery at run time, so the 3 columns read from it are enumerated
+explicitly rather than starred.
 
 Both staging variants expose the same columns and types, so the model builds
 under `dlt` (the three NJ districts) and under `odbc` (the Miami archive

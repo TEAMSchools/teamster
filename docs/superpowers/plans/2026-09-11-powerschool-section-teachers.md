@@ -96,10 +96,11 @@ trunk for lint.
 
 **Interfaces:**
 
-- Consumes: `stg_powerschool__sections` (`id`, `dcid`, `schoolid`),
-  `stg_powerschool__sectionteacher` (`id`, `sectionid`, `teacherid`, `roleid`,
-  `start_date`, `end_date`), `int_powerschool__teachers` (`id`, `schoolid`,
-  `teachernumber`), `stg_powerschool__roledef` (`id`, `name`, `sortorder`).
+- Consumes: `base_powerschool__sections` (`sections_id`, `sections_dcid`,
+  `sections_schoolid`), `stg_powerschool__sectionteacher` (`id`, `sectionid`,
+  `teacherid`, `roleid`, `start_date`, `end_date`), `int_powerschool__teachers`
+  (`id`, `schoolid`, `teachernumber`), `stg_powerschool__roledef` (`id`, `name`,
+  `sortorder`).
 - Produces: a relation with columns `sections_dcid INT64`, `sections_id INT64`,
   `sections_schoolid INT64`, `sectionteacher_id INT64`, `teacherid INT64`,
   `teachernumber STRING`, `role STRING`, `role_sortorder INT64`,
@@ -113,9 +114,9 @@ Write
 
 ```sql
 select
-    sec.dcid as sections_dcid,
-    sec.id as sections_id,
-    sec.schoolid as sections_schoolid,
+    sec.sections_dcid,
+    sec.sections_id,
+    sec.sections_schoolid,
 
     st.id as sectionteacher_id,
     st.teacherid,
@@ -127,19 +128,34 @@ select
 
     cast(st.start_date as date) as effective_start_date,
     cast(st.end_date as date) as effective_end_date,
-from {{ ref("stg_powerschool__sections") }} as sec
+from {{ ref("base_powerschool__sections") }} as sec
 inner join
-    {{ ref("stg_powerschool__sectionteacher") }} as st on sec.id = st.sectionid
+    {{ ref("stg_powerschool__sectionteacher") }} as st
+    on sec.sections_id = st.sectionid
 inner join
     {{ ref("int_powerschool__teachers") }} as t
     on st.teacherid = t.id
-    and sec.schoolid = t.schoolid
+    and sec.sections_schoolid = t.schoolid
 inner join {{ ref("stg_powerschool__roledef") }} as r on st.roleid = r.id
 ```
 
 Column order follows sqlfluff ST06: plain column refs grouped by table in join
 order with a blank line between groups, then the two `cast()` calls last. Do not
 reorder.
+
+Sections come from `base_powerschool__sections`, not
+`stg_powerschool__sections`. Both consumers already reach sections that way —
+the bridge directly, and `rpt_clever__sections` through
+`int_students__course_sections` to `int_powerschool__sections_union`.
+`base_powerschool__sections` inner-joins courses, terms and schools, so it is
+narrower: sourcing from staging instead adds 595 Newark rows on 506 sections
+whose `course_number` has no row in `stg_powerschool__courses`. Those are AY2004
+through AY2015 sections carrying retired mixed-case course numbers (`Span300`,
+`Sci200`, `Tec101`, `AGRI`), absent from `dim_course_sections` for the same
+reason, so including them would emit 595 orphan `course_section_key` values.
+`base_powerschool__sections` uses `dbt_utils.star()`, which resolves columns at
+run time, so the 3 columns read from it are enumerated explicitly rather than
+starred.
 
 - [ ] **Step 2: Write the properties yml**
 
@@ -150,18 +166,25 @@ Write
 models:
   - name: int_powerschool__section_teachers
     description: >-
-      One row per PowerSchool sectionteacher record, resolving the many-to-many
-      relationship between course sections and the staff assigned to them. Each
-      row carries the role the teacher holds on that section and the dates the
-      assignment was in effect. Distinct from the single primary teacher the
-      sections table names directly, which base_powerschool__sections already
-      resolves.
+      One row per PowerSchool sectionteacher record that resolves to a section,
+      a teacher and a role, expressing the many-to-many relationship between
+      course sections and the staff assigned to them. Each row carries the role
+      the teacher holds on that section and the dates the assignment was in
+      effect. Distinct from the single primary teacher the sections table names
+      directly, which base_powerschool__sections already resolves.
+
+
+      Rows drop where any of the three does not resolve. Sections come from
+      base_powerschool__sections, so a section whose course, term or school is
+      missing is excluded, as is an assignment whose teacher has no schoolstaff
+      record at that school. Both exclusions match what the consuming bridge and
+      Clever feed already produced before this model existed.
     columns:
       - name: sectionteacher_id
         data_type: int64
         description: >-
           Primary key of the PowerSchool sectionteacher record, and the grain of
-          this model.
+          this model. Unique only within a region.
         data_tests:
           - unique:
               config:
