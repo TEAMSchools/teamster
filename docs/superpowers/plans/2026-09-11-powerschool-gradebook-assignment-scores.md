@@ -683,7 +683,7 @@ reference and no `region` or `credit_type` column survive:
 ```bash
 cd /workspaces/teamster/.worktrees/cbini/refactor/claude-powerschool-gradebook-scores && \
 grep -cE '_dbt_source_project|extract_region| as region,| as credit_type,' \
-  src/dbt/kippnewark/target/compiled/kippnewark/models/powerschool/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql
+  src/dbt/kippnewark/target/compiled/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql
 ```
 
 Expected: `0`. A non-zero count means a deletion was missed.
@@ -942,7 +942,7 @@ done
 ```
 
 Expected: three successful compiles. The compiled file for each district is at
-`src/dbt/<district>/target/compiled/<district>/models/powerschool/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql`.
+`src/dbt/<district>/target/compiled/powerschool/models/sis/intermediate/int_powerschool__gradebook_assignments_scores.sql`.
 Read each one and confirm every relation is a `<district>_powerschool`
 production path with no `zz_` prefix.
 
