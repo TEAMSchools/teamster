@@ -176,8 +176,8 @@ omitting it, and the catalog carries no data either way.
 > **This section has a child spec.**
 > [2026-09-11-cube-sandbox-build-design.md](2026-09-11-cube-sandbox-build-design.md)
 > expands it into 5 buildable pieces and **changes one decision below**: the
-> sandbox deploys from a `sandbox-YYYY.MM.DD` git tag, not from `main`. Read the
-> child spec before acting on anything in this section.
+> sandbox is deployed deliberately, never by tracking `main`. Read the child
+> spec before acting on anything in this section.
 
 ### Why a separate Cube Cloud deployment, not a branch
 
@@ -365,7 +365,7 @@ swapped to production data by configuration.
 - **Query shapes.** Same view and member names, same JSON envelope. The sandbox
   deployment matches a known production state exactly, so the semantic model is
   identical by construction. (Superseded detail: this said the sandbox tracks
-  `main`. It deploys from a `sandbox-YYYY.MM.DD` tag instead — see
+  `main`. It is deployed deliberately instead — see
   [the child spec](2026-09-11-cube-sandbox-build-design.md).)
 - **Auth integration code.** Same OAuth flow, same raw `Authorization` header,
   same 403 shapes and messages.

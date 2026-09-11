@@ -55,7 +55,7 @@ unchanged.
 | Hosted Cube Cloud deployment over a sandbox BigQuery project | Confirmed, per parent spec          |
 | Sandbox holds zero real records, always                      | Confirmed, per parent spec          |
 | No de-identified mirror                                      | Confirmed, per parent spec          |
-| **Pin the sandbox model to a git tag, not `main`**           | **Changed from the parent spec**    |
+| **Deploy the sandbox deliberately, not by tracking `main`**  | **Changed from the parent spec**    |
 | Local Cube Core container as the daily surface               | Considered and declined, 2026-09-11 |
 
 ### The one change: pin a tag, do not track `main`
@@ -66,15 +66,29 @@ default for a consumer outside KTAF. Matching production _instantly_ means a
 model change merged on a Tuesday afternoon breaks MasterBorn's in-flight build
 with no warning and no changelog.
 
-Deploy the sandbox from a tag named `sandbox-YYYY.MM.DD` instead. Bumping it is
-a deliberate act by the analytics-engineering team, and each bump ships a diff
-report of added, removed, and retyped members as a release note. The sandbox
-still matches a known production state exactly — just a state both sides agreed
-to move to.
+Deploy the sandbox deliberately instead. Bumping it is an act by the
+analytics-engineering team, and each bump ships a diff report of added, removed,
+and retyped members as a release note. The sandbox still matches a known
+production state exactly — just a state both sides agreed to move to.
 
 The drift gate in Piece 4 is what makes this safe rather than stale: it measures
-the distance between the pinned tag and current production, so a pin that has
-drifted too far is visible rather than silent.
+the distance between the deployed state and current production, so a pin that
+has drifted too far is visible rather than silent.
+
+**Correction, 2026-09-11.** An earlier draft said "deploy from a tag named
+`sandbox-YYYY.MM.DD`". Cube Cloud has no such setting. Its Build & Deploy tab
+offers exactly 2 modes, and neither takes a tag:
+
+| Mode            | Source                                   | Production build fires       |
+| --------------- | ---------------------------------------- | ---------------------------- |
+| Deploy with Git | A chosen **production branch**           | On every push to that branch |
+| Deploy with CLI | Whatever `npx cubejs-cli deploy` uploads | Only when that command runs  |
+
+The intent survives; the mechanism changes. See
+[Piece 5](#piece-5--deploy-the-model-deliberately) for the 2 ways to get it and
+which to prefer. Confirm the modes in the console before building, the same way
+the credential-scoping facts in the parent spec were confirmed — this is read
+from vendor documentation, not observed.
 
 ### Why the local container was declined
 
@@ -691,18 +705,49 @@ The kit asserts the current manifest hash at test time. A kit bug is then
 immediately classifiable as their code or as a surface that moved under them,
 which is where most cross-organization debugging time otherwise goes.
 
-## Piece 5 — pin the model version
+## Piece 5 — deploy the model deliberately
 
-Deploy the sandbox from a tag named `sandbox-YYYY.MM.DD`. The rationale is in
-[The one change](#the-one-change-pin-a-tag-do-not-track-main) above.
+The sandbox must never follow `main` automatically. The rationale is in
+[The one change](#the-one-change-pin-a-tag-do-not-track-main) above; this
+section is the mechanism, which is not what the first draft claimed.
 
-Each bump:
+### Two ways to get it
+
+**Preferred: Deploy with CLI, from a tagged checkout.** Put the sandbox
+deployment in CLI mode. A bump is then
+`git checkout sandbox-YYYY.MM.DD && npx cubejs-cli deploy --token <token>`. The
+tag stays the human-meaningful pin even though Cube Cloud never reads it, and
+nothing auto-deploys — a production build happens only when someone runs that
+command. Cube Cloud keeps an internal repository that each successful deploy
+overwrites, so the deployed state is exactly what was uploaded.
+
+Two costs. It needs a deploy token stored somewhere, and it contradicts
+`src/cube/CLAUDE.md`'s "no manual deploy command" — which is a rule about the
+**production** deployment, so state the exception rather than quietly breaking
+the rule.
+
+**Alternative: Deploy with Git, tracking a long-lived branch.** Point the
+sandbox deployment at a branch such as `cube-sandbox-release` and fast-forward
+it to a chosen `main` commit to bump. No deploy token, and the bump is an
+ordinary git push. The cost is that a push to that branch deploys immediately,
+so the deliberateness rests on branch discipline rather than on a separate
+command.
+
+**Why CLI is preferred.** Connecting a GitHub repository auto-syncs
+non-production branches into staging environments _regardless of deploy mode_.
+On the sandbox deployment that means a staging environment per repo branch, each
+sharing the deployment's API secret. Harmless, since the data is fabricated, but
+it is noise around a surface handed to an outside party. CLI mode with no GitHub
+connection avoids it entirely.
+
+### Each bump
 
 1. Regenerate the catalog and commit it, so the move is a reviewable diff.
+1. Tag the commit `sandbox-YYYY.MM.DD`.
 1. Generate a member-level diff report of additions, removals, and retypes.
 1. Send that report to MasterBorn as a release note.
-1. Bump the tag on the sandbox deployment.
-1. Re-run the coverage and canary suites against the new pin.
+1. Deploy that checkout to the sandbox deployment.
+1. Re-run the coverage and canary suites against the new state.
 
 ## How each tier sets up
 
