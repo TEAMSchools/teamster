@@ -707,12 +707,21 @@ Slack message (Step 6) uses.
 2. **Generate an `.ics` file** covering this cycle's actual dates: the Data
    Collection Window, Pre-Work Completed Deadline, each Office Hours slot, the
    Internal Deadline, Panic Week, and the Official Deadline (pull the exact
-   dates from the item-list doc's Context section -- see Step 3). Worked example
-   from the 2026-2027 cycle, with correct RFC 5545 structure (CRLF line endings,
-   balanced VEVENT/VALARM blocks) to use as a reference:
-   [`reference/outlook-invites-2026-2027.ics`](reference/outlook-invites-2026-2027.ics).
-   Regenerate fresh each cycle with that cycle's real dates -- don't just reuse
-   the old file's dates.
+   dates from the item-list doc's Context section -- see Step 3). **Produce this
+   fresh each cycle into local scratch (`.claude/scratch/`) -- do not commit the
+   generated `.ics` file to the repo.** It's a disposable, per-cycle data
+   artifact (real dates/times for that year's collection), not documentation; a
+   committed copy from an earlier cycle would also invite reuse of stale dates.
+   RFC 5545 structure to follow: `VCALENDAR` wrapping one `VEVENT` per reminder,
+   **CRLF line endings** (not bare `\n`), balanced `BEGIN`/`END` pairs for both
+   `VEVENT` and any nested `VALARM`, all-day items using
+   `DTSTART;VALUE=DATE:YYYYMMDD` / matching `DTEND`, timed items using full
+   `DTSTART:YYYYMMDDTHHMMSSZ` UTC timestamps, and a `VALARM` block
+   (`ACTION:DISPLAY`, `TRIGGER:-P1D` or `-PT30M` style, its own `DESCRIPTION`)
+   for anything that should pop a reminder rather than just sit on the calendar.
+   Confirmed working structure (2026-2027 cycle, verified importing cleanly) --
+   rebuild an equivalent file with that cycle's real dates rather than looking
+   for a checked-in example.
 3. **Import it into classic desktop Outlook** via **File → Open & Export →
    Import/Export → "Import an iCalendar (.ics) or vCalendar (.vcs) file."** **Do
    not double-click the file** -- on a machine where Microsoft's newer "New
