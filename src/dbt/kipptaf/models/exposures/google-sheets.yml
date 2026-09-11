@@ -918,3 +918,16 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: google_sheets__dibels_daily_completion
+    label: DIBELS Daily Completion
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1Peu2YG3kDKV9qCT6h9ez-StDqsrwNUZ5focjBg_xStM
+    depends_on:
+      - ref("rpt_gsheets__dibels_benchmark_completion_daily")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
