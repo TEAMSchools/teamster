@@ -95,6 +95,14 @@ models:
         data_type: string
       - name: measure_year_growth
         data_type: string
+      - name: is_above_average_growth
+        data_type: boolean
+        description: >-
+          True when measure_semester_growth is Above Average or Well Above
+          Average. Null on BOY rows (no prior period to grow from) and on PM
+          rows (measure_semester_growth is always NA there -- this concept is
+          Benchmark-only). Read on the MOY row for BOY-to-MOY growth, on the EOY
+          row for MOY-to-EOY growth.
       - name: probe_number
         data_type: int64
         description: Probe sequence number within the PM period.

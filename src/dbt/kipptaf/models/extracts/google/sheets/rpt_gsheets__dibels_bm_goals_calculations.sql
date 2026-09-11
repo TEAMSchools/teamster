@@ -108,6 +108,7 @@ with
             and a.assessment_grade_int = f.grade_level
             and a.benchmark_goal_season = f.period
             and a.foundation_measure_standard_level = f.grade_goal_type
+            and f.population = 'All'
         where
             a.academic_year = {{ var("current_academic_year") }}
             and a.assessment_type = 'Benchmark'
