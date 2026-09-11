@@ -59,3 +59,19 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   hand-authored definitions.
 - **No manual deploy command.** Production redeploys are triggered by merges to
   `main` in Cube Cloud; do not propose a deploy step.
+- **`CUBEJS_API_SECRET` is deployment-wide; every OTHER variable is
+  per-environment.** Confirmed in the Cube Cloud console (2026-08-06): a branch
+  environment shows the SAME generated API secret as production, while
+  `CUBEJS_DB_BQ_*` and other config are separately editable per environment. So
+  a token minted for a branch staging endpoint is verified by PRODUCTION's
+  `checkAuth` against the same secret — it is mechanically a production
+  credential, and a holder can claim any `email` and read all of
+  `kipptaf_marts`. The bypass sits at signature verification, upstream of
+  `resolveAccess` and every `access_policy`, so no view or policy change
+  mitigates it. **Never hand a branch endpoint or a branch-minted token to
+  anyone outside the network** — external access needs a SEPARATE DEPLOYMENT,
+  which gets its own generated secret. The corollary is legitimate and useful:
+  pointing a branch's `CUBEJS_DB_BQ_PROJECT_ID` at a sandbox project tests the
+  model against synthetic data with zero YAML changes (every `sql_table:` is
+  project-unqualified, and `resolveAccess` reads the same project), which stays
+  internal-only precisely because the branch cannot carry its own credential.

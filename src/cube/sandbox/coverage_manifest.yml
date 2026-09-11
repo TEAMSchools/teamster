@@ -1,0 +1,1916 @@
+generated_by: scripts/sandbox_coverage_manifest.py
+generated_at: "2026-09-11"
+source:
+  project: teamster-332318
+  dataset: kipptaf_marts
+  tables: 20
+  note: Schema and codesets only. No rows are read from production.
+totals:
+  column_cells: 230
+  residents: 460
+  scope_cells: 22
+tables:
+  - dim_assessment_administrations
+  - dim_assessments
+  - dim_course_sections
+  - dim_courses
+  - dim_dates
+  - dim_locations
+  - dim_regions
+  - dim_school_calendars
+  - dim_staff
+  - dim_staff_cube_access
+  - dim_staff_reporting_chain
+  - dim_staff_reporting_periods
+  - dim_staff_work_history
+  - dim_student_enrollment_status
+  - dim_student_enrollments
+  - dim_student_section_enrollments
+  - dim_students
+  - dim_terms
+  - fct_assessment_scores_enrollment_scoped
+  - fct_student_attendance_daily
+views:
+  staff_directory:
+    - staff-directory
+  staff_pii:
+    - staff-pii-all_in_scope
+    - staff-pii-reporting_chain
+    - staff-pii-reporting_chain_or_below_rank
+    - staff-pii-teaching_staff
+  student_attendance_view:
+    - student-network
+    - student-region
+    - student-school
+  student_section_enrollments_view:
+    - student-network
+    - student-region
+    - student-school
+  student_enrollments_view:
+    - student-network
+    - student-region
+    - student-school
+  student_assessment_scores_view:
+    - student-network
+    - student-region
+    - student-school
+columns:
+  - table: dim_assessment_administrations
+    column: assessment_administration_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessment_administrations
+    column: assessment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessment_administrations
+    column: administered_date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessment_administrations
+    column: _dbt_source_project
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessment_administrations
+    column: administration_period
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessment_administrations
+    column: source_assessment_id
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessment_administrations
+    column: test_type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: assessment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: title
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: academic_subject
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: category
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: module_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: module_type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: grade_level_tested
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: is_internal_assessment
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: combined_academic_subject
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: aligned_academic_subject
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: credit_category
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: source_assessment_id
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_assessments
+    column: test_type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_course_sections
+    column: course_section_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_course_sections
+    column: course_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_course_sections
+    column: location_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_course_sections
+    column: identifier
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_course_sections
+    column: period
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_course_sections
+    column: room
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: course_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: course_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: course_title
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: credit_type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: academic_subject
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: is_foundations
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_courses
+    column: credits
+    data_type: FLOAT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: date_timestamp
+    data_type: TIMESTAMP
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: day_of_week
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: day_of_week_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: day_of_month
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: day_of_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: week_of_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: month_number
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: month_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: quarter_number
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: year_number
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: is_weekday
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: academic_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: fiscal_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: is_current_academic_year
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: calendar_week_start_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: calendar_week_end_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: school_week_start_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_dates
+    column: school_week_end_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: location_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: grade_band
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: is_campus
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: address
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: city
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: postal_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: campus
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: region_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_locations
+    column: abbreviation
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: business_unit_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: region_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: state
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: dagster_code_location
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: timezone
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: state_district_id
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_regions
+    column: legal_entity
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_school_calendars
+    column: date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_school_calendars
+    column: location_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_school_calendars
+    column: is_in_session
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_school_calendars
+    column: is_membership_day
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: staff_unique_id
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: full_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: first_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: last_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: birth_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: gender_identity
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: race
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: is_hispanic
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: work_email
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: personal_email
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: personal_cell_phone
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: active_directory_username
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: google_email
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: original_hire_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff
+    column: rehire_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: google_email
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: region_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: location_abbreviation
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: department_group
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: entity
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: job_function_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: job_function_level
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: student_location_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_location_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_department_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_pii_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_compensation_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_observations_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_cube_access
+    column: staff_benefits_scope
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_chain
+    column: manager_staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_chain
+    column: reportee_staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_chain
+    column: depth
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_periods
+    column: staff_reporting_periods_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_periods
+    column: staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_periods
+    column: manager_staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_periods
+    column: effective_start_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_reporting_periods
+    column: effective_end_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: staff_work_history_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: work_assignment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: full_time_equivalency
+    data_type: FLOAT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: is_management_position
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: status_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: status_reason
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: position_title
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: job_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: worker_type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: department_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: business_unit_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: work_location_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: is_primary_position
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: manager_staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: effective_start_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_staff_work_history
+    column: effective_end_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: student_enrollment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: iep_classification
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: special_education_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: special_education_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: special_education_placement
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: meal_eligibility
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: is_ell
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: is_iep
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollment_status
+    column: is_meal_eligible
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: student_enrollment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: student_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: location_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: entry_date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: exit_date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: academic_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: grade_level
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: graduation_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: is_retained_year
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_enrollments
+    column: year_in_network
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: academic_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: entry_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: exit_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: is_dropped_section
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: is_dropped_course
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: is_homeroom
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: student_section_enrollment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: course_section_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: student_enrollment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: lead_teacher_staff_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: is_current_section_enrollment
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_student_section_enrollments
+    column: is_current_homeroom
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: student_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: lea_student_identifier
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: district_student_identifier
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: state_student_identifier
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: salesforce_contact_id
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: full_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: birth_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: gender_identity
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: is_gifted
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: race
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_students
+    column: enrollment_status
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: term_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: location_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: school_id
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: term_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: term_name
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: start_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: end_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: academic_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: fiscal_year
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: grade_band
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: data_freeze_date
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: is_current
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: dim_terms
+    column: semester
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: assessment_score_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: assessment_administration_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: enrollment_resolution
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: student_section_enrollment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: term_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: test_date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: assessment_date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: scale_score
+    data_type: NUMERIC
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: percent_correct
+    data_type: NUMERIC
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: national_percentile
+    data_type: NUMERIC
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: proficiency_level
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: is_mastery
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: response_type
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: response_type_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: response_type_description
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: response_type_root_description
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: is_replacement
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_assessment_scores_enrollment_scoped
+    column: performance_band_label_number
+    data_type: NUMERIC
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: student_attendance_daily_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: student_enrollment_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: date_key
+    data_type: DATE
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: term_key
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_current_record
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_enrollment_month_end_record
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_enrollment_week_end_record
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: attendance_code
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: attendance_value
+    data_type: FLOAT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: membership_value
+    data_type: FLOAT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: present_weight
+    data_type: FLOAT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_truant
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_absent
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_tardy
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_ontime
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_oss
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_iss
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_suspended
+    data_type: INT64
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_latest_record
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_month_end_record
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_week_end_record
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: attendance_category
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: is_chronically_absent
+    data_type: BOOL
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+  - table: fct_student_attendance_daily
+    column: ada_tier
+    data_type: STRING
+    residents:
+      - "null"
+      - non_null
+    status: uncovered
+scopes:
+  - column: staff_benefits_scope
+    value: none
+    kind: any_non_none
+    source: access.js
+    status: uncovered
+  - column: staff_benefits_scope
+    value: non_none
+    kind: any_non_none
+    source: access.js
+    status: uncovered
+    concrete_values_from: dim_staff_cube_access.staff_benefits_scope
+    gap:
+      No non-none value exists in production. The generator must invent one, and
+      no production row will ever exercise this branch.
+  - column: staff_compensation_scope
+    value: none
+    kind: any_non_none
+    source: access.js
+    status: uncovered
+  - column: staff_compensation_scope
+    value: non_none
+    kind: any_non_none
+    source: access.js
+    status: uncovered
+    concrete_values_from: dim_staff_cube_access.staff_compensation_scope
+  - column: staff_department_scope
+    value: all
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_department_scope
+    value: none
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_department_scope
+    value: own_group
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_location_scope
+    value: network
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_location_scope
+    value: none
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_location_scope
+    value: region
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_location_scope
+    value: school
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_observations_scope
+    value: none
+    kind: any_non_none
+    source: access.js
+    status: uncovered
+  - column: staff_observations_scope
+    value: non_none
+    kind: any_non_none
+    source: access.js
+    status: uncovered
+    concrete_values_from: dim_staff_cube_access.staff_observations_scope
+  - column: staff_pii_scope
+    value: all_in_scope
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_pii_scope
+    value: none
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_pii_scope
+    value: reporting_chain
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_pii_scope
+    value: reporting_chain_or_below_rank
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: staff_pii_scope
+    value: teaching_staff
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: student_location_scope
+    value: network
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: student_location_scope
+    value: none
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: student_location_scope
+    value: region
+    kind: literal
+    source: access.js
+    status: uncovered
+  - column: student_location_scope
+    value: school
+    kind: literal
+    source: access.js
+    status: uncovered
+derived_states:
+  - name: hasRemit
+    value: true
+    status: uncovered
+  - name: hasRemit
+    value: false
+    status: uncovered
+  - name: hasChain
+    value: true
+    status: uncovered
+  - name: hasChain
+    value: false
+    status: uncovered
+anchors:
+  - column: is_latest_record
+    requirement: mixed
+    status: uncovered
+  - column: is_month_end_record
+    requirement: mixed
+    status: uncovered
+  - column: is_week_end_record
+    requirement: mixed
+    status: uncovered
+  - column: is_current_record
+    requirement: mixed
+    status: uncovered
+name_classes:
+  - class: all_caps
+    status: uncovered
+  - class: apostrophe
+    status: uncovered
+  - class: diacritic
+    status: uncovered
+  - class: hyphen
+    status: uncovered
+  - class: internal_capital
+    status: uncovered
+  - class: internal_space
+    status: uncovered
+  - class: long
+    status: uncovered
+  - class: non_latin
+    status: uncovered
+  - class: plain
+    status: uncovered
+  - class: rtl
+    status: uncovered
+  - class: short
+    status: uncovered
+  - class: single_char
+    status: uncovered
+codesets:
+  dim_staff_cube_access.student_location_scope:
+    - network
+    - none
+    - region
+    - school
+  dim_staff_cube_access.staff_location_scope:
+    - network
+    - none
+    - region
+    - school
+  dim_staff_cube_access.staff_department_scope:
+    - all
+    - none
+    - own_group
+  dim_staff_cube_access.staff_pii_scope:
+    - all_in_scope
+    - none
+  dim_staff_cube_access.staff_compensation_scope:
+    - all_in_scope
+    - none
+    - reporting_chain
+    - reporting_chain_or_below_rank
+  dim_staff_cube_access.staff_observations_scope:
+    - all_in_scope
+    - none
+    - reporting_chain
+    - reporting_chain_or_below_rank
+    - teaching_staff
+  dim_staff_cube_access.staff_benefits_scope:
+    - none
+  dim_students.gender_identity:
+    - null
+    - F
+    - M
+    - X
+  dim_students.race:
+    - American Indian or Alaska Native
+    - Asian
+    - Black/African American
+    - Hispanic or Latino
+    - Native Hawaiian or Other Pacific Islander
+    - Not Hispanic or Latino
+    - Not Listed
+    - Two or More Races
+    - White
+  dim_students.enrollment_status:
+    - Currently Enrolled
+    - Graduated
+    - Imported as Historical
+    - Inactive
+    - Transferred Out
+  dim_staff.gender_identity:
+    - null
+    - Cis Man
+    - Cis Woman
+    - F
+    - Gender Not Listed
+    - Gender Queer/Non-Conforming
+    - I decline to select
+    - M
+    - Non-Binary
+    - Not Specified
+    - Trans Man
+    - Two Spirit
+  dim_staff.race:
+    - null
+    - Asian
+    - Bi/Multiracial
+    - Black or African American (not Hispanic or Latino)
+    - Black/African American
+    - Decline to State
+    - Latinx/Hispanic/Chicana(o)
+    - Middle Eastern
+    - Native American/First Nation
+    - Race/Ethnicity Not Listed
+    - White
+identities:
+  - name: unresolvable
+    note: No dim_staff_cube_access row at all, to exercise clean default-deny.
+    status: uncovered
