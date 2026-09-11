@@ -1,0 +1,128 @@
+# KTAF reserved synthetic-person namespace.
+#
+# STARTER SET FOR REVIEW — not yet a reservation. Reserving a namespace only
+# works once it is agreed and published, so this file is a proposal until the
+# data team signs off and it is named in docs/reference/ and the partner
+# handoff. See docs/superpowers/specs/2026-09-11-cube-sandbox-build-design.md,
+# "Names: a reserved surname namespace, realistic given names".
+#
+# These names are fabricated. They describe no person, so this file carries no
+# PII and is committed deliberately.
+#
+# THE CONTRACT
+#
+# Every synthetic person's surname comes from `surnames` below. Nothing else
+# uses these words. That makes a surname self-identifying the way `example.com`
+# and `.invalid` are — reserved and documented, rather than impossible.
+#
+# A closed list of PLAUSIBLE names would prove only provenance: "Jayden
+# Rodriguez is on our list" is compatible with a real student having that name.
+# Coined surnames are what let the appearance of a name be the proof.
+#
+# Given names stay realistic, because that is where the characters that break
+# layout and sorting live. Each carries the class it exercises, so
+# sandbox_coverage.py can assert every class is present rather than trusting
+# that a random sample happened to include the hard ones.
+#
+# ADDING A SURNAME: check it is not a real surname in any population you can
+# think of, and prefer an invented stem with a plausible suffix over anything
+# that reads as a real family name.
+
+surnames:
+  - Fennworth
+  - Quillamber
+  - Bramblehyde
+  - Corvasine
+  - Dunmarrow
+  - Thistlewane
+  - Marrowby
+  - Vexley
+  - Orrindale
+  - Cloverhelm
+  - Pellworth
+  - Wrenhollow
+  - Sablewick
+  - Lomberry
+  - Stavelock
+  - Pinchwater
+  - Yarrowmede
+  - Kesslehorn
+  - Drindlewood
+  - Muffleton
+  - Cranwillow
+  - Vandermire
+  - Bellowgate
+  - Quorley
+  - Hesperwood
+  - Wexmoor
+  - Ferralun
+  - Gimblewood
+  - Snithwick
+  - Orlanthe
+  - Brackenmoss
+  - Dovetallow
+  - Rushmantle
+  - Thornquill
+  - Vellacourt
+  - Merrivane
+  - Calderwyn
+  - Tumbleridge
+  - Peskworth
+  - Ashenvale
+
+# Each entry names the class it exercises. `plain` entries are the common case;
+# every other class must appear at least once in a generated dataset.
+given_names:
+  - { name: Amara, class: plain }
+  - { name: Desmond, class: plain }
+  - { name: Priya, class: plain }
+  - { name: Tobias, class: plain }
+  - { name: Naomi, class: plain }
+  - { name: Ezra, class: plain }
+  - { name: Imani, class: plain }
+  - { name: Mateo, class: plain }
+
+  # Single character. Breaks initials logic and fixed-width columns.
+  - { name: X, class: single_char }
+  - { name: J, class: single_char }
+
+  # Very short. Often mistaken for a truncation bug.
+  - { name: Bo, class: short }
+  - { name: Al, class: short }
+
+  # Apostrophe. Breaks naive SQL string building and CSV quoting.
+  - { name: Ma'ayan, class: apostrophe }
+  - { name: Ke'oni, class: apostrophe }
+  - { name: N'Dea, class: apostrophe }
+
+  # Hyphen. Breaks tokenizing on the separator.
+  - { name: Mary-Kate, class: hyphen }
+  - { name: Jean-Luc, class: hyphen }
+
+  # Space inside the given name. Breaks "split on space to get the surname".
+  - { name: Ana Maria, class: internal_space }
+
+  # Diacritics. Break collation, sorting, and naive ASCII normalisation.
+  - { name: Zoë, class: diacritic }
+  - { name: José, class: diacritic }
+  - { name: Renée, class: diacritic }
+  - { name: Søren, class: diacritic }
+  - { name: Ngọc, class: diacritic }
+
+  # Non-Latin script. Breaks width assumptions and font fallback.
+  - { name: 李, class: non_latin }
+  - { name: Ольга, class: non_latin }
+
+  # Right-to-left script. Breaks layout in the direction nobody tests.
+  - { name: أمينة, class: rtl }
+
+  # Internal capital. Breaks title-casing that lowercases the rest.
+  - { name: DaShawn, class: internal_capital }
+  - { name: LaToya, class: internal_capital }
+
+  # All caps, as source systems frequently store it.
+  - { name: MARIA, class: all_caps }
+
+  # Long enough to overflow a column.
+  - { name: Christabella, class: long }
+  - { name: Maximiliana, class: long }

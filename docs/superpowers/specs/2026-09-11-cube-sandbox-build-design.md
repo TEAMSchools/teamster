@@ -361,22 +361,56 @@ categorical fields. No rows.
 The PII-shaped columns are concentrated in 2 tables: `dim_students` (11 columns)
 and `dim_staff` (16). Each class of field gets a different rule.
 
-**Names: realistic shape, unmistakably fake content.** Draw `first_name`,
-`last_name`, and `full_name` from a closed, committed list of invented names —
-not from a real-name library. The deciding reason is operational rather than
-legal: the partner will paste screenshots into bug reports. Plausible names make
-every screenshot a potential incident and put the burden on KTAF to prove that
-"Jayden Rodriguez, grade 3, Newark" is not a real child. Visibly synthetic names
-make screenshots free to share.
+**Names: a reserved surname namespace, realistic given names.**
 
-Keep the character classes that break user interfaces, though, because that is
-the messiness the manifest wants: apostrophes, hyphens, diacritics,
-single-character surnames, and names long enough to overflow a column. Realism
-belongs in the shape, not the identity.
+Start from the question that actually gets asked. The partner pastes a
+screenshot into a ticket, it shows a student row, and someone asks whether that
+is a real child. The answer has to take 10 seconds.
 
-Because the list is closed and committed, the canary idea generalizes: **any
-name in sandbox output that is not on the list is a contamination signal**, and
-that is mechanically checkable.
+A closed list of plausible names cannot give that answer. "Jayden Rodriguez"
+being on our committed list proves the **generator emitted it** — provenance —
+and is perfectly compatible with a real student having that name. Provenance is
+not non-existence, and no amount of list-checking closes the gap. Checking
+against the real roster would close it, and is refused: the generator would have
+to read real student data, building the exact bridge to PII it exists to
+prevent.
+
+So the names carry the proof themselves. Split the two parts:
+
+- **Surnames come from a documented reserved set** — coined words, used for
+  nothing else, committed to the repo and named in the partner handoff as KTAF's
+  synthetic-person namespace. This works the way `example.com` works: not
+  because the string is impossible, but because it is **reserved and
+  documented**, so its appearance is self-identifying. IANA reserved
+  `example.com` for exactly this purpose, and `.invalid` and the `555-01xx`
+  phone block are the same move.
+- **Given names stay realistic**, because that is where the character classes
+  that break user interfaces live: apostrophes, hyphens, diacritics, non-Latin
+  scripts, single characters, and lengths that overflow a column. A realistic
+  given name beside a reserved surname keeps the layout stress without the
+  plausible identity.
+
+`Amara Fennworth` reads as a name and is unmistakable once you know the
+convention. `Zoë Quillamber-Strand` does the same while exercising a diacritic,
+a hyphen, and 21 characters.
+
+Three levels of proof, fastest first:
+
+1. **By glance.** The surname is from the reserved set, and the row's email is
+   at a `.invalid` domain. The email is the tell that works on someone who has
+   never heard of the convention, since nothing at `.invalid` can resolve.
+1. **By grep.** The surname list is committed, so membership is one command. A
+   surname outside the set appearing in sandbox output is a contamination signal
+   — the canary idea generalized, and sound now only because the set is coined
+   rather than plausible.
+1. **By construction.** The sandbox project holds no IAM on `teamster-332318`
+   and Piece 1's isolation check runs on a schedule, so no path exists by which
+   a real row could be present. This is the actual proof; the first two are the
+   fast ones.
+
+Reserving a namespace only works if it is written down, or the glance test
+serves whoever happens to remember it. Name the set in the partner handoff and
+in `docs/reference/`.
 
 **Birth dates: derived from grade, never independent.** A 3rd grader born in
 1998 breaks every age calculation downstream. Sample the enrolled grade first,
@@ -397,6 +431,15 @@ identifiable as fabricated.
 **Emails and phones: reserved namespaces, and one hard prohibition.**
 `work_email`, `google_email`, `personal_email`, `active_directory_username`,
 `personal_cell_phone`.
+
+**Fold addresses to ASCII.** The given-name classes include diacritics and
+non-Latin and right-to-left scripts, so deriving an address by lowercasing the
+name yields a non-ASCII local part (`søren.gimblewood@…`), which needs SMTPUTF8
+and is not what any real directory holds. Transliterate to ASCII first. This is
+not cosmetic: `google_email` is the key `resolveAccess` matches exactly, so a
+non-ASCII address is a realistic-looking identity that silently resolves to
+nobody. The starter fixture's own illustration got this wrong, which is why it
+is called out here.
 
 **No fabricated address may use `@apps.teamschools.org`.** `google_email` is the
 identity-resolution key that `resolveAccess` matches on, and `canSwitchSqlUser`
