@@ -11,7 +11,11 @@ models:
       securityContext groups and location/department allow-lists that each
       view's access_policy reads; not exposed as a Cube. The staff directory and
       aggregate summary are open — these scopes only constrain sensitive fields.
-      Unresolved roles emit 'none' (deny), never NULL.
+      Unresolved roles emit 'none' (deny), never NULL. When ADP drops a person's
+      job function code, the code they last held under the same job_code carries
+      forward for 30 days so a data gap does not silently revoke access, bounded
+      by a floor date so the carry-forward applies only to gaps that open after
+      it shipped.
     data_tests:
       # A remit-scoped PII scope (all_in_scope / teaching_staff) with a none
       # location or department axis is a resolution bug: the remit resolves empty,
@@ -89,7 +93,39 @@ models:
 
       - name: job_function_code
         data_type: string
-        description: Current ADP job function code (CHIEF, SL, TEACH, ...).
+        description: >-
+          Current ADP job function code (CHIEF, SL, TEACH, ...). NULL when ADP
+          wrote the person's current work assignment row without one, which is
+          the condition the carry-forward covers.
+        data_tests:
+          # ADP leaves job_function_code empty on every new effective-dated work
+          # assignment row it writes, so a null here is an upstream data gap, not
+          # a modelling error — warn so People Operations gets the remediation
+          # list without blocking the build, and store the rows so the list is
+          # queryable rather than buried in run output.
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+
+      - name: job_function_code_resolved
+        data_type: string
+        description: >-
+          Job function code the role crosswalk is joined on — the ADP value when
+          present, otherwise the code the person last held under the same
+          job_code, carried forward for 30 days after the ADP value went NULL.
+          NULL once nothing resolves, which denies every scope.
+
+      - name: job_function_code_source
+        data_type: string
+        description: >-
+          Which source supplied job_function_code_resolved — adp,
+          carried_forward, or unresolved.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [adp, carried_forward, unresolved]
 
       - name: job_function_level
         data_type: int64

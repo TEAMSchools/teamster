@@ -38,6 +38,8 @@ with
             s.google_email,
 
             j.job_function_code,
+            j.job_code,
+            j.effective_start_date as job_effective_start_date,
 
             o.department_name,
             o.business_unit_name,
@@ -83,6 +85,59 @@ with
             {{ ref("dim_locations") }} as loc on wal.location_key = loc.location_key
     ),
 
+    prior_job_function_ranked as (
+        select
+            ca.staff_key,
+
+            j.job_function_code as prior_job_function_code,
+
+            row_number() over (
+                partition by ca.staff_key order by j.effective_start_date desc
+            ) as prior_rank,
+        from current_assignment as ca
+        inner join
+            {{ ref("dim_staff_work_assignments") }} as swa
+            on ca.staff_key = swa.staff_key
+        inner join
+            {{ ref("dim_work_assignment_jobs") }} as j
+            on swa.work_assignment_key = j.work_assignment_key
+            -- a different job_code means the role itself changed, so its code is
+            -- not this person's to replay
+            and ca.job_code = j.job_code
+        where ca.job_function_code is null and j.job_function_code is not null
+    ),
+
+    prior_job_function as (
+        select staff_key, prior_job_function_code,
+        from prior_job_function_ranked
+        where prior_rank = 1
+    ),
+
+    carry_forward as (
+        select
+            pjf.staff_key,
+            pjf.prior_job_function_code,
+
+            date_add(
+                ca.job_effective_start_date, interval 30 day
+            ) as carry_forward_expires_date,
+        from prior_job_function as pjf
+        inner join current_assignment as ca on pjf.staff_key = ca.staff_key
+        -- dim_work_assignment_jobs opens a new row only when job_code, job_title
+        -- or job_function_code changes, so the current row's start date is the
+        -- date the code went null. The floor keeps the pre-existing backlog
+        -- denied; only nulls opened on or after it are carried.
+        where
+            ca.job_effective_start_date
+            >= cast('{{ var("cube_access_carry_forward_floor_date") }}' as date)
+    ),
+
+    carry_forward_active as (
+        select staff_key, prior_job_function_code,
+        from carry_forward
+        where carry_forward_expires_date >= current_date('{{ var("local_timezone") }}')
+    ),
+
     enriched as (
         select
             ca.staff_key,
@@ -94,10 +149,23 @@ with
             ca.location_abbreviation,
 
             dr.department_group,
+
+            coalesce(
+                ca.job_function_code, cfa.prior_job_function_code
+            ) as job_function_code_resolved,
+
+            case
+                when ca.job_function_code is not null
+                then 'adp'
+                when cfa.prior_job_function_code is not null
+                then 'carried_forward'
+                else 'unresolved'
+            end as job_function_code_source,
         from current_assignment as ca
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_rollup") }} as dr
             on ca.department_name = dr.department_name
+        left join carry_forward_active as cfa on ca.staff_key = cfa.staff_key
     ),
 
     -- Rank the crosswalk role rows so a specific-entity match beats the 'any'
@@ -124,7 +192,7 @@ with
         from enriched as e
         left join
             {{ ref("stg_google_sheets__people__cube_access_role") }} as rl
-            on e.job_function_code = rl.job_function_code
+            on e.job_function_code_resolved = rl.job_function_code
             and rl.entity in ('any', e.entity)
     ),
 
@@ -139,6 +207,8 @@ with
             e.department_group,
             e.entity,
             e.job_function_code,
+            e.job_function_code_resolved,
+            e.job_function_code_source,
 
             rp.job_function_level,
 
@@ -180,6 +250,8 @@ select
     department_group,
     entity,
     job_function_code,
+    job_function_code_resolved,
+    job_function_code_source,
     job_function_level,
 
     student_location_scope,
