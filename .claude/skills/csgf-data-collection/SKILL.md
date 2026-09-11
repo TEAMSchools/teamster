@@ -512,7 +512,7 @@ KIPP Legacy Middle, KIPP Miami Technical High), what actually worked:**
   -- not `int_extracts__student_enrollments`'s year range. A school having no
   enrollment history before the current year does NOT mean it's newly opened;
   Miami's Focus cutover already destroys history for reasons unrelated to when a
-  school actually opened. Don't infer "new vs. long- standing" from
+  school actually opened. Don't infer "new vs. long-standing" from
   enrollment-extract year ranges -- check `int_students__schools` for existence,
   and check the school's own public page (below) for its actual founding year.
 - **State School ID encodes a shared charter number, not a per-school code.**
@@ -534,14 +534,13 @@ KIPP Legacy Middle, KIPP Miami Technical High), what actually worked:**
   same way: `dagster_<district>_dlt_focus.custom_fields` filtered
   `source_class = 'SISSchool'`, matched on `title`.
 - **Cross-check against the school's own public page**
-  (`kippmiami.org/kipp- <slug>/`) before trusting either internal source alone
-  -- it independently confirmed both the Focus addresses AND surfaced a real
-  typo in CSGF's existing Portal record for Royalty/Courage
-  (`300 NW 110th Street`, missing a digit vs. the real `3000 NW 110th Street`).
-  The same pages also carry each school's founding year ("20XX FOUNDED" in their
-  key-facts section), which answers "did this school open this cycle" -- but
-  that's not the same as having a value for the `Academic Year Opened` column
-  itself.
+  (`kippmiami.org/kipp-<slug>/`) before trusting either internal source alone --
+  it independently confirmed both the Focus addresses AND surfaced a real typo
+  in CSGF's existing Portal record for Royalty/Courage (`300 NW 110th Street`,
+  missing a digit vs. the real `3000 NW 110th Street`). The same pages also
+  carry each school's founding year ("20XX FOUNDED" in their key-facts section),
+  which answers "did this school open this cycle" -- but that's not the same as
+  having a value for the `Academic Year Opened` column itself.
 - **`Academic Year Opened`/`Academic Year Closed` are Salesforce lookup IDs, not
   text.** The column holds an opaque record ID (`9TPa5000000FbZvGAK` style).
   There's no way to derive the right ID for a school year that isn't already
