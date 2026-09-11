@@ -1,18 +1,25 @@
 models:
   - name: int_powerschool__section_teachers
     description: >-
-      One row per PowerSchool sectionteacher record, resolving the many-to-many
-      relationship between course sections and the staff assigned to them. Each
-      row carries the role the teacher holds on that section and the dates the
-      assignment was in effect. Distinct from the single primary teacher the
-      sections table names directly, which base_powerschool__sections already
-      resolves.
+      One row per PowerSchool sectionteacher record that resolves to a section,
+      a teacher and a role, expressing the many-to-many relationship between
+      course sections and the staff assigned to them. Each row carries the role
+      the teacher holds on that section and the dates the assignment was in
+      effect. Distinct from the single primary teacher the sections table names
+      directly, which base_powerschool__sections already resolves.
+
+
+      Rows drop where any of the three does not resolve. Sections come from
+      base_powerschool__sections, so a section whose course, term or school is
+      missing is excluded, as is an assignment whose teacher has no schoolstaff
+      record at that school. Both exclusions match what the consuming bridge and
+      Clever feed already produced before this model existed.
     columns:
       - name: sectionteacher_id
         data_type: int64
         description: >-
           Primary key of the PowerSchool sectionteacher record, and the grain of
-          this model.
+          this model. Unique only within a region.
         data_tests:
           - unique:
               config:
