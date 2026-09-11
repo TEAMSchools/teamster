@@ -81,6 +81,11 @@ this skill covers the manual/ownership side only.
 - [CSGF Data Collection Field Definitions](https://docs.google.com/spreadsheets/d/1hpMLqeFcci_Epar3InHRB8UXly7ZLg42vzjgANUpzP8/edit?gid=963005787#gid=963005787)
   -- CSGF's own field-by-field definitions. Full extraction with structural
   gotchas: [`reference/field-definitions.md`](reference/field-definitions.md).
+  **Check this before asking the collection owner what a field means or what a
+  task's real column list is** -- it already answers most of that. Don't wait to
+  be handed a screenshot of a field name or a pasted header row when this doc
+  can resolve it directly; use the pasted/screenshotted ground truth to verify
+  what's here, not as the first source.
 - This cycle's HS Data Collection Google Sheet ("26-27 HS Data Collection
   Template -- KIPP TEAM & Family," owned by
   `datacollection@chartergrowthfund.org`). **Caution: once populated this is a
@@ -557,6 +562,22 @@ KIPP Legacy Middle, KIPP Miami Technical High), what actually worked:**
     `School List Verification Submit Status`, and `School Status` as separate
     fields. Untested guess: `School List Submission Status` (name-matches the
     task), but this needs confirming against a row you know the true value for.
+- **2026-2027 AP course name list, pasted directly from the Portal task
+  (2026-09-11) -- diffed against the pivot's 28 columns.** 3 naming-drift hits,
+  all College Board's old "AP Studio Art" naming vs the current names: pivot has
+  `AP Studio Art: 2-D Design Portfolio` / `3-D Design Portfolio` /
+  `Drawing Portfolio`; CSGF's current list says `AP 2-D Art and Design`,
+  `AP 3-D Art and Design`, `AP Drawing`. Harmless as-is (the exported column is
+  a snake_case alias a human matches by meaning, not exact string, and none of
+  the 3 are currently taught anyway) but fix the crosswalk/pivot naming if any
+  school ever offers one. Real missing-column gaps (no pivot column exists at
+  all): Chinese/German/Italian/Japanese Language and Culture, Latin, European
+  History, Music Theory, Physics 2, Physics C (Electricity and Magnetism /
+  Mechanics), AP Research -- none currently taught (confirmed against AY2025
+  actual course data), so no live impact this cycle, but any of these
+  newly-offered in a future cycle would silently drop per the Coverage risk
+  above. (Calculus BC: AB Subscore and the two Music subscores are scoring
+  artifacts, not real course offerings -- not gaps.)
   - `Street Address` / `City` / `State/Province` / `ZIP/Postal Code` /
     `Country/Territory` -- each of these has TWO candidates in the dropdown: a
     bare legacy field (`Street Address`, `City`, `State`, `Zip Code`) and a
@@ -827,6 +848,19 @@ used to be abbreviated codes (`KHS`/`NCA`/`NLH`) -- fixed to full names
 (`KIPP Newark Lab High School` / etc.), confirmed against CSGF's Portal task
 labels.
 
+**Both fixes above are only in PR #5059 (this branch), not yet in prod as of
+2026-09-11.** Confirmed live: prod's `rpt_gsheets__csgf_hs_grad_data` (a VIEW,
+last recreated 2026-07-17 per `__TABLES__.last_modified_time`) still outputs the
+old abbreviated codes -- `git branch --contains` on the fixing commit
+(`b7344ed8b`) shows only this PR's branch, and `origin/main`'s copy of the file
+is still the pre-fix version from 2025-10-08. A view re-executes live but
+against its own STORED definition, which only updates when Dagster recreates it
+after a deploy -- so this won't self-correct by waiting. **Don't treat this
+model as fixed for the actual submission until #5059 merges and kipptaf
+redeploys** (confirm via `mcp__dagster__get_location_load_history` showing a
+`LOADED` entry with the merge commit's hash, same check as any prod-deploy
+verification).
+
 **`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
 cycle -- owner is aware and fixing separately from this skill; check whether
 it's still open before relying on this note). The model is driven by
@@ -851,6 +885,35 @@ was never updated after Miami's cutover to Focus as its SIS. Concretely:
   buildings as of this cycle: Courage, Royalty, Miami Tech, Legacy ES, Legacy
   MS) rather than trusting the extract's row count at face value.
 
+**Fixed (2026-09-11, this branch): `rpt_gsheets__csgf_enrollment` now sources
+Miami from Focus instead of the frozen PowerSchool catalog.** Added a
+`focus_schools` CTE (`int_focus__schools` joined to
+`stg_google_sheets__people__locations`, filtered `school_level is not null` --
+confirmed this correctly excludes Sunrise/Liberty, since Focus itself nulls
+their level on closure, and also excludes 2 non-school placeholder Focus records
+that happen to share the same null). Rebuilt in dev and confirmed all 5 real
+Miami schools now appear with real enrollment counts and real principal
+demographics -- no more missing rows, no more null-column ghost rows for the
+closed schools. Not yet merged (same PR #5059 as the other fixes above).
+
+**Still open, confirmed via the Field Definitions doc (not previously checked):
+`total_budgeted_enrollment` is NULL for every Miami school**, Royalty and
+Courage included, not just the 3 newly-added ones -- Miami has no row at all in
+`stg_google_sheets__topline_enrollment_targets`, the sheet this column joins to.
+No dbt fix possible without a real source; needs whoever owns that budget-target
+sheet to add Miami's rows.
+
+**Scope check against CSGF's own Field Definitions doc (2026-09-11): this model
+deliberately covers only part of the real "Enrollment & School Information"
+task.** Diffed column-by-column against `reference/field-definitions.md` section
+2 -- Total Seat Capacity 2026-27, Total Seats When Growth Plan Complete, 2024-25
+ADA Rate, 2024-25 Chronic Absenteeism Rate, 2025-26 Teacher Counts, Teacher
+Retention, and the co-leader row of School Leader Demographics are all real
+fields on this task with no column here. **Confirmed not a gap** -- these belong
+to other task owners (Walters, Laz, Kevin), entered directly on the Portal, not
+sourced through this dbt model. Documented so a future reader doesn't mistake
+this for an oversight.
+
 **Forward risk for next cycle, not this one:** Miami opened its first high
 school in AY2026 -- KIPP Miami Technical High, ~95 students, mostly grade 9. The
 7 HS-scoped `rpt_gsheets__csgf_*` models are correctly Miami-irrelevant _this_
@@ -871,6 +934,37 @@ produces no rows for them at all. A Focus course/grade source needs to be added
 to those two CTEs before this model rolls to AY2026. The other 6 HS models
 likely have the same PowerSchool-only gap somewhere in their lineage -- not yet
 verified per-model.
+
+**`rpt_gsheets__csgf_hs_enrollment`'s fixes are also only on PR #5059, not yet
+in prod, same staleness pattern as `hs_grad_data` above.** Confirmed live:
+prod's view (last recreated 2026-07-24) still lacks `exited_hs` entirely, still
+misses `FDC` in the FRL/SED flag, and still carries the old `passed_algebra_i`
+output column with the comma-bug-corrupted IN-list behind it. Rebuilt this
+branch's version in dev
+(`int_extracts__student_enrollments rpt_gsheets__csgf_hs_enrollment`, since
+`exited_hs` is a same-PR addition to the upstream too -- deferring to stale prod
+for just the report model fails with `Name exited_hs not found inside e`) --
+clean build, unique on `studentid`, 1,681 rows across the 3 schools with HS
+enrollment in AY2025 (Cooper Norcross, Newark Collegiate, Newark Lab -- no Miami
+rows, correctly, since Miami Tech didn't exist yet that year). One single
+null-GPA row (a 9th grader at Newark Lab) -- plausible (late enrollee / no
+grades posted) but worth a quick sanity check with the school before submitting,
+not treated as a code bug.
+
+**Confirmed against the real Enrollment tab header this cycle (pasted directly
+from CSGF's HSDC sheet, 2026-09-11): 16 real columns, and this model's
+`passed_integrated_math_1` (hardcoded `'NA (not offered)'`, meant to replace the
+old `passed_algebra_i` computed field) matches NEITHER old nor new -- CSGF's tab
+asks about neither Algebra I passage timing nor Integrated Math 1 at all this
+cycle.** Every other model column has a real destination (`student_is_frl`
+reused as-is for the tab's "Socioeconomically Disadvantaged (SED)" field --
+already documented on the column, not a new finding). Since data entry is a
+manual copy from the internal "CSGF Data" staging sheet
+(`kipptaf_extracts.rpt_gsheets__csgf_hs_enrollment`'s Google Sheet tab) into
+CSGF's actual HSDC workbook -- not an automated positional load -- an orphan
+column like this is harmless to just skip over, not a data-corruption risk.
+Worth a follow-up cleanup (drop the column from the model + properties yml) but
+not urgent enough to block this cycle's submission.
 
 Whoever runs next cycle's rollover should check this explicitly rather than
 assuming the existing HS models will "just work" once Miami has HS enrollees.
@@ -899,6 +993,20 @@ before submitting:**
    canonical names, and update the `case` statement in
    `rpt_gsheets__csgf_hs_ap_offerings.sql` for any mismatches -- a plain rename,
    not a new external source or staging sheet.
+
+**2026-2027 cycle, checked 2026-09-11: coverage is clean, naming still needs the
+human confirm.** Queried `base_powerschool__course_enrollments` joined through
+the crosswalk for AY2025 (the year this model actually reads) --12 distinct AP
+courses taught network-wide, all 12 already covered by the pivot's `IN` list
+(including the 2 that need the existing case-statement remap: `AP Pre-Calculus`,
+`AP US History`). Zero rows dropped at the earlier crosswalk join either. Same
+clean result cross-checking `int_assessments__ap_assessments` for `hs_ap_scores`
+(14 distinct course names for AY2025, all either already plain-matching or
+covered by the same case statement) -- no new AP course name needs adding to
+either model's `case` statement this cycle. **Still open:** nobody has pasted
+CSGF's current official AP course name list from the Portal task yet, so the
+"matches CSGF's exact expected string" half of the naming check is unverified --
+only "matches what we used last cycle" is confirmed.
 
 **`rpt_gsheets__csgf_hs_ap_scores` has the same naming risk, from a different
 upstream.** Its `aptest_name` sources from

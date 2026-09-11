@@ -6,9 +6,9 @@ models:
       the population as its high school grows. It has no rows yet because the
       reporting window is the prior academic year, before Miami had a high
       school. Note the `is_enrolled_recent` filter, which was null for Miami
-      until #5038. Ratified on #4996. Separately, pivots on a hardcoded list of
-      AP course names, so a newly-offered course not yet added to the pivot's IN
-      list drops out of the extract silently -- no error, just a missing column.
+      until #5038. Ratified on #4996. Pivots on a hardcoded list of AP course
+      names, so a newly-offered course not yet added to the pivot's IN list
+      drops out of the extract silently -- no error, just a missing column.
       Before each cycle's submission, confirm the current AY's actual AP courses
       (query stg_google_sheets__collegeboard__ap_course_crosswalk joined through
       base_powerschool__course_enrollments) still match this model's pivot list.
@@ -17,13 +17,30 @@ models:
       History -> AP United States History) -- CSGF's exact expected names can
       change cycle to cycle and don't always match the crosswalk's canonical
       naming; update that case statement, per the csgf-data-collection skill,
-      whenever CSGF's list changes.
+      whenever CSGF's list changes. Column order matches CSGF's own AP Offerings
+      task column order exactly (confirmed against the live task, 2026-2027
+      cycle) so a straight copy/paste from this model's output needs no
+      reordering. 11 columns (ap_chinese_language_and_culture,
+      ap_european_history, ap_german_language_and_culture,
+      ap_italian_language_and_culture, ap_japanese_language_and_culture,
+      ap_latin, ap_music_theory, ap_physics_2,
+      ap_physics_c_electricity_and_magnetism, ap_physics_c_mechanics,
+      ap_research) plus 3 scoring-subscore columns (ap_calculus_bc_ab_subscore,
+      ap_music_aural_subscore, ap_music_non_aural_subscore) exist on CSGF's task
+      but have no KTAF course/crosswalk data behind them -- they pivot to NULL
+      for every row by construction (the literal never matches a real
+      `ap_course_name`), same as any course a given school simply doesn't offer.
+      Confirmed none of the 11 real courses were taught network-wide as of the
+      2026-2027 cycle (2025-2026 academic year); revisit this list if that
+      changes.
     columns:
       - name: school_name
         data_type: string
         data_tests:
           - unique
-      - name: ap_african_american_studies
+      - name: ap_2d_art_and_design
+        data_type: string
+      - name: ap_3d_art_and_design
         data_type: string
       - name: ap_art_history
         data_type: string
@@ -33,7 +50,11 @@ models:
         data_type: string
       - name: ap_calculus_bc
         data_type: string
+      - name: ap_calculus_bc_ab_subscore
+        data_type: string
       - name: ap_chemistry
+        data_type: string
+      - name: ap_chinese_language_and_culture
         data_type: string
       - name: ap_comparative_government_and_politics
         data_type: string
@@ -41,25 +62,49 @@ models:
         data_type: string
       - name: ap_computer_science_principles
         data_type: string
+      - name: ap_drawing
+        data_type: string
       - name: ap_english_language_and_composition
         data_type: string
       - name: ap_english_literature_and_composition
         data_type: string
       - name: ap_environmental_science
         data_type: string
+      - name: ap_european_history
+        data_type: string
       - name: ap_french_language_and_culture
         data_type: string
+      - name: ap_german_language_and_culture
+        data_type: string
       - name: ap_human_geography
+        data_type: string
+      - name: ap_italian_language_and_culture
+        data_type: string
+      - name: ap_japanese_language_and_culture
+        data_type: string
+      - name: ap_latin
         data_type: string
       - name: ap_macroeconomics
         data_type: string
       - name: ap_microeconomics
         data_type: string
+      - name: ap_music_aural_subscore
+        data_type: string
+      - name: ap_music_non_aural_subscore
+        data_type: string
+      - name: ap_music_theory
+        data_type: string
       - name: ap_physics_1
         data_type: string
-      - name: ap_pre_calculus
+      - name: ap_physics_2
+        data_type: string
+      - name: ap_physics_c_electricity_and_magnetism
+        data_type: string
+      - name: ap_physics_c_mechanics
         data_type: string
       - name: ap_psychology
+        data_type: string
+      - name: ap_research
         data_type: string
       - name: ap_seminar
         data_type: string
@@ -69,15 +114,13 @@ models:
         data_type: string
       - name: ap_statistics
         data_type: string
-      - name: ap_2d_art_and_design_portfolio
-        data_type: string
-      - name: ap_3d_art_and_design_portfolio
-        data_type: string
-      - name: ap_drawing
-        data_type: string
       - name: ap_us_government_and_politics
         data_type: string
       - name: ap_us_history
         data_type: string
       - name: ap_world_history_modern
+        data_type: string
+      - name: ap_african_american_studies
+        data_type: string
+      - name: ap_pre_calculus
         data_type: string

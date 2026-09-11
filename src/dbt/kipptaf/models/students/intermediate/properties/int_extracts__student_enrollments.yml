@@ -940,7 +940,11 @@ models:
         description:
           Whether the student graduated or completed high school, per exitcode =
           'G1' (Gen Table 6 cat=exitcodes, labeled "Graduated from a KIPP NJ
-          school"). Shared by rpt_gsheets__csgf_hs_postsec_pathways and
+          school"). The codeset also lists 'GR' ("Graduated"), 'EG' ("Early
+          Graduate"), and 'L' ("Graduation Code"), but none of the three has
+          ever been assigned to a real enrollment record network-wide -- 'G1' is
+          the only graduation code actually in use, so checking it alone is
+          sufficient. Shared by rpt_gsheets__csgf_hs_postsec_pathways and
           rpt_gsheets__csgf_hs_enrollment -- promoted here from a duplicated
           per-model calculation so both stay in sync.
       - name: race_ethnicity

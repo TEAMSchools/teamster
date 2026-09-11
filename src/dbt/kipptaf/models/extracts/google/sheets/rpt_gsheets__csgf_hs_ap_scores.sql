@@ -17,6 +17,12 @@ select
         then 'AP United States Government and Politics'
         when 'AP Pre-Calculus'
         then 'AP Precalculus'
+        when 'AP Studio Art: 2-D Design Portfolio'
+        then 'AP 2-D Art and Design'
+        when 'AP Studio Art: 3-D Design Portfolio'
+        then 'AP 3-D Art and Design'
+        when 'AP Studio Art: Drawing Portfolio'
+        then 'AP Drawing'
         else a.ap_course_name
     end as aptest_name,
 
