@@ -68,6 +68,31 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   filter exists. Carve-out: TODOs, tracking-issue refs, and migration plumbing
   stay inline at the derivation site — a defect belongs in the code, not the
   metadata.
+- **Four cuts before committing any comment block.** The rule above is not
+  enough on its own — every one of these shipped in a single PR (#4710) written
+  by someone who had read it:
+  - **Cut what a test already enforces.** "response_type stays non-nullable"
+    beside a column carrying `not_null` is noise. The test fails loudly; the
+    comment cannot.
+  - **Cut counts and dated measurements.** "collapses 319,380 of 1,572,858 rows,
+    verified 2026-08-28" goes stale in silence, and a later reader cannot tell
+    whether a wrong number means the data moved or the logic broke. The census
+    belongs in the PR body. `dbt-yaml.md`'s no-stats rule for descriptions binds
+    comments too.
+  - **Cut pointers to other documentation.** "What the exclusions mean is on the
+    model description" states nothing. The fact either belongs at this line or
+    it does not.
+  - **Cut the second copy.** The same rationale pasted at two derivation sites
+    drifts apart and then disagrees with itself. State it once; reference it by
+    name from the other.
+- **A comment block over ~6 lines is almost always holding consumer content.**
+  Before pushing an edited model, list its blocks with
+  `awk '/^[[:space:]]*--/{if(!s)s=NR;n++;next}{if(n>=4)print n" at :"s;s=0;n=0}' <file>`
+  and find duplicated lines with
+  `grep -E '^\s*--' <file> | sed 's/^\s*--\s*//' | sort | uniq -d`. Judge the
+  block you are adding against its siblings, not against the file's total
+  comment ratio — a file can sit at 11% comments while the two blocks a reviewer
+  actually reads run 16 and 13 lines above a 5-line macro call.
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
