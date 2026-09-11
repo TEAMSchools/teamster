@@ -107,10 +107,9 @@ rules — so we need them as explicit terms rather than assumptions.
    code and scoping screens.
 1. **Sandbox with synthetic data and your access.** Real endpoint, real auth,
    test personas, no real records. Includes read access to our model explorer,
-   scoped to the sandbox only, so you can browse the model interactively. We are
-   provisioning the cloud project for it now and will give you a date once that
-   is done — the design and the data generator are settled, so the remaining
-   work is ours and does not block step 1.
+   scoped to the sandbox only, so you can browse the model interactively. We
+   will confirm the date when the cloud project it needs lands. Step 1 does not
+   wait on it.
 1. **Audit trail.** Built alongside the sandbox, not after.
 1. **Repoint at production data.** Weeks. Unblocked, now that we know your end
    users are staff.
