@@ -19,6 +19,31 @@ CSGF or this process at all. Steps below are confirmed; the procedure continues
 to grow as more of the cycle is narrated. Do not treat an absent step as
 "doesn't happen" -- it may just not be captured yet.
 
+## Who this skill is for
+
+**Not just the collection owner.** This process involves multiple task owners
+(Compliance, Finance, People/HR, KIPP Forward, etc. -- see the per-item
+ownership notes throughout this file, e.g. Schools List/Laz, Enrollment's
+teacher/ADA/seat-capacity fields/Walters+Laz+Kevin, Postsecondary Pathways/Casey
+Gibson). Anyone on any of those teams asking for CSGF help should trigger this
+skill, not only the Data Team's collection owner.
+
+**When helping someone who isn't the collection owner**, don't default to
+walking them through the collection owner's full checklist (Steps 1-7 below).
+Instead:
+
+1. Identify who's asking. The session's `userEmail` context is the first signal;
+   ask directly if it's ambiguous or absent.
+2. Check what THEY specifically own -- cross-reference this file's inline
+   ownership notes first (fast, always current), then this cycle's item-list
+   documentation doc (Step 3) for the authoritative per-item assignment if this
+   file doesn't name an owner for the item in question. Ask for that doc's link
+   if it isn't already in the conversation -- it's a new doc each cycle, so
+   don't assume a link from an earlier session still applies.
+3. Scope help to that item, not the whole collection. A Finance person asking
+   about Total Seat Capacity doesn't need the Schools List walkthrough, and vice
+   versa.
+
 ## Overview
 
 [CSGF (Charter School Growth Fund)](https://chartergrowthfund.org/) is a
