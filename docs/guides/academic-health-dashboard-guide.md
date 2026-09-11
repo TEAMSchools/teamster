@@ -9,18 +9,17 @@ README first). Lines beginning `> **Callout:**` are callouts; drop the word
 "Callout:" when rendering and use the Note style unless the text warns about a
 mistake, then use Warning. Italic lines beginning "Caption:" directly under an
 image are that image's caption; drop the word "Caption:". Image references point
-at `screenshots/` next to this file; upload each to Guide media and swap the
-path for the hosted URL, keeping the order in the manifest at the end. Put a
-table of contents after "What this dashboard does", linking to the two role
-sections, the three walkthroughs, Quick answers, and the Glossary. Numbered
-lists are step sequences; keep the markdown tables as tables. Names and student
-numbers are already pixelated in every image that had them; do not re-crop. The
-DeansList import guide is already linked in the text. The screenshot manifest is
-a production note, not reader content. On-screen control names appear in bold
+at the hosted `/guide-media/` URLs; the same files are in `screenshots/` next to
+this file under the names in the manifest at the end. Put a table of contents
+after "What this dashboard does", linking to the two role sections, the three
+walkthroughs, Quick answers, and the Glossary. Numbered lists are step
+sequences; keep the markdown tables as tables. Names and student numbers are
+already pixelated in every image that had them; do not re-crop. The DeansList
+import guide is already linked in the text. The screenshot manifest is a
+production note, not reader content. On-screen control names appear in bold
 exactly as the dashboard shows them.
 
-Prompt for Claude Design (paste as-is, with this file and the `screenshots/`
-folder attached):
+Prompt for Claude Design (paste as-is, with this file attached):
 
 ```text
 Build a Zendesk Guide help-center article from the attached Markdown file,
@@ -45,8 +44,8 @@ Rendering rules: a line beginning "> **Callout:**" is a callout; drop the word
 a mistake (the cusp band collapse, the manager filter, the Marking Period
 default, delete the name column before import). An italic line beginning
 "Caption:" directly under an image is that image's caption; drop the word
-"Caption:". Every image reference points at screenshots/<file>; place each as a
-screenshot block with its caption, full width, no crop, no rounded corners.
+"Caption:". Every image reference is already a hosted /guide-media/ URL; place each as
+a screenshot block with its caption, full width, no crop, no rounded corners.
 Keep every Markdown table as a table; none exceeds four columns except the two
 roster column tables, which may stay at two columns. Numbered lists are step
 sequences, one action per step. Bold on-screen control names exactly as
@@ -59,9 +58,7 @@ Links to keep live: the Tableau dashboard link, the Gradebook Health Dashboard
 Guide, and Importing Office Hours Rosters into DeansList. End with a "Related
 articles" list of those two guides.
 
-Output one HTML file ready to paste into the Zendesk article body, plus a short
-list of the screenshot files in the order they appear so the images can be
-uploaded to Guide media and their URLs swapped in.
+Output one HTML file ready to paste into the Zendesk article body.
 ```
 
 ---
@@ -183,14 +180,14 @@ spreadsheet rather than one school on screen.
 
 ## For regional and school leaders: Academic Health Home
 
-![Home overview](screenshots/01-home-full.png)
+![Home overview](/guide-media/01M27WQZEGPPBH0YBV6N7Y5P3B)
 
 _Caption: The Home tab at network scope. Controls across the top, nine tiles,
 school bars on the left, course failures and the goal panel on the right._
 
 ### 1. Set your controls
 
-![Home header controls](screenshots/02-home-header-controls.png)
+![Home header controls](/guide-media/01M27WR39VGSHCKBJA9DBBYTJ3)
 
 _Caption: The control strip. Region and Marking Period are single-choice. Head
 of School and School Level accept more than one value._
@@ -204,7 +201,7 @@ of School and School Level accept more than one value._
 | **School Level**        | MS or HS. Same reach as Head of School.                                                      |
 | **Special Populations** | IEP, MLL, 504, or G&T. Sits beside the school bars and changes only that chart.              |
 
-![Home with Region set to Newark](screenshots/08-home-region-newark-full.png)
+![Home with Region set to Newark](/guide-media/01M27WQV9R3WD4H473AATMYRFR)
 
 _Caption: The same tab with **Region** set to Newark. Camden and Paterson drop
 from every panel. The goal panel keeps the network rows in its summary table
@@ -212,7 +209,7 @@ because network totals have no region._
 
 ### 2. Read the nine tiles
 
-![The nine tiles](screenshots/03-home-ban-tiles.png)
+![The nine tiles](/guide-media/01M27WR034FS00B34NNRM9V7NF)
 
 _Caption: Three tiles each for Network, Middle Schools, and High Schools._
 
@@ -235,14 +232,14 @@ behind the percentage and how much history it has.
 > yet have enough weeks of history to compare against. It will appear on its
 > own.
 
-![The tiles with Academic Year set to last year](screenshots/09-home-ban-tiles-prior-year.png)
+![The tiles with Academic Year set to last year](/guide-media/01M27WQZBF08CNMJ78QCMF5TY1)
 
 _Caption: Last year's tiles. The change lines are blank because week-over-week
 history only exists for the year in progress._
 
 ### 3. Read the school bars
 
-![School bars with Special Populations set to IEP](screenshots/04-home-school-bars-iep.png)
+![School bars with Special Populations set to IEP](/guide-media/01M27WR37RZQHC8Q4DE602N6FT)
 
 _Caption: One bar per school, grouped by region. The blue bar is all students.
 The grey bar is the selected population, with its own label._
@@ -263,12 +260,12 @@ whole school, which includes the group itself. "Gap vs. non-IEP" compares the
 group to everyone else and reads larger. Use the second one when you are asked
 about the differential.
 
-![School bar tooltip with IEP selected](screenshots/30-user-tooltip-school-bar-iep-gaps.png)
+![School bar tooltip with IEP selected](/guide-media/01M27WQYHVP68SPT2FSD94GQ4N)
 
 _Caption: Hovering a school bar. Both gap figures are listed, with a note on why
 they differ._
 
-![School bars with Special Populations set to MLL](screenshots/05-home-school-bars-mll.png)
+![School bars with Special Populations set to MLL](/guide-media/01M27WR1SV22V749ZB0HJBA2GX)
 
 _Caption: The same chart with **Special Populations** set to MLL. Only the grey
 bars and labels change._
@@ -277,7 +274,7 @@ Click any school bar to open that school on the Schools tab.
 
 ### 4. Read the course failures heatmap
 
-![Course failures by school heatmap](screenshots/06-home-course-failures-heatmap.png)
+![Course failures by school heatmap](/guide-media/01M27WQWZ6A0YVZA68DHCAC9P9)
 
 _Caption: One row per school, one column per core subject. Darker red means a
 higher share of students failing._
@@ -288,7 +285,7 @@ core subjects appear: ELA, Math, Science, and Social Studies.
 
 Hover a cell for a breakdown by grade level.
 
-![Heatmap tooltip with grade-level breakdown](screenshots/29-user-tooltip-heatmap-grade-breakdown.png)
+![Heatmap tooltip with grade-level breakdown](/guide-media/01M27WQXVNWCQGHT0EQR5974BG)
 
 _Caption: Hovering a heatmap cell. The small chart shows the failure rate for
 each grade in that school and subject._
@@ -302,7 +299,7 @@ that subject. The teacher chart there will show only teachers of that subject.
 
 ### 5. Read the goal panel
 
-![Goal panel](screenshots/07-home-goal-panel.png)
+![Goal panel](/guide-media/01M27WR2JM9NDHG635TR3M6RFC)
 
 _Caption: Goal versus actual for each high school and grade, with a summary
 table of network rows below._
@@ -334,7 +331,7 @@ the school from its **School** dropdown.
 
 ## For school leaders, APs, and grade level chairs: Academic Health Schools
 
-![Schools tab default](screenshots/11-schools-full-default.png)
+![Schools tab default](/guide-media/01M27WQW7R43GWKDDJ4ZV0RYX9)
 
 _Caption: The Schools tab with **School** set to All. The GPA distribution by
 grade on top, letter grades by teacher below. Set a school first._
@@ -344,7 +341,7 @@ grade on top, letter grades by teacher below. Set a school first._
 
 ### 1. Set your controls
 
-![Schools header controls](screenshots/12-schools-header-controls.png)
+![Schools header controls](/guide-media/01M27WR40EPJ4HQAPD0MX076C4)
 
 _Caption: The control strip with **School** set to one school._
 
@@ -360,11 +357,11 @@ _Caption: The control strip with **School** set to one school._
 | **ADA 80%+**       | Students at or above 80% attendance, below it, or with no attendance data yet.                                                                        |
 | **Credit Type**    | Subject code. ENG, MATH, SCI, SOC, and the electives. Set for you when you click a heatmap cell on Home.                                              |
 
-![Marking Period dropdown open](screenshots/33-user-marking-period-dropdown.png)
+![Marking Period dropdown open](/guide-media/01M27WQYMYEY9YVMMG75MZRT0P)
 
 _Caption: The **Marking Period** choices. Y1 is the default._
 
-![Y1 Cusp Band dropdown open](screenshots/34-user-cusp-band-dropdown.png)
+![Y1 Cusp Band dropdown open](/guide-media/01M27WR2QH1ZEK7S4J4E0DMXA4)
 
 _Caption: The **Y1 Cusp Band** choices. "Not on Cusp" is every student outside
 the two bands._
@@ -375,14 +372,14 @@ the two bands._
 > That is the filter doing its job. Use the cusp band for the rosters and the
 > teacher chart, then set it back to All to read the distribution.
 
-![Cusp band filter collapsing the distribution](screenshots/16-schools-cusp-band-filter-collapse.png)
+![Cusp band filter collapsing the distribution](/guide-media/01M27WR415A2Z656GBPS818V99)
 
 _Caption: The distribution with **Y1 Cusp Band** set to Near 3.0. Every bar is
 one band and "% ≥ 3.0" reads 0%. Expected._
 
 ### 2. Read the GPA distribution
 
-![GPA distribution and % ≥ 3.0](screenshots/13-schools-gpa-distribution.png)
+![GPA distribution and % ≥ 3.0](/guide-media/01M27WR4S9B97BXWNAKMRS2MQC)
 
 _Caption: One bar per grade, plus an All Grades bar. Each bar is split into five
 GPA bands. The column on the right is the share at or above 3.0._
@@ -408,7 +405,7 @@ Hover a segment for the student count.
 Click any segment. The other segments dim, and a panel titled **Students in the
 selected band** opens below the distribution.
 
-![Band click with the roster panel open](screenshots/26-user-band-click-roster.png)
+![Band click with the roster panel open](/guide-media/01M27WR0YSW7MH1PRV1F6F8JKC)
 
 _Caption: The Below 2.0 segment for grade 10 is selected. The panel lists those
 students, one row per course. Names are pixelated in this guide._
@@ -447,7 +444,7 @@ the top of the panel. In the dialog, keep **Y1 Schools - GPA export** checked,
 pick Excel or CSV, and click **Download**. The export is one row per student
 with the GPA and cumulative columns, not one row per course.
 
-![Download dialog for the GPA export](screenshots/31-user-download-dialog-gpa-export.png)
+![Download dialog for the GPA export](/guide-media/01M27WR104JR1MWAAMZ7F62A2R)
 
 _Caption: The Download Crosstab dialog. The export sheet is already checked._
 
@@ -455,7 +452,7 @@ Click the X in the panel header to close it.
 
 ### 4. Read the letter grades by teacher
 
-![Letter grade distribution by teacher](screenshots/14-schools-teacher-distribution.png)
+![Letter grade distribution by teacher](/guide-media/01M27WQXPD9YJGQ2E1NSNSJP83)
 
 _Caption: The School row on top is the reference. Below it, one bar per teacher,
 worst failure rate first._
@@ -478,7 +475,7 @@ Hover a bar for the numbers: how many enrollments, the share at A/B/C, the share
 at D/F, the failure rate, and the gradebook category with the lowest average
 across that teacher's courses.
 
-![Teacher bar tooltip](screenshots/28-user-tooltip-teacher-bar.png)
+![Teacher bar tooltip](/guide-media/01M27WR06WJ5HZY9CMEC4GFB9Q)
 
 _Caption: Hovering a teacher's bar. The failure rate here is exact; the bar
 label is rounded._
@@ -489,7 +486,7 @@ Click any segment of a teacher's bar. The chart narrows to the left half of the
 screen and a roster appears on the right with that teacher's students who hold
 that letter grade, one row per student.
 
-![Teacher bar clicked with the roster on the right](screenshots/27-user-teacher-bar-click-popout.png)
+![Teacher bar clicked with the roster on the right](/guide-media/01M27WR1VRQMV2BNY4N1V486M9)
 
 _Caption: A teacher's D segment is selected. The roster on the right lists the
 students earning a D in that teacher's sections. Names are pixelated in this
@@ -505,7 +502,7 @@ segment again to clear the selection and restore the chart.
 
 Click **Show Office Hours** in the top right. A panel covers the tab.
 
-![Office Hours panel open](screenshots/19-schools-office-hours-open-full.png)
+![Office Hours panel open](/guide-media/01M27WQTAQWT2P9A38AR3ATS9Y)
 
 _Caption: The Office Hours roster for one school. The header shows how many rows
 and students are listed. Names are pixelated in this guide._
@@ -520,7 +517,7 @@ So a student failing one course appears once. A student near 3.0 appears once
 per course, with their weakest course first. Students below 2.0 who are not
 failing anything do not appear.
 
-![Office Hours roster detail](screenshots/20-schools-office-hours-roster.png)
+![Office Hours roster detail](/guide-media/01M27WQW5WT62YYKP29AMKGQBS)
 
 _Caption: The roster. One row per student and course, weakest course first
 within each student._
@@ -561,7 +558,7 @@ Click **Hide Office Hours** to put the panel away.
 Inside the Office Hours panel, click **Show DeansList**. A second panel opens
 over the roster.
 
-![DeansList panel open](screenshots/22-schools-deanslist-panel.png)
+![DeansList panel open](/guide-media/01M27WQV9KZ6F4D0TWD4QZM0DZ)
 
 _Caption: The DeansList export panel over the Office Hours roster. Names and
 student numbers are pixelated in this guide._
@@ -585,12 +582,12 @@ The panel has three parts:
 | **Roster Name**                       | "Office Hours - First Last", the teacher the student should attend.                           |
 | **Roster Notes**                      | Course, section, the lowest gradebook category, and "Week of" the Monday the file was pulled. |
 
-![DeansList panel with Sessions set to Top 4](screenshots/24-schools-deanslist-sessions4.png)
+![DeansList panel with Sessions set to Top 4](/guide-media/01M27WQX1QXKK51SMDMYV9DDBP)
 
 _Caption: The same export with **Sessions** set to Top 4. Each student now
 appears on up to four rosters._
 
-![Download dialog for the DeansList export](screenshots/32-user-download-dialog-deanslist-export.png)
+![Download dialog for the DeansList export](/guide-media/01M27WQTCJF7N7HVJ97ZTNPPSC)
 
 _Caption: The Download Crosstab dialog. Keep **Y1 - DeansList Export** checked._
 
@@ -725,37 +722,38 @@ courses per student in the DeansList export.
 
 ## Screenshot manifest
 
-Files live in `screenshots/`. Images 01 to 25 were rendered from the production
-dashboard on September 11, 2026; images 26 and up were captured in a browser the
-same day. Student names and student numbers are pixelated in every image that
-shows them. Teacher names are visible.
+Files live in `screenshots/` and are uploaded to Guide media under the IDs
+below. Images 01 to 25 were rendered from the production dashboard on September
+11, 2026; images 26 and up were captured in a browser the same day. Student
+names and student numbers are pixelated in every image that shows them. Teacher
+names are visible.
 
-| File                                           | Shows                                            |
-| ---------------------------------------------- | ------------------------------------------------ |
-| `01-home-full.png`                             | Home overview                                    |
-| `02-home-header-controls.png`                  | Home header controls                             |
-| `08-home-region-newark-full.png`               | Home with Region set to Newark                   |
-| `03-home-ban-tiles.png`                        | The nine tiles                                   |
-| `09-home-ban-tiles-prior-year.png`             | The tiles with Academic Year set to last year    |
-| `04-home-school-bars-iep.png`                  | School bars with Special Populations set to IEP  |
-| `30-user-tooltip-school-bar-iep-gaps.png`      | School bar tooltip with IEP selected             |
-| `05-home-school-bars-mll.png`                  | School bars with Special Populations set to MLL  |
-| `06-home-course-failures-heatmap.png`          | Course failures by school heatmap                |
-| `29-user-tooltip-heatmap-grade-breakdown.png`  | Heatmap tooltip with grade-level breakdown       |
-| `07-home-goal-panel.png`                       | Goal panel                                       |
-| `11-schools-full-default.png`                  | Schools tab default                              |
-| `12-schools-header-controls.png`               | Schools header controls                          |
-| `33-user-marking-period-dropdown.png`          | Marking Period dropdown open                     |
-| `34-user-cusp-band-dropdown.png`               | Y1 Cusp Band dropdown open                       |
-| `16-schools-cusp-band-filter-collapse.png`     | Cusp band filter collapsing the distribution     |
-| `13-schools-gpa-distribution.png`              | GPA distribution and % ≥ 3.0                     |
-| `26-user-band-click-roster.png`                | Band click with the roster panel open            |
-| `31-user-download-dialog-gpa-export.png`       | Download dialog for the GPA export               |
-| `14-schools-teacher-distribution.png`          | Letter grade distribution by teacher             |
-| `28-user-tooltip-teacher-bar.png`              | Teacher bar tooltip                              |
-| `27-user-teacher-bar-click-popout.png`         | Teacher bar clicked with the roster on the right |
-| `19-schools-office-hours-open-full.png`        | Office Hours panel open                          |
-| `20-schools-office-hours-roster.png`           | Office Hours roster detail                       |
-| `22-schools-deanslist-panel.png`               | DeansList panel open                             |
-| `24-schools-deanslist-sessions4.png`           | DeansList panel with Sessions set to Top 4       |
-| `32-user-download-dialog-deanslist-export.png` | Download dialog for the DeansList export         |
+| File                                           | Guide media                               | Shows                                            |
+| ---------------------------------------------- | ----------------------------------------- | ------------------------------------------------ |
+| `01-home-full.png`                             | `/guide-media/01M27WQZEGPPBH0YBV6N7Y5P3B` | Home overview                                    |
+| `02-home-header-controls.png`                  | `/guide-media/01M27WR39VGSHCKBJA9DBBYTJ3` | Home header controls                             |
+| `08-home-region-newark-full.png`               | `/guide-media/01M27WQV9R3WD4H473AATMYRFR` | Home with Region set to Newark                   |
+| `03-home-ban-tiles.png`                        | `/guide-media/01M27WR034FS00B34NNRM9V7NF` | The nine tiles                                   |
+| `09-home-ban-tiles-prior-year.png`             | `/guide-media/01M27WQZBF08CNMJ78QCMF5TY1` | The tiles with Academic Year set to last year    |
+| `04-home-school-bars-iep.png`                  | `/guide-media/01M27WR37RZQHC8Q4DE602N6FT` | School bars with Special Populations set to IEP  |
+| `30-user-tooltip-school-bar-iep-gaps.png`      | `/guide-media/01M27WQYHVP68SPT2FSD94GQ4N` | School bar tooltip with IEP selected             |
+| `05-home-school-bars-mll.png`                  | `/guide-media/01M27WR1SV22V749ZB0HJBA2GX` | School bars with Special Populations set to MLL  |
+| `06-home-course-failures-heatmap.png`          | `/guide-media/01M27WQWZ6A0YVZA68DHCAC9P9` | Course failures by school heatmap                |
+| `29-user-tooltip-heatmap-grade-breakdown.png`  | `/guide-media/01M27WQXVNWCQGHT0EQR5974BG` | Heatmap tooltip with grade-level breakdown       |
+| `07-home-goal-panel.png`                       | `/guide-media/01M27WR2JM9NDHG635TR3M6RFC` | Goal panel                                       |
+| `11-schools-full-default.png`                  | `/guide-media/01M27WQW7R43GWKDDJ4ZV0RYX9` | Schools tab default                              |
+| `12-schools-header-controls.png`               | `/guide-media/01M27WR40EPJ4HQAPD0MX076C4` | Schools header controls                          |
+| `33-user-marking-period-dropdown.png`          | `/guide-media/01M27WQYMYEY9YVMMG75MZRT0P` | Marking Period dropdown open                     |
+| `34-user-cusp-band-dropdown.png`               | `/guide-media/01M27WR2QH1ZEK7S4J4E0DMXA4` | Y1 Cusp Band dropdown open                       |
+| `16-schools-cusp-band-filter-collapse.png`     | `/guide-media/01M27WR415A2Z656GBPS818V99` | Cusp band filter collapsing the distribution     |
+| `13-schools-gpa-distribution.png`              | `/guide-media/01M27WR4S9B97BXWNAKMRS2MQC` | GPA distribution and % ≥ 3.0                     |
+| `26-user-band-click-roster.png`                | `/guide-media/01M27WR0YSW7MH1PRV1F6F8JKC` | Band click with the roster panel open            |
+| `31-user-download-dialog-gpa-export.png`       | `/guide-media/01M27WR104JR1MWAAMZ7F62A2R` | Download dialog for the GPA export               |
+| `14-schools-teacher-distribution.png`          | `/guide-media/01M27WQXPD9YJGQ2E1NSNSJP83` | Letter grade distribution by teacher             |
+| `28-user-tooltip-teacher-bar.png`              | `/guide-media/01M27WR06WJ5HZY9CMEC4GFB9Q` | Teacher bar tooltip                              |
+| `27-user-teacher-bar-click-popout.png`         | `/guide-media/01M27WR1VRQMV2BNY4N1V486M9` | Teacher bar clicked with the roster on the right |
+| `19-schools-office-hours-open-full.png`        | `/guide-media/01M27WQTAQWT2P9A38AR3ATS9Y` | Office Hours panel open                          |
+| `20-schools-office-hours-roster.png`           | `/guide-media/01M27WQW5WT62YYKP29AMKGQBS` | Office Hours roster detail                       |
+| `22-schools-deanslist-panel.png`               | `/guide-media/01M27WQV9KZ6F4D0TWD4QZM0DZ` | DeansList panel open                             |
+| `24-schools-deanslist-sessions4.png`           | `/guide-media/01M27WQX1QXKK51SMDMYV9DDBP` | DeansList panel with Sessions set to Top 4       |
+| `32-user-download-dialog-deanslist-export.png` | `/guide-media/01M27WQTCJF7N7HVJ97ZTNPPSC` | Download dialog for the DeansList export         |
