@@ -244,7 +244,7 @@ left join
     and td.observed_at between srh.effective_date_start and srh.effective_date_end
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
-    on srh.powerschool_teacher_number = tgl.teachernumber
+    on srh.sis_teacher_number = tgl.teachernumber
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and td.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1

@@ -224,6 +224,10 @@ models:
         data_tests:
           - unique
         data_type: string
+      - name: sis_teacher_number
+        data_tests:
+          - unique
+        data_type: string
       - name: reports_to_employee_number
         data_type: int64
       - name: race_ethnicity_reporting

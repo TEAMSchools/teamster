@@ -93,6 +93,8 @@ with
             null as race_ethnicity_reporting,
             null as reports_to_employee_number,
 
+            cast(en.employee_number as string) as employee_number_string,
+
             if(
                 w.effective_date_start < '2021-01-01',
                 '2021-01-01',
@@ -221,13 +223,18 @@ with
             employee_number,
             race_ethnicity_reporting,
             manager_employee_number as reports_to_employee_number,
+
+            cast(employee_number as string) as employee_number_string,
+
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
         from {{ source("dayforce", "int_dayforce__employee_history") }}
     )
 
 select
-    w.* except (reports_to_employee_number, race_ethnicity_reporting),
+    w.* except (
+        reports_to_employee_number, race_ethnicity_reporting, employee_number_string
+    ),
 
     lc.location_region as home_work_location_region,
     lc.location_dagster_code_location as home_work_location_dagster_code_location,
@@ -276,8 +283,17 @@ select
     lower(rtldap.mail) as reports_to_mail,
 
     coalesce(
-        idps.powerschool_teacher_number, cast(w.employee_number as string)
+        idps.powerschool_teacher_number, w.employee_number_string
     ) as powerschool_teacher_number,
+
+    coalesce(
+        if(
+            lc.location_dagster_code_location = 'kippmiami',
+            null,
+            idps.powerschool_teacher_number
+        ),
+        w.employee_number_string
+    ) as sis_teacher_number,
 
     coalesce(
         w.reports_to_employee_number, rten.employee_number
