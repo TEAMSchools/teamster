@@ -217,8 +217,8 @@ def fetch_introspection(tables: list[str]) -> dict[str, Any]:
     names = ", ".join(f"'{t}'" for t in tables)
     columns = [
         dict(row)
-        # trunk-ignore(bandit/B608): identifiers are repo constants and table names parsed from the cube model, never user input
         for row in client.query(
+            # trunk-ignore(bandit/B608): identifiers are repo constants; table names are parsed from the cube model, never user input
             f"""
             SELECT table_name, column_name, data_type, is_nullable
             FROM `{PROD_PROJECT}.{MARTS_DATASET}.INFORMATION_SCHEMA.COLUMNS`
@@ -230,8 +230,8 @@ def fetch_introspection(tables: list[str]) -> dict[str, Any]:
 
     codesets: dict[str, list[str]] = {}
     for table, column in CODESET_COLUMNS:
-        # trunk-ignore(bandit/B608): table and column come from CODESET_COLUMNS, a literal in this file
         rows = client.query(
+            # trunk-ignore(bandit/B608): table and column come from CODESET_COLUMNS, a literal in this file
             f"SELECT DISTINCT {column} AS v "
             f"FROM `{PROD_PROJECT}.{MARTS_DATASET}.{table}`"
         ).result()
