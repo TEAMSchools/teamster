@@ -2,7 +2,7 @@ select
     localstudentidentifier as student_number,
     assessmentyear as academic_year,
     academic_year as academic_year_int,
-    `period` as test_round,
+    administration_period as test_round,
     assessment_name as test_type,
     discipline as `subject`,
     `subject` as test_name,
@@ -42,9 +42,8 @@ select
         partition by co.student_number, fl.assessment_subject
         order by fl.academic_year asc, fl.administration_window asc
     ) as test_index,
-from {{ ref("stg_powerschool__students") }} as co
+from {{ ref("int_students__students") }} as co
 inner join
-    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-    on co.dcid = suf.studentsdcid
-    and co._dbt_source_project = suf._dbt_source_project
-inner join {{ ref("stg_fldoe__fast") }} as fl on suf.fleid = fl.student_id
+    {{ ref("stg_fldoe__fast") }} as fl
+    on co.florida_education_identifier = fl.student_id
+    and co._dbt_source_project = 'kippmiami'

@@ -1,14 +1,4 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_powerschool__student_enrollment_union"),
-                partition_by="student_number, academic_year, entrydate",
-                order_by="student_number desc",
-            )
-        }}
-    ),
-
     enr_bools as (
         select
             enr.*,
@@ -24,7 +14,7 @@ with
                 then true
                 else false
             end as is_enrolled_recent,
-        from deduplicate as enr
+        from {{ ref("int_powerschool__student_enrollment_union") }} as enr
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
             on enr.schoolid = cr.schoolid
@@ -130,6 +120,8 @@ select
     sch.name as school_name,
     sch.abbreviation as school_abbreviation,
 
+    entry_sch.abbreviation as entry_school_abbreviation,
+
     scf.spedlep,
     scf.lep_status,
     scf.homeless_code,
@@ -167,6 +159,9 @@ select
 from with_boy_status_window as enr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number
+left join
+    {{ ref("stg_powerschool__schools") }} as entry_sch
+    on enr.entry_schoolid = entry_sch.school_number
 left join
     {{ ref("stg_powerschool__studentcorefields") }} as scf
     on enr.students_dcid = scf.studentsdcid

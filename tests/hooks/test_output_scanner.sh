@@ -14,8 +14,8 @@ echo " Output Scanner (check-output.sh)"
 echo "========================================="
 
 if [[ ! -f ${OUTPUT_HOOK} ]]; then
-  echo -e "  ${YELLOW}SKIP${NC}: ${OUTPUT_HOOK} not found"
-  exit 0
+	echo -e "  ${YELLOW}SKIP${NC}: ${OUTPUT_HOOK} not found"
+	exit 0
 fi
 
 # ─── Secret pattern detection ────────────────────────────────────────────────
@@ -85,12 +85,18 @@ check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_af
 echo ""
 echo -e "${YELLOW}PostToolUse: High-entropy string boundary (120 chars)${NC}"
 
-str_119=$(printf 'g%.0s' {1..119})
-str_120=$(printf 'g%.0s' {1..120})
-str_121=$(printf 'g%.0s' {1..121})
+# Mixed-case fixture: the heuristic skips single-case runs (identifiers/paths).
+str_120=$(printf 'gG%.0s' {1..60})
+str_119="${str_120:1}"
+str_121="${str_120}g"
 check_output "119-char string (under threshold)" clean "${str_119}"
 check_output "120-char string (at threshold)" deny "${str_120}"
 check_output "121-char string (over threshold)" deny "${str_121}"
+# Deterministic mixed-case base64 blob (~200 chars) — the real target shape.
+b64_blob=$(printf 'The quick brown fox jumps over the lazy dog 0123456789 %.0s' {1..3} | base64 -w0)
+check_output "mixed-case base64 blob over threshold" deny "blob ${b64_blob}"
+check_output "120 lowercase-only run is not a blob" clean "$(printf 'g%.0s' {1..120})"
+check_output "120 uppercase-only run is not a blob" clean "$(printf 'G%.0s' {1..120})"
 
 echo ""
 echo -e "${YELLOW}PostToolUse: Non-scanned tools${NC}"
@@ -106,14 +112,14 @@ echo -e "${YELLOW}PostToolUse: Exit code regression (must exit 0 on deny)${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
 expect_deny_exit0 "PostToolUse JWT deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
-    '{tool_name: "Read", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
+		'{tool_name: "Read", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse op:// deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c 'config: op://vault/item/field' \
-    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c 'config: op://vault/item/field' \
+		'{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse high-entropy deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "$(printf 'g%.0s' {1..120})" \
-    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c "$(printf 'gG%.0s' {1..60})" \
+		'{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Schema regression: hook must read .tool_response (Claude Code's payload key) ──
@@ -125,16 +131,16 @@ echo -e "${YELLOW}PostToolUse: Schema regression (.tool_response is the real key
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_exit0 "scans .tool_response high-entropy string" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "$(printf 'g%.0s' {1..200})" \
-    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c "$(printf 'gG%.0s' {1..100})" \
+		'{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "scans .tool_response named pattern (op://)" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "leaked: op://vault/item/field" \
-    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+	"$(jq -n --arg c "leaked: op://vault/item/field" \
+		'{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
 # trunk-ignore(gitleaks/generic-api-key): synthetic ops_ token fixture
 _fake_op_trace='+ token=ops_eyJzaWduSW5BZGRyZXNzIjoiZXhhbXBsZS4xcGFzc3dvcmQuY29tIiwidXNlckF1dGgiOnsibWV0aG9kIjoiU1JQZy00MDk2In19'
 expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "${_fake_op_trace}" \
-    '{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
+	"$(jq -n --arg c "${_fake_op_trace}" \
+		'{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Schema fallback (#6e/#20): payload under a non-tool_response key ────────
@@ -143,14 +149,42 @@ expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_H
 echo ""
 echo -e "${YELLOW}PostToolUse: payload-key drift fallback (#20)${NC}"
 
+# With no .tool_response there is nothing to redact in the tool's own shape, so
+# the hook must end the turn (decision:block), not emit an empty replacement
+# that the harness ignores.
 # trunk-ignore-begin(shellcheck/SC2312)
-expect_deny_exit0 "secret under .output (not .tool_response)" "${OUTPUT_HOOK}" \
-  "$(jq -n '{tool_name:"Bash", output:{stdout:"leaked op://vault/item/field"}}')"
-expect_deny_exit0 "secret at top level (no tool_response)" "${OUTPUT_HOOK}" \
-  "$(jq -n '{tool_name:"mcp__github__issue_read", result:"op://vault/item/field"}')"
+expect_block "secret under .output (not .tool_response) ends the turn" \
+	"$(jq -n '{tool_name:"Bash", output:{stdout:"leaked op://vault/item/field"}}')"
+expect_block "secret at top level (no tool_response) ends the turn" \
+	"$(jq -n '{tool_name:"mcp__github__issue_read", result:"op://vault/item/field"}')"
 # trunk-ignore-end(shellcheck/SC2312)
 # control: clean .tool_response output still passes (fallback no overreach)
 check_output "clean .tool_response still clean" clean "rows: 5"
+
+# ─── Redaction content: the secret must be GONE from updatedToolOutput ────────
+echo ""
+echo -e "${YELLOW}PostToolUse: redaction replaces the secret, keeps the shape${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_redacted "Bash stdout secret replaced" \
+	"$(jq -n '{tool_name:"Bash", tool_response:{stdout:"x op://vault/item/field y", stderr:"", interrupted:false, isImage:false}}')" \
+	"op://vault/item/field"
+expect_redacted "Read file.content secret replaced" \
+	"$(jq -n '{tool_name:"Read", tool_response:{type:"text", file:{filePath:"/repo/a.sh", content:"op://vault/item/field", numLines:1}}}')" \
+	"op://vault/item/field"
+expect_redacted "MCP array-of-content secret replaced" \
+	"$(jq -n '{tool_name:"mcp__github__issue_read", tool_response:[{type:"text", text:"ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"}]}')" \
+	"ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+# shape keys survive so built-in tools accept the replacement
+_shape=$(jq -n '{tool_name:"Read", tool_response:{type:"text", file:{filePath:"/repo/a.sh", content:"op://vault/item/field"}}}' | bash "${OUTPUT_HOOK}" 2>/dev/null)
+if jq -e '.hookSpecificOutput.updatedToolOutput | .type == "text" and .file.filePath == "/repo/a.sh"' <<<"${_shape}" >/dev/null 2>&1; then
+	PASS=$((PASS + 1))
+	echo -e "  ${GREEN}PASS${NC} [shape]: type and filePath preserved"
+else
+	FAIL=$((FAIL + 1))
+	ERRORS+="\n  ${RED}FAIL${NC} [shape]: type/filePath not preserved"
+fi
+# trunk-ignore-end(shellcheck/SC2312)
 
 # ─── Batch 6: new detections (#16 base64url, #18 gzip, #19 patterns, #30 split) ─
 echo ""
@@ -173,5 +207,29 @@ check_output "#18 gzip+base64 blob inflates to key header" deny "data ${gzb64}"
 # #30 JWT split across a newline — caught only via the whitespace-stripped copy
 check_output "#30 JWT split across newline" deny "header eyJhbGciOiJSUzI1NiJ9
 .eyJzdWIiOiIxMjM0NTY3ODkwIn0 footer"
+
+# ─── Image blocks: base64 carrier skipped, everything else still scanned ────
+echo ""
+echo -e "${YELLOW}PostToolUse: image blocks (Read / MCP / API shapes)${NC}"
+
+# ~330-char mixed-case base64: trips the 120-char heuristic if scanned.
+img_b64=$(printf 'PNG pixel data 0123456789 abcdefghij KLMNOPQRST %.0s' {1..5} | base64 -w0)
+# trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
+expect_allow_raw "Read image output (file.base64) is clean" "${OUTPUT_HOOK}" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "Read", tool_response: {type: "image", file: {base64: $b, type: "image/png", originalSize: 48213}}}')"
+expect_allow_raw "MCP image content block (data) is clean" "${OUTPUT_HOOK}" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__tableau__render", tool_response: {content: [{type: "text", text: "rendered"}, {type: "image", data: $b, mimeType: "image/png"}]}}')"
+expect_allow_raw "API image block (source.data) is clean" "${OUTPUT_HOOK}" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "WebFetch", tool_response: {content: [{type: "image", source: {type: "base64", media_type: "image/png", data: $b}}]}}')"
+expect_redacted "image block sibling string still scanned" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__x__y", tool_response: {content: [{type: "text", text: "see op://vault/item/field"}, {type: "image", data: $b, mimeType: "image/png"}]}}')" \
+	"op://vault/item/field"
+expect_redacted "image block with plaintext (non-base64) data still scanned" \
+	"$(jq -n '{tool_name: "mcp__x__y", tool_response: {content: [{type: "image", data: "leaked op://vault/item/field", mimeType: "image/png"}]}}')" \
+	"op://vault/item/field"
+expect_redacted "text block with a base64 data field is not exempt" \
+	"$(jq -n --arg b "${img_b64}" '{tool_name: "mcp__x__y", tool_response: {content: [{type: "text", data: $b}]}}')" \
+	"${img_b64}"
+# trunk-ignore-end(shellcheck/SC2312)
 
 print_summary "Output Scanner"

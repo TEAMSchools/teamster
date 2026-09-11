@@ -13,21 +13,11 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence:
-    -- int_focus__calendar_day reaches back to AY2010 with 3 schools against
-    -- PowerSchool's 6, so scoping on the years it contains would replace most of
-    -- Miami's calendar history with a thinner copy.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
-    -- LEFT JOIN: `stg_powerschool__terms` carries only `isyearrec` = 1 windows,
-    -- and some real calendar days fall outside every window — mostly August
-    -- pre-service dates, plus a 15-day Paterson gap. An INNER JOIN silently
-    -- dropped those days from this model and from `dim_school_calendars`, which
-    -- reads it directly. `yearid` is null for a day with no covering term, and
-    -- nothing downstream requires it or `academic_year` to be non-null.
+    -- yearid comes from the package's int_powerschool__calendar_day, a left
+    -- join to the isyearrec = 1 term window. Some real calendar days fall
+    -- outside every window (August pre-service dates, a 15-day Paterson gap);
+    -- their yearid and academic_year are null, and nothing downstream requires
+    -- either to be non-null.
     powerschool_dated as (
         select
             cd._dbt_source_relation,
@@ -40,38 +30,19 @@ with
             cd.date_value,
             cd.date_value as school_date,
 
-            t.yearid,
+            cd.yearid,
 
             cd.insession = 1 as is_in_session,
             cd.membershipvalue > 0 as is_in_membership,
-
-            -- NULL-safe cutover flag: a day with no covering term (t.yearid is
-            -- NULL) is never a Focus-covered year, so it's kept below
-            -- regardless of project.
-            coalesce(
-                t.yearid >= c.focus_start_academic_year - 1990, false
-            ) as is_focus_covered_year,
-        from {{ ref("stg_powerschool__calendar_day") }} as cd
-        left join
-            {{ ref("stg_powerschool__terms") }} as t
-            on cd.schoolid = t.schoolid
-            and cd.date_value between t.firstday and t.lastday
-            and cd._dbt_source_project = t._dbt_source_project
-            and t.isyearrec = 1
-        cross join cutover as c
-        -- stg_powerschool__calendar_day NULLs date_value for pre-2000 sentinel
-        -- rows (a handful of PowerSchool junk records). The old INNER JOIN
-        -- incidentally dropped them (BETWEEN against NULL is never true); the
-        -- LEFT JOIN above no longer does, so drop them explicitly -- they were
-        -- never real calendar days.
-        where cd.date_value is not null
+        from {{ ref("int_powerschool__calendar_day") }} as cd
+        -- PowerSchool carries a handful of pre-2000 sentinel junk rows. The old
+        -- source (kipptaf's stg_powerschool__calendar_day) nulled their
+        -- date_value and this model dropped the nulls; the package's
+        -- int_powerschool__calendar_day passes them through, so drop them by
+        -- date here instead -- they were never real calendar days.
+        where cd.date_value >= date '2000-01-01'
     ),
 
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project preserves Miami
-    -- AY2020 through AY2025. A no-term day is never dropped here, even for
-    -- Miami — see `is_focus_covered_year` above.
-    --
     -- Dual-exposes the neutral names (`school_date`, `academic_year`,
     -- `is_in_session`, `is_in_membership`) alongside the legacy names
     -- (`date_value`, `yearid`, `insession`, `membershipvalue`) that
@@ -93,7 +64,6 @@ with
 
             yearid + 1990 as academic_year,
         from powerschool_dated
-        where not (_dbt_source_project = 'kippmiami' and is_focus_covered_year)
     ),
 
     -- int_focus__calendar_day is Focus-native: it emits academic_year and
@@ -111,28 +81,59 @@ with
             cd.school_date as date_value,
             cd.school_date,
             cd.academic_year,
-            cd.academic_year - 1990 as yearid,
 
             1 as insession,
             cast(1 as float64) as membershipvalue,
             true as is_in_session,
             true as is_in_membership,
+
+            cd.academic_year - 1990 as yearid,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2010 through AY2025
-        -- calendar rows land beside PowerSchool's real rows for the same Miami
-        -- school-days and break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence. Focus's calendar before the cutover year is a scaffold,
+        -- not the network's calendar of record, and the network keeps no
+        -- Miami calendar days before AY2026 (#5193).
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where cd.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list schoolid in different
--- positions, which would silently align schoolid with insession.
-select *,
+-- `union all` matches columns by POSITION, so both branches list the same
+-- 13 columns in the same order. Enumerating also fixes the view's column list:
+-- BigQuery sets it at create time and Dagster rebuilds a view only when its
+-- raw SQL changes, so a `select *` branch never picks up a column added
+-- upstream.
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    schoolid,
+    insession,
+    membershipvalue,
+    week_start_date,
+    week_end_date,
+    date_value,
+    school_date,
+    yearid,
+    is_in_session,
+    is_in_membership,
+    academic_year,
 from powerschool_conformed
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    schoolid,
+    insession,
+    membershipvalue,
+    week_start_date,
+    week_end_date,
+    date_value,
+    school_date,
+    yearid,
+    is_in_session,
+    is_in_membership,
+    academic_year,
 from focus_conformed

@@ -12,6 +12,10 @@ models:
                 field: name
       - name: student_id
         data_type: int64
+        description: >-
+          Network student number. Miami rows through SY2025 carry the bare
+          pre-Focus number in the source; they are brought onto the
+          8400-prefixed Focus student number here.
       - name: _dbt_source_relation
         data_type: string
       - name: academic_year

@@ -122,6 +122,31 @@ with
     ),
 
     -- grain projection, not dup-masking
+    -- not strictly required -- these rows hash identically to the Pearson NJGPA
+    -- rows -- but kept so this dimension does not depend on Pearson history
+    state_nj_njgpa_cambium as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+
+            'state_nj_njgpa' as assessment_type,
+            'NJGPA' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_cambium__njgpa") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection, not dup-masking
     state_fl_fast as (
         select distinct
             assessment_subject as subject_area,
@@ -376,6 +401,9 @@ with
         union all
         select {{ union_cols }},
         from state_nj_njgpa
+        union all
+        select {{ union_cols }},
+        from state_nj_njgpa_cambium
         union all
         select {{ union_cols }},
         from state_nj_njsla

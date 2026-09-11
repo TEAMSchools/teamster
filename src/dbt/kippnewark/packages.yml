@@ -1,6 +1,7 @@
 # trunk-ignore-all(yamllint/quoted-strings)
 packages:
   - local: ../amplify
+  - local: ../cambium
   - local: ../deanslist
   - local: ../edplan
   - local: ../finalsite
@@ -8,7 +9,6 @@ packages:
   - local: ../overgrad
   - local: ../pearson
   - local: ../powerschool
-  - local: ../renlearn
   - local: ../titan
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables

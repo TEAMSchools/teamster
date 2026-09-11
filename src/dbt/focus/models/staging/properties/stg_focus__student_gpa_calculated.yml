@@ -22,11 +22,12 @@ models:
       downstream.
 
 
-      The five decimal columns arrive from dlt as BIGNUMERIC, because
-      `weighted_gpa` is an unbounded Postgres `numeric` carrying up to 20
-      decimal places and needs the `widen_unbounded_numeric` dlt adapter to load
-      at all. They are cast to NUMERIC here, which keeps this package's decimal
-      vocabulary consistent and costs at most 5e-10 of rounding.
+      The five decimal columns arrive from dlt as BIGNUMERIC because the
+      source-wide `widen_unbounded_numeric_adapter` widens every unbounded
+      Postgres `numeric` column — `weighted_gpa`'s up to 20 decimal places is
+      the column that originally forced the widening, since without it the load
+      fails outright. They are cast to NUMERIC here, which keeps this package's
+      decimal vocabulary consistent and costs at most 5e-10 of rounding.
 
 
       The 21 `custom_*_gpa`, `custom_*_rank` and `ncaa_gpa` columns in the

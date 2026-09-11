@@ -263,6 +263,14 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: section_504_eligible
+        description: >-
+          Section 504 Eligible (custom_621). The select option Focus's own "504
+          Indicator Computed" field reads.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
       - name: gifted_eligibility
         description: >-
           Gifted Eligibility — the FLDOE criteria paragraph a student was

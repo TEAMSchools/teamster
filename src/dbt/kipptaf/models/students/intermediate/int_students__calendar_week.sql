@@ -10,30 +10,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence:
-    -- int_focus__calendar_week reaches back to AY2010, so scoping on the
-    -- years it contains would replace most of Miami's calendar-week history
-    -- with a thinner copy.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. int_powerschool__calendar_week already dual-exposes
-    -- yearid/academic_year and neutral date columns, so no extra aliasing is
-    -- needed here.
-    powerschool_conformed as (
-        select cw.*,
-        from {{ ref("int_powerschool__calendar_week") }} as cw
-        cross join cutover as c
-        where
-            not (
-                cw._dbt_source_project = 'kippmiami'
-                and cw.yearid >= c.focus_start_academic_year - 1990
-            )
-    ),
-
     -- int_focus__calendar_week is Focus-native: it emits academic_year but no
     -- yearid or region, and schoolid is Focus's internal id rather than the
     -- network school number.
@@ -49,20 +25,65 @@ with
             {{ extract_region("cw") }} as region,
         from {{ ref("int_focus__calendar_week") }} as cw
         inner join focus_schools as fs on cw.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2010 through
-        -- AY2025 calendar weeks land beside PowerSchool's real rows for the
-        -- same Miami school-weeks and break this model's grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence. Focus's calendar before the cutover year is a scaffold,
+        -- not the network's calendar of record, and the network keeps no
+        -- Miami calendar days before AY2026 (#5193).
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where cw.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list schoolid/yearid in
--- different positions, which would silently misalign columns.
-select *,
-from powerschool_conformed
+select
+    _dbt_source_relation,
+    schoolid,
+    week_start_date,
+    week_end_date,
+    school_level,
+    yearid,
+    academic_year,
+    week_start_monday,
+    week_end_sunday,
+    school_week_start_date,
+    school_week_end_date,
+    date_count,
+    semester,
+    quarter,
+    first_day_school_year,
+    last_week_start_school_year,
+    last_day_school_year,
+    school_week_start_date_lead,
+    week_number_academic_year,
+    week_number_quarter,
+    is_current_week_mon_sun,
+    region,
+    _dbt_source_project,
+from {{ ref("int_powerschool__calendar_week") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    schoolid,
+    week_start_date,
+    week_end_date,
+    school_level,
+    yearid,
+    academic_year,
+    week_start_monday,
+    week_end_sunday,
+    school_week_start_date,
+    school_week_end_date,
+    date_count,
+    semester,
+    quarter,
+    first_day_school_year,
+    last_week_start_school_year,
+    last_day_school_year,
+    school_week_start_date_lead,
+    week_number_academic_year,
+    week_number_quarter,
+    is_current_week_mon_sun,
+    region,
+    _dbt_source_project,
 from focus_conformed

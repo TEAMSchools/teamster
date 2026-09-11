@@ -12,8 +12,8 @@ dlt casts the duration to int64 microseconds instead.
 `widen_unbounded_numeric_adapter` covers the second case: unbounded Postgres
 `numeric` reflects as `precision=None`, dlt renders it `decimal128(38, 9)`, and
 pyarrow refuses any value needing more than 9 decimal places
-(`student_gpa_calculated.weighted_gpa`). It is opt-in per table, so these tests
-also pin that the opt-in routes to the right adapter.
+(`student_gpa_calculated.weighted_gpa`). The widening adapter now applies to
+every table in the source, and these tests pin that.
 """
 
 from datetime import timedelta
@@ -190,7 +190,7 @@ def test_reflection_settings_reach_table_rows(monkeypatch):
     assert captured["reflection_level"] == "full_with_precision"
     assert captured["backend"] == "pyarrow"
     assert captured["table_adapter_callback"] is remove_nullability_adapter
-    assert captured["type_adapter_callback"] is interval_to_microseconds_adapter
+    assert captured["type_adapter_callback"] is focus_assets._widening_type_adapter
     assert captured["table"] == "gradebook_assignments"
     assert captured["metadata"].schema == "public"
 
@@ -280,8 +280,8 @@ def test_widening_type_adapter_keeps_the_interval_mapping():
     assert (widened.precision, widened.scale) == (76, 38)
 
 
-def test_widen_numeric_flag_selects_the_type_adapter(monkeypatch):
-    """The per-table opt-in is what reaches `table_rows`, not a source-wide flag."""
+def test_every_table_gets_the_widening_adapter(monkeypatch):
+    """No table opts in any more — widening is source-wide."""
     from teamster.libraries.dlt.focus import assets as focus_assets
 
     captured: dict[str, Any] = {}
@@ -292,14 +292,13 @@ def test_widen_numeric_flag_selects_the_type_adapter(monkeypatch):
 
     monkeypatch.setattr(focus_assets, "table_rows", spy_table_rows)
 
-    for table_name, widen in (("plain", False), ("widened", True)):
+    for table_name in ("plain", "was_opted_in"):
         resource = focus_assets._build_focus_resource(
             sql_database_credentials=ConnectionStringCredentials("sqlite://"),
             table_name=table_name,
             db_schema="public",
-            widen_numeric=widen,
         )
         list(resource())
 
-    assert captured["plain"] is interval_to_microseconds_adapter
-    assert captured["widened"] is focus_assets._widening_type_adapter
+    assert captured["plain"] is focus_assets._widening_type_adapter
+    assert captured["was_opted_in"] is focus_assets._widening_type_adapter

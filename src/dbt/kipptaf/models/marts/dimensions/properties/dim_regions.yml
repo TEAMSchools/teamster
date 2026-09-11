@@ -50,6 +50,14 @@ models:
         description: >-
           IANA timezone identifier.
 
+      - name: state_district_id
+        data_type: string
+        description: >-
+          State-issued district identifier: the NJ DOE county-district code
+          (Newark 7325, Camden 1799, Paterson 7899). NULL for Miami, whose
+          Florida district number is not populated, and for TAF, which is not a
+          district.
+
       - name: legal_entity
         data_type: string
         description: >-

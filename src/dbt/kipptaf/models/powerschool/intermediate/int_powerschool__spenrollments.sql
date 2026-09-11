@@ -9,7 +9,6 @@ with
                     source(
                         "kippcamden_powerschool", "int_powerschool__spenrollments"
                     ),
-                    source("kippmiami_powerschool", "int_powerschool__spenrollments"),
                     source(
                         "kipppaterson_powerschool", "int_powerschool__spenrollments"
                     ),

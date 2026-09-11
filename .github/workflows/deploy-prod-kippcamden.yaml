@@ -15,6 +15,7 @@ on:
       - .github/workflows/deploy-prod-kippcamden.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/cambium/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/finalsite/**
@@ -25,6 +26,7 @@ on:
       - src/dbt/titan/**
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
@@ -47,6 +49,7 @@ on:
       - uv.lock
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**

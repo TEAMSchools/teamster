@@ -40,7 +40,7 @@ sources:
                 - kippcamden
                 - pearson
                 - stg_pearson__parcc
-      - name: stg_pearson__student_list_report
+      - name: int_pearson__student_list_report
         config:
           meta:
             dagster:
@@ -48,8 +48,8 @@ sources:
               asset_key:
                 - kippcamden
                 - pearson
-                - stg_pearson__student_list_report
-      - name: stg_pearson__student_test_update
+                - int_pearson__student_list_report
+      - name: int_pearson__all_assessments
         config:
           meta:
             dagster:
@@ -57,4 +57,4 @@ sources:
               asset_key:
                 - kippcamden
                 - pearson
-                - stg_pearson__student_test_update
+                - int_pearson__all_assessments

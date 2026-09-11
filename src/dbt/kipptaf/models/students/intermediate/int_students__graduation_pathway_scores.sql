@@ -1,0 +1,285 @@
+with
+    students as (
+        select
+            e._dbt_source_relation,
+            e._dbt_source_project,
+            e.students_dcid,
+            e.studentid,
+            e.student_number,
+            e.state_studentnumber,
+            e.salesforce_id,
+            e.grade_level,
+            e.enroll_status,
+            e.cohort,
+            e.discipline,
+            e.powerschool_credittype,
+            e.ps_grad_path_code,
+            e.met_fafsa_requirement as has_fafsa,
+
+            case
+                when e.ps_grad_path_code in ('M', 'N')
+                then true
+                when e.ps_grad_path_code in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
+
+            if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
+
+            /* NJGPA results land in late June, so 11th graders are not held to the
+               test requirement until then. */
+            if(
+                current_date('{{ var("local_timezone") }}')
+                < date({{ var("current_academic_year") + 1 }}, 06, 30),
+                false,
+                true
+            ) as njgpa_season_11th,
+
+            /* FAFSA is required to graduate but is not counted against a student
+               until the January deadline of their senior year. */
+            if(
+                current_date('{{ var("local_timezone") }}')
+                < date({{ var("current_academic_year") + 1 }}, 01, 01),
+                false,
+                true
+            ) as fafsa_season_12th,
+
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as e
+        where e.rn_undergrad = 1 and e.region != 'Miami' and e.grade_level >= 8
+    ),
+
+    scores as (
+        /* njgpa transfer scores, entered by hand in powerschool */
+        select
+            s.student_number,
+
+            x.testscalescore as scale_score,
+            x.testcode as score_type,
+            x.testcode as subject_area,
+            x.assessment_name as pathway_option,
+            x.assessment_version,
+            x.discipline,
+
+        from students as s
+        inner join
+            {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
+            on s.studentid = x.studentid
+            and s._dbt_source_project = x._dbt_source_project
+            and s.discipline = x.discipline
+
+        union all
+
+        /* njgpa scores from file */
+        select
+            s.student_number,
+
+            n.testscalescore as scale_score,
+            n.testcode as score_type,
+            n.testcode as subject_area,
+            n.assessment_name as pathway_option,
+            n.assessment_version,
+            n.discipline,
+
+        from students as s
+        inner join
+            {{ ref("int_pearson__all_assessments") }} as n
+            on s.student_number = n.localstudentidentifier
+            and s.discipline = n.discipline
+        where
+            -- Cambium reports this null where Pearson always set it to 1, so
+            -- the predicate is a no-op for Pearson; null must count as complete
+            -- or every Cambium score is silently excluded.
+            (n.testscorecomplete is null or n.testscorecomplete = 1)
+            and n.assessment_name = 'NJGPA'
+            and n.testcode in ('ELAGP', 'MATGP')
+
+        union all
+
+        /* act/sat/psat scores */
+        select
+            student_number,
+            scale_score,
+            score_type,
+            subject_area,
+            scope as pathway_option,
+            scope as assessment_version,
+
+            if(course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+        from {{ ref("int_assessments__college_assessment") }}
+        where
+            scope in ('ACT', 'SAT', 'PSAT10', 'PSAT NMSQT')
+            and course_discipline in ('MATH', 'ENG')
+            and score_type != 'act_english'
+    ),
+
+    attempted_subject_njgpa as (
+        /* whether the student sat the njgpa for the discipline at all */
+        select
+            student_number,
+
+            logical_or(discipline = 'ELA') as attempted_njgpa_ela,
+            logical_or(discipline = 'Math') as attempted_njgpa_math,
+        from scores
+        where pathway_option = 'NJGPA'
+        group by student_number
+    ),
+
+    matched as (
+        select
+            s._dbt_source_relation,
+            s._dbt_source_project,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.enroll_status,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
+
+            c.pathway_option,
+            c.score_type,
+            c.pathway_code,
+            c.cutoff,
+            c.assessment_version,
+
+            p.scale_score,
+            p.subject_area,
+
+            p.scale_score >= c.cutoff as met_pathway_cutoff,
+
+            coalesce(nj.attempted_njgpa_ela, false) as attempted_njgpa_ela,
+            coalesce(nj.attempted_njgpa_math, false) as attempted_njgpa_math,
+
+        from students as s
+        left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
+        left join
+            {{ ref("stg_google_sheets__student_graduation_path_cutoffs") }} as c
+            on s.cohort = c.cohort
+            and s.discipline = c.discipline
+        left join
+            scores as p
+            on c.pathway_option = p.pathway_option
+            and c.score_type = p.score_type
+            and c.assessment_version = p.assessment_version
+            and s.student_number = p.student_number
+        where
+            s.ps_grad_path_code is null
+            or s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
+
+        -- Both branches list every column. UNION ALL CORRESPONDING matches by
+        -- name and errors when the two lists differ, so a column added to one
+        -- branch has to be written down in the other instead of being padded
+        -- silently (the FULL form does that, and hid the nulls #5148 fixes).
+        union all corresponding
+
+        /* students whose pathway powerschool already decided. They never reach a
+           cut score, but they still need one row per discipline so the dashboard
+           shows them. */
+        select
+            s._dbt_source_relation,
+            s._dbt_source_project,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.enroll_status,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
+
+            case
+                s.ps_grad_path_code
+                when 'M'
+                then 'DLM'
+                when 'N'
+                then 'Portfolio'
+                when 'O'
+                then 'Met No Requirements'
+                when 'P'
+                then 'Incomplete Credits'
+            end as pathway_option,
+
+            case
+                concat(s.discipline, s.ps_grad_path_code)
+                when 'MathM'
+                then 'dlm_math'
+                when 'ELAM'
+                then 'dlm_ela'
+                when 'MathN'
+                then 'portfolio_math'
+                when 'ELAN'
+                then 'portfolio_ela'
+                when 'MathO'
+                then 'no_pathway_math'
+                when 'ELAO'
+                then 'no_pathway_ela'
+                when 'MathP'
+                then 'incomplete_credits_math'
+                when 'ELAP'
+                then 'incomplete_credits_ela'
+            end as score_type,
+
+            s.ps_grad_path_code as pathway_code,
+
+            cast(null as int64) as cutoff,
+            cast(null as string) as assessment_version,
+
+            /* not a real score. Kept as zero rather than null because the
+               graduation requirements extract filters on scale_score is not
+               null, and these students must stay on the dashboard. */
+            0 as scale_score,
+            s.discipline as subject_area,
+
+            s.pre_met_pathway_cutoff as met_pathway_cutoff,
+
+            case
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
+                else coalesce(nj.attempted_njgpa_ela, false)
+            end as attempted_njgpa_ela,
+
+            case
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
+                else coalesce(nj.attempted_njgpa_math, false)
+            end as attempted_njgpa_math,
+
+        from students as s
+        left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
+        where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
+    ),
+
+    scored as (
+        select
+            *,
+
+            /* negative value means short; positive means above min required */
+            if(scale_score is not null, scale_score - cutoff, null) as points_short,
+        from matched
+    )
+
+select
+    *,
+
+    /* Ranked by whether the score passed and then by how far it cleared its own
+       cut score, NOT by the raw score. The two NJGPA versions share a score_type
+       but not a scale, so a failing 700 on the retired scale would otherwise
+       outrank a passing 500 on the adaptive one. */
+    row_number() over (
+        partition by student_number, score_type
+        order by met_pathway_cutoff desc, points_short desc
+    ) as rn_highest,
+
+from scored

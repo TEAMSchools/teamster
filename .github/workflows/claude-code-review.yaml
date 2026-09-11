@@ -37,7 +37,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1.0.206
+        uses: anthropics/claude-code-action@833fb0f8c9f6686b33d963a8bae0a94f4936ab2a # v1.0.211
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -131,11 +131,14 @@ jobs:
           # (parse-sdk-options.ts ACCUMULATING_FLAGS) rather than replacing it,
           # so the comment-update and git-push tools stay allowed. The
           # --disallowedTools set is upstream's tested workaround for
-          # anthropics/claude-code-action#1462: these tools assume a turn can be
-          # resumed later, which a headless run cannot do. Not gated by
-          # --allowedTools, so denying them explicitly is the only guard.
+          # anthropics/claude-code-action#1462 and #1499: these tools assume a
+          # turn can be resumed later, which a headless run cannot do. Agent is
+          # the worst case: run-claude-sdk.ts breaks on the first result, so a
+          # background subagent is orphaned and the run reports success having
+          # posted nothing. Not gated by --allowedTools, so denying them
+          # explicitly is the only guard.
           claude_args: >-
             --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
             diff:*),Bash(git log:*),Bash(git show:*),Bash(git
             rev-parse:*),Bash(git merge-base:*)" --disallowedTools
-            "ScheduleWakeup,SendMessage,Monitor,Workflow"
+            "Agent,ScheduleWakeup,SendMessage,Monitor,Workflow"

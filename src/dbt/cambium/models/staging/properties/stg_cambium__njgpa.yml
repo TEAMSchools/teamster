@@ -1,0 +1,267 @@
+models:
+  - name: stg_cambium__njgpa
+    description: >-
+      Cambium TIDE NJGPA district summative record file, one row per student per
+      subject test, filtered to summative, attempted records and mapped into the
+      shared NJ state assessment shape that int_pearson__all_assessments
+      produces for the Pearson relations. Every Cambium-to-shared translation
+      lives here; kipptaf unions the result as a passthrough.
+    columns:
+      # Columns carrying per-column data_tests sort to the top. Every test sets
+      # severity explicitly: consuming districts default data_tests to warn.
+      - name: studenttestuuid
+        data_type: string
+        description: >-
+          Cambium's per-test identifier, unique per row. These are Cambium's own
+          UUIDs, not Pearson's, so student-crosswalk rows keyed on Pearson UUIDs
+          will not match Cambium records.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: test_date
+        data_type: date
+        description: >-
+          Date of the earliest online unit start across units 1 through 4,
+          coalesced to the parsed assessment session start. The coalesce is
+          required, not defensive: unit timestamps are populated for ELA only,
+          so unit-only derivation nulls every Mathematics row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: period
+        data_type: string
+        description: >-
+          Raw vendor-reported administration season, unnormalized. The value
+          list mirrors ADMINISTRATIONS in each region's cambium/assets.py
+          exactly; a novel fall token fails the build instead of quietly forking
+          a second Fall series downstream.
+        data_tests:
+          # accepted_values passes NULLs, so not_null is required alongside it
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Spring, Fall, FALL, FallBlock]
+              config:
+                severity: error
+      - name: administration_period
+        data_type: string
+        description: >-
+          Normalized from period, case-insensitively: 'FallBlock', 'Fall' and
+          'FALL' all collapse to 'Fall', so the Cambium rows share the Pearson
+          'Fall' series in dim_assessment_administrations.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Spring, Fall]
+              config:
+                severity: error
+      - name: test_grade
+        data_type: int64
+        description: >-
+          11 for both NJGPA test codes, via a case over test_code so an
+          unrecognized code yields NULL and fails here rather than flowing a
+          NULL grade into dim_assessments.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [11]
+                quote: false
+              config:
+                severity: error
+      - name: statestudentidentifier
+        data_type: int64
+        description: NJ SMART state student identifier (10 digits).
+      - name: localstudentidentifier
+        data_type: int64
+        description: >-
+          PowerSchool student_number. Null for a small number of students each
+          administration; patched in kipptaf from the student crosswalk sheet.
+      - name: firstname
+        data_type: string
+        description: Student first name as reported by Cambium.
+      - name: lastorsurname
+        data_type: string
+        description: Student surname as reported by Cambium.
+      - name: academic_year
+        data_type: int64
+        description:
+          Start year of assessmentyear, e.g. '2025-2026' becomes 2025.
+      - name: assessmentyear
+        data_type: string
+        description: Vendor-reported school year, e.g. '2025-2026'.
+      - name: assessmentgrade
+        data_type: string
+        description: >-
+          The test DESIGN level, not the student's grade — 'Grade 10' for ELA
+          and 'Grade 11' for Math. Use test_grade or grade_level_when_assessed.
+      - name: grade_level_when_assessed
+        data_type: int64
+        description: >-
+          The student's grade at the time of testing. 11 for every row in the
+          spring administration; expect 12 for fall retakers. Cambium-only.
+      - name: test_status
+        data_type: string
+        description: >-
+          Cambium test lifecycle status. Every row surviving the summative and
+          attemptedness filter is 'completed', so informational. Cambium-only.
+      - name: subject
+        data_type: string
+        quote: true
+        description: "'English Language Arts' or 'Mathematics'."
+      - name: subject_area
+        data_type: string
+        description: >-
+          Normalized from subject. Cambium already sends 'English Language
+          Arts', so the Pearson '/Literacy' normalization is a passthrough.
+      - name: aligned_subject
+        data_type: string
+        description: Equal to subject_area.
+      - name: illuminate_subject
+        data_type: string
+        description: "'Text Study' for ELA, else the subject as sent."
+      - name: discipline
+        data_type: string
+        description: "'Math' for Mathematics, else 'ELA'."
+      - name: testcode
+        data_type: string
+        description: ELAGP (ELA) or MATGP (Mathematics).
+      - name: module_code
+        data_type: string
+        description:
+          Equal to testcode; the NJSLA Science SC-to-SCI remap does not apply.
+      - name: aligned_test_code
+        data_type: string
+        description: Equal to testcode, as in the Pearson relations.
+      - name: admin
+        data_type: string
+        quote: true
+        description:
+          Equal to administration_period; reserved-word alias for Tableau.
+      - name: testperformancelevel
+        data_type: numeric
+        description: >-
+          1 (Not Yet Graduation Ready) or 2 (Graduation Ready). Same two-level
+          scale Pearson used for NJGPA.
+      - name: testperformancelevel_text
+        data_type: string
+        description:
+          "'Graduation Ready' for level 2, 'Not Yet Graduation Ready' for 1."
+      - name: aligned_performance_band_group
+        data_type: string
+        description: "'Lvl 4' for level 2, 'Lvl 3' for level 1."
+      - name: testscalescore
+        data_type: numeric
+        description: Scale score. Non-null on every filtered row.
+      - name: testscorecomplete
+        data_type: numeric
+        description: >-
+          Entirely NULL from Cambium, where Pearson set it to 1 on every
+          filtered row. Deliberately not synthesized;
+          int_students__graduation_path_codes coalesces it. See design spec D2.
+      - name: is_proficient
+        data_type: boolean
+        description: True when testperformancelevel is 2.
+      - name: is_proficient_int
+        data_type: int64
+        description: is_proficient as 1/0.
+      - name: is_approaching_int
+        data_type: int64
+        description: Always 0 for NJGPA, as in the Pearson rows.
+      - name: is_below_int
+        data_type: int64
+        description: >-
+          1 for every NJGPA row, matching the Pearson model's ELA/Math branch
+          (any level below 3). Parity with prior output, not a proficiency call.
+      - name: njsla_aggregated_proficiency
+        data_type: string
+        description: Always null; NJSLA-only column carried for the union.
+      - name: njsla_performance_band_group_label
+        data_type: string
+        description: Always null; NJSLA-only column carried for the union.
+      - name: assessment_name
+        data_type: string
+        description: Constant 'NJGPA'.
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Constant 'NJGPA-A', the adaptive form. Cambium replaced Pearson at the
+          spring 2026 administration on a different score scale, so graduation
+          pathway cut scores key on this value; both vendors share
+          assessment_name and testcode.
+      - name: assessment_type
+        data_type: string
+        description: Constant 'state_nj_njgpa'.
+      - name: results_type
+        data_type: string
+        description: Constant 'Actual'.
+      - name: district_state
+        data_type: string
+        description: Constant 'KTAF NJ'.
+      - name: studentwithdisabilities
+        data_type: string
+        description: N, IEP, 504, or B (both IEP and 504).
+      - name: is_504
+        data_type: boolean
+        description: True when studentwithdisabilities is '504' or 'B'.
+      - name: iep_status
+        data_type: string
+        description:
+          "'Has IEP' when studentwithdisabilities is 'IEP' or 'B', else 'No
+          IEP'."
+      - name: aligned_iep_status
+        data_type: string
+        description:
+          "'Students With Disabilities' or 'Students Without Disabilities'."
+      - name: englishlearnerel
+        data_type: string
+        description:
+          Y/N multilingual learner flag, under the Pearson column name.
+      - name: lep_status
+        data_type: boolean
+        description: True when englishlearnerel is 'Y'.
+      - name: aligned_ml_status
+        data_type: string
+        description: "'ML' when lep_status, else 'Not ML'."
+      - name: hispanicorlatinoethnicity
+        data_type: string
+        description: Y/N federal ethnicity flag.
+      - name: americanindianoralaskanative
+        data_type: string
+        description: Y/N federal race flag.
+      - name: asian
+        data_type: string
+        description: Y/N federal race flag.
+      - name: blackorafricanamerican
+        data_type: string
+        description: Y/N federal race flag.
+      - name: nativehawaiianorotherpacificislander
+        data_type: string
+        description: Y/N federal race flag.
+      - name: twoormoreraces
+        data_type: string
+        description: Y/N federal race flag.
+      - name: white
+        data_type: string
+        description: Y/N federal race flag.
+      - name: race_ethnicity
+        data_type: string
+        description: >-
+          Single-character code from the race flags, same priority as the
+          Pearson mapping (T, H, I, A, B, P, W).
+      - name: aligned_aggregate_ethnicity
+        data_type: string
+        description:
+          race_ethnicity expanded to the shared label; null maps to 'Blank'.

@@ -6,7 +6,6 @@ select
     short_name,
     type,
     comments,
-    seats,
     imported,
     display_room,
     room_description,
@@ -16,4 +15,6 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(seats as numeric) as seats,
 from {{ source("focus", "resources") }}

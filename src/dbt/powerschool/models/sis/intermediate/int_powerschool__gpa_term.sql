@@ -133,51 +133,70 @@ with
     )
 
 select
-    studentid,
-    schoolid,
-    yearid,
-    storecode as term_name,
-    semester,
-    is_current,
-    gpa_points_total_term,
-    gpa_term,
-    gpa_points_total_y1,
-    gpa_y1,
-    gpa_y1_unweighted,
-    n_failing_y1,
-    total_credit_hours_term,
-    total_credit_hours_y1,
+    gc.studentid,
+    gc.schoolid,
+    gc.yearid,
+    gc.storecode as term_name,
+    gc.semester,
+    gc.is_current,
+    gc.gpa_points_total_term,
+    gc.gpa_term,
+    gc.gpa_points_total_y1,
+    gc.gpa_y1,
+    gc.gpa_y1_unweighted,
+    gc.n_failing_y1,
+    gc.total_credit_hours_term,
+    gc.total_credit_hours_y1,
 
-    round(grade_avg_term, 0) as grade_avg_term,
-    round(grade_avg_y1, 0) as grade_avg_y1,
-    round(weighted_gpa_points_term, 2) as weighted_gpa_points_term,
-    round(weighted_gpa_points_y1, 2) as weighted_gpa_points_y1,
-    round(weighted_gpa_points_y1_unweighted, 2) as weighted_gpa_points_y1_unweighted,
+    s.dcid as students_dcid,
+    s.student_number as students_student_number,
+
+    sch.name as school_name,
+    sch.abbreviation as school_abbreviation,
+    sch.school_level,
+
+    round(gc.grade_avg_term, 0) as grade_avg_term,
+    round(gc.grade_avg_y1, 0) as grade_avg_y1,
+    round(gc.weighted_gpa_points_term, 2) as weighted_gpa_points_term,
+    round(gc.weighted_gpa_points_y1, 2) as weighted_gpa_points_y1,
+    round(gc.weighted_gpa_points_y1_unweighted, 2) as weighted_gpa_points_y1_unweighted,
 
     /* gpa semester */
-    sum(gpa_points_total_term) over (
-        partition by studentid, yearid, semester
+    sum(gc.gpa_points_total_term) over (
+        partition by gc.studentid, gc.yearid, gc.semester
     ) as gpa_points_total_semester,
 
     round(
-        sum(weighted_gpa_points_term) over (partition by studentid, yearid, semester), 2
+        sum(gc.weighted_gpa_points_term) over (
+            partition by gc.studentid, gc.yearid, gc.semester
+        ),
+        2
     ) as weighted_gpa_points_semester,
 
     round(
-        sum(total_credit_hours_y1) over (partition by studentid, yearid, semester), 2
+        sum(gc.total_credit_hours_y1) over (
+            partition by gc.studentid, gc.yearid, gc.semester
+        ),
+        2
     ) as total_credit_hours_semester,
 
     round(
-        avg(grade_avg_term) over (partition by studentid, yearid, semester), 0
+        avg(gc.grade_avg_term) over (partition by gc.studentid, gc.yearid, gc.semester),
+        0
     ) as grade_avg_semester,
 
     round(
         safe_divide(
-            sum(weighted_gpa_points_term) over (
-                partition by studentid, yearid, semester
+            sum(gc.weighted_gpa_points_term) over (
+                partition by gc.studentid, gc.yearid, gc.semester
             ),
-            sum(total_credit_hours_term) over (partition by studentid, yearid, semester)
+            sum(gc.total_credit_hours_term) over (
+                partition by gc.studentid, gc.yearid, gc.semester
+            )
         ),
         2
     ) as gpa_semester,
-from gpa_calcs
+from gpa_calcs as gc
+left join {{ ref("stg_powerschool__students") }} as s on gc.studentid = s.id
+left join
+    {{ ref("stg_powerschool__schools") }} as sch on gc.schoolid = sch.school_number

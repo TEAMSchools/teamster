@@ -49,7 +49,12 @@ with
             cast(ada.is_iss as int64) as is_iss,
             cast(ada.is_suspended as int64) as is_suspended,
 
+            -- a null attendancevalue means PowerSchool recorded no attendance
+            -- for the day (the is_* flags are null too); it must not read as
+            -- Present through the else branch
             case
+                when ada.attendancevalue is null
+                then null
                 when ada.is_oss = 1
                 then 'Out-of-School Suspension'
                 when ada.is_iss = 1

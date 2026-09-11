@@ -2,26 +2,23 @@ with
     course_enrollments as (
         select
             _dbt_source_project,
-            cc_studentid,
             cc_academic_year,
             cc_schoolid,
             cc_dcid,
             cc_dateenrolled,
             cc_dateleft,
             sections_dcid,
-            students_dcid,
             students_student_number,
             region,
-        from {{ ref("base_powerschool__course_enrollments") }}
+        from {{ ref("int_students__course_enrollments") }}
         where not is_dropped_section
     ),
 
     student_enrollments as (
         select
             _dbt_source_project,
-            studentid,
             schoolid,
-            yearid,
+            academic_year,
             student_number,
             entrydate,
             exitdate,
@@ -48,7 +45,7 @@ select
             [
                 "asg.assignmentsectionid",
                 "asg._dbt_source_project",
-                "ce.students_dcid",
+                "asg.students_dcid",
             ]
         )
     }} as grades_assignment_key,
@@ -86,27 +83,37 @@ select
     asg.totalpointvalue as max_points,
     asg.assign_final_score_percent as score_percent,
 
-    if(asg.is_missing = 1, true, false) as is_missing,
+    if(asg.is_missing is null, null, asg.is_missing = 1) as is_missing,
     if(asg.is_late = 1, true, false) as is_late,
     if(asg.is_exempt = 1, true, false) as is_exempt,
     asg.is_expected,
     if(asg.iscountedinfinalgrade = 1, true, false) as is_counted_in_final_grade,
-from {{ ref("int_powerschool__gradebook_assignments_scores") }} as asg
+from {{ ref("int_students__gradebook_assignments_scores") }} as asg
 inner join
     course_enrollments as ce
     on asg.sectionsdcid = ce.sections_dcid
-    and asg.students_dcid = ce.students_dcid
+    -- student_number, not students_dcid: students_dcid is null on every Miami
+    -- row of int_students__course_enrollments. The swap is 1:1 inside every NJ
+    -- district -- (sections_dcid, students_dcid) and (sections_dcid,
+    -- students_student_number) yield identical distinct counts -- so no NJ row
+    -- moves. The surrogate key still reads asg.students_dcid.
+    and asg.student_number = ce.students_student_number
     and asg.duedate >= ce.cc_dateenrolled
-    and asg.duedate < ce.cc_dateleft
+    -- cc_dateleft is null on 18,582 of 19,398 Miami AY2026 course enrollments
+    -- and on 0 NJ rows: `duedate < null` is null, which would drop nearly every
+    -- Miami row. Miami-only in effect.
+    and asg.duedate < coalesce(ce.cc_dateleft, date '9999-12-31')
     and asg._dbt_source_project = ce._dbt_source_project
 -- retained as a row-population filter (assignment must fall within a covering
 -- school enrollment); enrollment linkage now flows via
 -- student_section_enrollment_key -> dim_student_section_enrollments
 inner join
     student_enrollments as enr
-    on ce.cc_studentid = enr.studentid
+    on ce.students_student_number = enr.student_number
     and ce.cc_schoolid = enr.schoolid
-    and ce.cc_academic_year - 1990 = enr.yearid
+    -- academic_year on both sides. PowerSchool's yearid = academic_year - 1990
+    -- has no Focus equivalent, and the swap is 1:1 for all 3 NJ regions.
+    and ce.cc_academic_year = enr.academic_year
     and asg.duedate >= enr.entrydate
     and asg.duedate < enr.exitdate
     and ce._dbt_source_project = enr._dbt_source_project

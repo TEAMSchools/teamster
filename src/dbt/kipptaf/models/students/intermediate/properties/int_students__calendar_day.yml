@@ -2,8 +2,8 @@ models:
   - name: int_students__calendar_day
     description: >-
       SIS-neutral in-session school calendar days across the network. The
-      PowerSchool branch is year-scoped so the frozen Miami archive keeps
-      serving the years Focus does not cover; Focus serves AY2026 forward.
+      PowerSchool branch is NJ-only; Miami rows come from Focus from the cutover
+      year forward, and no Miami calendar history before AY2026 is kept (#5193).
       Focus's internal school id is crosswalked to the network school number
       here, because the crosswalk sheet is a kipptaf model the focus package
       cannot reach. Every measure is dual-exposed: a neutral column

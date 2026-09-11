@@ -30,22 +30,10 @@ import — both `assets.py` and `sensors.py` load unconditionally via
 `dlt/focus/__init__.py`.
 """
 
-widen_numeric_tables = frozenset(
-    a["table_name"] for a in config_assets if a.get("widen_unbounded_numeric")
-)
-"""Tables whose unbounded Postgres `numeric` columns need an explicit scale.
-
-`.get()`, not `[...]`: this key is absent on all but the tables that need it.
-Opt-in rather than source-wide because widening retypes the column to BigQuery
-BIGNUMERIC, and 45 already-loaded Focus tables carry 200 NUMERIC columns that
-`replace` cannot retype in place.
-"""
-
 assets = [
     build_focus_dlt_assets(
         sql_database_credentials=sql_database_credentials,
         code_location=CODE_LOCATION,
         tables=tables,
-        widen_numeric_tables=widen_numeric_tables,
     )
 ]

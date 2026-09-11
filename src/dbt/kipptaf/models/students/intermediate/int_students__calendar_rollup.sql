@@ -10,33 +10,11 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
-    -- The frozen PowerSchool archive keeps serving Miami for every year Focus
-    -- does not cover. Scoping by year rather than by project preserves Miami
-    -- AY2020 through AY2025. The star is qualified to the aliased relation: an
-    -- unqualified `select *,` leaks the cross-joined cutover CTE's
-    -- `focus_start_academic_year` into the output, because `full union all
-    -- corresponding` null-fills it on the `focus_conformed` side.
-    powerschool_conformed as (
-        select cr.*,
-        from {{ ref("int_powerschool__calendar_rollup") }} as cr
-        cross join cutover as c
-        where
-            not (
-                cr._dbt_source_project = 'kippmiami'
-                and cr.yearid >= c.focus_start_academic_year - 1990
-            )
-    ),
-
     -- int_focus__calendar_rollup is Focus-native: academic_year, min_school_date
     -- and max_school_date, and no track column at all. track is supplied here
     -- as a typed NULL, which is what the consuming join is made null-safe for.
     focus_conformed as (
+        -- trunk-ignore(sqlfluff/ST06): column order matches the PowerSchool arm's
         select
             cr.days_total,
             cr.days_remaining,
@@ -55,20 +33,37 @@ with
             cast(null as string) as track,
         from {{ ref("int_focus__calendar_rollup") }} as cr
         inner join focus_schools as fs on cr.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's pre-cutover rows
-        -- would land beside PowerSchool's real rows for the same Miami
-        -- school-years and break this model's own grain test.
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence. Focus's calendar before the cutover year is a scaffold,
+        -- not the network's calendar of record, and the network keeps no
+        -- Miami calendar days before AY2026 (#5193).
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where cr.academic_year >= c.focus_start_academic_year
     )
 
--- `full union all corresponding` matches columns by NAME. A plain `union all`
--- matches by POSITION, and the two CTEs above list schoolid/yearid in
--- different positions, which would silently misalign columns.
-select *,
-from powerschool_conformed
+select
+    _dbt_source_relation,
+    schoolid,
+    yearid,
+    track,
+    min_calendardate,
+    max_calendardate,
+    days_total,
+    days_remaining,
+    _dbt_source_project,
+from {{ ref("int_powerschool__calendar_rollup") }}
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    schoolid,
+    yearid,
+    track,
+    min_calendardate,
+    max_calendardate,
+    days_total,
+    days_remaining,
+    _dbt_source_project,
 from focus_conformed

@@ -30,6 +30,36 @@ models:
       `dim_student_section_enrollments`.
     config:
       materialized: table
+      meta:
+        dagster:
+          # 1x/day instead of eager. Rebuilds 79.7 times a day at 0.107 GiB a
+          # build, 8.6 GiB/day, and it is one of the models driving the
+          # 44/day churn in stg_powerschool__pgfinalgrades and 51.3/day in
+          # base_powerschool__final_grades, both kippnewark. Eager buys
+          # freshness nothing reads: the only downstream mart is
+          # fct_grades_term, which appears in no cube file and no extract. The
+          # cube_semantic_layer exposure does list it, but no file under
+          # src/cube/model/ reads it, so that entry overstates consumption.
+          #
+          # Not a view, even though the intermediate layer permits it. The
+          # uniqueness test here is the SIS-cutover tripwire. The PowerSchool
+          # and Focus branches are exact complements around
+          # focus_start_academic_year, so a >= slipping to >, the floor moving,
+          # or the not (...) guard being dropped makes one Miami academic year
+          # emit from both branches -- both carrying
+          # _dbt_source_project = 'kippmiami', which the uniqueness key
+          # catches. As a view the test would fire only on code change, because
+          # the data-change condition re-materializes tables only. A daily tick
+          # keeps it firing on the one boundary the SIS migration is actively
+          # moving.
+          #
+          # 0 4 matches the gradebook_and_gpa_dashboard batch these marts feed.
+          # All 4 leaves (category_grades, gradebook_assignments_scores, gpa,
+          # final_grades) share the tick, so ~any_deps_in_progress serializes
+          # the pass -- they are direct parent-child. The group costs about
+          # 8.7 GiB/day against 228.1 today. Refs #5082
+          automation_condition:
+            cron_schedule: 0 4 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -58,15 +88,17 @@ models:
       - name: student_number
         description: >-
           Network student number, the only student key both branches carry. On
-          the PowerSchool branch resolved from `stg_powerschool__students` (dcid
-          >= 1); on the Focus branch from `int_focus__students`, which already
-          strips the Miami-Dade district prefix.
+          the PowerSchool branch it comes directly from
+          `base_powerschool__final_grades.students_student_number`; on the Focus
+          branch from `int_focus__students`, which already strips the Miami-Dade
+          district prefix.
         data_type: int64
         data_tests:
-          # Null only when a PowerSchool final-grade row's student fails the
-          # dcid >= 1 placeholder filter. Measured at 0 rows, but fct_grades_term
-          # joins enrollment on this column, so a future null would silently drop
-          # the row from the fact with nothing else to catch it. Warn, not error:
+          # Null only when base_powerschool__final_grades.students_student_number
+          # is itself null for a stored-grade row whose student is missing from
+          # the archive. Measured at 0 rows, but fct_grades_term joins
+          # enrollment on this column, so a future null would silently drop the
+          # row from the fact with nothing else to catch it. Warn, not error:
           # the drop is a coverage gap, not a corrupt row.
           - not_null:
               config:

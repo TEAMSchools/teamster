@@ -29,11 +29,7 @@ with
 
             regexp_replace(schoolphone, r'[^0-9]', '') as school_phone,
         from {{ ref("stg_powerschool__schools") }}
-        -- Every NJ region is in scope and each district wrapper filters this view
-        -- down to its own `code_location`. Miami is excluded because it rosters
-        -- from Focus rather than PowerSchool — the same carve-out the six
-        -- rpt_clever__* feeds make.
-        where _dbt_source_project != 'kippmiami' and state_excludefromreporting = 0
+        where state_excludefromreporting = 0
     )
 
 select

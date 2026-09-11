@@ -1,5 +1,6 @@
 # trunk-ignore-all(yamllint/quoted-strings)
 packages:
+  - local: ../cambium
   - local: ../deanslist
   - local: ../edplan
   - local: ../finalsite

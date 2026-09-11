@@ -9,6 +9,14 @@ models:
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Eager rebuilt this table ~145 times a day. Its fastest consumers are
+          # hourly: the Clever extract job (@hourly) and rpt_tableau__ops_dashboard
+          # (0 * * * *). Everything else reads it nightly or pulls on open
+          # (Connected Sheets). Refs #5215
+          automation_condition:
+            cron_schedule: 0 * * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

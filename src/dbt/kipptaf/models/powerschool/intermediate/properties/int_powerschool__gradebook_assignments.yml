@@ -1,5 +1,12 @@
 models:
   - name: int_powerschool__gradebook_assignments
+    description: |
+      Union of gradebook assignments from Newark, Camden, and Paterson PowerSchool
+      instances. Miami's gradebook reaches the network layer through
+      `int_students__gradebook_assignments_scores`, which sources from Focus via
+      `int_focus__gradebook_grades`. The frozen Miami PowerSchool archive is
+      deliberately excluded here; restoring pre-cutover history is an Ops
+      data-migration question. See #5010.
     columns:
       - name: _dbt_source_relation
         data_type: string
