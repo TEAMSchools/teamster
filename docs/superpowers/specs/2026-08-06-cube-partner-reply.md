@@ -105,10 +105,12 @@ rules — so we need them as explicit terms rather than assumptions.
 
 1. **Catalog and samples.** Days. Ready now — see below. Enough to start writing
    code and scoping screens.
-1. **Sandbox with synthetic data and your access.** One to two weeks. Real
-   endpoint, real auth, test personas, no real records. Includes read access to
-   our model explorer, scoped to the sandbox only, so you can browse the model
-   interactively.
+1. **Sandbox with synthetic data and your access.** Real endpoint, real auth,
+   test personas, no real records. Includes read access to our model explorer,
+   scoped to the sandbox only, so you can browse the model interactively. We are
+   provisioning the cloud project for it now and will give you a date once that
+   is done — the design and the data generator are settled, so the remaining
+   work is ours and does not block step 1.
 1. **Audit trail.** Built alongside the sandbox, not after.
 1. **Repoint at production data.** Weeks. Unblocked, now that we know your end
    users are staff.
@@ -125,10 +127,21 @@ with types and descriptions. No data in it.
   `https://teamschools.github.io/teamster/reference/cube-semantic-catalog/`
 - **Machine-readable, parse this one:**
   `https://teamschools.github.io/teamster/reference/cube-catalog-meta.json`
+- **TypeScript declarations, if that helps:**
+  `https://teamschools.github.io/teamster/reference/cube-catalog.d.ts`
 
-Both links publish when this change merges to our main branch. If you are
-reading this before then, say so and we will send you the two files directly
-rather than have you wait.
+All three links publish when this change merges to our main branch. If you are
+reading this before then, say so and we will send you the files directly rather
+than have you wait.
+
+The declarations file is generated from the same snapshot, so it cannot drift
+from it. It gives you a `CubeQuery<V>` generic keyed by view, a row interface
+per view, and every member description as JSDoc — so a mistyped member name is a
+compile error rather than a runtime empty result, and the warnings on
+scope-bound measures show up on hover. Two behaviours are baked into the types
+deliberately: measure values are `string`, and every member on a row is optional
+and nullable. Ignore the file entirely if you are not on TypeScript; nothing
+else depends on it.
 
 The readable page also carries a ten-item gotchas list. Two of those will cost
 you a day each if you find them the hard way:
