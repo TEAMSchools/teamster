@@ -68,6 +68,18 @@ Instead:
 3. Scope help to that item, not the whole collection. A Finance person asking
    about Total Seat Capacity doesn't need the Schools List walkthrough, and vice
    versa.
+4. **Before asking them for anything, go read what's already been given.** Don't
+   make a task owner re-explain context or re-fetch a link this skill already
+   has. For their specific item, check: this cycle's item-list doc (above) for
+   dates/notes on that item; `reference/field-definitions.md` for CSGF's own
+   definition of the field(s) involved; the Portal mechanics / HSDC mechanics
+   reference sections below for how that task type actually works;
+   `docs/models/csgf-data-model.md` if a `rpt_gsheets__csgf_*` model touches
+   their item at all; and this file's Known data risks / Open Items for anything
+   already found and verified about it. Only ask them a question once those
+   sources genuinely don't answer it -- the point is to make asking for help
+   require as little from them as possible, since most of them have far less
+   context on this process than the collection owner.
 
 ## Overview
 
