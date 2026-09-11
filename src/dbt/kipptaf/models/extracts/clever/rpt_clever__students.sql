@@ -89,4 +89,5 @@ where
     and sr.rn_year = 1
     and not sr.is_out_of_district
     and sr.enroll_status in (0, -1)
-    and {{ exclude_frozen("sr._dbt_source_project") }}
+    -- Miami rosters into Clever from Focus, not from this feed
+    and sr._dbt_source_project != 'kippmiami'
