@@ -48,6 +48,14 @@ credentials -- in a test, or to review the logic -- pass a pre-fetched payload:
 
 ``--dump-introspection`` writes that payload, so a fetch can be captured once
 and replayed.
+
+Commit the output in its prettier-formatted form, like
+``generate_marts_reference.py``. This script is NOT idempotent against the
+committed file: ``yaml.safe_dump`` writes single-quoted scalars and unindented
+list items where prettier writes double quotes and indents, so a fresh run
+rewrites about 1,900 lines with no semantic change. Measured, not assumed. Do
+not read that diff as production having moved -- compare the parsed documents,
+or check ``totals``. Running ``trunk fmt``, or just committing, settles it back.
 """
 
 from __future__ import annotations
