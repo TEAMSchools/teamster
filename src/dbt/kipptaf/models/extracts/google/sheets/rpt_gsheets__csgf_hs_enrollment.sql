@@ -2,26 +2,12 @@ with
     transfer_course_tags as (
         select
             studentid,
-            grade_level,
 
             0 as is_dual_course,
 
             0 as is_cte_course,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            if(grade like 'F%', 0, 1) as passed_class,
-
-            if(
-                course_name like '%Alg%'
-                or course_name like '%ALG%'
-                or course_name like '%Alb%'
-                or course_name like 'Math%'
-                or course_name = 'GSE Coord Alegbra'
-                or course_name = 'NC Math 1',
-                1,
-                0
-            ) as is_alg_i_course,
 
             if(course_name like 'AP%', 1, 0) as is_ap_course,
 
@@ -38,7 +24,7 @@ with
                 'Albegra 1',
                 'ALG 1',
                 'Alg I',
-                'Alg 1'
+                'Alg 1',
                 'ALG I CP',
                 'Algebra',
                 'Algebra 1',
@@ -199,71 +185,6 @@ with
 
         from course_tags_union
         group by region, studentid
-    ),
-
-    passed_courses_union as (
-        select
-            c.cc_studentid as studentid,
-            c.students_grade_level as grade_level,
-            c.region,
-
-            max(if(g.grade like 'F%', 0, 1)) over (
-                partition by c.students_student_number
-            ) as passed_algebra_i,
-
-        from {{ ref("base_powerschool__course_enrollments") }} as c
-        inner join
-            {{ ref("stg_powerschool__storedgrades") }} as g
-            on c.cc_academic_year = g.academic_year
-            and c.sections_id = g.sectionid
-            and c.cc_studentid = g.studentid
-            and c._dbt_source_project = g._dbt_source_project
-            and g.storecode = 'Y1'
-        left join
-            {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
-            on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
-        where
-            c.rn_course_number_year = 1
-            and not c.is_dropped_course
-            and (
-                x.sced_course_name in (
-                    'Integrated Mathematics I',
-                    'Algebra I',
-                    'Algebra I - Part 1',
-                    'Algebra I - Part 2'
-                )
-                or c.courses_course_name = 'Math I Algebra'
-            )
-            and c.cc_academic_year < {{ var("current_academic_year") }}
-
-        union all
-
-        select
-            studentid,
-            grade_level,
-            region,
-
-            max(passed_class) over (partition by region, studentid) as passed_algebra_i,
-
-        from transfer_course_tags
-        where is_alg_i_course = 1
-    ),
-
-    passed_courses as (
-        select
-            region,
-            studentid,
-            grade_level,
-
-            max(passed_algebra_i) over (
-                partition by region, studentid
-            ) as passed_algebra_i,
-
-            row_number() over (
-                partition by region, studentid order by grade_level
-            ) as rn,
-
-        from passed_courses_union
     )
 
 select
@@ -271,6 +192,7 @@ select
     e.grade_level as grade,
     e.cumulative_y1_gpa_unweighted as unweighted_cumulative_gpa,
     e.cumulative_y1_gpa as weighted_cumulative_gpa,
+    e.exited_hs,
 
     c.has_participated_in_ap_courses,
     c.has_participated_in_honors_courses,
@@ -310,21 +232,6 @@ select
         else 'Did Not State'
     end as gender,
 
-    case
-        when p.passed_algebra_i = 0 or p.passed_algebra_i is null
-        then 'Has not yet passed/never taken'
-        when p.passed_algebra_i = 1 and p.grade_level <= 8
-        then 'Passed Before 9th'
-        when p.passed_algebra_i = 1 and p.grade_level = 9
-        then 'Passed in 9th'
-        when p.passed_algebra_i = 1 and p.grade_level = 10
-        then 'Passed in 10th'
-        when p.passed_algebra_i = 1 and p.grade_level = 11
-        then 'Passed in 11th'
-        when p.passed_algebra_i = 1 and p.grade_level = 12
-        then 'Passed in 12th'
-    end as passed_algebra_i,
-
     if(
         e.school_name = 'KIPP Cooper Norcross High',
         'KIPP Cooper Norcross High School',
@@ -335,15 +242,10 @@ select
 
     if(e.lep_status, 'Y', 'N') as student_is_el,
 
-    if(e.lunch_status in ('F', 'R'), 'Y', 'N') as student_is_frl,
+    if(e.lunch_status in ('F', 'R', 'FDC'), 'Y', 'N') as student_is_frl,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join course_tags as c on e.studentid = c.studentid and e.region = c.region
-left join
-    passed_courses as p
-    on e.studentid = p.studentid
-    and e.region = p.region
-    and p.rn = 1
 where
     e.academic_year = {{ var("current_academic_year") - 1 }}
     and e.school_level = 'HS'
