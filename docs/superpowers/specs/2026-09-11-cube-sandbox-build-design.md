@@ -245,7 +245,105 @@ members.
 Seeded RNG, parameterized, production scale, per the parent spec. Commit the
 persona fixtures: they are fabricated, so they are not PII.
 
-Two mechanisms make the data an instrument rather than a stand-in.
+### Generate per table, in dependency order
+
+The generator is **per warehouse table, not per cube**. 21 cubes read 19 tables,
+because two pairs share one: `student_enrollments` and `student_attendance` both
+read `fct_student_attendance_daily`, and `student_homeroom_section` and
+`student_section_enrollments` both read `dim_student_section_enrollments`. A
+generator keyed on cube names would write two of those twice. Add
+`dim_staff_reporting_chain`, which no cube reads, for 20.
+
+Order comes from the 26 join edges in the model. Generate a table only after
+every table it references:
+
+1. **No dependencies.** `dim_regions`, `dim_dates`, `dim_courses`,
+   `dim_students`, `dim_terms`, `dim_assessments`, `dim_staff`,
+   `dim_school_calendars`, `dim_student_enrollment_status`.
+1. **One hop.** `dim_locations`, `dim_course_sections`,
+   `dim_assessment_administrations`, `dim_staff_cube_access`,
+   `dim_staff_reporting_chain`.
+1. **The spine.** `dim_student_enrollments`, then
+   `dim_student_section_enrollments`.
+1. **Facts.** `fct_student_attendance_daily`,
+   `fct_assessment_scores_enrollment_scoped`, `dim_staff_work_history`.
+
+Facts never invent a key. Every foreign key is **sampled from the rows already
+generated** in an earlier tier, which is what makes referential integrity hold
+by construction rather than by a check afterwards.
+
+### The spine has a cycle, so it needs two passes
+
+`dim_student_enrollments` and `dim_student_section_enrollments` reference each
+other: an enrollment points at its homeroom section, and a section enrollment
+points back at its enrollment. No ordering satisfies both.
+
+Generate in three steps. Write `dim_student_enrollments` with its homeroom
+section key null, generate `dim_student_section_enrollments` against those
+enrollments, then update the enrollment rows with a homeroom key sampled from
+the sections just written. Leaving a deliberate slice of homeroom keys null is
+correct rather than sloppy — it is one of the manifest's required residents.
+
+This is the single most likely place for the generator to produce a dataset that
+loads cleanly and then fails at query time, because a broken cycle shows up as a
+join returning nothing rather than as an error.
+
+### Production scale, measured
+
+The parent spec estimated "10,000 students across 180 school days is roughly
+1.8M attendance rows." Measured on 2026-09-11, production is about 7 times that:
+
+| Table                                     | Production rows |
+| ----------------------------------------- | --------------- |
+| `fct_assessment_scores_enrollment_scoped` | 13,504,949      |
+| `fct_student_attendance_daily`            | 12,603,269      |
+| `dim_dates`                               | 2,921,940       |
+| `dim_students`                            | 31,194          |
+| `dim_assessment_administrations`          | 14,656          |
+| `dim_assessments`                         | 6,507           |
+| `dim_staff`                               | 4,799           |
+| `dim_courses`                             | 3,852           |
+| `dim_regions`                             | 5               |
+
+Attendance spans 2007-08-13 to the present across 84,477 enrollments — 19
+academic years, not 1. Size the generator against these numbers, because
+pagination and query-timeout behaviour is what the partner is meant to discover
+here rather than at repoint.
+
+Bound `dim_dates` deliberately. Production's calendar spine runs to the year
+9999, and an unbounded date dimension is what drove the partitioned
+pre-aggregation incident (#4460). Generate the real academic-year range only.
+
+### The sandbox will be faster than production, and that is a fidelity break
+
+**12 of the 20 are BigQuery views in production, not tables**:
+`dim_course_sections`, `dim_locations`, `dim_school_calendars`,
+`dim_staff_cube_access`, `dim_staff_reporting_chain`,
+`dim_staff_reporting_periods`, `dim_staff_work_history`,
+`dim_student_enrollment_status`, `dim_student_enrollments`,
+`dim_student_section_enrollments`, `dim_terms`, and
+`fct_student_attendance_daily`. The other 8 are physical.
+
+The sandbox has no dbt and no upstream model graph, so every one of the 20
+becomes a flat table there. Cube does not care — it issues the same SQL either
+way, and `INFORMATION_SCHEMA.COLUMNS` compares views and tables identically, so
+the Piece 4 fingerprint still works.
+
+What it costs is latency fidelity, in the one direction the fidelity rule
+forbids. Production recomputes view chains on read, which is compute-bound
+(#4464 moved the assessment star to tables for exactly this). The sandbox reads
+flat tables and will therefore be **systematically faster** than production —
+cleaner, not messier. That is unfixable short of rebuilding the view chains,
+which is absurd for fabricated data.
+
+So do not fix it; state it. Tell the partner in writing that sandbox latency is
+not representative and must not be used to size timeouts, pick page sizes, or
+decide what to cache. The parent spec says to leave pre-aggregations off until
+the partner reports a latency surprise. That surprise is now predicted rather
+than hypothetical, and it lands at repoint.
+
+Everything above builds a dataset that is correct and correctly sized. The two
+mechanisms below are what make it an instrument rather than a stand-in.
 
 ### Colonization resistance
 
