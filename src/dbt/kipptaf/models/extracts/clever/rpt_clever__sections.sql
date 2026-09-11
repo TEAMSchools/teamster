@@ -46,9 +46,9 @@ with
             sec.courses_course_name,
             sec.terms_abbreviation,
 
-            r.sortorder,
+            pst.role_sortorder as sortorder,
 
-            t.teachernumber,
+            pst.teachernumber,
 
             null as grade,
 
@@ -92,18 +92,9 @@ with
             end as `subject`,
         from {{ ref("int_students__course_sections") }} as sec
         inner join
-            {{ ref("stg_powerschool__sectionteacher") }} as st
-            on sec.sections_id = st.sectionid
-            and sec._dbt_source_project = st._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__roledef") }} as r
-            on st.roleid = r.id
-            and st._dbt_source_project = r._dbt_source_project
-        inner join
-            {{ ref("int_powerschool__teachers") }} as t
-            on st.teacherid = t.id
-            and sec.sections_schoolid = t.schoolid
-            and st._dbt_source_project = t._dbt_source_project
+            {{ ref("int_powerschool__section_teachers") }} as pst
+            on sec.sections_id = pst.sections_id
+            and sec._dbt_source_project = pst._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
             -- Miami rosters into Clever from Focus, not from this feed
