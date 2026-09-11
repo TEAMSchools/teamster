@@ -1,0 +1,55 @@
+models:
+  - name: int_powerschool__section_teachers
+    description: >-
+      Union of the per-region PowerSchool section-teacher models. One row per
+      sectionteacher record, carrying the role the teacher holds on the section
+      and the dates the assignment was in effect.
+    columns:
+      - name: sectionteacher_id
+        data_type: int64
+        description: >-
+          Primary key of the PowerSchool sectionteacher record. Unique only
+          within a region, so it is not the grain of this union.
+      - name: sections_dcid
+        data_type: int64
+        description: Durable key of the section the teacher is assigned to.
+      - name: sections_id
+        data_type: int64
+        description:
+          Section identifier used by sectionteacher and gradebook joins.
+      - name: sections_schoolid
+        data_type: int64
+        description: School the section belongs to.
+      - name: teacherid
+        data_type: int64
+        description: PowerSchool identifier of the assigned staff member.
+      - name: teachernumber
+        data_type: string
+        description: >-
+          Staff number consumers resolve against int_people__staff_roster.
+      - name: role
+        quote: true
+        data_type: string
+        description: >-
+          Name of the role the teacher holds on the section, such as Lead
+          Teacher, Co-teacher, Gradebook Access or Blended Learning.
+      - name: role_sortorder
+        data_type: int64
+        description: >-
+          Display order PowerSchool assigns the role, used to rank multiple
+          teachers on one section.
+      - name: effective_start_date
+        data_type: date
+        description: Date the teacher's assignment to the section began.
+      - name: effective_end_date
+        data_type: date
+        description: Date the teacher's assignment to the section ended.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from _dbt_source_relation.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sectionteacher_id
+              - _dbt_source_project
