@@ -68,9 +68,12 @@ Before step 1, do two things:
    stale catalog has already produced a confident-but-wrong "unanswerable" in a
    prior session. If a field or view you need appears to be missing, refresh
    `meta` before concluding it is unavailable.
-3. **Filter `response_type` explicitly** on every assessment query. Never rely
-   on the silent default blend — see `assessment-cube-reference.md` (Shared
-   conventions) for the accepted values and the default.
+3. **Filter `response_type` explicitly** on every assessment query. The column
+   is non-nullable with four values (`overall`, `group`, `standard`,
+   `not_taken`) — never rely on the silent default blend, and never filter for a
+   null/not-set `response_type` to reach vendor or state rows; that idiom no
+   longer returns anything. See `assessment-cube-reference.md` (Shared
+   conventions) for the full vocabulary and the default.
 4. **State confidence and flag every inference.** Give each answer a High /
    Medium / Low confidence rating, and explicitly list every interpretation or
    default you chose on the participant's behalf. Surface these for human
