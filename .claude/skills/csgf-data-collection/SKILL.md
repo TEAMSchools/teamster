@@ -22,11 +22,38 @@ to grow as more of the cycle is narrated. Do not treat an absent step as
 ## Who this skill is for
 
 **Not just the collection owner.** This process involves multiple task owners
-(Compliance, Finance, People/HR, KIPP Forward, etc. -- see the per-item
-ownership notes throughout this file, e.g. Schools List/Laz, Enrollment's
-teacher/ADA/seat-capacity fields/Walters+Laz+Kevin, Postsecondary Pathways/Casey
-Gibson). Anyone on any of those teams asking for CSGF help should trigger this
-skill, not only the Data Team's collection owner.
+across three teams (Data Team, Compliance, and named individuals per item -- see
+the
+[2026-2027 item-list doc's own Item List table](https://docs.google.com/document/d/1C5xOLrbm4ybiMAfZo9Fd7sHHZ-ncYftjZI0aO5J2o9A/edit?tab=t.0)).
+Anyone on any of those teams asking for CSGF help should trigger this skill, not
+only the Data Team's collection owner.
+
+**Real per-person split for the 2026-2027 cycle** (from that doc's Item List
+table -- re-check it fresh each cycle, this is NOT guaranteed to repeat):
+
+- **Anthony Walters / Casey Gibson**: Postsecondary Pathways (Overgrad/Other
+  Application Results tabs; Naviance is struck through/N-A this cycle),
+  Discipline Data, the Round 2 NSC file.
+- **Anthony Walters / Gaby Rangel**: HS Enrollment, AP Scores, AP Offerings, HS
+  Grad Data (the HSDC tabs), plus the main **School Enrollment** Portal task --
+  but see Kevin and Laszlo below, who own specific FIELDS on that same shared
+  task, not separate tasks.
+- **Kevin Verhoff**: School Staffing Data, Org Staffing Summary, Org Chart
+  (possibly shared with Laszlo) -- and, on the shared **School Enrollment**
+  task, specifically **Teacher Retention, Teacher Count, and the school leader
+  info fields** (that's the co-leader row gap noted elsewhere in this file --
+  Kevin's, not a dbt gap to chase).
+- **Laszlo De Simon**: Schools List, Officer's Certificate, Growth Plans, Data
+  Sharing Agreement, and on the shared **School Enrollment** task specifically
+  **the budget info fields** (`Total Budgeted Enrollment` and likely
+  `Total Seat Capacity`/`Total Seats When Growth Plan Complete` -- this is who
+  to escalate the budget-target-sheet gap noted elsewhere in this file to, not a
+  generic "Finance" hand-wave).
+- **Jeff Fleming / Nadja Salem / Susie Chu**: Key Contacts, School Finance
+  (P&L), Org Finance, Bank Info, Budget Upload.
+- **Not named anywhere in the item-list doc**: ADA% and Chronic Absenteeism% on
+  the School Enrollment task. Worth flagging back to the collection owner as a
+  possible gap in her own planning doc rather than assuming it's covered.
 
 **When helping someone who isn't the collection owner**, don't default to
 walking them through the collection owner's full checklist (Steps 1-7 below).
@@ -34,12 +61,10 @@ Instead:
 
 1. Identify who's asking. The session's `userEmail` context is the first signal;
    ask directly if it's ambiguous or absent.
-2. Check what THEY specifically own -- cross-reference this file's inline
-   ownership notes first (fast, always current), then this cycle's item-list
-   documentation doc (Step 3) for the authoritative per-item assignment if this
-   file doesn't name an owner for the item in question. Ask for that doc's link
-   if it isn't already in the conversation -- it's a new doc each cycle, so
-   don't assume a link from an earlier session still applies.
+2. Check what THEY specifically own -- the per-person split above for this
+   cycle, or the current cycle's item-list doc directly if a name isn't listed
+   above (ask for its link if you don't have it -- it's a new doc each cycle, so
+   don't assume last cycle's link, or even this session's, still applies).
 3. Scope help to that item, not the whole collection. A Finance person asking
    about Total Seat Capacity doesn't need the Schools List walkthrough, and vice
    versa.
@@ -949,10 +974,13 @@ task.** Diffed column-by-column against `reference/field-definitions.md` section
 2 -- Total Seat Capacity 2026-27, Total Seats When Growth Plan Complete, 2024-25
 ADA Rate, 2024-25 Chronic Absenteeism Rate, 2025-26 Teacher Counts, Teacher
 Retention, and the co-leader row of School Leader Demographics are all real
-fields on this task with no column here. **Confirmed not a gap** -- these belong
-to other task owners (Walters, Laz, Kevin), entered directly on the Portal, not
-sourced through this dbt model. Documented so a future reader doesn't mistake
-this for an oversight.
+fields on this task with no column here. **Confirmed not a gap** -- per this
+cycle's item-list doc (see "Who this skill is for" above), the budget/seat
+fields are Laszlo's, and Teacher Count/Retention plus the leader-info fields are
+Kevin's -- both entered directly on the Portal, not sourced through this dbt
+model. ADA%/Chronic Absenteeism% aren't named to anyone in that doc; worth
+flagging back to the collection owner rather than assuming they're covered.
+Documented so a future reader doesn't mistake any of this for an oversight.
 
 **Forward risk for next cycle, not this one:** Miami opened its first high
 school in AY2026 -- KIPP Miami Technical High, ~95 students, mostly grade 9. The
