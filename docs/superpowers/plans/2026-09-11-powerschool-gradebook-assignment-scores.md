@@ -1036,6 +1036,24 @@ full join old_fp as o on n.academic_year = o.academic_year
 order by academic_year
 ```
 
+Two corrections, both found by executing this step on 2026-09-11:
+
+**`sum(farm_fingerprint(...))` overflows.** At these row counts it fails with
+`Error in SUM aggregation: integer overflow`. Accumulate in a wider type on both
+branches —
+`sum(cast(farm_fingerprint(to_json_string(struct(...))) as bignumeric))`.
+Comparison strength is unchanged.
+
+**The prod model's enrollment input named below is one level off.** The prod
+kipptaf model is a VIEW, and its enrollment input is
+`kipptaf_powerschool.base_powerschool__course_enrollments`, which is a
+passthrough resolving to the physical
+`kipptaf_students.int_students__course_enrollments`. The
+`int_powerschool__course_enrollments_union` table sits further up that chain and
+is not read directly. Check `last_modified_time` on
+`kipptaf_students.int_students__course_enrollments` for the staleness question
+below, not on the union table.
+
 Expected: one row per academic year, `new_rows` equal to `old_rows`, and
 `fp_match` true on every row. The `struct(...)` lists 38 columns, not 39:
 `academic_year` is the `group by` key, so it is compared by the join rather than
