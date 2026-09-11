@@ -127,12 +127,23 @@ The result is 2 cadences, but each is derived rather than assumed. Daily
 `0 3 * * *` goes to the 7 marts with no live reader. The assessment-mart tick
 `0 0,10,13,15,17 * * *` goes to the 3 that Cube reads.
 
-Every daily model sits far below its break-even. One model does not:
+Build minutes above are rounded for display while break-even is computed from
+the unrounded value, so a few rows do not reproduce exactly from the printed
+columns. `dim_college_enrollments` is the widest gap, 183/wk against 201/wk from
+the rounded 4m. No row is close enough to its cadence for the rounding to change
+a decision.
 
-**`fct_student_attendance_daily` knowingly regresses in prod**, 1.7 to 7.9 slot
+4 of the 7 daily models sit far below their break-even. The other 3 —
+`fct_survey_responses`, `dim_survey_administrations` and
+`fct_grades_assignments` — have no break-even to clear: they cost 0.0 prod slot
+hours today, so a nightly cron is a pure prod add of 6.1 slot hours a week
+between them. They are justified by their CI column alone, which is 181.4 hours
+a week combined.
+
+**`fct_student_attendance_daily` knowingly costs more in prod**, 1.7 to 7.9 slot
 hours a week, because 35 builds a week exceeds its 8/wk break-even. Its Cube
 consumer anchors topline Total Enrollment and needs the intraday tick. Its CI
-column drops from 90.5 to about 20, so the model is net negative overall.
+column drops from 90.5 to about 21, so the model still reduces total cost.
 
 ### Expected result
 
@@ -173,6 +184,14 @@ The other 7 have no `sql_table` pointing at them anywhere in `src/cube/model/`.
 They appear only in the `cube.yml` exposure `depends_on`, which covers the
 semantic layer as a whole. No Tableau exposure references any of the 10, so no
 Tableau refresh cron sets a freshness floor on this batch.
+
+That inventory method — grep `src/cube/model/` for `sql_table`, plus Tableau
+exposures — finds external consumers and misses in-dbt ones by construction.
+`fct_student_attendance_daily` has one: `rpt_branchingminds__daily_attendance`
+reads it and feeds a vendor SFTP job at `0 3 * * *`. The conclusion survives,
+because that mart took the intraday tick anyway and none of the other 7 has a
+downstream dbt model outside this batch. But "no reader" here means no reader
+found by that method, not no reader.
 
 `dim_staff_reporting_chain` deserves separate attention. `cube.js` runs
 `SELECT reportee_staff_key FROM kipptaf_marts.dim_staff_reporting_chain WHERE manager_staff_key = @k`
@@ -234,6 +253,39 @@ Between the view drop and the table create, `cube.js` resolves an empty reportee
 set and denies PII access as if the manager had no downline. Convert it in the
 same ordered run and confirm the relation exists before the next Cube session.
 
+### Cron cadence degrades FK orphan detection, and the repo has hit this before
+
+A view mart is recomputed at test time, so a `relationships` test compares a
+child derived from current upstream data against a parent rebuilt moments
+earlier. The two are structurally in sync. A cron table is a snapshot instead —
+up to 24 hours old for the nightly 7, about 5 for the intraday 3 — while its FK
+parents stay eager. `dim_staff` rebuilds 192 times a week. Every key it drops
+between child ticks leaves the stale child referencing it, and the test reports
+an orphan that is a cadence artifact rather than a data defect.
+
+This is the failure `dim_assessments` already hit. Its properties yml records
+being raised from nightly to 5x/day under
+[#4559](https://github.com/TEAMSchools/teamster/issues/4559) precisely to close
+a skew window against `dim_assessment_administrations`. This change reintroduces
+that shape at larger scale and does not apply the same remedy, because the 7
+nightly marts have no consumer that justifies the extra builds.
+
+Nothing breaks: these tests are `severity: warn` by the project default. The
+cost is signal quality, and it lands on top of the orphan failures already
+tracked for `fct_student_attendance_daily` in
+[#4229](https://github.com/TEAMSchools/teamster/issues/4229), making that class
+harder to triage rather than easier. The 7-day follow-up measurement should
+check whether orphan counts moved after the conversion, not only slot hours.
+
+### Student data becomes persisted at rest
+
+`fct_grades_assignments` (23.4M rows) and `fct_student_attendance_daily` (12.6M
+rows) are student-level education content under the repo's PII rules. As views
+they held no data; as tables they persist it in `kipptaf_marts`. That changes
+the IAM surface, and it means an upstream deletion is not reflected until the
+next cron tick. Neither is a reason not to proceed — every existing table mart
+carries the same property — but it is a new fact about this dataset.
+
 ### Recursion is not a blocker
 
 `dim_staff_reporting_chain` uses `WITH RECURSIVE`. That is compatible with a
@@ -269,8 +321,46 @@ tables, its savings on them evaporate.
 **The remaining 57 view marts.** Each costs at most 6.1 slot hours a week.
 Revisit only if the measurement in step 3 shows the tail grew.
 
-**`fct_survey_submissions` and `bridge_survey_expectations` SQL.** Both have
-shapes worth questioning, including the `cross join` scaffold and the near
-cartesian student enrollment join. This change does not touch model SQL, so
-hashes and row sets stay identical and the conversion is verifiable as a pure
-materialization change.
+**`bridge_survey_expectations` SQL.** Its `cross join` scaffold is worth
+questioning, but it measured 0.017 GB, so there is no cost argument for touching
+it here.
+
+**`fct_grades_assignments` duplicate keys.** About 71 duplicate
+`grades_assignment_key` values, caused by `stg_powerschool__cc` double-writes
+and tracked upstream in
+[#3915](https://github.com/TEAMSchools/teamster/issues/3915). It is the one
+remaining mart in this batch whose `primary_key` constraint its data
+contradicts.
+
+## Scope amendment: one SQL fix
+
+This change was scoped as materialization-only. It is not, by a deliberate
+decision taken after the dev build.
+
+The build surfaced 3 marts whose `primary_key` constraint their own data
+violates. That is harmless on a view, where constraints are inert, but
+`materialized: table` renders the constraint into DDL, and BigQuery documents
+that "queries over tables with violated constraints might return incorrect
+results" — the optimizer uses unenforced keys for join elimination and
+reordering. Shipping a table that declares a key 46,062 rows contradict is worse
+than shipping the view it replaces.
+
+2 of the 3 shared a single root cause, fixed here in about 20 lines of
+`fct_survey_submissions.sql`. `int_surveys__manager_survey_details` is
+question-grain; the `historic_archive_submissions` CTE read it without
+projecting to submission grain, so the historic Alchemer archive emitted 18 rows
+per submission and collided 2,559 `survey_submission_key` values.
+`fct_survey_responses` inner-joins on that key, so its rows fanned out 18x in
+turn. The fix applies the same `dbt_utils.deduplicate` projection that
+`manager_subject_overlay` already uses on the same source, 40 lines earlier in
+the same model, and is information-preserving — every column the CTE selects is
+constant within the partition across all 2,559 submissions.
+
+Row counts move as a result: `fct_survey_submissions` 92,459 to 48,956, and
+`fct_survey_responses` 1,363,717 to 580,663. Both PK uniqueness tests now pass.
+Measurements in `docs/superpowers/plans/baseline-2026-09-11.md`.
+
+The cost claims in this document are unaffected — they are measured from test
+slot time, not row counts — but the conversion is no longer verifiable as a pure
+materialization change, and the row deltas above are the thing to check after
+deploy.

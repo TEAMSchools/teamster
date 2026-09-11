@@ -189,9 +189,44 @@ with
     /*
      * Historic Alchemer Manager archive — these rows have survey_response_id
      * NULL and don't appear in int_surveys__survey_responses, so they need
-     * the deterministic fallback hash. They produce no FK orphans against
-     * fct_survey_responses because no response-grain rows exist for them.
+     * the deterministic fallback hash.
      */
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    historic_archive_source as (
+        select
+            survey_id,
+            respondent_df_employee_number,
+            subject_df_employee_number,
+            date_submitted,
+            campaign_academic_year,
+            campaign_reporting_term,
+            effective_survey_response_id,
+        from {{ ref("int_surveys__manager_survey_details") }}
+        where
+            survey_id = 'historic_alchemer_Manager_survey'
+            and campaign_academic_year is not null
+    ),
+
+    /*
+     * int_surveys__manager_survey_details is question-grain, so the archive
+     * emitted 18 rows per submission and collided 2,559 survey_submission_key
+     * values, which then fanned fct_survey_responses 18x through its
+     * survey_submission_key join. Project to submission grain, the same job
+     * manager_subject_overlay does above. Information-preserving: every column
+     * selected above is constant within (survey_id,
+     * effective_survey_response_id) across all 2,559 archive submissions, so
+     * the order_by is an arbitrary but stable tiebreaker, not a business rule.
+     */
+    historic_archive_grain as (
+        {{
+            dbt_utils.deduplicate(
+                relation="historic_archive_source",
+                partition_by="survey_id, effective_survey_response_id",
+                order_by="subject_df_employee_number",
+            )
+        }}
+    ),
+
     historic_archive_submissions as (
         select
             ms.survey_id,
@@ -211,16 +246,13 @@ with
             'staff' as respondent_type,
 
             ms.effective_survey_response_id as survey_response_id,
-        from {{ ref("int_surveys__manager_survey_details") }} as ms
+        from historic_archive_grain as ms
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on rt.`name` = 'Manager Survey'
             and ms.campaign_academic_year = rt.academic_year
             and ms.campaign_reporting_term = rt.code
             and rt.type = 'SURVEY'
-        where
-            ms.survey_id = 'historic_alchemer_Manager_survey'
-            and ms.campaign_academic_year is not null
     ),
 
     combined_staff as (
