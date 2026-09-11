@@ -361,8 +361,12 @@ data (two name variants, one with a trailing space -- still worth flagging as a
 catalog cleanup item separately from this submission).
 
 **15.** **"How does your organization define a student as having passed gateway
-math?"** → **Earning Course Credit** [confirmed]. Matches the inference from
-`passed_algebra_i`'s course-grade-only logic.
+math?"** → **Earning Course Credit** [confirmed] -- a passing course grade, not
+a separate proficiency exam or standardized cut score. (The dbt-side
+`passed_algebra_i` field that used to compute this inference was later removed
+as dead code -- see the AP/Algebra cleanup in `rpt_gsheets__csgf_hs_enrollment`
+-- so this answer stands on the underlying course-credit definition, not on that
+column's continued existence.)
 
 **16.** **"Does your organization use a state-administered end-of-course exam
 for gateway math?"** → **Yes** [confirmed]. Matches `stg_pearson__njsla`'s

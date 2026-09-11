@@ -216,10 +216,35 @@ of the time. Everything else above is a genuine departure.
 
 - The other five HS-scoped models' Miami/Focus course-data gap for next cycle —
   only verified for `csgf_hs_enrollment` so far.
-- None of the eight models currently have a uniqueness test, which this repo's
-  convention requires for `rpt_` models — not yet addressed.
-- CSGF's own Portal school-list is missing three real Miami schools (KIPP Miami
+- All eight models now have a uniqueness test (resolved by this PR).
+- CSGF's own Portal school-list was missing three real Miami schools (KIPP Miami
   Technical High, KIPP Legacy Elementary, KIPP Legacy Middle) — confirmed via
-  CSGF's school-list CSV export. This is a Portal data-entry gap on CSGF's side
-  (add via "Add Record"), not a dbt fix; tracked as the collection owner's
-  action item, not this repo's.
+  CSGF's school-list CSV export. Not a dbt fix; the collection owner has since
+  added all three via the Portal's "Add Record" (self-service, since import
+  can't create new rows -- see the csgf-data-collection skill), so this is
+  resolved for the 2026-2027 cycle. The remaining Schools List fields for those
+  3 schools (seat capacity, facility/real-estate questions) still need direct
+  input from the task owner; tracked in the skill, not here.
+- `rpt_gsheets__csgf_enrollment.total_budgeted_enrollment` is NULL for every
+  Miami school (existing schools included) -- no Miami rows exist yet in the
+  Google Sheet this column joins to. Needs whoever owns that budget-target sheet
+  to add Miami, not a dbt fix.
+- `csgf_hs_ap_offerings` and `csgf_hs_ap_scores` carry an identical AP
+  course-name remap `CASE` statement, kept in sync by convention (documented in
+  both properties files) rather than centralized. Flagged by `claude-review` as
+  low-severity reuse/duplication; not fixed here, since it doesn't affect
+  correctness as long as both are updated together each cycle.
+- `rpt_gsheets__csgf_hs_enrollment`'s `transfer_course_tags` CTE still filters
+  transfer grades through a ~100-entry Algebra-I-course-name allowlist that
+  predates this PR, even though the CTE's only surviving outputs
+  (`is_ap_course`, `is_honors_course`) don't need that specific allowlist at all
+  -- a transfer student's AP or Honors course not on this historical list is
+  silently excluded from `has_participated_in_ap_courses` / `_honors_courses`.
+  Flagged by `claude-review`; worth a deliberate decision (drop the filter, or
+  confirm/document why it should stay) in a follow-up, not resolved here.
+- Column-level `description:` coverage across the eight models' properties YAML
+  is uneven -- only columns whose logic changed this cycle are documented; most
+  pre-existing columns (all of `csgf_hs_act`/`csgf_hs_sat`/
+  `csgf_hs_postsec_pathways`, most of `csgf_enrollment`/`csgf_hs_grad_data`)
+  still have none. Flagged by `claude-review`; left as incremental scope rather
+  than backfilled in this PR.
