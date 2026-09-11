@@ -933,7 +933,23 @@ after a deploy -- so this won't self-correct by waiting. **Don't treat this
 model as fixed for the actual submission until #5059 merges and kipptaf
 redeploys** (confirm via `mcp__dagster__get_location_load_history` showing a
 `LOADED` entry with the merge commit's hash, same check as any prod-deploy
-verification).
+verification). PR #5059 has since merged and deployed -- these fixes are live.
+
+**New this cycle (2026-09-11): CSGF added "Total Number of Graduates" to the HS
+Grad Data task** -- a real, distinct field from the existing "# Stud in Adj
+Cohort Grad w/i 4 Yrs" column (which is `total_4yr_grad`). Its tooltip reads
+"Include All Students Who Received a Diploma" -- i.e. every diploma recipient
+this year regardless of cohort, not just on-time 4-year grads. Added a new
+`all_graduates` CTE / `total_graduates` column to
+`rpt_gsheets__csgf_hs_grad_data` (no cohort filter, just
+`academic_year + 1 = current_academic_year and exitcode = 'G1'`, grouped by
+school) -- see `docs/models/csgf-data-model.md` for the full writeup. Real
+values entered for the 2026-2027 cycle: KIPP Cooper Norcross High School 94,
+KIPP Newark Collegiate Academy 168, KIPP Newark Lab High School 129. **When a
+Portal task adds a column mid-cycle like this, hover its tooltip for CSGF's own
+definition before assuming it maps to an existing model column -- two columns
+that sound similar (here, "graduates" vs. "4-year cohort grads") can be
+genuinely different metrics.**
 
 **`rpt_gsheets__csgf_enrollment` currently under-reports Miami** (as of this
 cycle -- owner is aware and fixing separately from this skill; check whether

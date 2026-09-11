@@ -207,6 +207,22 @@ this repo's own documented source (`stg_powerschool__students.yml`:
 in their field definitions. The SED field reuses this same `student_is_frl`
 value rather than a separate column.
 
+### `csgf_hs_grad_data.total_graduates` — new column, distinct from `total_4yr_grad`
+
+CSGF added a "Total Number of Graduates" column to the HS Grad Data task
+(2026-2027 cycle, confirmed via the task's own field tooltip: "Include All
+Students Who Received a Diploma"). This is genuinely different from
+`total_4yr_grad` -- the whole `grad_roster` CTE (and therefore every other
+column on this model) is scoped to `cohort = current_academic_year`, which
+excludes a student who received a diploma this year but belongs to an earlier
+cohort (held back a grade, graduating in year 5+) or a later one (graduated
+early). Added a separate `all_graduates` CTE with no cohort filter -- just
+`academic_year + 1 = current_academic_year and exitcode = 'G1'`, grouped by
+school -- and joined it in. Confirmed real, non-zero off-cohort graduates exist
+for all three current HS schools this cycle: KIPP Cooper Norcross High School
+has 87 on-time (cohort 2026) grads plus 3 cohort-2025 and 4 cohort-2027 grads
+for 94 total; Newark Collegiate 161 -> 168; Newark Lab 126 -> 129.
+
 ## Exit-code reference
 
 `enroll_status`/`exitcode` combinations that look similar can have very
