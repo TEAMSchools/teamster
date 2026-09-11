@@ -104,9 +104,11 @@ non-Miami schools. Verified all 5 real Miami schools now appear with correct
 enrollment/demographic/principal data, the 2 closed-school ghost rows are gone,
 and the 19 non-Miami rows are unchanged.
 
-**Still open**: `total_budgeted_enrollment` is NULL for every Miami school
-(existing schools included) — no Miami rows exist yet in the Google Sheet this
-column joins to. Not a dbt fix; needs whoever owns that sheet to add Miami.
+**Still open, and bigger than Miami**: `total_budgeted_enrollment` is NULL for
+all 26 schools network-wide — `stg_google_sheets__topline_enrollment_targets`
+has rows for academic_year 2025 only, none yet for 2026, for any district. The
+Enrollment task's own instructions require every cell filled; this needs whoever
+owns that sheet to add this year's targets before submission, not a dbt fix.
 
 ### Miami's first HS is a forward risk for next cycle, not this one
 
@@ -243,10 +245,11 @@ of the time. Everything else above is a genuine departure.
   resolved for the 2026-2027 cycle. The remaining Schools List fields for those
   3 schools (seat capacity, facility/real-estate questions) still need direct
   input from the task owner; tracked in the skill, not here.
-- `rpt_gsheets__csgf_enrollment.total_budgeted_enrollment` is NULL for every
-  Miami school (existing schools included) -- no Miami rows exist yet in the
-  Google Sheet this column joins to. Needs whoever owns that budget-target sheet
-  to add Miami, not a dbt fix.
+- `rpt_gsheets__csgf_enrollment.total_budgeted_enrollment` is NULL for all 26
+  schools network-wide, not just Miami -- the target sheet has no 2026 rows for
+  any district yet. Needs whoever owns that budget-target sheet to add this
+  year's targets, not a dbt fix. Violates the Enrollment task's own "do not
+  leave any cells blank" instruction as of 2026-09-11.
 - `csgf_hs_ap_offerings` and `csgf_hs_ap_scores` carry an identical AP
   course-name remap `CASE` statement, kept in sync by convention (documented in
   both properties files) rather than centralized. Flagged by `claude-review` as

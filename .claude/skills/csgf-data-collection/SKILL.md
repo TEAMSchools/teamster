@@ -900,12 +900,17 @@ Miami schools now appear with real enrollment counts and real principal
 demographics -- no more missing rows, no more null-column ghost rows for the
 closed schools. Not yet merged (same PR #5059 as the other fixes above).
 
-**Still open, confirmed via the Field Definitions doc (not previously checked):
-`total_budgeted_enrollment` is NULL for every Miami school**, Royalty and
-Courage included, not just the 3 newly-added ones -- Miami has no row at all in
-`stg_google_sheets__topline_enrollment_targets`, the sheet this column joins to.
-No dbt fix possible without a real source; needs whoever owns that budget-target
-sheet to add Miami's rows.
+**Corrected, confirmed against the real Portal task instructions (2026-09-11):
+`total_budgeted_enrollment` is NULL for EVERY school network-wide, not just
+Miami** -- `stg_google_sheets__topline_enrollment_targets` has rows for
+academic_year 2025 only (checked directly: even Royalty/Courage, which DO have a
+2025 row, have none for 2026); no district has this year's targets entered yet.
+The Portal task's own instructions say **"do not leave any cells blank,"** so
+this will fail validation for all 26 schools as-is, not just Miami's. No dbt fix
+possible without real source data -- likely just means this year's budget-target
+sheet hasn't been populated yet (a normal seasonal lag, not a Miami-specific
+gap), but confirm with whoever owns it before assuming it'll be ready in time
+for submission.
 
 **Scope check against CSGF's own Field Definitions doc (2026-09-11): this model
 deliberately covers only part of the real "Enrollment & School Information"
