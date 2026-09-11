@@ -1,5 +1,35 @@
 # Landing page hand-off: Academic & Gradebook Health Suite
 
+## Desktop refusal, 2026-09-11 — fixed
+
+Your Desktop open failed with `D2E8DA72` on two sheets. That was my bug, and it
+is fixed.
+
+Removing the navy background from the two healthy-gradebook sheets deleted each
+one's whole `<style>` element, because the navy rule was the only thing in it.
+`style` is mandatory in a worksheet's content model, so the file became invalid
+— and the error names `panes`, the element that could not follow, rather than
+`style`, the one that went missing. Both sheets now keep an empty `<style />`,
+which is what five other worksheets in this workbook already do.
+
+Nothing visible changed: an absent `<style>` and an empty one draw the same,
+which is exactly why Server published it and three rounds of review renders
+looked right. `check_twb.py` now has a check for this whole class of problem,
+mutation-tested, so it cannot reach you again the same way.
+
+**The review copy has a new URL.** The publish script named copies using the
+current date, so the rerun after midnight created a second workbook instead of
+overwriting the first. The name is now pinned so this cannot recur.
+
+|                              |                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Open this one**            | `ZZ-REVIEW 2026-09-11 AGHS landing page`                                                           |
+| URL                          | https://tableau.kipp.org/#/site/KIPPNJ/workbooks/9593                                              |
+| **Ignore / delete this one** | `ZZ-REVIEW 2026-09-10 AGHS landing page`, workbook 9587 — it still holds the file Desktop rejected |
+
+Please re-try the Desktop open on the rebuilt `final.twbx`. That is still the
+one check I cannot run here.
+
 ## Status, 2026-09-10 render-fix round
 
 The landing page is **already in the production workbook**. You published the
@@ -108,9 +138,9 @@ Production.
 
 | Item         | Value                                                   |
 | ------------ | ------------------------------------------------------- |
-| Name         | `ZZ-REVIEW 2026-09-10 AGHS landing page`                |
-| Workbook id  | `55cac48f-15d0-4048-b219-bb8dfbf39700`                  |
-| URL          | `https://tableau.kipp.org/#/site/KIPPNJ/workbooks/9587` |
+| Name         | `ZZ-REVIEW 2026-09-11 AGHS landing page`                |
+| Workbook id  | `57eefdb3-df9d-495a-b784-abea68d27b72`                  |
+| URL          | `https://tableau.kipp.org/#/site/KIPPNJ/workbooks/9593` |
 | Project      | `GPA-monitor-temp`                                      |
 | Default view | `Landing Page` (verified after publish)                 |
 
@@ -136,7 +166,7 @@ The file to open in Desktop and publish is:
 /workspaces/teamster/.claude/scratch/tableau/lp/final.twbx
 ```
 
-It is 28,390,691 bytes (rebuilt from revision 26). Two things were checked on
+It is 28,390,696 bytes (rebuilt from revision 26). Two things were checked on
 it. The packaged `.twb` equals the edited `out.twb` byte for byte, so nothing
 was translated on the way into the zip and no bare LF line endings survive. And
 every other entry in the package — the extract and the images — matches the

@@ -2210,3 +2210,65 @@ Two things worth knowing about the result:
 `check_additive` now reports `url-actions: 5` on the edited side against `3` on
 the base. That difference is the point of the change, and the remainder outside
 the landing page is still byte-identical.
+
+## 2026-09-11, Desktop refused the package: a deleted `<style>` element
+
+### `style` is mandatory in a worksheet's `<table>`, and the error names the wrong element
+
+**Verified by Desktop.** The owner opened `final.twbx` and got D2E8DA72 twice:
+
+```text
+element 'panes' is not allowed for content model
+'(view,style,panes,mark-layout?,rows,cols,...)'
+```
+
+The cause was the D2 fix. Removing the navy background from
+`LP - Tile Gradebook Health` and `LP - Strip Gradebook Health` deleted each
+sheet's whole `<style>` element, because the navy `element='table'` rule was the
+only thing in it. But `style` carries no `?` in that content model — it is
+MANDATORY — so the sheets became `(view, panes, rows, cols)` and Desktop refused
+the file. **The error names `panes`, the element that could not follow, not
+`style`, the one that went missing.** That is the same trap the skill already
+records for `reference-line`, in a different element.
+
+Everything upstream passed it: Server published it, rendered it, and the render
+was correct in every respect, because an absent `<style>` and an empty one look
+identical once drawn. Three rounds of review copies went out with it.
+
+The fix is one character of intent: **strip the rules, keep the element.** Five
+worksheets in this workbook already ship a bare `<style />` at 8-space
+indentation, so that is the form to copy rather than invent.
+
+### The checker that should have caught it now does
+
+`check_twb.py` gained `check_table_model`. It was missing because
+`check_pane_order` looks INSIDE `<pane>` — one level deeper than the element
+that went missing — and the required-children check only covered
+`worksheet -> (table, simple-id)`, not `table`'s own children.
+
+The new check verifies both halves of the model for every worksheet: that
+`view`, `style`, `panes`, `rows` and `cols` are all present, and that the
+children that are present appear in model order. Mutation-tested rather than
+assumed: deleting one `<style />` from a good file makes it report
+
+```text
+worksheet 'GPA - Cusp roster' <table> is missing mandatory ['style']
+```
+
+and exit 1, while the untouched production base still exits 0 — the control that
+matters, since a checker that fails on the base is a checker bug.
+
+Do this instead, generally: **when an edit removes the last child of a
+container, ask whether the container itself is optional.** The model string is
+printed in the Desktop error, and a `?` is the whole answer.
+
+### A `date.today()` review-copy name does not overwrite across midnight
+
+**Verified.** The publish script named the copy
+`f"ZZ-REVIEW {date.today():%Y-%m-%d} AGHS landing page"`. The fix round ran
+after midnight, so Overwrite mode had nothing to overwrite: it created
+`ZZ-REVIEW 2026-09-11 AGHS landing page` as a second workbook and left the
+reviewer's URL pointing at the stale 09-10 copy, with the broken file still in
+it. Pin the date to the BUILD's date as a constant. It still satisfies the
+skill's ZZ-REVIEW-plus-date publish gate; it just must not come from the clock.
+A same-luid assertion would also have caught it.

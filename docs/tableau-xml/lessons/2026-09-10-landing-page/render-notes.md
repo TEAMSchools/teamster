@@ -289,3 +289,29 @@ the GPA Roster links). Confirmed on a render. The other three cards still read
 
 **Not verified:** that the links open. A URL action fires on click and no render
 can show a click, so this needs a human on the live review copy.
+
+## 2026-09-11 Desktop refusal, fixed
+
+The owner's Desktop open of `final.twbx` failed with D2E8DA72 on two sheets:
+`element 'panes' is not allowed for content model '(view,style,panes,...)'`. The
+D2 fix had deleted the whole `<style>` element from `LP - Tile Gradebook Health`
+and `LP - Strip Gradebook Health` rather than just the navy rule inside it, and
+`style` is mandatory in that model. Both sheets now keep an empty `<style />`,
+the form five other worksheets in this workbook already use.
+
+Nothing visible changed: an absent `<style>` and an empty one render
+identically, which is why Server published it and three review renders looked
+correct. `check_twb.py` gained `check_table_model` so this class is caught by a
+checker from now on; it is mutation-tested and the untouched base still passes
+it.
+
+**The review copy moved.** The publish script named copies with `date.today()`,
+so the post-midnight rerun created a second workbook instead of overwriting. The
+name is now pinned.
+
+|                                |                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Current review copy            | `ZZ-REVIEW 2026-09-11 AGHS landing page`                                                        |
+| luid                           | `57eefdb3-df9d-495a-b784-abea68d27b72`                                                          |
+| URL                            | `https://tableau.kipp.org/#/site/KIPPNJ/workbooks/9593`                                         |
+| Stale copy to ignore or delete | `ZZ-REVIEW 2026-09-10 AGHS landing page`, workbook 9587 — still holds the file Desktop rejected |

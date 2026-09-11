@@ -187,6 +187,16 @@ def check(text: str) -> list[str]:
         if f"fontcolor='{NAVY}'" not in label(ws(text, name)):
             bad(f"D2 {name}: value run is not navy-on-white")
 
+    # the <style> ELEMENT must survive, emptied: `style` is mandatory in the
+    # worksheet <table> model, and deleting it is what Desktop refused with
+    # D2E8DA72 on 2026-09-11
+    for name in GRADEBOOK:
+        b = ws(text, name)
+        tbl = re.search(r"<table>(.*?)</table>", b, re.S)
+        body = tbl.group(1) if tbl else ""
+        if "<style />" not in body and "<style>" not in body:
+            bad(f"D2 {name}: <style> element deleted, not emptied (Desktop D2E8DA72)")
+
     # ---- D3: no doubled Grade, parameter token preserved (rulings 8, 11)
     if "Grade <[Parameters].[Parameter 10]>" in text:
         bad("D3: literal 'Grade ' still precedes the grade parameter token")

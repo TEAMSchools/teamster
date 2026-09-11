@@ -280,7 +280,14 @@ def fix_strip_cumulative(text: str) -> str:
 
 def fix_tile_gradebook(text: str) -> str:
     """Drop the navy table background, recolour every white run, shrink the
-    42 pt value to 24 pt."""
+    42 pt value to 24 pt.
+
+    The `<style>` ELEMENT stays, emptied. A worksheet's `<table>` content
+    model is `(view, style, panes, ...)` with no `?` on `style`, so deleting
+    the element outright makes the file one Desktop refuses to open --
+    `element 'panes' is not allowed for content model` (D2E8DA72). Server
+    published and rendered it happily. Five worksheets in this workbook
+    already ship a bare `<style />`, which is the form copied here."""
 
     def fn(b: str) -> str:
         b = sub_once(
@@ -290,7 +297,7 @@ def fix_tile_gradebook(text: str) -> str:
             f"            <format attr='background-color' value='{NAVY}' />\r\n"
             "          </style-rule>\r\n"
             "        </style>\r\n",
-            "",
+            "        <style />\r\n",
         )
         b = sub_once(
             b,
@@ -343,7 +350,7 @@ def fix_strip_gradebook(text: str) -> str:
             f"            <format attr='background-color' value='{NAVY}' />\r\n"
             "          </style-rule>\r\n"
             "        </style>\r\n",
-            "",
+            "        <style />\r\n",
         )
         b = sub_once(
             b,

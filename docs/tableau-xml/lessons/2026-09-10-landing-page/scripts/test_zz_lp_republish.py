@@ -28,6 +28,13 @@ from tableauserverclient.server.endpoint.exceptions import (
 
 OUT = Path("/workspaces/teamster/.claude/scratch/tableau/lp")
 
+#: PINNED, not `date.today()`. The original used today's date in the name,
+#: so the first publish after midnight did not overwrite the review copy --
+#: it created a second workbook and left the reviewer's URL pointing at the
+#: stale one. The date still satisfies the skill's ZZ-REVIEW-plus-date gate;
+#: it just has to be the BUILD's date, fixed, not the clock's.
+REVIEW_NAME = "ZZ-REVIEW 2026-09-11 AGHS landing page"
+
 WORKBOOK_LUID = "b3c14d67-3130-46ac-82a0-0637a5cc2da5"
 #: The user named this project explicitly; do not ask again.
 TEMP_PROJECT = "c74d8e08-b856-4430-a759-ebacb061e376"
@@ -94,7 +101,7 @@ def _publish_and_render(server: tsc.Server) -> dict:
 
     item = tsc.WorkbookItem(
         project_id=TEMP_PROJECT,
-        name=f"ZZ-REVIEW {date.today():%Y-%m-%d} AGHS landing page",
+        name=REVIEW_NAME,
         show_tabs=meta["show_tabs"] == "True",
     )
     item.hidden_views = sorted(publishable - live - added)
