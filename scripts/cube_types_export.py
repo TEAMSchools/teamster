@@ -301,6 +301,19 @@ def render(meta: dict[str, Any]) -> str:
     return "\n\n".join(parts).rstrip() + "\n"
 
 
+def _display(path: Path) -> str:
+    """Repo-relative when it can be, absolute otherwise.
+
+    `Path.relative_to` raises for a path outside the repo, and `--out` accepts
+    any path, so formatting the summary line would crash AFTER the file was
+    already written.
+    """
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--meta", type=Path, default=DEFAULT_META)
@@ -327,7 +340,7 @@ def main() -> int:
     measures = sum(len(v.get("measures", [])) for v in views)
     dimensions = sum(len(v.get("dimensions", [])) for v in views)
     print(
-        f"Wrote {args.out.relative_to(REPO_ROOT)}: "
+        f"Wrote {_display(args.out)}: "
         f"{len(views)} views, {measures} measures, {dimensions} dimensions"
     )
     return 0
