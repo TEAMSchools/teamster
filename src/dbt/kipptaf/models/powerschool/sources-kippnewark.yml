@@ -329,15 +329,6 @@ sources:
                 - kippnewark
                 - powerschool
                 - stg_powerschool__reenrollments
-      - name: stg_powerschool__roledef
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippnewark
-                - powerschool
-                - stg_powerschool__roledef
       - name: stg_powerschool__s_nj_crs_x
         config:
           meta:
@@ -401,15 +392,6 @@ sources:
                 - kippnewark
                 - powerschool
                 - stg_powerschool__sections
-      - name: stg_powerschool__sectionteacher
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippnewark
-                - powerschool
-                - stg_powerschool__sectionteacher
       - name: stg_powerschool__spenrollments
         config:
           meta:
