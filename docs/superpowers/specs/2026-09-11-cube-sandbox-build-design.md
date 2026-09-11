@@ -801,6 +801,15 @@ divergent pass.
 
 ## Open questions
 
+**This section is the input to the requirements pass this spec never had.** The
+spec was amended in conversation as gaps surfaced during implementation rather
+than passing through `superpowers:brainstorming` and `superpowers:writing-plans`
+— the parent spec's own header says it feeds `writing-plans`, and that step was
+skipped. Piece 2 is built and verified. Pieces 3 to 5 should not start until
+these are closed and a plan exists under `docs/superpowers/plans/`.
+
+### Needs a decision before Pieces 3 to 5
+
 **Should the kit be the only sanctioned path to Cube for internal apps?** The
 kit is a third access-control surface. Every internal app inherits the kit's
 defaults for token lifetime, result caching, and the audit `surface` value. The
@@ -811,17 +820,43 @@ cannot reach them. The alternative is making the kit the enforcement point: the
 exchange service refuses any client that does not present a kit-issued app
 identity. That scales with app count rather than degrading with it.
 
-**How far may the pinned tag drift before it is stale?** Piece 4 measures the
-distance. Nothing yet decides the threshold at which a bump becomes mandatory.
+**How far may the deployed model drift from `main` before it is stale?** Piece 4
+measures the distance. Nothing yet decides the threshold at which a redeploy
+becomes mandatory.
 
-**Who owns the tag bump cadence?** Analytics engineering by default, but the
-trigger is unsettled: scheduled, or on MasterBorn's request, or on a drift
-threshold.
+**Who owns the bump cadence?** Analytics engineering by default, but the trigger
+is unsettled: scheduled, on MasterBorn's request, or on a drift threshold.
+
+**Which deploy mode?** Piece 5 prefers CLI from a tagged checkout over a tracked
+branch. Adopting CLI mode means stating an explicit exception to
+`src/cube/CLAUDE.md`'s "no manual deploy command", which is a rule about the
+production deployment.
+
+**What does the generator write for `staff_benefits_scope`?** The manifest flags
+it as the one cell `access.js` requires that production cannot supply a value
+for — every row is `none` today. The generator must invent one, and no
+production row will ever exercise that branch.
+
+### Needs confirmation, not a decision
+
+**Are Deploy with Git and Deploy with CLI the only 2 modes, and can the GitHub
+connection be omitted?** Piece 5 rests on both. Read from vendor documentation,
+not observed in the console — the same standing the parent spec's
+credential-scoping facts had before they were checked.
 
 **Where does the sandbox project land in the resource hierarchy?** Unknown until
 someone with `roles/resourcemanager.projectCreator` creates it. The answer
 decides whether an Organization Policy constraint can back up the isolation, per
 [Piece 1](#the-organization-policy-constraint-may-not-be-available).
+
+### Needs sign-off on a proposal already drafted
+
+**The reserved surname set.** `src/cube/sandbox/reserved_names.yml` is labelled
+a starter set. A namespace nobody agreed to is not reserved, so it needs
+adoption and publication in `docs/reference/` and the partner handoff before the
+proof-by-glance property is real.
+
+**The synthetic domain.** `ktaf-sandbox.invalid` is a placeholder.
 
 Inherited from the parent spec and still open: which features query when the
 user is absent, whether MasterBorn will commit in writing that results are never
