@@ -1,0 +1,2631 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../csgf-data-model/">
+      
+      
+        <link rel="next" href="../../reference/automations/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>HS Early Warning Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#high-school-early-warning-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              HS Early Warning Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard tabs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-feeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three feeds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#course-performance-and-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Course performance and discipline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Course performance and discipline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-early-warning-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five early warning flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Community service
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graduation-pathways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graduation pathways
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graduation pathways">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-pathway-code-a-student-gets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which pathway code a student gets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-eligibility-label-a-student-gets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which eligibility label a student gets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Which eligibility label a student gets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-eligibility-combinations-sheet-retired" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The eligibility combinations sheet, retired
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-the-model-is-put-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the model is put together
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#picking-a-students-best-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Picking a student's best score
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#portfolio-appeals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Portfolio appeals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transfer-scores-are-entered-by-hand-in-powerschool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transfer scores are entered by hand in PowerSchool
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-of-year-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start-of-year procedure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start-of-year procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-cut-scores-whenever-njdoe-publishes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Cut scores, whenever NJDOE publishes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-community-service-custom-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Community service custom fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-reporting-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3 — Reporting terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-check-nothing-else-needs-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4 — Check nothing else needs it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard tabs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-feeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three feeds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#course-performance-and-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Course performance and discipline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Course performance and discipline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-five-early-warning-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The five early warning flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Community service
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graduation-pathways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graduation pathways
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graduation pathways">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-pathway-code-a-student-gets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which pathway code a student gets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-eligibility-label-a-student-gets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which eligibility label a student gets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Which eligibility label a student gets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-eligibility-combinations-sheet-retired" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The eligibility combinations sheet, retired
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-the-model-is-put-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the model is put together
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#picking-a-students-best-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Picking a student's best score
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#portfolio-appeals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Portfolio appeals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transfer-scores-are-entered-by-hand-in-powerschool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transfer scores are entered by hand in PowerSchool
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-of-year-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start-of-year procedure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start-of-year procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-cut-scores-whenever-njdoe-publishes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Cut scores, whenever NJDOE publishes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-community-service-custom-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Community service custom fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-reporting-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3 — Reporting terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-check-nothing-else-needs-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4 — Check nothing else needs it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/hs-early-warning-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="high-school-early-warning-data-model">High School Early Warning Data Model</h1>
+<p>The <strong>High School Early Warning Dashboard</strong> is a Tableau dashboard owned by the
+Data Team. It answers whether a high school student is on track to graduate,
+combining three independent feeds — course performance, community service, and
+New Jersey graduation pathway status.</p>
+<p>Exposure: <code>high_school_early_warning_dashboard</code> in
+<code>src/dbt/kipptaf/models/exposures/tableau.yml</code>. Tableau LSID
+<code>6333e047-e7a9-4d8f-a740-3df30f179d11</code>, refreshed by Dagster at <code>0 6 * * *</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Where the business rules live</p>
+<p>Every threshold on this dashboard is a Tableau calculation, not dbt logic.
+They are written out below because they are otherwise invisible to anyone
+without workbook access, and they were recovered by reading the calculations
+and checking them against the extracts.</p>
+</div>
+<h2 id="dashboard-tabs">Dashboard tabs</h2>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Purpose</th>
+<th>Views to date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Landing Page</td>
+<td>Pathway mix by subject and NJGPA attempt</td>
+<td>387</td>
+</tr>
+<tr>
+<td>On Track 9th</td>
+<td>Ninth grade promotion status by school</td>
+<td>516</td>
+</tr>
+<tr>
+<td>Early Warning</td>
+<td>Five per-student risk flags</td>
+<td>1,876</td>
+</tr>
+<tr>
+<td>Graduation Eligibility</td>
+<td>Progress toward a graduation pathway</td>
+<td>1,452</td>
+</tr>
+<tr>
+<td>Community Service</td>
+<td>Progress toward the 50 hour service goal</td>
+<td>242</td>
+</tr>
+</tbody>
+</table>
+<p>Confirmed against the Tableau server rather than the older design doc, which
+also listed a Graduation Planner Tracker and an Athletic Eligibility tab.
+Neither exists; an athletic eligibility spec was written but never built.</p>
+<p>The workbook has exactly three embedded datasources, one per <code>rpt_</code> model below,
+so every threshold on it is a Tableau calculation over those three extracts.</p>
+<h2 id="the-three-feeds">The three feeds</h2>
+<table>
+<thead>
+<tr>
+<th>Feed</th>
+<th>Answers</th>
+<th>Upstreams</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rpt_tableau__graduation_requirements</code></td>
+<td>Has the student met a graduation pathway?</td>
+<td><code>int_students__graduation_path_codes</code>, <code>int_extracts__student_enrollments_subjects</code>, <code>base_powerschool__course_enrollments</code></td>
+</tr>
+<tr>
+<td><code>rpt_tableau__community_service</code></td>
+<td>Are service hours on track?</td>
+<td><code>int_deanslist__students__custom_fields__pivot</code>, <code>stg_deanslist__behavior</code>, <code>int_extracts__student_enrollments</code></td>
+</tr>
+<tr>
+<td><code>rpt_tableau__hs_early_warning_dashboard</code></td>
+<td>Grades, GPA, and discipline flags</td>
+<td><code>base_powerschool__final_grades</code>, <code>base_powerschool__sections</code>, <code>int_powerschool__gpa_term</code>, <code>int_deanslist__incidents__penalties</code>, <code>stg_google_sheets__reporting__terms</code></td>
+</tr>
+</tbody>
+</table>
+<p>Miami is out of scope throughout. NJ graduation pathways do not apply in
+Florida, and <code>int_students__graduation_path_codes</code> filters
+<code>where e.region != 'Miami'</code>. Miami also only opened a high school this year, so
+there is no history to report on either way.</p>
+<p>The two graduation feeds are scoped differently on purpose, which looks like an
+inconsistency and is not. <code>rpt_tableau__graduation_requirements</code> filters cohort
+to a window of <code>current_academic_year - 1</code> through <code>current_academic_year + 5</code>
+and excludes Miami; <code>rpt_tableau__hs_early_warning_dashboard</code> does neither. The
+window is there because the graduation view deliberately reaches beyond the
+graduating class -- 11th graders are in scope, since they sit the NJGPA -- so it
+spans several cohorts rather than one. The early warning view has no cohort
+concern at all; it reports on whoever is enrolled now.</p>
+<h2 id="course-performance-and-discipline">Course performance and discipline</h2>
+<p><code>rpt_tableau__hs_early_warning_dashboard</code> is the widest of the three feeds. One
+row per <strong>student, reporting term and course</strong>, currently around 52,000 rows
+over 1,851 students.</p>
+<p>Scope: the current academic year, high schools only, one enrollment row per
+student (<code>rn_year = 1</code>), recently enrolled. Reporting terms come from the terms
+sheet with <code>type = 'RT'</code>, excluding Summer School and Y1.</p>
+<p>What it carries, per row:</p>
+<ul>
+<li><strong>Attendance</strong> — <code>ada</code>, from the enrollment extract.</li>
+<li><strong>Grades</strong> — the term and Y1 percent and letter grade, adjusted, plus the
+  course, credit type and teacher. Grades excluded from GPA are dropped.</li>
+<li><strong>GPA</strong> — cumulative Y1, projected Y1, and the term GPA.</li>
+<li><strong>Credits</strong> — earned cumulative, projected, and potential.</li>
+<li><strong>Discipline</strong> — suspension count and total days for the year, aggregated from
+  DeansList incident penalties where the penalty is a suspension.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title"><code>need_65</code> was renamed to <code>need_60</code></p>
+<p>The extract used to alias <code>gr.need_60</code> to <code>need_65</code>. The calculation was
+always the 0.600 one — the percentage a student needs on remaining work to
+finish the year at 60 — and only the label was wrong.</p>
+<p>60 is correct, because it is the lowest passing grade on both scales the high
+schools actually use: <code>KIPP NJ 2019 (5-12) Unweighted</code>, where D- starts at 60,
+and <code>NCA 2011</code>, where D starts at 60. The <code>A, B, C, D</code> scale does put D at 65,
+but no high school grade rows use it — check which scale is in play before
+reasoning about a cutoff.</p>
+<p><code>rpt_tableau__gradebook_dashboard</code> carries the same mislabel in two places. It
+is deprecated and was deliberately left alone.</p>
+</div>
+<h3 id="the-five-early-warning-flags">The five early warning flags</h3>
+<p>This extract carries raw measures; every flag is a Tableau calculation.
+Percentages are as of Q1 across all schools, and the last column says whether
+the rule was reproduced from the extract.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Rule</th>
+<th>Checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>On track for promotion</td>
+<td><code>earned_credits_cum_projected</code> at or above <strong>25 / 50 / 85 / 120</strong> for grades 9 / 10 / 11 / 12</td>
+<td>From the calculation</td>
+</tr>
+<tr>
+<td>Chronically absent</td>
+<td><code>ada</code> below <strong>90%</strong></td>
+<td>53.8% against 54.2%</td>
+</tr>
+<tr>
+<td>Below 2.0 GPA</td>
+<td><code>cumulative_y1_gpa_projected</code> below <strong>2.0</strong></td>
+<td>10.4%, exact</td>
+</tr>
+<tr>
+<td>Core Fs</td>
+<td>any Y1 grade of F in credit type <strong>MATH, ENG, SCI or SOC</strong></td>
+<td>75.2% against 75.3%</td>
+</tr>
+<tr>
+<td>Over age</td>
+<td>derived from <code>dob</code> against grade level</td>
+<td><strong>Not reproduced</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Both the GPA and the credits flags read projected values on purpose.</strong> A
+first-year 9th grader has no real Y1 GPA until the year ends, so scoring them on
+<code>gpa_y1</code> would either exclude them or mark them at zero for most of the year —
+which is exactly when an early warning is worth having. The projection carries
+them until a real Y1 figure exists.</p>
+<p>So do not "correct" these to the earned or actual columns. Swapping
+<code>cumulative_y1_gpa_projected</code> for <code>gpa_y1</code> gives 8.9% rather than the 10.4% the
+dashboard shows, and it breaks the flag hardest for the students it exists for.</p>
+<p>The over-age rule resisted reproduction: age beyond grade plus six flags 5.4% of
+students and grade plus seven flags 0.5%, against the 2.3% shown, so the real
+rule is date-precise in a way the extract alone does not reveal.</p>
+<div class="admonition warning">
+<p class="admonition-title">The On Track headline depends on a parameter</p>
+<p><code>On Track Indicator</code> is a switch, not a rule. It resolves to <code>On Track - All</code>,
+<code>On Track - Credits</code> or <code>On Track - Core Fs</code> depending on the viewer's
+parameter selection.</p>
+<p>Credits alone is the loosest. At Newark Collegiate it puts 214 ninth graders
+on track where Overall puts 153. Anyone quoting an on-track percentage needs
+to say which setting produced it.</p>
+</div>
+<h2 id="community-service">Community service</h2>
+<p><code>rpt_tableau__community_service</code> tracks service hours toward graduation. One row
+per student per DeansList community service entry, with students who have logged
+nothing appearing once with nulls.</p>
+<p>Scope: the current academic year, grade 9 and up, actively enrolled. Service
+entries are matched to the enrollment stint they fall inside.</p>
+<p>Two different measures of hours travel together, from two different places:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Source</th>
+<th>Grain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cs_hours</code></td>
+<td>Parsed out of the DeansList behavior name</td>
+<td>Per entry</td>
+</tr>
+<tr>
+<td><code>grade_9_hours</code> … <code>grade_12_hours</code></td>
+<td>DeansList student custom fields</td>
+<td>Per student, per grade</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Both are used, and the requirement is 50 cumulative hours.</strong> Tableau adds
+them:</p>
+<div class="highlight"><pre><span></span><code>Total (Prev Years)             = {FIXED [Student Number] : MAX(g9 + g10 + g11 + g12)}
+LOD Student Hours Current Year = {FIXED [Student Number] : SUM([Cs Hours])}
+LOD Total All Years            = current year + previous years
+</code></pre></div>
+<p>Grad Goal Met is that total at or above <strong>50</strong>. Checked against the workbook
+filtered to Newark Collegiate, where 50 reproduces both grade 11 at 23 students
+and grade 12 at 38 exactly, and no other threshold does.</p>
+<p>The custom fields are last year and earlier; the behavior log is this year.
+Early in the year the total is almost entirely prior years, which makes
+<code>cs_hours</code> look irrelevant if you only inspect current data — it is not.</p>
+<div class="admonition warning">
+<p class="admonition-title">Hours are parsed out of a text label</p>
+<p><code>cs_hours</code> comes from stripping the last five characters off the behavior
+name and casting what remains. It works on today's three values — <code>1 hour</code>,
+<code>5 hours</code>, <code>10 hours</code> — but only by luck: five characters happens to remove
+<code>" hour"</code> from one and <code>"hours"</code> from the others.</p>
+<p>A new label like <code>Half hour</code> or <code>Community Service - 5 hours</code> parses to null
+and the <code>coalesce</code> turns it into <strong>0</strong>. A student's hours quietly go missing
+and nothing fails. Anyone adding a behavior name in DeansList needs to match
+the existing pattern.</p>
+</div>
+<p>Repeated rows for the same student, date and behavior are <strong>expected</strong>, not a
+join fan-out — a student can log the same activity more than once in a day, and
+the source holds thousands of such pairs.</p>
+<div class="admonition warning">
+<p class="admonition-title">If last year's hours stop showing, ask Jabari</p>
+<p>Community service depends on a step somebody performs in DeansList, and the
+specific action is not recorded anywhere. The symptom to watch for is a prior
+year's hours disappearing from the dashboard.</p>
+<p>If that happens, flag Jabari before investigating the models — this is not a
+pipeline failure and there is nothing in dbt to fix. Whoever learns what the
+step actually is should write it down here.</p>
+</div>
+<h2 id="graduation-pathways">Graduation pathways</h2>
+<p><code>int_students__graduation_path_codes</code> computes <code>final_grad_path_code</code> — the
+letter New Jersey uses to report which pathway a student met. It is not only a
+dashboard input: it also flows through <code>rpt_powerschool__autocomm_students</code> into
+the PowerSchool fields <code>s_nj_stu_x__graduation_pathway_ela</code> and
+<code>s_nj_stu_x__graduation_pathway_math</code>, dropped daily for AutoComm import. <strong>A
+wrong code here becomes a wrong state submission.</strong> The same fields are the
+model's own input, read back through <code>stg_powerschool__s_nj_stu_x</code> as
+<code>ps_grad_path_code</code>, so a code PowerSchool already holds is never overridden.
+The write-back is no longer restricted to 12th grade.</p>
+<p>For the working rules, cut score maintenance, and the failure modes, use the
+<code>graduation-pathways</code> skill. The essentials:</p>
+<ul>
+<li>NJGPA is <strong>dual-vendor</strong>. <code>stg_pearson__njgpa</code> carries the retired form on a
+  cut of 725 and scores observed from 650 to 850, through the Fall 2025
+  administration. <code>stg_cambium__njgpa</code> carries the adaptive <strong>NJGPA-A</strong> with a
+  cut of 450 and scores observed from 300 to 562, from Spring 2026 onward. Those
+  ranges are what our rows contain, not published scale bounds -- NJDOE
+  publishes only the cut score, per graduating class. Both report the same
+  <code>assessment_name</code> and the same <code>testcode</code>.</li>
+<li><code>assessment_version</code> is what tells them apart, set as a literal in each
+  vendor's staging model and carried up through <code>int_pearson__all_assessments</code>.</li>
+<li>Cut scores live in a hand-maintained Google Sheet
+  (<code>stg_google_sheets__student_graduation_path_cutoffs</code>), keyed on <code>cohort</code> +
+  <code>discipline</code> + <code>score_type</code> + <code>assessment_version</code>.</li>
+<li><code>cohort</code> is frozen at high school entry, which is correct for NJ's 4-year
+  adjusted cohort graduation rate but means a retained or accelerated student
+  sits the assessment with a different class than their cohort.</li>
+</ul>
+<h3 id="which-pathway-code-a-student-gets">Which pathway code a student gets</h3>
+<p>Produces <code>final_grad_path_code</code>, the letter written back to the state. FAFSA
+plays no part in it — a student with no FAFSA who passed the NJGPA still gets
+<code>S</code>.</p>
+<pre class="mermaid"><code>flowchart TD
+    start([Student, one subject]) --&gt; g10{Grade 10 or below?}
+    g10 --&gt;|yes| keep[Carry ps_grad_path_code through]
+    g10 --&gt;|no| mnop{ps_grad_path_code is M, N, O or P?}
+    mnop --&gt;|yes| keep2[Keep the code PowerSchool holds]
+    mnop --&gt;|no| att{Sat the NJGPA?}
+    att --&gt;|no| r[Code R]
+    att --&gt;|yes| njgpa{Met NJGPA?}
+    njgpa --&gt;|yes| s[Code S]
+    njgpa --&gt;|no| act{Met ACT?}
+    act --&gt;|yes| e[Code E]
+    act --&gt;|no| sat{Met SAT?}
+    sat --&gt;|yes| d[Code D]
+    sat --&gt;|no| p10{Met PSAT10?}
+    p10 --&gt;|yes| j[Code J]
+    p10 --&gt;|no| pnm{Met PSAT NMSQT?}
+    pnm --&gt;|yes| k[Code K]
+    pnm --&gt;|no| r</code></pre>
+<p>There is no retry loop in the model. A student re-sitting an assessment simply
+has a new score the next time it builds, and the chain runs again from the top.</p>
+<p>The landing page charts exactly this column, under the display labels in
+<code>final_grad_path_name</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Label</th>
+<th>Code</th>
+<th>Label</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>S</code></td>
+<td>NJGPA</td>
+<td><code>M</code></td>
+<td>DLM</td>
+</tr>
+<tr>
+<td><code>E</code></td>
+<td>ACT</td>
+<td><code>N</code></td>
+<td>Portfolio</td>
+</tr>
+<tr>
+<td><code>D</code></td>
+<td>SAT</td>
+<td><code>O</code></td>
+<td>Met No Requirements</td>
+</tr>
+<tr>
+<td><code>J</code></td>
+<td>PSAT10</td>
+<td><code>P</code></td>
+<td>Incomplete Credits</td>
+</tr>
+<tr>
+<td><code>K</code></td>
+<td>PSAT NMSQT</td>
+<td><code>R</code></td>
+<td>Default</td>
+</tr>
+</tbody>
+</table>
+<p>The label is decoded in <code>int_students__graduation_path_codes</code> rather than in the
+workbook, so the dashboard and any other consumer read the same string.
+<code>No Data</code> on the dashboard is not a label -- it is a student with no row at all.
+<code>E</code>, <code>O</code> and <code>P</code> are mapped but have never appeared in our data.</p>
+<p>For a student coded straight from PowerSchool, the same label is produced twice
+in two different models -- once as <code>pathway_option</code> in
+<code>int_students__graduation_pathway_scores</code>, which <code>test_type</code> passes through, and
+once here. The lists have to stay identical, so
+<code>int_students__graduation_path_codes__labels_agree</code> fails the build if they
+drift. Code <code>O</code> had already drifted before that test existed, reading
+<code>No Pathway</code> in dbt and <code>Met No Requirements</code> in the workbook.</p>
+<p>That makes the landing page the fastest check on this model's health. NJGPA is
+the pathway nearly every student is supposed to meet, so the <code>S</code> band should be
+the largest one. When it is a sliver and <code>Default</code> is enormous, scores are not
+reaching their cut scores -- which is what a cut score sheet missing a cohort or
+an <code>assessment_version</code> looks like from the outside. Before the adaptive cut
+scores landed, the whole network showed 2 students on <code>S</code> and 217 on <code>D</code>, and
+that shape on the landing page is what to look for if it happens again.</p>
+<h3 id="which-eligibility-label-a-student-gets">Which eligibility label a student gets</h3>
+<p>Produces <code>grad_eligibility</code>, which is what the dashboard shows. This is where
+FAFSA enters. "FAFSA required" means grade 12 and on or after the January
+deadline of their senior year; FAFSA never gates an 11th grader.</p>
+<pre class="mermaid"><code>flowchart TD
+    start([Student]) --&gt; g10{Grade 10 or below?}
+    g10 --&gt;|yes| ge[Grad Eligible]
+    g10 --&gt;|no| counts[A subject counts only if the student sat the NJGPA in it]
+    counts --&gt; both{Both subjects count?}
+    both --&gt;|yes| f1{FAFSA required and missing?}
+    f1 --&gt;|no| ge
+    f1 --&gt;|yes| nf[No FAFSA]
+    both --&gt;|no| one{One subject counts?}
+    one --&gt;|yes| f2{FAFSA required and missing?}
+    f2 --&gt;|no| only[ELA Only or Math Only]
+    f2 --&gt;|yes| onlynf[ELA Only / No FAFSA or Math Only / No FAFSA]
+    one --&gt;|no| hasf{Has FAFSA and FAFSA is required?}
+    hasf --&gt;|yes| fo[FAFSA Only]
+    hasf --&gt;|no| g11{Grade 11, no NJGPA records, before results land?}
+    g11 --&gt;|yes| ge
+    g11 --&gt;|no| nge[Not Grad Eligible]</code></pre>
+<p>Every <code>M</code> and <code>N</code> on the dashboard is <code>ps_grad_path_code</code> carried straight
+through -- the model never assigns them. It does guarantee those students a row
+per subject even though they have no score, because the extract filters on
+<code>scale_score is not null</code> and they would otherwise vanish from the dashboard
+entirely rather than show as IEP or portfolio.</p>
+<p>The FAFSA branches produce nothing between July and December. <code>fafsa_required</code>
+is grade 12 AND on or after the January deadline, so for half the year every
+FAFSA label is unreachable by construction. Finding zero of them in a summer
+build is correct, not a bug.</p>
+<h4 id="the-eligibility-combinations-sheet-retired">The eligibility combinations sheet, retired</h4>
+<p>This label used to come from a hand-maintained Google Sheet that enumerated
+every combination of the boolean inputs and named the label for each. Any
+combination nobody had thought to add fell through to the literal string
+<code>New category. Need new logic.</code>, which rendered on the dashboard as its own
+colour and meant a student's status was simply unknown until someone edited the
+sheet. It was showing on 4 students at the point the sheet was retired.</p>
+<p>The <code>CASE</code> above replaces it. There is no combination it cannot label, so that
+category no longer exists and the sheet is gone. If a new rule arrives from the
+state, it is a branch in the model, not a row in a spreadsheet.</p>
+<h3 id="how-the-model-is-put-together">How the model is put together</h3>
+<p>Two models, split by grain:</p>
+<ul>
+<li><code>int_students__graduation_pathway_scores</code> pairs every student with every
+  pathway their cohort has a cut score for, and decides whether their score
+  cleared it. One row per student, subject, score type, assessment version and
+  sitting. Nothing is filtered out, so the dashboard can show near misses.</li>
+<li><code>int_students__graduation_path_codes</code> rolls that up into a per-student
+  standing and produces <code>final_grad_path_code</code>, its display label
+  <code>final_grad_path_name</code>, and <code>grad_eligibility</code>.</li>
+</ul>
+<p><code>grad_eligibility</code> is derived, not looked up. It used to come from a
+hand-maintained sheet joined on eight boolean columns, which is now retired.
+Three rules drive it:</p>
+<ol>
+<li>A subject only counts if the student sat the NJGPA in it.</li>
+<li>FAFSA is required to graduate, but is not counted against a student until the
+   January deadline of their senior year, and never gates an 11th grader.</li>
+<li>An 11th grader holding NJGPA records is treated as a 12th grader, minus
+   FAFSA. Testing ahead of their peers usually means they are behind on credits.
+   The grace period is only for 11th graders with no records yet, and it ends
+   once results land in late June.</li>
+</ol>
+<h3 id="picking-a-students-best-score">Picking a student's best score</h3>
+<p>A student can hold scores on both NJGPA versions — eight do today, and two of
+them failed the retired test by a few points and then passed the adaptive one.
+The two scales are not comparable, so <code>rn_highest</code> ranks by <strong>whether the score
+passed, then by how far it cleared its own cut score</strong>, not by the raw score.</p>
+<p>This matters because consumers filter <code>rn_highest = 1</code> to get one row per score
+type. Ranking on the raw score would put a failing 700 on the retired scale
+above a passing 500 on the adaptive one, and the dashboard would show the
+failure while hiding the pass. A test asserts a passing score is never ranked
+behind a failing one.</p>
+<p>The roll-up is separate and already handles this: <code>met_njgpa</code> is a maximum
+across both versions, so passing either one counts.</p>
+<h3 id="portfolio-appeals">Portfolio appeals</h3>
+<p>A portfolio appeal is pathway code <code>N</code>, granted by NJDOE and imported into each
+region's PowerSchool by hand from PDFs the C3 team sends. There is no pipeline;
+the model only reads the resulting <code>ps_grad_path_code</code>. The full procedure,
+including the Excel workbook that must never be opened in Google Sheets, is in
+the <code>graduation-pathways</code> skill.</p>
+<h3 id="transfer-scores-are-entered-by-hand-in-powerschool">Transfer scores are entered by hand in PowerSchool</h3>
+<p>Transfer students' NJGPA scores do not arrive in a vendor file. School staff
+enter them per instance at <strong>District Management &gt; Tests &gt; Standardized Tests</strong>,
+then <strong>Edit Scores</strong>.</p>
+<p>Both forms share one holder named <code>NJGPA/NJGPA-A</code>, type State, with four score
+fields. <code>int_powerschool__state_assessments_transfer_scores</code> reads the version
+off the <code>-A</code> suffix, then strips the suffix so the code still joins to the
+sheet:</p>
+<table>
+<thead>
+<tr>
+<th>Score field</th>
+<th><code>assessment_version</code></th>
+<th><code>testcode</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ELAGP</code></td>
+<td><code>NJGPA</code></td>
+<td><code>ELAGP</code></td>
+</tr>
+<tr>
+<td><code>MATGP</code></td>
+<td><code>NJGPA</code></td>
+<td><code>MATGP</code></td>
+</tr>
+<tr>
+<td><code>ELAGP-A</code></td>
+<td><code>NJGPA-A</code></td>
+<td><code>ELAGP</code></td>
+</tr>
+<tr>
+<td><code>MATGP-A</code></td>
+<td><code>NJGPA-A</code></td>
+<td><code>MATGP</code></td>
+</tr>
+</tbody>
+</table>
+<p>User guide, which <strong>must be updated whenever transfer-score entry changes</strong>:
+<a href="https://teamschools.zendesk.com/hc/en-us/articles/20823542157463--User-Guide-Adding-NJGPA-Scores-to-PowerSchool-for-Transfer-Students">Adding NJGPA Scores to PowerSchool for Transfer Students</a></p>
+<div class="admonition warning">
+<p class="admonition-title">Paterson needs this configured first</p>
+<p>Only the Newark and Camden PowerSchool instances have the <code>NJGPA/NJGPA-A</code>
+holder. Paterson has no NJGPA data at all today, so it contributes no rows —
+which is correct, not a defect.</p>
+<p>When Paterson first receives an NJGPA transfer score, its instance needs the
+same setup first: a standardized test named exactly <code>NJGPA/NJGPA-A</code>, type
+State, with all four score fields above. A score entered before the holder
+exists cannot be captured, and there is no error to notice — the model
+filters on the holder name, so a missing or differently-named holder simply
+yields zero rows.</p>
+<p>The score field names matter as much as the holder name. Anything outside
+<code>ELAGP</code> / <code>MATGP</code> / <code>ELAGP-A</code> / <code>MATGP-A</code> produces a testcode that matches no
+cut score row; the <code>accepted_values</code> test on <code>testcode</code> turns that into a
+build failure rather than a silently dropped score.</p>
+</div>
+<h2 id="start-of-year-procedure">Start-of-year procedure</h2>
+<p>The dbt layer rolls over on its own. All three feeds filter on
+<code>var("current_academic_year")</code>, which is set per project in <code>dbt_project.yml</code>
+and rolls each July, so no SQL changes when the year advances.</p>
+<p>Four things need a human. Two of them have no owner and no schedule, which is
+recorded here as fact rather than dressed up as a process.</p>
+<h3 id="step-1-cut-scores-whenever-njdoe-publishes">Step 1 — Cut scores, whenever NJDOE publishes</h3>
+<p>The Academics team shares the NJDOE cut-off documentation; the data team applies
+it to <code>stg_google_sheets__student_graduation_path_cutoffs</code>. The runbook is in
+the <code>graduation-pathways</code> skill.</p>
+<p>This is not an annual task. NJDOE publishes per graduating class, and only after
+that class has sat and been scored, so rows arrive when they arrive.</p>
+<p><strong>Do not add a cut score row for a cohort whose threshold NJDOE has not
+published.</strong> A guessed threshold silently marks students as having met or missed
+a pathway nobody has defined, and <code>final_grad_path_code</code> goes to the state. A
+cohort with no rows is expected, not a gap to close -- as of September 2026 that
+is the classes of 2028, 2029 and 2030.</p>
+<p>The enforcement is the <code>scores_have_cutoffs</code> test, which warns and names the
+students who cannot be scored rather than letting them fall through to a default
+<code>R</code>. Hand that list to the HS team; in September 2026 it went to Casey and
+Walters.</p>
+<h3 id="step-2-community-service-custom-fields">Step 2 — Community service custom fields</h3>
+<p>Jabari does this in DeansList, when he remembers or when someone asks. There is
+no trigger and no schedule.</p>
+<p>The symptom of it not having happened is a prior year's hours disappearing from
+the dashboard -- see the warning under Community service. There is nothing in
+dbt to fix when that happens, so asking Jabari IS the procedure.</p>
+<h3 id="step-3-reporting-terms">Step 3 — Reporting terms</h3>
+<p>Anyone on the data team, whenever they have time. No owner, no trigger.</p>
+<p><code>stg_google_sheets__reporting__terms</code> needs rows of type <code>RT</code> for the new
+academic year for all three NJ high schools. AY2026-27 is in place. The join in
+<code>rpt_tableau__hs_early_warning_dashboard</code> is an INNER join, so a school missing
+its <code>RT</code> rows silently disappears from the extract rather than raising anything.</p>
+<h3 id="step-4-check-nothing-else-needs-it">Step 4 — Check nothing else needs it</h3>
+<p>Unknown, and never confirmed. The three inputs above are the ones that have been
+traced; nobody has verified the list is complete. Treat this as an open question
+rather than a clean bill of health, and add to it when the next rollover turns
+something up.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

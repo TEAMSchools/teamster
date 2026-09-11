@@ -1,0 +1,2240 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../gradebook-audit-data-model/">
+      
+      
+        <link rel="next" href="../hs-early-warning-data-model/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>CSGF Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#csgf-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CSGF Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-the-csgf-data-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is the CSGF data collection?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-eight-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The eight models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The eight models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shared-upstream-int_extracts__student_enrollments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared upstream: int_extracts__student_enrollments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known risks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known risks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#csgf_enrollment-under-reported-miami-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        csgf_enrollment under-reported Miami — resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miamis-first-hs-is-a-forward-risk-for-next-cycle-not-this-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Miami's first HS is a forward risk for next cycle, not this one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ap-course-naming-drifts-from-csgfs-official-list-cycle-to-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AP course naming drifts from CSGF's official list, cycle to cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#school-names-need-the-same-per-cycle-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        School names need the same per-cycle check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csgf_hs_grad_datas-cohort-scope-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        csgf_hs_grad_data's cohort scope — resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exit-code-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exit-code reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-the-csgf-data-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is the CSGF data collection?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-eight-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The eight models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The eight models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shared-upstream-int_extracts__student_enrollments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared upstream: int_extracts__student_enrollments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known risks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known risks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#csgf_enrollment-under-reported-miami-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        csgf_enrollment under-reported Miami — resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miamis-first-hs-is-a-forward-risk-for-next-cycle-not-this-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Miami's first HS is a forward risk for next cycle, not this one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ap-course-naming-drifts-from-csgfs-official-list-cycle-to-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AP course naming drifts from CSGF's official list, cycle to cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#school-names-need-the-same-per-cycle-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        School names need the same per-cycle check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csgf_hs_grad_datas-cohort-scope-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        csgf_hs_grad_data's cohort scope — resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exit-code-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exit-code reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/csgf-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="csgf-data-model">CSGF Data Model</h1>
+<p>Reference document for the eight <code>rpt_gsheets__csgf_*</code> models feeding the
+<code>csgf_data</code> exposure — the dbt pipeline that prepares KIPP TEAM &amp; Family's
+annual Charter School Growth Fund (CSGF) data submission.</p>
+<p>!!! tip "Claude Code skill available" The <code>csgf-data-collection</code> skill in
+<code>.claude/skills/csgf-data-collection/</code> covers the manual/ownership side of this
+process — confirming participants, the item-list documentation doc rollover,
+Salesforce Portal and HSDC mechanics, and a per-cycle checklist for several of
+the risks documented below. This page is the dbt-side lineage and model
+reference; the skill is the process runbook.</p>
+<h2 id="what-is-the-csgf-data-collection">What is the CSGF data collection?</h2>
+<p><a href="https://chartergrowthfund.org/">CSGF (Charter School Growth Fund)</a> is a
+nonprofit that invests growth capital in high-performing charter networks. KIPP
+TEAM &amp; Family is a member of CSGF's investment portfolio, and participating in
+this annual collection is a term of that grant agreement — the data directly
+informs CSGF's grant-making decisions and their own portfolio-wide reporting to
+funders.</p>
+<p>The collection covers academic, staffing, finance, and org data across two
+systems: the Salesforce Portal (most items) and Google Sheets (the High School
+Data Collection workbook, "HSDC," plus CSGF's own field-definitions reference).
+The eight models on this page prepare KTAF's HSDC extracts — everything else in
+the collection (finance, staffing, org info) is either entered directly in the
+Portal or sourced from other pipelines not covered here.</p>
+<p>All eight write to a KTAF-owned staging Google Sheet, <strong>"CSGF Data"</strong> — one tab
+per model — which the collection owner then transfers into CSGF's actual systems
+(last cycle by manual cell copy; this cycle via the Portal's new Excel
+bulk-upload feature). See the skill's "How the dbt models actually reach CSGF"
+section for that mechanism in full.</p>
+<h2 id="the-eight-models">The eight models</h2>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Grain</th>
+<th>Years of data referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>csgf_enrollment</code></td>
+<td>One row per school</td>
+<td><strong>This year</strong>, but <code>retention_numerator</code>/<code>retention_denominator</code> pull last year too via a self-join</td>
+</tr>
+<tr>
+<td><code>csgf_hs_enrollment</code></td>
+<td>One row per HS student</td>
+<td>Last year only (<code>current_academic_year - 1</code>)</td>
+</tr>
+<tr>
+<td><code>csgf_hs_sat</code></td>
+<td>One row per SAT section score</td>
+<td>Last year only</td>
+</tr>
+<tr>
+<td><code>csgf_hs_act</code></td>
+<td>One row per ACT section score</td>
+<td>Last year only</td>
+</tr>
+<tr>
+<td><code>csgf_hs_ap_offerings</code></td>
+<td>One row per school (wide-pivoted)</td>
+<td>Last year only</td>
+</tr>
+<tr>
+<td><code>csgf_hs_ap_scores</code></td>
+<td>One row per AP exam taken</td>
+<td>Last year only</td>
+</tr>
+<tr>
+<td><code>csgf_hs_grad_data</code></td>
+<td>One row per school</td>
+<td>Current cohort only (<code>cohort = current_academic_year</code>)</td>
+</tr>
+<tr>
+<td><code>csgf_hs_postsec_pathways</code></td>
+<td>One row per grade-12 student</td>
+<td><strong>All years</strong> (unfiltered)</td>
+</tr>
+</tbody>
+</table>
+<p>Year anchoring is deliberately inconsistent across these eight models — this was
+flagged in <a href="https://github.com/TEAMSchools/teamster/issues/4897">issue #4897</a>
+and confirmed here by reading each model's SQL directly, not by trusting the
+issue's description. Practical consequence: a data problem in either the current
+or prior year can affect <code>csgf_enrollment</code>; a problem in <em>any</em> historical year
+can affect <code>csgf_hs_postsec_pathways</code>, the one remaining unfiltered model. It
+also means 7 of the 8 models are computable as soon as CSGF's Preliminary
+Questions task is done, without waiting on anything about the current
+in-progress year — only <code>csgf_enrollment</code>'s current-year grain needs this year's
+Oct 1 count day to have happened.</p>
+<p>All six HS-scoped models filter to <code>school_level = 'HS'</code>, which today means
+Camden (KIPP Cooper Norcross High) and Newark (KIPP Newark Collegiate Academy,
+KIPP Newark Lab High School) only — Miami and Paterson have no HS enrollment as
+of AY2025. See <a href="#known-risks">Known risks</a> for why that's changing.</p>
+<h3 id="shared-upstream-int_extracts__student_enrollments">Shared upstream: <code>int_extracts__student_enrollments</code></h3>
+<p>Every one of the eight models reads
+<code>{{ ref("int_extracts__student_enrollments") }}</code> (aliased <code>e</code> or <code>co</code> depending
+on the model). Two columns on that model exist specifically to serve CSGF
+consumers and should stay promoted there rather than re-duplicated per model:</p>
+<ul>
+<li><strong><code>exited_hs</code></strong> (<code>if(exitcode = 'G1', 'Y', 'N')</code>) — whether the student
+  graduated or completed high school. Added for <code>csgf_hs_enrollment</code>'s "did this
+  student exit HS at the end of [year]" field, after CSGF clarified via their
+  portal comment thread that the field means graduation/completion specifically,
+  <strong>not</strong> the broader "didn't return the following year" reading its
+  plain-language wording suggests. <code>csgf_hs_postsec_pathways</code> already computed
+  the identical thing locally (<code>exited_hs</code>, same name, same logic) before this
+  was promoted — both models now read the one column. Keep them in sync if
+  either changes.</li>
+<li><strong><code>enroll_status_string</code></strong> — decodes the raw <code>enroll_status</code> PowerSchool code.
+  Not CSGF-specific, but several models' logic depends on understanding it: <code>0</code>
+  = Currently Enrolled, <code>2</code> = Transferred Out, <code>3</code> = Graduated (see the
+  exit-code table below for the finer-grained signal).</li>
+</ul>
+<h2 id="known-risks">Known risks</h2>
+<p>Verify each of these before trusting a submission — none are hypothetical; all
+were found by reading the model SQL or querying prod directly this cycle.</p>
+<h3 id="csgf_enrollment-under-reported-miami-resolved"><code>csgf_enrollment</code> under-reported Miami — resolved</h3>
+<p>The model was driven by <code>stg_powerschool__schools</code>, a frozen PowerSchool-era
+Miami school catalog never updated after Miami's cutover to Focus as its SIS.
+Two Focus-marked-<code>(Closed)</code> schools (Sunrise, Liberty) still appeared with every
+column null, and three schools with real enrolled Focus students were silently
+<strong>missing</strong> entirely (not null — absent rows) because the join to the stale
+catalog failed: KIPP Miami Tech (95 HS students), KIPP Legacy Elementary (173),
+KIPP Legacy Middle (32) — roughly 300 of Miami's ~1,755 enrolled students. Fixed
+by this PR: added a <code>focus_schools</code> CTE (<code>int_focus__schools</code> filtered to
+<code>school_level is not null</code>, joined through
+<code>stg_google_sheets__people__locations</code>) unioned with the PowerSchool-sourced
+non-Miami schools. Verified all 5 real Miami schools now appear with correct
+enrollment/demographic/principal data, the 2 closed-school ghost rows are gone,
+and the 19 non-Miami rows are unchanged.</p>
+<p><strong>Still open, and bigger than Miami</strong>: <code>total_budgeted_enrollment</code> is NULL for
+all 26 schools network-wide — <code>stg_google_sheets__topline_enrollment_targets</code>
+has rows for academic_year 2025 only, none yet for 2026, for any district. The
+Enrollment task's own instructions require every cell filled; this needs whoever
+owns that sheet to add this year's targets before submission, not a dbt fix.</p>
+<h3 id="miamis-first-hs-is-a-forward-risk-for-next-cycle-not-this-one">Miami's first HS is a forward risk for next cycle, not this one</h3>
+<p>Miami opened its first high school in AY2026 — KIPP Miami Technical High, ~95
+students, mostly grade 9. The six HS-scoped models are correctly
+Miami-irrelevant <em>this</em> cycle (they read AY2025, when Miami had zero HS
+students), but next cycle they roll to AY2026 and will need Miami HS data for
+the first time ever.</p>
+<p>For <code>csgf_hs_enrollment</code> specifically: its enrollment/demographic fields come
+through <code>int_extracts__student_enrollments</code>, which already includes Miami via
+Focus, so those will be correct. But its course-tag CTEs (<code>transfer_course_tags</code>
+→ <code>stg_powerschool__storedgrades</code>, <code>local_course_tags</code> →
+<code>base_powerschool__course_enrollments</code>) are PowerSchool-only with no Focus
+equivalent wired in — Miami HS students will get <strong>NULL, not <code>'N'</code></strong>, for
+<code>has_participated_in_ap_courses</code> / <code>_honors_courses</code> /
+<code>_dual_enrollment_courses</code> / <code>_cte_courses</code>, since the <code>course_tags</code> CTE
+produces no rows for them at all. The other five HS models likely have the same
+PowerSchool-only gap somewhere in their lineage — not yet verified per-model.</p>
+<h3 id="ap-course-naming-drifts-from-csgfs-official-list-cycle-to-cycle">AP course naming drifts from CSGF's official list, cycle to cycle</h3>
+<p><code>csgf_hs_ap_offerings</code> and <code>csgf_hs_ap_scores</code> each source AP course names from
+a different upstream (<code>stg_google_sheets__collegeboard__ap_course_crosswalk</code> and
+<code>int_assessments__ap_assessments.ap_course_name</code> respectively), and neither
+upstream's naming is guaranteed to match CSGF's official picklist for the
+current cycle. Confirmed mismatches for 2026-2027, diffed against CSGF's real
+current AP course list pasted from the Portal task: "AP US History" → "AP United
+States History," "AP US Government and Politics" → "AP United States Government
+and Politics," "AP Pre-Calculus" → "AP Precalculus," and 3 College Board "Studio
+Art" names → CSGF's current "Art and Design" naming ("AP Studio Art: 2-D Design
+Portfolio" → "AP 2-D Art and Design," "3-D Design Portfolio" → "3-D Art and
+Design," "Drawing Portfolio" → "AP Drawing"). Both models now carry an identical
+<code>case</code> remap for all 6 — <strong>update both together</strong> whenever CSGF's list changes,
+or one model silently drifts from the other. This duplication is a known,
+deliberate scope decision (flagged by <code>claude-review</code>, not centralized) — see
+Open Items.</p>
+<p><code>csgf_hs_ap_offerings</code> used to pivot on only 28 of CSGF's 43 real AP course
+columns, so a newly-offered course not on that list would drop out of the
+extract silently (no error). Fixed this cycle: the pivot now emits all 43
+columns, in CSGF's exact column order (confirmed against the live Portal task),
+so a straight copy/paste needs no reordering. The 11 courses/3 subscore columns
+KTAF has never offered or tested pivot to NULL for every row by construction —
+confirmed via direct query, not assumed. Still confirm current-AY coverage each
+cycle per the skill's checklist, since CSGF's list itself can change.</p>
+<h3 id="school-names-need-the-same-per-cycle-check">School names need the same per-cycle check</h3>
+<p>Raw PowerSchool <code>school_name</code> doesn't always match CSGF's expected string —
+<code>csgf_hs_enrollment</code> and <code>csgf_hs_ap_offerings</code> both special-case
+<code>KIPP Cooper Norcross High</code> → <code>KIPP Cooper Norcross High School</code> for this
+reason. Confirmed for 2026-2027: both models' full-name output matches CSGF's
+expected names for all three current HS schools.</p>
+<p><code>csgf_hs_grad_data</code> had the same gap — it output abbreviated codes (<code>KHS</code>,
+<code>NCA</code>, <code>NLH</code>) instead of full names. Fixed by switching from
+<code>school_abbreviation</code> to <code>school_name</code> (with the same Cooper Norcross remap),
+confirmed against CSGF's Portal task labels (<code>KIPP Newark Lab High School</code> /
+<code>KIPP Newark Collegiate Academy</code> / <code>KIPP Cooper Norcross High School</code>).</p>
+<p><code>csgf_enrollment</code>'s Paterson remap had the inverse problem — it was outputting
+<code>KIPP Paterson MS</code> / <code>KIPP Paterson ES</code>, missing "Prep." Fixed against CSGF's
+own Portal school-list export, which has <code>KIPP Paterson Prep MS</code> /
+<code>KIPP Paterson Prep ES</code> on file.</p>
+<h3 id="csgf_hs_grad_datas-cohort-scope-resolved"><code>csgf_hs_grad_data</code>'s cohort scope — resolved</h3>
+<p><a href="https://github.com/TEAMSchools/teamster/issues/4897">Issue #4897</a> originally
+flagged this as an open design question: the model had a <code>graduated</code> CTE with a
+real cohort filter
+(<code>cohort = current_academic_year AND academic_year = current_academic_year - 1</code>)
+that was <strong>never referenced</strong> by the final <code>SELECT</code> — dead code. The live query
+path (<code>grad_roster</code>, filtered only by <code>school_level = 'HS'</code>) was unfiltered by
+cohort, so it returned every cohort ever recorded — confirmed in prod: one
+school alone had 20 rows, spanning cohorts 2011-2030, instead of one.</p>
+<p>CSGF's own Salesforce Portal task purpose settles this: the task explicitly
+calculates the 4-year graduation rate for the cohort that entered 9th grade four
+years prior and is expected to graduate this year, with the instruction "if the
+school did not have 12th graders in [year], leave all rows blank" — i.e. one row
+per school for the current cohort, not one row per cohort ever recorded. Fixed
+by moving the dead CTE's cohort filter onto the live <code>grad_roster</code> query path
+and removing the dead <code>graduated</code> CTE entirely. Confirmed against prod: three
+schools, three rows, all cohort 2026.</p>
+<p>!!! note "SED field uses the same FRL definition" CSGF's new "Socioeconomically
+Disadvantaged (SED)" field on the HS Enrollment tab instructs submitters to "use
+what is valid for the state." <code>csgf_hs_enrollment</code>'s <code>student_is_frl</code> was
+widened this cycle to include <code>lunch_status = 'FDC'</code> alongside <code>'F'</code> and <code>'R'</code> —
+<code>FDC</code> means "Free via Direct Certification" (automatic free-meal eligibility via
+SNAP/TANF/Medicaid), a federal mechanism valid in every state's own
+economically-disadvantaged definition, NJ included. This reading is backed by
+this repo's own documented source (<code>stg_powerschool__students.yml</code>:
+<code>"FDC=Free-DC"</code>) and matches CSGF's own "FRL or Direct Cert" framing elsewhere
+in their field definitions. The SED field reuses this same <code>student_is_frl</code>
+value rather than a separate column.</p>
+<h2 id="exit-code-reference">Exit-code reference</h2>
+<p><code>enroll_status</code>/<code>exitcode</code> combinations that look similar can have very
+different real-world meaning. Confirmed against AY2025 data by checking what
+fraction of students carrying each code actually returned the following year (a
+real return, not a proxy):</p>
+<table>
+<thead>
+<tr>
+<th>exitcode</th>
+<th>Meaning (PowerSchool Gen Table 6)</th>
+<th>Returned next year</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1</td>
+<td>Transfer within the same school</td>
+<td>93.9%</td>
+</tr>
+<tr>
+<td>W01</td>
+<td>Promoted/Retained/Transferred, Same Sch</td>
+<td>99.1%</td>
+</tr>
+<tr>
+<td>T2</td>
+<td>Transfer to another public school within district</td>
+<td>93.9%</td>
+</tr>
+<tr>
+<td>T4</td>
+<td>Transfer to another public school outside district</td>
+<td>0.7%</td>
+</tr>
+<tr>
+<td>T8</td>
+<td>Transfer out of state or country</td>
+<td>0.6%</td>
+</tr>
+<tr>
+<td>TC</td>
+<td>Transfer to charter school</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>T9</td>
+<td>Transfer to parental instruction</td>
+<td>12.5%</td>
+</tr>
+<tr>
+<td>W02</td>
+<td>Promoted/Retained/Transferred, Diff Sch</td>
+<td>8.4%</td>
+</tr>
+<tr>
+<td>W06</td>
+<td>Graduated - Std Diploma</td>
+<td>9.5%</td>
+</tr>
+<tr>
+<td>G1</td>
+<td>Graduated from a KIPP NJ school</td>
+<td>0%</td>
+</tr>
+</tbody>
+</table>
+<p>T1, W01, and T2 aren't real exits — they're PowerSchool's codes for internal
+moves (same school, or between schools within the same district, which for KTAF
+includes moving between two KTAF schools). That's why they still return 93-99%
+of the time. Everything else above is a genuine departure.</p>
+<h2 id="open-items">Open items</h2>
+<ul>
+<li>The other five HS-scoped models' Miami/Focus course-data gap for next cycle —
+  only verified for <code>csgf_hs_enrollment</code> so far.</li>
+<li>All eight models now have a uniqueness test (resolved by this PR).</li>
+<li>CSGF's own Portal school-list was missing three real Miami schools (KIPP Miami
+  Technical High, KIPP Legacy Elementary, KIPP Legacy Middle) — confirmed via
+  CSGF's school-list CSV export. Not a dbt fix; the collection owner has since
+  added all three via the Portal's "Add Record" (self-service, since import
+  can't create new rows -- see the csgf-data-collection skill), so this is
+  resolved for the 2026-2027 cycle. The remaining Schools List fields for those
+  3 schools (seat capacity, facility/real-estate questions) still need direct
+  input from the task owner; tracked in the skill, not here.</li>
+<li><code>rpt_gsheets__csgf_enrollment.total_budgeted_enrollment</code> is NULL for all 26
+  schools network-wide, not just Miami -- the target sheet has no 2026 rows for
+  any district yet. Needs whoever owns that budget-target sheet to add this
+  year's targets, not a dbt fix. Violates the Enrollment task's own "do not
+  leave any cells blank" instruction as of 2026-09-11.</li>
+<li><code>csgf_hs_ap_offerings</code> and <code>csgf_hs_ap_scores</code> carry an identical AP
+  course-name remap <code>CASE</code> statement, kept in sync by convention (documented in
+  both properties files) rather than centralized. Flagged by <code>claude-review</code> as
+  low-severity reuse/duplication; not fixed here, since it doesn't affect
+  correctness as long as both are updated together each cycle.</li>
+<li><code>rpt_gsheets__csgf_hs_enrollment</code>'s <code>transfer_course_tags</code> CTE still filters
+  transfer grades through a ~100-entry Algebra-I-course-name allowlist that
+  predates this PR, even though the CTE's only surviving outputs
+  (<code>is_ap_course</code>, <code>is_honors_course</code>) don't need that specific allowlist at all
+  -- a transfer student's AP or Honors course not on this historical list is
+  silently excluded from <code>has_participated_in_ap_courses</code> / <code>_honors_courses</code>.
+  Flagged by <code>claude-review</code>; worth a deliberate decision (drop the filter, or
+  confirm/document why it should stay) in a follow-up, not resolved here.</li>
+<li>Column-level <code>description:</code> coverage across the eight models' properties YAML
+  is uneven -- only columns whose logic changed this cycle are documented; most
+  pre-existing columns (all of <code>csgf_hs_act</code>/<code>csgf_hs_sat</code>/
+  <code>csgf_hs_postsec_pathways</code>, most of <code>csgf_enrollment</code>/<code>csgf_hs_grad_data</code>)
+  still have none. Flagged by <code>claude-review</code>; left as incremental scope rather
+  than backfilled in this PR.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
