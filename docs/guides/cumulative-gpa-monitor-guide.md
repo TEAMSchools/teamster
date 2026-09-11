@@ -307,12 +307,12 @@ follow a class, read diagonally: grade 9 in 2022, grade 10 in 2023, grade 11 in
 
 ![Splay over time](screenshots/18-cgm-splay-over-time.png)
 
-_Caption: The five-band split for the grade chosen in **Grade view**, one bar
-per closed year._
+_Caption: The five-band split for grade 11, one bar per closed year._
 
 The second chart shows the same five bands from the band mix charts, one bar per
-closed year, for the grade in **Grade view**. **Region** and **School** apply to
-both charts. Click **Hide Trends** to close the panel.
+closed year, for grade 11. It reads the same whatever **Grade view** is set to.
+**Region** and **School** apply to both charts. Click **Hide Trends** to close
+the panel.
 
 ---
 
