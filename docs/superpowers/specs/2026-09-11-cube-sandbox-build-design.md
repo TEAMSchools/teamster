@@ -342,6 +342,55 @@ decide what to cache. The parent spec says to leave pre-aggregations off until
 the partner reports a latency surprise. That surprise is now predicted rather
 than hypothetical, and it lands at repoint.
 
+### Do not ship the partner a smaller dataset
+
+The obvious economy is to generate a fraction of production scale so the build
+loop is quick. Take the `--scale` parameter, not the smaller sandbox. Three
+reasons, in the order they should change your mind.
+
+**Volume buys exactly 3 things, and they are the 3 a kit freezes wrong.**
+Pagination, query timeouts, and pre-aggregation routing are invisible at a few
+hundred rows and load-bearing at production scale. Client code that never had to
+paginate does not start paginating on its own, and in a kit that omission is
+inherited by every app built on it. Nothing else in the design depends on row
+count.
+
+**The cost intuition does not survive measurement.** A single
+`count(distinct student_enrollment_key)` against production
+`fct_student_attendance_daily` scans **945 MB and references 15 upstream tables
+across 6 datasets** (dry run, 2026-09-11), because in production that mart is a
+view over the PowerSchool and Focus graph for 4 districts. The sandbox answers
+the same query from 1 flat table with no join. Production is expensive because
+of the view chain, not the row count — so a full-scale sandbox is already
+dramatically cheaper and faster than production, and shrinking it optimises
+something that is not the constraint.
+
+**The manifest already sets a floor.** A dataset still has to satisfy 460 column
+cells, every scope enum the code handles, non-uniform snapshot anchors, and a
+join orphan on each side of every path. "Small" is therefore bounded from below
+by coverage, not chosen freely — and a dataset that clears that floor is
+complete in every way except volume.
+
+The real friction is **generation and load wall-clock**, not query cost. Solve
+that where it bites, in KTAF's own iteration, with 2 named profiles from the
+same seeded generator:
+
+| Profile | Rows               | Lives                        | Used by                                                      |
+| ------- | ------------------ | ---------------------------- | ------------------------------------------------------------ |
+| `tiny`  | The manifest floor | Local files                  | Generator development, coverage assertions in CI on every PR |
+| `full`  | Production scale   | The sandbox BigQuery dataset | The partner, the canary and RLS suites, load testing         |
+
+Same generator, same seed, same manifest coverage. Only the row multiplier
+differs, so a `tiny` run that satisfies the manifest proves the generator
+correct without waiting on a full build.
+
+**One size at a time, through Cube.** Every `sql_table` is dataset-qualified
+(`kipptaf_marts.dim_students`) while the repoint variable is
+`CUBEJS_DB_BQ_PROJECT_ID` — a project, not a dataset. So two sizes visible
+through Cube simultaneously would need 2 sandbox GCP projects and 2 Cube
+deployments, not 2 datasets in one project. Not worth it: `tiny` exists to
+validate generated rows directly, which needs no Cube at all.
+
 Everything above builds a dataset that is correct and correctly sized. The two
 mechanisms below are what make it an instrument rather than a stand-in.
 
