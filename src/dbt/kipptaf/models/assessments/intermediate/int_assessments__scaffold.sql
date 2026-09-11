@@ -127,26 +127,7 @@ with
         enrollment dates, but some students have multiple enrollments for the same
         course */
         select
-            assessment_id,
-            title,
-            administered_at,
-            performance_band_set_id,
-            academic_year_clean,
-            subject_area,
-            scope,
-            module_type,
-            module_code,
-            region,
-            grade_level_id,
-            canonical_assessment_id,
-            illuminate_student_id,
-            powerschool_student_number,
-            powerschool_school_id,
-            cc_dateenrolled,
-            cc_dateleft,
-            discipline,
-            cc_dcid,
-            cc_source_project,
+            *,
 
             row_number() over (
                 partition by assessment_id, illuminate_student_id

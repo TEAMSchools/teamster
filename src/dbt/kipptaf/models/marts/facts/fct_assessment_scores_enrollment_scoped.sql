@@ -211,6 +211,8 @@ with
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
     -- deterministic. Remove this dedupe when staging is fixed.
+    -- Measured at 273,791 input rows for #5252 -- below the ~1M threshold for
+    -- the ranked-column rewrite, so this stays on the macro. Don't re-measure.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -266,6 +268,8 @@ with
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
     -- deterministic.
+    -- Measured at 8,128 input rows for #5252 -- below the ~1M threshold for the
+    -- ranked-column rewrite, so this stays on the macro. Don't re-measure.
     star_scores as (
         {{
             dbt_utils.deduplicate(
