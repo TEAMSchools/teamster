@@ -884,6 +884,15 @@ live CSGF sheet directly.
 
 ## Known data risks -- verify before submitting
 
+**Fixed 2026-09-11: SAT/ACT/AP Scores/AP Offerings must scope to the same
+population as HS Enrollment, or CSGF flags "ID not on Enrollment Tab."** HS
+Enrollment's own instructions say to only include students who completed the
+school year (`enroll_status in (0, 3)`); the other four HS-scoped models had no
+such filter and included mid-year transfers-out too. Full writeup in
+`docs/models/csgf-data-model.md`. If you see this exact error on a future
+cycle's HSDC tabs, check whether a newly-added HS-scoped model has the same gap
+before assuming it's a data problem.
+
 **Year anchoring across the eight `rpt_gsheets__csgf_*` models** (verified by
 reading each model's SQL directly, not just taken from prior notes -- see
 [issue #4897](https://github.com/TEAMSchools/teamster/issues/4897) for the
