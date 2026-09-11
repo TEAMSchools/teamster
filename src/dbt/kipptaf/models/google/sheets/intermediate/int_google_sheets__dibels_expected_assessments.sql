@@ -1,3 +1,22 @@
+with
+    terms as (
+        select
+            academic_year,
+            region,
+            code,
+            name,
+            start_date,
+            end_date,
+
+            safe_cast(band_grade as int64) as grade_level,
+
+        from {{ ref("stg_google_sheets__reporting__terms") }}
+        -- left, not cross: a Benchmark row's grade_band is null, and unnesting
+        -- null yields no rows, which would drop the row entirely
+        left join unnest(split(grade_band, ',')) as band_grade
+        where type = 'LIT'
+    )
+
 select
     m.academic_year,
     m.region,
@@ -36,11 +55,20 @@ select
         order by m.round_number desc
     ) as max_pm_round,
 
+    -- how many measures a student at this grade owes for this round. countif,
+    -- not count, because this model deliberately does not filter its own
+    -- soft-delete columns: filtering here would run before the window
+    -- functions above and silently redefine min_pm_round / max_pm_round.
+    countif(m.assessment_include is null and m.pm_goal_include is null) over (
+        partition by m.academic_year, m.region, m.grade, m.admin_season, m.round_number
+    ) as expected_row_count,
+
 from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as m
 left join
-    {{ ref("stg_google_sheets__reporting__terms") }} as t
+    terms as t
     on m.academic_year = t.academic_year
     and m.region = t.region
     and m.admin_season = t.name
     and m.test_code = t.code
-    and t.type = 'LIT'
+    -- a null grade_level is a Benchmark window, which applies to every grade
+    and (m.grade = t.grade_level or t.grade_level is null)

@@ -3,21 +3,39 @@ models:
     columns:
       - name: Unique
         data_type: string
+        description:
+          Sheet-authored key concatenating measure, grade and administration.
       - name: Measure_Standard
         data_type: string
+        description:
+          The measure the standard applies to, e.g. Reading Fluency (ORF).
       - name: Grade
         data_type: string
+        description:
+          Grade level the standard applies to, as written on the sheet.
       - name: Admin_Season
         data_type: string
+        description: The administration -- BOY, MOY or EOY.
       - name: Grade_Level_Standard
         data_type: float64
+        description:
+          Amplify's published score for grade level at this measure, grade and
+          administration. Unpadded.
       - name: Above
         data_type: float64
+        description: Lower threshold for Above Benchmark.
       - name: Below
         data_type: float64
+        description: Lower threshold for Below Benchmark.
       - name: Well_Below
         data_type: int64
+        description: Lower threshold for Well Below Benchmark.
       - name: matching_pm_season
         data_type: string
+        description:
+          The PM season this administration's standard governs -- MOY maps to
+          BOY->MOY, EOY to MOY->EOY, so a PM round is measured against the NEXT
+          benchmark's standard.
       - name: grade_level
         data_type: int64
+        description: Grade level as an integer, K mapped to 0.

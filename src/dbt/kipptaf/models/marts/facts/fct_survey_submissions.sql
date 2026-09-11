@@ -32,6 +32,7 @@ with
             rt.start_date as rt_start_date,
             rt.region as rt_region,
             rt.school_id as rt_school_id,
+            rt.grade_band as rt_grade_band,
 
             'staff' as respondent_type,
 
@@ -65,6 +66,7 @@ with
             rt.start_date as rt_start_date,
             rt.region as rt_region,
             rt.school_id as rt_school_id,
+            rt.grade_band as rt_grade_band,
 
             'student' as respondent_type,
 
@@ -105,6 +107,7 @@ with
             rt.start_date as rt_start_date,
             rt.region as rt_region,
             rt.school_id as rt_school_id,
+            rt.grade_band as rt_grade_band,
 
             'family' as respondent_type,
         from submissions_grain as sg
@@ -168,6 +171,7 @@ with
             rt.start_date as rt_start_date,
             rt.region as rt_region,
             rt.school_id as rt_school_id,
+            rt.grade_band as rt_grade_band,
 
             'staff' as respondent_type,
 
@@ -207,6 +211,7 @@ with
             rt.start_date as rt_start_date,
             rt.region as rt_region,
             rt.school_id as rt_school_id,
+            rt.grade_band as rt_grade_band,
 
             'staff' as respondent_type,
 
@@ -235,6 +240,7 @@ with
                         "rt_start_date",
                         "rt_region",
                         "rt_school_id",
+                        "rt_grade_band",
                     ]
                 )
             }} as survey_administration_key,
@@ -261,6 +267,7 @@ with
                         "rt_start_date",
                         "rt_region",
                         "rt_school_id",
+                        "rt_grade_band",
                     ]
                 )
             }} as survey_administration_key,
@@ -287,6 +294,7 @@ with
                         "rt_start_date",
                         "rt_region",
                         "rt_school_id",
+                        "rt_grade_band",
                     ]
                 )
             }} as survey_administration_key,
@@ -313,6 +321,7 @@ with
                         "rt_start_date",
                         "rt_region",
                         "rt_school_id",
+                        "rt_grade_band",
                     ]
                 )
             }} as survey_administration_key,
@@ -340,6 +349,7 @@ with
                         "rt_start_date",
                         "rt_region",
                         "rt_school_id",
+                        "rt_grade_band",
                     ]
                 )
             }} as survey_administration_key,

@@ -1,301 +1,247 @@
 with
-    data_farming as (
-        select *, concat('kipp', lower(region)) as _dbt_source_project,
-        from {{ source("amplify", "int_amplify__dds__data_farming_unpivot") }}
-    ),
-
-    assessments_scores as (
+    -- grain projection, not dup-masking: measure_standard is joined, not
+    -- projected, so a round's several measures collapse to one row
+    pm_scores as (
         select
-            bss.academic_year,
-            bss.region,
-            bss.student_primary_id as student_number,
-            bss.assessment_grade,
-            bss.assessment_grade_int,
-            bss.benchmark_period as `period`,
-            bss.client_date,
-            bss.sync_date,
-            bss._dbt_source_project,
+            r._dbt_source_project,
+            r.academic_year,
+            r.region,
+            r.student_number,
+            r.assessment_grade_int,
+            r.boy_probe_eligible,
+            r.moy_probe_eligible,
+            r.boy_composite,
+            r.moy_composite,
+            r.eoy_composite,
 
-            u.surrogate_key,
-            u.measure_name,
-            u.measure_name_code,
-            u.measure_standard,
-            u.measure_standard_score,
-            u.measure_standard_level,
-            u.measure_standard_level_int,
-            u.measure_percentile,
-            u.measure_semester_growth,
-            u.measure_year_growth,
-
-            null as probe_number,
-            null as total_number_of_probes,
-            null as score_change,
+            -- period is the PM season, not the benchmark that opened it -- the
+            -- participation roster joins admin_season to it
+            r.matching_season as `period`,
+            r.overall_probe_eligible as pm_eligible,
 
             e.assessment_type,
             e.round_number,
             e.month_round,
             e.start_date,
             e.end_date,
-            e.matching_pm_season as matching_season,
+            e.expected_measure_standard,
 
-        from {{ ref("int_amplify__mclass__benchmark_student_summary") }} as bss
-        inner join
-            {{ ref("int_amplify__mclass__benchmark_student_summary_unpivot") }} as u
-            on bss.surrogate_key = u.surrogate_key
-        inner join
-            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
-            on bss.academic_year = e.academic_year
-            and bss.region = e.region
-            and bss.assessment_grade_int = e.grade
-            and bss.benchmark_period = e.admin_season
-            and u.measure_standard = e.expected_measure_standard
-            and e.assessment_include is null
-            and e.pm_goal_include is null
-        where
-            bss.enrollment_grade = bss.assessment_grade
-            and bss.assessment_grade is not null
-
-        union all
-
-        -- 7/8 benchmark scores SY24 only
-        select
-            df.academic_year,
-            df.region,
-            df.student_id as student_number,
-            df.assessment_grade,
-            df.assessment_grade_int,
-
-            df.period,
-            df.`date` as client_date,
-            df.`date` as sync_date,
-            df._dbt_source_project,
-
-            df.surrogate_key,
-            df.measure_name,
-            df.measure_name_code,
-            df.measure_standard,
-            df.measure_standard_score,
-            df.measure_standard_level,
-            df.measure_standard_level_int,
-            df.measure_percentile,
-
-            null as measure_semester_growth,
-            null as measure_year_growth,
-            null as probe_number,
-            null as total_number_of_probes,
-            null as score_change,
-
-            e.assessment_type,
-            e.round_number,
-            e.month_round,
-            e.start_date,
-            e.end_date,
-            e.matching_pm_season as matching_season,
-
-        from data_farming as df
-        inner join
-            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
-            on df.academic_year = e.academic_year
-            and df.region = e.region
-            and df.assessment_grade_int = e.grade
-            and df.period = e.admin_season
-            and df.measure_standard = e.expected_measure_standard
-            and e.assessment_include is null
-            and e.pm_goal_include is null
-
-        union all
-
-        select
-            p.academic_year,
-            p.region,
-            p.student_primary_id as student_number,
             p.assessment_grade,
-            p.assessment_grade_int,
-            p.pm_period as `period`,
             p.client_date,
             p.sync_date,
-            p._dbt_source_project,
             p.surrogate_key,
             p.measure_name,
             p.measure_name_code,
+            p.probe_number,
+            p.total_number_of_probes,
             p.measure as measure_standard,
             p.measure_standard_score,
 
-            'NA' as measure_standard_level,
+            cast(null as string) as aimline_status,
+            cast(null as numeric) as goal,
+            cast(null as int64) as met_aimline_goal,
 
-            null as measure_standard_level_int,
-            null as measure_percentile,
+            p.measure_standard_score_change as score_change,
 
-            'NA' as measure_semester_growth,
-            'NA' as measure_year_growth,
+            'Internal' as model_type,
 
-            p.probe_number,
-            p.total_number_of_probes,
-            p.measure_standard_score_change,
+            -- the benchmark season this round aims at, matching prod
+            if(r.matching_season = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
+
+        from {{ ref("int_amplify__benchmark_student_summary") }} as r
+        inner join
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
+            on r.academic_year = e.academic_year
+            and r.region = e.region
+            and r.assessment_grade_int = e.grade
+            and r.matching_season = e.admin_season
+            and e.assessment_include is null
+            and e.pm_goal_include is null
+        -- inner, not left: this model carries scored rows only, as it always
+        -- has. An expected round with no score is the participation roster's
+        -- job -- it counts the gate's rows against these.
+        inner join
+            {{ ref("int_amplify__mclass__pm_student_summary") }} as p
+            on e.academic_year = p.academic_year
+            and e.region = p.region
+            and e.expected_measure_standard = p.measure
+            and e.admin_season = p.pm_period
+            and r.student_number = p.student_primary_id
+            and p.client_date between e.start_date and e.end_date
+        -- EOY opens no PM season. Year floor matches the aimline branch's
+        -- coverage, so the two methods report over the same years.
+        where
+            r.period != 'EOY'
+            and r.academic_year >= 2025
+            and r.overall_probe_eligible = 'Yes'
+            and r.rn_pm_eligibility = 1
+            and p.enrollment_grade = p.assessment_grade
+            and p.assessment_grade is not null
+
+        union all
+
+        select distinct
+            r._dbt_source_project,
+            r.academic_year,
+            r.region,
+            r.student_number,
+            r.assessment_grade_int,
+            r.boy_probe_eligible,
+            r.moy_probe_eligible,
+            r.boy_composite,
+            r.moy_composite,
+            r.eoy_composite,
+
+            -- see the internal branch above
+            r.matching_season as `period`,
+            r.overall_aimline_composite_level as pm_eligible,
 
             e.assessment_type,
             e.round_number,
             e.month_round,
             e.start_date,
             e.end_date,
+            e.expected_measure_standard,
 
-            if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
+            p.assessment_grade,
+            p.device_date as client_date,
+            p.sync_date,
+            p.surrogate_key,
+            p.measure_name,
+            p.measure_name_code,
+            p.probe_number,
+            p.total_number_of_probes,
+            p.measure as measure_standard,
+            p.measure_standard_score,
+            p.aimline_status,
+            p.goal,
 
-        from {{ ref("int_amplify__mclass__pm_student_summary") }} as p
+            case
+                when p.aimline_status = 'At or Above'
+                then 1
+                when p.aimline_status = 'Below'
+                then 0
+            end as met_aimline_goal,
+
+            -- the aimline source carries no score delta. Sits where branch 1's
+            -- real column sits -- UNION ALL matches by position, not name.
+            cast(null as numeric) as score_change,
+
+            'Aimline' as model_type,
+
+            if(r.matching_season = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
+
+        from {{ ref("int_amplify__benchmark_student_summary") }} as r
         inner join
-            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
-            on p.academic_year = e.academic_year
-            and p.region = e.region
-            and p.assessment_grade_int = e.grade
-            and p.measure = e.expected_measure_standard
-            and p.pm_period = e.admin_season
-            and p.client_date between e.start_date and e.end_date
+            {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }} as e
+            on r.academic_year = e.academic_year
+            and r.region = e.region
+            and r.assessment_grade_int = e.grade
+            and r.matching_season = e.admin_season
+            -- the cohort gate: At/Above matches no by-levels row
+            and r.overall_aimline_composite_level = e.measure_standard_level
             and e.assessment_include is null
             and e.pm_goal_include is null
-        where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
+        -- see the internal branch above
+        inner join
+            {{ ref("int_amplify__mclass__pm_student_summary_aimline") }} as p
+            on e.academic_year = p.academic_year
+            and e.region = p.region
+            and e.expected_measure_standard = p.measure
+            and e.admin_season = p.pm_period
+            and r.student_number = p.student_primary_id
+            and p.device_date between e.start_date and e.end_date
+        where
+            r.period != 'EOY'
+            and r.academic_year >= 2025
+            and r.rn_pm_eligibility = 1
+            and p.enrollment_grade = p.assessment_grade
+            and p.assessment_grade is not null
     ),
 
     max_score as (
         select
             *,
 
+            -- keeps a student's best score for a measure in a round, with the
+            -- later probe winning a same-day tie. Deliberately NOT ordered by
+            -- probe_number: that is Amplify's own numbering and does not align
+            -- with our PM rounds. academic_year is load-bearing -- round numbers
+            -- restart every year, so without it a student's AY2026 round 1
+            -- competes with their AY2025 round 1 for the same measure and one
+            -- real score is dropped. model_type keeps the two methods from
+            -- ranking against each other. assessment_grade_int and period are
+            -- here for the same reason rn_pm_eligibility carries them in
+            -- int_amplify__benchmark_student_summary: each sitting is its own
+            -- administration, so two grades in one round would otherwise
+            -- collide and the lower score be dropped, silently.
             row_number() over (
-                partition by surrogate_key, round_number, measure_standard
-                order by measure_standard_level_int desc
+                partition by
+                    academic_year,
+                    student_number,
+                    model_type,
+                    `period`,
+                    assessment_grade_int,
+                    round_number,
+                    expected_measure_standard
+                order by measure_standard_score desc, client_date desc
             ) as rn_highest,
 
-        from assessments_scores
-    ),
-
-    composite_only as (
-        select academic_year, student_number, `period`, measure_standard_level,
-        from max_score
-        where measure_standard = 'Composite' and rn_highest = 1
-    ),
-
-    overall_composite_by_window as (
-        select
-            academic_year,
-            student_number,
-
-            coalesce(p.boy, 'No data') as boy,
-            coalesce(p.moy, 'No data') as moy,
-            coalesce(p.eoy, 'No data') as eoy,
-        from
-            composite_only pivot (
-                max(measure_standard_level) for `period` in ('BOY', 'MOY', 'EOY')
-            ) as p
-    ),
-
-    probe_eligible_tag as (
-        -- TODO: rn_distinct calc wasnt working - will review later
-        select distinct
-            s.academic_year,
-            s.student_number,
-
-            /* this coalesce ensures students without a composite row are not left
-               null for these fields */
-            coalesce(c.boy, 'No data') as boy,
-            coalesce(c.moy, 'No data') as moy,
-            coalesce(c.eoy, 'No data') as eoy,
-
-            if(
-                c.boy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
-            ) as boy_probe_eligible,
-
-            if(
-                c.moy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
-            ) as moy_probe_eligible,
-
-        from max_score as s
-        left join
-            overall_composite_by_window as c
-            on s.academic_year = c.academic_year
-            and s.student_number = c.student_number
-        where s.assessment_type = 'Benchmark'
+        from pm_scores
     )
 
 select
-    s.academic_year,
-    s.region,
-    s.student_number,
-    s.assessment_type,
-    s.assessment_grade,
-    s.assessment_grade_int,
-    s.period,
-    s.round_number,
-    s.month_round,
-    s.start_date,
-    s.end_date,
-    s.matching_season,
-    s.client_date,
-    s.sync_date,
-    s._dbt_source_project,
-    s.measure_name,
-    s.measure_name_code,
-    s.measure_standard,
-    s.measure_standard_score,
-    s.measure_standard_level,
-    s.measure_standard_level_int,
-    s.measure_percentile,
-    s.measure_semester_growth,
-    s.measure_year_growth,
-    s.probe_number,
-    s.total_number_of_probes,
-    s.score_change,
+    academic_year,
+    region,
+    student_number,
+    assessment_type,
+    assessment_grade,
+    assessment_grade_int,
+    `period`,
+    round_number,
+    month_round,
+    start_date,
+    end_date,
+    matching_season,
+    client_date,
+    sync_date,
+    _dbt_source_project,
+    measure_name,
+    measure_name_code,
+    measure_standard,
+    measure_standard_score,
+    measure_standard_level,
+    measure_standard_level_int,
+    measure_percentile,
+    measure_semester_growth,
+    measure_year_growth,
 
-    p.boy_probe_eligible,
-    p.moy_probe_eligible,
-    p.boy as boy_composite,
-    p.moy as moy_composite,
-    p.eoy as eoy_composite,
+    -- PM-only columns, carried as nulls so the union lines up. Typed, because a
+    -- bare null infers as INT64 and collides with the PM branch on score_change.
+    cast(null as int64) as probe_number,
+    cast(null as int64) as total_number_of_probes,
+    cast(null as numeric) as score_change,
+    cast(null as string) as aimline_status,
+    cast(null as numeric) as goal,
+    cast(null as int64) as met_aimline_goal,
+
+    boy_probe_eligible,
+    moy_probe_eligible,
+    boy_composite,
+    moy_composite,
+    eoy_composite,
+
+    model_type,
 
     'Text Study' as illuminate_subject,
 
-    case
-        s.period when 'BOY' then 'MOY' when 'MOY' then 'EOY'
-    end as benchmark_goal_season,
+    benchmark_goal_season,
+    aggregated_measure_standard_level,
+    foundation_measure_standard_level,
+    overall_probe_eligible,
+    actual_row_count,
 
-    case
-        when s.measure_standard_level_int >= 3
-        then 'At/Above'
-        when s.measure_standard_level_int <= 2
-        then 'Below/Well Below'
-    end as aggregated_measure_standard_level,
-
-    case
-        when s.measure_standard_level_int >= 3
-        then 'At/Above'
-        when s.measure_standard_level_int = 2
-        then 'Below'
-        when s.measure_standard_level_int = 1
-        then 'Well Below'
-    end as foundation_measure_standard_level,
-
-    case
-        s.period
-        when 'BOY'
-        then p.boy_probe_eligible
-        when 'MOY'
-        then p.moy_probe_eligible
-    end as overall_probe_eligible,
-
-    count(*) over (
-        partition by
-            s.academic_year,
-            s.region,
-            s.assessment_grade,
-            s.period,
-            s.round_number,
-            s.student_number
-    ) as actual_row_count,
-
-from max_score as s
-left join
-    probe_eligible_tag as p
-    on s.academic_year = p.academic_year
-    and s.student_number = p.student_number
-where s.assessment_type = 'Benchmark' and s.rn_highest = 1
+from {{ ref("int_amplify__benchmark_student_summary") }}
 
 union all
 
@@ -319,49 +265,49 @@ select
     s.measure_name_code,
     s.measure_standard,
     s.measure_standard_score,
-    s.measure_standard_level,
-    s.measure_standard_level_int,
-    s.measure_percentile,
-    s.measure_semester_growth,
-    s.measure_year_growth,
+    -- Benchmark-only concepts. PM carries no level, percentile or growth
+    -- classification, and prod's PM branch set these same literals.
+    'NA' as measure_standard_level,
+
+    cast(null as int64) as measure_standard_level_int,
+    cast(null as float64) as measure_percentile,
+
+    'NA' as measure_semester_growth,
+    'NA' as measure_year_growth,
+
     s.probe_number,
     s.total_number_of_probes,
     s.score_change,
 
-    p.boy_probe_eligible,
-    p.moy_probe_eligible,
-    p.boy as boy_composite,
-    p.moy as moy_composite,
-    p.eoy as eoy_composite,
+    s.aimline_status,
+    s.goal,
+    s.met_aimline_goal,
+
+    s.boy_probe_eligible,
+    s.moy_probe_eligible,
+    s.boy_composite,
+    s.moy_composite,
+    s.eoy_composite,
+
+    s.model_type,
 
     'Text Study' as illuminate_subject,
-
     'NA' as benchmark_goal_season,
 
-    case
-        when s.measure_standard_level_int >= 3
-        then 'At/Above'
-        when s.measure_standard_level_int <= 2
-        then 'Below/Well Below'
-    end as aggregated_measure_standard_level,
+    -- Benchmark-only. PM carries no measure_standard_level_int, so prod's two
+    -- case expressions returned null on every PM row; stated as null instead of
+    -- branching on a column that is always null.
+    cast(null as string) as aggregated_measure_standard_level,
+    cast(null as string) as foundation_measure_standard_level,
 
-    case
-        when s.measure_standard_level_int >= 3
-        then 'At/Above'
-        when s.measure_standard_level_int = 2
-        then 'Below'
-        when s.measure_standard_level_int = 1
-        then 'Well Below'
-    end as foundation_measure_standard_level,
+    -- pm_eligible already resolved to this round's season. Position matters:
+    -- UNION ALL binds by position and every column here is STRING, so a
+    -- misplacement is accepted silently rather than failing on type.
+    s.pm_eligible as overall_probe_eligible,
 
-    case
-        s.period
-        when 'BOY->MOY'
-        then p.boy_probe_eligible
-        when 'MOY->EOY'
-        then p.moy_probe_eligible
-    end as overall_probe_eligible,
-
+    -- model_type is in the partition so each method counts only its own rows.
+    -- Without it the two methods count each other and a round that expects at
+    -- most 5 measures reports up to 10, breaking every completion comparison.
     count(*) over (
         partition by
             s.academic_year,
@@ -369,12 +315,9 @@ select
             s.assessment_grade,
             s.period,
             s.round_number,
-            s.student_number
+            s.student_number,
+            s.model_type
     ) as actual_row_count,
 
 from max_score as s
-left join
-    probe_eligible_tag as p
-    on s.academic_year = p.academic_year
-    and s.student_number = p.student_number
-where s.assessment_type = 'PM' and s.rn_highest = 1
+where s.rn_highest = 1

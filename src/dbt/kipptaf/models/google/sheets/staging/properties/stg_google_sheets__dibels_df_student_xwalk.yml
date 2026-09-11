@@ -5,9 +5,17 @@ models:
     columns:
       - name: Student_Number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            contains_pii: true
       - name: Grade_Level
         data_type: int64
+        description: Grade level as recorded on the sheet.
       - name: Admin_Season
         data_type: string
+        description: The administration -- BOY, MOY or EOY.
       - name: Region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.

@@ -22,13 +22,11 @@ with
             p.completed_test_round,
             p.completed_test_round_int,
 
+            g.benchmark_goal_padded,
+
             if(
                 a.measure_standard_score >= g.cumulative_growth_words, 1, 0
             ) as met_measure_standard_goal,
-
-            if(
-                a.measure_standard_score >= g.benchmark_goal, 1, 0
-            ) as met_admin_benchmark_goal,
 
         from {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
         inner join
@@ -49,12 +47,22 @@ with
             and a.assessment_grade_int = p.grade_level
             and a.period = p.admin_season
             and a.round_number = p.round_number
-        where g.pm_goal_include is null
+            and a.model_type = p.model_type
+        -- this model evaluates the internal method only: cumulative_growth_words
+        -- comes from the custom goals sheet, which has no aimline equivalent.
+        -- Both filters are load-bearing -- the roster and all_assessments each
+        -- carry a row per method now, so without them a student's Internal and
+        -- Aimline rows match each other.
+        where g.pm_goal_include is null and a.model_type = 'Internal'
     ),
 
     met_measure_code_goal as (
         select
             *,
+
+            if(
+                measure_standard_score >= benchmark_goal_padded, 1, 0
+            ) as met_admin_benchmark_goal,
 
             if(
                 avg(met_measure_standard_goal) over (
@@ -93,6 +101,24 @@ with
             end as met_pm_round_criteria,
 
         from met_measure_code_goal
+    ),
+
+    met_round_overall as (
+        select
+            *,
+
+            case
+                when
+                    pm_goal_criteria = 'AND'
+                    and met_pm_round_criteria = 1
+                    and completed_test_round
+                then 1
+                when pm_goal_criteria is null and met_pm_round_criteria = 1
+                then 1
+                else 0
+            end as met_pm_round_overall_criteria,
+
+        from met_round_criteria
     )
 
 select
@@ -104,13 +130,14 @@ select
     measure_standard,
     round_number,
     benchmark_goal,
+    benchmark_goal_padded,
     round_growth_words_goal,
     cumulative_growth_words,
     pm_goal_criteria,
     student_number,
     measure_name_code,
     measure_standard_score,
-    start_date,
+    `start_date`,
     end_date,
     completed_test_round,
     completed_test_round_int,
@@ -118,16 +145,29 @@ select
     met_admin_benchmark_goal,
     met_measure_name_code_goal,
     met_pm_round_criteria,
+    met_pm_round_overall_criteria,
 
+    if(met_measure_standard_goal = 1, 'Met', 'Not Met') as measure_standard_goal_status,
+
+    if(met_admin_benchmark_goal = 1, 'Met', 'Not Met') as admin_benchmark_goal_status,
+
+    -- a round the student did not finish is unmeasurable rather than failed, but
+    -- only where the missing measures could still have changed the answer: AND is
+    -- settled by any single failure, OR by any single pass.
     case
         when
             pm_goal_criteria = 'AND'
             and met_pm_round_criteria = 1
-            and completed_test_round
-        then 1
-        when pm_goal_criteria is null and met_pm_round_criteria = 1
-        then 1
-        else 0
-    end as met_pm_round_overall_criteria,
+            and not completed_test_round
+        then 'Round Incomplete'
+        when
+            pm_goal_criteria is null
+            and met_pm_round_criteria = 0
+            and not completed_test_round
+        then 'Round Incomplete'
+        when met_pm_round_overall_criteria = 1
+        then 'Met'
+        else 'Not Met'
+    end as pm_round_status,
 
-from met_round_criteria
+from met_round_overall

@@ -1,5 +1,22 @@
 models:
   - name: int_amplify__all_assessments
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            # assessment_grade_int is IN the key here, unlike on the criteria
+            # models where it is deliberately left out. A student can be assessed
+            # at two grades inside one benchmark window and each sitting is its
+            # own administration, so grade is part of this model's grain rather
+            # than a mid-year change to catch -- without it, 5 of 409,906 AY2025
+            # rows collide.
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - model_type
+              - period
+              - round_number
+              - measure_standard
+              - assessment_grade_int
     columns:
       - name: academic_year
         data_type: int64
@@ -13,10 +30,18 @@ models:
             source_column: academic_year
       - name: region
         data_type: string
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_type
         data_type: string
+        description:
+          Whether the row is a Benchmark administration or a PM round.
       - name: assessment_grade
         data_type: string
         description: Grade level of the assessment administered.
@@ -35,18 +60,33 @@ models:
             source_column: assessment_grade_int
       - name: period
         data_type: string
+        description:
+          For a Benchmark row the administration -- BOY, MOY or EOY. For a PM
+          row the PM season, BOY->MOY or MOY->EOY.
       - name: round_number
         data_type: int64
+        description:
+          The PM round. Round numbers run consecutively across the year rather
+          than restarting each season.
       - name: month_round
         data_type: string
+        description:
+          Calendar month the round's window falls in, from the expectation
+          sheet.
       - name: start_date
         data_type: date
+        description: First day of the round or administration window.
       - name: end_date
         data_type: date
+        description: Last day of the round or administration window.
       - name: matching_season
         data_type: string
+        description:
+          The benchmark administration a PM round is measured toward -- BOY->MOY
+          aims at MOY, MOY->EOY at EOY.
       - name: client_date
         data_type: date
+        description: Date the probe was administered on the device.
       - name: sync_date
         data_type: date
         description: Date the assessment data was synced.
@@ -77,6 +117,9 @@ models:
             source_column: measure_name_code
       - name: measure_standard
         data_type: string
+        description:
+          The individual measure evaluated -- Reading Fluency (ORF) and Reading
+          Accuracy (ORF-Accu) are separate standards under one code.
       - name: measure_standard_score
         data_type: float64
         description: Raw assessment score, cast from the source score column.
@@ -87,14 +130,28 @@ models:
             source_column: measure_standard_score
       - name: measure_standard_level
         data_type: string
+        description:
+          Amplify's benchmark level for the score, e.g. At or Above Benchmark.
+          Benchmark rows only.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_standard_level_int
         data_type: int64
+        description: measure_standard_level as an ordinal. Benchmark rows only.
       - name: measure_percentile
         data_type: float64
+        description: National percentile for the score. Benchmark rows only.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_semester_growth
         data_type: string
+        description:
+          Amplify's semester growth classification. Benchmark rows only.
       - name: measure_year_growth
         data_type: string
+        description: Amplify's year growth classification. Benchmark rows only.
       - name: probe_number
         data_type: int64
         description: Probe sequence number within the PM period.
@@ -113,16 +170,79 @@ models:
             source_column: total_number_of_probes
       - name: score_change
         data_type: numeric
+        description:
+          Change in score from the student's previous probe. Internal PM rows
+          only; the aimline source carries no delta.
+      - name: aimline_status
+        data_type: string
+        description: >-
+          Amplify's own verdict on whether the probe sat at or above the
+          student's individual aimline — At or Above, Below, or null. Populated
+          on Aimline rows only; null on every Internal and Benchmark row, so
+          null does not by itself mean Amplify withheld a verdict. Amplify
+          publishes no status on roughly a sixth of aimline probes even where a
+          goal is present, and those are not failures.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: aimline_status
+      - name: goal
+        data_type: numeric
+        description: >-
+          The aimline target this probe was measured against, drawn from the
+          student's own starting score rather than a cohort average. The
+          per-student counterpart to the internal method's
+          cumulative_growth_words. Aimline rows only.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: goal
+      - name: met_aimline_goal
+        data_type: int64
+        description: >-
+          aimline_status as a flag — 1 for At or Above, 0 for Below, null where
+          Amplify published no verdict. Derived here rather than downstream so
+          every consumer reads one translation, and null is a real third value
+          rather than a miss. Aimline rows only.
       - name: boy_probe_eligible
         data_type: string
+        description:
+          Whether the student's BOY composite made them eligible for progress
+          monitoring.
       - name: moy_probe_eligible
         data_type: string
+        description:
+          Whether the student's MOY composite made them eligible for progress
+          monitoring.
       - name: boy_composite
         data_type: string
+        description: The student's BOY composite level.
+        config:
+          meta:
+            contains_pii: true
       - name: moy_composite
         data_type: string
+        description: The student's MOY composite level.
+        config:
+          meta:
+            contains_pii: true
       - name: eoy_composite
         data_type: string
+        description: The student's EOY composite level.
+        config:
+          meta:
+            contains_pii: true
+      - name: model_type
+        data_type: string
+        description: >-
+          Which data model produced the row: BM for Benchmark, Internal for the
+          in-house PM goal method, Aimline for Amplify's per-student aimline.
+          Both PM methods run K-8 in parallel, so a consumer that counts PM rows
+          must filter this column or every eligible student is counted once per
+          method. It is also in max_score's partition, so the two methods do not
+          rank against each other when picking a round's highest probe.
       - name: illuminate_subject
         data_type: string
         description: >-
@@ -138,11 +258,26 @@ models:
           from region. Materialized so consumers join and hash a column.
       - name: benchmark_goal_season
         data_type: string
+        description:
+          The administration Amplify's published goal applies to. Benchmark rows
+          only.
       - name: aggregated_measure_standard_level
         data_type: string
+        description:
+          Composite level rolled up across the measures in the administration.
+          Benchmark rows only.
       - name: foundation_measure_standard_level
         data_type: string
+        description:
+          Level used by the Foundations goal tracker. Benchmark rows only.
       - name: overall_probe_eligible
         data_type: string
+        description:
+          Eligibility resolved to the row's own window. On an Internal PM row it
+          is 'Yes'; on an Aimline PM row it carries the composite level instead,
+          which is the cohort key the by-levels gate is split on.
       - name: actual_row_count
         data_type: int64
+        description:
+          How many of the round's expected measures the student was actually
+          scored on, counted per data method.

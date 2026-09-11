@@ -1,24 +1,41 @@
 with
+    -- grain projection, not dup-masking: the directory is school x grade x year
+    -- and PM days are counted per school-year, so grade level drops out
+    school_years as (
+        select distinct _dbt_source_project, academic_year, region, ps_schoolid,
+
+        from {{ ref("int_students__school_directory") }}
+        -- no calendar to count: recruiting rows, and DIBELS is K-8
+        where school_source != 'finalsite' and school_level_alt != 'HS'
+    ),
+
     pm_rounds as (
         select
-            c.schoolcity as region,
+            s.region,
 
             t.academic_year,
             t.name as term_name,
 
-            safe_cast(right(t.code, 1) as int) as round_number,
+            -- anchored, and P?LIT matches PLIT deliberately
+            safe_cast(regexp_extract(t.code, r'^P?LIT(\d+)$') as int) as round_number,
 
             count(distinct c.date_value) as pm_round_days,
 
-        from {{ ref("int_powerschool__calendar_day") }} as c
+        from school_years as s
+        -- SIS-neutral, not stg_powerschool__calendar_day: Miami is Focus-only
+        inner join
+            {{ ref("int_students__calendar_day") }} as c
+            on s.ps_schoolid = c.schoolid
+            and c.insession = 1
+            and s._dbt_source_project = c._dbt_source_project
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as t
-            on c.schoolcity = t.region
+            on s.region = t.region
+            and s.academic_year = t.academic_year
             and c.date_value between t.start_date and t.end_date
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
-        where c.insession = 1
-        group by c.schoolcity, t.academic_year, t.name, round_number
+        group by s.region, t.academic_year, t.name, round_number
     ),
 
     pm_rounds_agg as (
@@ -47,9 +64,9 @@ select
     e.pm_goal_include,
     e.pm_goal_criteria,
 
-    t.code,
-    t.start_date,
-    t.end_date,
+    e.test_code as code,
+    e.start_date,
+    e.end_date,
 
     d.pm_round_days,
     d.pm_days,
@@ -58,24 +75,18 @@ select
     g.grade_level_standard as benchmark_goal,
 
 from {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
-inner join
-    {{ ref("stg_google_sheets__reporting__terms") }} as t
-    on e.academic_year = t.academic_year
-    and e.region = t.region
-    and e.admin_season = t.name
-    and e.test_code = t.code
-    and e.assessment_type = 'PM'
-    and t.type = 'LIT'
 left join
     pm_rounds_agg as d
-    on t.academic_year = d.academic_year
-    and t.region = d.region
-    and t.name = d.term_name
+    on e.academic_year = d.academic_year
+    and e.region = d.region
+    and e.admin_season = d.term_name
     and e.round_number = d.round_number
 left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
-{# TODO: update to current_school_year var #}
-where e.academic_year >= 2024
+where
+    e.assessment_type = 'PM'
+    -- no term row covers this grade, so the round has no window
+    and e.start_date is not null

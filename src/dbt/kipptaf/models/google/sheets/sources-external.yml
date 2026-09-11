@@ -145,14 +145,93 @@ sources:
             data_type: boolean
           - name: PM_Goal_Criteria
             data_type: string
+      - name: src_google_sheets__dibels__expected_assessments_by_levels
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_google_sheets__dibels__expected_assessments_by_levels
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - expected_assessments_by_levels
+        columns:
+          - name: academic_year
+            data_type: int64
+          - name: region
+            data_type: string
+          - name: grade
+            data_type: int64
+          - name: test_type
+            data_type: string
+          - name: discipline
+            data_type: string
+          - name: subject_area
+            data_type: string
+          - name: assessment_type
+            data_type: string
+          - name: measure_standard_level
+            data_type: string
+          - name: measure_standard
+            data_type: string
+          - name: test_code
+            data_type: string
+          - name: admin_season
+            data_type: string
+          - name: month_round
+            data_type: string
+          - name: illuminate_subject
+            data_type: string
+          - name: iready_subject
+            data_type: string
+          - name: ps_credit_type
+            data_type: string
+          - name: assessment_include
+            data_type: boolean
+          - name: pm_goal_include
+            data_type: boolean
+          - name: pm_goal_criteria
+            data_type: string
       - name: src_google_sheets__dibels__foundation_goals
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_foundation_goals
+            sheet_range: src_google_sheets__dibels__foundation_goals
             skip_leading_rows: 1
+        columns:
+          - name: academic_year
+            data_type: int64
+          - name: region
+            data_type: string
+          - name: grade_range
+            data_type: string
+          - name: grade_band
+            data_type: string
+          - name: grade_level
+            data_type: int64
+          - name: period
+            data_type: string
+          - name: population
+            data_type: string
+          - name: grade_goal_type
+            data_type: string
+          - name: grade_goal_low
+            data_type: float64
+          - name: grade_goal_high
+            data_type: float64
+          - name: grade_goal
+            data_type: float64
+          - name: grade_range_goal
+            data_type: float64
         config:
           meta:
             dagster:
@@ -214,8 +293,50 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_pm_goals
+            sheet_range: src_google_sheets__dibels__pm_goals
             skip_leading_rows: 1
+        # declared explicitly rather than autodetected: Benchmark_Goal_Padded is
+        # null on every pre-SY26-27 row, and autodetect drops an all-null column
+        # -- which would fail the staging model's contracted select *. Order
+        # matches the sheet, which matches rpt_gsheets__dibels_pm_goal_setting's
+        # output order, since the rows are pasted from it.
+        columns:
+          - name: academic_year
+            data_type: int64
+          - name: region
+            data_type: string
+          - name: admin_season
+            data_type: string
+          - name: assessment_grade
+            data_type: string
+          - name: assessment_grade_int
+            data_type: int64
+          - name: measure_standard
+            data_type: string
+          - name: starting_words
+            data_type: int64
+          - name: round_number
+            data_type: int64
+          - name: pm_goal_include
+            data_type: boolean
+          - name: pm_goal_criteria
+            data_type: string
+          - name: pm_round_days
+            data_type: int64
+          - name: benchmark_goal
+            data_type: float64
+          - name: benchmark_goal_padded
+            data_type: float64
+          - name: required_growth_words
+            data_type: int64
+          - name: pm_days
+            data_type: int64
+          - name: daily_growth_rate
+            data_type: float64
+          - name: round_growth_words_goal
+            data_type: int64
+          - name: cumulative_growth_words
+            data_type: float64
         config:
           meta:
             dagster:
@@ -231,8 +352,95 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_bm_goals
+            sheet_range: src_google_sheets__dibels__bm_goals
             skip_leading_rows: 1
+        columns:
+          - name: academic_year
+            data_type: int64
+          - name: region
+            data_type: string
+          - name: assessment_grade
+            data_type: string
+          - name: assessment_grade_int
+            data_type: int64
+          - name: period
+            data_type: string
+          - name: benchmark_goal_season
+            data_type: string
+          - name: school
+            data_type: string
+          - name: grade_goal
+            data_type: float64
+          - name: grade_range_goal
+            data_type: float64
+          - name: n_admin_season_school_gl_all
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above
+            data_type: int64
+          - name: n_admin_season_region_gl_all
+            data_type: int64
+          - name: n_admin_season_region_gl_at_above
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above_expected
+            data_type: int64
+          - name: n_admin_season_region_gl_at_above_expected
+            data_type: int64
+          - name: grade_goal_iep
+            data_type: float64
+          - name: grade_range_goal_iep
+            data_type: float64
+          - name: n_admin_season_school_gl_all_iep
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above_iep
+            data_type: int64
+          - name: n_admin_season_region_gl_all_iep
+            data_type: int64
+          - name: n_admin_season_region_gl_at_above_iep
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above_expected_iep
+            data_type: int64
+          - name: n_admin_season_region_gl_at_above_expected_iep
+            data_type: int64
+          - name: grade_goal_mll
+            data_type: float64
+          - name: grade_range_goal_mll
+            data_type: float64
+          - name: n_admin_season_school_gl_all_mll
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above_mll
+            data_type: int64
+          - name: n_admin_season_region_gl_all_mll
+            data_type: int64
+          - name: n_admin_season_region_gl_at_above_mll
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above_expected_mll
+            data_type: int64
+          - name: n_admin_season_region_gl_at_above_expected_mll
+            data_type: int64
+          - name: n_admin_season_school_gl_bl_wb
+            data_type: int64
+          - name: n_admin_season_school_gl_bl_wb_iep
+            data_type: int64
+          - name: n_admin_season_school_gl_bl_wb_mll
+            data_type: int64
+          - name: n_admin_season_region_gl_bl_wb
+            data_type: int64
+          - name: n_admin_season_region_gl_bl_wb_iep
+            data_type: int64
+          - name: n_admin_season_region_gl_bl_wb_mll
+            data_type: int64
+          - name: n_admin_season_school_gl_at_above_gap
+            data_type: float64
+          - name: n_admin_season_region_gl_at_above_gap
+            data_type: float64
+          - name: n_admin_season_school_gl_at_above_gap_iep
+            data_type: float64
+          - name: n_admin_season_region_gl_at_above_gap_iep
+            data_type: float64
+          - name: n_admin_season_school_gl_at_above_gap_mll
+            data_type: float64
+          - name: n_admin_season_region_gl_at_above_gap_mll
+            data_type: float64
         config:
           meta:
             dagster:
@@ -1184,9 +1392,9 @@ sources:
             sheet_range: src_google_sheets__iready_expected_assessments
             skip_leading_rows: 1
         columns:
-          - name: Academic_Year
+          - name: academic_year
             data_type: int64
-          - name: Region
+          - name: region
             data_type: string
           - name: Assessment_Type
             data_type: string
@@ -1204,7 +1412,7 @@ sources:
             data_type: string
           - name: Test_Code
             data_type: string
-          - name: Admin_Season
+          - name: admin_season
             data_type: string
           - name: Month_Round
             data_type: string
@@ -1385,7 +1593,7 @@ sources:
         columns:
           - name: Name
             data_type: STRING
-          - name: Region
+          - name: region
             data_type: STRING
           - name: PowerSchool_School_ID
             data_type: INT64

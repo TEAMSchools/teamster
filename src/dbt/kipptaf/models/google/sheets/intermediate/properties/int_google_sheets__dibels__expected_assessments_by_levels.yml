@@ -1,0 +1,203 @@
+models:
+  - name: int_google_sheets__dibels__expected_assessments_by_levels
+    description: >
+      Which DIBELS measures each region expects to progress-monitor, per grade,
+      round and student cohort, with the round's date window and the Benchmark
+      goal it grows toward -- the aimline method's membership gate.
+
+      The by-levels sibling of int_google_sheets__dibels_expected_assessments,
+      and a separate model rather than a branch inside it. The two methods were
+      briefly unioned behind a data_model discriminator; splitting them at the
+      source keeps the internal gate's column set identical to what its
+      consumers already expect, and removes the trap where a consumer forgetting
+      to filter data_model matched every score twice.
+
+      Column names follow int_google_sheets__dibels_pm_expectations wherever the
+      two mean the same thing, so a reader moving between the internal and
+      aimline chains is not re-learning vocabulary -- the round code is code
+      here, not test_code. The exception is matching_bm_season, which has no
+      counterpart because it points the opposite way to the internal chain's
+      matching_pm_season.
+
+      PM only. The by-levels range carries no Benchmark rows and never will --
+      Benchmark tests every student against one set of expectations, so it has
+      no cohort split, and it is sourced from the 16-column range alone.
+
+      The reporting terms CTE explodes grade_band into one row per grade level
+      so a grade picks up its own band's window rather than whichever band the
+      join reached first. The unnest is a cross join here, not a left join,
+      which is the one structural difference from the internal gate -- every row
+      in this source is a PM round and every PM terms row carries a band, so
+      there is no null-band Benchmark row to preserve. Unnesting a null yields
+      no rows, which is exactly what should happen to a Benchmark terms row on
+      this chain.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - grade
+              - admin_season
+              - code
+              - measure_standard
+              - measure_standard_level
+    columns:
+      - name: measure_standard_level
+        description: >
+          Cohort the expectation applies to -- Below Benchmark or Well Below
+          Benchmark, matching the vocabulary of
+          int_amplify__all_assessments.measure_standard_level so a consumer
+          compares them without mapping.
+
+          Part of the grain, and it partitions min_pm_round and max_pm_round --
+          when a round is expected of one cohort and not the other, the two
+          cohorts' round ranges differ, and a shared partition would hand both
+          the wider range. As of SY25-26 the cohorts carry identical measure
+          sets throughout the sheet, so it discriminates nothing yet.
+        data_tests:
+          - not_null
+      - name: academic_year
+        description: >
+          Academic year as the starting calendar year -- 2025 is SY25-26. No
+          year before 2025 exists on this chain.
+      - name: region
+        description: Region name -- Camden, Miami, Newark or Paterson.
+      - name: grade
+        description:
+          Grade level the expectation applies to, with kindergarten as 0.
+      - name: code
+        description: >
+          Reporting term code for the round -- LIT1 through LIT11. Named code
+          rather than test_code to match
+          int_google_sheets__dibels_pm_expectations, so the rename happens once
+          here instead of at every consumer.
+      - name: admin_season
+        description: >
+          PM season the round sits in -- BOY->MOY or MOY->EOY. Matches the
+          reporting terms name column. Never a Benchmark season on this chain.
+      - name: round_number
+        description: >
+          Round number parsed from the code with a regex. Miami runs 11 rounds,
+          so reading the code's last character would fold rounds 10 and 11 onto
+          0 and 1.
+      - name: min_pm_round
+        description: >
+          Lowest round number in the row's season, per year, region, season,
+          grade and cohort.
+      - name: max_pm_round
+        description: >
+          Highest round number in the row's season, on the same partition as
+          min_pm_round. Marks the end of the season without implying a growth
+          trajectory -- aimline has none.
+      - name: expected_row_count
+        description: >
+          How many measures a student in this cohort at this grade owes for this
+          round. Same countif construction as on the internal gate and for the
+          same reason, plus measure_standard_level in the partition: the two
+          cohorts can be expected on different measures, so a shared partition
+          would charge a Below Benchmark student for Well Below's rounds too.
+      - name: month_round
+        description: >
+          Month label for the round, hand-written on the sheet rather than
+          derived, and it has drifted from the real calendar before. Prefer the
+          month of start_date.
+      - name: start_date
+        description: >
+          First day of the round's window, resolved against the grade's own
+          band. Null when no reporting terms row covers this year, region,
+          season, code and grade -- either the calendar is not entered yet, or
+          the sheet defines an expectation for a grade the region did not enrol
+          that year. A consumer that needs to answer "was the student tested
+          inside the round" must drop those rows.
+      - name: end_date
+        description: >
+          Last day of the round's window. A score outside it does not count
+          toward the round, which is what makes a student Not Tested.
+      - name: assessment_include
+        description: >
+          The off switch. Null means the row is live; false means excluded, and
+          consumers express that as assessment_include is null. Carried through
+          unfiltered so that which rounds count stays a sheet decision -- a
+          cancelled round is switched off here, not filtered in SQL.
+      - name: pm_goal_include
+        description: >
+          False marks a scaffold-fill row -- a measure tested at least once in
+          the season but not in this round, kept so the internal method's goal
+          trajectory stays continuous. Aimline has no trajectory and no use for
+          them, but they are present anyway because the by-levels rows were
+          generated by duplicating the internal sheet. An aimline consumer must
+          filter pm_goal_include is null rather than assume it already is.
+      - name: pm_goal_criteria
+        description: >
+          Whether a student must meet all tested standards in a round or any of
+          them. AND network-wide for SY26-27, which is what makes falling below
+          the aimline on one measure enough to place a student below.
+      - name: assessment_type
+        description: >
+          Benchmark or PM, authored on the sheet. PM on every row here.
+      - name: test_type
+        description: Assessment family the row belongs to, from the sheet.
+      - name: discipline
+        description: Discipline the measure sits under, from the sheet.
+      - name: subject_area
+        description: Subject area the measure sits under, from the sheet.
+      - name: measure_standard
+        description: >
+          Raw measure and standard token from the sheet. Part of the grain, and
+          the three expected_measure_ columns are parsed out of it.
+      - name: illuminate_subject
+        description: Illuminate subject the measure maps to, from the sheet.
+      - name: iready_subject
+        description: i-Ready subject the measure maps to, from the sheet.
+      - name: ps_credit_type
+        description:
+          PowerSchool credit type the measure maps to, from the sheet.
+      - name: matching_bm_season
+        description: >
+          The Benchmark season a PM round grows toward -- MOY for a BOY->MOY
+          round, EOY for a MOY->EOY round. This is the key the join to
+          dibels_goals_long runs on, matched against that table's own
+          admin_season.
+
+          It is the aimline chain's replacement for the internal chain's
+          matching_pm_season, which encodes the same relation from the other
+          side -- goals_long's MOY row carries BOY->MOY, because BOY->MOY is the
+          season growing toward it. Deriving the season on this side keeps the
+          join reading in one direction, which is why the two chains
+          deliberately do not share a name here.
+      - name: expected_measure_name_code
+        description: Measure code parsed from measure_standard, such as ORF.
+      - name: expected_measure_name
+        description: >
+          Measure name parsed from measure_standard, such as Oral Reading
+          Fluency.
+      - name: expected_measure_standard
+        description: >
+          Benchmark level parsed from measure_standard. This is what a student
+          score is compared against, and the key that reaches dibels_goals_long.
+      - name: grade_level_text
+        description: Grade level as text, with 0 rendered as K.
+      - name: benchmark_season
+        description: >
+          Benchmark season the goal was actually taken from, read back off
+          dibels_goals_long. Now that the join keys on matching_bm_season it
+          always equals that column when a goal was found, and is null when none
+          was -- so it carries no information beyond whether the join matched,
+          which benchmark_goal already reports. Kept only because
+          int_google_sheets__dibels_pm_expectations exposes the same column
+          name.
+      - name: benchmark_goal
+        description: >
+          Benchmark score the student is measured against for the at-grade-level
+          half of the reporting category. Amplify supplies the aimline, which
+          answers whether a student is on pace; this answers whether they are at
+          grade level yet, and the pair is what separates On Track and Meeting
+          Aimline from Meeting Aimline, Off-Track.
+
+          A null means the measure was assigned outside its valid grade range
+          rather than a goal being missing. dibels_goals_long is University of
+          Oregon's own DIBELS 8 table, unchanged since July 2020, and UO defines
+          no goal where a measure is not designed to be given at that grade.
+          Treat a null as a testing-assignment question for academics, not a gap
+          to fill by adding rows to the goals table.
