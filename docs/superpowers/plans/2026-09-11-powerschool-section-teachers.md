@@ -846,7 +846,7 @@ select count(*) as n_rows, count(distinct sectionteacher_id) as n_keys
 from `teamster-332318`.kippmiami_powerschool.int_powerschool__section_teachers
 ```
 
-Expected: 19,529 rows and 19,529 distinct keys.
+Expected: 19,519 rows and 19,519 distinct keys.
 
 ---
 
@@ -1005,7 +1005,7 @@ git -C /workspaces/teamster/.worktrees/cbini/refactor/claude-section-teachers-mi
 git -C /workspaces/teamster/.worktrees/cbini/refactor/claude-section-teachers-miami commit -m "feat(kipptaf): union Miami archive section teachers, drop the package again
 
 Restores the 19,517 Miami archive rows PR #5259 dropped from the bridge,
-across 3,433 sections and 4 roles, AY2018 through AY2025.
+across 3,423 sections and 4 roles, AY2018 through AY2025.
 
 Refs #5260
 

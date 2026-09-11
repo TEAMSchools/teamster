@@ -53,9 +53,9 @@ Counted against `kippmiami_powerschool` on 2026-09-11:
 | Lead Teacher            | 3,432      | 3,432                         |
 | Co-teacher              | 1,928      | 1,927                         |
 | Blended Learning        | 185        | 185                           |
-| **Total**               | **19,529** | **19,517**                    |
+| **Total**               | **19,519** | **19,517**                    |
 
-3,433 sections, 388 teachers, AY2018 through AY2025.
+3,423 sections, 387 teachers, AY2018 through AY2025.
 
 That 3,433 is the same count PR #5259 cites for Miami history sections, which it
 kept deliberately because dropping them would orphan every Miami grade and
@@ -216,7 +216,7 @@ ever references a relation that does not exist.
 - `rpt_clever__sections` row-identical to prod after PR 1. The Clever feeds were
   verified byte-for-byte in PR #5259, so any delta is this change.
 - `bridge_course_section_teachers` row-identical to prod for NJ after PR 1.
-- After PR 2, the bridge gains approximately 19,517 Miami rows across 3,433
+- After PR 2, the bridge gains approximately 19,517 Miami rows across 3,423
   sections and 4 roles, and `course_section_key` values are unchanged on every
   pre-existing row.
 - `dim_course_sections` unchanged at its current row count, with no new orphan
