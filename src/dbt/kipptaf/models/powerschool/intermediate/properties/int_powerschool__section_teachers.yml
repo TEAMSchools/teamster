@@ -4,6 +4,12 @@ models:
       Union of the per-region PowerSchool section-teacher models. One row per
       sectionteacher record, carrying the role the teacher holds on the section
       and the dates the assignment was in effect.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sectionteacher_id
+              - _dbt_source_project
     columns:
       - name: sectionteacher_id
         data_type: int64
@@ -47,9 +53,3 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from _dbt_source_relation.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - sectionteacher_id
-              - _dbt_source_project
