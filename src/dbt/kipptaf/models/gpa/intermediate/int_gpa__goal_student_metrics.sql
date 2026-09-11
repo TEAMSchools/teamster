@@ -30,7 +30,8 @@ where
        for AY2025 that was 382 of 398 grade-12 students, reporting the cohort at
        0 percent attainment. */
     and sr.is_enrolled_recent
-    /* TODO(#5171): Miami runs on Focus, so its students join no PowerSchool GPA
-       row and sit in the goal denominator unmeasurable. Drop once Miami GPA
-       data is available. */
+    /* TODO(#5171, #5181): Miami runs on Focus, so its students join no
+       PowerSchool GPA row and sit in the goal denominator unmeasurable.
+       #5181 tracks the Focus conformance this depends on; drop both once
+       Miami GPA data is available. */
     and sr.region in ('Newark', 'Camden', 'Paterson')

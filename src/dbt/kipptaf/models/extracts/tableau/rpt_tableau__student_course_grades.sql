@@ -361,8 +361,10 @@ with
                2-year window */
             and enr.academic_year >= {{ var("current_academic_year") - 1 }}
             and enr.academic_year <= {{ var("current_academic_year") }}
-            /* Miami hard-excluded: region unsupported in the rebuilt
-               dashboard (#4340) */
+            /* TODO(#5181): Miami runs on Focus, whose GPA and grades are not
+               yet conformed to the PowerSchool metric vocabulary, so its
+               students resolve no term or year-to-date GPA. Temporary; the
+               dashboard rebuild (#4340) shipped without the region. */
             and enr.region in ('Newark', 'Camden', 'Paterson')
     ),
 
