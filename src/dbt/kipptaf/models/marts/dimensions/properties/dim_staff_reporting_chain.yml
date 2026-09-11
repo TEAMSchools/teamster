@@ -19,10 +19,20 @@ models:
       hit this silently — debug via dim_staff_reporting_periods for the affected
       staff.
     config:
+      materialized: table
       # WITH RECURSIVE is incompatible with the contract-validation subquery
       # wrapper; orphan detection is preserved via the relationships tests below.
+      # The CTAS wrapper is fine with recursion — int_illuminate__root_standards
+      # is WITH RECURSIVE plus materialized: table in prod.
       contract:
         enforced: false
+      meta:
+        dagster:
+          # 5x/day, matching the assessment marts. cube.js queries this mart
+          # once per user session to build the PII access scope, at 16.1 slot
+          # minutes a call as a view. Refs #5217
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
