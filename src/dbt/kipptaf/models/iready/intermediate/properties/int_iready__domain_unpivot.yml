@@ -10,12 +10,34 @@ models:
     config:
       materialized: table
     columns:
+      - name: relative_placement
+        data_type: string
+        description:
+          Domain-specific relative grade-level placement from the diagnostic.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 1 Grade Level Below
+                  - 2 Grade Levels Below
+                  - 3 or More Grade Levels Below
+                  - Early On Grade Level
+                  - Mid or Above Grade Level
+                  - Not Assessed
+
       - name: student_id
         data_type: int64
         description: PowerSchool student number for the student tested.
       - name: subject
         data_type: string
         description: i-Ready subject the diagnostic covers — Reading or Math.
+      - name: illuminate_subject
+        data_type: string
+        description: >-
+          Illuminate course-subject mapping for the diagnostic's subject, passed
+          through from int_iready__diagnostic_results. Required by
+          fct_assessment_scores_enrollment_scoped, whose vendor branch joins
+          int_assessments__resolved_section_enrollments on subject_area.
       - name: academic_year_int
         data_type: int64
         description: Academic year of the diagnostic administration.
@@ -42,10 +64,6 @@ models:
       - name: placement
         data_type: string
         description: Domain-specific placement label from the diagnostic.
-      - name: relative_placement
-        data_type: string
-        description:
-          Domain-specific relative grade-level placement from the diagnostic.
       - name: scale_score
         data_type: int64
         description: Domain-specific i-Ready scale score from the diagnostic.
@@ -87,6 +105,7 @@ unit_tests:
                   as _dbt_source_relation,
               90001 as student_id,
               'Reading' as `subject`,
+              'Text Study' as illuminate_subject,
               2026 as academic_year_int,
               date('2025-09-01') as `start_date`,
               date('2025-09-15') as completion_date,
@@ -154,6 +173,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -168,6 +188,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -182,6 +203,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -196,6 +218,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -210,6 +233,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -224,6 +248,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -238,6 +263,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -252,6 +278,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -266,6 +293,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -280,6 +308,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -294,6 +323,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
@@ -308,6 +338,7 @@ unit_tests:
         - {
             student_id: 90001,
             subject: Reading,
+            illuminate_subject: Text Study,
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
