@@ -23,7 +23,8 @@
     "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
-    "UV_LINK_MODE": "copy",
+    "UV_CACHE_DIR": "/workspaces/.uv-cache",
+    "UV_LINK_MODE": "hardlink",
     "UV_RESOLUTION": "highest"
   },
   "customizations": {
