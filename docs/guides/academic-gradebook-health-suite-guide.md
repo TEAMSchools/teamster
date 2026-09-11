@@ -7,10 +7,10 @@ Notes for the designer: build this as a Zendesk Guide article using the KIPP NJ
 | Miami Zendesk snippets (`design_system/kippnj-miami-design/zendesk/`, read its
 README first). Lines beginning `> **Callout:**` are callouts; drop the word
 "Callout:" when rendering. The italic line beginning "Caption:" under the image
-is its caption; drop the word "Caption:". The image reference points at
-`screenshots/`; upload it to Guide media and swap in the hosted URL. This
-article is short; no table of contents. The screenshot manifest is a production
-note, not reader content.
+is its caption; drop the word "Caption:". The image reference is the hosted
+`/guide-media/` URL; the file is also in `screenshots/`. This article is short;
+no table of contents. The screenshot manifest is a production note, not reader
+content.
 
 Prompt for Claude Design (paste as-is, with this file attached):
 
@@ -49,7 +49,7 @@ Open the suite here:
 
 ## The Landing Page
 
-![Landing Page](screenshots/00-landing-page.png)
+![Landing Page](/guide-media/01M27ZK9Q0G4PXH1GXJH8WZWV0)
 
 _Caption: The Landing Page. Four headline tiles across the top with a region
 breakdown under each, one card per tab in the middle with its help guide link,
@@ -134,6 +134,6 @@ too; those tell us what the guides are missing.
 
 ## Screenshot manifest
 
-| File                  | Guide media | Shows                                      |
-| --------------------- | ----------- | ------------------------------------------ |
-| `00-landing-page.png` | pending     | The Landing Page at network scope, 2026-27 |
+| File                  | Guide media                               | Shows                                      |
+| --------------------- | ----------------------------------------- | ------------------------------------------ |
+| `00-landing-page.png` | `/guide-media/01M27ZK9Q0G4PXH1GXJH8WZWV0` | The Landing Page at network scope, 2026-27 |
