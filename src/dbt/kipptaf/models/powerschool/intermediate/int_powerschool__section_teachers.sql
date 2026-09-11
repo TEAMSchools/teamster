@@ -12,6 +12,10 @@ with
                         "int_powerschool__section_teachers",
                     ),
                     source(
+                        "kippmiami_powerschool",
+                        "int_powerschool__section_teachers",
+                    ),
+                    source(
                         "kipppaterson_powerschool",
                         "int_powerschool__section_teachers",
                     ),
