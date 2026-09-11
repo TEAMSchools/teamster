@@ -13,7 +13,7 @@ spend profiling: invoke the `cube-ops` skill.
 
 ```text
 src/cube/
-  cube.js                   # Auth, group resolution, queryRewrite, sql-user gating
+  cube.js                   # Auth, group resolution, sql-user gating
   package.json              # Cube server + bigquery driver + googleapis
   .env.example              # Hook-blocked for Claude — but its local values are
                             # documented verbatim in docs/guides/cube.md, so read
