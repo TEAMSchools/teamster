@@ -77,7 +77,7 @@ workbook, on two tabs:
   DeansList export.
 
 Open it here:
-<https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome>
+<https://tableau.kipp.org/t/KIPPNJ/views/AcademicGradebookHealthSuite/AcademicHealthHome?:embed=y>
 
 The same workbook holds the **Gradebook School Rollup** and **Gradebook Teacher
 View** tabs, which are about whether teachers' gradebooks are in good shape.
