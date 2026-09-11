@@ -233,6 +233,15 @@ models:
         data_type: string
         description:
           First non-null of powerschool_teacher_number, employee_number.
+      - name: sis_teacher_number
+        data_type: string
+        description: >-
+          Teacher number to join SIS-sourced teacher data on. Equal to
+          powerschool_teacher_number for Camden, Newark and Paterson. Always
+          employee_number for Miami, whose SIS is Focus and which keys teachers
+          on employee_number. Join Miami's frozen PowerSchool archive on
+          powerschool_teacher_number instead -- 2 Miami staff carry a retired
+          PowerSchool number that only resolves their pre-Focus sections.
       - name: reports_to_employee_number
         data_type: int64
         description:

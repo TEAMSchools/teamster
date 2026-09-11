@@ -280,6 +280,15 @@ select
     ) as powerschool_teacher_number,
 
     coalesce(
+        if(
+            lc.location_dagster_code_location = 'kippmiami',
+            null,
+            idps.powerschool_teacher_number
+        ),
+        cast(w.employee_number as string)
+    ) as sis_teacher_number,
+
+    coalesce(
         w.reports_to_employee_number, rten.employee_number
     ) as reports_to_employee_number,
 

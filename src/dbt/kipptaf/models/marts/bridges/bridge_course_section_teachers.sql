@@ -87,7 +87,7 @@ with
         cross join focus_academic_year_boundary as fay
         inner join
             {{ ref("int_people__staff_roster") }} as sr
-            on sec.teachernumber = sr.powerschool_teacher_number
+            on sec.teachernumber = sr.sis_teacher_number
         where
             sec._dbt_source_project = 'kippmiami'
             and sec.terms_academic_year >= fay.min_academic_year
