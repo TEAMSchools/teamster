@@ -19,6 +19,51 @@ DeansList import guide is already linked in the text. The screenshot manifest is
 a production note, not reader content. On-screen control names appear in bold
 exactly as the dashboard shows them.
 
+Prompt for Claude Design (paste as-is, with this file and the `screenshots/`
+folder attached):
+
+```text
+Build a Zendesk Guide help-center article from the attached Markdown file,
+"Academic Health Dashboard Guide", using the KIPP NJ | Miami Zendesk article
+subsystem in design_system/kippnj-miami-design/zendesk/. Read that folder's
+README.md first and follow its rules exactly: every block is a table with
+inline styles and literal hex, no <style>, no var(), no flex or grid, margin
+only on <table>, <div> not <p> inside cells, system font stack, weights 400,
+600 and 700 only, headings semibold uppercase with sentence-case words.
+Use the snippets in index.html for callouts, screenshot blocks, tables, and the
+table of contents. Match sample-article.html for overall structure.
+
+Structure: do not repeat the title in the body; Zendesk renders it. Start with
+the two-sentence audience line as the summary. Then an "In this article" table
+of contents linking to: Before you start, Academic Health Home, Academic Health
+Schools, Three walkthroughs, Quick answers, Glossary. Then the body in the
+order of the Markdown. Heading levels never skip. Anchor ids are lowercase and
+hyphenated.
+
+Rendering rules: a line beginning "> **Callout:**" is a callout; drop the word
+"Callout:" and use the Note style, except use Warning when the text warns about
+a mistake (the cusp band collapse, the manager filter, the Marking Period
+default, delete the name column before import). An italic line beginning
+"Caption:" directly under an image is that image's caption; drop the word
+"Caption:". Every image reference points at screenshots/<file>; place each as a
+screenshot block with its caption, full width, no crop, no rounded corners.
+Keep every Markdown table as a table; none exceeds four columns except the two
+roster column tables, which may stay at two columns. Numbered lists are step
+sequences, one action per step. Bold on-screen control names exactly as
+written. Keep the wording; do not paraphrase, shorten, or add emoji.
+
+Leave out: the "Notes for the designer" paragraph, this prompt, and the
+"Screenshot manifest" section. Those are production notes.
+
+Links to keep live: the Tableau dashboard link, the Gradebook Health Dashboard
+Guide, and Importing Office Hours Rosters into DeansList. End with a "Related
+articles" list of those two guides.
+
+Output one HTML file ready to paste into the Zendesk article body, plus a short
+list of the screenshot files in the order they appear so the images can be
+uploaded to Guide media and their URLs swapped in.
+```
+
 ---
 
 ## What this dashboard does
