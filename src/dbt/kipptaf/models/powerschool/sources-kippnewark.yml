@@ -806,6 +806,15 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__gradebook_assignments
+      - name: int_powerschool__gradebook_assignments_scores
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gradebook_assignments_scores
       - name: int_powerschool__section_teachers
         config:
           meta:
