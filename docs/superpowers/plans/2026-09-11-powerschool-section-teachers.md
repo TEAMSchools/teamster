@@ -425,6 +425,12 @@ models:
       Union of the per-region PowerSchool section-teacher models. One row per
       sectionteacher record, carrying the role the teacher holds on the section
       and the dates the assignment was in effect.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sectionteacher_id
+              - _dbt_source_project
     columns:
       - name: sectionteacher_id
         data_type: int64
@@ -468,24 +474,23 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from _dbt_source_relation.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - sectionteacher_id
-              - _dbt_source_project
 ```
 
 `sectionteacher_id` is unique per region but collides across them, so the
 uniqueness test is the composite, not a bare `unique`.
 
+The `data_tests:` block sits ABOVE `columns:`, directly under the model's
+`description:`. `.claude/rules/dbt-yaml.md` places multi-column tests at model
+level above the column list; only single-column tests go on the column itself.
+
 - [ ] **Step 3: Add the source entry to all 3 NJ source files**
 
 In each of `sources-kippnewark.yml`, `sources-kippcamden.yml`, and
-`sources-kipppaterson.yml`, add this block under `tables:`, keeping the file's
-existing alphabetical ordering (it sorts just before
-`int_powerschool__section_grade_config`). Substitute the district name on the
-`asset_key` line — `kippnewark`, `kippcamden`, `kipppaterson`:
+`sources-kipppaterson.yml`, add this block under `tables:`, in the position the
+file already uses for its `int_powerschool__*` entries — directly before
+`int_powerschool__section_grade_config`. These files are not alphabetically
+sorted, so match the neighbours rather than re-sorting. Substitute the district
+name on the `asset_key` line — `kippnewark`, `kippcamden`, `kipppaterson`:
 
 ```yaml
 - name: int_powerschool__section_teachers
