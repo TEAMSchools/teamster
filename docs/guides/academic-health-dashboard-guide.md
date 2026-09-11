@@ -14,10 +14,10 @@ path for the hosted URL, keeping the order in the manifest at the end. Put a
 table of contents after "What this dashboard does", linking to the two role
 sections, the three walkthroughs, Quick answers, and the Glossary. Numbered
 lists are step sequences; keep the markdown tables as tables. Names and student
-numbers are already pixelated in every image that had them; do not re-crop. Link
-"DeansList import guide" to its Zendesk article once published. The screenshot
-manifest is a production note, not reader content. On-screen control names
-appear in bold exactly as the dashboard shows them.
+numbers are already pixelated in every image that had them; do not re-crop. The
+DeansList import guide is already linked in the text. The screenshot manifest is
+a production note, not reader content. On-screen control names appear in bold
+exactly as the dashboard shows them.
 
 ---
 
@@ -549,8 +549,10 @@ appears on up to four rosters._
 
 _Caption: The Download Crosstab dialog. Keep **Y1 - DeansList Export** checked._
 
-Then follow the DeansList import guide to load the file. The **DeansList
-import** text at the top of the panel will link to it.
+Then follow
+[Importing Office Hours Rosters into DeansList](https://teamschools.zendesk.com/hc/en-us/articles/43411553089047-Importing-Office-Hours-Rosters-into-DeansList)
+to load the file. The **DeansList import** text at the top of the panel links to
+the same article.
 
 > **Callout:** Set **School**, **Grade Level**, and **Sessions** before you
 > download. The export matches what is on screen, including any cusp band or
