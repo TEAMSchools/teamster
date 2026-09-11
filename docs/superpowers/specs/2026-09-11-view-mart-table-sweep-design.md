@@ -325,19 +325,19 @@ Revisit only if the measurement in step 3 shows the tail grew.
 questioning, but it measured 0.017 GB, so there is no cost argument for touching
 it here.
 
-**`fct_grades_assignments` duplicate keys.** About 71 duplicate
-`grades_assignment_key` values, caused by `stg_powerschool__cc` double-writes
-and tracked upstream in
-[#3915](https://github.com/TEAMSchools/teamster/issues/3915). It is the one
-remaining mart in this batch whose `primary_key` constraint its data
-contradicts.
+**`fct_grades_assignments`'s stale duplicate-key TODO.** The model carries an
+in-file `TODO` citing 71 residual duplicate keys from `stg_powerschool__cc`
+double-writes. The data no longer supports it —
+[#4017](https://github.com/TEAMSchools/teamster/issues/4017) is closed and the
+table measures 23,437,020 rows against 23,437,020 distinct keys — but removing a
+comment is a separate change from this one.
 
 ## Scope amendment: one SQL fix
 
 This change was scoped as materialization-only. It is not, by a deliberate
 decision taken after the dev build.
 
-The build surfaced 3 marts whose `primary_key` constraint their own data
+The build surfaced 2 marts whose `primary_key` constraint their own data
 violates. That is harmless on a view, where constraints are inert, but
 `materialized: table` renders the constraint into DDL, and BigQuery documents
 that "queries over tables with violated constraints might return incorrect
@@ -345,7 +345,7 @@ results" — the optimizer uses unenforced keys for join elimination and
 reordering. Shipping a table that declares a key 46,062 rows contradict is worse
 than shipping the view it replaces.
 
-2 of the 3 shared a single root cause, fixed here in about 20 lines of
+Both shared a single root cause, fixed here in about 20 lines of
 `fct_survey_submissions.sql`. `int_surveys__manager_survey_details` is
 question-grain; the `historic_archive_submissions` CTE read it without
 projecting to submission grain, so the historic Alchemer archive emitted 18 rows
