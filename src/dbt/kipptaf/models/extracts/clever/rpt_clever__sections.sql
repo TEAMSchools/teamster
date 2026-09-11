@@ -47,7 +47,6 @@ with
             sec.terms_abbreviation,
 
             pst.role_sortorder as sortorder,
-
             pst.teachernumber,
 
             null as grade,
