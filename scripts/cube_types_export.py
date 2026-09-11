@@ -29,9 +29,12 @@ Commit the output. A model change then surfaces as a reviewable diff in both
 the catalog and the types.
 
 Like ``generate_marts_reference.py``, commit the output in its prettier-
-formatted form. This emits compact declarations that the pre-commit formatter
-rewraps, so the working tree shows formatting churn between running the script
-and committing it. That is expected, and it settles on the formatted form.
+formatted form. This script is NOT idempotent against the committed file:
+prettier collapses short unions that this emits expanded, so a fresh run
+rewrites about 400 lines of the declaration file with no semantic change.
+Measured, not assumed. Do not read that diff as the model having moved --
+check ``cube-catalog-meta.json`` for that. Running ``trunk fmt``, or just
+committing, settles it back.
 """
 
 from __future__ import annotations
