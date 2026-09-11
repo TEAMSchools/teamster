@@ -9,6 +9,16 @@ models:
       dimensions — assignee and original_assignee are nullable), dim_dates
       (created and solved as role-playing — solved is nullable), and
       dim_locations.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: support_ticket_key
         data_type: string
@@ -18,6 +28,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
