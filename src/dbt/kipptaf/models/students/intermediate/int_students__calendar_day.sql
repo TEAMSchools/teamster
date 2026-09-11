@@ -1,10 +1,4 @@
 with
-    -- Focus's `school_id` is its internal id (14, 15, 58...), not the network
-    -- school number, and it differs from the `school_number` the focus package
-    -- exposes (a Florida code like 2332A). Resolve through both hops. The inner
-    -- join is also the filter that drops Focus's 3 non-instructional schools
-    -- (Applicants, Virtual Franchise, ZZ Course History), which have no
-    -- locations row.
     focus_schools as (
         select s.id as focus_school_id, loc.powerschool_school_id as schoolid,
         from {{ ref("int_focus__schools") }} as s
@@ -13,11 +7,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- yearid comes from the package's int_powerschool__calendar_day, a left
-    -- join to the isyearrec = 1 term window. Some real calendar days fall
-    -- outside every window (August pre-service dates, a 15-day Paterson gap);
-    -- their yearid and academic_year are null, and nothing downstream requires
-    -- either to be non-null.
     powerschool_dated as (
         select
             cd._dbt_source_relation,
@@ -43,10 +32,6 @@ with
         where cd.date_value >= date '2000-01-01'
     ),
 
-    -- Dual-exposes the neutral names (`school_date`, `academic_year`,
-    -- `is_in_session`, `is_in_membership`) alongside the legacy names
-    -- (`date_value`, `yearid`, `insession`, `membershipvalue`) that
-    -- `dim_school_calendars` and the NJ-parity gate read.
     powerschool_conformed as (
         select
             _dbt_source_relation,
@@ -66,9 +51,6 @@ with
         from powerschool_dated
     ),
 
-    -- int_focus__calendar_day is Focus-native: it emits academic_year and
-    -- school_date, and no insession or membershipvalue at all. A row existing there
-    -- IS an in-session day, so both flags are constants supplied here.
     focus_conformed as (
         select
             cd._dbt_source_relation,
@@ -90,11 +72,8 @@ with
             cd.academic_year - 1990 as yearid,
         from {{ ref("int_focus__calendar_day") }} as cd
         inner join focus_schools as fs on cd.schoolid = fs.focus_school_id
-        -- One row. See int_students__sis_cutover for why the boundary is a
-        -- floor derived from recorded attendance rather than from Focus row
-        -- presence. Focus's calendar before the cutover year is a scaffold,
-        -- not the network's calendar of record, and the network keeps no
-        -- Miami calendar days before AY2026 (#5193).
+        -- One row. Floors on the cutover year, not on Focus row presence
+        -- (#5193).
         cross join {{ ref("int_students__sis_cutover") }} as c
         where cd.academic_year >= c.focus_start_academic_year
     )
