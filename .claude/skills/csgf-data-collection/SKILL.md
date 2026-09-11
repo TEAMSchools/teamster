@@ -910,7 +910,14 @@ this will fail validation for all 26 schools as-is, not just Miami's. No dbt fix
 possible without real source data -- likely just means this year's budget-target
 sheet hasn't been populated yet (a normal seasonal lag, not a Miami-specific
 gap), but confirm with whoever owns it before assuming it'll be ready in time
-for submission.
+for submission. **Not something the collection owner can add themselves** -- the
+source is the
+["Topline Enrollment Targets" Google Sheet](https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0)
+(external source `src_google_sheets__topline_enrollment_targets`), owned outside
+the Data Team. Escalate to whoever owns this year's targets on that sheet rather
+than treating it as a collection-owner task; leave the CSGF cell blank and
+accept the validation flag until it's populated, same as any other cross-team
+dependency in this process.
 
 **Scope check against CSGF's own Field Definitions doc (2026-09-11): this model
 deliberately covers only part of the real "Enrollment & School Information"
