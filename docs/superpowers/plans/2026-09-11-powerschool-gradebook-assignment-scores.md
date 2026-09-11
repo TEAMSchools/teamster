@@ -47,6 +47,20 @@ trunk for lint, BigQuery MCP for verification.
   the commit fmt hook re-pads it; do not hand-align.
 - Column order in the moved SQL must not change. sqlfluff ST06 passes on the
   current order and the five deletions do not disturb it.
+- **`if(<condition>, true, false)` is load-bearing, not redundant.** Never
+  simplify one to the bare condition. `score_entered` is null on 1,834,662 prod
+  rows, and `if(null, true, false)` is `false` while the bare expression is
+  `null` — verified 2026-09-11: on every one of those rows
+  `assign_score_above_max` reads `false` and never null. Dropping a wrapper
+  flips 1.8M values from `false` to `null`.
+- **The six `assign_*` category flags are not duplication.** They are six
+  distinct business rules producing six separately-named output columns, and
+  `int_powerschool__gradebook_assignment_scores_rollup` sums all six by name.
+  There is no consolidation available that preserves the output contract. Leave
+  them as six blocks.
+- Improving the carried-over column DESCRIPTIONS is in scope and expected —
+  ruled on 2026-09-11. Improving the carried-over SQL is not, for the two
+  reasons above.
 - `git add -u` for tracked files. A NEW file must be named explicitly on
   `git add` — `-u` does not stage untracked paths.
 - Commit messages end with:
@@ -559,27 +573,45 @@ models:
           fifty-percent category flags compare against.
       - name: is_expected_zero
         data_type: int64
-        description: Conditional on is_expected, score_entered.
+        description: >-
+          One where the student was expected to have a score and the score
+          entered is exactly zero, zero otherwise. A null score does not count —
+          is_expected_null covers that case.
       - name: is_expected_academic_dishonesty
         data_type: int64
-        description:
-          Conditional on is_expected, is_missing, school_level_alt,
-          score_entered.
+        description: >-
+          One where an expected high-school assignment scored zero without being
+          marked missing, zero otherwise. A zero that is not a missing-work zero
+          is the signal the gradebook audit reads as a possible integrity
+          penalty.
       - name: is_expected_null
         data_type: int64
-        description: Conditional on is_expected, score_entered.
+        description: >-
+          One where the student was expected to have a score and no score was
+          entered, zero otherwise. This is the ungraded-work counter the percent
+          graded calculation is built from.
       - name: is_expected_late
         data_type: int64
-        description: Conditional on is_expected, is_late.
+        description: >-
+          One where the student was expected to have a score and the gradebook
+          marks the work late, zero otherwise.
       - name: is_expected_missing
         data_type: int64
-        description: Conditional on is_expected, is_missing.
+        description: >-
+          One where the student was expected to have a score and the gradebook
+          marks the work missing, zero otherwise. The three category
+          missing-score flags below all gate on it.
       - name: is_expected_scored
         data_type: boolean
-        description: Conditional on is_expected, score_entered.
+        description: >-
+          True where the student was expected to have a score and one was
+          entered, whatever its value. The complement of is_expected_null within
+          the expected population.
       - name: assign_score_above_max
         data_type: boolean
-        description: True when score_entered exceeds totalpointvalue.
+        description: >-
+          True where an expected score exceeds the assignment's total point
+          value. False rather than null when no score was entered.
       - name: assign_mh_hwf_score_less_5
         data_type: boolean
         description: >-
