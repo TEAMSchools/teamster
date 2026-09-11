@@ -10,7 +10,6 @@ with
     -- internal -- scaffold.academic_year (academic_year_clean) and the
     -- inventory's illuminate_academic_year (cc_academic_year + 1) use offset
     -- conventions that disagree by a school year.
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     internal_anchored as (
         select
             sc.powerschool_student_number,
@@ -19,25 +18,19 @@ with
             sc._dbt_source_project,
 
             c.administered_date as anchor_date,
+
+            row_number() over (
+                partition by
+                    sc.powerschool_student_number,
+                    sc.canonical_assessment_id,
+                    sc._dbt_source_project
+                order by c.administered_date asc
+            ) as rn,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on sc.canonical_assessment_id = c.canonical_assessment_id
         where sc.is_internal_assessment and not sc.is_replacement
-    ),
-
-    internal_deduplicated as (
-        {{
-            dbt_utils.deduplicate(
-                relation="internal_anchored",
-                partition_by="""
-                    powerschool_student_number,
-                    canonical_assessment_id,
-                    _dbt_source_project
-                """,
-                order_by="anchor_date asc",
-            )
-        }}
     ),
 
     internal_scores as (
@@ -52,7 +45,8 @@ with
             cast(null as string) as administration_period,
 
             'internal' as source_type,
-        from internal_deduplicated
+        from internal_anchored
+        where rn = 1
     ),
 
     -- NJ state scores (Pearson). illuminate_subject is the upstream state->course
@@ -339,7 +333,6 @@ with
             and ce.cc_dcid is not null
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     all_candidates as (
         select *,
         from candidates_subject
@@ -352,14 +345,34 @@ with
 
     -- one section per score: prefer the subject section (tier 1) over homeroom,
     -- then the section that ends latest among ties within a tier
+    all_candidates_ranked as (
+        select
+            *,
+
+            row_number() over (
+                partition by score_grain_key
+                order by tier asc, cc_dateleft desc, cc_dcid desc
+            ) as rn,
+        from all_candidates
+    ),
+
     resolved as (
-        {{
-            dbt_utils.deduplicate(
-                relation="all_candidates",
-                partition_by="score_grain_key",
-                order_by="tier asc, cc_dateleft desc, cc_dcid desc",
-            )
-        }}
+        select
+            powerschool_student_number,
+            canonical_assessment_id,
+            academic_year,
+            administration_period,
+            subject_area,
+            _dbt_source_project,
+            source_type,
+            resolution_type,
+
+            cc_dcid,
+            cc_source_project,
+            powerschool_school_id,
+            region,
+        from all_candidates_ranked
+        where rn = 1
     )
 
 select

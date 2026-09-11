@@ -6,9 +6,16 @@ models:
       SIS-neutral school weeks across the network -- the successor to
       int_powerschool__calendar_week, which stays a pure PowerSchool union. The
       PowerSchool branch is NJ-only; Miami rows come from Focus from the cutover
-      year forward, and no Miami calendar history before AY2026 is kept (#5193).
-      Focus's internal school id is crosswalked to the network school number
-      here.
+      year forward, and no Miami calendar history before AY2026 is kept.
+      int_focus__calendar_week is Focus-native. It emits academic_year but no
+      yearid or region, and its schoolid is Focus's own internal id (14, 15,
+      58...) rather than the network school number, so this model crosswalks
+      that id through the people locations sheet. The crosswalk is an inner
+      join, which doubles as the filter that drops Focus's non-instructional
+      schools, since those have no locations row. The Focus branch floors on the
+      cutover year from int_students__sis_cutover rather than on Focus row
+      presence, because Focus's calendar before that year is a scaffold rather
+      than the network's calendar of record.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
