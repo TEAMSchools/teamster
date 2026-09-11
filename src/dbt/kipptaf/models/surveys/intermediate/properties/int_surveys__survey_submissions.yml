@@ -13,6 +13,16 @@ models:
       The live arm carries every survey title, not only the titles the marts
       currently model, so a new survey becomes available to a consumer without
       touching this model.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # A table, not a view, because 3 marts read this model and a view
+          # would make each of them recompute the 4.1M-row collapse. Nightly
+          # matches the cadence all 3 consumers run on, so the whole chain
+          # settles in one pass. Refs #5217, #3918
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: survey_submission_key
         description: >-
