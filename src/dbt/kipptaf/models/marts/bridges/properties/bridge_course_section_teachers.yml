@@ -64,7 +64,7 @@ models:
         config:
           meta:
             source_system: PowerSchool and Focus
-            source_model: stg_powerschool__roledef
+            source_model: int_powerschool__section_teachers
             source_column: name
       - name: effective_start_date
         data_type: date
@@ -75,7 +75,7 @@ models:
         config:
           meta:
             source_system: PowerSchool and Focus
-            source_model: stg_powerschool__sectionteacher
+            source_model: int_powerschool__section_teachers
             source_column: start_date
       - name: effective_end_date
         data_type: date
@@ -86,7 +86,7 @@ models:
         config:
           meta:
             source_system: PowerSchool and Focus
-            source_model: stg_powerschool__sectionteacher
+            source_model: int_powerschool__section_teachers
             source_column: end_date
     data_tests:
       - dbt_utils.unique_combination_of_columns:
