@@ -166,10 +166,23 @@ marked `uncovered`.
 
 ### Required cells
 
-- **Every column**: at least 1 null row and 1 non-null row, unless the column is
-  declared not-nullable. 229 columns, so this is the bulk of the manifest.
-- **Every view crossed with every `*_scope` enum value**: at least 1 fabricated
-  `dim_staff_cube_access` row. 6 views against the six scope enums.
+- **Every column**: at least 1 null row and 1 non-null row. Measured against
+  production on 2026-09-11: **230 columns across the 20 tables, every one of
+  them nullable and none nested.** So the "unless declared not-nullable"
+  exemption never fires — 460 column cells with no exceptions, the bulk of the
+  manifest.
+- **Every `*_scope` enum value the code handles**: at least 1 fabricated
+  `dim_staff_cube_access` row. There are **7 scope columns, not 6** —
+  `student_location_scope`, `staff_location_scope`, `staff_department_scope`,
+  `staff_pii_scope`, `staff_compensation_scope`, `staff_observations_scope`,
+  `staff_benefits_scope`.
+- **Every derived state `buildGroups` branches on**: `hasRemit` and `hasChain`
+  each true and false. An empty remit or chain takes the no-group default-deny
+  path rather than emitting a group, because Cube throws "Values required for
+  filter" on an `equals []` row filter (#4269). That branch is unreachable in
+  production by design, so only the sandbox can exercise it.
+- **One unresolvable identity**, with no `dim_staff_cube_access` row at all, to
+  exercise clean default-deny.
 - **Every snapshot anchor**: a true/false mix strictly between 0 and 1, for
   `is_latest_record`, `is_month_end_record`, `is_week_end_record`, and
   `is_current_record`. A uniformly true anchor makes anchored measures look
@@ -188,6 +201,44 @@ specification, the CI assertion target, and half the drift detector.
 
 Producing it costs 1 read-only query plus a YAML parse, so it is cheap enough to
 get wrong on the first attempt.
+
+### Generate the enum domain from `access.js`, never from production data
+
+Production data is a **subset** of the enum domain the code handles, so a
+manifest derived from `SELECT DISTINCT` would silently omit live policy
+branches. Measured on 2026-09-11 against `dim_staff_cube_access`:
+
+| Scope value                                       | Handled in `access.js` | Rows in production |
+| ------------------------------------------------- | ---------------------- | ------------------ |
+| `staff_pii_scope = teaching_staff`                | Yes                    | **0**              |
+| `staff_pii_scope = reporting_chain`               | Yes                    | **0**              |
+| `staff_pii_scope = reporting_chain_or_below_rank` | Yes                    | **0**              |
+| `staff_benefits_scope != none`                    | Yes                    | **0**              |
+
+`staff_pii.yml` carries an `access_policy` block for all 4 `staff_pii_scope`
+values, and `buildGroups` emits `staff-benefits` for any non-`none` benefits
+scope. Three of those policies and that group have **no production row that
+reaches them**. The sandbox is the only place they can ever be exercised.
+
+This does not violate the fidelity rule from the parent spec. That rule says
+make the sandbox narrower than production; here **production is narrower than
+the code**, which is a case the rule does not cover. Cover the code's domain,
+and note in the handoff that 4 of those personas exist nowhere in production
+today.
+
+### The 20th table is invisible to the model
+
+`scripts/sandbox_coverage_manifest.py` must not derive its table set by parsing
+`sql_table:`. Only **19** tables appear there. The 20th,
+`dim_staff_reporting_chain`, is read directly by
+[`cube.js:145`](../../../src/cube/cube.js) and appears in no cube YAML at all.
+
+Miss it and the failure is quiet: the sandbox compiles, every view resolves, and
+identity resolution then fails for exactly the `reporting_chain` and
+`reporting_chain_or_below_rank` personas — the 3 that production cannot test
+either. The generator reads the union of `sql_table:` values and the
+`kipptaf_marts.*` references in `cube.js`, and asserts the result has 20
+members.
 
 ## Piece 3 — generate the data, and make it adversarial
 
