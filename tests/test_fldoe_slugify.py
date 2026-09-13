@@ -6,12 +6,14 @@ the `1. ` inside `11. Category` first and yields `1category_1`. That failure is
 silent -- the column simply lands somewhere nothing reads -- so it is pinned here.
 """
 
-import pytest
 from slugify import slugify
 
 from teamster.code_locations.kippmiami.fldoe.assets import FAST_STANDARDS_REPLACEMENTS
 from teamster.code_locations.kippmiami.fldoe.schema import FAST_SCHEMA
 
+# Spelled out here rather than imported from `assets.py` on purpose. The test
+# states the expected label set independently, so renaming a label in production
+# fails this test instead of silently redefining what the test asserts.
 STANDARDS_LABELS = [
     ("Category", "category"),
     ("Benchmark", "benchmark"),
@@ -24,22 +26,8 @@ def _slug(text: str) -> str:
     return slugify(text=text, separator="_", replacements=FAST_STANDARDS_REPLACEMENTS)
 
 
-@pytest.mark.parametrize(
-    ("header", "expected"),
-    [
-        ("1. Category", "category_1"),
-        ("4. Points Earned", "points_earned_4"),
-        ("1. Points Possible", "points_possible_1"),
-        ("11. Category", "category_11"),
-        ("14. Benchmark", "benchmark_14"),
-        ("40. Points Earned", "points_earned_40"),
-    ],
-)
-def test_ordinal_headers_slugify_to_schema_names(header: str, expected: str) -> None:
-    assert _slug(header) == expected
-
-
 def test_every_ordinal_maps_onto_an_existing_schema_field() -> None:
+    """Ordinal 11 is the regression case: `1. ` is a substring of `11. `."""
     schema_fields = {field["name"] for field in FAST_SCHEMA["fields"]}
 
     for ordinal in range(1, 45):
