@@ -12,13 +12,29 @@ from teamster.libraries.sftp.assets import (
     build_sftp_folder_asset,
 )
 
+# FLDOE moved the ordinal to the front of the standards columns in 2026-27:
+# `Category` became `1. Category`. slugify applies `replacements` as plain string
+# substitutions in list order, so these run highest ordinal first. Ascending order
+# rewrites the `1. ` inside `11. Category` and silently yields `1category_1`.
+# `FLDOECategories` already declares ordinals 1 through 44. See #5283.
+FAST_STANDARDS_REPLACEMENTS = [
+    [f"{ordinal}. {label}", f"{slug}_{ordinal}"]
+    for ordinal in range(44, 0, -1)
+    for label, slug in (
+        ("Category", "category"),
+        ("Benchmark", "benchmark"),
+        ("Points Earned", "points_earned"),
+        ("Points Possible", "points_possible"),
+    )
+]
+
 fast = build_sftp_folder_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fast"],
     remote_dir_regex=(
         r"/data-team/kippmiami/fldoe/fast/(?P<school_year_term>SY\d+/PM\d)"
     ),
     remote_file_regex=(
-        r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
+        r"[^/]+?_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",
     avro_schema=FAST_SCHEMA,
@@ -33,18 +49,25 @@ fast = build_sftp_folder_asset(
                     ]
                 )
             ),
+            # FLDOE added Grade 9 FAST ELA Reading in 2026-27 and sends no
+            # Grade 9 mathematics file, so Grade 9 is listed on its own instead of
+            # widening the grade/subject cross product. See #5283.
             "grade_level_subject": StaticPartitionsDefinition(
                 sorted(
                     [
-                        f"Grade{grade}FAST{subject}"
-                        for subject in ["ELAReading", "Mathematics"]
-                        for grade in [3, 4, 5, 6, 7, 8]
+                        *[
+                            f"Grade{grade}FAST{subject}"
+                            for subject in ["ELAReading", "Mathematics"]
+                            for grade in [3, 4, 5, 6, 7, 8]
+                        ],
+                        "Grade9FASTELAReading",
                     ]
                 )
             ),
         }
     ),
     slugify_replacements=[
+        *FAST_STANDARDS_REPLACEMENTS,
         [
             "1. Number Sense and Additive Reasoning Performance",
             "number_sense_and_additive_reasoning_performance",
@@ -187,7 +210,7 @@ science = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "science"],
     remote_dir_regex=r"/data-team/kippmiami/fldoe/science/(?P<school_year_term>\d+)",
     remote_file_regex=(
-        r"\w+-\w+_Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv"
+        r"[^/]+?_Grade(?P<grade_level_subject>\d)Science_StudentData_\d+\s[AP]M\.csv"
     ),
     ssh_resource_key="ssh_couchdrop",
     avro_schema=SCIENCE_SCHEMA,
