@@ -62,7 +62,8 @@ row and an IEP row).
 `stg_google_sheets__dibels_bm_goals` (feeding the existing dashboard) is a
 **padded** manual-freeze snapshot. Bright Spots uses the retrofitted (unpadded)
 `stg_google_sheets__dibels_foundation_goals` directly -- a separate goal source,
-not a shared join.
+not a shared join. The dashboard never reads foundation_goals, which is why the
+yearly rollover needs two separate pastes rather than one -- see _Step 7_.
 
 **Enrollment source: `int_extracts__student_enrollments`, NOT `..._subjects`.**
 The `_subjects` variant is that same model cross-joined against a static 2-row
@@ -549,6 +550,59 @@ for Newark and Camden grades K-5 -- none for grades 6-8, none for Paterson at
 all. A retrofit that shows `0` IEP rows for Paterson is correct. Cross-check row
 counts by `academic_year, population` against what the source tab actually
 contains before assuming a parsing bug.
+
+### Step 7 -- the SECOND paste: foundation goals do not reach the dashboard
+
+**Pasting foundation goals changes nothing the dashboard displays.** Tell the
+user this before they finish, because everything about the first paste looks
+complete: the external re-stages, the staging model builds green, row counts
+check out, and the benchmark goals on the dashboard stay exactly as they were.
+
+The loop runs through a human twice:
+
+```text
+stg_google_sheets__dibels_foundation_goals   <- first paste (Steps 4-6)
+  -> rpt_gsheets__dibels_bm_goals_calculations   (computes the goals)
+    -> PASTE INTO "BM Goals" TAB                 <- second paste, Step 7
+      -> src_google_sheets__dibels__bm_goals
+        -> stg_google_sheets__dibels_bm_goals
+          -> rpt_tableau__dibels_dashboard       (Benchmark branch, alias `g`)
+```
+
+The dashboard's Benchmark goal columns -- `admin_goal`,
+`admin_goal_grade_range`, `admin_goal_season`, and every
+`n_admin_season_{school,region}_gl_*` count -- come from
+`stg_google_sheets__dibels_bm_goals` alone. Nothing on the dashboard reads
+`stg_google_sheets__dibels_foundation_goals`. So until the second paste lands,
+the new year has Benchmark rows with null goals while the calculation model
+holds the answer nobody moved.
+
+Paste target: named range `src_google_sheets__dibels__bm_goals`, spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`. Source of the rows:
+`rpt_gsheets__dibels_bm_goals_calculations`, which carries the current year
+only. Unlike the foundation_goals paste, the column set does not change, so no
+`stage_external_sources` re-stage is needed -- a value-only paste.
+
+**Verify by year, not by row count.** A populated prior year makes the totals
+look healthy:
+
+```sql
+select
+    academic_year,
+    count(*) as bm_rows,
+    countif(admin_goal is not null) as has_admin_goal,
+    countif(n_admin_season_school_gl_all is not null) as has_school_counts
+from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
+where assessment_type = 'Benchmark'
+group by academic_year
+order by academic_year
+```
+
+A year with `bm_rows` in the tens of thousands and `has_admin_goal` at `0` is
+the missing second paste. Measured 2026-09-14: AY2026 had 119,178 Benchmark rows
+at `0` goals while AY2024 and AY2025 were populated, and
+`rpt_gsheets__dibels_bm_goals_calculations` held 49 unpasted AY2026 rows. AY2023
+reads `0` legitimately -- it predates the goals sheet.
 
 ## PM/aimline migration (#3834)
 
