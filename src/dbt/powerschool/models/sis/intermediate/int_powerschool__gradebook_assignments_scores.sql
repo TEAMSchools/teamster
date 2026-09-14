@@ -11,6 +11,7 @@ with
             a.category_name,
             a.category_code,
             a.iscountedinfinalgrade,
+            a.half_total_point_value,
 
             s.scorepoints,
             s.actualscoreentered,
@@ -20,6 +21,7 @@ with
             e.students_student_number as student_number,
             e.courses_course_name as course_name,
             e.teacher_lastfirst as teacher_name,
+            e.school_level_alt,
 
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
@@ -32,16 +34,6 @@ with
                 then false
                 else true
             end as is_expected,
-
-            /* hardcoding year while we look for a better solution to custom grade
-               level vs school level */
-            if(
-                e.cc_academic_year >= 2025
-                and e.cc_schoolid = 179905
-                and e.sections_grade_level >= 5,
-                'MS',
-                e.school_level
-            ) as school_level_alt,
 
             if(
                 a.scoretype = 'POINTS',
@@ -62,8 +54,6 @@ with
                 round(safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2),
                 safe_cast(s.actualscoreentered as numeric)
             ) as assign_final_score_percent,
-
-            (a.totalpointvalue / 2) as half_total_point_value,
 
         from {{ ref("int_powerschool__gradebook_assignments") }} as a
         /* PS automatically assigns ALL assignments to a student when they enroll into

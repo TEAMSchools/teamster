@@ -22,11 +22,7 @@ with
 
             r.sam_account_name as teacher_tableau_username,
 
-            if(
-                s.school_abbreviation = 'Sumner' and s.sections_grade_level >= 5,
-                'MS',
-                null
-            ) as school_level_alt,
+            s.school_level_alt,
 
         from {{ ref("base_powerschool__sections") }} as s
         left join
