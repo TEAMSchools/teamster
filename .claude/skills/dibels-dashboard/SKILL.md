@@ -1166,6 +1166,51 @@ transcription; checking it against itself proves nothing about the source.
 The T&L PM rounds document is that source:
 <https://docs.google.com/document/d/12ZDlAJY_IgSS4yElBAFWouJ6_M8982j1Fb1B93-INjU>
 
+For **benchmark** goals -- the foundation goals paste, not PM rounds -- the
+academics source is a separate sheet:
+<https://docs.google.com/spreadsheets/d/1-fLmFQz94yAuotVYkzTxOxv6O129V3I2LDhdPY16HIc>
+
+Academics replace this each year, so re-read it rather than trusting the values
+recorded here, and update this link if they move it. What it decides:
+
+**Grades 6-8 are goal-set at EOY only.** Verified identical in AY2025 and
+AY2026: grades K-5 carry both MOY and EOY foundation goals, grades 6-8 carry EOY
+alone. This is academics' intent, not a truncated paste -- confirm the shape
+before reporting a gap.
+
+That shape collides with how `benchmark_goal_season` works.
+`int_amplify__all_assessments` sets it to the goal season a row is measured
+AGAINST, which is the NEXT one: a BOY row carries `MOY`, an MOY row carries
+`EOY`, an EOY row carries null. `rpt_gsheets__dibels_bm_goals_calculations`
+joins `a.benchmark_goal_season = f.period`, so a **BOY** row needs an **MOY**
+foundation goal. Grades 6-8 have none, the LEFT join misses, `grade_goal_type`
+comes back null, and `where c.grade_goal_type = 'At/Above'` drops the row. So
+grades 6-8 produce no BOY benchmark goals at all; they appear only once MOY
+testing lands, where their EOY goal does match.
+
+Consequence for the rollover: the first paste of a year covers **K-5 only**
+(measured 2026-09-14: 49 rows, BOY, grades 0-5, 16 schools). Do not read the
+missing grades as a broken foundation paste -- the 6-8 EOY values are present
+and populated; the model never consults them at BOY.
+
+**OPEN, unresolved as of 2026-09-14.** Whether that is right has not been
+decided. Grades 6-8 hold a real EOY goal that the BOY join cannot reach, so
+those grades show no benchmark goal for most of the year and then appear once
+MOY testing lands. Three candidate resolutions, none chosen:
+
+1. Academics add MOY rows for 6-8, and the model is left alone.
+2. The join falls back to the EOY goal when no MOY goal exists, making the EOY
+   target double as the mid-year one.
+3. Grades 6-8 are accepted as EOY-only reporting, and the dashboard says so
+   rather than rendering them blank.
+
+Options 2 and 3 change what a goal MEANS for those grades, so they need T&L, not
+a modelling judgement. Do not implement either off the back of this note. Note
+also that the AY2025 `bm_goals` tab contains grades 6-8 at `period = 'BOY'` with
+non-null goals that the current model cannot reproduce from AY2025's own
+foundation data -- those rows predate this join, so last year's tab is not
+evidence for what the output should be.
+
 It is a Google Doc, not a Sheet, so
 `mcp__claude_ai_Google_Drive__read_file_content` returns the whole thing with
 its region headings intact (`# Newark & Paterson`, `# Camden`, `# Miami`) --
