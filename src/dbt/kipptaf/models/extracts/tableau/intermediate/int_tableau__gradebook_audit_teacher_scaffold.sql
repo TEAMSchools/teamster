@@ -24,7 +24,7 @@ with
 
             s.school_level_alt,
 
-        from {{ ref("base_powerschool__sections") }} as s
+        from {{ ref("int_students__course_sections") }} as s
         left join
             {{ ref("int_people__staff_roster") }} as r
             on s.teachernumber = r.powerschool_teacher_number
