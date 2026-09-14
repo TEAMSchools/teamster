@@ -505,7 +505,6 @@ select
     g.need_next_cutoff_percent,
 
     g.office_hours_priority_rank,
-    g.need_next,
 
     /* signed, so negative means the projection sits below last year's actual.
        Both inputs are student-grain, so these repeat across every quarter row
@@ -517,6 +516,8 @@ select
 
     s.gpa_band_projected_unweighted
     - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
+
+    g.need_next,
 
     coalesce(
         g.y1_course_final_letter_grade_adjusted,
