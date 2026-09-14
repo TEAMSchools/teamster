@@ -1791,15 +1791,67 @@ averages benchmark scores, so a region whose window is still open gets goals set
 on a partial cohort -- and since goals are never recalculated, there is no
 second chance.
 
-When someone asks for help setting goals, do not run anything first. Check the
-request date against `stg_google_sheets__reporting__terms` for that benchmark
-administration, run the calculation only for the regions whose window has
-closed, and tell the person explicitly which regions you ran, which you skipped,
+**"Running goal setting" is a SELECT, not a dbt invocation.**
+`rpt_gsheets__dibels_pm_goal_setting` is a view Dagster already maintains in
+`kipptaf_extracts`, and it recomputes off whatever scores have landed at read
+time. What the person needs from you is a query they can run in BigQuery and
+copy out of, with the ready regions in the `WHERE`:
+
+```sql
+select *
+from `teamster-332318`.kipptaf_extracts.rpt_gsheets__dibels_pm_goal_setting
+where
+    academic_year = 2026                -- current year only; state it, do not assume
+    and admin_season = 'BOY->MOY'       -- the season the finished benchmark opens
+    and region in ('Newark', 'Camden')  -- only regions whose window has closed
+```
+
+Three filters, three safeguards. The season filter matters as much as the region
+one -- the freeze happens twice a year, and pasting both at once sets MOY->EOY
+goals off BOY scores. BOY finishing opens `BOY->MOY`; MOY finishing opens
+`MOY->EOY`.
+
+When someone asks for help setting goals, do not hand over that query first.
+Check the request date against `stg_google_sheets__reporting__terms` for that
+benchmark administration, put only the regions whose window has closed into the
+filter, and tell the person explicitly which regions are in it, which are not,
 and the date each remaining window ends.
 
 Then tell them to come back the day AFTER each remaining administration closes,
 and suggest they set themselves a calendar reminder for that date. Do not
 promise to remember it.
+
+**Prod's calculation is fanned out today, and the fix is on this branch.**
+Measured on prod: `int_google_sheets__dibels_pm_expectations` holds 17,102 rows
+against 1,835 distinct (9.3x) and `rpt_gsheets__dibels_pm_goal_setting` 2,700
+against 300 (9x), from the ungrade-predicated `reporting__terms` join. It is not
+only duplicate rows -- `cumulative_growth_words` is a running sum, so it
+accumulates the duplicates, and a paste taken from prod today would freeze
+nine-times-inflated targets. The already-pasted AY2024 and AY2025 rows are clean
+(855 rows, 855 distinct, no value above twice its `benchmark_goal`), so this has
+not reached the sheet. Do not let it: check rows-equal-distinct on the query
+output before anyone copies it.
+
+### Check the paste before anyone trusts it
+
+Four checks against `stg_google_sheets__dibels_pm_goals` after a rebuild. The
+failure modes are paste-shaped -- a fanned-out source, a shifted column, a
+partial selection -- and these catch all of them.
+
+1. Rows equal distinct rows on `academic_year`, `region`, `admin_season`,
+   `assessment_grade_int`, `measure_standard`, `round_number`.
+2. Each season's last round equals `benchmark_goal_padded`. The calculation pins
+   it there, so a deviation is a paste problem, not rounding.
+3. Every earlier round equals the running sum of `round_growth_words_goal`.
+4. `benchmark_goal` equals `goals_long.grade_level_standard`, and
+   `benchmark_goal_padded` that plus three -- confirms the row landed against
+   the right measure and grade, not just that the arithmetic is self-consistent.
+
+Known state as of this branch: AY2025 passes all four but for one row whose last
+round sits 11 words under target; AY2024 has 24 rows off on check 2 and 8 on
+check 3, which is hand arithmetic from before the automation rather than a
+defect. Show the AY2025 row to academics rather than fixing it -- the sheet
+records what the goals were.
 
 ### The aimline sibling, and the three traps in it
 

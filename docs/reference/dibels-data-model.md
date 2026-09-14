@@ -1266,24 +1266,75 @@ asked for both methods, each applied to K-8, so
 retired. Aimline is evaluated by its own sibling,
 `int_amplify__pm_met_criteria_aimline`. See #3834.
 
-#### When to run it: per region, not per network
+#### "Setting goals" means querying the view, not running a model
+
+Nobody runs anything by hand. `rpt_gsheets__dibels_pm_goal_setting` is a view
+Dagster already maintains in `kipptaf_extracts`, and it recomputes off whatever
+benchmark scores have landed at read time. Setting goals is therefore: query it
+in BigQuery, filtered to the regions that are ready, and copy those rows into
+the Google Sheet behind `stg_google_sheets__dibels_pm_goals`.
+
+```sql
+select *
+from `teamster-332318`.kipptaf_extracts.rpt_gsheets__dibels_pm_goal_setting
+where
+    -- the model computes current_academic_year only; stated so the person can
+    -- see which year they are pasting rather than assuming
+    academic_year = 2026
+    -- the season the finished benchmark OPENS, not both. BOY finishing opens
+    -- BOY->MOY; MOY finishing opens MOY->EOY
+    and admin_season = 'BOY->MOY'
+    -- only the regions whose benchmark window has actually closed
+    and region in ('Newark', 'Camden')
+```
+
+All three filters are safeguards, and all three live in that `WHERE`. The season
+one matters as much as the region one: the freeze happens twice a year, and
+pasting both seasons at once would set MOY->EOY goals off BOY scores.
+
+#### Query it per region, not per network
 
 **Regions never finish benchmark testing on the same day**, and `starting_words`
-is an average of benchmark scores — so running the calculation before a region
-has finished gives that region a goal set on a partial cohort, and there is no
-second chance, because goals are never recalculated once frozen.
+is an average of benchmark scores — so pulling a region's rows before its window
+has closed freezes goals set on a partial cohort, and there is no second chance,
+because goals are never recalculated.
 
-So when someone asks for help setting goals, the first move is not to run
-anything. It is to check the request date against
+So when someone asks for help setting goals, the first move is not to hand them
+a query. It is to check the request date against
 `stg_google_sheets__reporting__terms` for the benchmark administration in
-question, and then run the calculation **only for the regions whose window has
-closed**. Tell the person which regions you ran, which you did not, and when
-each of the remaining ones ends.
+question, and only then give them the query with the finished regions in it.
+Tell them which regions are in it, which are not, and the date each remaining
+window ends.
 
 Then tell them to come back the day **after** each remaining administration
 closes, and suggest they put a calendar reminder on that date. It is their
 reminder to set, not ours to remember, and the alternative is a region silently
 getting goals off an incomplete cohort.
+
+#### Check the paste before anyone trusts it
+
+The sheet is hand-pasted, so the failure modes are paste-shaped: a fanned-out
+source, a shifted column, a partial selection. Four checks catch all of them,
+and all four run against `stg_google_sheets__dibels_pm_goals` after a rebuild.
+
+1. **Rows equal distinct rows** on `academic_year`, `region`, `admin_season`,
+   `assessment_grade_int`, `measure_standard`, `round_number`. Catches a paste
+   taken from a fanned-out read.
+2. **Each season's last round equals `benchmark_goal_padded`.** The calculation
+   pins it there deliberately, so any deviation is a paste problem rather than a
+   rounding one.
+3. **Every earlier round equals the running sum of `round_growth_words_goal`.**
+   Catches a partial paste or a column shifted by one.
+4. **`benchmark_goal` equals `goals_long.grade_level_standard`**, and
+   `benchmark_goal_padded` that plus three. Confirms the row landed against the
+   right measure and grade, not merely that the arithmetic is self-consistent.
+
+Measured on the sheet as it stands: AY2025 satisfies all four but for a single
+row whose last round sits 11 words under its target, and AY2024 has 24 rows off
+on check 2 and 8 off on check 3. AY2024 predates the automation — the Literacy
+Team leader hand-calculated that year — so the spread there is hand arithmetic
+rather than a defect. The single AY2025 row is worth showing academics rather
+than fixing, since the sheet's purpose is to record what the goals were.
 
 #### Goals are frozen once, and never recalculated
 
