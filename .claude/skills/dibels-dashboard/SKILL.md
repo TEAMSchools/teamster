@@ -1760,22 +1760,46 @@ which round carries `starting_words` and which is pinned to
 its school days out of the season total. Removing one rescales every goal in
 that season, not just its own row.
 
+**A disable does NOT mean recalculating the goals.** Goals are frozen once per
+season and never recalculated or re-pasted -- that is the point of the freeze,
+and it holds even when a round is cancelled afterwards. The trajectory stays as
+frozen; the disabled round simply stops being evaluated. Do not offer a re-run.
+
 Procedure:
 
-1. Set the right column on Expected Assessments — `pm_goal_include` for one
-   measure, `assessment_include` for the whole round — on the internal range,
+1. Set the right column on Expected Assessments -- `pm_goal_include` for one
+   measure, `assessment_include` for the whole round -- on the internal range,
    the by-levels range, or both, matching where the test actually runs.
-2. Re-run `rpt_gsheets__dibels_pm_goal_setting` and replace the WHOLE current
-   academic year in the PM goals sheet with its output. Not a patch of the
-   affected rows.
-3. Verify the pasted `pm_goal_include` values match Expected Assessments row for
-   row before trusting any downstream number.
-4. For a cancelled round, say plainly that the goals still include it, and that
-   changing that is the open academics question above.
+2. Verify the `pm_goal_include` values agree between Expected Assessments and
+   the frozen PM goals sheet, row for row. Nothing keeps them in sync, and a
+   mismatch silently changes which rounds are evaluated.
+3. For a cancelled round, say plainly that the frozen goals still include its
+   school days, and that changing that is the open academics question above.
 
-The model computes `current_academic_year` only, so it cannot regenerate a prior
-year. A disable applied retroactively to a closed year has no source of truth to
-rebuild from and should be refused rather than hand-edited.
+**If a goal VALUE has to change, that is Academics' edit, not our re-run.** They
+enter it directly on the Google Sheet behind
+`stg_google_sheets__dibels_pm_goals`. Regenerating the sheet from
+`rpt_gsheets__dibels_pm_goal_setting` to reach a corrected number is the wrong
+move: the model reads `current_academic_year` only and recomputes off whatever
+scores have since landed, so it would silently move every other goal in the year
+as well.
+
+### Run goal setting per region, and only for regions that have finished testing
+
+**Regions never finish benchmark testing on the same day.** `starting_words`
+averages benchmark scores, so a region whose window is still open gets goals set
+on a partial cohort -- and since goals are never recalculated, there is no
+second chance.
+
+When someone asks for help setting goals, do not run anything first. Check the
+request date against `stg_google_sheets__reporting__terms` for that benchmark
+administration, run the calculation only for the regions whose window has
+closed, and tell the person explicitly which regions you ran, which you skipped,
+and the date each remaining window ends.
+
+Then tell them to come back the day AFTER each remaining administration closes,
+and suggest they set themselves a calendar reminder for that date. Do not
+promise to remember it.
 
 ### The aimline sibling, and the three traps in it
 

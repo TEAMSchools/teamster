@@ -1062,10 +1062,11 @@ every round carries a running level: "by round 3 you should be here."
 **Who decides what** is worth being precise about, because a reader looking at a
 goal will reasonably ask who chose it:
 
-| Owner | Decides                                                                                       | Where it lives                                           |
-| ----- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| T&L   | Which rounds exist, their dates, which measures each round tests, and which cohort tests them | Expected Assessments sheet, `reporting__terms`           |
-| Us    | The numbers — starting point, growth owed, per-round targets                                  | `rpt_gsheets__dibels_pm_goal_setting`, frozen to a sheet |
+| Owner                           | Decides                                                                                       | Where it lives                                               |
+| ------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Teaching & Learning (academics) | Which rounds exist, their dates, which measures each round tests, and which cohort tests them | Expected Assessments sheet, `reporting__terms`               |
+| Data team                       | The numbers — starting point, growth owed, per-round targets                                  | `rpt_gsheets__dibels_pm_goal_setting`, frozen to a sheet     |
+| Teaching & Learning (academics) | Any later change to a goal VALUE, entered by hand                                             | The Google Sheet behind `stg_google_sheets__dibels_pm_goals` |
 
 Evaluation then asks three nested questions, each narrower than the last, and
 one gate:
@@ -1257,11 +1258,49 @@ filtering to `pm_goal_include is null` (active goal rows), and comparing each
 student's score to `cumulative_growth_words` to set `met_measure_standard_goal`.
 The AND/OR round criteria logic runs on top of that.
 
-!!! warning "Entire pipeline deprecated in AY 2026–2027" With aimline providing
-per-student goals, `rpt_gsheets__dibels_pm_goal_setting`,
-`stg_google_sheets__dibels_pm_goals`, and `int_amplify__pm_met_criteria`'s
-current score-comparison logic are all replaced. See the deprecation list in
-issue [#3834](https://github.com/TEAMSchools/teamster/issues/3834).
+!!! warning "Not deprecated — both methods run K-8 from AY 2026–2027" An earlier
+version of this page said aimline replaced this pipeline. It does not. Academics
+asked for both methods, each applied to K-8, so
+`rpt_gsheets__dibels_pm_goal_setting`, `stg_google_sheets__dibels_pm_goals` and
+`int_amplify__pm_met_criteria` are all live and were extended rather than
+retired. Aimline is evaluated by its own sibling,
+`int_amplify__pm_met_criteria_aimline`. See #3834.
+
+#### When to run it: per region, not per network
+
+**Regions never finish benchmark testing on the same day**, and `starting_words`
+is an average of benchmark scores — so running the calculation before a region
+has finished gives that region a goal set on a partial cohort, and there is no
+second chance, because goals are never recalculated once frozen.
+
+So when someone asks for help setting goals, the first move is not to run
+anything. It is to check the request date against
+`stg_google_sheets__reporting__terms` for the benchmark administration in
+question, and then run the calculation **only for the regions whose window has
+closed**. Tell the person which regions you ran, which you did not, and when
+each of the remaining ones ends.
+
+Then tell them to come back the day **after** each remaining administration
+closes, and suggest they put a calendar reminder on that date. It is their
+reminder to set, not ours to remember, and the alternative is a region silently
+getting goals off an incomplete cohort.
+
+#### Goals are frozen once, and never recalculated
+
+Once a season's rows are pasted, that is the season. There is no re-run, no
+re-paste and no partial correction, whatever changes downstream — that is the
+entire point of the freeze.
+
+Two consequences people ask about:
+
+- **A round can be disabled after the fact.** Set `assessment_include` (whole
+  round cancelled) or `pm_goal_include` (one measure) on Expected Assessments.
+  What does not follow is recalculating the goals to match: the trajectory stays
+  as frozen, and the disabled round simply stops being evaluated.
+- **Changing a number is Academics' job, not a re-run.** If a goal value itself
+  has to change, Academics edits it directly on the Google Sheet behind
+  `stg_google_sheets__dibels_pm_goals`. We do not regenerate the sheet to get
+  there.
 
 ### Reference table: `stg_google_sheets__dibels_goals_long`
 
