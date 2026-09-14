@@ -12,6 +12,19 @@ and diagnostics are in the `cube-ops` skill.
 
 ## Authoring conventions
 
+- **A dimension's `description:` is the BI surface, and nothing syncs it.**
+  Superset, Tableau on the SQL API, and the claude.ai Project all read the cube
+  text; a dbt mart `description:` reaches dbt docs and stops there. Writing the
+  explanation in the dbt properties file does NOT put it in front of a BI user —
+  `scripts/sync_cube_descriptions.py` skips any dimension that already has a
+  description, copies once into the file rather than linking, patches dimensions
+  only (never measures), and is run by no hook or CI job. Result: 113 of 172
+  comparable dimensions had drifted from their dbt columns as of 2026-09-10
+  (#5256). When a column's meaning matters to a BI reader, write it in BOTH
+  places in the same change until #5256 lands.
+- **`sync_cube_descriptions.py --check` is not read-only.** It writes every file
+  it would change and only alters the exit code afterward, so never run it to
+  inspect drift or on a dirty tree.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
