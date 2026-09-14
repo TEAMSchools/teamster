@@ -76,6 +76,7 @@ with
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
             s.school_level,
+            s.school_level_alt,
 
             t.`quarter`,
             t.semester,
@@ -96,21 +97,13 @@ with
                 cast(s.terms_academic_year + 1 as string), 2
             ) as academic_year_display,
 
-            if(
-                s.terms_academic_year >= 2025
-                and s.sections_schoolid = 179905
-                and s.sections_grade_level >= 5,
-                'MS',
-                s.school_level
-            ) as school_level_alt,
-
             if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
             count(*) over (
                 partition by s._dbt_source_project, s.sections_id
             ) as section_quarter_count,
 
-        from {{ ref("base_powerschool__sections") }} as s
+        from {{ ref("int_students__course_sections") }} as s
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
             on s.courses_dcid = cx.coursesdcid
