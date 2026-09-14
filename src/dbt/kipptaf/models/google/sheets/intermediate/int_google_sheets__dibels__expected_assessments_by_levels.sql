@@ -50,13 +50,11 @@ select
     min(e.round_number) over (
         partition by
             e.academic_year, e.region, e.admin_season, e.grade, e.measure_standard_level
-        order by e.round_number
     ) as min_pm_round,
 
     max(e.round_number) over (
         partition by
             e.academic_year, e.region, e.admin_season, e.grade, e.measure_standard_level
-        order by e.round_number desc
     ) as max_pm_round,
 
     -- as on the internal gate, plus measure_standard_level: the two cohorts can

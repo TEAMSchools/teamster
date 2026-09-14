@@ -47,12 +47,10 @@ select
 
     min(m.round_number) over (
         partition by m.academic_year, m.region, m.admin_season, m.grade
-        order by m.round_number
     ) as min_pm_round,
 
     max(m.round_number) over (
         partition by m.academic_year, m.region, m.admin_season, m.grade
-        order by m.round_number desc
     ) as max_pm_round,
 
     -- how many measures a student at this grade owes for this round. countif,

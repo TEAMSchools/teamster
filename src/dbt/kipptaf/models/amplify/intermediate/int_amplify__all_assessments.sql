@@ -66,11 +66,9 @@ with
             and e.admin_season = p.pm_period
             and r.student_number = p.student_primary_id
             and p.client_date between e.start_date and e.end_date
-        -- EOY opens no PM season. Year floor matches the aimline branch's
-        -- coverage, so the two methods report over the same years.
+        -- EOY opens no PM season
         where
             r.period != 'EOY'
-            and r.academic_year >= 2025
             and r.overall_probe_eligible = 'Yes'
             and r.rn_pm_eligibility = 1
             and p.enrollment_grade = p.assessment_grade
@@ -151,7 +149,6 @@ with
             and p.device_date between e.start_date and e.end_date
         where
             r.period != 'EOY'
-            and r.academic_year >= 2025
             and r.rn_pm_eligibility = 1
             and p.enrollment_grade = p.assessment_grade
             and p.assessment_grade is not null
