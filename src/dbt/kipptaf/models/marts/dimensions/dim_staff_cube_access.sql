@@ -2,7 +2,7 @@ with
     -- one current primary work assignment per staff (dedup'd below)
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     primary_assignment as (
-        select swa.staff_key, swa.work_assignment_key,
+        select swa.staff_key, swa.work_assignment_key, swa.termination_date,
         from {{ ref("dim_staff_work_assignments") }} as swa
         inner join
             {{ ref("dim_work_assignment_primary") }} as p
@@ -34,6 +34,7 @@ with
     current_assignment as (
         select
             pd.staff_key,
+            pd.termination_date,
 
             s.google_email,
 
@@ -130,6 +131,16 @@ with
         where
             ca.job_effective_start_date
             >= cast('{{ var("cube_access_carry_forward_floor_date") }}' as date)
+            -- Never repair a leaver. An offboarding writes a new effective-dated
+            -- assignment row whose job_function_code comes back null, which looks
+            -- identical to the erosion this model repairs -- so without this guard
+            -- carry-forward replays the departing person's scopes onto their
+            -- termination row. The spine's is_current does drop them, but only
+            -- once termination_date passes (it is `>= current_date`), and an ADP
+            -- ghost record (#4407) can hold a leaver current past that. Gate on
+            -- the termination date directly rather than inheriting that as the
+            -- only defense.
+            and ca.termination_date is null
     ),
 
     carry_forward_active as (
