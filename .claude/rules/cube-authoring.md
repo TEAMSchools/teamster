@@ -189,11 +189,11 @@ comparison does not compile (Task 1 spike finding). That's why `buildGroups`
 emits one scope-specific group per enum value instead of a single group gated by
 a `conditions.if` branch.
 
-When adding a sensitive staff field, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to `staff_pii.yml` (not `staff_directory.yml`)
-and wire its per-field scope in `access.js`'s `STAFF_SENSITIVE_SCOPE_BY_MEMBER`.
-Student views have no PII split — any scope-specific `student-*` group sees
-every field.
+When adding a sensitive staff field, decide PII status per
+`.claude/rules/ferpa-pii.md`. If PII, add it to `staff_pii.yml` (not
+`staff_directory.yml`) and wire its per-field scope in `access.js`'s
+`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Student views have no PII split — any
+scope-specific `student-*` group sees every field.
 
 ## `cube.js` security model
 

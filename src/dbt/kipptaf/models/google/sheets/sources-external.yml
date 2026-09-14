@@ -53,7 +53,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
-            sheet_range: src_students__graduation_path_cutoffs
+            sheet_range: src_students__graduation_path_cutoffs_v2
             skip_leading_rows: 1
         config:
           meta:

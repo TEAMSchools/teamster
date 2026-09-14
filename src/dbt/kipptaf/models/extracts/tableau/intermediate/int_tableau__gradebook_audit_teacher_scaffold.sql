@@ -97,7 +97,7 @@ with
 
         from {{ ref("int_students__terms") }} as t
         inner join
-            {{ ref("stg_powerschool__schools") }} as sch
+            {{ ref("int_students__schools") }} as sch
             on t.schoolid = sch.school_number
             and t._dbt_source_project = sch._dbt_source_project
         inner join

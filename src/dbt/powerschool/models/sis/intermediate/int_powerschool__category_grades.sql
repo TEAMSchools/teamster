@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     enr_gr as (
         select
             enr.cc_abs_sectionid as sectionid,
@@ -52,15 +51,18 @@ with
         where not enr.is_dropped_course
     ),
 
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="enr_gr",
-                partition_by="studentid, yearid, course_number, storecode",
-                order_by="is_dropped_section asc, percent_grade desc",
-            )
-        }}
-    )
+    ranked as (
+        select
+            *,
+
+            row_number() over (
+                partition by studentid, yearid, course_number, storecode
+                order by is_dropped_section asc, percent_grade desc
+            ) as rn,
+        from enr_gr
+    ),
+
+    deduplicate as (select * except (rn), from ranked where rn = 1)
 
 select
     sectionid,

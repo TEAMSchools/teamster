@@ -9,7 +9,6 @@ with
                     source(
                         "kippcamden_powerschool", "int_powerschool__calendar_week"
                     ),
-                    source("kippmiami_powerschool", "int_powerschool__calendar_week"),
                     source(
                         "kipppaterson_powerschool", "int_powerschool__calendar_week"
                     ),

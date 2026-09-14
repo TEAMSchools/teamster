@@ -1,8 +1,10 @@
 # Data launch page — project overview
 
-Orientation for anyone picking up this work. [README.md](README.md) is the field
-reference and [RUNBOOK.md](RUNBOOK.md) is the task sequence; this is the why,
-the scope, and where it stands.
+Orientation for anyone picking up this work.
+[Adding a tool to the launch page](../guides/launch-page-guide.md) is the
+published field reference, [README.md](README.md) covers this directory and the
+state of the catalog, and [RUNBOOK.md](RUNBOOK.md) is the task sequence; this is
+the why, the scope, and where it stands.
 
 Last updated 2026-08-11.
 
@@ -133,7 +135,8 @@ not wire the build into the deploy before the gate exists.
 | Path                                                                 | What                                         |
 | -------------------------------------------------------------------- | -------------------------------------------- |
 | `docs/launch/links.yml`                                              | The catalog. Source of truth                 |
-| `docs/launch/README.md`                                              | Field reference and what "verified" requires |
+| `docs/launch/README.md`                                              | This directory, and the state of the catalog |
+| `docs/guides/launch-page-guide.md`                                   | Published field reference: how to add a tool |
 | `docs/launch/RUNBOOK.md`                                             | The verification task sequence               |
 | `docs/superpowers/specs/2026-08-06-launch-page-design.md`            | What the page is (on #4762)                  |
 | `docs/superpowers/specs/2026-08-11-launch-page-build-gate-design.md` | How it gets built (on #4819)                 |

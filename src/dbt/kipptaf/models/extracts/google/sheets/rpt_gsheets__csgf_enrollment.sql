@@ -164,6 +164,38 @@ with
 
         from students
         group by schoolid
+    ),
+
+    focus_schools as (
+        select
+            loc.powerschool_school_id as school_number,
+            loc.location_name as `name`,
+
+            sl.work_email as principalemail,
+
+        from {{ ref("int_focus__schools") }} as fs
+        inner join
+            {{ ref("stg_google_sheets__people__locations") }} as loc
+            on fs.school_number = loc.focus_school_id
+        left join
+            {{ ref("int_people__staff_roster") }} as sl
+            on loc.powerschool_school_id = sl.home_work_location_powerschool_school_id
+            and sl.job_title = 'School Leader'
+            and sl.primary_indicator
+            and sl.is_current_record
+            and sl.worker_status_code = 'Active'
+        where fs.school_level is not null
+    ),
+
+    schools as (
+        select school_number, `name`, principalemail
+        from {{ ref("stg_powerschool__schools") }}
+        where _dbt_source_project != 'kippmiami'
+
+        union all
+
+        select school_number, `name`, principalemail
+        from focus_schools
     )
 
 select
@@ -228,13 +260,13 @@ select
     case
         s.`name`
         when 'Paterson Prep Middle School'
-        then 'KIPP Paterson MS'
+        then 'KIPP Paterson Prep MS'
         when 'Paterson Prep Elementary School'
-        then 'KIPP Paterson ES'
+        then 'KIPP Paterson Prep ES'
         else s.`name`
     end as school,
 
-from {{ ref("stg_powerschool__schools") }} as s
+from schools as s
 inner join calendar_days as c on s.school_number = c.schoolid
 left join
     {{ ref("stg_google_sheets__topline_enrollment_targets") }} as et

@@ -12,10 +12,6 @@ with
                         "int_powerschool__category_grades_pivot",
                     ),
                     source(
-                        "kippmiami_powerschool",
-                        "int_powerschool__category_grades_pivot",
-                    ),
-                    source(
                         "kipppaterson_powerschool",
                         "int_powerschool__category_grades_pivot",
                     ),

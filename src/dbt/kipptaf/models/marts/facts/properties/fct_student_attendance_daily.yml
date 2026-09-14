@@ -25,6 +25,17 @@ models:
       for ADA, `SUM(is_absent) / SUM(is_membership_day)` for absence rate. Use
       the `is_*` flags for categorical breakdowns (Present/Absent/Tardy/
       OSS/ISS) or the `attendance_category` column for a single GROUP BY axis.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day, matching the assessment marts. Cube's student_enrollments
+          # and student_attendance cubes read this mart and anchor topline
+          # Total Enrollment, so it needs the intraday tick. That is above its
+          # own break-even (prod 1.7 to 7.9 slot hours a week), accepted
+          # because the CI column drops 90.5 to about 21. Refs #5217
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: student_attendance_daily_key
         data_type: string
@@ -34,6 +45,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 

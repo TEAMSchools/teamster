@@ -30,6 +30,12 @@ vars:
   # archive load, so there is no archive table to union in.
   edplan_has_archive: false
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  # Paterson sits only NJSLA and NJSLA Science, and its Pearson files carry
+  # the district SIS id, so the union reads the int_pearson__* remaps instead
+  # of the package staging models (stg_pearson__njgpa / _parcc are disabled).
+  pearson_state_assessment_relations:
+    - int_pearson__njsla
+    - int_pearson__njsla_science
 
 models:
   kipppaterson:
@@ -92,6 +98,13 @@ models:
         # data-forced exception: needs gradesectionconfig, which is empty in
         # Paterson's PowerSchool (no dlt model)
         int_powerschool__section_grade_config:
+          +enabled: false
+        # data-forced exception: needs the grad-plan dlt tables (gpnode,
+        # gpprogresssubject*), which are disabled below (empty in Paterson's
+        # PowerSchool)
+        int_powerschool__gpnode:
+          +enabled: false
+        int_powerschool__gpprogress_grades:
           +enabled: false
         # contacts layer disabled for Paterson (parity with kippnewark)
         int_powerschool__contacts:

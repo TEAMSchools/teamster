@@ -12,7 +12,8 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         where
             sr.assignment_status != 'Terminated'
-            and {{ exclude_frozen("sr.home_work_location_dagster_code_location") }}
+            -- Miami rosters into Clever from Focus, not from this feed
+            and sr.home_work_location_dagster_code_location != 'kippmiami'
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
@@ -34,9 +35,7 @@ with
                 _dbt_source_relation, r'(kipp\w+)_'
             ) as dagster_code_location,
         from {{ ref("stg_powerschool__schools") }}
-        where
-            state_excludefromreporting = 0
-            and {{ exclude_frozen("_dbt_source_project") }}
+        where state_excludefromreporting = 0
     ),
 
     teachers_long as (
@@ -47,9 +46,8 @@ with
             sec.courses_course_name,
             sec.terms_abbreviation,
 
-            r.sortorder,
-
-            t.teachernumber,
+            pst.role_sortorder as sortorder,
+            pst.teachernumber,
 
             null as grade,
 
@@ -91,23 +89,15 @@ with
                 when 'WLANG'
                 then 'Language'
             end as `subject`,
-        from {{ ref("base_powerschool__sections") }} as sec
+        from {{ ref("int_students__course_sections") }} as sec
         inner join
-            {{ ref("stg_powerschool__sectionteacher") }} as st
-            on sec.sections_id = st.sectionid
-            and sec._dbt_source_project = st._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__roledef") }} as r
-            on st.roleid = r.id
-            and st._dbt_source_project = r._dbt_source_project
-        inner join
-            {{ ref("int_powerschool__teachers") }} as t
-            on st.teacherid = t.id
-            and sec.sections_schoolid = t.schoolid
-            and st._dbt_source_project = t._dbt_source_project
+            {{ ref("int_powerschool__section_teachers") }} as pst
+            on sec.sections_id = pst.sections_id
+            and sec._dbt_source_project = pst._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
-            and {{ exclude_frozen("sec._dbt_source_project") }}
+            -- Miami rosters into Clever from Focus, not from this feed
+            and sec._dbt_source_project != 'kippmiami'
 
         union all
 
