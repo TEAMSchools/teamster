@@ -2,33 +2,32 @@ models:
   - name: int_surveys__survey_submissions
     description: >-
       Canonical submission grain for every survey the network runs. One row per
-      submission, across both the live Google Forms and Alchemer feed and the
+      submission, across the live Google Forms and Alchemer feeds and the
       historic Alchemer Manager Survey archive.
 
-      This model owns survey_submission_key. Both sources it reads are
-      question-grain, so each arm collapses to submission grain here rather than
-      in every consuming mart. Consumers select the key through; they do not
-      re-derive it.
+      This model owns survey_submission_key and every per-submission derived
+      column — survey title, reporting term, respondent identity resolved
+      against the staff roster history, and round_rn. The live arms read the
+      response-grain staging tables directly, so nothing collapses here.
+      int_surveys__survey_responses joins this model for those columns rather
+      than deriving them per question row.
 
       The live arm carries every survey title, not only the titles the marts
       currently model, so a new survey becomes available to a consumer without
       touching this model.
+
+      Eager table. Google Forms responses land on a 15-minute sensor and the
+      survey dashboard refreshes hourly through int_surveys__survey_responses,
+      so this model rebuilds when its inputs change rather than on a nightly
+      cron.
     config:
       materialized: table
-      meta:
-        dagster:
-          # A table, not a view, because 3 marts read this model and a view
-          # would make each of them recompute the 4.1M-row collapse. Nightly
-          # matches the cadence all 3 consumers run on, so the whole chain
-          # settles in one pass. Refs #5217, #3918
-          automation_condition:
-            cron_schedule: 0 3 * * *
     columns:
       - name: survey_submission_key
         description: >-
           Surrogate key derived from survey_id and survey_response_id. Primary
           key. For the historic archive, survey_response_id is the deterministic
-          fallback described below, so the composition is identical across both
+          fallback described below, so the composition is identical across all
           arms.
         data_tests:
           - unique
@@ -47,13 +46,15 @@ models:
           term.
 
       - name: survey_title
-        description:
-          Display title of the survey, as the source system records it.
+        description: >-
+          Display title of the survey, as the source system records it. Google
+          Forms takes the form's info title; Alchemer takes the survey title.
 
       - name: respondent_email
         description: >-
           Email the respondent submitted under. Null on the historic Manager
-          archive, which records no respondent email.
+          archive, which records no respondent email, and on Alchemer responses
+          absent from the frozen response-identifiers table.
         config:
           meta:
             contains_pii: true
@@ -61,21 +62,77 @@ models:
       - name: respondent_employee_number
         description: >-
           Employee number of the respondent, resolved against the staff roster
-          at the time of submission. Null when the respondent could not be
-          matched to a staff record.
+          history at the time of submission, first by email or account name and
+          then through Google Directory aliases. Null when the respondent could
+          not be matched to a staff record.
         config:
           meta:
             contains_pii: true
+
+      - name: respondent_preferred_name
+        description: >-
+          Formatted name of the respondent from the same roster-history match as
+          respondent_employee_number. Null on the archive arm.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_samaccountname
+        description: >-
+          Active Directory account name of the respondent from the roster match.
+          Null on the archive arm.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_userprincipalname
+        description: >-
+          Active Directory user principal name of the respondent from the roster
+          match. Null on the archive arm.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_identifier
+        description: >-
+          Respondent employee number as a string, falling back to the respondent
+          email when no staff record matched.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: date_started
+        description: >-
+          Timestamp the respondent opened the survey. Null on the archive arm.
 
       - name: date_submitted
         description: Timestamp the respondent submitted the survey.
 
       - name: academic_year
         description: >-
-          Academic year the submission falls in, resolved from the reporting
-          terms sheet on the live arm and from the campaign on the archive.
+          Academic year the submission falls in. Google Forms resolves it from
+          the SURVEY reporting-terms windows by title and UTC submit date.
+          Alchemer takes the campaign fiscal year minus one and falls back to
+          the reporting-terms window. The archive carries the campaign year.
 
       - name: term_code
         description: >-
           Reporting term code the submission falls in, for example MGR1 or MGR2
-          on the Manager Survey.
+          on the Manager Survey. Alchemer takes it from the campaign name and
+          falls back to the reporting-terms window.
+
+      - name: term_name
+        description: >-
+          Reporting-terms sheet name the submission matched. Null on the archive
+          arm.
+
+      - name: survey_response_link
+        description: >-
+          Deep link to the individual response in the source system. Null on the
+          archive arm.
+
+      - name: round_rn
+        description: >-
+          Recency rank of this submission among the same respondent's
+          submissions to the same form in the same reporting term, 1 being the
+          latest. Always 1 on Alchemer. Null on the archive arm.
