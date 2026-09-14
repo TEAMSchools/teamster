@@ -372,7 +372,8 @@ with
     -- GRAIN — scores sharing a grain can carry different dates. RT rows abut but
     -- never overlap within a (school_id, region), so BETWEEN matches one row.
     reporting_terms as (
-        select `type`, code, `name`, `start_date`, end_date, region, school_id,
+        select
+            `type`, code, `name`, `start_date`, end_date, region, school_id, grade_band,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
     )
@@ -418,6 +419,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},
@@ -503,6 +505,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},
@@ -595,6 +598,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},

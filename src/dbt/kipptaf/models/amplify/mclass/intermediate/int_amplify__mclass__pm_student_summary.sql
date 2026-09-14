@@ -66,4 +66,6 @@ select
     }} as student_primary_id,
     coalesce(student_id_state_id, secondary_student_id_stateid) as student_id_state_id,
 
+    if(pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
+
 from location_xref

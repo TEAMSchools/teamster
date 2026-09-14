@@ -1,19 +1,46 @@
 models:
   - name: stg_google_sheets__dibels_foundation_goals
     columns:
-      - name: Academic_Year
+      - name: academic_year
         data_type: int64
-      - name: Region
+        description:
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
+      - name: region
         data_type: string
-      - name: Grade_Range
+        description:
+          The city form of the region -- Newark, Camden, Miami, Paterson.
+      - name: grade_range
         data_type: string
-      - name: Grade_Level
+        description: The grade range the goal covers, as written on the sheet.
+      - name: grade_band
+        data_type: string
+        description: The grade band the goal covers.
+      - name: grade_level
         data_type: int64
-      - name: Period
+        description: Grade level as an integer, K mapped to 0.
+      - name: period
         data_type: string
-      - name: Grade_Goal_Type
+        description:
+          The benchmark administration the goal applies to -- BOY, MOY or EOY.
+      - name: population
         data_type: string
-      - name: Grade_Goal
+        description: Student population the goal applies to -- All, SPED or MLL.
+      - name: grade_goal_type
+        data_type: string
+        description: Whether the goal is expressed as At/Above or Well Below.
+      - name: grade_goal_low
         data_type: float64
-      - name: Grade_Range_Goal
+        description: Lower bound of the goal range.
+      - name: grade_goal_high
         data_type: float64
+        description: Upper bound of the goal range.
+      - name: grade_goal
+        data_type: float64
+        description:
+          Share of students at this grade expected to score At or Above
+          Benchmark.
+      - name: grade_range_goal
+        data_type: float64
+        description:
+          The same goal expressed for the grade range rather than a single
+          grade.

@@ -272,7 +272,9 @@ with
             {{ ref("int_fldoe__all_assessments") }} as a
             on e.academic_year = a.academic_year
             -- network student_number, the same key the NJ legs above use;
-            -- Miami state_studentnumber reads fleid, null under Focus (#5042)
+            -- Miami state_studentnumber reads fleid, null under Focus (#5042).
+            -- Guarded by test_state_assessment_joins_resolve_miami, which
+            -- asserts this leg holds rows -- a revert re-drops Miami silently.
             and e.pearson_local_student_identifier = a.student_number
             and e._dbt_source_project = a._dbt_source_project
             and a.results_type = 'Actual'
