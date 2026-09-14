@@ -1,0 +1,262 @@
+models:
+  - name: int_assessments__score_anchors
+    description: >-
+      Every assessment score the section resolver tries to place, with the one
+      date it anchors on. One row per score grain (student, region, source type,
+      canonical assessment, academic year, administration period, subject area)
+      and anchor date. Six source branches feed it — internal Illuminate scores
+      anchored on the canonical administered date, NJ state (Pearson) and FL
+      state (FLDOE) scores on their test date, and iReady, STAR, and DIBELS
+      benchmark composites on their completion, screening, or client date.
+      Internal scores collapse to one row per student, canonical assessment, and
+      region on the earliest administered date. Rows with no anchor date or no
+      student are out of scope and dropped. Byte-identical duplicate rows from a
+      source (re-pulled iReady and STAR sittings) collapse; a score with two
+      different anchor dates keeps both rows, since each date is a separate
+      chance at an enrollment window. Read by
+      int_assessments__resolved_section_enrollments, which references it three
+      times; materializing it once here is what keeps that model's BigQuery plan
+      shallow.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Same tick as int_assessments__scaffold,
+          # int_assessments__course_enrollments, and the resolver so
+          # ~any_deps_in_progress orders it before the resolver in one pass.
+          # Refs #5261
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - powerschool_student_number
+              - _dbt_source_project
+              - source_type
+              - canonical_assessment_id
+              - academic_year
+              - administration_period
+              - subject_area
+              - anchor_date
+    columns:
+      - name: source_type
+        data_type: string
+        description: >-
+          Source branch that produced the score row. One of internal
+          (Illuminate-sourced), state_nj (Pearson NJ), state_fl (FLDOE FL),
+          iready (i-Ready diagnostics), star (Renaissance STAR), or dibels
+          (Amplify DIBELS benchmark composites).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [internal, state_nj, state_fl, iready, star, dibels]
+      - name: powerschool_student_number
+        data_type: int64
+        description: >-
+          Student identifier. Sourced from int_assessments__scaffold for
+          internal scores and from each vendor or state intermediate otherwise.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.powerschool_student_number
+      - name: canonical_assessment_id
+        data_type: int64
+        description: >-
+          Canonical assessment identifier grouping member assessments into one
+          logical assessment. Populated only for internal scores; NULL for state
+          and vendor rows.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.canonical_assessment_id
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year of the sitting. Populated for state and vendor rows;
+          NULL for internal rows, whose year comes from the enrollment window
+          the resolver matches.
+        config:
+          meta:
+            source_column: int_pearson__all_assessments.academic_year
+      - name: administration_period
+        data_type: string
+        description: >-
+          Administration window label within the academic year. Populated for
+          state, iReady, STAR, and DIBELS rows; NULL for internal rows. For
+          iReady rows this is the reporting-terms window (BOY / MOY / EOY /
+          Outside Round) from `test_round`.
+        config:
+          meta:
+            source_column: int_pearson__all_assessments.administration_period
+      - name: subject_area
+        data_type: string
+        description: >-
+          Subject area aligned to illuminate_subject_area values in
+          int_assessments__course_enrollments. For internal scores this is the
+          scaffold subject_area; for state and vendor scores it is the
+          `illuminate_subject` column mapped upstream (e.g. Reading -> Text
+          Study, Math -> Mathematics).
+        config:
+          meta:
+            source_column: int_assessments__scaffold.subject_area
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Region identifier (kippnewark, kippcamden, kippmiami, kipppaterson) of
+          the score.
+        config:
+          meta:
+            source_column: int_assessments__scaffold._dbt_source_project
+      - name: anchor_date
+        data_type: date
+        description: >-
+          The date the resolver matches against enrollment windows. The
+          canonical administered date for internal scores, the test date for
+          state scores, and the completion, screening, or client date for vendor
+          scores. Not the corrupt Illuminate date_taken.
+        config:
+          meta:
+            source_column: int_assessments__assessments_canonical.administered_date
+      - name: score_grain_key
+        data_type: string
+        description: >-
+          Surrogate key over the seven grain columns (student, region, source
+          type, canonical assessment, academic year, administration period,
+          subject area). The resolver ranks section candidates within this key
+          and anti-joins tier 2 on it. Not unique on its own — a score with two
+          anchor dates shares one key across two rows — so the uniqueness test
+          is on the grain columns plus anchor_date, and this column carries no
+          `unique` test by design.
+
+unit_tests:
+  - name: test_internal_collapses_to_one_row_per_canonical
+    description: >-
+      Two scaffold rows for the same student, canonical assessment, and region
+      collapse to one internal row anchored on the canonical administered date.
+      A replacement row and a non-internal row are excluded.
+    model: int_assessments__score_anchors
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - {
+              powerschool_student_number: 1,
+              canonical_assessment_id: 100,
+              _dbt_source_project: kippnewark,
+              subject_area: Mathematics,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+          - {
+              powerschool_student_number: 1,
+              canonical_assessment_id: 100,
+              _dbt_source_project: kippnewark,
+              subject_area: Mathematics,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+          - {
+              powerschool_student_number: 1,
+              canonical_assessment_id: 100,
+              _dbt_source_project: kippnewark,
+              subject_area: Mathematics,
+              is_internal_assessment: true,
+              is_replacement: true,
+            }
+          - {
+              powerschool_student_number: 1,
+              canonical_assessment_id: 100,
+              _dbt_source_project: kippnewark,
+              subject_area: Mathematics,
+              is_internal_assessment: false,
+              is_replacement: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows:
+          - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
+      - input: ref('int_iready__diagnostic_results')
+        rows: []
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        rows: []
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 1,
+            canonical_assessment_id: 100,
+            _dbt_source_project: kippnewark,
+            subject_area: Mathematics,
+            anchor_date: 2024-03-04,
+            source_type: internal,
+          }
+
+  - name: test_duplicate_vendor_rows_collapse
+    description: >-
+      Two byte-identical iReady rows (a re-pulled sitting) produce one output
+      row. A third row for the same score on a different completion date is a
+      separate anchor and is kept.
+    model: int_assessments__score_anchors
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows: []
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
+      - input: ref('int_iready__diagnostic_results')
+        format: sql
+        rows: |
+          select
+              5 as student_id,
+              2024 as academic_year_int,
+              'BOY' as test_round,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-15') as completion_date,
+              650 as overall_scale_score
+          union all
+          select
+              5 as student_id,
+              2024 as academic_year_int,
+              'BOY' as test_round,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-15') as completion_date,
+              650 as overall_scale_score
+          union all
+          select
+              5 as student_id,
+              2024 as academic_year_int,
+              'BOY' as test_round,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-22') as completion_date,
+              655 as overall_scale_score
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        rows: []
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 5,
+            academic_year: 2024,
+            administration_period: BOY,
+            subject_area: Text Study,
+            anchor_date: 2024-09-15,
+            source_type: iready,
+          }
+        - {
+            powerschool_student_number: 5,
+            academic_year: 2024,
+            administration_period: BOY,
+            subject_area: Text Study,
+            anchor_date: 2024-09-22,
+            source_type: iready,
+          }
