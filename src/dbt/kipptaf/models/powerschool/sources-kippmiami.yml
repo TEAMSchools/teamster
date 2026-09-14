@@ -2,12 +2,12 @@ sources:
   - name: kippmiami_powerschool
     description: >-
       Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved
-      to Focus). Permanent history source for stored grades, attendance, and the
-      course enrollments they hang off (#5193). Rebuilt from the frozen
-      externals with the 8400 Focus prefix on student_number and an AY2025 bound
-      applied (#5012). The dataset must not be dropped. Declared BQ-native
-      (plain schema, no target branch) so every target reads the prod tables
-      directly.
+      to Focus). Permanent history source for stored grades, attendance, the
+      course enrollments they hang off (#5193), and section teachers (#5260) —
+      12 permanent tables in total. Rebuilt from the frozen externals with the
+      8400 Focus prefix on student_number and an AY2025 bound applied (#5012).
+      The dataset must not be dropped. Declared BQ-native (plain schema, no
+      target branch) so every target reads the prod tables directly.
     schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__courses
@@ -109,3 +109,12 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__final_grades_rollup
+      - name: int_powerschool__section_teachers
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__section_teachers

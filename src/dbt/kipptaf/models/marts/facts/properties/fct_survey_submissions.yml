@@ -15,6 +15,16 @@ models:
       populated only for Manager Survey submissions (role-playing FK to
       dim_staff for the manager being evaluated). FK to
       dim_survey_administrations and dim_dates.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: survey_submission_key
         data_type: string
@@ -24,6 +34,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
