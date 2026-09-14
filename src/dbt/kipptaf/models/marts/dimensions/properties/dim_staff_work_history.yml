@@ -6,6 +6,14 @@ models:
       org unit, work location, and point-in-time manager all held
       simultaneously. Consumed by the Cube semantic layer (staff_work_history
       cube feeding the staff_directory and staff_pii views).
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day, matching the assessment marts. The staff_work_history cube
+          # reads this mart. Refs #5217
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
@@ -18,6 +26,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
       - name: work_assignment_key

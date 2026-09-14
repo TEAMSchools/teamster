@@ -46,9 +46,6 @@ with
             question_shortname,
             response_text,
             response_value,
-
-            {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
-            as survey_submission_key,
         from general_responses
         union all
         select
@@ -58,14 +55,20 @@ with
             question_shortname,
             response_text,
             response_value,
-
-            {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
-            as survey_submission_key,
         from manager_responses
     )
 
+/*
+ * survey_submission_key comes from int_surveys__survey_submissions rather than
+ * being re-hashed here, so the composition lives in exactly one place. The join
+ * to fct_survey_submissions stays: it is the filter that keeps this fact to the
+ * submissions the fact actually models.
+ */
 select
-    ar.survey_submission_key,
+    ar.response_value,
+    ar.response_text,
+
+    ss.survey_submission_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -75,10 +78,11 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["ar.question_shortname"]) }}
     as survey_question_key,
-
-    ar.response_value,
-    ar.response_text,
 from all_responses as ar
 inner join
+    {{ ref("int_surveys__survey_submissions") }} as ss
+    on ar.survey_id = ss.survey_id
+    and ar.survey_response_id = ss.survey_response_id
+inner join
     {{ ref("fct_survey_submissions") }} as fss
-    on ar.survey_submission_key = fss.survey_submission_key
+    on ss.survey_submission_key = fss.survey_submission_key
