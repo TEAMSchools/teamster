@@ -68,6 +68,19 @@ with
             ) as passes_department_gate,
 
             ntnc.associate_id is not null as is_new_teacher_network_coordinator,
+
+            /*
+                A School Leader in Residence is homed at Room 11, the Miami
+                regional office, so School Admin scope reaches no teachers. The
+                title match is deliberate and temporary: it goes away once the
+                ADP `Principal in Residence` membership is populated for them,
+                which is the same feed the coordinator rule above already reads.
+            */
+            coalesce(
+                sr.job_title = 'School Leader in Residence'
+                and sr.home_work_location_dagster_code_location = 'kippmiami',
+                false
+            ) as is_school_leader_in_residence,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
             new_teacher_network_coordinators as ntnc on sr.worker_id = ntnc.associate_id
@@ -98,7 +111,10 @@ with
             sr.home_department_name as course_name,
             sr.home_work_location_dagster_code_location as region,
             sr.is_teacher,
-            sr.is_new_teacher_network_coordinator as is_regional_observer,
+            sr.is_new_teacher_network_coordinator
+            or sr.is_school_leader_in_residence as is_regional_observer,
+
+            sr.is_school_leader_in_residence as observes_whole_region,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,
 
@@ -174,10 +190,20 @@ with
 
         union distinct
 
-        /* Regional Observer: their own school only */
+        /*
+            Regional Observer: their own school, or every school in their
+            region when their home location is a regional office rather than a
+            campus.
+        */
         select p.user_internal_id, gs.school_id,
         from people as p
-        inner join grow_schools as gs on p.school_name = gs.school_name
+        inner join
+            grow_schools as gs
+            on if(
+                p.observes_whole_region,
+                p.region = gs.region,
+                p.school_name = gs.school_name
+            )
         where p.is_regional_observer
     ),
 

@@ -15,7 +15,12 @@ models:
       matches both an admin tier and the Coach predicate receives both.
       `Regional Observer` is the one role that does not come from a job
       function: it is granted to New Teacher Network Coordinators, read from the
-      ADP membership feed, and scoped to the coordinator's own school.
+      ADP membership feed, and scoped to the coordinator's own school. It is
+      also granted to Miami School Leaders in Residence, matched on job title
+      and scoped to every school in their region, because their home location is
+      the regional office rather than a campus. That title match is temporary
+      and is replaced by the ADP `Principal in Residence` membership once People
+      Operations populates it.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
@@ -81,7 +86,8 @@ models:
           Grow school ids this user should be scoped to, sent as
           `regionalAdminSchools`. Every active school for a `Chief Level` user,
           the user's own region for the other `Regional Admin` tiers, the user's
-          own school for a `Regional Observer`, empty for everyone else. Ordered
+          own school for a `Regional Observer`, every school in their region for
+          a Miami School Leader in Residence, empty for everyone else. Ordered
           by school id so the surrogate key is stable.
       - name: readonly
         data_type: int64
@@ -1104,4 +1110,151 @@ unit_tests:
             regional_admin_school_ids: [],
             readonly: 0,
             group_type: observees,
+          }
+
+  - name: unit_grow_users_miami_slr_region_scope
+    description:
+      Pins the temporary School Leader in Residence rule. A Miami School Leader
+      in Residence is homed at the regional office, so they get `Regional
+      Observer` scoped to every school in their region, on top of the `School
+      Admin` their job function earns, and they stay writable. The rule is
+      Miami-only, so a Newark School Leader in Residence gets no regional scope,
+      and it is title-only, so a Miami school leader at a campus gets none
+      either.
+    model: rpt_schoolmint_grow__users
+    given:
+      - input: ref('int_people__staff_roster')
+        format: sql
+        rows: |
+          select
+              500 as employee_number,
+              'slrmia@apps.teamschools.org' as google_email,
+              cast(null as int64) as reports_to_employee_number,
+              'Room 11' as home_work_location_reporting_name,
+              'Room 11' as home_work_location_name,
+              'School Leadership' as home_department_name,
+              'kippmiami' as home_work_location_dagster_code_location,
+              'Miami' as given_name,
+              'Resident' as family_name_1,
+              'Active' as assignment_status,
+              'School Leader' as job_function,
+              'School Leader in Residence' as job_title,
+              cast(null as int64) as primary_grade_level_taught,
+              'slrmia@apps.teamschools.org' as user_principal_name,
+              cast(null as date) as worker_termination_date,
+              'w-500' as worker_id
+          union all
+          select
+              501, 'slrnwk@apps.teamschools.org', cast(null as int64),
+              'Room 9', 'Room 9', 'School Leadership', 'kippnewark',
+              'Newark', 'Resident', 'Active', 'School Leader',
+              'School Leader in Residence', cast(null as int64),
+              'slrnwk@apps.teamschools.org', cast(null as date), 'w-501'
+          union all
+          select
+              502, 'slmia@apps.teamschools.org', cast(null as int64),
+              'KIPP Courage Academy', 'KIPP Courage Academy',
+              'School Leadership', 'kippmiami', 'Campus', 'Leader',
+              'Active', 'School Leader', 'School Leader', cast(null as int64),
+              'slmia@apps.teamschools.org', cast(null as date), 'w-502'
+      - input: ref('stg_adp_workforce_now__employee_memberships')
+        format: sql
+        rows: |
+          select
+              'w-502' as associate_id,
+              'Teacher Leader' as membership_description,
+              true as is_current
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+              'Room 11' as location_name,
+              'kippmiami' as location_dagster_code_location
+          union all
+          select 'KIPP Courage Academy', 'kippmiami'
+          union all
+          select 'Room 9', 'kippnewark'
+          union all
+          select 'KIPP TEAM Academy', 'kippnewark'
+      - input: ref('stg_schoolmint_grow__roles')
+        format: sql
+        rows: |
+          select 'r-coach' as role_id, 'Coach' as name
+          union all
+          select 'r-teacher', 'Teacher'
+          union all
+          select 'r-saa', 'School Assistant Admin'
+          union all
+          select 'r-sa', 'School Admin'
+          union all
+          select 'r-ra', 'Regional Admin'
+          union all
+          select 'r-ro', 'Regional Observer'
+      - input: ref('stg_schoolmint_grow__schools')
+        format: sql
+        rows: |
+          select
+              'sch-room11' as school_id, 'Room 11' as name,
+              cast(null as string) as archived_at
+          union all
+          select 'sch-courage', 'KIPP Courage Academy', cast(null as string)
+          union all
+          select 'sch-room9', 'Room 9', cast(null as string)
+          union all
+          select 'sch-team', 'KIPP TEAM Academy', cast(null as string)
+      - input: ref('stg_schoolmint_grow__users')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as user_id,
+              cast(null as int64) as internal_id_int,
+              cast(null as string) as archived_at,
+              cast(null as string) as email,
+              cast(null as string) as name,
+              cast(null as string) as coach,
+              cast(null as bool) as inactive,
+              cast(null as bool) as read_only,
+              cast(null as string) as default_information_course,
+              cast(null as string) as default_information_grade_level,
+              cast(null as string) as default_information_school,
+              cast(
+                  null as array<struct<`_id` string, name string>>
+              ) as roles,
+              cast(
+                  null as array<struct<name string, `_id` string>>
+              ) as regional_admin_schools
+          from unnest([1])
+          where false
+      - input: ref('stg_schoolmint_grow__generic_tags')
+        format: sql
+        rows: |
+          select
+              cast(null as string) as tag_id,
+              cast(null as string) as name,
+              cast(null as string) as abbreviation,
+              cast(null as string) as tag_type
+          from unnest([1])
+          where false
+    expect:
+      rows:
+        - {
+            user_internal_id: 500,
+            role_names: [Regional Observer, School Admin],
+            regional_admin_school_ids: [sch-courage, sch-room11],
+            readonly: 0,
+            group_type: observers,
+          }
+        - {
+            user_internal_id: 501,
+            role_names: [School Admin],
+            regional_admin_school_ids: [],
+            readonly: 0,
+            group_type: observers,
+          }
+        - {
+            user_internal_id: 502,
+            role_names: [School Admin],
+            regional_admin_school_ids: [],
+            readonly: 0,
+            group_type: observers,
           }
