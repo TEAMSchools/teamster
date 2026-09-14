@@ -9,6 +9,11 @@ models:
       answer. File-upload questions emit one row per uploaded file with the
       filename projected into `answer`. Marts that need per-shortname or
       per-question rollups project to that grain themselves.
+
+      Every per-submission column — survey title, respondent identity, reporting
+      term, dates, response link and round_rn — is selected through from
+      int_surveys__survey_submissions, which owns that resolution. This model
+      adds only the question and answer columns.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
