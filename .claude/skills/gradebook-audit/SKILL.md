@@ -316,9 +316,13 @@ the plugin it feeds:
 - Repo: [`TEAMSchools/ps-plugins`](https://github.com/TEAMSchools/ps-plugins) --
   how the PowerSchool plugin was built and is maintained, plus the academics
   chat skill
-- Input sheet tab: `ps_plugin_data`, whose columns F and G (`week_start_monday`
-  / `week_end_friday`) are working columns for mapping weeks and are not
-  uploaded
+- Input sheet tab: `ps_plugin_data`. Columns F and G (`week_start_monday` /
+  `week_end_friday`) exist so academics can match a week number to the actual
+  calendar dates while filling in counts -- a reading aid for a person, not part
+  of the upload and not something the skill computes from. Because the sheet
+  already resolves week numbers to dates, the chat skill does no week-mapping
+  arithmetic at all, which is the single biggest reason this work is safe to
+  hand to a chat session.
 
 Deliberately a pointer and not a copy. This procedure used to carry the full
 mechanics; two copies of a fill rule drift, and when they disagree nobody can
