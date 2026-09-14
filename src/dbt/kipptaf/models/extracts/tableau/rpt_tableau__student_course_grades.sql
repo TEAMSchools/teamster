@@ -364,6 +364,17 @@ with
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
             and enr.region in ('Newark', 'Camden', 'Paterson')
+    ),
+
+    course_grades as (
+        /* the package carries PowerSchool's raw credit type; conform it here the
+           way int_students__course_enrollments does so Paterson's spelled-out
+           values match the dashboard's filters */
+        select
+            * except (credit_type),
+
+            {{ conform_powerschool_credittype("credit_type") }} as credit_type,
+        from {{ ref("int_powerschool__student_course_grades") }}
     )
 
 select
@@ -547,7 +558,7 @@ select
 
 from student_roster as s
 left join
-    {{ ref("int_powerschool__student_course_grades") }} as g
+    course_grades as g
     on s.studentid = g.studentid
     and s.yearid = g.yearid
     and s.`quarter` = g.`quarter`
