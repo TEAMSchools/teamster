@@ -211,10 +211,10 @@ def parse_grid(
                 parsed = parse_range(raw)
                 if parsed is None:
                     # An empty or n/a cell is a deliberate "no goal" and stays
-                    # silent. A cell with CONTENT that yields no number is a
-                    # transcription problem, and staying silent there drops the
-                    # row while the run still reports clean -- which is how the
-                    # AY2026 grades 6-8 EOY rows went missing (2026-09-14).
+                    # silent -- that is what the MOY columns hold for grades
+                    # 6-8. A cell with CONTENT that yields no number is a
+                    # transcription problem instead, and staying silent there
+                    # drops the row while the run still reports clean.
                     if raw.strip() and raw.strip().lower() != "n/a":
                         warnings.append(
                             f"{path}:{line_no}: {region} grade {grade_str} {period} "
