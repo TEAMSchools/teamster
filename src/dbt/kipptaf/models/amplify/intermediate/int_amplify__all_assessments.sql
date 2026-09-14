@@ -1,6 +1,4 @@
 with
-    -- grain projection, not dup-masking: measure_standard is joined, not
-    -- projected, so a round's several measures collapse to one row
     pm_scores as (
         select
             r._dbt_source_project,
@@ -80,7 +78,7 @@ with
 
         union all
 
-        select distinct
+        select
             r._dbt_source_project,
             r.academic_year,
             r.region,

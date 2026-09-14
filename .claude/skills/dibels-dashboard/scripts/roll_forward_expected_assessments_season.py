@@ -38,7 +38,8 @@ from googleapiclient.discovery import build
 # 0-indexed against the post-cutover 18-column "Expected Assessments" schema
 # (academic_year, region, grade, test_type, discipline, subject_area,
 # assessment_type, measure_standard_level, measure_standard, test_code,
-# admin_season, month_round, ...) -- see backfill_expected_assessments_derived_columns.py.
+# admin_season, month_round, ...) -- see the `dibels-dashboard` SKILL.md for the
+# full layout.
 ACADEMIC_YEAR_COL = 0
 TEST_CODE_COL = 9
 ADMIN_SEASON_COL = 10

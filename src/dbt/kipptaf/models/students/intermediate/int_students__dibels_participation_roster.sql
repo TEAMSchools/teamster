@@ -1,9 +1,10 @@
 with
     -- the two expectation gates appended. expected_row_count is computed in the
     -- gates themselves, where the cohort partition lives next to the column that
-    -- causes it.
+    -- causes it. Both branches are grain projections, not dup-masking: a gate
+    -- is one row per measure, and this CTE keeps the round.
     expected_tests as (
-        select
+        select distinct
             academic_year,
             region,
             grade,
@@ -28,7 +29,7 @@ with
 
         union all
 
-        select
+        select distinct
             academic_year,
             region,
             grade,
@@ -136,6 +137,8 @@ with
                 else false
             end as completed_test_round,
 
+            -- a student with two enrollment stints inside one round window
+            -- matches twice; the later stint's enroll_status wins
             row_number() over (
                 partition by
                     e.academic_year,
@@ -145,6 +148,7 @@ with
                     e.round_number,
                     s.student_number,
                     s.grade_level
+                order by s.exitdate desc
             ) as rn,
 
         from expected_tests as e

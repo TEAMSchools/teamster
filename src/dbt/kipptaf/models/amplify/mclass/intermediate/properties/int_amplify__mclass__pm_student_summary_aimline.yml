@@ -9,9 +9,8 @@ models:
       aimline_status / aimline_value_by_date fields between these two files
       mid-year before, with no advance notice, and gave no commitment on whether
       it happens again. One row per student, measure, and probe attempt within a
-      PM period; grades below 3 are excluded, since K-2 keeps its own in-house
-      PM goals process on `int_amplify__mclass__pm_student_summary` instead of
-      Amplify aimline.
+      PM period, K-8. There is no grade filter, since both PM methods run K-8
+      and int_amplify__all_assessments tells them apart by model_type.
     config:
       materialized: table
     data_tests:
@@ -38,6 +37,9 @@ models:
         description: Student primary identifier (student number).
         data_tests:
           - not_null
+        config:
+          meta:
+            contains_pii: true
       - name: measure
         data_type: string
         description:
@@ -53,9 +55,7 @@ models:
           - not_null
       - name: assessment_grade_int
         data_type: int64
-        description:
-          Assessment grade as integer. Filtered to 3 and above; K-2 is carried
-          on int_amplify__mclass__pm_student_summary instead.
+        description: Assessment grade as integer, K-8 with kindergarten as 0.
         data_tests:
           - not_null
       - name: goal
@@ -70,6 +70,7 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: goal
+            contains_pii: true
       - name: aimline_status
         data_type: string
         description:
@@ -77,12 +78,18 @@ models:
           Above'). First non-null of the aimline file's and the base PM file's
           value for this probe, since Amplify has carried this field on either
           file at different points without notice.
+        config:
+          meta:
+            contains_pii: true
       - name: aimline_value_by_date
         data_type: numeric
         description:
           Expected aimline score for the assessment date. First non-null of the
           aimline file's and the base PM file's value for this probe, for the
           same reason as aimline_status.
+        config:
+          meta:
+            contains_pii: true
       - name: school_year
         data_type: string
         description: School year range (e.g., '2025-2026').
@@ -121,6 +128,9 @@ models:
       - name: measure_standard_score
         data_type: numeric
         description: Raw assessment score, cast from the source score column.
+        config:
+          meta:
+            contains_pii: true
       - name: assessment_grade
         data_type: string
         description: Grade level of the assessment administered.
@@ -133,28 +143,52 @@ models:
       - name: enrollment_teacher_name
         data_type: string
         description: Enrollment teacher name(s), pipe-delimited when multiple.
+        config:
+          meta:
+            contains_pii: true
       - name: enrollment_teacher_staff_id
         data_type: string
         description:
           Enrollment teacher staff ID(s), pipe-delimited when multiple.
+        config:
+          meta:
+            contains_pii: true
       - name: assessing_teacher_name
         data_type: string
         description: Name of the teacher who administered the assessment.
+        config:
+          meta:
+            contains_pii: true
       - name: assessing_teacher_staff_id
         data_type: string
         description: Staff ID of the assessing teacher.
+        config:
+          meta:
+            contains_pii: true
       - name: special_education
         data_type: string
         description: Special education status.
+        config:
+          meta:
+            contains_pii: true
       - name: disability
         data_type: string
         description: Disability indicator.
+        config:
+          meta:
+            contains_pii: true
       - name: iep_status
         data_type: string
         description: Individualized Education Program status.
+        config:
+          meta:
+            contains_pii: true
       - name: section_504
         data_type: string
         description: Section 504 plan indicator.
+        config:
+          meta:
+            contains_pii: true
       - name: _dagster_partition_key
         data_type: string
         description: Dagster partition key (school year).
@@ -164,8 +198,10 @@ models:
       - name: region
         data_type: string
         description:
-          Region resolved from school_name via the location crosswalk (long-
-          form entity name, e.g. 'TEAM Academy Charter School').
+          City-form region (Camden, Newark, Paterson, Miami), derived from the
+          location crosswalk's Dagster code location so it joins the expectation
+          gates and int_amplify__mclass__pm_student_summary. The crosswalk's own
+          location_region is the long-form entity name and joins to nothing.
       - name: school
         data_type: string
         description: School abbreviation from the location crosswalk.

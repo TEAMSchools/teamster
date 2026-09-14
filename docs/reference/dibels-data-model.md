@@ -1960,8 +1960,8 @@ SY25-26 only K-2 did, because 3-8 was on aimline, which supplies goals per
 student and needs no day count. A band running aimline alone needs only `LIT`
 rows for round dates.
 
-`duplicate_reporting_terms_grade_band.py --codes plit` copies an existing band's
-`PLIT` rows to other bands, which works while every band shares a calendar.
+Copying an existing band's `PLIT` rows to the other bands is how this was done
+for AY2026, and works while every band shares a calendar.
 
 `PLIT` date-range generation is now documented, derived, and scripted — see
 _Assessment calendar_ above and the `dibels-dashboard` skill's "`PLIT` boundary

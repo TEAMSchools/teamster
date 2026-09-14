@@ -1,17 +1,30 @@
-"""Generate SY26-27 `LIT`/`PLIT` rows for `reporting__terms`, NJ regions
-only (Camden, Newark, Paterson) -- Miami excluded, see module docstring below.
+"""Generate NJ `LIT`/`PLIT` rows for `reporting__terms` (Camden, Newark,
+Paterson) for any academic year -- Miami excluded, see module docstring below.
 
-`LIT` round dates are transcribed directly from the confirmed T&L PM rounds
-doc ("SY27 - DIBELS PM Rounds - All Regions") -- hardcoded in ROUNDS below,
-one list per region since Newark/Paterson share a grid and Camden has its
-own. Benchmark BOY/MOY/EOY rows for AY2026 already exist in
-`reporting__terms` (added by an earlier rollover pass this session) and are
-not touched here.
+`LIT` round dates come from `--rounds`, a TSV transcribed directly from the
+confirmed T&L PM rounds doc for the year -- never derived or rolled forward.
+Benchmark BOY/MOY/EOY rows are added by a separate rollover pass and are not
+touched here.
+
+`--rounds` columns (tab-separated, one header row, regions in output order):
+
+    region         `Newark`, `Paterson` or `Camden`
+    round_number   1-based, in calendar order within the region
+    season         `BOY->MOY` or `MOY->EOY`
+    start_date     ISO `YYYY-MM-DD`
+    end_date       ISO `YYYY-MM-DD`
+    plit1_start    required on the region's round 1 row, blank elsewhere: the
+                   region's own BOY Benchmark start date, which PLIT1 starts ON
+                   (see below). Take it from the year's `LIT1`/`BOY` rows
+                   already in `reporting__terms`.
+
+`rounds/sy2627_nj.tsv` is the SY26-27 table. Next year: copy it, edit the dates,
+run.
 
 `PLIT` dates are DERIVED, not transcribed, using the boundary rule verified
-against real AY2025 `reporting__terms` data (see the `dibels-dashboard`
-skill, "PLIT boundary rule" -- matched 7 real boundaries exactly across
-Camden, Newark and Paterson before this script was written):
+against real AY2025 `reporting__terms` data (see the `dibels-dashboard` skill,
+"PLIT boundary rule" -- matched 7 real boundaries exactly across Camden, Newark
+and Paterson before this script was written):
 
     PLITn.start = first IN-SESSION day strictly after the previous round's
                   end_date (round n-1, or the season's own Benchmark start
@@ -19,16 +32,16 @@ Camden, Newark and Paterson before this script was written):
     PLITn.end   = last IN-SESSION day strictly before round n's start_date
 
 This holds cleanly WITHIN a season. Crossing from BOY->MOY into MOY->EOY
-(the first PLIT of the second season) is an open question -- last year's
-real data shows a 1-day overlap there (the new season's PLIT1 starts one
+(the first PLIT of the second season) is an open question -- AY2025's real
+data shows a 1-day overlap there (the new season's PLIT1 starts one
 calendar day before the old season's last round officially ends) that was
 never explained and is NOT replicated here. This script applies the same
 clean rule at the season boundary too (day after the last BOY->MOY round
 ends). If that turns out wrong, only the one row per region needs
-correcting once the real reason for last year's overlap is known.
+correcting once the real reason for that overlap is known.
 
 PD days are deliberately NOT excluded from the boundary calculation.
-Checked against last year's real numbers first: the frozen PM goals sheet
+Checked against AY2025's real numbers first: the frozen PM goals sheet
 does NOT reliably exclude PD days either (Camden round 2's frozen
 `pm_round_days` matched a naive PD-day-inclusive count exactly), so
 building PD-day awareness in here would make this MORE correct than
@@ -36,70 +49,54 @@ precedent, not consistent with it. Revisit if that's ever explicitly
 decided otherwise.
 
 Miami is excluded entirely -- its PLIT structure is different (windows
-spanning entire breaks) and unverified; it needs its own pass.
+spanning entire breaks) and unverified; it has its own script,
+`generate_miami_lit_plit_rows.py`.
 
 Usage:
     uv run --with google-cloud-bigquery python3 \
-        .claude/skills/dibels-dashboard/scripts/generate_sy2627_k2_lit_plit_rows.py \
+        .claude/skills/dibels-dashboard/scripts/generate_nj_lit_plit_rows.py \
+        --academic-year 2026 \
+        --rounds .claude/skills/dibels-dashboard/scripts/rounds/sy2627_nj.tsv \
         --out out.tsv
 """
 
 import argparse
+import csv
 import datetime
 
 from google.cloud import bigquery
 
-ACADEMIC_YEAR = "2026"
-FISCAL_YEAR = "2027"
 DEFAULT_BANDS = ["0,1,2", "3,4", "5,6,7,8"]
-PS_YEAR_ID = "36"
-
-# (region, [(round_number, start, end), ...])
-ROUNDS = {
-    "Newark": [
-        (1, "2026-09-28", "2026-10-02"),
-        (2, "2026-10-19", "2026-10-23"),
-        (3, "2026-11-16", "2026-11-20"),
-        (4, "2026-12-14", "2026-12-18"),
-        (5, "2027-02-01", "2027-02-05"),
-        (6, "2027-02-22", "2027-02-26"),
-        (7, "2027-03-15", "2027-03-19"),
-        (8, "2027-05-03", "2027-05-07"),
-    ],
-    "Paterson": [
-        (1, "2026-09-28", "2026-10-02"),
-        (2, "2026-10-19", "2026-10-23"),
-        (3, "2026-11-16", "2026-11-20"),
-        (4, "2026-12-14", "2026-12-18"),
-        (5, "2027-02-01", "2027-02-05"),
-        (6, "2027-02-22", "2027-02-26"),
-        (7, "2027-03-15", "2027-03-19"),
-        (8, "2027-05-03", "2027-05-07"),
-    ],
-    "Camden": [
-        (1, "2026-09-28", "2026-10-02"),
-        (2, "2026-10-26", "2026-10-30"),
-        (3, "2026-11-16", "2026-11-20"),
-        (4, "2027-03-01", "2027-03-05"),
-        (5, "2027-04-05", "2027-04-09"),
-        (6, "2027-05-03", "2027-05-07"),
-    ],
-}
-
-# Season boundary per region: the round_number after which BOY->MOY ends and
-# MOY->EOY begins. Newark/Paterson: 4 BOY->MOY + 4 MOY->EOY. Camden: 3 + 3.
-SEASON_SPLIT = {"Newark": 4, "Paterson": 4, "Camden": 3}
-
-# Season1's own Benchmark BOY start date (PLIT1.start anchor), from the
-# AY2026 LIT1/BOY rows already in reporting_terms.
-BOY_START = {"Newark": "2026-08-19", "Paterson": "2026-08-19", "Camden": "2026-08-13"}
 
 
 def d(s: str) -> datetime.date:
     return datetime.date.fromisoformat(s)
 
 
-def fetch_in_session_dates(client: bigquery.Client, region: str) -> set[datetime.date]:
+def read_rounds(
+    path: str,
+) -> tuple[dict[str, list[tuple[int, str, str, str]]], dict[str, str]]:
+    """Return {region: [(round_number, season, start, end)]}, {region: plit1_start}."""
+    rounds: dict[str, list[tuple[int, str, str, str]]] = {}
+    plit1_start: dict[str, str] = {}
+    with open(path, newline="") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            region = r["region"]
+            round_number = int(r["round_number"])
+            rounds.setdefault(region, []).append(
+                (round_number, r["season"], r["start_date"], r["end_date"])
+            )
+            if round_number == 1:
+                plit1_start[region] = r["plit1_start"]
+    missing = [r for r in rounds if not plit1_start.get(r)]
+    if missing:
+        raise SystemExit(f"plit1_start missing on round 1 for: {', '.join(missing)}")
+    return rounds, plit1_start
+
+
+def fetch_in_session_dates(
+    client: bigquery.Client, region: str, academic_year: int
+) -> set[datetime.date]:
     # int_students__calendar_day, NOT stg_powerschool__calendar_day: Miami is
     # Focus-only from AY2026, and the frozen PowerSchool archive still serves a
     # rolled-forward Miami calendar with phantom in-session days (23 in Jul 2026,
@@ -113,12 +110,20 @@ def fetch_in_session_dates(client: bigquery.Client, region: str) -> set[datetime
         inner join `teamster-332318.kipptaf_powerschool.stg_powerschool__schools` s
             on c.schoolid = s.school_number and c._dbt_source_project = s._dbt_source_project
         where s.schoolcity = @region and c.insession = 1
-          and c.date_value between '2026-07-01' and '2027-07-01'
+          and c.date_value between @year_start and @year_end
     """
     job = client.query(
         query,
         job_config=bigquery.QueryJobConfig(
-            query_parameters=[bigquery.ScalarQueryParameter("region", "STRING", region)]
+            query_parameters=[
+                bigquery.ScalarQueryParameter("region", "STRING", region),
+                bigquery.ScalarQueryParameter(
+                    "year_start", "DATE", datetime.date(academic_year, 7, 1)
+                ),
+                bigquery.ScalarQueryParameter(
+                    "year_end", "DATE", datetime.date(academic_year + 1, 7, 1)
+                ),
+            ]
         ),
     )
     return {row.date_value for row in job.result()}
@@ -146,6 +151,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
     parser.add_argument(
+        "--academic-year",
+        type=int,
+        required=True,
+        help="academic year, labelled by the FALL (SY26-27 is 2026)",
+    )
+    parser.add_argument(
+        "--rounds", required=True, help="round-dates TSV, see docstring"
+    )
+    parser.add_argument(
         "--band",
         action="append",
         help=(
@@ -157,20 +171,24 @@ def main() -> None:
     args = parser.parse_args()
     bands = args.band or DEFAULT_BANDS
 
+    academic_year = str(args.academic_year)
+    fiscal_year = str(args.academic_year + 1)
+    # PowerSchool yearid convention: AY2026 (SY26-27) is 36.
+    ps_year_id = str(args.academic_year - 1990)
+
+    all_rounds, plit1_start = read_rounds(args.rounds)
+
     client = bigquery.Client(project="teamster-332318")
 
     out_rows = []
-    for region, rounds in ROUNDS.items():
-        in_session = fetch_in_session_dates(client, region)
-        season1_len = SEASON_SPLIT[region]
+    for region, rounds in all_rounds.items():
+        in_session = fetch_in_session_dates(client, region, args.academic_year)
         prev_round_end: datetime.date | None = None
 
-        for round_number, r_start, r_end in rounds:
-            season = "BOY->MOY" if round_number <= season1_len else "MOY->EOY"
-
+        for round_number, season, r_start, r_end in rounds:
             if prev_round_end is None:
                 plit_start = d(
-                    BOY_START[region]
+                    plit1_start[region]
                 )  # PLIT1 starts ON the BOY Benchmark start
             else:
                 plit_start = first_in_session_after(in_session, prev_round_end)
@@ -184,9 +202,9 @@ def main() -> None:
                         season,
                         plit_start.isoformat(),
                         plit_end.isoformat(),
-                        ACADEMIC_YEAR,
-                        FISCAL_YEAR,
-                        PS_YEAR_ID,
+                        academic_year,
+                        fiscal_year,
+                        ps_year_id,
                         "",
                         "",
                         region,
@@ -201,9 +219,9 @@ def main() -> None:
                         season,
                         r_start,
                         r_end,
-                        ACADEMIC_YEAR,
-                        FISCAL_YEAR,
-                        PS_YEAR_ID,
+                        academic_year,
+                        fiscal_year,
+                        ps_year_id,
                         "",
                         "",
                         region,

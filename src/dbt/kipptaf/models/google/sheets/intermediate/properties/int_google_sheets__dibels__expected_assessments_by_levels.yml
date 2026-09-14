@@ -110,6 +110,16 @@ models:
           the sheet defines an expectation for a grade the region did not enrol
           that year. A consumer that needs to answer "was the student tested
           inside the round" must drop those rows.
+        data_tests:
+          # Warn, not error: a null here silently removes every aimline
+          # expectation for that year, region, season and grade downstream --
+          # int_amplify__all_assessments joins device_date between start_date
+          # and end_date. Scoped to the current year so a historical grade the
+          # region never enrolled does not fire it.
+          - not_null:
+              config:
+                severity: warn
+                where: academic_year = {{ var("current_academic_year") }}
       - name: end_date
         description: >
           Last day of the round's window. A score outside it does not count

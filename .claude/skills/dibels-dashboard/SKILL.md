@@ -178,10 +178,10 @@ reading the diff afterwards.
 
 Edit one source by **bounding the block first**: find its
 `      - name: <source>` line, find the next line starting `      - name: src_`,
-and operate only between them. That is what `.claude/scratch/wire_source.py`
-does -- it moves `sheet_range`, replaces or inserts the `columns:` list, and
-asserts it found exactly one `sheet_range` and at most one `columns:` inside the
-block.
+and operate only between them. That is what the throwaway source-wiring script
+used for the bm_goals cutover did -- it moved `sheet_range`, replaced or
+inserted the `columns:` list, and asserted it had found exactly one
+`sheet_range` and at most one `columns:` inside the block.
 
 Then **audit every removed line** before trusting it:
 
@@ -406,11 +406,11 @@ rows for the current year and only a BigQuery time-travel read got them back.
 So every script that modifies an existing tab **emits the full tab, corrected
 rows in place**, and the handover is "select all, paste over". That makes the
 operation idempotent, reviewable as a row count, and impossible to half-apply.
-`fix_v1_expected_assessments_month_round.py` is the model: it walks all 3,681
-rows in original order, rewrites only the `Month/Round` cell on Benchmark rows
-whose value disagrees with `reporting__terms`, passes every PM row and every
-already-correct row through untouched, and prints a per-key summary of what it
-changed so the diff is auditable before pasting.
+The V1 `Month/Round` fix is the model: its throwaway script walked all 3,681
+rows in original order, rewrote only the `Month/Round` cell on Benchmark rows
+whose value disagreed with `reporting__terms`, passed every PM row and every
+already-correct row through untouched, and printed a per-key summary of what it
+changed so the diff was auditable before pasting.
 
 **The line is whether existing rows change, not how many rows there are.**
 
@@ -421,18 +421,22 @@ changed so the diff is auditable before pasting.
 
 Where each script sits today, so a successor does not have to read them all:
 
-- Whole-tab, already compliant -- `fix_v1_expected_assessments_month_round.py`,
-  `backfill_expected_assessments_derived_columns.py`,
-  `duplicate_expected_assessments_measure_standard_level.py`.
-- Append-only, correctly partial --
-  `generate_sy2627_expected_assessments_rows.py`,
-  `generate_sy2627_k2_lit_plit_rows.py`,
-  `generate_sy2627_miami_lit_plit_rows.py`,
-  `duplicate_reporting_terms_grade_band.py`,
+- Whole-tab, already compliant -- the one-shot sheet fixes (the V1 `Month/Round`
+  rewrite, the derived-column backfill, the `measure_standard_level` cohort
+  split). All were run once and deleted; the sections below record what each
+  did.
+- Append-only, correctly partial -- `generate_pm_expected_assessments_rows.py`,
+  `generate_nj_lit_plit_rows.py`, `generate_miami_lit_plit_rows.py`,
   `roll_forward_expected_assessments_season.py`.
 
 If a new script needs to change rows that already exist, it belongs in the first
 group. Do not add one to the second group that also edits in place.
+
+The three `generate_*` scripts are year-agnostic: each takes `--academic-year`
+(labelled by the fall, so SY26-27 is `2026`) and a `--rounds` TSV transcribed
+from that year's T&L PM rounds doc. `scripts/rounds/sy2627_*.tsv` are the
+SY26-27 tables -- for a new year, copy the file, edit the dates, run. Each
+script's module docstring documents its own `--rounds` columns.
 
 Corollaries:
 
@@ -722,10 +726,10 @@ gets a null `pm_round_days` and drops out of the goal calculation with no error.
 The user's correction was blunt and worth remembering: _"yes, we need plit rows
 for 3-8 now for reporting terms."_
 
-`scripts/duplicate_reporting_terms_grade_band.py` takes
-`--codes {lit,plit,both}` for this reason. It used to hardcode the `PLIT%`
-exclusion; the flag exists because the exclusion became the wrong default, not
-because it was optional.
+When band rows were duplicated across bands for this, the copy had to carry
+`PLIT` as well as `LIT`. The one-shot script that did it originally hardcoded a
+`PLIT%` exclusion -- that exclusion became the wrong default, not an optional
+one.
 
 **Miami does not use the NJ bands.** Miami splits K / 1-3 / 4,5 / 6-8 per T&L's
 document, not K-2 / 3,4 / 5,6,7,8. Read the bands off the doc per region, every
@@ -791,11 +795,11 @@ copy, and duplicate it into a second row identical in every column except
 `measure_standard_level`, set to `Well Below`. Benchmark rows are untouched --
 Benchmark tests all students regardless of cohort.
 
-`scripts/duplicate_expected_assessments_measure_standard_level.py` does this,
-walking the whole "Expected Assessments" tab in original row order (not just the
-matched rows) so every other row -- other academic years, and every Benchmark
-row including 2025's and 2026's -- passes through unchanged in its original
-position. Verified against prod (V1) after running it: the resulting `Below` and
+This was done once with a throwaway script, and the resulting rows are in the
+sheet. It walked the whole "Expected Assessments" tab in original row order (not
+just the matched rows) so every other row -- other academic years, and every
+Benchmark row including 2025's and 2026's -- passed through unchanged in its
+original position. Verified against prod (V1) after running it: the `Below` and
 `Well Below` rows are an exact 1:1 match to V1's 2025 PM rows, and every
 non-2025-PM row matches V1 byte-for-byte, confirmed by multiset diff (zero
 extra, zero missing on all three checks), not just a row count.
@@ -833,11 +837,10 @@ Both produce the same values for the same rows -- the sheet column was
 backfilled with the exact rule the SQL applies.
 
 **Backfilled for every existing row, not just new ones** -- `assessment_type` is
-used across every academic year on this tab, not only SY26-27, so
-`scripts/backfill_expected_assessments_derived_columns.py` fills it for all
-~3,588 rows (all years) using that same rule, so no row's classification changes
-silently. The same script also carries the `month_round` fix below -- run once,
-get both.
+used across every academic year on this tab, not only SY26-27, so the one-shot
+backfill filled it for all ~3,588 rows (all years) using that same rule, so no
+row's classification changed silently. That same pass also carried the
+`month_round` fix below.
 
 ### Benchmark `month_round` must match `reporting__terms`, not be copied forward
 
@@ -854,11 +857,9 @@ before this.
 **The rule going forward**: `month_round` = the calendar month of the matching
 `LIT1`/`LIT2`/`LIT3` (`BOY`/`MOY`/`EOY`) row's `Start Date` in
 `reporting__terms`, **per region**, not copied from last year's label and not
-shared across regions.
-`scripts/fix_expected_assessments_benchmark_month_round.py` derives this lookup
-and corrects every Benchmark row that disagrees, for every academic year present
--- folded into `backfill_expected_assessments_derived_columns.py` above, so a
-rollover only needs to run that one script.
+shared across regions. This lookup was derived and every disagreeing Benchmark
+row corrected, for every academic year present, as part of the one-shot backfill
+pass above.
 
 **Gotcha that cost a wasted first pass**: before grade-band tagging existed
 (pre-2025), a PM round can share the exact same `LIT1`/`LIT2`/`LIT3` code as the
@@ -893,9 +894,9 @@ Camden, Newark and Paterson in both SY25-26 and SY26-27**, and for Miami in
 SY25-26 (205 = 205, which also confirms the archive was frozen faithfully at
 cutover, so the SY25-26 Miami verification work stands). Only Miami AY2026
 diverges. `int_google_sheets__dibels_pm_expectations` and
-`generate_sy2627_k2_lit_plit_rows.py` were both switched with zero output
-change: all 44 SY26-27 `PLIT` rows regenerated byte-identical, and
-`pm_round_days` was unchanged across every region and academic year.
+`generate_nj_lit_plit_rows.py` were both switched with zero output change: all
+44 SY26-27 `PLIT` rows regenerated byte-identical, and `pm_round_days` was
+unchanged across every region and academic year.
 
 **The schools side is NOT yet fixed, and the obvious swap makes it worse.** The
 model still resolves region as `stg_powerschool__schools.schoolcity` with
@@ -930,9 +931,9 @@ exclude Miami since it's on Focus):
   "previous round" to compute from)
 
 Matched 7 real boundaries exactly across all three NJ regions before trusting it
-(`scripts/generate_sy2627_k2_lit_plit_rows.py` implements it, and caught its own
-bug on the first run -- `PLIT1.start` needs the direct-copy exception above, not
-the day-after-previous-round math every other `PLITn` uses).
+(`scripts/generate_nj_lit_plit_rows.py` implements it, and caught its own bug on
+the first run -- `PLIT1.start` needs the direct-copy exception above, not the
+day-after-previous-round math every other `PLITn` uses).
 
 **PD days are NOT excluded from this calculation, and shouldn't be added in.**
 Checked directly: `stg_powerschool__calendar_day` has a real `type = 'PD'` code
@@ -1003,8 +1004,8 @@ Get `PLIT1.start` confirmed by T&L for Miami rather than deriving it.
 SY26-27 Miami has 11 rounds but only 10 `PLIT` rows. That is correct. T&L
 extended PM #2 to run `10/26` through `11/06`, and PM #3 starts `11/09`, so no
 school days remain between them -- the derived `PLIT3` start (`11/09`) lands
-after its derived end (`11/06`). `generate_sy2627_miami_lit_plit_rows.py` skips
-such a round and prints which one, rather than emitting an inverted range.
+after its derived end (`11/06`). `generate_miami_lit_plit_rows.py` skips such a
+round and prints which one, rather than emitting an inverted range.
 
 **Do not "restore" the missing row.** The two ways to force one are both worse
 than omitting it: an inverted range counts zero days anyway, and a range
@@ -1066,7 +1067,7 @@ confirmed all K-8 rounds require meeting every tested standard, not a mix of
 AND/OR rounds. Don't build round-by-round OR logic for SY26-27 on the assumption
 it might vary; it doesn't this year.
 
-`scripts/generate_sy2627_expected_assessments_rows.py` implements both the K-2
+`scripts/generate_pm_expected_assessments_rows.py` implements both the K-2
 scaffolding and the 3-8 filtered generation, plus the `measure_standard_level`
 cohort split (`Both` -> `Below` + `Well Below` rows, `Well Below only` per the
 doc -> just the one) -- verified against the concrete PSF example above, a 3-8
@@ -1198,12 +1199,11 @@ says `September`; EOY starts 2027-04-26, V1 says `May`, by-levels says `April`.
 
 So either source Benchmark from the by-levels branch, or fix V1's `month_round`
 first. Fixing V1 is preferable -- then the branches agree and the constraint
-disappears -- but note that neither existing script targets it:
-`fix_expected_assessments_benchmark_month_round.py` is superseded and indexes a
-17-column layout, `backfill_expected_assessments_derived_columns.py` indexes 18,
-and V1 is 16. The rule is small enough to re-derive: `month_round` is the month
-of that Benchmark round's `Start Date` in `reporting__terms`, keyed on
-`(academic_year, region, admin_season)`.
+disappears -- but note that neither one-shot fix would have targeted it: the
+Benchmark `month_round` fix indexed a 17-column layout, the derived-column
+backfill indexed 18, and V1 is 16. The rule is small enough to re-derive:
+`month_round` is the month of that Benchmark round's `Start Date` in
+`reporting__terms`, keyed on `(academic_year, region, admin_season)`.
 
 ### The participation roster spans three expectation models
 
@@ -2140,19 +2140,23 @@ at them.
 
 ### Generating rows for both models
 
-Both models come out of the same transcribed T&L round data in
-`scripts/generate_sy2627_expected_assessments_rows.py`:
+Both models come out of the same transcribed T&L round data, which
+`scripts/generate_pm_expected_assessments_rows.py` reads from a `--rounds` TSV
+(`scripts/rounds/sy2627_expected_assessments.tsv` for SY26-27; for a new year,
+copy that file and edit the dates and grids):
 
 ```bash
+rounds=.claude/skills/dibels-dashboard/scripts/rounds/sy2627_expected_assessments.tsv
+
 # combo: K-2 internal scaffold + 3-8 aimline -> by-levels range, 18 columns
 uv run python3 \
-  .claude/skills/dibels-dashboard/scripts/generate_sy2627_expected_assessments_rows.py \
-  --out /tmp/combo.tsv
+  .claude/skills/dibels-dashboard/scripts/generate_pm_expected_assessments_rows.py \
+  --academic-year 2026 --rounds "$rounds" --out /tmp/combo.tsv
 
 # internal applied to K-8 -> V1 range, 16 columns
 uv run python3 \
-  .claude/skills/dibels-dashboard/scripts/generate_sy2627_expected_assessments_rows.py \
-  --single-rows --out /tmp/internal.tsv
+  .claude/skills/dibels-dashboard/scripts/generate_pm_expected_assessments_rows.py \
+  --academic-year 2026 --rounds "$rounds" --single-rows --out /tmp/internal.tsv
 ```
 
 `--single-rows` does two things: widens the scaffold from `K2_GRADES` to every
@@ -2194,10 +2198,10 @@ what the internal method counts school days against, and it was K-2-only only
 because K-2 was the only band on the internal method. Now that academics runs
 internal across K-8, every band needs `PLIT`.
 
-`duplicate_reporting_terms_grade_band.py --codes plit` copies one band's `PLIT`
-rows to others. That is only correct while the bands share a calendar, which
-they do today -- every band's `LIT` round covers the same dates, so the derived
-`PLIT` windows coincide.
+Copying one band's `PLIT` rows to the others -- how the AY2026 rows were
+produced -- is only correct while the bands share a calendar, which they do
+today -- every band's `LIT` round covers the same dates, so the derived `PLIT`
+windows coincide.
 
 Watch the interaction with `int_google_sheets__dibels_pm_expectations`: its day
 count groups on `(region, year, season, round)` with **no `grade_band`**, and
@@ -2219,10 +2223,10 @@ enrollment has changed**: AY2026 Paterson has 120 grade-4 students and 60
 grade-8 students (zero of either in AY2025) -- confirmed via
 `int_extracts__student_enrollments`, and consistent with the SY26-27 T&L doc,
 which gives Newark and Paterson one shared grid with no per-region grade-band
-split. Generating AY2026 rows with the old Paterson-specific band override
-(`duplicate_reporting_terms_grade_band.py`'s `--region-override` flag) produces
-the WRONG bands -- check current enrollment before reusing any region's
-prior-year band definition, every year, not just for Paterson.
+split. Generating AY2026 rows with the old Paterson-specific band override (the
+per-region band override the old band-duplication script carried) produces the
+WRONG bands -- check current enrollment before reusing any region's prior-year
+band definition, every year, not just for Paterson.
 
 ### SY26-27 NJ rollover status
 
@@ -2284,8 +2288,8 @@ hold. Flag derived rows as derived so a later correction is cheap; do not
 re-litigate the `PLIT3` question above before generating.
 
 **Miami SY26-27 is generated.** 44 `reporting__terms` rows
-(`generate_sy2627_miami_lit_plit_rows.py`) and 416 `Expected Assessments` rows
-(`generate_sy2627_expected_assessments_rows.py --regions Miami`). What the
+(`generate_miami_lit_plit_rows.py`) and 416 `Expected Assessments` rows
+(`generate_pm_expected_assessments_rows.py --regions Miami`). What the
 generators encode, all from the T&L SY27 doc's Miami tab:
 
 - **11 rounds, season split 5 + 6.** The MOY Benchmark window (`1/5 - 1/22`)
