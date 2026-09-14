@@ -95,7 +95,6 @@ with
             and academic_year = {{ var("current_academic_year") - 1 }}
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     backfill_y1_stored_raw as (
         /* TODO(#4687): TEMPORARY, see backfill_quarter_running. */
         select
@@ -367,7 +366,9 @@ with
 
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid >= {{ var("current_academic_year") - 1991 }}
+            -- a district without the GradeBook plugin sets the var false (#3908)
+            {{ var("powerschool_has_category_grades") }}
+            and yearid >= {{ var("current_academic_year") - 1991 }}
             and not is_dropped_section
             and storecode_type not in ('Q')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
