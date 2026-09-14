@@ -18,9 +18,7 @@ models:
       ADP membership feed, and scoped to the coordinator's own school. It is
       also granted to Miami School Leaders in Residence, matched on job title
       and scoped to every school in their region, because their home location is
-      the regional office rather than a campus. That title match is temporary
-      and is replaced by the ADP `Principal in Residence` membership once People
-      Operations populates it.
+      the regional office rather than a campus.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:

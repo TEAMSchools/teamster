@@ -70,11 +70,10 @@ with
             ntnc.associate_id is not null as is_new_teacher_network_coordinator,
 
             /*
-                A School Leader in Residence is homed at Room 11, the Miami
-                regional office, so School Admin scope reaches no teachers. The
-                title match is deliberate and temporary: it goes away once the
-                ADP `Principal in Residence` membership is populated for them,
-                which is the same feed the coordinator rule above already reads.
+                Temporary: this title match goes away once the ADP
+                `Principal in Residence` membership is populated, which is the
+                same feed the coordinator rule above already reads. The region
+                predicate holds the grant to Miami until then.
             */
             coalesce(
                 sr.job_title = 'School Leader in Residence'
@@ -111,10 +110,10 @@ with
             sr.home_department_name as course_name,
             sr.home_work_location_dagster_code_location as region,
             sr.is_teacher,
+            sr.is_school_leader_in_residence as observes_whole_region,
+
             sr.is_new_teacher_network_coordinator
             or sr.is_school_leader_in_residence as is_regional_observer,
-
-            sr.is_school_leader_in_residence as observes_whole_region,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,
 
