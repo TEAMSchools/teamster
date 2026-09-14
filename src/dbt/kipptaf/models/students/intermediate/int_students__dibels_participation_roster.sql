@@ -85,11 +85,28 @@ with
         where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
     ),
 
-    -- one row per student per (model, season) they could owe testing for, each
-    -- carrying that combination's own eligibility value. This is what lets three
-    -- different eligibility rules -- none for Benchmark, a probe-eligible flag
-    -- for internal, a cohort match for aimline -- resolve to one equality
-    -- against expected_tests rather than three UNION branches.
+    -- the seven (season, method) combinations a student could owe testing for
+    expectation_keys as (
+        select admin_season, model_type,
+        from
+            unnest(
+                [
+                    struct('BOY' as admin_season, 'BM' as model_type),
+                    ('MOY', 'BM'),
+                    ('EOY', 'BM'),
+                    ('BOY->MOY', 'Internal'),
+                    ('MOY->EOY', 'Internal'),
+                    ('BOY->MOY', 'Aimline'),
+                    ('MOY->EOY', 'Aimline')
+                ]
+            )
+    ),
+
+    -- one row per student per (model, season), each carrying that combination's
+    -- own eligibility value. This is what lets three different eligibility rules
+    -- -- none for Benchmark, a probe-eligible flag for internal, a cohort match
+    -- for aimline -- resolve to one equality against expected_tests rather than
+    -- three UNION branches.
     student_expectations as (
         select
             s.academic_year,
@@ -102,25 +119,21 @@ with
 
             k.admin_season,
             k.model_type,
-            k.eligibility_key,
+
+            case
+                when k.model_type = 'BM'
+                then 'All'
+                when k.model_type = 'Internal' and k.admin_season = 'BOY->MOY'
+                then s.boy_probe_eligible
+                when k.model_type = 'Internal'
+                then s.moy_probe_eligible
+                when k.model_type = 'Aimline' and k.admin_season = 'BOY->MOY'
+                then s.dibels_boy_composite
+                else s.dibels_moy_composite
+            end as eligibility_key,
 
         from students as s
-        cross join
-            unnest(
-                [
-                    struct(
-                        'BOY' as admin_season,
-                        'BM' as model_type,
-                        'All' as eligibility_key
-                    ),
-                    ('MOY', 'BM', 'All'),
-                    ('EOY', 'BM', 'All'),
-                    ('BOY->MOY', 'Internal', s.boy_probe_eligible),
-                    ('MOY->EOY', 'Internal', s.moy_probe_eligible),
-                    ('BOY->MOY', 'Aimline', s.dibels_boy_composite),
-                    ('MOY->EOY', 'Aimline', s.dibels_moy_composite)
-                ]
-            ) as k
+        cross join expectation_keys as k
     ),
 
     roster_enrollment_dates as (
