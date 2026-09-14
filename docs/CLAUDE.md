@@ -18,7 +18,7 @@ docs/
     groups.yml              # Topical groups, families, promo cards, threshold
     build.py               # load -> select -> validate -> render
     template.html           # The published page's shell
-    README.md              # Field reference: what "verified" requires
+    README.md              # This directory + state of the catalog
     RUNBOOK.md              # Verification task sequence
     PROJECT.md              # Why this exists, where it stands
   reference/               # Architectural patterns and operational guides
@@ -43,6 +43,7 @@ docs/
     dagster.md
     dbt-development.md
     google-sheets.md
+    launch-page-guide.md   # Field reference for links.yml (published)
     local-development.md
     sftp-integration.md
     superpowers.md
@@ -89,8 +90,11 @@ Regenerate only in a full environment where all locations load.
 ## `launch/` Directory
 
 The staff tool catalog and the pipeline that publishes it — see
-`docs/launch/README.md` (field reference) and `docs/launch/PROJECT.md` (why and
-where it stands) before touching anything here.
+`docs/guides/launch-page-guide.md` (the published field reference: every
+`links.yml` field, legal values, and validation errors), `docs/launch/README.md`
+(this directory and the state of the catalog) and `docs/launch/PROJECT.md` (why
+and where it stands) before touching anything here. `build.py` is authoritative
+if the guide and the code disagree.
 
 - **`docs/launch/*.{yml,py}` and `template.html` are source, not docs** —
   `mkdocs.yml` `exclude_docs` keeps `links.yml`, `groups.yml`, `build.py`,

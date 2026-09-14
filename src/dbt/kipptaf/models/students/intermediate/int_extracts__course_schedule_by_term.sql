@@ -75,6 +75,7 @@ with
             s.sections_no_of_students,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
+            s.school_level,
 
             t.`quarter`,
             t.semester,
@@ -86,8 +87,6 @@ with
             t.first_day_school_year,
             t.last_day_school_year,
             t.days_in_quarter,
-
-            d.school_level,
 
             {{ extract_region("s") }} as region,
 
@@ -102,7 +101,7 @@ with
                 and s.sections_schoolid = 179905
                 and s.sections_grade_level >= 5,
                 'MS',
-                d.school_level
+                s.school_level
             ) as school_level_alt,
 
             if(cx.ap_course_subject is not null, true, false) as is_ap_course,
@@ -112,10 +111,6 @@ with
             ) as section_quarter_count,
 
         from {{ ref("base_powerschool__sections") }} as s
-        inner join
-            {{ ref("stg_powerschool__schools") }} as d
-            on s.sections_schoolid = d.school_number
-            and s._dbt_source_project = d._dbt_source_project
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
             on s.courses_dcid = cx.coursesdcid

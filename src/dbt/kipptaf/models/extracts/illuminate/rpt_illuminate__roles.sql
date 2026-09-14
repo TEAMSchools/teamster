@@ -16,11 +16,7 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_powerschool__schools") }} as sch
-    on sch.state_excludefromreporting = 0
-    -- Miami left Illuminate ahead of AY2026-27. Filter the SITE side only: CMO
-    -- staff are network-wide, so they keep roles at every remaining site.
-    and sch._dbt_source_project != 'kippmiami'
+    {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
 where
     sr.worker_status_code != 'Terminated'
     and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')

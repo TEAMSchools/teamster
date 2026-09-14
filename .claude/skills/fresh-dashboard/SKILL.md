@@ -42,6 +42,16 @@ description: >-
   from either SIS's per-school field. These are NJ bands, so **Miami grade 5
   reports `MS` here but `ES` on the goals sheet** — an accepted divergence, not
   a bug. Don't reconcile it.
+- **TWO different workbooks are in play, and confusing them produces a
+  confidently wrong staleness verdict.** SRE's target workbook (see
+  _Sanity-checking the scaffold against SRE's target sheet_) is the
+  hand-maintained source of the numbers. The sheet **dbt actually reads is a
+  separate workbook**: `Finalsite`, id
+  `1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU`, tab `goals`, reaching the
+  external table through the named range
+  `src_google_sheets__finalsite__goals_v2` (cols `A`-`J`). Numbers move from one
+  to the other only when a person transcribes them, so the two drift apart by
+  design and "the goals sheet" is ambiguous unless you say which.
 - **Only `src_google_sheets__finalsite__goals` reads the sheet live. Every goals
   relation you can actually query is a frozen table**, so prod goes STALE
   relative to the sheet — the opposite of a live-read hazard.
@@ -50,10 +60,20 @@ description: >-
   (native table, frozen at last build), and the BigQuery MCP cannot read the
   `src_` external at all — its service account has no Drive scope
   (`Access Denied ... while getting Drive credentials`). Before trusting ANY
-  goals comparison, prove freshness: the sheet's Drive `modifiedTime` must be
-  older than `last_modified_time` for `stg_google_sheets__finalsite__goals` in
+  goals comparison, prove freshness against the **`Finalsite` goals workbook,
+  not SRE's**: its Drive `modifiedTime` must be older than `last_modified_time`
+  for `stg_google_sheets__finalsite__goals` in
   `kipptaf_google_sheets.__TABLES__`. If it is newer, the sheet has uningested
   edits — rebuild into dev before comparing (see the reconciliation loop).
+- **Reading SRE's `modifiedTime` for that check answers a different question.**
+  It has already produced a reported "prod is stale, SRE edited today" when the
+  goals sheet was untouched and prod was current to the minute (staging built
+  nine minutes after the goals sheet's last edit). SRE's timestamp tells you
+  only that a TRANSCRIPTION may be owed. Two further reasons not to lean on it:
+  merely opening that workbook can bump `modifiedTime`, because its volatile
+  formulas recalculate on access, and the Drive connector returns
+  `viewedByMeTime` alongside it, which is easy to misread as corroboration. **A
+  value diff is the evidence that SRE changed something; a timestamp is not.**
 
 ---
 
@@ -276,18 +296,32 @@ Four traps in this tab:
   / 56). **Col `F` is `Budget Target` — as its header says — for these three
   exactly as for every other school. Load it that way.** An earlier version of
   this file claimed those values were really seat targets "because the `Miami`
-  tab's per-grade seat rows sum to exactly those numbers," and that error is
-  live in prod: it holds `Seat Target` 90/196/56 with `Budget Target` NULL for
-  the three, while reading col `F` as `Budget Target` for the other 19. The same
-  column cannot be two things.
+  tab's per-grade seat rows sum to exactly those numbers." The same column
+  cannot be two things, and **the prod error that claim caused is now FIXED**
+  (verified 2026-09-09): all three carry BOTH `Seat Target` and `Budget Target`
+  at 90 / 196 / 56. Those readings land on the same number legitimately —
+  `Budget Target` from col `F`, and `Seat Target` independently from the `Miami`
+  tab's col `H` per-grade sums (MTH 90; Legacy ES K-5 = 56+28+28+28+28+28 = 196;
+  Legacy MS grade 6 alone = 56, its grades 7-8 rows being excluded). So **equal
+  values here are not evidence the two columns were conflated again** — check
+  whether BOTH are populated before reporting a regression, and do not "restore"
+  a NULL.
 
   The sum argument is a coincidence — a new school opens at capacity, so its
   budget target equals its seat capacity. Col `F` is demonstrably a distinct
-  concept: it differs from col `E` for 10 of the 19 schools that carry both
-  (Sumner 406/376, Hatch 252/208, Life 515/490), and **`KCA` has `F` 612 above
-  `E` 504**, which no seat reading survives. The seat value for the three is
-  independently derivable from the `Miami` tab's col `H` per-grade sums, so
-  nothing is lost by reading `F` as budget.
+  concept: it differs from col `E` for 9 of the 19 schools that carry both
+  (SPARK 603/601, THRIVE 574/572, Seek 574/572, Life 515/490, KURA 522/505, LSP
+  584/572, Sumner 406/376, Hatch 252/208, KHS 495/480). The seat value for the
+  three is independently derivable from the `Miami` tab's col `H` per-grade
+  sums, so nothing is lost by reading `F` as budget.
+
+  **This file used to rest that argument on "`KCA` has `F` 612 above `E` 504,
+  which no seat reading survives." As of 2026-09-09 `F21` reads 504** — SRE
+  moved Courage's `Budget Target` from 612 to 504 — so the once-decisive example
+  is gone, while the conclusion still stands on the 9 schools above. Treat every
+  single-cell proof in this file as perishable: re-derive it from the current
+  workbook before quoting it, and never report a cell as changed just because it
+  no longer matches a number written here.
 
   Test before trusting any "this column is really that column" claim: compare
   `E` against `F` across all schools. If they ever differ, they are different
@@ -541,6 +575,25 @@ implausible magnitude before reporting it.
 Note also that `KCNA`'s lower block repeats `KHS` in a **Campus** column, so a
 school-name map will happily match it and read the wrong columns.
 
+**Pull the goals table with the BigQuery Python client, not the MCP and not
+`bq`.** A full comparison needs every sheet-sourced row at once (~700 for the
+six SRE targets, ~2,300 for the whole tab). The BigQuery MCP truncates at 50
+rows, and `bq` runs on gcloud USER credentials that expire mid-session — it
+fails with `You do not currently have an active account selected`, which is an
+auth expiry and NOT a permissions problem, so do not go hunting for grants. ADC
+is a service account and does not expire:
+
+```bash
+# then, in the script: bigquery.Client(project="teamster-332318")
+uv run --with google-cloud-bigquery python
+```
+
+Diff in Python from there. Do not set `GOOGLE_APPLICATION_CREDENTIALS` inline to
+"help" — that trips the credentials-JSON path block; default ADC discovery
+already resolves it. A compact alternative when you only need a spot check is
+one `string_agg` per `(goal_granularity, goal_name)` through the MCP, which
+returns a dozen rows instead of hundreds.
+
 ## Goals reconciliation — offer this at the start of FRESH work
 
 **SRE does not always flag goal changes.** So before doing anything substantive
@@ -631,6 +684,34 @@ discrepancies are then out of scope for whatever you find.
    diff.** They disagree in real cases. When the two conflict, do NOT pick one:
    flag it as a question for SRE (see _Handing SRE a question_ below).
 
+1. **When they disagree, re-read the cover-sheet cell as a FORMULA** —
+   `valueRenderOption="FORMULA"` — because that is what tells you which KIND of
+   problem you have. On the cover sheet, cols `D`, `E`, `G`, `H` and `I` are
+   formulas pointing into the region tabs for essentially every school, while
+   **col `F` (`Budget Target`) is hand-typed for all of them**. So a literal in
+   `F` is ordinary authoring and needs no explanation, whereas **a lone literal
+   in an otherwise-formula column is the signature of a manual overwrite** — and
+   from here it is indistinguishable from an accidental paste over the formula.
+
+   **That is where it stops. Do not escalate a hand-typed override and do not
+   push a value from it.** SRE customizes cells by hand and that is theirs to
+   do, so a literal in a formula column EXPLAINS a diff rather than being a
+   defect to chase — this is the standing call from the data team, not a
+   judgement to re-make per cell. Say what you found, leave prod as loaded, and
+   move on. It is also the exception to the "flag it as a question for SRE" rule
+   in the step above: that rule is for two SOURCED numbers disagreeing, not for
+   a cover-sheet cell someone deliberately typed.
+
+   Verified 2026-09-09: cover sheet `H11` (Purpose `New Student Target`) is the
+   only literal in col `H`, reading 69 against the `Newark` tab's `P51`
+   (`=sum(P47:P50)`) of 73.97 → 74. Prod holds 74, and 74 was KEPT — the
+   divergence from the cover sheet's 69 was accepted rather than reconciled, and
+   no question went to SRE. Do not re-open it.
+
+   Print only a literal-vs-formula CLASSIFICATION, never the formula strings: a
+   grid of formula text trips `check-output.sh`'s high-entropy scan and the
+   entire tool result comes back as `[redacted: secret material]`.
+
 1. **Never encode an interpretation from this file as a transformation in your
    extractor.** Read every column as its header says, diff, and explain the
    diffs afterwards. Remapping a column on the way in ("this file says `F` is
@@ -641,9 +722,43 @@ discrepancies are then out of scope for whatever you find.
    three" — because the documentation and the extractor were the same claim. A
    NULL that matches a note in this file is still a finding until you have
    checked the source cell.
-1. **Hand back a paste-ready block.** Plain delimited rows in a fenced code
-   block, one row per line, column order matching the sheet — not a markdown
-   table, which can't be pasted into Sheets.
+1. **Hand back a FULL rebuild of the `goals` tab, not just the changed rows.**
+   Emit every row the tab should contain — all of them, roughly 2,300 — as plain
+   tab-delimited lines in a fenced code block, in the sheet's column order
+   (`enrollment_academic_year`, `region`, `school_level`, `schoolid`, `school`,
+   `grade_level`, `goal_granularity`, `goal_type`, `goal_name`, `goal_value`),
+   so the analyst clicks `A2` and pastes once. Not a markdown table, which can't
+   be pasted into Sheets.
+
+   **Do not hand back only the rows that changed.** Applying a diff by hand
+   means finding each row among thousands and editing a single cell, and every
+   step of that is error-prone: the analyst has to trust a row number you
+   computed, the tab's row order is not guaranteed stable between reads, and a
+   mis-scrolled edit writes a goal onto the wrong school silently — no test
+   downstream would catch it, because the value is perfectly valid where it
+   landed. A full replace has one failure mode instead, a bad paste, and that
+   one is visible immediately in the row count.
+
+   Three constraints on the full-replace path:
+   - **Row 1 is the header** (`skip_leading_rows: 1`). The paste starts at `A2`
+     and must never overwrite, shift or sort row 1 — capturing it corrupts the
+     external table's column mapping.
+   - **The rebuild must be a superset of what is already there.** Build it by
+     taking the current staging rows and applying only the value changes you
+     attributed to a source cell — NEVER by re-deriving the tab from SRE's
+     workbook. The workbook carries only the six SRE-entered targets, so a
+     workbook-derived rebuild silently drops every funnel roll-up row
+     (`Inquiries`, `Deferred`, `Waitlisted`, `Accepted`, and the
+     `Pending Offers` / `Conversion` families) — about two thirds of the tab.
+   - **Diff your rebuild against the staging table before handing it over**, on
+     row count and on the full key set (`enrollment_academic_year`, `region`,
+     `schoolid`, `grade_level`, `goal_granularity`, `goal_type`, `goal_name`).
+     Only `goal_value` may differ, and only in the cells you can name. Say in
+     your message how many values moved.
+
+   Still name each change in prose next to the block, with the source cell, so
+   the analyst and SRE can see what moved without diffing 2,300 lines.
+
 1. **Rebuild before re-comparing.** Their edits are NOT visible to prod —
    `stg_google_sheets__finalsite__goals` is a frozen table and the BigQuery MCP
    cannot read the live external. Rebuild into your dev schema, then query the

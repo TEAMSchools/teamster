@@ -1,4 +1,7 @@
 with
+    -- Passthrough over the kippmiami build. student_number arrives already
+    -- resolved there from int_focus__students as the 8400-prefixed network
+    -- number; nothing here re-keys it.
     source as (
         {{
             dbt_utils.union_relations(

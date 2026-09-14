@@ -9,6 +9,14 @@ models:
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Eager rebuilt this table ~145 times a day. Its fastest consumers are
+          # hourly: the Clever extract job (@hourly) and rpt_tableau__ops_dashboard
+          # (0 * * * *). Everything else reads it nightly or pulls on open
+          # (Connected Sheets). Refs #5215
+          automation_condition:
+            cron_schedule: 0 * * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -927,6 +935,18 @@ models:
         description:
           The enrollment status of the student. Categorical mapping of
           enroll_status.
+      - name: exited_hs
+        data_type: string
+        description:
+          Whether the student graduated or completed high school, per exitcode =
+          'G1' (Gen Table 6 cat=exitcodes, labeled "Graduated from a KIPP NJ
+          school"). The codeset also lists 'GR' ("Graduated"), 'EG' ("Early
+          Graduate"), and 'L' ("Graduation Code"), but none of the three has
+          ever been assigned to a real enrollment record network-wide -- 'G1' is
+          the only graduation code actually in use, so checking it alone is
+          sufficient. Shared by rpt_gsheets__csgf_hs_postsec_pathways and
+          rpt_gsheets__csgf_hs_enrollment -- promoted here from a duplicated
+          per-model calculation so both stay in sync.
       - name: race_ethnicity
         data_type: string
         description:

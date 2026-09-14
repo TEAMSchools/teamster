@@ -10,15 +10,6 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- derived from recorded attendance rather than from Focus row presence:
-    -- int_focus__attendance_daily scaffolds a present-by-default row back to
-    -- AY2020, so scoping on the years it contains would replace six years of
-    -- real PowerSchool attendance with fabricated perfect attendance.
-    cutover as (
-        select focus_start_academic_year, from {{ ref("int_students__sis_cutover") }}
-    ),
-
     -- Focus re-dated Miami's enrollment stints (a returning student's stint
     -- starts on the real first day of school, where PowerSchool used a July 1
     -- rollover), and entrydate feeds student_enrollment_key, so the frozen
@@ -31,59 +22,9 @@ with
         where _dbt_source_project = 'kippmiami'
     ),
 
-    -- The per-district ctod source carries 561 duplicate (studentid,
-    -- calendardate) keys network-wide (1,301 excess rows: every column
-    -- byte-identical, a raw double-write -- confirmed against the raw
-    -- per-district source tables) plus 18 genuine same-day conflicts (rows
-    -- that differ -- one Camden student-day carries two different
-    -- fteid/grade_level rows for the same studentid/date). 558 of the 561
-    -- keys are Newark, spanning 2026-08-19 through 2027-06-17 -- the current,
-    -- still-loading academic year, so this is an ONGOING double-write, not a
-    -- closed historical defect. Both are pre-existing upstream PowerSchool
-    -- data-quality artifacts, unrelated to this model's Focus conform logic
-    -- -- they were previously invisible because the old ctod's own
-    -- uniqueness test carried no severity override and silently warned.
-    -- TODO: the PowerSchool attendance-calendar load needs an upsert/natural-
-    -- key constraint on (studentid, calendardate) so it stops writing a
-    -- second identical row for the same student-day when the nightly
-    -- pre-population job reruns; until then this dedup must stay.
-    -- _dbt_source_project MUST be in partition_by, not just studentid:
-    -- PowerSchool's internal studentid is assigned per-district, not
-    -- network-wide, so two different students in two different districts
-    -- routinely collide on the same (studentid, calendardate) -- omitting
-    -- the project from the partition silently merged unrelated students
-    -- from different districts (caught via a dev-vs-prod parity check:
-    -- dropping it undercounted every NJ district by 1-2K rows/year).
-    powerschool_deduped as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_powerschool__ps_adaadm_daily_ctod"),
-                partition_by="_dbt_source_project, studentid, calendardate",
-                order_by="(attendancevalue is null) asc",
-            )
-        }}
-    ),
-
-    -- Miami's student_number is the 8400-prefixed Focus id since #5148, and the
-    -- frozen archive carries the bare PowerSchool number, like the pre-Focus
-    -- vendor rows the macro was written for. int_focus__students.powerschool_id
-    -- confirms the offset for every archive student.
-    powerschool_renumbered as (
-        select
-            * except (student_number),
-
-            {{
-                focus_student_number(
-                    "student_number", "yearid + 1990", "_dbt_source_project"
-                )
-            }} as student_number,
-        from powerschool_deduped
-    ),
-
-    -- Year-scoped, not project-scoped. Focus starts at AY2026 and the frozen
-    -- archive holds Miami AY2020 through AY2025, so excluding kippmiami
-    -- outright (the way int_students__terms does) would delete six years of
-    -- history.
+    -- The frozen PowerSchool archive ends at AY2025 (rebuilt with that bound,
+    -- #5012), so every archive row is a pre-Focus year and needs no cutover
+    -- predicate. The Focus branch below still floors at the cutover year.
     powerschool_conformed as (
         select
             ps.* except (entrydate),
@@ -107,21 +48,16 @@ with
             -- Archive date when no Focus stint contains the day (51 AY2025 rows
             -- per #4803); those rows already resolve on the archive date.
             coalesce(fs.entrydate, ps.entrydate) as entrydate,
-        from powerschool_renumbered as ps
-        cross join cutover as c
-        -- Inclusive on both ends: the roster's exitdate is the stint's last
-        -- day, and it trims each stint to the day before the next starts, so
-        -- one day matches at most one stint.
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ps
+        -- Half-open: the union conforms exitdate to the day after the stint's
+        -- last day, and the roster trims each stint to the day before the next
+        -- starts, so one day matches at most one stint.
         left join
             focus_stints as fs
             on ps.student_number = fs.student_number
             and ps.yearid = fs.yearid
-            and ps.calendardate between fs.entrydate and fs.exitdate
-        where
-            not (
-                ps._dbt_source_project = 'kippmiami'
-                and ps.yearid >= c.focus_start_academic_year - 1990
-            )
+            and ps.calendardate >= fs.entrydate
+            and ps.calendardate < fs.exitdate
     ),
 
     -- The whole Focus-to-network translation lives here. See "The conform
@@ -146,6 +82,10 @@ with
             ad._dbt_source_project,
 
             fs.schoolid,
+
+            fcw.week_start_monday,
+            fcw.week_end_sunday,
+            fcw.week_number_academic_year,
 
             -- See powerschool_conformed's is_focus_source for why this is an
             -- explicit flag rather than a studentid-null proxy.
@@ -179,10 +119,22 @@ with
             if(ad.daily_code = 'U', 'A', ad.daily_code) as att_code,
         from {{ ref("int_focus__attendance_daily") }} as ad
         inner join focus_schools as fs on ad.schoolid = fs.focus_school_id
-        cross join cutover as c
-        -- Required, not belt-and-braces. Without it Focus's AY2020 through
-        -- AY2025 rows land beside PowerSchool's real rows for the same Miami
-        -- school-days and break this model's own grain test.
+        left join
+            {{ ref("int_focus__calendar_week") }} as fcw
+            on ad.schoolid = fcw.schoolid
+            and ad.academic_year = fcw.academic_year
+            and ad.school_date between fcw.week_start_monday and fcw.week_end_sunday
+            and ad._dbt_source_project = fcw._dbt_source_project
+        -- One row. See int_students__sis_cutover for why the boundary is a
+        -- floor derived from recorded attendance rather than from Focus row
+        -- presence: int_focus__attendance_daily scaffolds a present-by-default
+        -- row back to AY2020, so scoping on the years it contains would
+        -- replace six years of real PowerSchool attendance with fabricated
+        -- perfect attendance. Required, not belt-and-braces: without it
+        -- Focus's AY2020 through AY2025 rows land beside PowerSchool's real
+        -- rows for the same Miami school-days and break this model's own
+        -- grain test.
+        cross join {{ ref("int_students__sis_cutover") }} as c
         where ad.academic_year >= c.focus_start_academic_year
     ),
 
@@ -220,14 +172,13 @@ with
             mem.attendancevalue,
             mem.potential_attendancevalue,
             mem.membershipvalue,
+            mem.week_start_monday,
+            mem.week_end_sunday,
+            mem.week_number_academic_year,
 
             t.academic_year,
             t.semester,
             t.term,
-
-            cw.week_start_monday,
-            cw.week_end_sunday,
-            cw.week_number_academic_year,
 
             abs(mem.attendancevalue - 1) as is_absent,
 
@@ -293,12 +244,10 @@ with
             and mem.calendardate between t.term_start_date and t.term_end_date
             and mem._dbt_source_project = t._dbt_source_project
             and t.term is not null
-        inner join
-            {{ ref("int_students__calendar_week") }} as cw
-            on mem.yearid = cw.yearid
-            and mem.schoolid = cw.schoolid
-            and mem.calendardate between cw.week_start_monday and cw.week_end_sunday
-            and mem._dbt_source_project = cw._dbt_source_project
+        -- Membership days outside any calendar week have no week fields. The
+        -- former inner join to calendar_week dropped them; this keeps the row
+        -- set identical (#5193).
+        where mem.week_start_monday is not null
     ),
 
     anchors as (

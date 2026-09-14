@@ -70,18 +70,26 @@ skill.
 - **Do NOT use `Balanced` or `Performance`** — Balanced minimum requests (1 vCPU
   / 4 GiB) exceed ours (500m / 2 GiB). Performance has the same node-based
   pricing penalty as CCCs.
-- **`safe-to-evict: "false"` (extended-duration) is on agent and run pods.**
-  Under built-in Scale-Out it works as documented — blocks cluster autoscaler
-  eviction. Mutually exclusive with spot; do not move agent or run pods to a
-  spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget` →
-  `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent does
-  not.
+- **`safe-to-evict: "false"` (extended-duration) is on agent, run, and code
+  server pods.** Under built-in Scale-Out it works as documented — blocks
+  cluster autoscaler eviction. Mutually exclusive with spot; do not move any of
+  them to a spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget`
+  → `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent
+  does not. The code-server annotation depends on run pods and code servers
+  sharing priority 0: reintroducing a priority gap turns it back into the #4921
+  preemption storm. Asserted in `tests/test_k8s_config.py`.
 - **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
   set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
   nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with
   `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
   reconciliation cascade (cold start + ClusterIP churn) — factor into cost
   analysis.
+- **Run/step pods and code servers both run at priority 0.** Do not add a
+  `priorityClassName` to either. Run pods sat at 1000 (`dagster-run`) until
+  2026-09-08, when one preempted the kippcamden code server mid-upload and left
+  the location in a terminal `ERROR` for four days (#5187). Only the agent
+  carries a PriorityClass (`dagster-agent`, 1000), and it lives on amd64 nodes
+  where it competes with nothing. Asserted in `tests/test_k8s_config.py`.
 - **Code server topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to

@@ -121,6 +121,11 @@ models:
         data_type: string
       - name: school_abbreviation
         data_type: string
+      - name: entry_school_abbreviation
+        data_type: string
+        description: >-
+          Abbreviation of the school the student first enrolled in within the
+          network (entry_schoolid). Null when entry_schoolid is null.
       - name: spedlep
         data_type: string
       - name: lep_status

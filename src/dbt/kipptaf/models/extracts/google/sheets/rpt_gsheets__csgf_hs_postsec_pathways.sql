@@ -1,12 +1,11 @@
 select
     co.academic_year,
     co.student_number,
+    co.exited_hs,
 
     app.account_billing_state as college_state,
 
     coalesce(app.account_name, 'NA') as college_name,
-
-    if(co.exitcode = 'G1', 'Y', 'N') as exited_hs,
 
     case
         when app.enrollment_pursuing_degree_type = "Bachelor's (4-year)"

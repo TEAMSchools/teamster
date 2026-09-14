@@ -22,6 +22,27 @@ models:
           arguments:
             group_by: student_number
             distinct_field: grad_eligibility
+      - dbt_utils.unique_combination_of_columns:
+          description: >-
+            Not structurally unique the way the same key is on
+            int_students__graduation_pathway_scores. rn_highest is passed
+            through here rather than regenerated, so a duplicate is reachable if
+            calcs ever yields more than one row per source project, student and
+            discipline -- which needs ps_grad_path_code or the attempted flags
+            to disagree across a student's own rows. Today's grain makes that
+            constant per student and discipline, so the test is not known to be
+            reachable; it is a guard against the joins below drifting, not a
+            demonstrated risk.
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - student_number
+              - discipline
+              - score_type
+              - assessment_version
+              - rn_highest
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -30,8 +51,10 @@ models:
         description: District code location derived from `_dbt_source_relation`.
       - name: students_dcid
         data_type: int64
-      - name: studentsid
+      - name: studentid
         data_type: int64
+        description: >-
+          PowerSchool student identifier, unique only within its own instance.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
@@ -74,6 +97,8 @@ models:
       - name: ps_grad_path_code
         data_type: string
       - name: has_fafsa
+        data_type: boolean
+        description: Whether the student has met the FAFSA requirement.
       - name: njgpa_season_11th
         data_type: boolean
         description: >-
@@ -131,13 +156,26 @@ models:
       - name: points_short
         data_type: numeric
         description: Conditional on cutoff, scale_score.
+      - name: final_grad_path_name
+        data_type: string
+        description: >-
+          Display label for `final_grad_path_code`, so the code is decoded once
+          here rather than in each consumer. Null only where the code is null.
+        data_tests:
+          - not_null:
+              config:
+                where: final_grad_path_code is not null
+                severity: error
       - name: final_grad_path_code
         data_type: string
-        description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of grade_level, met_act, met_njgpa, met_psat10,
-          met_psat_nmsqt, met_sat, njgpa_attempt, ps_grad_path_code.
+        description: >-
+          Letter New Jersey uses to report which pathway the student met, and
+          the value written back to PowerSchool for the state submission. S is
+          the state assessment, E is ACT, D is SAT, J is PSAT10, K is
+          PSAT/NMSQT, M is IEP, N is portfolio appeal, O is attempted but passed
+          nothing, P is incomplete credits, R is the default for a student who
+          sat the NJGPA and met no pathway. A code PowerSchool already holds is
+          carried through rather than recomputed.
       - name: grad_eligibility
         data_type: string
         data_tests:
@@ -152,10 +190,12 @@ models:
                   - FAFSA Only
                   - ELA Only / No FAFSA
                   - Math Only / No FAFSA
-        description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. First non-null of
-          grad_eligibility, grade_level.
+        description: >-
+          Where the student stands against the graduation requirement overall,
+          which is what the dashboard shows. Derived from whether each subject
+          counts, whether FAFSA is required yet, and the 11th grade grace period
+          -- not looked up. Grades 10 and below are always Grad Eligible, since
+          no requirement has come due.
       - name: test_type
         data_type: string
         description:
@@ -166,5 +206,76 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__test
             source_column: test_type
-      - name: rn_discipline_distict
+      - name: rn_discipline_distinct
         data_type: int64
+        description: >-
+          Ranks a student's rows within a subject so a consumer wanting one row
+          per subject can filter on 1.
+
+unit_tests:
+  - name: test_met_njgpa_when_either_version_passed
+    description: >-
+      A student who failed one version of the NJGPA and passed the other has met
+      the state assessment pathway. Both versions share a pathway_option of
+      NJGPA, so the roll-up takes the best result across them rather than the
+      most recent or the highest raw score. Eight students hold scores on both
+      versions today and two of them have exactly this shape -- they missed the
+      retired cut score by a few points and then passed the adaptive test. Pins
+      that they come out with met_njgpa true and a final code of S.
+    model: int_students__graduation_path_codes
+    given:
+      - input: ref('int_students__graduation_pathway_scores')
+        format: sql
+        rows: |
+          select
+            'kippnewark_powerschool' as _dbt_source_relation,
+            'kippnewark' as _dbt_source_project,
+            1 as students_dcid,
+            1 as studentid,
+            1 as student_number,
+            '1' as state_studentnumber,
+            cast(null as string) as salesforce_id,
+            12 as grade_level,
+            0 as enroll_status,
+            2027 as cohort,
+            'ELA' as discipline,
+            'ENG' as powerschool_credittype,
+            cast(null as string) as ps_grad_path_code,
+            true as has_fafsa,
+            false as njgpa_season_11th,
+            false as fafsa_season_12th,
+            'NJGPA' as pathway_option,
+            'ELAGP' as score_type,
+            'S' as pathway_code,
+            725 as cutoff,
+            'NJGPA' as assessment_version,
+            cast(700 as numeric) as scale_score,
+            'ELAGP' as subject_area,
+            false as met_pathway_cutoff,
+            true as attempted_njgpa_ela,
+            false as attempted_njgpa_math,
+            cast(-25 as numeric) as points_short,
+            2 as rn_highest
+          union all
+          select
+            'kippnewark_powerschool', 'kippnewark', 1, 1, 1, '1', null,
+            12, 0, 2027, 'ELA', 'ENG', null, true, false, false,
+            'NJGPA', 'ELAGP', 'S', 450, 'NJGPA-A',
+            cast(500 as numeric), 'ELAGP', true, true, false,
+            cast(50 as numeric), 1
+    expect:
+      rows:
+        - {
+            student_number: 1,
+            assessment_version: NJGPA,
+            met_njgpa: true,
+            met_ela: true,
+            final_grad_path_code: S,
+          }
+        - {
+            student_number: 1,
+            assessment_version: NJGPA-A,
+            met_njgpa: true,
+            met_ela: true,
+            final_grad_path_code: S,
+          }

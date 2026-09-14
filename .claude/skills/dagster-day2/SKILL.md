@@ -165,13 +165,13 @@ Step 8 churn: at replicas=1 with maxSurge=200%, normal Helm upgrade = 2 creates.
 3-4 creates = a rollout retry; >>4 = sustained storm.
 
 In this codebase, agent pods run at priority 1000 (`dagster-agent`
-PriorityClass) — same tier as run/step pods, so they CANNOT be preempted by
-them. If you see "no agents have recently heartbeated" AND the agent pod shows
-Preempted events, the preemption would have to come from a pod at priority >1000
-(system-cluster-critical, etc.) — which is rare and worth investigating. If
-agents are RUNNING with heartbeats but there's agent-level ReadTimeout to
-`*.agent.dagster.cloud`, that's a control-plane connectivity issue, not
-pod-level preemption.
+PriorityClass) — above run/step and code server pods (0), so they CANNOT be
+preempted by them. If you see "no agents have recently heartbeated" AND the
+agent pod shows Preempted events, the preemption would have to come from a pod
+at priority >1000 (system-cluster-critical, etc.) — which is rare and worth
+investigating. If agents are RUNNING with heartbeats but there's agent-level
+ReadTimeout to `*.agent.dagster.cloud`, that's a control-plane connectivity
+issue, not pod-level preemption.
 
 **Timeline table** (ET): run failures, tick failures, terminal schedule tick
 failures, location load failures, agent errors, code server failures, unhealthy

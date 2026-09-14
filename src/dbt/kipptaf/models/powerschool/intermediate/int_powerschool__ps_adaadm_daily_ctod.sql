@@ -29,5 +29,5 @@ with
         }}
     )
 
-select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
-from union_relations
+select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
+from union_relations as ur

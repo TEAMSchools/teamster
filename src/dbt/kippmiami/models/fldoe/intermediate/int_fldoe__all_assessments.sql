@@ -43,24 +43,19 @@ with
 
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     fleid_lookup_raw as (
-        -- TODO: #3887 — 14 FLEIDs map to multiple student_numbers in PS;
-        -- dedupe is a workaround until source is cleaned.
-        select s.student_number, suf.fleid,
-        from {{ source("kippmiami_powerschool", "stg_powerschool__students") }} as s
-        inner join
-            {{
-                source(
-                    "kippmiami_powerschool", "stg_powerschool__u_studentsuserfields"
-                )
-            }} as suf on s.dcid = suf.studentsdcid and suf.fleid is not null
+        select student_number, florida_education_identifier as fleid,
+        from {{ ref("int_focus__students") }}
+        where florida_education_identifier is not null
     ),
 
     fleid_lookup as (
+        -- TODO: #3887 — 62 FLEIDs sit on more than one Focus student record;
+        -- the lower student_number is the migrated one enrollments carry.
         {{
             dbt_utils.deduplicate(
                 relation="fleid_lookup_raw",
                 partition_by="fleid",
-                order_by="student_number desc",
+                order_by="student_number asc",
             )
         }}
     )

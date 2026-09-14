@@ -53,7 +53,24 @@ fi
 # Extract all string values from tool_response (Claude Code's PostToolUse payload
 # key). Fall back to the whole payload when .tool_response is absent so a
 # payload-key drift (content under a different key) can't skip scanning (#20).
-combined=$(jq -r '[(.tool_response // .) | .. | strings] | join(" ")' <<<"${input}")
+# Image blocks carry the rendered picture as base64 — Read returns
+# {type:"image", file:{base64}}, MCP tools {type:"image", data}, the API
+# {type:"image", source:{data}} — and any real image trips the 120-char
+# heuristic. Drop ONLY that carrier, and only when it is base64-shaped; every
+# sibling string (paths, mime types, a plaintext data field) is still scanned.
+combined=$(jq -r '
+  def is_b64: type == "string" and test("^[A-Za-z0-9+/=[:space:]]+$");
+  def carrier(f): (try f catch null) // null;
+  def strip_images:
+    if type == "object" then
+      (if .type == "image" then
+         (if (carrier(.file.base64) | is_b64) then del(.file.base64) else . end)
+         | (if (carrier(.data) | is_b64) then del(.data) else . end)
+         | (if (carrier(.source.data) | is_b64) then del(.source.data) else . end)
+       else . end)
+      | with_entries(.value |= strip_images)
+    elif type == "array" then map(strip_images) else . end;
+  [(.tool_response // .) | strip_images | .. | strings] | join(" ")' <<<"${input}")
 
 # Decode candidate blobs and re-scan (catches encoded secrets). Two explicit
 # passes — standard base64 and url-safe base64 (#16) — so path separators aren't
@@ -99,9 +116,15 @@ fi
 
 # Heuristic: long high-entropy strings not already matched. Strip base64 image
 # data-URIs and ignore pure-hex runs (checksums/hashes) to cut false positives
-# (#29) while still catching opaque encoded-secret blobs.
+# (#29) while still catching opaque encoded-secret blobs. A run with no case
+# mix is an identifier, path, or hash, not an encoded blob: dot-free dbt paths
+# (target/compiled/kipptaf/models/<a>/<b>/tests/dbt_utils_unique_combination_o_<hex>)
+# reach 120 chars, while a random 120-char base64 string is single-case with
+# p = (38/64)^120 ~ 1e-27.
+# ponytail: case-mix test, not Shannon entropy; upgrade to an awk entropy
+# score (>5.0 bits/char) if a mixed-case identifier run false-positives.
 entropy_input=$(echo "${combined}" | sed -E 's#data:[^,[:space:]]*;base64,[A-Za-z0-9+/=]+##g')
 long_runs=$(echo "${entropy_input}" | grep -oE '[A-Za-z0-9+/=_-]{120,}' || true)
-if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$'; then
+if [[ -n ${long_runs} ]] && echo "${long_runs}" | grep -qvE '^[0-9a-fA-F]+$|^[^a-z]*$|^[^A-Z]*$'; then
 	emit_redacted "⛔ Tool output contained a high-entropy string (possible encoded secret) — redacted by check-output.sh"
 fi

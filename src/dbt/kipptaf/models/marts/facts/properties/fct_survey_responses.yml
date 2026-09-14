@@ -6,6 +6,16 @@ models:
       fct_survey_submissions via survey_submission_key and to
       dim_survey_questions via survey_question_key. Reaches dim_surveys only via
       the chain: response -> submission -> administration -> survey.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # Nightly: every data test on this view recomputed it in full, and
+          # dbt Cloud CI ran that on nearly every PR. No Cube cube or Tableau
+          # exposure reads this mart, so nightly clears its break-even with
+          # room to spare. Refs #5217
+          automation_condition:
+            cron_schedule: 0 3 * * *
     columns:
       - name: survey_response_key
         data_type: string
@@ -17,6 +27,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
