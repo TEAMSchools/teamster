@@ -434,9 +434,9 @@ group. Do not add one to the second group that also edits in place.
 
 The three `generate_*` scripts are year-agnostic: each takes `--academic-year`
 (labelled by the fall, so SY26-27 is `2026`) and a `--rounds` TSV transcribed
-from that year's T&L PM rounds doc. `scripts/rounds/sy2627_*.tsv` are the
-SY26-27 tables -- for a new year, copy the file, edit the dates, run. Each
-script's module docstring documents its own `--rounds` columns.
+from that year's T&L PM rounds doc. The TSV is not committed; transcribe it each
+year. Each script's module docstring documents its own `--rounds` columns with
+example rows.
 
 Corollaries:
 
@@ -2142,11 +2142,11 @@ at them.
 
 Both models come out of the same transcribed T&L round data, which
 `scripts/generate_pm_expected_assessments_rows.py` reads from a `--rounds` TSV
-(`scripts/rounds/sy2627_expected_assessments.tsv` for SY26-27; for a new year,
-copy that file and edit the dates and grids):
+(transcribed from the doc each year, not committed; columns and example rows are
+in the script's docstring):
 
 ```bash
-rounds=.claude/skills/dibels-dashboard/scripts/rounds/sy2627_expected_assessments.tsv
+rounds=sy2627_expected_assessments.tsv
 
 # combo: K-2 internal scaffold + 3-8 aimline -> by-levels range, 18 columns
 uv run python3 \

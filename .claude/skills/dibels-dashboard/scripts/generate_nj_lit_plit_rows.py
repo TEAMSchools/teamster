@@ -18,8 +18,12 @@ touched here.
                    (see below). Take it from the year's `LIT1`/`BOY` rows
                    already in `reporting__terms`.
 
-`rounds/sy2627_nj.tsv` is the SY26-27 table. Next year: copy it, edit the dates,
-run.
+The TSV is transcribed fresh each year and not committed. First rows of the
+SY26-27 table, for the shape:
+
+    region	round_number	season	start_date	end_date	plit1_start
+    Newark	1	BOY->MOY	2026-09-28	2026-10-02	2026-08-19
+    Newark	2	BOY->MOY	2026-10-19	2026-10-23
 
 `PLIT` dates are DERIVED, not transcribed, using the boundary rule verified
 against real AY2025 `reporting__terms` data (see the `dibels-dashboard` skill,
@@ -56,7 +60,7 @@ Usage:
     uv run --with google-cloud-bigquery python3 \
         .claude/skills/dibels-dashboard/scripts/generate_nj_lit_plit_rows.py \
         --academic-year 2026 \
-        --rounds .claude/skills/dibels-dashboard/scripts/rounds/sy2627_nj.tsv \
+        --rounds sy2627_nj.tsv \
         --out out.tsv
 """
 

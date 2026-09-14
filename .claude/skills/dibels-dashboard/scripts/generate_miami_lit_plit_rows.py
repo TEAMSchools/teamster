@@ -41,8 +41,12 @@ academic years by the SPRING, so "SY27" is `--academic-year 2026`.
     start_date     ISO `YYYY-MM-DD`
     end_date       ISO `YYYY-MM-DD`
 
-`rounds/sy2627_miami.tsv` is the SY26-27 table. Next year: copy it, edit the
-dates, run.
+The TSV is transcribed fresh each year and not committed. First rows of the
+SY26-27 table, for the shape:
+
+    round_number	season	start_date	end_date
+    1	BOY->MOY	2026-10-05	2026-10-09
+    2	BOY->MOY	2026-10-26	2026-11-06
 
 `PLIT` boundaries are DERIVED with the same rule verified against real AY2025
 data for NJ and Miami both (see the `dibels-dashboard` skill, "PLIT boundary
@@ -60,7 +64,7 @@ Usage:
     uv run --with google-cloud-bigquery python3 \
         .claude/skills/dibels-dashboard/scripts/generate_miami_lit_plit_rows.py \
         --academic-year 2026 \
-        --rounds .claude/skills/dibels-dashboard/scripts/rounds/sy2627_miami.tsv \
+        --rounds sy2627_miami.tsv \
         --out out.tsv
 """
 

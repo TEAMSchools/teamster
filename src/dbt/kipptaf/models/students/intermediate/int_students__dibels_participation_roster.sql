@@ -1,10 +1,9 @@
 with
-    -- the two expectation gates appended. expected_row_count is computed in the
-    -- gates themselves, where the cohort partition lives next to the column that
-    -- causes it. Both branches are grain projections, not dup-masking: a gate
-    -- is one row per measure, and this CTE keeps the round.
+    -- the two expectation gates, aggregated from measure grain to round grain.
+    -- count(*) after the include filters equals the gates' own
+    -- expected_row_count; recomputing it here makes the grain explicit.
     expected_tests as (
-        select distinct
+        select
             academic_year,
             region,
             grade,
@@ -13,7 +12,6 @@ with
             round_number,
             `start_date`,
             end_date,
-            expected_row_count,
 
             -- 'BM' rather than 'Benchmark', so this joins
             -- int_amplify__all_assessments model_type directly
@@ -24,12 +22,22 @@ with
             -- wants only probe-eligible students.
             if(assessment_type = 'PM', 'Yes', 'All') as eligibility_key,
 
+            count(*) as expected_row_count,
         from {{ ref("int_google_sheets__dibels_expected_assessments") }}
         where assessment_include is null and pm_goal_include is null
+        group by
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            `start_date`,
+            end_date
 
         union all
 
-        select distinct
+        select
             academic_year,
             region,
             grade,
@@ -38,15 +46,25 @@ with
             round_number,
             `start_date`,
             end_date,
-            expected_row_count,
 
             'Aimline' as model_type,
 
             -- aimline matches a cohort rather than a flag
             measure_standard_level as eligibility_key,
 
+            count(*) as expected_row_count,
         from {{ ref("int_google_sheets__dibels__expected_assessments_by_levels") }}
         where assessment_include is null and pm_goal_include is null
+        group by
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            `start_date`,
+            end_date,
+            measure_standard_level
     ),
 
     students as (

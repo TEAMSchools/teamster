@@ -1,14 +1,4 @@
 with
-    -- grain projection, not dup-masking: the directory is school x grade x year
-    -- and PM days are counted per school-year, so grade level drops out
-    school_years as (
-        select distinct _dbt_source_project, academic_year, region, ps_schoolid,
-
-        from {{ ref("int_students__school_directory") }}
-        -- no calendar to count: recruiting rows, and DIBELS is K-8
-        where school_source != 'finalsite' and school_level_alt != 'HS'
-    ),
-
     pm_rounds as (
         select
             s.region,
@@ -21,7 +11,9 @@ with
 
             count(distinct c.date_value) as pm_round_days,
 
-        from school_years as s
+        -- the directory is school x grade x year; count(distinct) absorbs the
+        -- grade fan-out
+        from {{ ref("int_students__school_directory") }} as s
         -- SIS-neutral, not stg_powerschool__calendar_day: Miami is Focus-only
         inner join
             {{ ref("int_students__calendar_day") }} as c
@@ -35,6 +27,8 @@ with
             and c.date_value between t.start_date and t.end_date
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
+        -- no calendar to count: recruiting rows, and DIBELS is K-8
+        where s.school_source != 'finalsite' and s.school_level_alt != 'HS'
         group by s.region, t.academic_year, t.name, round_number
     ),
 

@@ -47,14 +47,18 @@ Omit a (round, grade) pair entirely when the doc does not test it -- the K-2
 scaffold below fills it back in with `pm_goal_include = false`, and 3-8 gets no
 row at all.
 
-`rounds/sy2627_expected_assessments.tsv` is the SY26-27 table. Next year: copy
-it, edit the dates and grids, run.
+The TSV is transcribed fresh each year and not committed. First rows of the
+SY26-27 table, for the shape:
+
+    region	round_number	season	start_date	end_date	grade	measures	cohort
+    Newark	1	BOY->MOY	2026-09-28	2026-10-02	0	PSF	Both
+    Newark	1	BOY->MOY	2026-09-28	2026-10-02	1	PSF	Both
 
 Usage:
     uv run python3 \
         .claude/skills/dibels-dashboard/scripts/generate_pm_expected_assessments_rows.py \
         --academic-year 2026 \
-        --rounds .claude/skills/dibels-dashboard/scripts/rounds/sy2627_expected_assessments.tsv \
+        --rounds sy2627_expected_assessments.tsv \
         --out out.tsv
 """
 
