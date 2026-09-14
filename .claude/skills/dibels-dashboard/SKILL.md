@@ -1193,35 +1193,51 @@ Consequence for the rollover: the first paste of a year covers **K-5 only**
 missing grades as a broken foundation paste -- the 6-8 EOY values are present
 and populated; the model never consults them at BOY.
 
-**This is a bug in the current model, not a question for T&L.** Foundation goals
-are derived from final (EOY) benchmark results, so the EOY figure is the ANCHOR
-target rather than one milestone among three. A BOY or MOY row measures progress
-toward it. Reusing a grade's EOY goal when the season being measured has no goal
-of its own is therefore the intended semantic, and the absent MOY rows for 6-8
-are not an omission by academics.
+**Reading the foundation goals columns.** Two columns decide which goal a row
+gets, and neither name says so on its own:
 
-Historic prod did exactly that, which is the evidence to trust over the current
-code. AY2025 grades 6-8 carry their foundation EOY goal at BOY _and_ MOY, exact
-to the digit -- Camden 6 `0.33`, Newark 6 `0.53`, Camden 7 `0.32`, Newark 7
-`0.34`, Camden 8 `0.41`, Newark 8 `0.40`, each matching that grade and region's
-foundation EOY goal with zero difference.
+- `period` is the administration the goal is FOR -- an `MOY` row is the goal for
+  the MOY administration, an `EOY` row the goal for EOY. It is not the date the
+  goal was set.
+- `grade_goal_type` selects WHICH foundation aggregate applies: `At/Above` or
+  `Well Below`. On the assessment side the counterpart is
+  `foundation_measure_standard_level`, the student's own composite bucket, and
+  `rpt_gsheets__dibels_bm_goals_calculations` joins the two so a student is
+  measured against the aggregate matching their level.
 
-The fix is a fallback to the grade's EOY row when the `benchmark_goal_season`
-join finds nothing. It must supply `grade_goal_type` as well as the goal values,
-because `where c.grade_goal_type = 'At/Above'` is what drops these rows today --
-a fallback that fills only `grade_goal` leaves them dropped and looks inert.
+`benchmark_goal_season` on the assessment side is the season a row is measured
+AGAINST, which is the next one (`BOY -> MOY`, `MOY -> EOY`, `EOY -> null`). The
+join is `a.benchmark_goal_season = f.period`, so a BOY row looks for the goal
+FOR MOY.
 
-Two traps when reproducing the historic numbers:
+**This is correct behaviour, not a bug.** The academics sheet sets MOY and EOY
+goals per grade, and grades 6-8 deliberately get EOY only -- K-2 and 3-5 carry
+both. K-2 is also the only band with `grade_range_goal` populated. Verified
+against AY2026: grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY
+and 6 EOY, and only grades 0-2 have non-null range goals.
 
-- **Paterson grades 6 and 7 were wrong at BOY in AY2025** -- `0.53` against a
-  foundation EOY of `0.30` at grade 6, and `0.34` against `0.33` at grade 7,
-  both of them Newark's value. Paterson's MOY rows are correct. These are copy
-  errors in the hand-built tab, so a correct model will NOT reproduce them; do
-  not read the difference as a regression.
-- **Miami has benchmark goals in the tab but no foundation goals at all.**
-  Foundation goals cover Camden, Newark and Paterson only, so Miami's numbers
-  come from outside this model. Check that before assuming this lineage feeds
-  them.
+Because a BOY row is measured against the MOY goal, grades 6-8 have nothing to
+measure against at BOY, and a blank goal is the honest output. They pick up
+their goal once MOY testing lands, where `MOY -> EOY` matches their EOY row. So
+the first paste of a year covering K-5 only is expected; do not widen the join
+to reach the EOY goal early -- an EOY target is not a mid-year one, and
+academics chose not to set a mid-year target for these grades.
+
+**Do not use the AY2025 `bm_goals` tab as evidence against this.** It does
+contain grades 6-8 at `period = 'BOY'` carrying the foundation EOY goal, which
+looks like precedent for an EOY fallback. It is not: no version of
+`rpt_gsheets__dibels_bm_goals_calculations` ever produced those rows -- the join
+has been `a.benchmark_goal_season = f.period` since `aac3e5a86`, and
+`benchmark_goal_season` has always been the plain next-season map (`BOY -> MOY`,
+`MOY -> EOY`), never grade-aware. The tab is a manual-freeze snapshot, so those
+rows were hand-filled, and they carry errors that prove it: Paterson grade 6
+reads `0.53` against a foundation EOY of `0.30`, and grade 7 reads `0.34`
+against `0.33`, both of them Newark's value. This cost a full investigation
+cycle in September 2026; the tab is not a specification.
+
+Separately, **Miami has benchmark goals in that tab but no foundation goals at
+all.** Foundation goals cover Camden, Newark and Paterson only, so Miami's
+numbers come from outside this lineage.
 
 It is a Google Doc, not a Sheet, so
 `mcp__claude_ai_Google_Drive__read_file_content` returns the whole thing with
