@@ -82,7 +82,20 @@ def grade_range(grade_level: int) -> str:
 
 
 def parse_range(cell: str) -> tuple[float, float] | None:
-    """ "62 - 66%" -> (0.62, 0.66); "53%" -> (0.53, 0.53); "n/a"/"" -> None."""
+    """ "62 - 66%" -> (0.62, 0.66); "53%" -> (0.53, 0.53); "0.51" -> (0.51,
+    0.51); "n/a"/"" -> None.
+
+    The academics tab mixes two number formats in the same columns, and
+    scaling both the same way is wrong. Grades K-5 are written as percentage
+    ranges ("57 - 61%"); grades 6-8 are written as decimal fractions ("0.51",
+    no percent sign). Dividing a fraction by 100 put grade 6-8 goals in at
+    0.0051 instead of 0.51 -- a hundredfold understatement that still looked
+    like a plausible number in the output.
+
+    So scale only what is actually a percentage: a cell carrying a percent
+    sign, or one whose upper bound exceeds 1 and therefore cannot be a
+    fraction. A bare "1" stays 1.0, which is 100% either way.
+    """
     cell = cell.strip()
     if not cell or cell.lower() == "n/a":
         return None
@@ -93,7 +106,9 @@ def parse_range(cell: str) -> tuple[float, float] | None:
         low = high = float(nums[0])
     else:
         low, high = float(nums[0]), float(nums[1])
-    return (low / 100, high / 100)
+    if "%" in cell or high > 1:
+        return (low / 100, high / 100)
+    return (low, high)
 
 
 def goal_value_of(goal_type: str, low: float, high: float) -> float:
@@ -178,6 +193,8 @@ def parse_grid(
                     f"{population} -- only the K-2 band is known, skipped"
                 )
                 continue
+            if grade_str.lower() == "grade":
+                continue  # the tab's own header row, when a title sits above it
             if grade_str not in GRADE_MAP:
                 warnings.append(
                     f"{path}:{line_no}: unrecognized grade {grade_str!r}, skipped"
