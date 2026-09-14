@@ -1,0 +1,41 @@
+models:
+  - name: int_powerschool__student_course_grades
+    description: >-
+      Union of the per-region PowerSchool student course grade models. One row
+      per student, term, course, and gradebook category for the current and
+      prior academic year.
+
+
+      NJ-only by design: this unions the district PowerSchool packages, and
+      Miami's gradebook is in Focus, not PowerSchool. Ratified on #4996.
+
+
+      Every column except _dbt_source_relation and _dbt_source_project comes
+      through unchanged from the package model of the same name, which is where
+      the authoritative column descriptions live.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      # TODO(#3915): returns to error when the storedgrades double-write cleanup
+      # completes. All duplicates are prior-year storedgrades rows.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studentid
+              - yearid
+              - quarter
+              - course_number
+              - category_name_code
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from _dbt_source_relation.
+      - name: quarter
+        data_type: string
+        quote: true
+        description: Reporting term (Q1-Q4) or Y1 for the year row.
