@@ -21,6 +21,7 @@ with
             rt.academic_year,
             rt.region,
             rt.school_id,
+            rt.grade_band,
         from {{ ref("int_surveys__survey_submissions") }} as sg
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -45,6 +46,7 @@ with
             rt.academic_year,
             rt.region,
             rt.school_id,
+            rt.grade_band,
         from {{ ref("int_surveys__survey_submissions") }} as ms
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -68,6 +70,7 @@ with
             rt.academic_year,
             rt.region,
             rt.school_id,
+            rt.grade_band,
         from {{ source("surveys", "int_surveys__response_identifiers") }} as ri
         inner join
             {{ ref("int_surveys__survey_submissions") }} as ss
@@ -106,7 +109,7 @@ with
                 relation="all_administrations",
                 partition_by=(
                     "survey_id, term_type, term_code, term_name,"
-                    " term_start_date, region, school_id"
+                    " term_start_date, region, school_id, grade_band"
                 ),
                 order_by="academic_year",
             )
@@ -124,6 +127,7 @@ select
                 "term_start_date",
                 "region",
                 "school_id",
+                "grade_band",
             ]
         )
     }} as survey_administration_key,
@@ -139,6 +143,7 @@ select
                 "term_start_date",
                 "region",
                 "school_id",
+                "grade_band",
             ]
         )
     }} as term_key,
