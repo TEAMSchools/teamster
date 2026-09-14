@@ -1,4 +1,42 @@
 with
+    foundation_goals_by_season as (
+        select
+            academic_year,
+            region,
+            grade_level,
+            `period`,
+            population,
+            grade_goal_type,
+            grade_goal,
+            grade_range_goal,
+        from {{ ref("stg_google_sheets__dibels_foundation_goals") }}
+
+        union all
+
+        select
+            e.academic_year,
+            e.region,
+            e.grade_level,
+
+            'MOY' as `period`,
+
+            e.population,
+            e.grade_goal_type,
+            e.grade_goal,
+            e.grade_range_goal,
+
+        from {{ ref("stg_google_sheets__dibels_foundation_goals") }} as e
+        left join
+            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as m
+            on e.academic_year = m.academic_year
+            and e.region = m.region
+            and e.grade_level = m.grade_level
+            and e.population = m.population
+            and e.grade_goal_type = m.grade_goal_type
+            and m.period = 'MOY'
+        where e.period = 'EOY' and m.academic_year is null
+    ),
+
     roster as (
         select
             a.academic_year,
@@ -248,7 +286,7 @@ with
             and a.assessment_grade_int = e.grade_level
             and a.client_date between e.entrydate and e.exitdate
         left join
-            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as f
+            foundation_goals_by_season as f
             on a.academic_year = f.academic_year
             and a.region = f.region
             and a.assessment_grade_int = f.grade_level
@@ -256,7 +294,7 @@ with
             and a.foundation_measure_standard_level = f.grade_goal_type
             and f.population = 'All'
         left join
-            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as f_iep
+            foundation_goals_by_season as f_iep
             on a.academic_year = f_iep.academic_year
             and a.region = f_iep.region
             and a.assessment_grade_int = f_iep.grade_level
@@ -264,7 +302,7 @@ with
             and a.foundation_measure_standard_level = f_iep.grade_goal_type
             and f_iep.population = 'IEP'
         left join
-            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as f_mll
+            foundation_goals_by_season as f_mll
             on a.academic_year = f_mll.academic_year
             and a.region = f_mll.region
             and a.assessment_grade_int = f_mll.grade_level

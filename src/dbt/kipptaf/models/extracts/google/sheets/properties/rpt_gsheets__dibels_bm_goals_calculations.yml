@@ -1,5 +1,25 @@
 models:
   - name: rpt_gsheets__dibels_bm_goals_calculations
+    description: >-
+      Computes the benchmark goals that get pasted into the BM Goals tab, by
+      joining each student's composite level to the foundation goal for the
+      season being measured. A BOY row is measured against the MOY goal and an
+      MOY row against EOY, per benchmark_goal_season.
+
+      The foundation_goals_by_season CTE exists because academics goal-set
+      grades 6-8 at EOY only -- their MOY cells read n/a, while K-5 carry both.
+      Without it a BOY row for those grades matches no goal, grade_goal_type
+      comes back null, and the final At/Above filter drops the row: 31,076
+      AY2026 dashboard rows with no benchmark goal. The CTE adds an MOY row
+      carrying the EOY figure wherever a grade has EOY and no MOY, so the one
+      target academics set serves both measurement points. K-5 gains nothing,
+      because it already has real MOY rows.
+
+      This is what a person did by hand for AY2025. That year the At/Above
+      filter did not yet exist, so the unmatched 6-8 rows survived with real
+      counts and null goals and someone typed the goals in -- which is how
+      Paterson grades 6 and 7 ended up holding Newark's values. Doing it here
+      fixes that class of error rather than repeating it.
     columns:
       - name: academic_year
         data_type: int64

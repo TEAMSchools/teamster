@@ -442,6 +442,18 @@ models:
         data_type: int64
         description:
           completed_test_round as 1/0, for aggregation in the BI layer.
+      - name: participation_group
+        data_type: string
+        description: >-
+          Combo on the rows making up the blended participation view academics
+          asked to see -- every Benchmark row, the internal method for K-2, and
+          aimline for grades 3-8 -- and Not Combo on the alternates, meaning
+          aimline K-2 and internal 3-8. Filter to Combo for one participation
+          rate across the network: a PM student is expected under both methods,
+          so an unfiltered rate counts them twice. Set in
+          int_students__dibels_participation_roster, where the K-2 versus 3-8
+          boundary is hardcoded, and read off the ENROLLED grade level rather
+          than the assessed grade.
       - name: met_measure_standard_goal
         data_type: int64
         description:
