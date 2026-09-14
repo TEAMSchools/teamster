@@ -42,7 +42,7 @@ Issue: #5310, child of #5212.
   `get_automation_condition` in
   `src/teamster/libraries/dbt/dagster_dbt_translator.py`.
 
-- [ ] **Step 1: Edit the yml**
+- [x] **Step 1: Edit the yml**
 
 Replace lines 14-15:
 
@@ -65,7 +65,7 @@ config:
         cron_schedule: 0 3,16 * * *
 ```
 
-- [ ] **Step 2: Parse the project**
+- [x] **Step 2: Parse the project**
 
 Run from the worktree root:
 
@@ -75,7 +75,7 @@ uv run dbt parse --project-dir src/dbt/kipptaf --no-partial-parse
 
 Expected: exits 0 with no errors.
 
-- [ ] **Step 3: Confirm the manifest carries the cron**
+- [x] **Step 3: Confirm the manifest carries the cron**
 
 ```bash
 python3 -c "import json; m=json.load(open('src/dbt/kipptaf/target/manifest.json')); print(m['nodes']['model.kipptaf.int_students__graduation_pathway_scores']['config']['meta'])"
@@ -83,7 +83,7 @@ python3 -c "import json; m=json.load(open('src/dbt/kipptaf/target/manifest.json'
 
 Expected output contains `'cron_schedule': '0 3,16 * * *'`.
 
-- [ ] **Step 4: Lint**
+- [x] **Step 4: Lint**
 
 ```bash
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/students/intermediate/properties/int_students__graduation_pathway_scores.yml </dev/null
@@ -91,7 +91,7 @@ Expected output contains `'cron_schedule': '0 3,16 * * *'`.
 
 Expected: no issues.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -u
@@ -104,7 +104,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 2: Open the pull request
 
-- [ ] **Step 1: Push and open the PR** with the body from
+- [x] **Step 1: Push and open the PR** with the body from
       `.github/pull_request_template.md`. Body includes `Closes #5310` and
       `Refs #5212`.
 - [ ] **Step 2: After merge**, check the ranking from #5212 over a window that
