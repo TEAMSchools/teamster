@@ -10,8 +10,7 @@ with
             sr.question_shortname,
             sr.survey_submission_key,
             sr.answer as response_text,
-
-            safe_cast(sr.answer as numeric) as response_value,
+            sr.answer_value as response_value,
         from {{ ref("int_surveys__survey_responses") }} as sr
         where
             sr.survey_title in (

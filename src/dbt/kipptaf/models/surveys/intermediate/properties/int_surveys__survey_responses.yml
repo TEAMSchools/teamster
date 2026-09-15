@@ -12,8 +12,10 @@ models:
 
       Every per-submission column — survey title, respondent identity, reporting
       term, dates, response link and round_rn — is selected through from
-      int_surveys__survey_submissions, which owns that resolution. This model
-      adds only the question and answer columns.
+      int_surveys__survey_submissions, which owns that resolution. The
+      decommissioned Alchemer feed arrives fully resolved from
+      int_surveys__alchemer_responses and is unioned in as-is. This model adds
+      only the department crosswalk.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -1,37 +1,4 @@
 with
-    gdir_alias_map as (
-        select gd.primary_email, addr.address as known_address,
-        from {{ ref("stg_google_directory__users") }} as gd, unnest(gd.emails) as addr
-        union distinct
-        select gd.primary_email, alias,
-        from {{ ref("stg_google_directory__users") }} as gd, unnest(gd.aliases) as alias
-        union distinct
-        select gd.primary_email, gd.primary_email as known_address,
-        from {{ ref("stg_google_directory__users") }} as gd
-    ),
-
-    /*
-     * The terms join keys on the UTC date, which is what date() of the raw
-     * string resolved to before this model read staging directly. The local
-     * date differs on submissions near midnight; switching is a behavior
-     * change for another issue.
-     */
-    gforms_responses as (
-        select
-            form_id,
-            response_id,
-            respondent_email,
-            create_timestamp,
-            last_submitted_timestamp,
-
-            date(last_submitted_timestamp) as last_submitted_date,
-
-            lower(
-                regexp_extract(respondent_email, r'^([^@]+)')
-            ) as respondent_local_part,
-        from {{ ref("stg_google_forms__responses") }}
-    ),
-
     live_gforms as (
         select
             r.form_id as survey_id,
@@ -39,6 +6,7 @@ with
             r.respondent_email,
             r.create_timestamp as date_started,
             r.last_submitted_timestamp as date_submitted,
+            r.response_link as survey_response_link,
 
             f.info_title as survey_title,
 
@@ -59,18 +27,11 @@ with
                 srh.user_principal_name, srh_alias.user_principal_name
             ) as respondent_userprincipalname,
 
-            concat(
-                'https://docs.google.com/forms/d/',
-                r.form_id,
-                '/edit#response=',
-                r.response_id
-            ) as survey_response_link,
-
             dense_rank() over (
                 partition by r.respondent_email, rt.academic_year, rt.code, r.form_id
                 order by r.last_submitted_timestamp desc
             ) as round_rn,
-        from gforms_responses as r
+        from {{ ref("stg_google_forms__responses") }} as r
         inner join {{ ref("stg_google_forms__form") }} as f on r.form_id = f.form_id
         /*
          * One row per submission relies on same-name SURVEY windows never
@@ -94,115 +55,16 @@ with
             and srh.effective_date_end_timestamp
             and srh.primary_indicator
         left join
-            gdir_alias_map as gam
+            {{ ref("int_google_directory__users__addresses") }} as gda
             on srh.employee_number is null
-            and r.respondent_email = gam.known_address
+            and r.respondent_email = gda.address
         left join
             {{ ref("int_people__staff_roster_history") }} as srh_alias
-            on gam.primary_email = srh_alias.google_email
+            on gda.primary_email = srh_alias.google_email
             and r.last_submitted_timestamp
             between srh_alias.effective_date_start_timestamp
             and srh_alias.effective_date_end_timestamp
             and srh_alias.primary_indicator
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    archive_source as (
-        select
-            survey_id,
-            survey_title,
-            respondent_email,
-            date_submitted,
-            campaign_academic_year,
-            campaign_reporting_term,
-            respondent_df_employee_number,
-            effective_survey_response_id,
-        from {{ ref("int_surveys__manager_survey_details") }}
-        where
-            survey_id = 'historic_alchemer_Manager_survey'
-            and campaign_academic_year is not null
-    ),
-
-    /*
-     * int_surveys__manager_survey_details is question-grain, so the archive
-     * arrives at 18 rows per submission. Every column selected is constant
-     * within the partition.
-     */
-    archive_submissions as (
-        {{
-            dbt_utils.deduplicate(
-                relation="archive_source",
-                partition_by="survey_id, effective_survey_response_id",
-                order_by="respondent_df_employee_number",
-            )
-        }}
-    ),
-
-    all_submissions as (
-        select
-            survey_id,
-            survey_response_id,
-            survey_title,
-            respondent_email,
-            respondent_employee_number,
-            respondent_preferred_name,
-            respondent_samaccountname,
-            respondent_userprincipalname,
-            date_started,
-            date_submitted,
-            academic_year,
-            term_code,
-            term_name,
-            survey_response_link,
-            round_rn,
-        from live_gforms
-
-        union all
-
-        select
-            survey_id,
-            survey_response_id,
-            survey_title,
-            respondent_email,
-            respondent_employee_number,
-            respondent_preferred_name,
-            respondent_samaccountname,
-            respondent_userprincipalname,
-            date_started,
-            date_submitted,
-            academic_year,
-            term_code,
-            term_name,
-            survey_response_link,
-            round_rn,
-        from {{ ref("int_surveys__alchemer_submissions") }}
-
-        union all
-
-        select
-            survey_id,
-
-            effective_survey_response_id as survey_response_id,
-
-            survey_title,
-            respondent_email,
-
-            respondent_df_employee_number as respondent_employee_number,
-
-            cast(null as string) as respondent_preferred_name,
-            cast(null as string) as respondent_samaccountname,
-            cast(null as string) as respondent_userprincipalname,
-            cast(null as timestamp) as date_started,
-
-            date_submitted,
-
-            campaign_academic_year as academic_year,
-            campaign_reporting_term as term_code,
-
-            cast(null as string) as term_name,
-            cast(null as string) as survey_response_link,
-            cast(null as int) as round_rn,
-        from archive_submissions
     )
 
 select
@@ -228,4 +90,26 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
     as survey_submission_key,
-from all_submissions
+from live_gforms
+
+union all
+
+select
+    survey_id,
+    survey_response_id,
+    survey_title,
+    respondent_email,
+    respondent_employee_number,
+    respondent_preferred_name,
+    respondent_samaccountname,
+    respondent_userprincipalname,
+    date_started,
+    date_submitted,
+    academic_year,
+    term_code,
+    term_name,
+    survey_response_link,
+    round_rn,
+    respondent_identifier,
+    survey_submission_key,
+from {{ ref("int_surveys__alchemer_submissions") }}

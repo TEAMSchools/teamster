@@ -1,17 +1,18 @@
 models:
   - name: int_surveys__alchemer_submissions
     description: >-
-      Alchemer survey submissions at 1 row per response, with reporting term,
-      campaign, and respondent identity resolved. Alchemer is decommissioned and
-      every input is a frozen table, so this model exists to be built once and
+      Every Alchemer survey submission at 1 row per response, with reporting
+      term, campaign, and respondent identity resolved, plus the historic
+      Alchemer Manager Survey archive at the same grain. Alchemer is
+      decommissioned and every input is frozen, so this model is built once and
       then archived under the repo's archive pattern (disable the model, declare
-      the table in sources-bigquery.yml, and point
-      int_surveys__survey_submissions at the source). Until then it is a table
-      so the join to the reporting-terms sheet and the staff roster history
-      resolves against the same inputs the live arm uses.
+      the table in sources-bigquery.yml, and point the live survey models at the
+      source). The live models union it in without recomputing anything.
 
-      Only responses that fall inside a SURVEY reporting-term window count as
-      submissions; the inner join to the terms sheet is the filter.
+      Only API responses that fall inside a SURVEY reporting-term window count
+      as submissions; the inner join to the terms sheet is the filter. The
+      archive arm collapses int_surveys__manager_survey_details, which is
+      question-grain, to one row per effective_survey_response_id.
     config:
       materialized: table
     data_tests:
@@ -24,10 +25,15 @@ models:
             severity: error
     columns:
       - name: survey_id
-        description: Alchemer survey id as a string.
+        description: >-
+          Alchemer survey id as a string, or the literal
+          historic_alchemer_Manager_survey for the archive.
 
       - name: survey_response_id
-        description: Alchemer response id as a string.
+        description: >-
+          Alchemer response id as a string. On the archive, the deterministic
+          respondent-subject-term concatenation the archive uses as its
+          effective response id.
 
       - name: survey_title
         description: Alchemer survey title.
@@ -35,7 +41,8 @@ models:
       - name: respondent_email
         description: >-
           Respondent email from the frozen response-identifiers table. Null for
-          responses absent from that table.
+          responses absent from that table and on the archive, which records no
+          email.
         config:
           meta:
             contains_pii: true
@@ -44,32 +51,39 @@ models:
         description: >-
           Employee number of the respondent, resolved against the staff roster
           history at the time of submission, first by email or account name and
-          then through Google Directory aliases. Null when no staff record
-          matched.
+          then through Google Directory aliases. On the archive, the employee
+          number the archive records. Null when no staff record matched.
         config:
           meta:
             contains_pii: true
 
       - name: respondent_preferred_name
-        description: Formatted name of the respondent from the roster match.
+        description: >-
+          Formatted name of the respondent from the roster match. Null on the
+          archive.
         config:
           meta:
             contains_pii: true
 
       - name: respondent_samaccountname
-        description: Active Directory account name from the roster match.
+        description: >-
+          Active Directory account name from the roster match. Null on the
+          archive.
         config:
           meta:
             contains_pii: true
 
       - name: respondent_userprincipalname
-        description: Active Directory user principal name from the roster match.
+        description: >-
+          Active Directory user principal name from the roster match. Null on
+          the archive.
         config:
           meta:
             contains_pii: true
 
       - name: date_started
-        description: Timestamp the respondent opened the survey.
+        description: >-
+          Timestamp the respondent opened the survey. Null on the archive.
 
       - name: date_submitted
         description: Timestamp the respondent submitted the survey.
@@ -77,18 +91,39 @@ models:
       - name: academic_year
         description: >-
           Campaign fiscal year minus one, falling back to the academic year of
-          the matched SURVEY reporting-term window.
+          the matched SURVEY reporting-term window. The archive carries its own
+          campaign academic year.
 
       - name: term_code
         description: >-
           Reporting term code parsed from the campaign name, falling back to the
-          code of the matched SURVEY reporting-term window.
+          code of the matched SURVEY reporting-term window. The archive carries
+          its own campaign reporting term.
 
       - name: term_name
-        description: Reporting-terms sheet name the submission matched.
+        description: >-
+          Reporting-terms sheet name the submission matched. Null on the
+          archive.
 
       - name: survey_response_link
-        description: Deep link to the response in Alchemer.
+        description: Deep link to the response in Alchemer. Null on the archive.
 
       - name: round_rn
-        description: Always 1. Alchemer responses were never ranked by recency.
+        description: >-
+          Always 1 on API responses; Alchemer responses were never ranked by
+          recency. Null on the archive.
+
+      - name: respondent_identifier
+        description: >-
+          Respondent employee number as a string, falling back to the respondent
+          email when no staff record matched. Same composition as
+          int_surveys__survey_submissions.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: survey_submission_key
+        description: >-
+          Surrogate key of the submission, hashed from survey_id and
+          survey_response_id with the same composition as
+          int_surveys__survey_submissions.
