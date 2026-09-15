@@ -27,4 +27,4 @@ select
     as basic_comprehension_maze_semester_growth,
     reading_comprehension_maze_tested_out as basic_comprehension_maze_tested_out,
     reading_comprehension_maze_year_growth as basic_comprehension_maze_year_growth,
-from {{ source("amplify", "stg_amplify__mclass__api__benchmark_student_summary") }}
+from {{ source("amplify", "stg_amplify__benchmark_student_summary") }}
