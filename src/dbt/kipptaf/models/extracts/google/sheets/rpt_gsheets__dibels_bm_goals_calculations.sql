@@ -266,6 +266,10 @@ with
                     a.aggregated_measure_standard_level
             ) as n_admin_season_region_gl_bl_wb_mll,
 
+            -- partitions on the THREE-way foundation level, not the two-way
+            -- aggregated one. The Below/Well Below partition mixes students
+            -- whose grade_goal_type is 'Well Below' with students whose is null,
+            -- and the bl_wb self-join below needs a surviving 'Well Below' row.
             row_number() over (
                 partition by
                     a.academic_year,
@@ -273,8 +277,9 @@ with
                     a.assessment_grade,
                     a.period,
                     a.benchmark_goal_season,
-                    a.aggregated_measure_standard_level,
+                    a.foundation_measure_standard_level,
                     e.school
+                order by a.student_number
             ) as rn,
 
         from {{ ref("int_amplify__all_assessments") }} as a

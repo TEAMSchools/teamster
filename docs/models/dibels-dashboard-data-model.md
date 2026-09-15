@@ -873,6 +873,53 @@ and uses it to compute the expected At/Above student count. Whether this is
 intentional needs confirmation with T&L before the next BOY goals run. Tracked
 in issue [#3834](https://github.com/TEAMSchools/teamster/issues/3834).
 
+##### The `bl_wb` columns were silently null, non-deterministically
+
+Fixed 2026-09-15. Worth reading before trusting any pre-fix paste.
+
+The six `*_bl_wb` columns are not computed on the row that carries them. The
+`n_admin_season_*_bl_wb` counts only evaluate on rows whose
+`aggregated_measure_standard_level` is `Below/Well Below`, while the output row
+is the `At/Above` one, so the final `SELECT` self-joins `needed_count_calcs` to
+itself and pulls them from the sibling row on
+`b.grade_goal_type = 'Well Below'`.
+
+The `rn` dedup that feeds both sides partitioned on
+`aggregated_measure_standard_level`, which has two values, and **had no
+`ORDER BY`**. `grade_goal_type` comes from `foundation_measure_standard_level`,
+which has three — `At/Above`, `Below`, `Well Below` — and only `At/Above` and
+`Well Below` match a foundation goal row, so a `Below` student's
+`grade_goal_type` is null. The `Below/Well Below` partition therefore mixed
+students whose goal type was `Well Below` with students whose was null, and
+`rn = 1` picked between them arbitrarily. Land on a `Below` student and the
+self-join found nothing: all six `bl_wb` columns came back null for that school,
+including the REGION-level ones, which cannot legitimately vary by school.
+
+Three consequences, all observed:
+
+- **It varied by region purely by luck.** The odds of a good pick track the Well
+  Below share of the non-At/Above students. Newark's is high enough that it read
+  correct everywhere; Camden and Paterson had blanks. Newark being "good" was
+  never evidence of correctness.
+- **It varied between builds.** The AY2026 paste is blank on Camden K, 1 and 4,
+  while the model at the time of the fix was blank on 1, 6 and 8 — same code,
+  different draw.
+- **The region column disagreed with itself across schools** in the same region
+  and grade, e.g. Camden grade 1 reading 82 for LSP and null for Sumner.
+
+The fix partitions `rn` on `foundation_measure_standard_level` instead, which is
+a strict refinement of the aggregated level, and adds `order by student_number`
+so the pick is deterministic. One row now survives per goal type, so the
+`Well Below` sibling always exists where any Well Below student does.
+
+Verified on AY2026 after the fix: zero nulls in all three regions, the region
+value identical across every school in a region, `at_above + bl_wb = all` exact
+on all nine Camden grades, and the school counts summing exactly to the region
+count.
+
+**Any paste taken before 2026-09-15 carries these nulls and should be
+regenerated.**
+
 #### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_bm_goals`
 
 The output of `rpt_gsheets__dibels_bm_goals_calculations` is **manually
