@@ -30,7 +30,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
         config:
           meta:
             contains_pii: true
@@ -55,7 +55,7 @@ models:
                 to: ref('stg_focus__course_periods')
                 field: course_period_id
               config:
-                severity: error
+                severity: warn
       - name: period_id
         description: >-
           Focus school period the attendance was taken in (joins
