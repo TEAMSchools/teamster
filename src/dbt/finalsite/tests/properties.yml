@@ -102,15 +102,13 @@ data_tests:
       Finalsite by noon is usable in Focus by 2pm, and the failure is invisible
       to enrollment ops until an import comes up short. A student with no
       enrolled_date in the feed at all is a legitimate deferral and is not
-      flagged. Warn rather than error, matching every other test in this package
-      -- the root project sets `data_tests: +severity: warn` and root-project
-      config overrides a package resource's own, so `severity: error` here would
-      be silently ignored. Warn is also the behaviour wanted: an errored test
-      fails the dbt build and blocks the delivery outright, and a delivery built
-      from a stale read still beats no delivery at all. The failed asset check
-      is what carries the signal, so this test is only as loud as the Dagster+
-      alert policy on asset-check failures. Refs #4834
+      flagged. Warn rather than error: an errored test fails the dbt build and
+      blocks the delivery outright, and a delivery built from a stale read still
+      beats no delivery at all. The failed asset check is what carries the
+      signal, so this test is only as loud as the Dagster+ alert policy on
+      asset-check failures. Refs #4834
     config:
+      severity: warn
       meta:
         dagster:
           ref:

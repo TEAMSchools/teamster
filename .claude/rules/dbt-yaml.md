@@ -276,11 +276,13 @@ legitimately-superseded inactive rows that repeat the key.
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
 - Staging-layer tests MUST set `config: severity: error` on every test. The
-  project default is `warn`, so staging tests without explicit `severity: error`
-  silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
-  may omit the override where a warning is acceptable.
-- Removing a `severity: warn` override reverts to project default (`warn`), not
-  `error`. To restore `error`, set `config: severity: error` explicitly.
+  district and kipptaf project default is `warn`, so their staging tests without
+  explicit `severity: error` silently degrade to warnings and won't fail CI.
+  Intermediate/mart/`rpt_` tests may omit the override where a warning is
+  acceptable.
+- Removing a `severity: warn` override reverts to the project default: `warn` in
+  a district or kipptaf, `error` in a source package. To force `error`, set
+  `config: severity: error` explicitly.
 - The root project's `dbt_project.yml` test config overrides a package's
   resource-level config, so an unscoped `data_tests: +severity: warn` in a
   district silently downgrades every package test declared `error`. Districts
