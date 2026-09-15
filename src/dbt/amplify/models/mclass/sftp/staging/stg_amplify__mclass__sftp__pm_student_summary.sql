@@ -68,7 +68,9 @@ with
         select
             -- Amplify leaves device_date blank on some rows; the sync date is
             -- the closest thing to when the probe happened.
-            * replace (coalesce(device_date, sync_date) as device_date),
+            * except (device_date),
+
+            coalesce(device_date, sync_date) as device_date,
 
             case
                 measure

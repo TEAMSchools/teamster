@@ -469,7 +469,7 @@ models:
         config:
           meta:
             source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_model: stg_amplify__mclass__sftp__benchmark_student_summary
             source_column: surrogate_key
             column_role: primary_key
       - name: region

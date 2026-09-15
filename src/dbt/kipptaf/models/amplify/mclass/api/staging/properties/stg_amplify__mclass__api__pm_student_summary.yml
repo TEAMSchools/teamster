@@ -5,6 +5,8 @@ models:
       SY24-25, New Jersey and Miami), with its API column names aliased to the
       SFTP file's names so it unions with the live feed without per-column
       coalesces. Read only through int_amplify__mclass__pm_student_summary.
+      Passthrough columns are documented on the package's API staging model yml
+      under src/dbt/amplify/models/mclass/api/staging/properties/.
     config:
       meta:
         contains_pii: true

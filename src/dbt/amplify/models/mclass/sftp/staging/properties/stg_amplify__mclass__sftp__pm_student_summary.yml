@@ -14,6 +14,8 @@ models:
         description: >-
           Hash of student_primary_id_studentnumber, school_year, pm_period,
           measure, probe_number, device_date and assessment_grade. One per row.
+          The aimline staging model hashes the same fields, so corresponding
+          rows share a hash by coincidence; it is not a join path.
         data_tests:
           - unique:
               config:

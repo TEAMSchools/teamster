@@ -184,8 +184,11 @@ Local build order:
    kipptaf, target dev with `--defer --favor-state`, so the chain through
    `int_amplify__all_assessments` and its tests runs on the new shape.
 
-Prod ordering has no hazard: the package change deploys to the district code
-locations, and kipptaf reads their prod tables with an unchanged column set.
+Prod ordering: the package change deploys to the district code locations and
+kipptaf separately, so kipptaf can rebuild against district tables that still
+carry the raw `device_date`. The kipptaf PM wrapper keeps its own
+`coalesce(device_date, sync_date)`, idempotent against the package's, so the
+window reads clean either way.
 
 ## Verification against prod
 
