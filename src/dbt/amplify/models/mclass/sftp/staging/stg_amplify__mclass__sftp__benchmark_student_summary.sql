@@ -188,15 +188,4 @@ select
     safe_cast(
         basic_comprehension_maze_national_norm_percentile as numeric
     ) as basic_comprehension_maze_national_norm_percentile,
-
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "student_primary_id_studentnumber",
-                "school_year",
-                "benchmark_period",
-                "assessment_grade",
-            ]
-        )
-    }} as surrogate_key,
 from {{ source("amplify_mclass_sftp", "benchmark_student_summary") }}
