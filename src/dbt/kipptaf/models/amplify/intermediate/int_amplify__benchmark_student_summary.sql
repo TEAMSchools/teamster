@@ -12,11 +12,10 @@ with
             bss.assessment_grade,
             bss.assessment_grade_int,
             bss.benchmark_period as `period`,
-            bss.client_date,
+            bss.device_date as client_date,
             bss.sync_date,
             bss._dbt_source_project,
 
-            u.surrogate_key,
             u.measure_name,
             u.measure_name_code,
             u.measure_standard,
@@ -37,7 +36,10 @@ with
         from {{ ref("int_amplify__mclass__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__mclass__benchmark_student_summary_unpivot") }} as u
-            on bss.surrogate_key = u.surrogate_key
+            on bss.student_primary_id = u.student_primary_id
+            and bss.school_year = u.school_year
+            and bss.benchmark_period = u.benchmark_period
+            and bss.assessment_grade = u.assessment_grade
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on bss.academic_year = e.academic_year
@@ -66,7 +68,6 @@ with
             df.`date` as sync_date,
             df._dbt_source_project,
 
-            df.surrogate_key,
             df.measure_name,
             df.measure_name_code,
             df.measure_standard,

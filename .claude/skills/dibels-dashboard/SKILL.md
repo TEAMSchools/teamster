@@ -1756,14 +1756,15 @@ key on the other.
 was in the same CTE. That is the shape to watch for.
 
 It deduped PM at all only by accident:
-`int_amplify__mclass__pm_student_summary`'s surrogate key omits `probe_number`
-and `client_date`, so it collides across a student's probes -- 67,984 AY2025
-rows against 33,917 distinct keys. **That collision is still there**, so never
-partition, join, or count on that model's `surrogate_key` expecting one row per
-probe. It also invalidates the obvious diagnostic:
-`count(distinct surrogate_key) < count(*)` does NOT prove fan-out here, and
-using it that way mis-read 1,352 genuine multi-probe rounds as gate duplication
-during this session.
+`int_amplify__mclass__pm_student_summary`'s surrogate key used to omit
+`probe_number` and `device_date`, so it collided across a student's probes --
+67,984 AY2025 rows against 33,917 distinct keys. **Fixed in #5305**: the key now
+covers student, school year, PM period, measure, probe, device date and
+assessment grade, and the model carries a severity-error natural-key test. The
+diagnostic lesson still stands: `count(distinct surrogate_key) < count(*)` on a
+model whose key you have not read is not proof of fan-out -- using it that way
+mis-read 1,352 genuine multi-probe rounds as gate duplication during this
+session.
 
 Measured on AY2025, every effect in one direction:
 
