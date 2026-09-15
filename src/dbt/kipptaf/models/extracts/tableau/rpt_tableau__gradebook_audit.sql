@@ -131,6 +131,9 @@ with
             /* summer toggle: see skill */
             s.academic_year = {{ var("current_academic_year") }}
             and s.school_level_alt != 'ES'
+            /* TODO(#5181): Miami runs on Focus, whose gradebook assignment
+               data is not yet conformed to the PowerSchool vocabulary this
+               audit reads. Temporary. */
             and s._dbt_source_project != 'kippmiami'
             and s.exclude_from_gpa = 0
     ),
