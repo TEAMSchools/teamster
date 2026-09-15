@@ -284,10 +284,10 @@ legitimately-superseded inactive rows that repeat the key.
 - The root project's `dbt_project.yml` test config overrides a package's
   resource-level config, so an unscoped `data_tests: +severity: warn` in a
   district silently downgrades every package test declared `error`. Districts
-  scope their default under their own project name
-  (`kippnewark: +severity: warn`) and each source package carries its own
-  `data_tests: +severity: warn` default, which resource-level `error` is allowed
-  to beat. Keep it that way.
+  therefore scope their `warn` default under their own project name
+  (`kippnewark: +severity: warn`). Source packages declare no project-level
+  severity at all, so a package test resolves dbt's own default, `error`, unless
+  the test itself says otherwise. Keep it that way.
 - **`accepted_values` passes NULLs** — it compiles to
   `where value not in (...)`, which NULL never satisfies. Every enum column that
   must be non-null carries `not_null` too, including one a `coalesce` makes

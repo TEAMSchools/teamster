@@ -35,6 +35,3 @@ vars:
   bigquery_external_connection_name: null
   local_timezone: null
   current_academic_year: 0
-
-data_tests:
-  +severity: warn
