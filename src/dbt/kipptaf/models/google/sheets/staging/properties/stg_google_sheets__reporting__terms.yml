@@ -34,19 +34,21 @@ models:
               - grade_band
           config:
             severity: error
-      # A SURVEY submission resolves its term by joining its submit date into
-      # these windows on name alone. Two same-name windows that overlap fan
-      # that join out and hand the submission two academic years. #5276
+      # Consumers resolve a term by joining a date into these windows by type
+      # and name (plus region, school and grade band where a type scopes by
+      # them). Two such windows that overlap, or a window whose end precedes
+      # its start, fan that join out or drop rows silently. Rows missing a
+      # bound are a separate defect and are excluded here. #5276
       - dbt_utils.mutually_exclusive_ranges:
           arguments:
             lower_bound_column: start_date
             upper_bound_column: end_date
-            partition_by: name
+            partition_by: type, name, region, school_id, grade_band
             gaps: allowed
             zero_length_range_allowed: true
           config:
             severity: error
-            where: type = 'SURVEY'
+            where: start_date is not null and end_date is not null
     columns:
       - name: type
         data_type: string
