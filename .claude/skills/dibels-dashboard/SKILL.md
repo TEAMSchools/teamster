@@ -2210,8 +2210,8 @@ three-in-a-row variant.
   and do not derive the verdict from `goal` either: that is the season-end
   target and reproduces `aimline_status` on only five rows in six.
 
-Validated on AY2025 in dev: 36,486 rows, exact grain, six tests pass, 21 rows
-lost to the roster join (five Newark students, in the yml).
+Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
+lost to the roster join (2 Newark students, in the yml).
 
 ### "% meeting aimline, overall and by measure" is three grains, and all three already exist
 
