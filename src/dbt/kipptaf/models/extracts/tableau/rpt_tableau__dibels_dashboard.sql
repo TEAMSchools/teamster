@@ -101,6 +101,7 @@ select
     r.actual_row_count,
     r.completed_test_round,
     r.completed_test_round_int,
+    r.participation_group,
 
     null as met_measure_standard_goal,
     null as met_admin_benchmark_goal,
@@ -287,6 +288,7 @@ select
     rs.actual_row_count,
     rs.completed_test_round,
     rs.completed_test_round_int,
+    rs.participation_group,
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
@@ -509,6 +511,7 @@ select
     rs.actual_row_count,
     rs.completed_test_round,
     rs.completed_test_round_int,
+    rs.participation_group,
 
     null as met_measure_standard_goal,
 

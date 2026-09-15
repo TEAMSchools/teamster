@@ -82,7 +82,20 @@ def grade_range(grade_level: int) -> str:
 
 
 def parse_range(cell: str) -> tuple[float, float] | None:
-    """ "62 - 66%" -> (0.62, 0.66); "53%" -> (0.53, 0.53); "n/a"/"" -> None."""
+    """ "62 - 66%" -> (0.62, 0.66); "53%" -> (0.53, 0.53); "0.51" -> (0.51,
+    0.51); "n/a"/"" -> None.
+
+    The academics tab mixes two number formats in the same columns, and
+    scaling both the same way is wrong. Grades K-5 are written as percentage
+    ranges ("57 - 61%"); grades 6-8 are written as decimal fractions ("0.51",
+    no percent sign). Dividing a fraction by 100 put grade 6-8 goals in at
+    0.0051 instead of 0.51 -- a hundredfold understatement that still looked
+    like a plausible number in the output.
+
+    So scale only what is actually a percentage: a cell carrying a percent
+    sign, or one whose upper bound exceeds 1 and therefore cannot be a
+    fraction. A bare "1" stays 1.0, which is 100% either way.
+    """
     cell = cell.strip()
     if not cell or cell.lower() == "n/a":
         return None
@@ -93,16 +106,24 @@ def parse_range(cell: str) -> tuple[float, float] | None:
         low = high = float(nums[0])
     else:
         low, high = float(nums[0]), float(nums[1])
-    return (low / 100, high / 100)
+    if "%" in cell or high > 1:
+        return (low / 100, high / 100)
+    return (low, high)
 
 
 def goal_value_of(goal_type: str, low: float, high: float) -> float:
     return low if goal_type == "At/Above" else high
 
 
-def parse_grid(path: str, academic_year: int) -> tuple[list[tuple], list[str]]:
+def parse_grid(
+    path: str, academic_year: int
+) -> tuple[list[tuple], list[str], set[int]]:
     rows_out: list[tuple] = []
     warnings: list[str] = []
+    # every grade the INPUT carried, emitted or not -- a grade whose cells
+    # all fail to parse produces no rows and would otherwise vanish from
+    # the coverage grid entirely, which is the failure this guards.
+    grades_seen: set[int] = set()
 
     lines = [
         ln.rstrip("\n")
@@ -172,25 +193,40 @@ def parse_grid(path: str, academic_year: int) -> tuple[list[tuple], list[str]]:
                     f"{population} -- only the K-2 band is known, skipped"
                 )
                 continue
+            if grade_str.lower() == "grade":
+                continue  # the tab's own header row, when a title sits above it
             if grade_str not in GRADE_MAP:
                 warnings.append(
                     f"{path}:{line_no}: unrecognized grade {grade_str!r}, skipped"
                 )
                 continue
             grade_level = GRADE_MAP[grade_str]
+            grades_seen.add(grade_level)
 
             for offset, period, goal_type in METRIC_COLS:
                 col = start + offset
                 if col >= len(row):
                     continue
-                parsed = parse_range(row[col])
+                raw = row[col]
+                parsed = parse_range(raw)
                 if parsed is None:
+                    # An empty or n/a cell is a deliberate "no goal" and stays
+                    # silent -- that is what the MOY columns hold for grades
+                    # 6-8. A cell with CONTENT that yields no number is a
+                    # transcription problem instead, and staying silent there
+                    # drops the row while the run still reports clean.
+                    if raw.strip() and raw.strip().lower() != "n/a":
+                        warnings.append(
+                            f"{path}:{line_no}: {region} grade {grade_str} {period} "
+                            f"{goal_type} {population}: no number found in {raw!r} "
+                            f"-- skipped, fix source"
+                        )
                     continue
                 low, high = parsed
                 if low > high:
                     warnings.append(
                         f"{path}:{line_no}: {region} grade {grade_str} {period} {goal_type} "
-                        f"{population}: low {low} > high {high} in {row[col]!r} -- skipped, fix source"
+                        f"{population}: low {low} > high {high} in {raw!r} -- skipped, fix source"
                     )
                     continue
                 goal_value = goal_value_of(goal_type, low, high)
@@ -216,7 +252,7 @@ def parse_grid(path: str, academic_year: int) -> tuple[list[tuple], list[str]]:
                     )
                 )
 
-    return rows_out, warnings
+    return rows_out, warnings, grades_seen
 
 
 def main() -> None:
@@ -226,10 +262,12 @@ def main() -> None:
     out_path = Path(sys.argv[1])
     all_rows: list[tuple] = []
     all_warnings: list[str] = []
+    year_grades: dict[int, set[int]] = {}
 
     for arg in sys.argv[2:]:
         year_str, path = arg.split("=", 1)
-        rows, warnings = parse_grid(path, int(year_str))
+        rows, warnings, grades_seen = parse_grid(path, int(year_str))
+        year_grades[int(year_str)] = year_grades.get(int(year_str), set()) | grades_seen
         print(f"{path} (AY{year_str}): {len(rows)} rows, {len(warnings)} warnings")
         all_rows.extend(rows)
         all_warnings.extend(warnings)
@@ -240,6 +278,41 @@ def main() -> None:
             f.write("\t".join(str(v) for v in row) + "\n")
 
     print(f"\ntotal rows: {len(all_rows)} -> {out_path}")
+
+    # Coverage grid. A row count alone cannot show that one grade band lost one
+    # period -- AY2026 emitted a plausible-looking total with every grade 6-8
+    # EOY row missing. Printing period x goal_type per grade makes a hole
+    # visible without knowing the expected count in advance.
+    print("\n=== coverage: rows per academic_year / grade / period / goal_type ===")
+    seen: dict[tuple, int] = {}
+    for r in all_rows:
+        seen[(r[0], r[4], r[5], r[7])] = seen.get((r[0], r[4], r[5], r[7]), 0) + 1
+    years = sorted(year_grades)
+    periods = sorted({p for _, p, _ in METRIC_COLS})
+    goal_types = sorted({g for _, _, g in METRIC_COLS})
+    header = "  ".join(f"{p[:3]}/{g[:5]:<5}" for p in periods for g in goal_types)
+    for year in years:
+        print(f"\nAY{year}    grade  {header}")
+        for grade in sorted(year_grades[year]):
+            cells = []
+            for p in periods:
+                for g in goal_types:
+                    n = seen.get((year, grade, p, g), 0)
+                    cells.append(f"{'--' if n == 0 else n:>9}")
+            flag = (
+                "   <-- EMPTY"
+                if all(
+                    seen.get((year, grade, p, g), 0) == 0
+                    for p in periods
+                    for g in goal_types
+                )
+                else ""
+            )
+            print(f"         {grade:>5}  " + "  ".join(cells) + flag)
+    print("\n'--' is a period/goal_type combination that produced NO rows for that")
+    print("grade. Check it against the academics sheet before pasting: a blank")
+    print("cell there is legitimate, a populated one means a row was lost.")
+
     if all_warnings:
         print("\n=== warnings (rows skipped, fix source and re-run if unexpected) ===")
         print("\n".join(all_warnings))
