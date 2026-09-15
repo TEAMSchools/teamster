@@ -45,6 +45,10 @@ models:
         data_type: int64
       - name: baseline_diagnostic_y_n
         data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: comprehension_informational_text_placement
         data_type: string
       - name: comprehension_informational_text_relative_placement
@@ -65,6 +69,11 @@ models:
         data_type: int64
       - name: diagnostic_gain
         data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                where: most_recent_diagnostic_ytd_y_n = 'Y'
       - name: diagnostic_language
         data_type: string
       - name: duration_min
@@ -161,6 +170,10 @@ models:
         data_type: date
       - name: most_recent_diagnostic_ytd_y_n
         data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_grade
         data_type: string
       - name: tactile_graphics
