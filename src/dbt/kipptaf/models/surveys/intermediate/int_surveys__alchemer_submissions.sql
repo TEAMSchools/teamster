@@ -49,14 +49,14 @@ select
     sr.date_started,
     sr.date_submitted,
 
+    rt.name as term_name,
+
     ri.respondent_mail as respondent_email,
 
-    rt.name as term_name,
+    1 as round_rn,
 
     cast(sr.survey_id as string) as survey_id,
     cast(sr.response_id as string) as survey_response_id,
-
-    1 as round_rn,
 
     coalesce(sc.fiscal_year - 1, rt.academic_year) as academic_year,
     coalesce(regexp_extract(sc.name, r'\s(.*)'), rt.code) as term_code,
