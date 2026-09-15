@@ -1,25 +1,4 @@
 with
-    -- One row. See int_students__sis_cutover for why the boundary is a floor
-    -- and why it is derived from recorded attendance rather than row presence.
-    sis_cutover as (
-        select
-            focus_start_academic_year,
-
-            -- PowerSchool yearid form of the same boundary, so the archive
-            -- branch filters on a bare gt.yearid instead of recomputing
-            -- yearid + 1990 per row in WHERE.
-            focus_start_academic_year - 1990 as focus_start_yearid,
-        from {{ ref("int_students__sis_cutover") }}
-    ),
-
-    -- dcid >= 1 is the placeholder filter. See the model description for why
-    -- student_number is the join key.
-    powerschool_students as (
-        select id as studentid, student_number, _dbt_source_project,
-        from {{ ref("stg_powerschool__students") }}
-        where dcid >= 1
-    ),
-
     powerschool_conformed as (
         select
             gt._dbt_source_relation,
@@ -38,14 +17,13 @@ with
             gt.total_credit_hours_y1,
             gt.grade_avg_term,
             gt.grade_avg_y1,
+            gt.students_student_number as student_number,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
             gc.cumulative_y1_gpa_projected,
             gc.earned_credits_cum,
             gc.potential_credits_cum,
-
-            ps.student_number,
 
             -- PowerSchool's yearid is academic_year - 1990. gpa_term carries no
             -- academic_year of its own, and the Focus branch has no yearid, so
@@ -55,25 +33,11 @@ with
             -- The PowerSchool GPA chain does not produce class rank at all.
             cast(null as int64) as class_rank,
         from {{ ref("int_powerschool__gpa_term") }} as gt
-        cross join sis_cutover as sc
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on gt.studentid = gc.studentid
             and gt.schoolid = gc.schoolid
             and gt._dbt_source_project = gc._dbt_source_project
-        -- left, not inner: an inner join would silently drop any GPA row whose
-        -- student fails the dcid >= 1 placeholder filter, changing the NJ
-        -- population. Measured at zero such rows, but the join type is what
-        -- guarantees it stays that way.
-        left join
-            powerschool_students as ps
-            on gt.studentid = ps.studentid
-            and gt._dbt_source_project = ps._dbt_source_project
-        where
-            not (
-                gt._dbt_source_project = 'kippmiami'
-                and gt.yearid >= sc.focus_start_yearid
-            )
     ),
 
     focus_conformed as (
@@ -133,8 +97,10 @@ with
             on fs.school_number = loc.focus_school_id
         -- The archive branch above owns Miami's years before the cutover, so
         -- admit only rows at or after it — the same boundary, applied from the
-        -- other side.
-        cross join sis_cutover as sc
+        -- other side. One row. See int_students__sis_cutover for why the
+        -- boundary is a floor and why it is derived from recorded attendance
+        -- rather than row presence.
+        cross join {{ ref("int_students__sis_cutover") }} as sc
         where g.syear >= sc.focus_start_academic_year
     )
 

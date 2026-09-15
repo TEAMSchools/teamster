@@ -329,15 +329,6 @@ sources:
                 - kippnewark
                 - powerschool
                 - stg_powerschool__reenrollments
-      - name: stg_powerschool__roledef
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippnewark
-                - powerschool
-                - stg_powerschool__roledef
       - name: stg_powerschool__s_nj_crs_x
         config:
           meta:
@@ -401,15 +392,6 @@ sources:
                 - kippnewark
                 - powerschool
                 - stg_powerschool__sections
-      - name: stg_powerschool__sectionteacher
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippnewark
-                - powerschool
-                - stg_powerschool__sectionteacher
       - name: stg_powerschool__spenrollments
         config:
           meta:
@@ -599,6 +581,15 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__calendar_rollup
+      - name: int_powerschool__calendar_day
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__calendar_day
       - name: int_powerschool__contacts
         config:
           meta:
@@ -671,6 +662,60 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__state_assessments_transfer_scores
+      - name: int_powerschool__final_grades_rollup
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__final_grades_rollup
+      - name: int_powerschool__gpa_term_pivot
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gpa_term_pivot
+      - name: int_powerschool__log
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__log
+      - name: int_powerschool__s_nj_stu_x_unpivot
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__s_nj_stu_x_unpivot
+      - name: int_powerschool__gpnode
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gpnode
+      - name: int_powerschool__gpprogress_grades
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gpprogress_grades
       - name: int_powerschool__student_enrollment_union
         config:
           meta:
@@ -761,6 +806,33 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__gradebook_assignments
+      - name: int_powerschool__gradebook_assignments_scores
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gradebook_assignments_scores
+      - name: int_powerschool__student_course_grades_spine
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__student_course_grades_spine
+      - name: int_powerschool__section_teachers
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__section_teachers
       - name: int_powerschool__section_grade_config
         config:
           meta:

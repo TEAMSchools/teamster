@@ -549,12 +549,12 @@ select
 
     ill.student_id as illuminate_student_id,
 
-    -- suf covers all four districts and previously carried Miami's PowerSchool
-    -- value; Miami's students_dcid is now always null (Focus has no
-    -- equivalent), so suf never matches a Miami row and ar.gifted_and_talented
-    -- (from int_focus__students, via focus_conformed) is the fallback.
+    -- gifted_and_talented only ever existed on the Miami relation of
+    -- stg_powerschool__u_studentsuserfields, dropped from that union; suf
+    -- never contributed a real value here. ar.gifted_and_talented (from
+    -- int_focus__students, via focus_conformed) covers Miami instead.
     coalesce(
-        njs.gifted_and_talented, suf.gifted_and_talented, ar.gifted_and_talented, 'N'
+        njs.gifted_and_talented, ar.gifted_and_talented, 'N'
     ) as gifted_and_talented,
 
     -- njr and suf join through students_dcid, which Focus never populates, so

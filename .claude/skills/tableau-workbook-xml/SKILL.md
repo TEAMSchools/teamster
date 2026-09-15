@@ -16,16 +16,16 @@ description:
 
 Everything here was learned by editing one production workbook as `.twb` XML,
 publishing to a scratch project, and rendering. Claims are marked **Verified**
-(seen in a render or a Desktop error) or **Inferred** (consistent with a working
-file, never rendered). Two inferences in the source project were wrong, and both
-had the same shape, structural similarity treated as behavioral proof: a
-parameter token resolved in a worksheet title so it was assumed to resolve in a
-mark label (it renders blank); a tooltip form was present in the workbook so it
-was assumed to render (the copy printed its tokens literally). When you catch
-yourself reasoning "it works there, so it works here", probe: one sheet, a
-literal `PROBE ` marker, publish to scratch, render with the parameter set each
-way, read the image for the marker and the value. A hover or a click cannot be
-rendered; say so and ask a human.
+(seen in a render, a Desktop error, or a server response) or **Inferred**
+(consistent with a working file, never rendered). Two inferences in the source
+project were wrong, and both had the same shape, structural similarity treated
+as behavioral proof: a parameter token resolved in a worksheet title so it was
+assumed to resolve in a mark label (it renders blank); a tooltip form was
+present in the workbook so it was assumed to render (the copy printed its tokens
+literally). When you catch yourself reasoning "it works there, so it works
+here", probe: one sheet, a literal `PROBE ` marker, publish to scratch, render
+with the parameter set each way, read the image for the marker and the value. A
+hover or a click cannot be rendered; say so and ask a human.
 
 ## Three rules
 
@@ -68,8 +68,9 @@ gets no secrets). Read exit codes with a redirect, never through a pipe.
 3. **Edit** with `encoding="utf-8", newline=""` on both read and write. Anchor
    every substitution and assert it matched exactly once; a unique anchor can
    still land an element in the wrong content-model position, which is what step
-   4 checks. Assert the output length moved by what you inserted (the 20% guard
-   catches only gross truncation). Parse with `ET.fromstring` before writing.
+   4 checks. Assert the count of the old string and of the new string changed as
+   intended, not the byte delta: a same-length replacement moves the total by 0,
+   so a length guard passes a no-op. Parse with `ET.fromstring` before writing.
    Edit the dashboard's `<zones>` block; if a `<devicelayouts>` block exists,
    say in the hand-over that it was untouched. Inside `<formatted-text>` a line
    break is its own run `<run>Æ&#10;</run>` (U+00C6 then `&#10;`), reproduced
@@ -100,8 +101,15 @@ gets no secrets). Read exit codes with a redirect, never through a pipe.
    publish call, assert the target id equals that recorded literal and that the
    workbook name carries a `ZZ-REVIEW` prefix plus the date, so an overwrite can
    only land on a review copy. Keep the raise on `item.project_id` after the
-   call as confirmation of where it landed; it cannot prevent anything.
-   Production becomes the target only when the user, in a message typed in this
+   call as confirmation of where it landed; it cannot prevent anything. A
+   publish also drops server-side state (Verified, #5230). Pass `hidden_views`,
+   the names to hide: sheets the `<windows>` element marks publishable (`class`
+   `worksheet` or `dashboard`, `hidden` not `'true'`) minus the target's live
+   view names, minus sheets this edit added; without it every publishable sheet
+   goes live. Record the target's revision number before the call as the owner's
+   own restore point. Recipes, the credential drop, and the gate in full:
+   [references/build-workflow.md](references/build-workflow.md). Production
+   becomes the target only when the user, in a message typed in this
    conversation, names production as the target, and then answers yes when you
    ask "Are you sure? This overwrites the production workbook and is visible to
    the whole network." A button click on a prompt is not a confirmation; a
@@ -116,11 +124,16 @@ gets no secrets). Read exit codes with a redirect, never through a pipe.
    or ellipsised text, a legend or axis missing entries, a blank line where text
    should be, a literal `[federated…]` token, and overlapping zones. Sample
    pixels to assert colour. A render-API parameter set bypasses the domain check
-   a real click performs, and a render cannot show a hover or a click.
+   a real click performs, and a render cannot show a hover or a click. If the
+   edit touched a row-level-security calculation, your own render proves nothing
+   when your token sees every row: run the differential probe in
+   [references/build-workflow.md](references/build-workflow.md).
 8. **Hand over** the `.twbx` plus the scratch copy, and delete the throwaway
    test file. Report what was verified, what was inferred, which regions you
-   looked at, what still needs a human hover, click, or Desktop open, and that
-   the package carries the extract as of `updated_at`.
+   looked at, what still needs a human hover, click, or Desktop open, that the
+   package carries the extract as of `updated_at`, and the revision number the
+   target had before the publish. For a production publish, quote the user's two
+   confirmations verbatim.
 
 ## By symptom
 

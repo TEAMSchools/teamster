@@ -100,6 +100,38 @@ def test_list_retries_on_503_mid_pagination():
     assert mock_execute.call_count == 3
 
 
+def test_list_outlasts_a_sustained_429():
+    """A per-minute rateLimitExceeded needs a retry budget measured in tens of
+    seconds, not the dagster.backoff default of 1.5s across 5 attempts."""
+    resource, mock_api = _make_resource()
+    mock_execute = mock_api.users.return_value.list.return_value.execute
+    mock_execute.side_effect = [_http_error(429)] * 6 + [{"users": [{"id": "u1"}]}]
+
+    with patch("dagster._utils.backoff.time.sleep") as mock_sleep:
+        data = resource._list("users", customer="C123")
+
+    assert data == [{"id": "u1"}]
+    assert mock_execute.call_count == 7
+    assert sum(c.args[0] for c in mock_sleep.call_args_list) >= 60
+
+
+def test_batch_envelope_outlasts_a_sustained_429():
+    """The whole-batch ``execute()`` shares the 63s budget with ``_list``."""
+    resource, mock_api = _make_resource()
+    mock_batch = MagicMock()
+    mock_batch.execute.side_effect = [_http_error(429)] * 6 + [None]
+    mock_api.new_batch_http_request.return_value = mock_batch
+
+    with patch("dagster._utils.backoff.time.sleep") as mock_sleep:
+        failures = resource._execute_batch_with_retry(
+            [{"primaryEmail": "a@x.org"}], request_factory=MagicMock()
+        )
+
+    assert failures == []
+    assert mock_batch.execute.call_count == 7
+    assert sum(c.args[0] for c in mock_sleep.call_args_list) >= 60
+
+
 def test_list_returns_single_page():
     resource, mock_api = _make_resource()
     mock_api.users.return_value.list.return_value.execute.return_value = {

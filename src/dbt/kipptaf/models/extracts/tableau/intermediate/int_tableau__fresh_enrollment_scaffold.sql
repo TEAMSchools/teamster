@@ -13,7 +13,7 @@ with
             {{ var("finalsite_recruitment_year") }} as enrollment_academic_year,
 
         from {{ ref("stg_powerschool__schools") }}
-        where state_excludefromreporting = 0 and _dbt_source_project != 'kippmiami'
+        where state_excludefromreporting = 0
 
         union all
 
@@ -42,7 +42,7 @@ with
         select distinct schoolid, grade_level, _dbt_source_project,
 
         from {{ ref("stg_powerschool__students") }}
-        where enroll_status = 0 and _dbt_source_project != 'kippmiami'
+        where enroll_status = 0
 
         union all
 

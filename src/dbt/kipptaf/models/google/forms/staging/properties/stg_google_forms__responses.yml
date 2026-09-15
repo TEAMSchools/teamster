@@ -21,6 +21,20 @@ models:
         data_type: date
       - name: last_submitted_timestamp
         data_type: timestamp
+      - name: last_submitted_date
+        data_type: date
+        description: >-
+          UTC calendar date of last_submitted_timestamp. The reporting-terms
+          join keys on this, not the local date.
+      - name: response_link
+        data_type: string
+        description: Deep link to the response in the Google Forms editor.
+      - name: respondent_local_part
+        data_type: string
+        description: Lowercased local part of respondent_email, before the @.
+        config:
+          meta:
+            contains_pii: true
       - name: answers
         data_type:
           ARRAY<STRUCT<key STRING, value STRUCT<questionId STRING, grade

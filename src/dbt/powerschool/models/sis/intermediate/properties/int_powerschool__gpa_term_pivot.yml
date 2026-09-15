@@ -32,21 +32,51 @@ models:
             source_column: yearid
       - name: gpa_term_cur
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term_q1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term_q2
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term_q3
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_term_q4
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1_cur
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1_q1
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1_q2
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1_q3
         data_type: float64
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_y1_q4
         data_type: float64
+        config:
+          meta:
+            contains_pii: true

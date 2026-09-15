@@ -235,7 +235,34 @@ Add `guide:` with the Zendesk article URL. It must be `https://`.
 ### Adding a region-variant tool
 
 Tools that exist once per region collapse into a single row on the page with
-per-region sub-links. That grouping is a **family**, defined in `groups.yml`.
+per-region sub-links. That grouping is a **family**, defined in the `families:`
+block of `groups.yml`.
+
+The row takes its label and description from the family, not from its members.
+Here is the real `gpa_roster` family, with its description shortened:
+
+```yaml
+families:
+  - id: gpa_roster
+    name: GPA Roster
+    description:
+      Student GPA for the current year, one sheet per region — quarter GPAs,
+      year-to-date, and cumulative.
+    group: academics
+    members:
+      - "GPA Roster: Camden"
+      - "GPA Roster: Miami"
+      - "GPA Roster: Newark"
+      - "GPA Roster: Paterson"
+```
+
+| Key           | What it is                                               |
+| ------------- | -------------------------------------------------------- |
+| `id`          | Lowercase letters, digits, and underscores               |
+| `name`        | The single row label staff see on the page               |
+| `description` | The row's description. Member descriptions are not shown |
+| `group`       | One of the seven ids in [Groups](#groups)                |
+| `members`     | The **`name`** of each `links.yml` entry in the family   |
 
 To add a member to an existing family:
 
@@ -243,8 +270,44 @@ To add a member to an existing family:
    one of `newark`, `camden`, `miami`, `paterson`. `[all]` is not legal for a
    family member.
 
-1. Add the entry's **`name`** to that family's `members:` list in `groups.yml`.
-   Families match on `name`, not on `id`, so the two must agree exactly.
+   ```yaml
+   - id: gpa_roster_miami
+     name: "GPA Roster: Miami"
+     url: https://docs.google.com/spreadsheets/d/...
+     description: Term and Y1 GPA for students in the Miami region.
+     audiences: [region, teachers]
+     system: google-sheet
+     group: academics
+     regions: [miami]
+     status: verified
+   ```
+
+1. Add that entry's **`name`** to the family's `members:` list, character for
+   character:
+
+   ```yaml
+   members:
+     - "GPA Roster: Camden"
+     - "GPA Roster: Miami"
+     - "GPA Roster: Newark"
+     - "GPA Roster: Paterson"
+   ```
+
+   Both places need the quotes, because `GPA Roster: Miami` contains a
+   colon-space.
+
+**Families match on `name`, not on `id`.** A member name with no matching entry
+fails the build:
+
+```text
+family 'gpa_roster' names missing tool 'GPA Roster: Trenton'
+```
+
+**A member whose entry is not `verified` stays in the list and simply does not
+render.** The family row is built from the verified members only, so a family
+can legitimately list more members than the page shows. Removing an unverified
+member from `members:` is not necessary and loses the record that the variant
+exists.
 
 A new family, or a new `group`, is a `groups.yml` conversation with the catalog
 owner — not something to add unilaterally.

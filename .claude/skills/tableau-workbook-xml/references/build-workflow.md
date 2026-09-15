@@ -36,8 +36,65 @@ if item.project_id != TEMP_PROJECT:
 ```
 
 Include the date in the review name so two sessions cannot overwrite each
-other's copies if Overwrite matches on name within a project (unverified; see
-[unverified-warnings.md](unverified-warnings.md)).
+other's copies. Across about a dozen Overwrites of the same target in #5230 the
+LUID and `content_url` never changed (Verified), so an Overwrite lands on the
+existing workbook; whether a different session's same-named workbook would be
+matched is still Inferred ([unverified-warnings.md](unverified-warnings.md)).
+The date costs nothing and closes the case either way.
+
+## What a publish drops, and what to do about it
+
+Verified in #5230 across 13 publishes on REST API 3.25 with
+`tableauserverclient` 0.41, unless marked.
+
+- **Hidden views.** `WorkbookItem.hidden_views` is write-only in the library: no
+  read path populates it, so the server's hidden state cannot be read back off
+  the item and a publish without the argument makes every publishable sheet a
+  live view. In #5230 one workbook marked 20 sheets publishable against 10 live
+  views, another 12 against 2. Compute the list to hide before the call: from
+  the `.twb`'s `<windows>` element take entries whose `class` is `worksheet` or
+  `dashboard` and whose `hidden` is not `'true'`; subtract the live view names
+  of the **overwrite target** (not a scratch copy); subtract the sheets this
+  edit deliberately added. `<worksheets>` and `<dashboards>` list every sheet
+  whether publishable or not and are the wrong source. Pass the result as
+  `hidden_views` on the `WorkbookItem`.
+- **Embedded connection credentials.** A publish without a `connections=[...]`
+  list drops them. The scratch copy hides this because the packaged extract
+  still renders; the owner sees a failing refresh or a credential prompt later.
+  How to put them back is **not settled**: #5230 reports `update_connection`
+  with `oauth = True`, but in the installed library `oauth` exists only on
+  `ConnectionCredentials` and the request builder `update_connection` uses never
+  emits it; the only path that does is `publish(connections=[...])`, which #5230
+  saw report success on a live-connection workbook while leaving
+  `embed_password` false (a value the library also returns when the server omits
+  the attribute). Until a probe settles the call, say in the hand-over that
+  credentials were not carried, and treat re-embedding a service account's
+  credential as the owner's decision. Never write a key into a throwaway test
+  file; the 1Password fixture in `tests/conftest.py` supplies secrets at run
+  time.
+- **Revision number.** Every Overwrite on this site created a revision (131 to
+  132, 107 to 108, 45 to 46, 100 to 101). Call `populate_revisions` on the
+  target before publishing and record the current number in the hand-over so the
+  owner has a restore point they apply themselves from the Server UI. That is
+  the owner's action, not yours: a restore on production is a production change
+  and needs the same two confirmations as a publish.
+- **Refresh schedules and permissions.** Not established. A refresh was already
+  queued after several Overwrites, which suggests the schedule survived, but
+  nobody listed tasks before and after; the probe in
+  [unverified-warnings.md](unverified-warnings.md) is unchanged.
+
+## Proving a row-level-security change
+
+If the build touched a permissions calculation, a render as your own identity is
+worthless when your token sits in an all-access group: the gate returns true for
+every row and an applied gate looks identical to a broken one (Verified, #5230).
+Publish a **probe build** with the all-access branch removed to the
+non-production project, render it at the same crop, resolution and parameter
+value as the control, and require both halves: rows scoped to another department
+are **absent**, and rows for the render identity's own department are
+**present**. Absence alone passes a build that renders nothing. The probe build
+is a throwaway: it never becomes the hand-over, and you delete it from the
+project when the check is done.
 
 ## Pull fresh, every time
 
@@ -161,6 +218,42 @@ cp docs/tableau-xml/scripts/tsc_session.py tests/test_zz_tableau.py
 uv run pytest tests/test_zz_tableau.py -s
 rm tests/test_zz_tableau.py
 ```
+
+## Sessions and jobs
+
+Observed in #5230 on REST API 3.25 with `tableauserverclient` 0.41; library
+facts checked against the installed source.
+
+- **`401002: Invalid authentication credentials` mid-run.** Three run failures
+  in #5230. The cause is not established: #5230 read it as one active session
+  per token, while this repo's Dagster resource
+  (`src/teamster/libraries/tableau/CLAUDE.md`) attributes the same code to a
+  sign-in race and recovers with a fresh sign-in. The recovery is the same
+  either way: hold one session, sign in through the `with` block the template
+  already uses (it signs out on exit and on exception), poll a job with your own
+  loop, and re-sign-in on `401002`. `wait_for_job` is a plain sleep-and-poll
+  loop with no re-authentication and no timeout by default, so a session lost
+  mid-poll surfaces as an error from its next request; write the loop yourself.
+  Whether the Tableau MCP's token is the same one the template uses is
+  unverified; if so, an MCP call during a publish is a plausible trigger.
+- **`403180`, `Full extract refresh operation for the workbook is not allowed`,
+  is not a credential failure.** The workbook has no extract; that is normal for
+  a live connection. The two connection types need opposite proofs: a live
+  connection cannot draw without a credential, so a render proves it; an
+  extract-backed workbook renders from the `.hyper` regardless, so a render
+  proves nothing and only a refresh counts.
+- **`jobs.get_by_id` on a `create_extract` job returns server code `400031`**
+  (`REST API does not support background job type :create_extracts`). The
+  jobs-list endpoint (`jobs.get()`, `jobs.filter()`) was not tried and may poll
+  it; until then, watch the workbook's size.
+- **`jobs.get()` with no id returns a tuple** of a `BackgroundJobItem` list and
+  a `PaginationItem`. `BackgroundJobItem` has `title`, `subtitle`, `status`,
+  `ended_at`; it has no `workbook_name`, `finish_code`, or `completed_at`, so
+  filtering on `workbook_name` raises `AttributeError`.
+- **`populate_csv` on a dashboard returned 0 rows, and so did the control.**
+  Export from a worksheet, or render and read the image. The lesson is in
+  [failure-catalog.md](failure-catalog.md): the test was wrong before the
+  workbook was.
 
 ## Cross-workbook merges lose things silently
 

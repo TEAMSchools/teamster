@@ -8,7 +8,7 @@ models:
       lives here; kipptaf unions the result as a passthrough.
     columns:
       # Columns carrying per-column data_tests sort to the top. Every test sets
-      # severity explicitly: consuming districts default data_tests to warn.
+      # severity explicitly.
       - name: studenttestuuid
         data_type: string
         description: >-
