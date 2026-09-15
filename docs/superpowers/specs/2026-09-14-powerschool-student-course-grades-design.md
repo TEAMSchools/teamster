@@ -14,11 +14,11 @@ one package model carrying every PowerSchool-internal join, a kipptaf
 
 ## Decision
 
-Build one new package model, `int_powerschool__student_course_grades`, at the
-consumer's own grain: one row per student, term, course, and gradebook category,
-for the current and prior academic year. It absorbs every course-grain CTE the
-consumer holds today, including the temporary #4687 prior-year reconstruction.
-kipptaf reads it through a bare `union_relations` wrapper, and
+Build one new package model, `int_powerschool__student_course_grades_spine`, at
+the consumer's own grain: one row per student, term, course, and gradebook
+category, for the current and prior academic year. It absorbs every course-grain
+CTE the consumer holds today, including the temporary #4687 prior-year
+reconstruction. kipptaf reads it through a bare `union_relations` wrapper, and
 `rpt_tableau__student_course_grades` becomes the student roster joined once to
 that wrapper plus its 2 kipptaf enrichment joins. One PR. No Miami, no archive
 rebuild.
@@ -79,7 +79,7 @@ a model-internal pick.
 
 ## The package model
 
-`src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql`
+`src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql`
 
 Grain: one row per `studentid`, `yearid`, `quarter`, `course_number`,
 `category_name_code`, where `quarter` is Q1 to Q4 or Y1 and Y1 rows carry a null
@@ -172,7 +172,7 @@ prior-year storedgrades double-write duplicates move with the data. Restoring
 
 ## The kipptaf wrapper
 
-`src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql`
+`src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql`
 
 A bare `union_relations` over `kippnewark_powerschool`,
 `kippcamden_powerschool`, and `kipppaterson_powerschool` plus
@@ -266,8 +266,8 @@ on #5281).
 
 A new package model has no `zz_stg_*` copy, so kipptaf CI cannot resolve the new
 source until one exists. Seed it with
-`dbt build --select int_powerschool__student_course_grades --target staging` in
-`kippnewark`, `kippcamden`, and `kipppaterson`, one at a time; parallel runs
+`dbt build --select int_powerschool__student_course_grades_spine --target staging`
+in `kippnewark`, `kippcamden`, and `kipppaterson`, one at a time; parallel runs
 across projects exhaust BigQuery's `INFORMATION_SCHEMA.simple_rate.user` quota.
 That writes shared staging tables and needs direct user authorization in the
 turn before each call.

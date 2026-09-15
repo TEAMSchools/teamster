@@ -496,7 +496,7 @@ select
 
 from student_roster as s
 left join
-    {{ ref("int_powerschool__student_course_grades") }} as g
+    {{ ref("int_powerschool__student_course_grades_spine") }} as g
     on s.studentid = g.studentid
     and s.yearid = g.yearid
     and s.`quarter` = g.`quarter`

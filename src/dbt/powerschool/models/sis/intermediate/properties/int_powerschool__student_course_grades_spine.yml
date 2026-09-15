@@ -1,5 +1,5 @@
 models:
-  - name: int_powerschool__student_course_grades
+  - name: int_powerschool__student_course_grades_spine
     description: >-
       One row per student, term, course, and gradebook category for the current
       and prior academic year, joining every PowerSchool-internal course-grade

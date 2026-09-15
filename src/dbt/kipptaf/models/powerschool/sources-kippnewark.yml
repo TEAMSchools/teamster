@@ -815,7 +815,7 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__gradebook_assignments_scores
-      - name: int_powerschool__student_course_grades
+      - name: int_powerschool__student_course_grades_spine
         config:
           meta:
             dagster:
@@ -823,7 +823,7 @@ sources:
               asset_key:
                 - kippnewark
                 - powerschool
-                - int_powerschool__student_course_grades
+                - int_powerschool__student_course_grades_spine
       - name: int_powerschool__section_teachers
         config:
           meta:

@@ -1,5 +1,5 @@
 models:
-  - name: int_powerschool__student_course_grades
+  - name: int_powerschool__student_course_grades_spine
     description: >-
       Union of the per-region PowerSchool student course grade models. One row
       per student, term, course, and gradebook category for the current and

@@ -10,12 +10,13 @@
 through a kipptaf `union_relations` wrapper, with the extract row-identical to
 prod for NJ.
 
-**Architecture:** A new package model `int_powerschool__student_course_grades`
-at student x term x course x category for the current and prior academic year,
-built from the consumer's existing course-grain CTEs moved verbatim minus the
-cross-region plumbing. A kipptaf wrapper unions the 3 NJ districts. The consumer
-keeps its student-grain roster CTEs and left-joins the wrapper once, then the 2
-kipptaf enrichment joins that used to sit inside its `course_enrollments` CTE.
+**Architecture:** A new package model
+`int_powerschool__student_course_grades_spine` at student x term x course x
+category for the current and prior academic year, built from the consumer's
+existing course-grain CTEs moved verbatim minus the cross-region plumbing. A
+kipptaf wrapper unions the 3 NJ districts. The consumer keeps its student-grain
+roster CTEs and left-joins the wrapper once, then the 2 kipptaf enrichment joins
+that used to sit inside its `course_enrollments` CTE.
 
 **Tech Stack:** dbt 1.x on BigQuery, `dbt_utils.union_relations`,
 `dbt_utils.deduplicate`, `dbt_utils.unique_combination_of_columns`. Spec:
@@ -55,16 +56,16 @@ kipptaf enrichment joins that used to sit inside its `course_enrollments` CTE.
 
 ## File map
 
-| Action | Path                                                                                                    | Responsibility                               |
-| ------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Create | `src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql`                | every PowerSchool-internal course-grain join |
-| Create | `src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades.yml`     | grain test, column descriptions              |
-| Modify | `src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml`                                             | add the source table entry                   |
-| Modify | `src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml`                                             | add the source table entry                   |
-| Modify | `src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml`                                           | add the source table entry                   |
-| Create | `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql`            | bare `union_relations` wrapper               |
-| Create | `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades.yml` | PII tag, 6-column grain test                 |
-| Modify | `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql`                        | roster plus wrapper plus 2 enrichment joins  |
+| Action | Path                                                                                                          | Responsibility                               |
+| ------ | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Create | `src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql`                | every PowerSchool-internal course-grain join |
+| Create | `src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades_spine.yml`     | grain test, column descriptions              |
+| Modify | `src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml`                                                   | add the source table entry                   |
+| Modify | `src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml`                                                   | add the source table entry                   |
+| Modify | `src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml`                                                 | add the source table entry                   |
+| Create | `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql`            | bare `union_relations` wrapper               |
+| Create | `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades_spine.yml` | PII tag, 6-column grain test                 |
+| Modify | `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql`                              | roster plus wrapper plus 2 enrichment joins  |
 
 ---
 
@@ -73,9 +74,9 @@ kipptaf enrichment joins that used to sit inside its `course_enrollments` CTE.
 **Files:**
 
 - Create:
-  `src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql`
+  `src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql`
 - Create:
-  `src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades.yml`
+  `src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades_spine.yml`
 - Read for reference (do not modify):
   `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql`
   lines 369 to 883, the CTEs being moved.
@@ -86,7 +87,7 @@ kipptaf enrichment joins that used to sit inside its `course_enrollments` CTE.
   `base_powerschool__final_grades`, `stg_powerschool__storedgrades`,
   `int_powerschool__category_grades`, `int_powerschool__gradescaleitem_lookup`,
   `int_powerschool__terms`.
-- Produces: relation `int_powerschool__student_course_grades` in each NJ
+- Produces: relation `int_powerschool__student_course_grades_spine` in each NJ
   district's `kipp<district>_powerschool` dataset, grain
   `(studentid, yearid, quarter, course_number, category_name_code)`, columns
   listed in step 3. Tasks 2 and 3 depend on these exact column names.
@@ -111,7 +112,7 @@ storecode appears (an `E1` or `T1`), note it: the spine CTE in step 2 filters
 - [ ] **Step 2: Write the package model SQL**
 
 Create
-`src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql`:
+`src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql`:
 
 ```sql
 with
@@ -708,11 +709,11 @@ column names unchanged. The spec names them `teachernumber` and
 - [ ] **Step 3: Write the properties yml**
 
 Create
-`src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades.yml`:
+`src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades_spine.yml`:
 
 ```yaml
 models:
-  - name: int_powerschool__student_course_grades
+  - name: int_powerschool__student_course_grades_spine
     description: >-
       One row per student, term, course, and gradebook category for the current
       and prior academic year, joining every PowerSchool-internal course-grade
@@ -997,11 +998,11 @@ models:
 Run from the main cwd:
 
 ```bash
-cd /workspaces/teamster && uv run dbt compile --select int_powerschool__student_course_grades --target prod --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kippnewark
+cd /workspaces/teamster && uv run dbt compile --select int_powerschool__student_course_grades_spine --target prod --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kippnewark
 ```
 
 Expected: `Done.` with 1 model compiled, no errors. Compiled SQL lands at
-`<worktree>/src/dbt/kippnewark/target/compiled/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql`.
+`<worktree>/src/dbt/kippnewark/target/compiled/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql`.
 If dbt reports a missing package, run
 `uv run dbt deps --project-dir <that project-dir>` once and compile again.
 
@@ -1031,7 +1032,7 @@ measured in Task 4 step 3. Record `n_rows` and the job's slot time from
 - [ ] **Step 6: Lint**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades.yml </dev/null
+cd /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades_spine.yml </dev/null
 ```
 
 Expected: `No issues`. If sqlfluff ST06 flags the final select, the `ts.quarter`
@@ -1043,7 +1044,7 @@ before changing order.
 Write `.claude/scratch/commit-msg.txt`:
 
 ```text
-feat(powerschool): add int_powerschool__student_course_grades
+feat(powerschool): add int_powerschool__student_course_grades_spine
 
 One row per student, term, course, and gradebook category for the
 current and prior year, joining course enrollments, live and stored
@@ -1057,7 +1058,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 ```
 
 ```bash
-wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && git -C "$wt" add src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades.yml && git -C "$wt" commit -q -F /workspaces/teamster/.claude/scratch/commit-msg.txt && git -C "$wt" log -1 --format='%h %s'
+wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && git -C "$wt" add src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__student_course_grades_spine.yml && git -C "$wt" commit -q -F /workspaces/teamster/.claude/scratch/commit-msg.txt && git -C "$wt" log -1 --format='%h %s'
 ```
 
 ---
@@ -1073,16 +1074,16 @@ wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-p
 - Modify: `src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml` (after
   the same entry, near line 799)
 - Create:
-  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql`
+  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql`
 - Create:
-  `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades.yml`
+  `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades_spine.yml`
 
 **Interfaces:**
 
 - Consumes: the Task 1 relation, by name, in each of 3 district datasets.
-- Produces: kipptaf model `int_powerschool__student_course_grades` with every
-  Task 1 column plus `_dbt_source_relation` and `_dbt_source_project`. Task 3
-  joins on `studentid`, `yearid`, `quarter`, `_dbt_source_project`.
+- Produces: kipptaf model `int_powerschool__student_course_grades_spine` with
+  every Task 1 column plus `_dbt_source_relation` and `_dbt_source_project`.
+  Task 3 joins on `studentid`, `yearid`, `quarter`, `_dbt_source_project`.
 
 - [ ] **Step 1: Add the source entry to each NJ source file**
 
@@ -1092,7 +1093,7 @@ In each of the 3 files, directly after the
 file):
 
 ```yaml
-- name: int_powerschool__student_course_grades
+- name: int_powerschool__student_course_grades_spine
   config:
     meta:
       dagster:
@@ -1100,7 +1101,7 @@ file):
         asset_key:
           - <district>
           - powerschool
-          - int_powerschool__student_course_grades
+          - int_powerschool__student_course_grades_spine
 ```
 
 The `schema:` at the top of each file already carries the `dev` and `staging`
@@ -1109,7 +1110,7 @@ branches, so no schema edit is needed.
 - [ ] **Step 2: Write the wrapper SQL**
 
 Create
-`src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql`:
+`src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql`:
 
 ```sql
 with
@@ -1133,11 +1134,11 @@ from union_relations as ur
 - [ ] **Step 3: Write the wrapper properties yml**
 
 Create
-`src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades.yml`:
+`src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades_spine.yml`:
 
 ```yaml
 models:
-  - name: int_powerschool__student_course_grades
+  - name: int_powerschool__student_course_grades_spine
     description: >-
       Union of the per-region PowerSchool student course grade models. One row
       per student, term, course, and gradebook category for the current and
@@ -1192,7 +1193,7 @@ wrapper will expand to an empty column list until the `zz_stg_*` copies exist
 - [ ] **Step 5: Lint**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades.yml </dev/null
+cd /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades_spine.yml </dev/null
 ```
 
 Expected: `No issues`.
@@ -1202,7 +1203,7 @@ Expected: `No issues`.
 Write `.claude/scratch/commit-msg.txt`:
 
 ```text
-feat(kipptaf): union wrapper for int_powerschool__student_course_grades
+feat(kipptaf): union wrapper for int_powerschool__student_course_grades_spine
 
 Bare union_relations over the 3 NJ PowerSchool packages plus the 3
 source entries. PII tag re-declared at model level since it does not
@@ -1214,7 +1215,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 ```
 
 ```bash
-wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && git -C "$wt" add -u && git -C "$wt" add src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades.yml && git -C "$wt" commit -q -F /workspaces/teamster/.claude/scratch/commit-msg.txt && git -C "$wt" log -1 --format='%h %s'
+wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package && git -C "$wt" add -u && git -C "$wt" add src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__student_course_grades_spine.yml && git -C "$wt" commit -q -F /workspaces/teamster/.claude/scratch/commit-msg.txt && git -C "$wt" log -1 --format='%h %s'
 ```
 
 ---
@@ -1252,7 +1253,7 @@ Replace everything from the current `from student_roster as s` (line 1076 on
 ```sql
 from student_roster as s
 left join
-    {{ ref("int_powerschool__student_course_grades") }} as g
+    {{ ref("int_powerschool__student_course_grades_spine") }} as g
     on s.studentid = g.studentid
     and s.yearid = g.yearid
     and s.`quarter` = g.`quarter`
@@ -1396,8 +1397,8 @@ cd /workspaces/teamster && uv run dbt compile --select rpt_tableau__student_cour
 ```
 
 Expected: `Done.` with no errors. The compiled SQL references
-`kipptaf_powerschool.int_powerschool__student_course_grades`, which does not
-exist in prod yet; compile does not execute, so that is fine. It is used in
+`kipptaf_powerschool.int_powerschool__student_course_grades_spine`, which does
+not exist in prod yet; compile does not execute, so that is fine. It is used in
 Task 4.
 
 - [ ] **Step 5: Lint**
@@ -1416,7 +1417,7 @@ Write `.claude/scratch/commit-msg.txt`:
 refactor(kipptaf): read course grades from the package wrapper
 
 rpt_tableau__student_course_grades keeps its student-grain roster CTEs
-and left-joins int_powerschool__student_course_grades once, then the
+and left-joins int_powerschool__student_course_grades_spine once, then the
 subjects and staff-roster enrichment. Fourteen course-grain CTEs deleted;
 they live in the powerschool package now. Contract unchanged.
 
@@ -1436,7 +1437,7 @@ wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-p
 **Files:**
 
 - Read:
-  `<worktree>/src/dbt/kipp{newark,camden,paterson}/target/compiled/powerschool/models/sis/intermediate/int_powerschool__student_course_grades.sql`
+  `<worktree>/src/dbt/kipp{newark,camden,paterson}/target/compiled/powerschool/models/sis/intermediate/int_powerschool__student_course_grades_spine.sql`
   (Task 1 step 4 produced Newark; compile Camden and Paterson the same way)
 - Read:
   `<worktree>/src/dbt/kipptaf/target/compiled/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql`
@@ -1450,7 +1451,7 @@ wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-p
 - [ ] **Step 1: Compile the package model for Camden and Paterson**
 
 ```bash
-cd /workspaces/teamster && for d in kippcamden kipppaterson; do uv run dbt compile --select int_powerschool__student_course_grades --target prod --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/$d 2>&1 | tail -2; done
+cd /workspaces/teamster && for d in kippcamden kipppaterson; do uv run dbt compile --select int_powerschool__student_course_grades_spine --target prod --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/$d 2>&1 | tail -2; done
 ```
 
 Expected: `Done.` twice.
@@ -1460,7 +1461,7 @@ Expected: `Done.` twice.
 Write `.claude/scratch/verify-scg.sql` with this shape. The 3 `pkg_*` CTEs are
 the compiled package SQLs pasted verbatim. `new_consumer` is the compiled
 consumer SQL with its one reference to
-`` `teamster-332318`.`kipptaf_powerschool`.`int_powerschool__student_course_grades` ``
+`` `teamster-332318`.`kipptaf_powerschool`.`int_powerschool__student_course_grades_spine` ``
 replaced by `wrapper`.
 
 ```sql
@@ -1475,11 +1476,11 @@ pkg_kipppaterson as (
   -- compiled Paterson package SQL
 ),
 wrapper as (
-  select *, '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__student_course_grades`' as _dbt_source_relation, 'kippnewark' as _dbt_source_project from pkg_kippnewark
+  select *, '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__student_course_grades_spine`' as _dbt_source_relation, 'kippnewark' as _dbt_source_project from pkg_kippnewark
   union all
-  select *, '`teamster-332318`.`kippcamden_powerschool`.`int_powerschool__student_course_grades`', 'kippcamden' from pkg_kippcamden
+  select *, '`teamster-332318`.`kippcamden_powerschool`.`int_powerschool__student_course_grades_spine`', 'kippcamden' from pkg_kippcamden
   union all
-  select *, '`teamster-332318`.`kipppaterson_powerschool`.`int_powerschool__student_course_grades`', 'kipppaterson' from pkg_kipppaterson
+  select *, '`teamster-332318`.`kipppaterson_powerschool`.`int_powerschool__student_course_grades_spine`', 'kipppaterson' from pkg_kipppaterson
 ),
 new_consumer as (
   -- compiled consumer SQL, with the wrapper relation replaced by `wrapper`
@@ -1621,8 +1622,8 @@ No commit for this task; the scratch SQL is not committed.
 - [ ] **Step 1: Ask the user to authorize the 3 staging seeds**
 
 Say, in plain text: "The next 3 commands each write a shared
-`zz_stg_<district>_powerschool.int_powerschool__student_course_grades` table
-that CI reads. Authorize each?" Wait for a yes before each.
+`zz_stg_<district>_powerschool.int_powerschool__student_course_grades_spine`
+table that CI reads. Authorize each?" Wait for a yes before each.
 
 - [ ] **Step 2: Seed Newark**
 
@@ -1630,7 +1631,7 @@ After the user's yes, restate in plain text that they authorized the Newark
 staging build, then run this alone in one Bash call:
 
 ```bash
-cd /workspaces/teamster && uv run dbt build --select int_powerschool__student_course_grades --target staging --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kippnewark
+cd /workspaces/teamster && uv run dbt build --select int_powerschool__student_course_grades_spine --target staging --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kippnewark
 ```
 
 Expected: 1 model created, 1 test warn (the #3915 duplicates), 0 errors.
@@ -1646,7 +1647,7 @@ Same as step 2 with `kipppaterson`, after its own yes.
 - [ ] **Step 5: Compile the wrapper against staging to prove the columns list**
 
 ```bash
-cd /workspaces/teamster && uv run dbt compile --select int_powerschool__student_course_grades --target staging --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kipptaf 2>&1 | tail -3 && grep -c "cast(" /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kipptaf/target/compiled/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades.sql
+cd /workspaces/teamster && uv run dbt compile --select int_powerschool__student_course_grades_spine --target staging --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kipptaf 2>&1 | tail -3 && grep -c "cast(" /workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-package/src/dbt/kipptaf/target/compiled/kipptaf/models/powerschool/intermediate/int_powerschool__student_course_grades_spine.sql
 ```
 
 Expected: `Done.` and a `cast(` count of 0. Any `cast(null as ...)` means a
@@ -1663,13 +1664,13 @@ wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-student-course-grades-p
 Read `.github/pull_request_template.md`. Write `.claude/scratch/pr-body.md`
 following its sections. Summary: "When merged, this pull request will move every
 PowerSchool-to-PowerSchool join behind `rpt_tableau__student_course_grades` into
-a new `powerschool` package model, `int_powerschool__student_course_grades`,
-read through a kipptaf union wrapper. Closes row 1 of #5285; row 2 shipped in
-#5306." Reviewer Notes: the term spine change (section school, not roster
-school), the `teacher_number` and `teacher_name` alias placement, the
-`section_or_period` decision, and the Task 4 numbers. For Claude fold-out: the
-spec path, the verification tables, the slot time, and the 3 seeded staging
-tables. End with
+a new `powerschool` package model,
+`int_powerschool__student_course_grades_spine`, read through a kipptaf union
+wrapper. Closes row 1 of #5285; row 2 shipped in #5306." Reviewer Notes: the
+term spine change (section school, not roster school), the `teacher_number` and
+`teacher_name` alias placement, the `section_or_period` decision, and the Task 4
+numbers. For Claude fold-out: the spec path, the verification tables, the slot
+time, and the 3 seeded staging tables. End with
 `🤖 Generated with [Claude Code](https://claude.com/claude-code)`. No PII values
 anywhere in the body.
 
