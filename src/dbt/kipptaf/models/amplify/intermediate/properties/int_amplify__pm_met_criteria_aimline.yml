@@ -74,31 +74,44 @@ models:
         data_type: string
         description: >-
           T&L's reporting category for the row, per measure standard — Meeting
-          Aimline On-Track, Meeting Aimline Off-Track, Below Aimline, Not
-          Tested, or No Aimline Status. Their definitions, from the PM guidance
-          document, in the order the case tests them.
+          Aimline On-Track, Meeting Aimline Off-Track, Below Aimline, No Aimline
+          Data On-Track, No Aimline Data Off-Track, or Round Incomplete. Their
+          definitions, from the PM guidance document, in the order the case
+          tests them.
 
-          Not Tested comes first and overrides everything else, because T&L
-          define it at the round rather than the row — a student not tested on
-          one or more of the measures the round expected is Not Tested for that
-          round, including on the measures they did sit. It is the same
+          Round Incomplete comes first and overrides everything else, because
+          T&L define it at the round rather than the row — a student not tested
+          on one or more of the measures the round expected is incomplete for
+          that round, including on the measures they did sit. It is the same
           completed_test_round gate the internal method applies, surfaced as a
           category instead of a separate status. A student who sat nothing in
           the round has no row here at all, and the reporting extract names
-          those.
+          those Not Tested, which is the distinction between the two words: no
+          row means never sat, Round Incomplete means sat some but not all.
 
           Meeting Aimline, On-Track is at or above both the aimline and the
           benchmark. T&L add that a student meeting benchmark but not aimline
-          belongs here too, so the case tests the benchmark alone and the label
-          slightly overstates what it checks. That is their wording and their
-          rule, recorded here so nobody 'corrects' it.
+          belongs here too, so the case tests the benchmark ahead of the aimline
+          verdict and the label slightly overstates what it checks — 6,844
+          AY2025 rows, of which 696 are actually below the aimline. That is
+          their wording and their rule, recorded here so nobody 'corrects' it.
 
           Meeting Aimline, Off-Track is at or above the aimline but not the
-          benchmark. Below Aimline is below the aimline. No Aimline Status is
-          the fifth value their four do not cover — the probe was sat, and
-          Amplify published no verdict, so neither Below Aimline nor Not Tested
-          is true of it. Academics chose to show the score and flag the missing
-          target rather than hide the row or call it Not Tested.
+          benchmark. Below Aimline is below the aimline.
+
+          The two No Aimline Data values cover what T&L's four do not — the
+          probe was sat and Amplify published no verdict, so neither Below
+          Aimline nor Round Incomplete is true of it. Academics chose to show
+          the score and flag the missing target rather than hide the row. They
+          split by benchmark the same way the Meeting values do, because a
+          missing aimline verdict says nothing about whether the student is on
+          pace: No Aimline Data, On-Track met the benchmark, Off-Track did not.
+
+          Missing data is deliberately NOT folded into T&L's benchmark-wins rule
+          above. That rule is about a student who missed a known aimline, and
+          these rows have no aimline to miss. Before 2026-09-15 the benchmark
+          branch swallowed them and 1,533 AY2025 rows read as Meeting Aimline
+          with no aimline verdict behind the claim.
         data_tests:
           - not_null
           - accepted_values:
@@ -275,6 +288,36 @@ models:
           the point: it is not a miss, and the rollups above treat it as
           unknown. This is the one stage that differs from the internal sibling,
           where the equivalent column compares a score to a cohort target.
+      - name: measure_standard_goal_status
+        data_type: string
+        description: >-
+          met_aimline_goal as a label — Met, Not Met, or No Aimline Data. Named
+          to match the internal sibling's column of the same name so one BI
+          field reads across both PM methods, which is why it says Met rather
+          than repeating Amplify's At or Above wording; aimline_status carries
+          that verbatim for anyone who needs it.
+
+          Third value exists because this method has a state the internal one
+          does not: Amplify published no verdict for a probe that was sat. It is
+          not a miss and must not colour as one.
+
+          Independent of the round gate. A Round Incomplete row still carries
+          the real verdict for the measures the student DID sit, so a row can
+          read Round Incomplete and Met together without contradiction — the
+          round is unfinished, that measure passed.
+        config:
+          meta:
+            contains_pii: true
+      - name: admin_benchmark_goal_status
+        data_type: string
+        description: >-
+          met_admin_benchmark_goal as a label — Met or Not Met. Two-valued
+          rather than three because the benchmark standard is always published
+          for the rows this model keeps, so there is no unknown state to name.
+          Matches the internal sibling's column of the same name.
+        config:
+          meta:
+            contains_pii: true
       - name: met_admin_benchmark_goal
         data_type: int64
         description: >-

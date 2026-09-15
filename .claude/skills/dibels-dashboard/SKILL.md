@@ -1,16 +1,55 @@
 ---
 name: dibels-dashboard
 description: >-
-  Use when building or maintaining any part of the DIBELS dashboard suite -- the
-  Bright Spots tracker (#4952), the PM/aimline migration (#3834), benchmark
-  completion tracking (#4902), or anything touching
-  stg_google_sheets__dibels_foundation_goals,
-  stg_google_sheets__dibels_brightspot_goals, rpt_tableau__dibels_brightspots,
-  rpt_gsheets__dibels_bm_goals_calculations, int_amplify__all_assessments, or
-  rpt_tableau__dibels_dashboard and their lineage.
+  Use for ANY DIBELS work -- reading, explaining, querying, modelling, goal
+  setting, Tableau views, or answering a question about the numbers. Not only
+  code changes: invoke it before answering anything about DIBELS, because the
+  reference document it points at carries decisions that are not recoverable
+  from the SQL. Triggers: the DIBELS dashboard or Literacy Dashboard, the Bright
+  Spots tracker (#4952), the PM/aimline migration (#3834), benchmark completion
+  tracking (#4902), aimline categories, foundation or benchmark or PM goal
+  setting, the Amplify DIBELS spreadsheet, or anything touching
+  int_amplify__all_assessments, int_amplify__pm_met_criteria,
+  int_amplify__pm_met_criteria_aimline, int_amplify__benchmark_student_summary,
+  int_students__dibels_participation_roster, rpt_tableau__dibels_dashboard,
+  rpt_gsheets__dibels_bm_goals_calculations,
+  rpt_gsheets__dibels_pm_goal_setting, stg_google_sheets__dibels_* or their
+  lineage.
 ---
 
 # DIBELS Dashboard
+
+## Before you finish: update this skill and the reference document
+
+**Not optional, and not gated on the user asking.** Any session that changes a
+DIBELS model, discovers something about how the data behaves, or settles a
+question with academics updates BOTH:
+
+- `docs/models/dibels-dashboard-data-model.md` — the published reference. It is
+  in the mkdocs nav, so a wrong page here is a bug, not a stale note.
+- this skill, for anything a future session needs BEFORE it opens a file.
+
+The reason is specific to this domain. Most of what matters about DIBELS is not
+recoverable from the SQL: which choices are T&L's and must not be 'corrected',
+which are ours, what academics were asked and answered, and which apparent bugs
+are recorded intent. On 2026-09-15 a session called a documented T&L rule a bug
+and started changing it; the yml description is what stopped that. A session
+that leaves its findings only in a PR body has lost them.
+
+What to write down, beyond the change itself:
+
+- A rule that looks wrong but is deliberate — say whose decision it is, and that
+  it must not be corrected.
+- A value or label rename — the old name, the new one, and the date, because
+  academics will ask about a word they still use.
+- Anything measured — row counts, category distributions, coverage rates — with
+  the academic year, since the next reader cannot tell a real shift from a
+  method change without it.
+- A dead end: an MCP that cannot reach a source, a check that proves nothing.
+
+Put column and model semantics in the model's properties yml, workflow and
+reasoning here, and the narrative in the reference document. The repo's yml
+conventions still apply to descriptions.
 
 Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
 tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not

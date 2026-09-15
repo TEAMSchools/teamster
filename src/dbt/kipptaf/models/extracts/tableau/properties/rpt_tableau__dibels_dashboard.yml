@@ -456,9 +456,16 @@ models:
           than the assessed grade.
       - name: met_measure_standard_goal
         data_type: int64
-        description:
-          1 when the score reaches the round's cumulative growth target for this
-          measure standard, else 0. Internal method.
+        description: >-
+          1 when the measure hit its goal for the round, else 0. Populated on
+          BOTH PM methods, against a different target each: the Internal branch
+          compares the score to the round's cumulative growth target, the
+          Aimline branch carries met_aimline_goal, which is Amplify's verdict
+          against the student's aimline. Null on an Aimline row where Amplify
+          published no verdict.
+        config:
+          meta:
+            contains_pii: true
       - name: met_admin_benchmark_goal
         data_type: int64
         description:
@@ -481,14 +488,27 @@ models:
           only when the student was tested on everything it expected.
       - name: measure_standard_goal_status
         data_type: string
-        description:
-          met_measure_standard_goal as a label -- Met or Not Met, or Not Tested
-          where no evaluation exists.
+        description: >-
+          met_measure_standard_goal as a label. Met or Not Met on both PM
+          methods, Not Tested where no evaluation exists, plus No Aimline Data
+          on Aimline rows where Amplify published no verdict for a probe that
+          was sat -- a state the Internal method has no equivalent for, and not
+          a miss.
+
+          Both PM branches populate this, so one BI field reads across methods.
+          Before 2026-09-15 the Aimline branch hardcoded it to null.
+        config:
+          meta:
+            contains_pii: true
       - name: admin_benchmark_goal_status
         data_type: string
-        description:
+        description: >-
           met_admin_benchmark_goal as a label -- Met or Not Met, or Not Tested
-          where no evaluation exists.
+          where no evaluation exists. Populated on both PM methods; before
+          2026-09-15 the Aimline branch hardcoded it to null.
+        config:
+          meta:
+            contains_pii: true
       - name: pm_round_status
         data_type: string
         description: >-
@@ -531,8 +551,14 @@ models:
         data_type: string
         description: >-
           T&L's reporting category -- Meeting Aimline On-Track, Meeting Aimline
-          Off-Track, Below Aimline, Not Tested, or No Aimline Status. Aimline
-          rows only.
+          Off-Track, Below Aimline, No Aimline Data On-Track, No Aimline Data
+          Off-Track, or Round Incomplete. Aimline rows only, and Not Tested here
+          where the student has no row in the aimline model at all.
+
+          Round Incomplete and Not Tested are different states: Round Incomplete
+          means the student sat some of the round's measures but not all, Not
+          Tested means no row exists because they sat nothing. Do not collapse
+          them.
         config:
           meta:
             contains_pii: true

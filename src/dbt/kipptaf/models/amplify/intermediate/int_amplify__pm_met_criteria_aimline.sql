@@ -241,6 +241,16 @@ select
         met_aimline_goal = 0 and previous_met_aimline_goal = 0, 1, 0
     ) as missed_aimline_consecutive,
 
+    if(met_admin_benchmark_goal = 1, 'Met', 'Not Met') as admin_benchmark_goal_status,
+
+    case
+        when met_aimline_goal = 1
+        then 'Met'
+        when met_aimline_goal = 0
+        then 'Not Met'
+        else 'No Aimline Data'
+    end as measure_standard_goal_status,
+
     case
         when met_pm_round_overall_criteria = 1
         then 'Met'
@@ -257,14 +267,16 @@ select
 
     case
         when not completed_test_round
-        then 'Not Tested'
-        when met_admin_benchmark_goal = 1
+        then 'Round Incomplete'
+        when met_admin_benchmark_goal = 1 and met_aimline_goal is not null
         then 'Meeting Aimline, On-Track'
         when met_aimline_goal = 1
         then 'Meeting Aimline, Off-Track'
         when met_aimline_goal = 0
         then 'Below Aimline'
-        else 'No Aimline Status'
+        when met_admin_benchmark_goal = 1
+        then 'No Aimline Data, On-Track'
+        else 'No Aimline Data, Off-Track'
     end as aimline_category,
 
 from round_overall

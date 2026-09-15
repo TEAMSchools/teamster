@@ -513,16 +513,18 @@ select
     rs.completed_test_round_int,
     rs.participation_group,
 
-    null as met_measure_standard_goal,
-
+    pm.met_aimline_goal as met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
 
-    null as measure_standard_goal_status,
-    null as admin_benchmark_goal_status,
-
+    coalesce(
+        pm.measure_standard_goal_status, 'Not Tested'
+    ) as measure_standard_goal_status,
+    coalesce(
+        pm.admin_benchmark_goal_status, 'Not Tested'
+    ) as admin_benchmark_goal_status,
     coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
 
     r.overall_aimline_composite_level as aimline_cohort_level,

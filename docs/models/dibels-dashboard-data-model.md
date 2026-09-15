@@ -1705,28 +1705,52 @@ Two things the sibling needs that the internal model does not:
   design and the rollups treat null as unknown rather than as a miss. This
   generalises the completion asymmetry: under `AND` one miss settles the round
   however much is unknown, under the null (OR) criteria one pass does, and only
-  where neither has happened is the round unresolved — reported as
-  `No Aimline Status`.
+  where neither has happened is the round unresolved.
 
 `aimline_category` carries T&L's reporting categories, taken from their PM
-guidance document: **Meeting Aimline, On-Track**, **Meeting Aimline,
-Off-Track**, **Below Aimline**, **Not Tested**, and a fifth, **No Aimline
-Status**, for the rows their four do not cover.
+guidance document, plus two the model adds for rows their four do not cover. Six
+values as of 2026-09-15, with AY2025 counts:
+
+| Value                          | AY2025 rows | Source       |
+| ------------------------------ | ----------: | ------------ |
+| **Below Aimline**              |      16,813 | T&L          |
+| **Meeting Aimline, Off-Track** |       7,070 | T&L          |
+| **Meeting Aimline, On-Track**  |       6,844 | T&L          |
+| **Round Incomplete**           |       2,554 | T&L, renamed |
+| **No Aimline Data, Off-Track** |       1,688 | model        |
+| **No Aimline Data, On-Track**  |       1,533 | model        |
 
 The cascade tests in that order, and two things about it are T&L's decisions
-rather than ours. `Not Tested` comes first and overrides the rest, because they
-define it at the round and not the row — a student not tested on one or more of
-the round's expected measures is Not Tested for that round, including on the
-measures they did sit. It is the same `completed_test_round` gate the internal
-method applies, surfaced as a category. And `Meeting Aimline, On-Track` fires on
-the benchmark alone, per their written rule that a student meeting benchmark but
-not aimline still belongs there, so the label overstates what it checks; that
-wording is theirs, recorded so nobody 'corrects' it.
+rather than ours. `Round Incomplete` comes first and overrides the rest, because
+they define it at the round and not the row — a student not tested on one or
+more of the round's expected measures is incomplete for that round, including on
+the measures they did sit. It is the same `completed_test_round` gate the
+internal method applies, surfaced as a category. And `Meeting Aimline, On-Track`
+fires on the benchmark ahead of the aimline verdict, per their written rule that
+a student meeting benchmark but not aimline still belongs there, so the label
+overstates what it checks — 696 of its 6,844 AY2025 rows are actually below the
+aimline. That wording is theirs, recorded so nobody 'corrects' it.
 
-`No Aimline Status` exists because academics chose, when asked, to show the
-score and flag the missing target rather than hide the row or call it Not
-Tested. Those students were tested, so Not Tested would be false, and Below
-Aimline would report a non-failure as a failure.
+**`Round Incomplete` and `Not Tested` are different states, and the extract
+carries both.** Round Incomplete means the student sat some of the round's
+measures but not all. Not Tested means no row exists in this model at all,
+because they sat nothing — the extract's `coalesce` names those. The category
+read `Not Tested` for the incomplete case until 2026-09-15, which put the words
+"Not Tested" on rows displaying a score.
+
+The two `No Aimline Data` values exist because academics chose, when asked, to
+show the score and flag the missing target rather than hide the row or call it
+Not Tested. Those students were tested, so Not Tested would be false, and Below
+Aimline would report a non-failure as a failure. They split by benchmark the
+same way the Meeting values do, because a missing aimline verdict says nothing
+about whether the student is on pace.
+
+That split is also a fix. Until 2026-09-15 the benchmark branch fired before any
+aimline check and swallowed the null case, so 1,533 AY2025 rows read
+`Meeting Aimline, On-Track` with no aimline verdict behind the claim, while the
+other 1,688 sat in a single undifferentiated `No Aimline Status`. Missing data
+is deliberately NOT folded into T&L's benchmark-wins rule: that rule is about a
+student who missed a known aimline, and these rows have no aimline to miss.
 
 `missed_aimline_consecutive` is the two-rounds-in-a-row signal, per measure and
 within one PM season. Consecutive means consecutive among the rounds the student
@@ -1735,6 +1759,23 @@ not from a lag over scored rows — so a measure the schedule tests in rounds 1
 and 3 only streaks across round 2 correctly. Where the student was expected in a
 round and missed it, the streak falls back to their last recorded verdict, so an
 absence does not break a run either. T&L dropped the three-in-a-row variant.
+
+**The labelled twins reached this model late.** The internal sibling has carried
+`measure_standard_goal_status` and `admin_benchmark_goal_status` since the
+`*_status` work; the aimline model did not, and the extract hardcoded both to
+`null` on the Aimline branch, so a Tableau view had nothing to bind to on half
+the PM rows. Added 2026-09-15. `measure_standard_goal_status` is three-valued
+here — Met, Not Met, **No Aimline Data** — because this method has a state the
+internal one does not; `admin_benchmark_goal_status` stays two-valued, since the
+benchmark standard is always published for the rows the model keeps. Both use
+the internal method's vocabulary rather than Amplify's At or Above / Below, so
+one BI field reads across both methods; `aimline_status` carries Amplify's
+wording verbatim for anyone who needs it. `met_measure_standard_goal` likewise
+now carries `met_aimline_goal` through on the Aimline branch instead of null.
+
+The measure-level status is independent of the round gate, which is what makes
+the display coherent: a row can read `Round Incomplete` and `Met` together — the
+round is unfinished, that measure passed.
 
 On AY2025 the model produces 36,486 rows on an exact grain, from 36,507 aimline
 rows in `all_assessments` — the 21-row loss is five Newark students, documented
