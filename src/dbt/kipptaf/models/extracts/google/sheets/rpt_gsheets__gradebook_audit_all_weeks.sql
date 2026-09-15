@@ -12,6 +12,8 @@ from {{ ref("int_students__calendar_week") }}
 where
     -- summer toggle: see skill
     academic_year = {{ var("current_academic_year") }}
+    and _dbt_source_project != 'kippmiami'
+    and school_level != 'ES'
 group by
     academic_year,
     region,

@@ -7,9 +7,9 @@ models:
       but joins stg_powerschool__u_expectations to attach the four category
       counts — so the template stops at the last completed week and only covers
       the region and school-level combinations that already have expectations
-      loaded. This model joins nothing, so it runs to the end of the year and
-      covers every region and school level int_students__calendar_week holds,
-      including ES and Miami, which the gradebook audit itself excludes.
+      loaded. This model joins nothing, so it runs to the end of the academic
+      year. Scope matches the rest of the gradebook audit — Miami and ES are
+      excluded, leaving Newark, Camden, and Paterson at MS and HS.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -26,10 +26,10 @@ models:
           Academic year, stored as the starting year (2026 = 2026-27).
       - name: region
         data_type: string
-        description: District region (Newark, Camden, Miami, Paterson).
+        description: District region (Newark, Camden, Paterson).
       - name: school_level
         data_type: string
-        description: School level grouping (ES / MS / HS).
+        description: School level grouping (MS / HS).
       - name: quarter
         data_type: string
         quote: true
