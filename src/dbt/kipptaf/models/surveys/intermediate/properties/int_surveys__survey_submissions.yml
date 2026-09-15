@@ -29,9 +29,9 @@ models:
           key. For the historic archive, survey_response_id is the deterministic
           fallback described below, so the composition is identical across all
           arms. Uniqueness depends on the reporting-terms sheet: two same-name
-          SURVEY windows that overlap give one submission two rows, and
-          downstream fct_survey_responses joins this model on top of a view that
-          already joined it, so a duplicate here multiplies four-fold there.
+          SURVEY windows that overlap give one submission two rows, and every
+          question row in int_surveys__survey_responses and fct_survey_responses
+          doubles with it.
         data_tests:
           - unique
 
