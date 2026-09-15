@@ -917,6 +917,29 @@ value identical across every school in a region, `at_above + bl_wb = all` exact
 on all nine Camden grades, and the school counts summing exactly to the region
 count.
 
+**One narrower gap survives the fix**, raised in review on #5315 and confirmed.
+The `rn` partition is still scoped by `e.school`, so a `Well Below` survivor row
+exists only where that school actually has a Well Below student at that grade
+and period. A school with `Below` students but none `Well Below` still finds no
+sibling, and its six `bl_wb` columns still come back null — reproducing the
+region-disagrees-with-itself symptom, from absent data rather than a bad draw.
+
+It is far narrower than what was fixed: before, a bad draw could null any school
+that HAD Well Below students, which is nearly all of them. Checking every year
+the model has emitted, grouped by region, school, grade and period, exactly one
+group in 429 hits it — AY2024 — and AY2026 is clean at zero, which is why the
+fix shipped as-is.
+
+The permanent fix is to drop `aggregated_measure_standard_level` from the six
+`n_admin_season_*_bl_wb` window partitions. Those windows partition by the very
+column their own `if()` filters on, which is what forces the value to zero on
+the `At/Above` anchor row and creates the need for a sibling at all — the
+`at_above` columns have no such problem. Widening the partition puts the
+combined count directly on the anchor row and the self-join disappears, along
+with this gap. Tracked as a follow-up, with a test asserting
+`count(distinct n_admin_season_region_gl_bl_wb) = 1` per region, grade and
+period, which is the invariant both failure modes break.
+
 **Any paste taken before 2026-09-15 carries these nulls and should be
 regenerated.**
 
