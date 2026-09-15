@@ -62,7 +62,8 @@ row and an IEP row).
 `stg_google_sheets__dibels_bm_goals` (feeding the existing dashboard) is a
 **padded** manual-freeze snapshot. Bright Spots uses the retrofitted (unpadded)
 `stg_google_sheets__dibels_foundation_goals` directly -- a separate goal source,
-not a shared join.
+not a shared join. The dashboard never reads foundation_goals, which is why the
+yearly rollover needs two separate pastes rather than one -- see _Step 7_.
 
 **Enrollment source: `int_extracts__student_enrollments`, NOT `..._subjects`.**
 The `_subjects` variant is that same model cross-joined against a static 2-row
@@ -549,6 +550,59 @@ for Newark and Camden grades K-5 -- none for grades 6-8, none for Paterson at
 all. A retrofit that shows `0` IEP rows for Paterson is correct. Cross-check row
 counts by `academic_year, population` against what the source tab actually
 contains before assuming a parsing bug.
+
+### Step 7 -- the SECOND paste: foundation goals do not reach the dashboard
+
+**Pasting foundation goals changes nothing the dashboard displays.** Tell the
+user this before they finish, because everything about the first paste looks
+complete: the external re-stages, the staging model builds green, row counts
+check out, and the benchmark goals on the dashboard stay exactly as they were.
+
+The loop runs through a human twice:
+
+```text
+stg_google_sheets__dibels_foundation_goals   <- first paste (Steps 4-6)
+  -> rpt_gsheets__dibels_bm_goals_calculations   (computes the goals)
+    -> PASTE INTO "BM Goals" TAB                 <- second paste, Step 7
+      -> src_google_sheets__dibels__bm_goals
+        -> stg_google_sheets__dibels_bm_goals
+          -> rpt_tableau__dibels_dashboard       (Benchmark branch, alias `g`)
+```
+
+The dashboard's Benchmark goal columns -- `admin_goal`,
+`admin_goal_grade_range`, `admin_goal_season`, and every
+`n_admin_season_{school,region}_gl_*` count -- come from
+`stg_google_sheets__dibels_bm_goals` alone. Nothing on the dashboard reads
+`stg_google_sheets__dibels_foundation_goals`. So until the second paste lands,
+the new year has Benchmark rows with null goals while the calculation model
+holds the answer nobody moved.
+
+Paste target: named range `src_google_sheets__dibels__bm_goals`, spreadsheet
+`15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs`. Source of the rows:
+`rpt_gsheets__dibels_bm_goals_calculations`, which carries the current year
+only. Unlike the foundation_goals paste, the column set does not change, so no
+`stage_external_sources` re-stage is needed -- a value-only paste.
+
+**Verify by year, not by row count.** A populated prior year makes the totals
+look healthy:
+
+```sql
+select
+    academic_year,
+    count(*) as bm_rows,
+    countif(admin_goal is not null) as has_admin_goal,
+    countif(n_admin_season_school_gl_all is not null) as has_school_counts
+from `teamster-332318`.kipptaf_tableau.rpt_tableau__dibels_dashboard
+where assessment_type = 'Benchmark'
+group by academic_year
+order by academic_year
+```
+
+A year with `bm_rows` in the tens of thousands and `has_admin_goal` at `0` is
+the missing second paste. Measured 2026-09-14: AY2026 had 119,178 Benchmark rows
+at `0` goals while AY2024 and AY2025 were populated, and
+`rpt_gsheets__dibels_bm_goals_calculations` held 49 unpasted AY2026 rows. AY2023
+reads `0` legitimately -- it predates the goals sheet.
 
 ## PM/aimline migration (#3834)
 
@@ -1111,6 +1165,79 @@ transcription; checking it against itself proves nothing about the source.
 
 The T&L PM rounds document is that source:
 <https://docs.google.com/document/d/12ZDlAJY_IgSS4yElBAFWouJ6_M8982j1Fb1B93-INjU>
+
+For **benchmark** goals -- the foundation goals paste, not PM rounds -- the
+academics source is a separate sheet:
+<https://docs.google.com/spreadsheets/d/1-fLmFQz94yAuotVYkzTxOxv6O129V3I2LDhdPY16HIc>
+
+Academics replace this each year, so re-read it rather than trusting the values
+recorded here, and update this link if they move it. What it decides:
+
+**Grades 6-8 are goal-set at EOY only.** Verified identical in AY2025 and
+AY2026: grades K-5 carry both MOY and EOY foundation goals, grades 6-8 carry EOY
+alone. This is academics' intent, not a truncated paste -- confirm the shape
+before reporting a gap.
+
+That shape collides with how `benchmark_goal_season` works.
+`int_amplify__all_assessments` sets it to the goal season a row is measured
+AGAINST, which is the NEXT one: a BOY row carries `MOY`, an MOY row carries
+`EOY`, an EOY row carries null. `rpt_gsheets__dibels_bm_goals_calculations`
+joins `a.benchmark_goal_season = f.period`, so a **BOY** row needs an **MOY**
+foundation goal. Grades 6-8 have none, the LEFT join misses, `grade_goal_type`
+comes back null, and `where c.grade_goal_type = 'At/Above'` drops the row. So
+grades 6-8 produce no BOY benchmark goals at all; they appear only once MOY
+testing lands, where their EOY goal does match.
+
+Consequence for the rollover: the first paste of a year covers **K-5 only**
+(measured 2026-09-14: 49 rows, BOY, grades 0-5, 16 schools). Do not read the
+missing grades as a broken foundation paste -- the 6-8 EOY values are present
+and populated; the model never consults them at BOY.
+
+**Reading the foundation goals columns.** Two columns decide which goal a row
+gets, and neither name says so on its own:
+
+- `period` is the administration the goal is FOR -- an `MOY` row is the goal for
+  the MOY administration, an `EOY` row the goal for EOY. It is not the date the
+  goal was set.
+- `grade_goal_type` selects WHICH foundation aggregate applies: `At/Above` or
+  `Well Below`. On the assessment side the counterpart is
+  `foundation_measure_standard_level`, the student's own composite bucket, and
+  `rpt_gsheets__dibels_bm_goals_calculations` joins the two so a student is
+  measured against the aggregate matching their level.
+
+`benchmark_goal_season` on the assessment side is the season a row is measured
+AGAINST, which is the next one (`BOY -> MOY`, `MOY -> EOY`, `EOY -> null`). The
+join is `a.benchmark_goal_season = f.period`, so a BOY row looks for the goal
+FOR MOY.
+
+**This is correct behaviour, not a bug.** The academics sheet sets MOY and EOY
+goals per grade, and grades 6-8 deliberately get EOY only -- K-2 and 3-5 carry
+both. K-2 is also the only band with `grade_range_goal` populated. Verified
+against AY2026: grades 0-5 have 6 MOY and 6 EOY rows each, grades 6-8 have 0 MOY
+and 6 EOY, and only grades 0-2 have non-null range goals.
+
+Because a BOY row is measured against the MOY goal, grades 6-8 have nothing to
+measure against at BOY, and a blank goal is the honest output. They pick up
+their goal once MOY testing lands, where `MOY -> EOY` matches their EOY row. So
+the first paste of a year covering K-5 only is expected; do not widen the join
+to reach the EOY goal early -- an EOY target is not a mid-year one, and
+academics chose not to set a mid-year target for these grades.
+
+**Do not use the AY2025 `bm_goals` tab as evidence against this.** It does
+contain grades 6-8 at `period = 'BOY'` carrying the foundation EOY goal, which
+looks like precedent for an EOY fallback. It is not: no version of
+`rpt_gsheets__dibels_bm_goals_calculations` ever produced those rows -- the join
+has been `a.benchmark_goal_season = f.period` since `aac3e5a86`, and
+`benchmark_goal_season` has always been the plain next-season map (`BOY -> MOY`,
+`MOY -> EOY`), never grade-aware. The tab is a manual-freeze snapshot, so those
+rows were hand-filled, and they carry errors that prove it: Paterson grade 6
+reads `0.53` against a foundation EOY of `0.30`, and grade 7 reads `0.34`
+against `0.33`, both of them Newark's value. This cost a full investigation
+cycle in September 2026; the tab is not a specification.
+
+Separately, **Miami has benchmark goals in that tab but no foundation goals at
+all.** Foundation goals cover Camden, Newark and Paterson only, so Miami's
+numbers come from outside this lineage.
 
 It is a Google Doc, not a Sheet, so
 `mcp__claude_ai_Google_Drive__read_file_content` returns the whole thing with
