@@ -17,4 +17,4 @@ select
     student_primary_id as student_primary_id_studentnumber,
 
     coalesce(account_name, district_name) as district_name,
-from {{ source("amplify", "stg_amplify__mclass__api__pm_student_summary") }}
+from {{ source("amplify", "stg_amplify__pm_student_summary") }}
