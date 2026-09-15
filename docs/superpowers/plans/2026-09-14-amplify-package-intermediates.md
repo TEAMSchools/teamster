@@ -1249,3 +1249,132 @@ rebuilds from the district `zz_stg` copies. A CI failure naming
 `Name basic_comprehension_maze_level not found` means a stale per-PR shadow of
 an intermediate; follow the kipptaf CLAUDE.md "stale per-PR shadow" note.
 Process `claude-review` findings through `superpowers:receiving-code-review`.
+
+---
+
+### Task 8: Let package `severity: error` survive the district projects
+
+Added during execution. Task 1 found that every district `dbt_project.yml`
+carries an unscoped `data_tests: +severity: warn`, and dbt lets the root
+project's config override a package's resource-level config, so every package
+test resolves to `warn` when built through a district, including the staging
+tests the repo's YAML rule requires to be `error`. Verified with `dbt ls` on
+kippnewark before the change: all 11 amplify tests resolved `warn`.
+
+**Files:**
+
+- Modify: `src/dbt/kippcamden/dbt_project.yml`,
+  `src/dbt/kippmiami/dbt_project.yml`, `src/dbt/kippnewark/dbt_project.yml`,
+  `src/dbt/kipppaterson/dbt_project.yml` (the `data_tests:` block)
+- Modify: `dbt_project.yml` in each of the 12 source packages (`amplify`,
+  `cambium`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`,
+  `pearson`, `powerschool`, `renlearn`, `titan`): append a `data_tests:` block
+- Modify: `.claude/rules/dbt-yaml.md`, the _Test config defaults_ bullet that
+  reads "Unscoped `+config` applies to tests from all installed packages"
+
+**Interfaces:**
+
+- Produces: in every district, a package test with no declared severity still
+  resolves `warn`; one declared `severity: error` resolves `error`; the
+  district's own tests keep the `warn` default.
+
+- [ ] **Step 1: District blocks**
+
+In each of the four district `dbt_project.yml` files, replace
+
+```yaml
+data_tests:
+  +severity: warn
+  +store_failures: true
+  +store_failures_as: view
+```
+
+with (substituting the project's own name for `kippcamden`):
+
+```yaml
+data_tests:
+  +store_failures: true
+  +store_failures_as: view
+  kippcamden:
+    +severity: warn
+```
+
+- [ ] **Step 2: Package defaults**
+
+Append to each of the 12 package `dbt_project.yml` files:
+
+```yaml
+data_tests:
+  +severity: warn
+```
+
+A package's own project default is what resource-level `severity: error` is
+allowed to beat; the root project's default is not.
+
+- [ ] **Step 3: Verify the precedence with `dbt ls`, one district per package
+      set**
+
+```bash
+wt=/workspaces/teamster/.worktrees/cbini/refactor/claude-amplify-package-intermediates
+uv run dbt ls --resource-type test --output json --output-keys name package_name config \
+  --project-dir "$wt/src/dbt/kippcamden" --profiles-dir /workspaces/teamster/.dbt 2>/dev/null | grep '^{' \
+  | python3 -c "import sys,json,collections; c=collections.Counter((d['package_name'], d['config'].get('severity')) for d in map(json.loads, sys.stdin)); [print(k, v) for k, v in sorted(c.items())]"
+```
+
+Expected on kippcamden: `edplan warn`, `titan warn`, `finalsite warn 14` and
+`finalsite error 25`, `powerschool warn 17` and `powerschool error 71`,
+`kippcamden` tests `warn` except any that declare `error` themselves. Repeat for
+kippmiami (expect `focus error 281`, `focus warn` for the rest) and for
+kippnewark and kipppaterson (expect `amplify error 11`).
+
+- [ ] **Step 4: Gate on prod failures**
+
+Every test that flips to `error` and fails in prod today would fail its Dagster
+asset after merge. The measurement is in
+`/workspaces/teamster/.claude/scratch/flip_results.md` (per district: package,
+test, failing row count, from the `<district>_dbt_test__audit` views). For each
+failing test, decide with the user: fix the data or the test in this PR, or add
+`config: severity: warn` on that test with a `TODO(#<issue>)` naming a
+follow-up. Do not merge with a known red.
+
+- [ ] **Step 5: Update the YAML rule**
+
+In `.claude/rules/dbt-yaml.md`, replace the bullet
+
+```markdown
+- Unscoped `+config` applies to tests from all installed packages, not just the
+  current project
+```
+
+with
+
+```markdown
+- The root project's `dbt_project.yml` test config overrides a package's
+  resource-level config, so an unscoped `data_tests: +severity: warn` in a
+  district silently downgrades every package test declared `error`. Districts
+  scope their default under their own project name
+  (`kippnewark: +severity: warn`) and each source package carries its own
+  `data_tests: +severity: warn` default, which resource-level `error` is allowed
+  to beat. Keep it that way.
+```
+
+- [ ] **Step 6: Lint and commit**
+
+```bash
+cd "$wt" && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/*/dbt_project.yml .claude/rules/dbt-yaml.md </dev/null
+git -C "$wt" add src/dbt/kippcamden/dbt_project.yml src/dbt/kippmiami/dbt_project.yml src/dbt/kippnewark/dbt_project.yml src/dbt/kipppaterson/dbt_project.yml src/dbt/amplify/dbt_project.yml src/dbt/cambium/dbt_project.yml src/dbt/deanslist/dbt_project.yml src/dbt/edplan/dbt_project.yml src/dbt/finalsite/dbt_project.yml src/dbt/focus/dbt_project.yml src/dbt/iready/dbt_project.yml src/dbt/overgrad/dbt_project.yml src/dbt/pearson/dbt_project.yml src/dbt/powerschool/dbt_project.yml src/dbt/renlearn/dbt_project.yml src/dbt/titan/dbt_project.yml .claude/rules/dbt-yaml.md
+git -C "$wt" commit -m "fix(dbt): let package severity: error survive the district projects
+
+Refs #5305
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+```
+
+**Step 4: Watch CI (original)** text is above; this task runs before Task 7.
+
+Invoke `pr-ci-review`. The dbt Cloud CI job builds `state:modified+` for kipptaf
+only; the package change is exercised through the PM SFTP wrapper, which CI
+rebuilds from the district `zz_stg` copies. A CI failure naming
+`Name basic_comprehension_maze_level not found` means a stale per-PR shadow of
+an intermediate; follow the kipptaf CLAUDE.md "stale per-PR shadow" note.
+Process `claude-review` findings through `superpowers:receiving-code-review`.

@@ -52,3 +52,6 @@ sources:
         # SFTP ingestion is unused (no district enables it).
         sftp:
           +enabled: false
+
+data_tests:
+  +severity: warn

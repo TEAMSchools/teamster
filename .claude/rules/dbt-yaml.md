@@ -281,8 +281,13 @@ legitimately-superseded inactive rows that repeat the key.
   may omit the override where a warning is acceptable.
 - Removing a `severity: warn` override reverts to project default (`warn`), not
   `error`. To restore `error`, set `config: severity: error` explicitly.
-- Unscoped `+config` applies to tests from all installed packages, not just the
-  current project
+- The root project's `dbt_project.yml` test config overrides a package's
+  resource-level config, so an unscoped `data_tests: +severity: warn` in a
+  district silently downgrades every package test declared `error`. Districts
+  scope their default under their own project name
+  (`kippnewark: +severity: warn`) and each source package carries its own
+  `data_tests: +severity: warn` default, which resource-level `error` is allowed
+  to beat. Keep it that way.
 - **`accepted_values` passes NULLs** — it compiles to
   `where value not in (...)`, which NULL never satisfies. Every enum column that
   must be non-null carries `not_null` too, including one a `coalesce` makes

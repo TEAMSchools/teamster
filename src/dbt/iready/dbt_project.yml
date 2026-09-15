@@ -35,3 +35,6 @@ models:
     staging:
       +contract:
         enforced: true
+
+data_tests:
+  +severity: warn
