@@ -28,7 +28,10 @@ models:
           Surrogate key derived from survey_id and survey_response_id. Primary
           key. For the historic archive, survey_response_id is the deterministic
           fallback described below, so the composition is identical across all
-          arms.
+          arms. Uniqueness depends on the reporting-terms sheet: two same-name
+          SURVEY windows that overlap give one submission two rows, and
+          downstream fct_survey_responses joins this model on top of a view that
+          already joined it, so a duplicate here multiplies four-fold there.
         data_tests:
           - unique
 
@@ -96,7 +99,9 @@ models:
       - name: respondent_identifier
         description: >-
           Respondent employee number as a string, falling back to the respondent
-          email when no staff record matched.
+          email when no staff record matched. The historic Manager archive never
+          carries a respondent email, so this is null on any archive row whose
+          source data also lacks a respondent employee number.
         config:
           meta:
             contains_pii: true

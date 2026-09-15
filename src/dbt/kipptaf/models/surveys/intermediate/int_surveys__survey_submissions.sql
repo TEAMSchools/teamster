@@ -72,6 +72,12 @@ with
             ) as round_rn,
         from gforms_responses as r
         inner join {{ ref("stg_google_forms__form") }} as f on r.form_id = f.form_id
+        /*
+         * One row per submission relies on same-name SURVEY windows never
+         * overlapping. Nothing collapses here any more, so an overlap fails
+         * the survey_submission_key unique test; the mutually_exclusive_ranges
+         * test on the terms model catches it at the sheet. #5276, #3918
+         */
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on f.info_title = rt.name
@@ -178,6 +184,7 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sr.survey_title = rt.name
             and sr.date_submitted_date between rt.start_date and rt.end_date
+            and rt.type = 'SURVEY'
         left join
             alchemer_identifiers as ri
             on sr.survey_id = ri.survey_id

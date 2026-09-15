@@ -43,6 +43,7 @@ models:
             upper_bound_column: end_date
             partition_by: name
             gaps: allowed
+            zero_length_range_allowed: true
           config:
             severity: error
             where: type = 'SURVEY'

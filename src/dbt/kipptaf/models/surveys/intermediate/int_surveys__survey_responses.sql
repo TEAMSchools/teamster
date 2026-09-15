@@ -1,7 +1,6 @@
 with
     alchemer_results as (
         select
-            survey_title,
             question_title_english,
             question_short_name,
             response_value,
@@ -37,6 +36,8 @@ with
 
             safe_cast(fr.text_value as numeric) as answer_value,
 
+            -- answer sits after answer_value in both branches so the union
+            -- binds by position
             coalesce(fr.text_value, fr.file_upload_file_name) as answer,
 
             if(safe_cast(fr.text_value as int) is null, 1, 0) as is_open_ended,
