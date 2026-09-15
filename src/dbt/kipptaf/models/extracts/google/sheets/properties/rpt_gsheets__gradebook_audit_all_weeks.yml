@@ -7,9 +7,10 @@ models:
       but joins stg_powerschool__u_expectations to attach the four category
       counts — so the template stops at the last completed week and only covers
       the region and school-level combinations that already have expectations
-      loaded. This model joins nothing, so it runs to the end of the academic
-      year. Scope matches the rest of the gradebook audit — Miami and ES are
-      excluded, leaving Newark, Camden, and Paterson at MS and HS.
+      loaded. This model does not join the expectations, so it runs to the end
+      of the academic year. Scope matches the rest of the gradebook audit —
+      Miami and ES are excluded, leaving Newark, Camden, and Paterson at MS and
+      HS.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -32,15 +33,18 @@ models:
       - name: school_level
         data_type: string
         description: >
-          School level grouping (MS / HS). This is int_students__calendar_week's
-          per-school school_level, which is what the companion
-          rpt_gsheets__gradebook_audit_template also groups on. It is NOT
-          school_level_alt, the column rpt_tableau__gradebook_audit scopes on —
-          that one reclassifies Sumner grades 5 and up to MS from AY2025, so it
-          depends on a student's grade level and cannot exist at this model's
-          per-school grain. The practical effect is that Sumner is ES here and
-          its calendar does not feed the Camden MS row. Camden's ES and MS
-          calendars are currently identical, so nothing differs today.
+          School level grouping (MS / HS), resolved the way
+          rpt_tableau__gradebook_audit resolves it — school_level_alt from
+          int_students__school_directory, falling back to
+          int_students__calendar_week's per-school school_level where the
+          directory has no row for that school and year. school_level_alt
+          reclassifies Sumner grades 5 and up to MS from AY2025, so Sumner's
+          calendar feeds the Camden MS row even though the school itself is ES.
+          Because that reclassification depends on grade level, one school can
+          map to two levels — the join deliberately returns both an ES and an MS
+          row for Sumner, and the ES one is then filtered out. This differs from
+          the companion template model, which still groups on the plain
+          per-school school_level.
       - name: quarter
         data_type: string
         quote: true
@@ -57,7 +61,8 @@ models:
         description: >
           Last in-session day of the school week. Friday on a full week, but
           earlier when the week is shortened by a holiday or PD day, so a short
-          week is visible at a glance. Taken as the region's latest in-session
-          day rather than a distinct value per school, because
-          int_students__calendar_week is per-schoolid and school_week_end_date
-          diverges within a region when only some of its schools lose a day.
+          week is visible at a glance. Taken as the latest in-session day across
+          the schools in the region and level rather than a distinct value per
+          school, because int_students__calendar_week is per-schoolid and
+          school_week_end_date diverges within a region when only some of its
+          schools lose a day.
