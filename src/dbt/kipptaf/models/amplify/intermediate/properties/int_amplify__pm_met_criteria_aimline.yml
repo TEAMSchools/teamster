@@ -70,6 +70,39 @@ models:
               - round_number
               - measure_standard
     columns:
+      - name: benchmark_goal
+        data_type: numeric
+        description: >-
+          Amplify's published grade-level standard for the season, as the
+          by-levels gate carries it, and the bar met_admin_benchmark_goal
+          compares against.
+
+          Unpadded, unlike the internal method. Academics keep the 3-word
+          planning buffer for the internal method, whose frozen sheet carries it
+          in benchmark_goal_padded, and do not want it here — the pad exists to
+          make a cohort trajectory land slightly above the standard, and this
+          method builds no trajectory. The consequence is that the two methods'
+          met_admin_benchmark_goal are 3 words apart, so the same student at the
+          same score can read at grade level on this method and not on the
+          internal one. That is intended, not a reconciliation defect, but it
+          means the two columns must not be compared or unioned as though they
+          answered one question. Measured on AY2025: 9,117 rows meet the
+          unpadded standard against 5,758 that would meet the padded one.
+
+          A null here would be reported as a miss rather than as missing. The
+          by-levels gate does carry null standards — 30 of its 938 kept AY2025
+          rounds, for measure and grade combinations Amplify publishes no
+          standard for — and met_admin_benchmark_goal derives from this column
+          with a case whose else branch is 0, so a null standard would read as
+          "not at grade level" instead of failing. No such row reaches this
+          model today, measured at 0 of 36,504 on AY2025, which is what makes
+          the not_null test meaningful rather than vacuous: it fails the day a
+          null-standard round becomes score-eligible, which is the same silent
+          mislabelling this model's aimline_category rewrite exists to fix.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: aimline_category
         data_type: string
         description: >-
@@ -188,24 +221,6 @@ models:
         description: >-
           The PM round, from the expectation gate. Round numbers run
           consecutively across the year rather than restarting each season.
-      - name: benchmark_goal
-        data_type: numeric
-        description: >-
-          Amplify's published grade-level standard for the season, as the
-          by-levels gate carries it, and the bar met_admin_benchmark_goal
-          compares against.
-
-          Unpadded, unlike the internal method. Academics keep the 3-word
-          planning buffer for the internal method, whose frozen sheet carries it
-          in benchmark_goal_padded, and do not want it here — the pad exists to
-          make a cohort trajectory land slightly above the standard, and this
-          method builds no trajectory. The consequence is that the two methods'
-          met_admin_benchmark_goal are 3 words apart, so the same student at the
-          same score can read at grade level on this method and not on the
-          internal one. That is intended, not a reconciliation defect, but it
-          means the two columns must not be compared or unioned as though they
-          answered one question. Measured on AY2025: 9,117 rows meet the
-          unpadded standard against 5,758 that would meet the padded one.
       - name: goal
         data_type: numeric
         description: >-
