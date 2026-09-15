@@ -45,8 +45,17 @@ with
 
             {{ extract_region("a") }} as region,
 
-            {{ conform_powerschool_credittype("a.courses_credittype") }}
-            as courses_credittype,
+            case
+                when a.courses_credittype in ('ENG', 'ELA')
+                then 'ENG'
+                when a.courses_credittype in ('MATH', 'Math')
+                then 'MATH'
+                when a.courses_credittype in ('SCI', 'Science')
+                then 'SCI'
+                when a.courses_credittype in ('HR', 'Homeroom')
+                then 'HR'
+                else a.courses_credittype
+            end as courses_credittype,
 
             if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 

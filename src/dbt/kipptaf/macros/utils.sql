@@ -20,20 +20,3 @@
         0
     )
 {%- endmacro %}
-
-{# PowerSchool credit types are conformed to the Focus vocabulary so the two SIS
-   branches of int_students__course_enrollments agree; Paterson courses carry the
-   spelled-out forms. Every kipptaf reader of a package credit type calls this. #}
-{% macro conform_powerschool_credittype(column) %}
-    case
-        when {{ column }} in ('ENG', 'ELA')
-        then 'ENG'
-        when {{ column }} in ('MATH', 'Math')
-        then 'MATH'
-        when {{ column }} in ('SCI', 'Science')
-        then 'SCI'
-        when {{ column }} in ('HR', 'Homeroom')
-        then 'HR'
-        else {{ column }}
-    end
-{% endmacro %}

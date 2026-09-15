@@ -11,11 +11,23 @@ with
             sections_dcid,
             sections_section_number as section_number,
             sections_external_expression as external_expression,
-            courses_credittype as credit_type,
             courses_course_name as course_name,
             courses_excludefromgpa as exclude_from_gpa,
             teachernumber as teacher_number,
             teacher_lastfirst as teacher_name,
+
+            /* Paterson courses carry spelled-out credit types */
+            case
+                when courses_credittype in ('ENG', 'ELA')
+                then 'ENG'
+                when courses_credittype in ('MATH', 'Math')
+                then 'MATH'
+                when courses_credittype in ('SCI', 'Science')
+                then 'SCI'
+                when courses_credittype in ('HR', 'Homeroom')
+                then 'HR'
+                else courses_credittype
+            end as credit_type,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             cc_academic_year >= {{ var("current_academic_year") - 1 }}
@@ -37,16 +49,14 @@ with
     ),
 
     term_spine as (
-        /* grain projection, not dup-masking: (schoolid, yearid, term) */
-        select distinct schoolid, yearid, term as `quarter`,
+        select schoolid, yearid, term as `quarter`,
         from {{ ref("int_powerschool__terms") }}
-        where term like 'Q%'
 
         union all
 
-        /* grain projection, not dup-masking: (schoolid, yearid) */
-        select distinct schoolid, yearid, 'Y1' as `quarter`,
-        from {{ ref("int_powerschool__terms") }}
+        select schoolid, yearid, 'Y1' as `quarter`,
+        from {{ ref("stg_powerschool__terms") }}
+        where isyearrec = 1 and schoolid != 0
     ),
 
     y1_final_grades as (
@@ -366,9 +376,7 @@ with
 
         from {{ ref("int_powerschool__category_grades") }}
         where
-            -- a district without the GradeBook plugin sets the var false (#3908)
-            {{ var("powerschool_has_category_grades") }}
-            and yearid >= {{ var("current_academic_year") - 1991 }}
+            yearid >= {{ var("current_academic_year") - 1991 }}
             and not is_dropped_section
             and storecode_type not in ('Q')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')

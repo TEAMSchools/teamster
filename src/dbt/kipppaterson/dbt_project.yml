@@ -36,10 +36,6 @@ vars:
   pearson_state_assessment_relations:
     - int_pearson__njsla
     - int_pearson__njsla_science
-  # No GradeBook plugin deployed, so category grades are unusable here. The
-  # kipptaf int_powerschool__category_grades wrapper already omits Paterson
-  # for the same reason (#3908).
-  powerschool_has_category_grades: false
 
 models:
   kipppaterson:
