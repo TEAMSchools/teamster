@@ -241,6 +241,18 @@ cutoff — is the Sunday ending the most recently completed school week (the
 latest calendar week with
 `week_start_monday < date_trunc(current_date, isoweek)`).
 
+**A week carrying no expectation blanks the dashboard for that whole week.**
+This model ends in `where expectation is not null` (BigQuery `UNPIVOT` drops
+nulls regardless), and `current_week` collapses to the single most recently
+completed week per quarter. So if that one week holds no count in any of the
+four columns, this model emits nothing for it, `category_join`'s inner join
+drops every section, and the audit reports zero `category_summary` rows until
+the next week starts. A week with only _some_ columns null is the same failure
+in miniature — it yields fewer than four category rows and breaks the four-row
+floor. Neither case is guarded here, by design: both are resolved on the upload
+side, by the fill rules in Step 1 of the
+[Start-of-year procedure](#start-of-year-procedure).
+
 ### Expectations upload template: `rpt_gsheets__gradebook_audit_template`
 
 Feeds the Google Sheet the T&L team uses to build the CSV they upload back into
@@ -275,12 +287,17 @@ Three gotchas worth knowing before editing it:
   unset category produced no row at all (BigQuery `UNPIVOT` excludes nulls), so
   the gap was invisible in the sheet; wide, it surfaces as an empty cell for
   whoever is setting counts to fill in. Adding an all-null guard would hide
-  exactly what the template exists to show, and re-uploading a blank row writes
-  back the blank state it came from. Measured 2026-08-18, all 205 rows in
-  `stg_powerschool__u_expectations` carry a count in all four columns, so no
-  guard would filter anything today anyway. That 205 is the raw source count,
-  not this model's output — the template emits 202 rows, because `term_weeks`
-  keeps only weeks that have already started.
+  exactly what the template exists to show. What must _not_ happen is uploading
+  that blank straight back into `U_EXPECTATIONS`, where a blank does not read as
+  "nobody set this yet" but as "no expectation this week", and takes the
+  dashboard down with it — Step 1 of the
+  [Start-of-year procedure](#start-of-year-procedure) resolves every blank
+  before upload, which is what keeps the source table populated in all four
+  columns. Row counts on both sides track the school calendar rather than any
+  fixed number, and this model emits fewer rows than
+  `stg_powerschool__u_expectations` holds because `term_weeks` keeps only weeks
+  that have already started — so check that invariant with the query in Step 1
+  rather than against a remembered count.
 
 Coverage follows the inner join to `stg_powerschool__u_expectations` — Newark
 and Camden at MS and HS, Paterson at MS, no ES and no Miami — so it needs no
@@ -558,15 +575,16 @@ flags (`has_grade_above_100`, `has_grade_below_70_no_comment`,
 `not_enough_assignments`) are hardcoded in `rpt_tableau__gradebook_audit`'s
 `health_calc` CTE and require no annual configuration.
 
-### Step 1 — Confirm assignment expectations are updated in PowerSchool
+### Step 1 — Load the new year's assignment expectations into PowerSchool
 
-The expectations data that drives `not_enough_assignments` comes from
+Owned by the T&L team member responsible for gradebook expectations, not the
+data team — no dbt model changes as part of this step. The expectations that
+drive `not_enough_assignments` come from
 `int_powerschool__u_expectations_qtd_unpivot`, which reads the `U_EXPECTATIONS`
-table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin. The
-`U_EXPECTATIONS` table does not have an `academic_year` field — it reflects the
-current state of expectations in PowerSchool. Until the T&L team member
-responsible for gradebook expectations updates the table for the new year, the
-audit will continue to report against the prior year's expectation values.
+table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin.
+`U_EXPECTATIONS` has no `academic_year` column — it reflects whatever is
+currently live in PowerSchool — so until it is replaced for the new year, the
+audit keeps reporting against the prior year's values.
 
 `rpt_gsheets__gradebook_audit_template` (see above) exists to support this step:
 it lands every school week's current expectations in a Google Sheet, which T&L
@@ -576,6 +594,90 @@ toggle's state before reading it as the new year's grid.
 
 Plugin source and update instructions:
 [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
+
+#### One upload per PowerSchool instance
+
+`U_EXPECTATIONS` carries no region column — region is implied by the instance
+the rows live in, and the kipptaf union (`stg_powerschool__u_expectations`) is
+what re-attaches `_dbt_source_project`. Camden, Newark and Paterson are separate
+PowerSchool instances and therefore separate uploads. Newark MS and Newark HS
+belong in the same Newark file even when T&L maintains them on separate sheet
+tabs.
+
+#### Renumber T&L's weeks to `week_number_quarter` before uploading
+
+`U_EXPECTATIONS.week_number` is the week's position **within its quarter**, and
+`int_powerschool__u_expectations_qtd_unpivot` joins it to
+`int_students__calendar_week.week_number_quarter`. T&L's planning sheet has not
+historically matched that, in three ways — each of which silently shifts every
+expectation onto the wrong week rather than failing loudly:
+
+- **It numbers weeks running across the year**, not within the quarter (Q2
+  starting at 11, Q3 at 23, and so on).
+- **It includes no-school weeks** — Thanksgiving, winter break, Presidents'
+  week, spring break — that `week_number_quarter` does not count.
+- **One tab often serves regions whose school years start on different dates.**
+  In AY 2026-2027 Camden opened Monday 2026-08-17 while Newark and Paterson
+  opened 2026-08-24, so Camden has 11 Q1 weeks against their 10 and the same
+  sheet row is a different `week_number` in each region.
+
+Map each sheet row by the **Monday of its ISO week**, then derive `week_number`
+per region as that Monday's offset from the region's own week 1. Do not map on
+the sheet's own week number, and do not map on its printed date range either — a
+week shortened by a Monday holiday prints its first in-session day (`9/8-9/11`
+for Labor Day week) while the calendar week's Monday is 9/7.
+
+#### Fill every blank before uploading
+
+A blank in `U_EXPECTATIONS` means "no expectation", not "unset", and it removes
+rows from the dashboard — see the expectations source section above for the
+mechanism. Resolve every blank, per count column, scoped to the quarter:
+
+1. Sheet gives a value — use it.
+2. Sheet gives `---` / `--` / blank, or the calendar week has no sheet row at
+   all — carry forward the last non-null value for that column within the same
+   quarter. This is why the last week of a quarter, which T&L marks all-dashes
+   as a revisions week, should hold the same counts as the week before it.
+3. Nothing precedes it in that quarter — use zero. A zero expectation cannot
+   raise `not_enough_assignments`, so a first week of school with no sheet row
+   reports as compliant rather than flagging every section in the region.
+
+Together these keep every calendar week populated in all four columns, which is
+what preserves the four-row category floor.
+
+#### Load every quarter, not just the current one
+
+T&L often has only the current quarter ready, with later tabs still under
+construction. Nothing breaks while those quarters are missing, because
+`current_week` filters to weeks that have already started — which is exactly why
+the gap stays invisible until the first Monday of the next quarter, when the
+dashboard goes blank for every region at once. If the later quarters ship late,
+diary that Monday and re-check before it arrives.
+
+#### Verify after the plugin load
+
+Once the `u_expectations` dlt asset has re-ingested and dbt has run:
+
+```sql
+select
+    _dbt_source_project,
+    school_level,
+    `quarter`,
+    count(*) as weeks,
+    countif(
+        cnt_w is null or cnt_h is null or cnt_f is null or cnt_s is null
+    ) as null_rows,
+from `teamster-332318`.kipptaf_powerschool.stg_powerschool__u_expectations
+group by 1, 2, 3
+order by 1, 2, 3
+```
+
+`null_rows` must be zero everywhere, and `weeks` must equal that region and
+school level's quarter length in `int_students__calendar_week` for the current
+`academic_year`. Then confirm `int_powerschool__u_expectations_qtd_unpivot`
+returns four rows per `region × school_level` for the current quarter, and that
+every section × quarter in `rpt_tableau__gradebook_audit` still has exactly four
+`category_summary` rows.
 
 ### Step 2 — Revert the summer toggle (if applied)
 
