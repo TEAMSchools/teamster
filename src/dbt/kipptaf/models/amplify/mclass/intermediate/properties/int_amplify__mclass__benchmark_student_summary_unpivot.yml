@@ -3,16 +3,49 @@ models:
     config:
       materialized: table
     columns:
-      - name: surrogate_key
-        data_type: string
-        description:
-          Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number.
+      - name: student_primary_id
+        data_type: int64
+        description: >-
+          Network student number, carried from the benchmark summary. Part of
+          the natural key identifying the row this measure was unpivoted from.
         config:
           meta:
             source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: surrogate_key
+            source_model: stg_amplify__mclass__sftp__benchmark_student_summary
+            source_column: student_primary_id
+            column_role: primary_key
+      - name: school_year
+        data_type: string
+        description: >-
+          School year range (e.g., '2025-2026'). Part of the natural key
+          identifying the row this measure was unpivoted from.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__benchmark_student_summary
+            source_column: school_year
+            column_role: primary_key
+      - name: benchmark_period
+        data_type: string
+        description: >-
+          Benchmark administration window. Part of the natural key identifying
+          the row this measure was unpivoted from.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__benchmark_student_summary
+            source_column: benchmark_period
+            column_role: primary_key
+      - name: assessment_grade
+        data_type: string
+        description: >-
+          Grade level of the assessment administered. Part of the natural key
+          identifying the row this measure was unpivoted from.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__benchmark_student_summary
+            source_column: assessment_grade
             column_role: primary_key
       - name: mclass_measure_standard
         data_type: string

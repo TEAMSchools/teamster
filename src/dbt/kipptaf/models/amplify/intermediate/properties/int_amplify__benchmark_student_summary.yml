@@ -139,11 +139,6 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: District code location the row came from.
-      - name: surrogate_key
-        data_type: string
-        description: >
-          Identifies one administration. A student with two sittings in a window
-          has two, which is what makes the grade-change case visible.
       - name: measure_name
         data_type: string
         description: Measure name, such as Oral Reading Fluency.
