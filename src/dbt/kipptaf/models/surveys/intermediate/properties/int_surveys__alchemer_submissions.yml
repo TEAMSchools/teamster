@@ -1,0 +1,94 @@
+models:
+  - name: int_surveys__alchemer_submissions
+    description: >-
+      Alchemer survey submissions at 1 row per response, with reporting term,
+      campaign, and respondent identity resolved. Alchemer is decommissioned and
+      every input is a frozen table, so this model exists to be built once and
+      then archived under the repo's archive pattern (disable the model, declare
+      the table in sources-bigquery.yml, and point
+      int_surveys__survey_submissions at the source). Until then it is a table
+      so the join to the reporting-terms sheet and the staff roster history
+      resolves against the same inputs the live arm uses.
+
+      Only responses that fall inside a SURVEY reporting-term window count as
+      submissions; the inner join to the terms sheet is the filter.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+          config:
+            severity: error
+    columns:
+      - name: survey_id
+        description: Alchemer survey id as a string.
+
+      - name: survey_response_id
+        description: Alchemer response id as a string.
+
+      - name: survey_title
+        description: Alchemer survey title.
+
+      - name: respondent_email
+        description: >-
+          Respondent email from the frozen response-identifiers table. Null for
+          responses absent from that table.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_employee_number
+        description: >-
+          Employee number of the respondent, resolved against the staff roster
+          history at the time of submission, first by email or account name and
+          then through Google Directory aliases. Null when no staff record
+          matched.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_preferred_name
+        description: Formatted name of the respondent from the roster match.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_samaccountname
+        description: Active Directory account name from the roster match.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: respondent_userprincipalname
+        description: Active Directory user principal name from the roster match.
+        config:
+          meta:
+            contains_pii: true
+
+      - name: date_started
+        description: Timestamp the respondent opened the survey.
+
+      - name: date_submitted
+        description: Timestamp the respondent submitted the survey.
+
+      - name: academic_year
+        description: >-
+          Campaign fiscal year minus one, falling back to the academic year of
+          the matched SURVEY reporting-term window.
+
+      - name: term_code
+        description: >-
+          Reporting term code parsed from the campaign name, falling back to the
+          code of the matched SURVEY reporting-term window.
+
+      - name: term_name
+        description: Reporting-terms sheet name the submission matched.
+
+      - name: survey_response_link
+        description: Deep link to the response in Alchemer.
+
+      - name: round_rn
+        description: Always 1. Alchemer responses were never ranked by recency.

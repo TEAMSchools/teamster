@@ -7,10 +7,11 @@ models:
 
       This model owns survey_submission_key and every per-submission derived
       column — survey title, reporting term, respondent identity resolved
-      against the staff roster history, and round_rn. The live arms read the
-      response-grain staging tables directly, so nothing collapses here.
-      int_surveys__survey_responses joins this model for those columns rather
-      than deriving them per question row.
+      against the staff roster history, and round_rn. The Google Forms arm reads
+      the response-grain staging tables directly; the decommissioned Alchemer
+      feed arrives already resolved from int_surveys__alchemer_submissions.
+      Nothing collapses here. int_surveys__survey_responses joins this model for
+      those columns rather than deriving them per question row.
 
       The live arm carries every survey title, not only the titles the marts
       currently model, so a new survey becomes available to a consumer without
@@ -33,7 +34,9 @@ models:
           question row in int_surveys__survey_responses and fct_survey_responses
           doubles with it.
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
 
       - name: survey_id
         description: >-
