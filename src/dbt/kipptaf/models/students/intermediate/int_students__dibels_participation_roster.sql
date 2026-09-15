@@ -233,6 +233,14 @@ select
         else 'Not Combo'
     end as participation_group,
 
+    case
+        when actual_row_count = 0
+        then 'Not Tested'
+        when completed_test_round
+        then 'Fully Tested'
+        else 'Round Incomplete'
+    end as round_test_status,
+
     if(completed_test_round, 1, 0) as completed_test_round_int,
 
 from roster_enrollment_dates
