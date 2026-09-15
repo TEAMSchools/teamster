@@ -19,6 +19,8 @@ models:
               - school_level
               - quarter
               - week_number_quarter
+          config:
+            severity: error
     columns:
       - name: academic_year
         data_type: int64
@@ -29,7 +31,16 @@ models:
         description: District region (Newark, Camden, Paterson).
       - name: school_level
         data_type: string
-        description: School level grouping (MS / HS).
+        description: >
+          School level grouping (MS / HS). This is int_students__calendar_week's
+          per-school school_level, which is what the companion
+          rpt_gsheets__gradebook_audit_template also groups on. It is NOT
+          school_level_alt, the column rpt_tableau__gradebook_audit scopes on —
+          that one reclassifies Sumner grades 5 and up to MS from AY2025, so it
+          depends on a student's grade level and cannot exist at this model's
+          per-school grain. The practical effect is that Sumner is ES here and
+          its calendar does not feed the Camden MS row. Camden's ES and MS
+          calendars are currently identical, so nothing differs today.
       - name: quarter
         data_type: string
         quote: true
