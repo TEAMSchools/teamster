@@ -13,9 +13,7 @@ models:
         data_type: string
         description:
           Name of the student's college counselor, resolved from the counselor's
-          own Salesforce contact record. Not the Salesforce contact owner. Same
-          value as college_counselor; both names are kept so the KIPP Forward
-          Data Suite workbook needs no repoint.
+          own Salesforce contact record. Same value as college_counselor.
       - name: is_kipp_ms_graduate
         data_type: boolean
       - name: is_kipp_hs_graduate
@@ -565,6 +563,9 @@ models:
         data_type: string
       - name: college_counselor
         data_type: string
+        description:
+          Name of the student's college counselor, resolved from the counselor's
+          own Salesforce contact record. Same value as counselor_name.
       - name: recent_cumulative_gpa
         data_type: numeric
       - name: recent_transcript_date
