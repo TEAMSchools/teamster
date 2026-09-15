@@ -1,8 +1,9 @@
 with
     school_levels as (
-        -- grain projection, not dup-masking:
-        -- _dbt_source_project/academic_year/ps_schoolid/school_level_alt.
-        -- Sumner intentionally yields two rows; see the properties yml.
+        -- grain projection, not dup-masking: key is
+        -- _dbt_source_project/academic_year/ps_schoolid. school_level_alt
+        -- varies within that key for Sumner only, so this returns two rows
+        -- there; see the properties yml.
         select distinct
             _dbt_source_project, academic_year, ps_schoolid, school_level_alt,
 

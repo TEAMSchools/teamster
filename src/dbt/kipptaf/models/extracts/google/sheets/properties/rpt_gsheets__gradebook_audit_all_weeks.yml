@@ -42,9 +42,9 @@ models:
           calendar feeds the Camden MS row even though the school itself is ES.
           Because that reclassification depends on grade level, one school can
           map to two levels — the join deliberately returns both an ES and an MS
-          row for Sumner, and the ES one is then filtered out. This differs from
-          the companion template model, which still groups on the plain
-          per-school school_level.
+          row for Sumner, and the ES one is then filtered out. The companion
+          rpt_gsheets__gradebook_audit_template resolves school level the same
+          way.
       - name: quarter
         data_type: string
         quote: true
