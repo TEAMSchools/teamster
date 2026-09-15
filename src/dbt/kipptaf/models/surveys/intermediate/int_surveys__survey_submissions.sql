@@ -1,121 +1,70 @@
 with
-    /*
-     * int_surveys__survey_responses is question-grain at 4.1M rows, 32.6
-     * questions per submission. That clears both bars in the ranked-column gate
-     * (.claude/rules/dbt-sql.md): over ~1M input rows, and over 1 slot hour a
-     * week in the models that read it. dbt_utils.deduplicate would pack the
-     * whole ~25-column row into array_agg; enumerating the 8 columns the union
-     * actually needs keeps the shuffle to those.
-     *
-     * Ascending survey_question_id reproduces what dbt_utils.deduplicate picked
-     * here before, so the swap moves no rows.
-     *
-     * The pick is not quite arbitrary. Of 126,808 submissions, survey_title,
-     * respondent_email, respondent_employee_number, date_submitted and
-     * term_code are all constant within the partition, but academic_year is
-     * NOT: 68 submissions carry more than one, because the upstream resolves it
-     * by joining a submission timestamp into the reporting-terms windows. For
-     * those 68 the order key decides which year wins, which then decides which
-     * administration the marts attach the submission to. Keep the order key
-     * stable until that upstream ambiguity is resolved. TODO: #3918 follow-up.
-     */
-    live_ranked as (
+    live_gforms as (
         select
-            survey_id,
-            survey_response_id,
-            survey_title,
-            respondent_email,
-            respondent_employee_number,
-            date_submitted,
-            academic_year,
-            term_code,
+            r.form_id as survey_id,
+            r.response_id as survey_response_id,
+            r.respondent_email,
+            r.create_timestamp as date_started,
+            r.last_submitted_timestamp as date_submitted,
+            r.response_link as survey_response_link,
 
-            row_number() over (
-                partition by survey_id, survey_response_id order by survey_question_id
-            ) as rn,
-        from {{ ref("int_surveys__survey_responses") }}
-    ),
+            f.info_title as survey_title,
 
-    live_submissions as (
-        select
-            survey_id,
-            survey_response_id,
-            survey_title,
-            respondent_email,
-            respondent_employee_number,
-            date_submitted,
-            academic_year,
-            term_code,
-        from live_ranked
-        where rn = 1
-    ),
+            rt.academic_year,
+            rt.code as term_code,
+            rt.name as term_name,
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    archive_source as (
-        select
-            survey_id,
-            survey_title,
-            respondent_email,
-            date_submitted,
-            campaign_academic_year,
-            campaign_reporting_term,
-            respondent_df_employee_number,
-            effective_survey_response_id,
-        from {{ ref("int_surveys__manager_survey_details") }}
-        where
-            survey_id = 'historic_alchemer_Manager_survey'
-            and campaign_academic_year is not null
-    ),
+            coalesce(
+                srh.employee_number, srh_alias.employee_number
+            ) as respondent_employee_number,
+            coalesce(
+                srh.formatted_name, srh_alias.formatted_name
+            ) as respondent_preferred_name,
+            coalesce(
+                srh.sam_account_name, srh_alias.sam_account_name
+            ) as respondent_samaccountname,
+            coalesce(
+                srh.user_principal_name, srh_alias.user_principal_name
+            ) as respondent_userprincipalname,
 
-    /*
-     * int_surveys__manager_survey_details is question-grain too, so the archive
-     * arrives at 18 rows per submission. Same grain projection as above; every
-     * column selected is constant within the partition.
-     */
-    archive_submissions as (
-        {{
-            dbt_utils.deduplicate(
-                relation="archive_source",
-                partition_by="survey_id, effective_survey_response_id",
-                order_by="respondent_df_employee_number",
+            dense_rank() over (
+                partition by r.respondent_email, rt.academic_year, rt.code, r.form_id
+                order by r.last_submitted_timestamp desc
+            ) as round_rn,
+        from {{ ref("stg_google_forms__responses") }} as r
+        inner join {{ ref("stg_google_forms__form") }} as f on r.form_id = f.form_id
+        /*
+         * One row per submission relies on same-name SURVEY windows never
+         * overlapping. Nothing collapses here any more, so an overlap fails
+         * the survey_submission_key unique test; the mutually_exclusive_ranges
+         * test on the terms model catches it at the sheet. #5276, #3918
+         */
+        left join
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
+            on f.info_title = rt.name
+            and r.last_submitted_date between rt.start_date and rt.end_date
+            and rt.type = 'SURVEY'
+        left join
+            {{ ref("int_people__staff_roster_history") }} as srh
+            on (
+                r.respondent_local_part = srh.sam_account_name
+                or r.respondent_email = srh.google_email
             )
-        }}
-    ),
-
-    /*
-     * Both arms are normalized onto survey_response_id here so the key is
-     * hashed once below rather than once per arm. That single call site is what
-     * makes this model the one home for survey_submission_key.
-     */
-    all_submissions as (
-        select
-            survey_id,
-            survey_response_id,
-            survey_title,
-            respondent_email,
-            respondent_employee_number,
-            date_submitted,
-            academic_year,
-            term_code,
-        from live_submissions
-
-        union all
-
-        select
-            survey_id,
-
-            effective_survey_response_id as survey_response_id,
-
-            survey_title,
-            respondent_email,
-
-            respondent_df_employee_number as respondent_employee_number,
-
-            date_submitted,
-
-            campaign_academic_year as academic_year,
-            campaign_reporting_term as term_code,
-        from archive_submissions
+            and r.last_submitted_timestamp
+            between srh.effective_date_start_timestamp
+            and srh.effective_date_end_timestamp
+            and srh.primary_indicator
+        left join
+            {{ ref("int_google_directory__users__addresses") }} as gda
+            on srh.employee_number is null
+            and r.respondent_email = gda.address
+        left join
+            {{ ref("int_people__staff_roster_history") }} as srh_alias
+            on gda.primary_email = srh_alias.google_email
+            and r.last_submitted_timestamp
+            between srh_alias.effective_date_start_timestamp
+            and srh_alias.effective_date_end_timestamp
+            and srh_alias.primary_indicator
     )
 
 select
@@ -124,10 +73,43 @@ select
     survey_title,
     respondent_email,
     respondent_employee_number,
+    respondent_preferred_name,
+    respondent_samaccountname,
+    respondent_userprincipalname,
+    date_started,
     date_submitted,
     academic_year,
     term_code,
+    term_name,
+    survey_response_link,
+    round_rn,
+
+    coalesce(
+        cast(respondent_employee_number as string), respondent_email
+    ) as respondent_identifier,
 
     {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
     as survey_submission_key,
-from all_submissions
+from live_gforms
+
+union all
+
+select
+    survey_id,
+    survey_response_id,
+    survey_title,
+    respondent_email,
+    respondent_employee_number,
+    respondent_preferred_name,
+    respondent_samaccountname,
+    respondent_userprincipalname,
+    date_started,
+    date_submitted,
+    academic_year,
+    term_code,
+    term_name,
+    survey_response_link,
+    round_rn,
+    respondent_identifier,
+    survey_submission_key,
+from {{ source("surveys", "int_surveys__alchemer_submissions") }}

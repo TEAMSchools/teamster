@@ -11,8 +11,9 @@ models:
         data_type: string
         description: >-
           Surrogate key for this dimension. Hash composition uses term type,
-          code, name, start date, region, and school ID. Region attributes are
-          reachable via dim_terms → dim_locations → dim_regions FK traversal.
+          code, name, start date, region, school ID, and grade band. Region
+          attributes are reachable via dim_terms → dim_locations → dim_regions
+          FK traversal.
         constraints:
           - type: primary_key
             warn_unsupported: false
