@@ -622,6 +622,49 @@ Paste target: named range `src_google_sheets__dibels__bm_goals`, spreadsheet
 only. Unlike the foundation_goals paste, the column set does not change, so no
 `stage_external_sources` re-stage is needed -- a value-only paste.
 
+#### Generate only the regions prod is missing -- never regenerate one already there
+
+**The default is additive, per region.** Ask prod what it already holds,
+generate only the regions absent from it, and append. A region already in the
+tab is frozen and stays frozen.
+
+```sql
+select academic_year, region, count(*) as rows_
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__dibels_bm_goals
+where academic_year = <year>
+group by academic_year, region
+order by region
+```
+
+Anything listed there is done. Generate the complement, not the whole year.
+
+The reason is that **the paste is not idempotent.** Only the goal columns are
+stable -- they come from the frozen foundation goals sheet. The
+`n_admin_season_*` headcounts are computed from live assessment data, so the
+same region regenerated a week later returns different numbers as more students
+test. Regenerating a region that is already present therefore does not "refresh"
+it: it silently replaces figures that were already set and reported against with
+figures from a later moment, and nothing in the sheet or the warehouse records
+that it happened. Regions are goal-set at different times precisely because
+their testing windows close at different times, so each one's snapshot is
+supposed to be taken once, when that region's window closes.
+
+**The one exception is a defect in the calculation**, where the frozen numbers
+are wrong rather than merely old. Then replace the whole academic year rather
+than part of it, so every region's rows come from the same code at the same
+moment. That happened on 2026-09-15: all 74 AY2026 rows were regenerated after
+the `bl_wb` non-determinism fix, deliberately overriding the additive rule.
+Treat a full-year replace as the thing that needs justifying, not the default.
+
+`select * except(...)` has no bearing here -- the model emits the current year
+only, so "the whole year" and "everything the model returns" are the same set.
+
+Related caution, worth checking before assuming a region is simply missing:
+**Miami has benchmark goals in the tab but no foundation goals at all.**
+Foundation goals cover Camden, Newark and Paterson only, so Miami's benchmark
+numbers do not come from this lineage and cannot be produced by generating them
+here. A Miami row absent from the tab is not a row this procedure can add.
+
 **Verify by year, not by row count.** A populated prior year makes the totals
 look healthy:
 
