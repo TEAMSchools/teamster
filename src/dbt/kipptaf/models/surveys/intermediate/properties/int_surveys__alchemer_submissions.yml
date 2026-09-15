@@ -4,16 +4,18 @@ models:
       Every Alchemer survey submission at 1 row per response, with reporting
       term, campaign, and respondent identity resolved, plus the historic
       Alchemer Manager Survey archive at the same grain. Alchemer is
-      decommissioned and every input is frozen, so this model is built once and
-      then archived under the repo's archive pattern (disable the model, declare
-      the table in sources-bigquery.yml, and point the live survey models at the
-      source). The live models union it in without recomputing anything.
+      decommissioned and every input is frozen, so this model was built once on
+      2026-09-15 and is archived under the repo's archive pattern: the model is
+      disabled, the table is declared in sources-bigquery.yml, and the live
+      survey models read the source. Re-enable and rebuild only to change the
+      frozen rows.
 
       Only API responses that fall inside a SURVEY reporting-term window count
       as submissions; the inner join to the terms sheet is the filter. The
       archive arm collapses int_surveys__manager_survey_details, which is
       question-grain, to one row per effective_survey_response_id.
     config:
+      enabled: false
       materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -22,6 +24,7 @@ models:
               - survey_id
               - survey_response_id
           config:
+            enabled: false
             severity: error
     columns:
       - name: survey_id

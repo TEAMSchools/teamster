@@ -112,4 +112,4 @@ select
     round_rn,
     respondent_identifier,
     survey_submission_key,
-from {{ ref("int_surveys__alchemer_submissions") }}
+from {{ source("surveys", "int_surveys__alchemer_submissions") }}

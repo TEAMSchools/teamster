@@ -4,14 +4,16 @@ models:
       Alchemer survey responses at question grain, carrying every per-submission
       column from int_surveys__alchemer_submissions so
       int_surveys__survey_responses can union the rows in without a join.
-      Alchemer is decommissioned and every input is frozen, so this model is
-      built once and then archived under the repo's archive pattern alongside
-      int_surveys__alchemer_submissions.
+      Alchemer is decommissioned and every input is frozen, so this model was
+      built once on 2026-09-15 and is archived under the repo's archive pattern
+      alongside int_surveys__alchemer_submissions: disabled, declared in
+      sources-bigquery.yml, read by int_surveys__survey_responses as a source.
 
       Only responses whose submission survived the SURVEY reporting-term filter
       in int_surveys__alchemer_submissions appear here; the historic Manager
       archive has no question-grain rows in the Alchemer results table.
     config:
+      enabled: false
       materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -23,6 +25,7 @@ models:
               - question_shortname
               - answer
           config:
+            enabled: false
             severity: error
     columns:
       - name: survey_id

@@ -59,7 +59,7 @@ with
             round_rn,
             respondent_identifier,
             survey_submission_key,
-        from {{ ref("int_surveys__alchemer_responses") }}
+        from {{ source("surveys", "int_surveys__alchemer_responses") }}
     ),
 
     /* the crosswalk is already one row per abbreviation, so this joins at
