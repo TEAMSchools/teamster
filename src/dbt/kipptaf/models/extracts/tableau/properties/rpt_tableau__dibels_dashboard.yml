@@ -591,13 +591,14 @@ models:
           79.1%, while the per-measure per-round rates in one season run from
           67.2% to 94.6%.
 
-          And group by expected_measure_name_code rather than
-          expected_measure_standard for participation. One probe yields both
-          sub-measures — ORF gives Reading Accuracy and Reading Fluency, NWF
-          gives Decoding and Letter Sounds — so the standards read identical
-          rates and the denominator double-counts the sitting. Goal attainment
-          is the reverse: each standard has its own target, so that stays at
-          measure standard grain.
+          Group by expected_measure_standard, not expected_measure_name_code.
+          The name code merges sub-measures off one probe, and while a pair is
+          never split once both are expected -- zero exceptions in 7,399 AY2025
+          student-rounds for ORF and 7,524 for NWF -- the two are not always
+          both expected. Reading Accuracy is a BOY to MOY measure only, with
+          zero expected rows in rounds 5 to 8 where Reading Fluency runs on, so
+          a name-code rate blends two populations in one season and means only
+          one of them in the other.
 
           Academics separate the two questions and this column is the measure
           half: a student who did not sit a measure the round expected did not

@@ -1594,28 +1594,47 @@ season alone run from **67.2% to 94.6%** — a 27-point spread the pooled number
 erases. The reportable grain is measure × season × round, sliced by region or
 school as needed.
 
-##### Participation is per probe; goals are per measure standard
+##### Report participation at measure standard, not at name code
 
-`expected_measure_name_code` groups the sub-measures that come off ONE probe:
+`expected_measure_name_code` groups sub-measures that come off one probe — `ORF`
+covers Reading Accuracy and Reading Fluency, `NWF` covers Decoding and Letter
+Sounds. It is tempting to report percent tested at that grain, reasoning that
+one sitting produces both sub-scores. **Do not.** Academics mean the separate
+measure standards, and the data agrees with them.
 
-| `expected_measure_name_code` | Measure standards                 |
-| ---------------------------- | --------------------------------- |
-| `ORF`                        | Reading Accuracy, Reading Fluency |
-| `NWF`                        | Decoding, Letter Sounds           |
-| `Comprehension`              | Reading Comprehension (Maze)      |
-| `PSF`                        | Phonemic Awareness                |
-| `WRF`                        | Word Reading                      |
+Two facts, measured on AY2025 aimline, settle it together.
 
-A student who sits the ORF probe necessarily produces both ORF sub-scores, so
-the two read an identical percent tested in every round — the same sitting
-counted twice. **Percent tested therefore belongs at
-`expected_measure_name_code` (five probes), not `expected_measure_standard`
-(seven standards)**, or the chart shows duplicate bars and a denominator
-inflated by the paired measures. Goal attainment is the opposite: each measure
-standard carries its own target, so that stays at `expected_measure_standard`.
+**A pair is never split once both are expected.** Across 7,399 student-rounds
+where both ORF measures were expected, zero had one tested and the other not;
+same for NWF across 7,524. So a student cannot have Reading Accuracy done
+without Reading Fluency. That half of the probe reasoning holds.
 
-Per-probe rates on AY2025 aimline: `PSF` 90.0%, `NWF` 89.0%, `WRF` 87.1%, `ORF`
-74.4%, `Comprehension` 65.4%.
+**But the two are not always both expected.** Reading Accuracy is a **BOY→MOY
+measure only** — rounds 1 to 4, with zero expected rows in rounds 5 to 8, while
+Reading Fluency runs all eight:
+
+| Season  | Round |   ORF | ORF-Accu |  Maze | NWF-CLS | NWF-WRC |
+| ------- | ----- | ----: | -------: | ----: | ------: | ------: |
+| BOY→MOY | 1     | 2,945 |    2,945 |     — |     807 |     807 |
+| BOY→MOY | 2     | 1,340 |    1,340 |     — |     800 |     800 |
+| BOY→MOY | 3     | 2,916 |    2,916 | 2,916 |   1,181 |   1,181 |
+| BOY→MOY | 4     |   201 |      201 |     — |   1,286 |   1,286 |
+| MOY→EOY | 5     |   545 |        0 |     — |     951 |     951 |
+| MOY→EOY | 6     | 1,903 |        0 | 1,240 |   1,279 |   1,279 |
+| MOY→EOY | 7     | 1,358 |        0 |     — |     896 |     896 |
+| MOY→EOY | 8     | 2,876 |        0 | 1,529 |     324 |     324 |
+
+The two standards therefore have different denominators, and an `ORF` name-code
+rate is a 50/50 blend in BOY→MOY but pure Reading Fluency in MOY→EOY — one label
+meaning two different things across the year. Maze is rounds 3, 6 and 8 only,
+the same trap in a different shape.
+
+Reporting at measure standard costs nothing, since the paired standards read
+identical rates wherever both are expected. It just also stays correct where
+only one is.
+
+Goal attainment is at measure standard for an independent reason: each standard
+carries its own target.
 
 `round_test_status` is round grain and repeats on every expected measure in the
 round, which the BI layer's LOD / `COUNTD` default already handles. At roster
