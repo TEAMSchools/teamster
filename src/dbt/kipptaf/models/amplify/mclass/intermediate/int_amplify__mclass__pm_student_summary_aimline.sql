@@ -135,21 +135,5 @@ with
             on c.school_name = lc.location_name
     )
 
-select
-    *,
-
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "student_primary_id",
-                "school_year",
-                "pm_period",
-                "measure",
-                "probe_number",
-                "device_date",
-                "assessment_grade",
-            ]
-        )
-    }} as surrogate_key,
-
+select *,
 from enriched
