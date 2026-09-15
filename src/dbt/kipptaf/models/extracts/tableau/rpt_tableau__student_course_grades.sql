@@ -104,43 +104,6 @@ with
             academic_year = {{ var("current_academic_year") - 1 }} and not is_projected
     ),
 
-    backfill_running_gpa as (
-        /* TODO(#4687): TEMPORARY. Delete this CTE, its join in student_roster,
-           and the coalesce on gpa_y1 once the dashboard runs on current-year
-           data. Tracked in Asana under GPA and Gradebook Dashboard v3, Phase 4.
-
-           Running credit-weighted GPA through each term, accumulated from the
-           same components the real gpa_y1 uses. Deliberately NOT anchored to
-           the stored Y1: the reconstruction reads 45.1, 46.7, 46.6, 48.2
-           percent of high school students at or above 3.0 through Q1-Q4
-           (AY2025) against a stored Y1 of 48.9 — it sits slightly below
-           the stored value throughout, and anchoring Q4 to that value
-           would introduce a discontinuity there rather than let the
-           series read as one continuous trend. */
-        select
-            studentid,
-            schoolid,
-            yearid,
-            _dbt_source_project,
-            term_name,
-
-            round(
-                safe_divide(
-                    sum(weighted_gpa_points_term) over (
-                        partition by studentid, _dbt_source_project, schoolid, yearid
-                        order by term_name
-                    ),
-                    sum(total_credit_hours_term) over (
-                        partition by studentid, _dbt_source_project, schoolid, yearid
-                        order by term_name
-                    )
-                ),
-                2
-            ) as gpa_y1_running,
-        from {{ ref("int_powerschool__gpa_term") }}
-        where yearid = {{ var("current_academic_year") - 1991 }}
-    ),
-
     student_roster as (
         select
             enr._dbt_source_relation,
@@ -233,9 +196,7 @@ with
 
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
 
-            coalesce(
-                bfg.gpa_y1_running, if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1)
-            ) as gpa_y1,
+            if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
             if(
                 term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
@@ -292,18 +253,6 @@ with
             and enr._dbt_source_project = gtq._dbt_source_project
             and term.quarter = gtq.term_name
             and term._dbt_source_project = gtq._dbt_source_project
-        /* bfg is gated to the prior year in ON — the inverse of gc/lb/gpq/pyc's
-           current-year gate below — so current-year rows get NULL here and
-           the coalesce on gpa_y1 falls through to the untouched original
-           expression */
-        left join
-            backfill_running_gpa as bfg
-            on enr.studentid = bfg.studentid
-            and enr.yearid = bfg.yearid
-            and enr.schoolid = bfg.schoolid
-            and enr._dbt_source_project = bfg._dbt_source_project
-            and term.quarter = bfg.term_name
-            and enr.academic_year = {{ var("current_academic_year") - 1 }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
             on enr.studentid = gty.studentid
