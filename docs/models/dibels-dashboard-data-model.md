@@ -1617,11 +1617,10 @@ standard carries its own target, so that stays at `expected_measure_standard`.
 Per-probe rates on AY2025 aimline: `PSF` 90.0%, `NWF` 89.0%, `WRF` 87.1%, `ORF`
 74.4%, `Comprehension` 65.4%.
 
-Do not sum `round_test_status` across rows: it is round grain and repeats on
-every expected measure in the round. Count distinct students, or aggregate at
-round grain. At roster grain AY2025 aimline is 15,242 Fully Tested of 24,601
-rounds, but the same caution applies — report it per season and round rather
-than as one number.
+`round_test_status` is round grain and repeats on every expected measure in the
+round, which the BI layer's LOD / `COUNTD` default already handles. At roster
+grain AY2025 aimline is 15,242 Fully Tested of 24,601 rounds — again, report it
+per season and round rather than as one number.
 
 #### AY 2026–2027 considerations
 

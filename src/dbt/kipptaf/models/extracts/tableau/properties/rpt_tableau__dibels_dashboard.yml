@@ -452,8 +452,7 @@ models:
           Tested, 1,769 Round Incomplete and 7,590 Not Tested at round grain.
 
           Round grain, not row grain, so it repeats across every expected
-          measure in the round. Count distinct students or aggregate at round
-          grain, never sum rows.
+          measure in the round.
       - name: participation_group
         data_type: string
         description: >-
