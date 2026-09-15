@@ -38,5 +38,5 @@ select
         c.home_department_name
     ) as department_grade,
 from {{ ref("int_people__staff_roster") }} as c
-left join elementary_grade as g on c.powerschool_teacher_number = g.teachernumber
+left join elementary_grade as g on c.sis_teacher_number = g.teachernumber
 where c.assignment_status not in ('Terminated')

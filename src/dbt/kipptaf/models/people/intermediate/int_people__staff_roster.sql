@@ -31,7 +31,7 @@ left join
     and epm.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("int_students__teacher_grade_levels") }} as tgl
-    on d.powerschool_teacher_number = tgl.teachernumber
+    on d.sis_teacher_number = tgl.teachernumber
     and d.home_work_location_dagster_code_location = tgl._dbt_source_project
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
