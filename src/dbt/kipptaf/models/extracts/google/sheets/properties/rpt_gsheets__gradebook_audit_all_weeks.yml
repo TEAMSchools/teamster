@@ -1,0 +1,52 @@
+models:
+  - name: rpt_gsheets__gradebook_audit_all_weeks
+    description: >
+      Every school week of the current academic year as a calendar grid, one row
+      per region, school level, and week within the quarter. Companion to
+      rpt_gsheets__gradebook_audit_template, which carries the same week grid
+      but joins stg_powerschool__u_expectations to attach the four category
+      counts — so the template stops at the last completed week and only covers
+      the region and school-level combinations that already have expectations
+      loaded. This model joins nothing, so it runs to the end of the year and
+      covers every region and school level int_students__calendar_week holds,
+      including ES and Miami, which the gradebook audit itself excludes.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school_level
+              - quarter
+              - week_number_quarter
+    columns:
+      - name: academic_year
+        data_type: int64
+        description:
+          Academic year, stored as the starting year (2026 = 2026-27).
+      - name: region
+        data_type: string
+        description: District region (Newark, Camden, Miami, Paterson).
+      - name: school_level
+        data_type: string
+        description: School level grouping (ES / MS / HS).
+      - name: quarter
+        data_type: string
+        quote: true
+        description: Academic quarter (Q1–Q4).
+      - name: week_number_quarter
+        data_type: int64
+        description: Sequential week number within the quarter.
+      - name: week_start_monday
+        data_type: date
+        description:
+          Monday of the school week, the network-standard week anchor.
+      - name: week_end_friday
+        data_type: date
+        description: >
+          Last in-session day of the school week. Friday on a full week, but
+          earlier when the week is shortened by a holiday or PD day, so a short
+          week is visible at a glance. Taken as the region's latest in-session
+          day rather than a distinct value per school, because
+          int_students__calendar_week is per-schoolid and school_week_end_date
+          diverges within a region when only some of its schools lose a day.
