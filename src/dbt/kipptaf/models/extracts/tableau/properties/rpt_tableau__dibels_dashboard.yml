@@ -442,6 +442,18 @@ models:
         data_type: int64
         description:
           completed_test_round as 1/0, for aggregation in the BI layer.
+      - name: round_test_status
+        data_type: string
+        description: >-
+          The round's testing state in academics' words — Not Tested, Round
+          Incomplete, or Fully Tested. Carried from
+          int_students__dibels_participation_roster, which owns it. Use this for
+          percent fully tested by round; on AY2025 aimline it reads 15,242 Fully
+          Tested, 1,769 Round Incomplete and 7,590 Not Tested at round grain.
+
+          Round grain, not row grain, so it repeats across every expected
+          measure in the round. Count distinct students or aggregate at round
+          grain, never sum rows.
       - name: participation_group
         data_type: string
         description: >-
@@ -569,6 +581,24 @@ models:
         data_type: string
         description:
           Grade taken from the last character of the matched ELA course name.
+      - name: measure_test_status
+        data_type: string
+        description: >-
+          Whether THIS measure was tested — Tested or Not Tested. Row grain, so
+          it is the field for percent tested by measure. On AY2025 aimline that
+          is 35,482 Tested of 44,865 expected.
+
+          Academics separate the two questions and this column is the measure
+          half: a student who did not sit a measure the round expected did not
+          test that measure, whatever the round's own state. round_test_status
+          answers the round question, and the two agree — every measure in a Not
+          Tested round reads Not Tested, every measure in a Fully Tested round
+          reads Tested, and only a Round Incomplete round mixes them.
+
+          Derived from whether a scored row joined, which is why this extract is
+          the only place it can live: both PM criteria models carry scored rows
+          only, so an untested measure has no row in them at all. The expected
+          measure comes from the expectation gate this model joins.
       - name: scheduled
         data_type: int64
         description: 1 when the student matched an ELA section, else 0.

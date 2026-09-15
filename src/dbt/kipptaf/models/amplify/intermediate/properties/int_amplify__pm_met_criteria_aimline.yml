@@ -265,9 +265,16 @@ models:
         data_type: boolean
         description: >-
           Whether the student was tested on every measure the round expected,
-          from the participation roster's Aimline rows. The roster owns this
-          because it is the model that turns an expected-but-absent measure into
-          a row; int_amplify__all_assessments carries scored rows only.
+          from the participation roster's Aimline rows, which owns the expected
+          and actual counts this derives from.
+
+          The roster is at ROUND grain and only counts the expected measures --
+          it does not carry a row per measure, and neither does this model,
+          which holds scored rows only. So an untested measure has no row here
+          at all, and a measure-grain tested flag cannot be built from either.
+          That is measure_test_status on rpt_tableau__dibels_dashboard, the only
+          relation with a row per expected measure. See round_test_status on the
+          roster for the three-state round version academics use.
       - name: completed_test_round_int
         data_type: int64
         description:

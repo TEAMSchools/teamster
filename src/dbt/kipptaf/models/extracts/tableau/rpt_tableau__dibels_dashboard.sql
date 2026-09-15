@@ -102,6 +102,7 @@ select
     r.completed_test_round,
     r.completed_test_round_int,
     r.participation_group,
+    r.round_test_status,
 
     null as met_measure_standard_goal,
     null as met_admin_benchmark_goal,
@@ -120,6 +121,8 @@ select
     cast(a.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
+
+    if(b.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
@@ -289,6 +292,7 @@ select
     rs.completed_test_round,
     rs.completed_test_round_int,
     rs.participation_group,
+    rs.round_test_status,
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
@@ -315,6 +319,8 @@ select
     cast(e.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
+
+    if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
@@ -512,6 +518,7 @@ select
     rs.completed_test_round,
     rs.completed_test_round_int,
     rs.participation_group,
+    rs.round_test_status,
 
     pm.met_aimline_goal as met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
@@ -538,6 +545,8 @@ select
     cast(e.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
+
+    if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 

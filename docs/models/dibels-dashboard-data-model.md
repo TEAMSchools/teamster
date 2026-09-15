@@ -1536,6 +1536,61 @@ the same student × round combination. The current model filters enrollment date
 correctly, but the dual-row case may still occur at the edges. This is a
 candidate for simplification in a future cleanup pass.
 
+#### Testing state: the three states academics use, at two grains
+
+Academics are specific about test completion, and their wording maps to three
+states rather than a boolean:
+
+- a student who did not sit a **measure** the round expected did not test that
+  measure
+- a student who sat **nothing** in a round is Not Tested for that round
+- a student who sat **some but not all** of the round's expected measures is
+  Round Incomplete for that round
+
+They want two percentages out of this: **percent tested by measure** and
+**percent fully tested by round**. Those are different grains, so they take two
+columns.
+
+`round_test_status` on this model carries the round half — Not Tested, Round
+Incomplete, Fully Tested. `completed_test_round` alone cannot, because a false
+value covers both nothing-sat and some-sat-not-all; the split comes from
+`actual_row_count = 0`. Fully Tested keys on `completed_test_round` itself so
+the two columns can never disagree.
+
+`measure_test_status` on `rpt_tableau__dibels_dashboard` carries the measure
+half — Tested or Not Tested, at row grain. It **cannot** live on this model or
+on either PM criteria model:
+
+- this model is at round grain and only COUNTS the expected measures
+- `int_amplify__pm_met_criteria` and `_aimline` carry scored rows only —
+  measured 2026-09-15, zero rows with a null `measure_standard_score` in either,
+  so an untested measure has no row in them at all
+
+The extract is the only relation with a row per expected measure, because it
+drives from the expectation gate and left-joins the scores. So that is where the
+measure-grain flag belongs. (An earlier version of the roster's
+`completed_test_round` description claimed this model "turns an
+expected-but-absent measure into a row". It does not, and that sentence was
+corrected on 2026-09-15.)
+
+The two agree by construction, verified on AY2025 aimline:
+
+| `round_test_status` | Measure Tested | Measure Not Tested |
+| ------------------- | -------------: | -----------------: |
+| Fully Tested        |         33,640 |                  0 |
+| Round Incomplete    |          1,842 |              1,456 |
+| Not Tested          |              0 |              7,927 |
+
+Zero leakage in either direction — every measure in a Not Tested round reads Not
+Tested, every measure in a Fully Tested round reads Tested, and only Round
+Incomplete mixes them. AY2025 aimline therefore reports 79.1% tested by measure
+(35,482 of 44,865) and 62.0% fully tested by round (15,242 of 24,601 at roster
+grain).
+
+Do not sum `round_test_status` across rows: it is round grain and repeats on
+every expected measure in the round. Count distinct students, or aggregate at
+round grain.
+
 #### AY 2026–2027 considerations
 
 The BM branch is unaffected by the aimline migration. The PM branches require
