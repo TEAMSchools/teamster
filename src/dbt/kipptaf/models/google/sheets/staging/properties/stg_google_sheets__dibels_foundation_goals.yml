@@ -1,5 +1,17 @@
 models:
   - name: stg_google_sheets__dibels_foundation_goals
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - grade_level
+              - period
+              - population
+              - grade_goal_type
+          config:
+            severity: error
     columns:
       - name: academic_year
         data_type: int64
