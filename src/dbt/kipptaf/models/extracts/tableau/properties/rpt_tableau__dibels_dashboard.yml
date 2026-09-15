@@ -585,8 +585,20 @@ models:
         data_type: string
         description: >-
           Whether THIS measure was tested — Tested or Not Tested. Row grain, so
-          it is the field for percent tested by measure. On AY2025 aimline that
-          is 35,482 Tested of 44,865 expected.
+          it is the field behind percent tested.
+
+          Aggregate it per measure per round, never pooled. A single network
+          figure hides the variation that matters: AY2025 aimline pools to
+          79.1%, while the per-measure per-round rates in one season run from
+          67.2% to 94.6%.
+
+          And group by expected_measure_name_code rather than
+          expected_measure_standard for participation. One probe yields both
+          sub-measures — ORF gives Reading Accuracy and Reading Fluency, NWF
+          gives Decoding and Letter Sounds — so the standards read identical
+          rates and the denominator double-counts the sitting. Goal attainment
+          is the reverse: each standard has its own target, so that stays at
+          measure standard grain.
 
           Academics separate the two questions and this column is the measure
           half: a student who did not sit a measure the round expected did not

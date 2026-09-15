@@ -1583,13 +1583,45 @@ The two agree by construction, verified on AY2025 aimline:
 
 Zero leakage in either direction — every measure in a Not Tested round reads Not
 Tested, every measure in a Fully Tested round reads Tested, and only Round
-Incomplete mixes them. AY2025 aimline therefore reports 79.1% tested by measure
-(35,482 of 44,865) and 62.0% fully tested by round (15,242 of 24,601 at roster
-grain).
+Incomplete mixes them.
+
+##### Report the rate per measure per round, not pooled
+
+A single network percent-tested figure is close to meaningless and should not be
+put on a view. Pooling every measure and round in AY2025 aimline gives 79.1%
+(35,482 of 44,865), while the actual per-measure per-round rates in the BOY→MOY
+season alone run from **67.2% to 94.6%** — a 27-point spread the pooled number
+erases. The reportable grain is measure × season × round, sliced by region or
+school as needed.
+
+##### Participation is per probe; goals are per measure standard
+
+`expected_measure_name_code` groups the sub-measures that come off ONE probe:
+
+| `expected_measure_name_code` | Measure standards                 |
+| ---------------------------- | --------------------------------- |
+| `ORF`                        | Reading Accuracy, Reading Fluency |
+| `NWF`                        | Decoding, Letter Sounds           |
+| `Comprehension`              | Reading Comprehension (Maze)      |
+| `PSF`                        | Phonemic Awareness                |
+| `WRF`                        | Word Reading                      |
+
+A student who sits the ORF probe necessarily produces both ORF sub-scores, so
+the two read an identical percent tested in every round — the same sitting
+counted twice. **Percent tested therefore belongs at
+`expected_measure_name_code` (five probes), not `expected_measure_standard`
+(seven standards)**, or the chart shows duplicate bars and a denominator
+inflated by the paired measures. Goal attainment is the opposite: each measure
+standard carries its own target, so that stays at `expected_measure_standard`.
+
+Per-probe rates on AY2025 aimline: `PSF` 90.0%, `NWF` 89.0%, `WRF` 87.1%, `ORF`
+74.4%, `Comprehension` 65.4%.
 
 Do not sum `round_test_status` across rows: it is round grain and repeats on
 every expected measure in the round. Count distinct students, or aggregate at
-round grain.
+round grain. At roster grain AY2025 aimline is 15,242 Fully Tested of 24,601
+rounds, but the same caution applies — report it per season and round rather
+than as one number.
 
 #### AY 2026–2027 considerations
 
