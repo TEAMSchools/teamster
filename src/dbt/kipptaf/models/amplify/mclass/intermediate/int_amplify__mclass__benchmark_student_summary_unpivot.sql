@@ -76,11 +76,11 @@ with
                         reading_accuracy_orf_accu_year_growth
                     ) as 'Reading Accuracy (ORF-Accu)',
                     (
-                        reading_comprehension_maze_level,
-                        reading_comprehension_maze_national_norm_percentile,
-                        reading_comprehension_maze_score,
-                        reading_comprehension_maze_semester_growth,
-                        reading_comprehension_maze_year_growth
+                        basic_comprehension_maze_level,
+                        basic_comprehension_maze_national_norm_percentile,
+                        basic_comprehension_maze_score,
+                        basic_comprehension_maze_semester_growth,
+                        basic_comprehension_maze_year_growth
                     ) as 'Reading Comprehension (Maze)',
                     (
                         reading_fluency_orf_level,

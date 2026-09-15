@@ -12,7 +12,7 @@ with
             bss.assessment_grade,
             bss.assessment_grade_int,
             bss.benchmark_period as `period`,
-            bss.client_date,
+            bss.device_date as client_date,
             bss.sync_date,
             bss._dbt_source_project,
 

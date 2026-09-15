@@ -25,7 +25,7 @@ with
             e.expected_measure_standard,
 
             p.assessment_grade,
-            p.client_date,
+            p.device_date as client_date,
             p.sync_date,
             p.surrogate_key,
             p.measure_name,
@@ -65,7 +65,7 @@ with
             and e.expected_measure_standard = p.measure
             and e.admin_season = p.pm_period
             and r.student_number = p.student_primary_id
-            and p.client_date between e.start_date and e.end_date
+            and p.device_date between e.start_date and e.end_date
         -- EOY opens no PM season
         where
             r.period != 'EOY'
