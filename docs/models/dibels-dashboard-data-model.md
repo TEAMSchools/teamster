@@ -354,6 +354,61 @@ If a score exists in Amplify but no matching row exists in the expected
 assessments config, it is silently excluded. This is intentional — new measures
 or grades only appear once the data team adds them to the config.
 
+#### A whole region can be missing, and dbt is usually not the cause
+
+Miami has no AY2026 DIBELS data anywhere in the warehouse, and nothing in this
+repo can fix it — Amplify's export does not contain them. Established 2026-09-15
+by reading the raw SFTP file directly, after three wrong theories (a missing
+union member, a crosswalk gap, the `is_self_contained` exclusion).
+
+Check the source first, at the top of the hierarchy, before tracing a single
+join:
+
+```sql
+select
+    school_year,
+    district_name,
+    school_name,
+    count(*) as n_rows,
+    count(distinct student_primary_id_studentnumber) as n_students,
+    cast(max(sync_date) as string) as last_sync,
+from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
+where school_year = '2026-2027'
+group by school_year, district_name, school_name
+order by school_name
+```
+
+For SY2026-2027 that returns 16 schools, all NJ, `district_name` of
+`Kipp New Jersey`. Swap the year for `2025-2026` and it returns
+`Kipp New Jersey And Miami` with Kipp Courage Academy and Kipp Royalty Academy
+present. The account was renamed and Miami's schools left it. The PM file has
+the same shape.
+
+Three things make this class of question easy to get wrong:
+
+- **One network account lands in `kippnewark`'s bucket.** Region is resolved
+  from `int_people__location_crosswalk`, never from `_dbt_source_relation`, and
+  `kippmiami_amplify` is deliberately not in the union — so Miami's absence from
+  that union is by design and is not the defect.
+- **Amplify renames schools between years.** `Kipp Hatch Middle` became
+  `Kipp Hatch Academy` and `Kipp Sumner Elementary` became `Kipp Sumner Academy`
+  for SY2026-2027, and both are absorbed by the crosswalk. A rename the
+  crosswalk misses surfaces as a **null region**, not as missing rows, so check
+  for null regions and compare row counts across layers before blaming the
+  export.
+- **Confirm by student number, not by school name.** Matching the file's
+  `student_primary_id_studentnumber` against AY2026 enrollment rules out a
+  rename entirely: 4,952 Newark, 1,568 Camden, 792 Paterson, 11 not enrolled,
+  zero Miami.
+
+The gap is wider than the two schools that left. Miami has five schools with
+reading enrollment in AY2026 — Courage, Royalty, Legacy ES, Legacy MS, Miami
+Tech — and none are in the Amplify account. Courage and Royalty were in it for
+SY2025-2026 and were dropped; Legacy and Miami Tech were never added. Fixing the
+export is also not sufficient for the dashboard: Miami has benchmark goals in
+the BM Goals tab but no foundation goals and no PM rounds scaffold, so
+participation has nothing to measure against until both are built.
+
 #### Internal structure
 
 **Restructured for SY26-27.** The Benchmark half moved out to
@@ -1955,6 +2010,63 @@ round is unfinished, that measure passed.
 On AY2025 the model produces 36,486 rows on an exact grain, from 36,507 aimline
 rows in `all_assessments` — the 21-row loss is five Newark students, documented
 in the yml.
+
+#### Aimline attainment: the three grains academics report
+
+Academics asked on 2026-09-15 for "% not meeting aimline, overall and by
+measure." That phrase covers three questions, not two, and they are the same
+AND-gate shape as the testing states on the participation roster:
+
+1. did the student meet the aimline on **this measure standard** this round
+2. did they meet it on **every expected standard under one measure name code**
+3. did they meet it on **every expected standard in the round**
+
+All three already exist as columns — no modelling was needed, which is the main
+thing to know before anyone builds them again:
+
+| Question | Column                                                    |
+| -------- | --------------------------------------------------------- |
+| 1        | `met_aimline_goal`                                        |
+| 2        | `met_measure_name_code_goal`                              |
+| 3        | `met_pm_round_criteria` / `met_pm_round_overall_criteria` |
+
+"Not meeting" is the inverse of `met_aimline_goal = 1`, so it needs no separate
+field. Take it from the verdict columns and **not** from `aimline_category`: the
+category applies T&L's benchmark-wins rule, so 696 AY2025 rows read
+`Meeting Aimline, On-Track` while sitting below the aimline. For a metric whose
+purpose is finding students who need intervention, the label undercounts the
+problem set by exactly those rows.
+
+Measured on AY2025 aimline, each grain at its own unit of analysis:
+
+| Grain                      |  Units |    Met | Not met | No verdict | % not met |
+| -------------------------- | -----: | -----: | ------: | ---------: | --------: |
+| Measure standard           | 44,865 | 13,886 |  18,284 |     12,695 |     56.8% |
+| Measure name code          | 29,935 |  7,362 |  13,742 |      8,831 |     65.1% |
+| Round, verdicts only       | 20,250 |  3,993 |  10,757 |      5,500 |     72.9% |
+| Round, participation-gated | 20,250 |  3,613 |  12,552 |      4,085 |     77.6% |
+
+The percentage is over rows with a verdict. The rate climbs as the gate widens,
+which is what an AND does — but it means 57% and 78% are both defensible answers
+to "% not meeting aimline," so **every view must state its grain** or the two
+get quoted interchangeably.
+
+Two choices belong to academics, not to the model. Whether grain 3 uses the
+participation gate — their wording, "all expected measure standards," says yes,
+and it matches their rule that an untested required measure is a miss, but
+`met_pm_round_overall_criteria` reports 0 for an unresolved round, so read the
+rate off the flag and the label off `pm_round_status`. And whether the
+no-verdict rows count as not met: at 12,695 of 44,865 at measure grain they are
+not a rounding residual, and folding them in drops each rate by 10 to 20 points.
+
+The gate is over **expected** standards, never all theoretically possible ones,
+and that is load-bearing rather than incidental. Reading Accuracy has zero
+expected rows in rounds 5 to 8, so `ORF` from round 5 onward requires Reading
+Fluency alone; if the gate required both, every grade 3-8 student would fail ORF
+for the back half of the year by definition. PSF (rounds 1 to 3), Comprehension
+(3, 6 and 8) and WRF (round 8 only) have the same shape. The per-round
+expectation counts are tabulated under
+[Report participation at measure standard, not at name code](#report-participation-at-measure-standard-not-at-name-code).
 
 #### `met_admin_benchmark_goal` is per round, not latched
 

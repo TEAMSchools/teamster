@@ -1238,6 +1238,64 @@ thing -- it filters `academic_year = current_academic_year`, so it is empty
 whenever the new year's PM calendar has not been entered. Empty is the expected
 state mid-rollover, not a defect.
 
+### A whole region missing: read Amplify's file before tracing any join
+
+When the calendar checks above pass and an entire region still has no scores,
+**the export itself is the first suspect, not the pipeline.** On 2026-09-15 I
+gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
+union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
+checking the top of the hierarchy, where the answer was sitting: Amplify's
+SY2026-2027 export contains no Miami schools at all. The account was renamed
+from `Kipp New Jersey And Miami` to `Kipp New Jersey` and their schools left it.
+
+Run this before anything else:
+
+```sql
+select
+    school_year,
+    district_name,
+    school_name,
+    count(*) as n_rows,
+    count(distinct student_primary_id_studentnumber) as n_students,
+    cast(max(sync_date) as string) as last_sync,
+from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
+where school_year = '2026-2027'
+group by school_year, district_name, school_name
+order by school_name
+```
+
+That is the external over the landed file -- the top of the hierarchy, no
+dependencies. Swap the year to see the contrast with SY2025-2026.
+
+Four rules for this class of question:
+
+- **`kippmiami_amplify` is deliberately absent from the union.** Amplify exports
+  one network account and it lands in `kippnewark`'s bucket; region comes from
+  `int_people__location_crosswalk`. Do not "fix" the union.
+- **Amplify renames schools between years, and the rename is not the bug until
+  you prove it.** `Kipp Hatch Middle` became `Kipp Hatch Academy` and
+  `Kipp Sumner Elementary` became `Kipp Sumner Academy` for SY2026-2027; the
+  crosswalk absorbed both. A rename it misses produces a **null region**, not
+  missing rows -- so compare row counts layer by layer and check for null
+  regions before concluding anything. Identical counts across layers means
+  nothing is being dropped at the join.
+- **Confirm by student number, not by school name.** Matching the file's
+  `student_primary_id_studentnumber` against enrollment rules out a rename
+  entirely, because it never touches a name. That is the check that actually
+  closes the question.
+- **Reading the raw SFTP file is available and cheap.** Credentials come from
+  the pytest session fixture, so a throwaway `tests/**/test_zz_*.py` using
+  `SSH_RESOURCE_AMPLIFY.process_config_and_initialize()` plus
+  `setup_for_execution(build_init_resource_context())` can list the tree and
+  download a file. Do not report an export as empty without it when the question
+  is whether the vendor sent the data. Print aggregates only, never student
+  rows, and delete the test file afterwards.
+
+Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
+live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
+`/PM`, and every file is a daily cumulative snapshot (704 of them), so the asset
+takes the newest match by mtime.
+
 ### Verifying a year that is not in prod yet -- go to the source
 
 When you need to check something about an academic year whose rows are not in
@@ -2154,6 +2212,39 @@ three-in-a-row variant.
 
 Validated on AY2025 in dev: 36,486 rows, exact grain, six tests pass, 21 rows
 lost to the roster join (five Newark students, in the yml).
+
+### "% meeting aimline, overall and by measure" is three grains, and all three already exist
+
+Academics' phrasing hides three questions. Asked on 2026-09-15 what they meant,
+the answer was: did the student meet the aimline on this measure standard this
+round, on every expected standard under one measure name code, and on every
+expected standard in the round. Same AND-gate shape as the testing states.
+
+**Do not build anything for this.** All three are already columns:
+`met_aimline_goal`, `met_measure_name_code_goal`, and `met_pm_round_criteria` /
+`met_pm_round_overall_criteria` (the second variant also requires full
+participation). "% not meeting" is the inverse of the same flags -- it needs no
+new field either.
+
+Three things to say when this comes up:
+
+- **Take it from the verdict, not from `aimline_category`.** The category
+  applies T&L's benchmark-wins rule, so 696 AY2025 rows read
+  `Meeting Aimline, On-Track` while below the aimline. For an
+  intervention-targeting metric the label undercounts the problem set.
+- **Name the grain on every view.** AY2025 "% not meeting" runs 56.8% at measure
+  standard, 65.1% at name code, 72.9% at round, and 77.6% at round with the
+  participation gate -- all four defensible, so an unlabelled 57% and an
+  unlabelled 78% will both get quoted as the same metric.
+- **The gate is over EXPECTED standards, never all possible ones.** Reading
+  Accuracy has zero expected rows in rounds 5 to 8, so ORF from round 5 needs
+  Reading Fluency alone. Requiring both would fail every grade 3-8 student for
+  the back half of the year by definition.
+
+Two decisions belong to academics: whether grain 3 uses the participation gate
+(their wording says yes), and whether the no-verdict rows count as not met
+(12,695 of 44,865 at measure grain, so the choice moves each rate by 10 to 20
+points).
 
 ### The met/not-met flags have labelled twins, and the workbook needs a change
 
