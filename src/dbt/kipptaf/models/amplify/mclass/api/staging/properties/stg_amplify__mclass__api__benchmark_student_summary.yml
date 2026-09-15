@@ -1,0 +1,58 @@
+models:
+  - name: stg_amplify__mclass__api__benchmark_student_summary
+    description: >-
+      Frozen Amplify mCLASS API benchmark archive (SY22-23 through SY24-25, New
+      Jersey and Miami), with its API column names aliased to the SFTP file's
+      names so it unions with the live feed without per-column coalesces. Read
+      only through int_amplify__mclass__benchmark_student_summary.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: device_date
+        data_type: date
+        description: The archive's client_date under the SFTP name.
+      - name: composite_score_lexile
+        data_type: string
+        description:
+          The archive's dibels_composite_score_lexile under the SFTP name.
+      - name: enrollment_teacher_name
+        data_type: string
+        description: The archive's official_teacher_name under the SFTP name.
+      - name: enrollment_teacher_staff_id
+        data_type: string
+        description:
+          The archive's official_teacher_staff_id under the SFTP name.
+      - name: basic_comprehension_maze_score
+        data_type: numeric
+        description:
+          The archive's reading_comprehension_maze_score under the SFTP name.
+      - name: basic_comprehension_maze_level
+        data_type: string
+        description:
+          The archive's reading_comprehension_maze_level under the SFTP name.
+      - name: basic_comprehension_maze_national_norm_percentile
+        data_type: numeric
+        description: >-
+          The archive's reading_comprehension_maze_national_norm_percentile
+          under the SFTP name.
+      - name: basic_comprehension_maze_semester_growth
+        data_type: string
+        description: >-
+          The archive's reading_comprehension_maze_semester_growth under the
+          SFTP name.
+      - name: basic_comprehension_maze_year_growth
+        data_type: string
+        description:
+          The archive's reading_comprehension_maze_year_growth under the SFTP
+          name.
+      - name: basic_comprehension_maze_tested_out
+        data_type: boolean
+        description:
+          The archive's reading_comprehension_maze_tested_out under the SFTP
+          name.
+      - name: basic_comprehension_maze_discontinued
+        data_type: boolean
+        description: >-
+          The archive's reading_comprehension_maze_discontinued under the SFTP
+          name.
