@@ -95,3 +95,8 @@ models:
         data_type: string
       - name: item_url_id
         data_type: string
+      - name: item_abbreviation_lower
+        data_type: string
+        description: >-
+          item_abbreviation lowercased, for joins to sheets whose entry is not
+          case-constrained.
