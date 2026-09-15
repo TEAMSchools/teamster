@@ -1,7 +1,10 @@
 with
     bm_unpivot as (
         select
-            surrogate_key,
+            student_primary_id,
+            school_year,
+            benchmark_period,
+            assessment_grade,
 
             /* unpivot cols */
             measure as measure_standard,

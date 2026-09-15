@@ -6,7 +6,8 @@ select
         official_teacher_name,
         official_teacher_staff_id,
         student_id_state_id,
-        student_primary_id
+        student_primary_id,
+        surrogate_key
     ),
 
     client_date as device_date,

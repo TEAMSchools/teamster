@@ -10,7 +10,8 @@ select
         reading_comprehension_maze_score,
         reading_comprehension_maze_semester_growth,
         reading_comprehension_maze_tested_out,
-        reading_comprehension_maze_year_growth
+        reading_comprehension_maze_year_growth,
+        surrogate_key
     ),
 
     client_date as device_date,

@@ -20,18 +20,6 @@ models:
     columns:
       - name: _dbt_source_relation
         data_type: string
-      - name: surrogate_key
-        data_type: string
-        description:
-          Hash of the source's student number, school_year, pm_period, measure,
-          probe_number, device_date and assessment_grade, carried from staging.
-          Archive rows carry the archive's own key.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary
-            source_column: surrogate_key
-            column_role: primary_key
       - name: alternate_assessment
         data_type: string
       - name: approved_accommodations

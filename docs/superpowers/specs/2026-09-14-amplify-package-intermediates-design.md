@@ -228,3 +228,23 @@ Before opening the PR, on the dev or CI schema against prod:
   Preparatory is now inside the network account for good. If so, the Paterson
   package models and the `kipppaterson_amplify` sources can be disabled in a
   follow-up, and the guard tests stay.
+
+## Amendment: review on #5322
+
+**Package test severity defaults to error.** The source packages no longer
+declare a project-level `data_tests: +severity: warn`. A package test with no
+declared severity now resolves dbt's own default, `error`, and carries that
+severity into every district that installs the package. The districts keep their
+`warn` default, but scoped under their own project name, so it applies to their
+own tests instead of silently downgrading every package test declared `error`.
+
+**Surrogate keys are computed only in the kipptaf marts.** The `surrogate_key`
+column is dropped from every amplify package staging model and from every
+kipptaf amplify staging wrapper and intermediate. The one join that matched on
+the hash, `int_amplify__benchmark_student_summary` against the benchmark
+unpivot, now matches on the natural key — `student_primary_id`, `school_year`,
+`benchmark_period` and `assessment_grade`. Staging models that lost their only
+uniqueness test when the hash's `unique` went away gained a model-level
+`dbt_utils.unique_combination_of_columns` over the same columns the hash
+covered, so the grain is still asserted. Marts under `models/marts/` compute
+their own keys and are unaffected.

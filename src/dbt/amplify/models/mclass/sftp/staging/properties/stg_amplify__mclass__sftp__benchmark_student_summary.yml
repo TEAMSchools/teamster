@@ -8,16 +8,17 @@ models:
     config:
       meta:
         contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - benchmark_period
+              - assessment_grade
+          config:
+            severity: error
     columns:
-      - name: surrogate_key
-        data_type: string
-        description: >-
-          Hash of student_primary_id_studentnumber, school_year,
-          benchmark_period and assessment_grade. One per row.
-        data_tests:
-          - unique:
-              config:
-                severity: error
       - name: school_name
         data_type: string
       - name: _dagster_partition_key
