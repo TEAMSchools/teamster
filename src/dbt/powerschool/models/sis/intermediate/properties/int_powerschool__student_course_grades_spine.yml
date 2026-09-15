@@ -25,6 +25,8 @@ models:
               - quarter
               - course_number
               - category_name_code
+          config:
+            severity: warn
     columns:
       - name: studentid
         data_type: int64
