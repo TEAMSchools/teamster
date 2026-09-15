@@ -64,7 +64,9 @@ key that is unique. Both are value-only edits, so no contract changes and no
 
 `stg_amplify__mclass__sftp__pm_student_summary_aimline`
 
-- No change. It already carries `unique` on `surrogate_key`.
+- Surrogate key widens the same way (`device_date`, `assessment_grade` added).
+  Prod had 31 keys colliding on a student re-probed at a second grade; the
+  widened key has zero collisions. Value-only.
 
 All three get model-level `config.meta.contains_pii: true`. They are
 student-level assessment content with names, ids and demographics.
