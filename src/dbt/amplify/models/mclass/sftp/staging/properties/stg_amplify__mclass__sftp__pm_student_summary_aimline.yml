@@ -4,6 +4,9 @@ models:
       Amplify mCLASS DIBELS progress monitoring aimline data from the PM_CUSTOM
       SFTP file. Each row represents a single probe assessment for a student
       within a PM period, with aimline goal and status.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: surrogate_key
         data_type: string
@@ -11,7 +14,9 @@ models:
           Hash of student_primary_id, school_year, pm_period, measure, and
           probe_number.
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
         constraints:
           - type: primary_key
       - name: measure

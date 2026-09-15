@@ -66,7 +66,9 @@ with
 
     pm_student_summary as (
         select
-            *,
+            -- Amplify leaves device_date blank on some rows; the sync date is
+            -- the closest thing to when the probe happened.
+            * replace (coalesce(device_date, sync_date) as device_date),
 
             case
                 measure
@@ -92,18 +94,6 @@ with
                 then 'WRF'
             end as measure_name_code,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "student_primary_id_studentnumber",
-                        "school_year",
-                        "pm_period",
-                        "measure",
-                        "assessment_edition",
-                    ]
-                )
-            }} as surrogate_key,
-
         from normalized
     )
 
@@ -128,5 +118,19 @@ select
         then 'Word Reading Fluency'
         else measure_name_code
     end as measure_name,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "student_primary_id_studentnumber",
+                "school_year",
+                "pm_period",
+                "measure",
+                "probe_number",
+                "device_date",
+                "assessment_grade",
+            ]
+        )
+    }} as surrogate_key,
 
 from pm_student_summary

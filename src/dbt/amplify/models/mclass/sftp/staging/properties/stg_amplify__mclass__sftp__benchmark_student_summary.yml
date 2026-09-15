@@ -1,6 +1,23 @@
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
+    description: >-
+      Amplify mCLASS DIBELS benchmark scores from the SFTP file. One row per
+      student, school year, benchmark period and assessment grade. The file is a
+      network-wide export of the Amplify account, so a district's copy can carry
+      other regions' schools.
+    config:
+      meta:
+        contains_pii: true
     columns:
+      - name: surrogate_key
+        data_type: string
+        description: >-
+          Hash of student_primary_id_studentnumber, school_year,
+          benchmark_period and assessment_grade. One per row.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: school_name
         data_type: string
       - name: _dagster_partition_key
@@ -273,8 +290,6 @@ models:
         data_type: boolean
       - name: word_reading_wrf_discontinued
         data_type: boolean
-      - name: surrogate_key
-        data_type: string
       - name: additional_student_id_primarysisid
         data_type: string
       - name: additional_student_id_sisid
