@@ -93,3 +93,9 @@ models:
       - name: rated_department_name
         data_type: string
         description: Display label for rated_department_code.
+      - name: survey_submission_key
+        data_type: string
+        description: >-
+          Surrogate key of the parent submission, selected through from
+          int_surveys__survey_submissions so facts can join
+          fct_survey_submissions without re-joining the submissions model.

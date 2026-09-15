@@ -33,6 +33,7 @@ with
             ss.survey_response_link,
             ss.round_rn,
             ss.respondent_identifier,
+            ss.survey_submission_key,
 
             safe_cast(fr.text_value as numeric) as answer_value,
 
@@ -71,6 +72,7 @@ with
             ss.survey_response_link,
             ss.round_rn,
             ss.respondent_identifier,
+            ss.survey_submission_key,
 
             safe_cast(sr.response_value as numeric) as answer_value,
 
