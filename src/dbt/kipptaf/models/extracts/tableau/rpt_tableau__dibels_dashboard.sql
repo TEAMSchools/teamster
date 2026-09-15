@@ -126,6 +126,8 @@ select
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
+    cast(null as string) as aimline_trajectory_category,
+
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
     {{ ref("int_google_sheets__dibels_expected_assessments") }} as a
@@ -323,6 +325,8 @@ select
     if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
+
+    cast(null as string) as aimline_trajectory_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -549,6 +553,23 @@ select
     if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
+
+    -- academics' four reporting buckets plus the untested row, deliberately
+    -- ignoring round completeness: their legend has no Round Incomplete slice,
+    -- so a row classifies on its own verdict. Read off the two flags rather
+    -- than aimline_category, which applies T&L's benchmark-wins rule and would
+    -- report a below-aimline row as meeting one.
+    case
+        when a.measure_standard is null
+        then 'Not Tested'
+        when pm.met_aimline_goal is null
+        then 'No Aimline Data'
+        when pm.met_aimline_goal = 0
+        then 'Below Aimline'
+        when pm.met_admin_benchmark_goal = 1
+        then 'On Track to Benchmark'
+        else 'On Aimline, Below Benchmark'
+    end as aimline_trajectory_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join

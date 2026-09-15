@@ -116,12 +116,16 @@ models:
           - not_null
           - accepted_values:
               arguments:
+                # Not Tested is absent deliberately: this model carries scored
+                # rows only, so it cannot produce that value. The extract
+                # coalesces a missing row to Not Tested on its own column.
                 values:
-                  - Meeting Aimline, On-Track
-                  - Meeting Aimline, Off-Track
                   - Below Aimline
-                  - Not Tested
-                  - No Aimline Status
+                  - Meeting Aimline, Off-Track
+                  - Meeting Aimline, On-Track
+                  - Round Incomplete
+                  - No Aimline Data, Off-Track
+                  - No Aimline Data, On-Track
       - name: pm_round_status
         data_type: string
         description: >-

@@ -614,6 +614,33 @@ models:
       - name: scheduled
         data_type: int64
         description: 1 when the student matched an ELA section, else 0.
+      - name: aimline_trajectory_category
+        data_type: string
+        description: >-
+          Academics' four reporting buckets for the aimline views, plus the
+          untested row: Below Aimline, On Aimline Below Benchmark, On Track to
+          Benchmark, No Aimline Data, Not Tested. Aimline rows only — null on
+          the BM and Internal branches. Every aimline row lands in exactly one
+          bucket, so the five sum to the expected rows and a percent-of-total
+          stack needs no filtering.
+
+          It crosses the two flags directly, `met_aimline_goal` for the verdict
+          and `met_admin_benchmark_goal` for the trajectory, and that is
+          deliberate rather than reading `aimline_category`. The category
+          applies T&L's benchmark-wins rule, so 713 AY2025 rows sit in Meeting
+          Aimline, On-Track with `met_aimline_goal = 0` — reporting a
+          below-aimline row as meeting one. For the intervention-targeting views
+          these buckets feed, the verdict is what academics mean.
+
+          It also ignores round completeness, where `aimline_category` puts
+          Round Incomplete first and overrides everything. Academics' legend has
+          no Round Incomplete slice, so a row here classifies on its own verdict
+          whatever the round's state. The two columns therefore disagree on the
+          2,554 AY2025 Round Incomplete rows by design — do not union or compare
+          them. `round_test_status` still carries the round question separately.
+
+          AY2025, of 35,482 tested rows: Below Aimline 18,284, On Aimline Below
+          Benchmark 7,430, On Track to Benchmark 6,456, No Aimline Data 3,312.
       - name: mtss_enrollment
         data_type: string
         description: MTSS programme the student is enrolled in, if any.
