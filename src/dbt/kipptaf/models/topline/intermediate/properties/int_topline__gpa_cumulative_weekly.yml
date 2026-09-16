@@ -1,5 +1,19 @@
 models:
   - name: int_topline__gpa_cumulative_weekly
+    description: >-
+      Projected unweighted cumulative GPA carried onto the enrollment week
+      spine, one row per enrolled student-week for middle and high school in the
+      current and prior academic year. The GPA comes from
+      snapshot_powerschool__gpa_cumulative, matched to the week whose starting
+      Monday falls inside the snapshot version's validity span. Dates are
+      derived in the local timezone, because a bare cast to date truncates in
+      UTC and would shift an evening capture onto the next day. Feeds
+      int_topline__student_metrics, which scores each row against the 3.00 bar.
+
+
+      The grain is not enforced. Several snapshot versions can span one Monday,
+      so a student-week can repeat with disagreeing values. Tracked in
+      https://github.com/TEAMSchools/teamster/issues/5375.
     config:
       materialized: table
       meta:
@@ -9,3 +23,19 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description:
+          Monday that opens the enrollment week, and the date matched against
+          the snapshot version's validity span.
+      - name: week_end_sunday
+        description: Sunday that closes the enrollment week.
+      - name: cumulative_y1_gpa_projected_unweighted
+        description:
+          Projected unweighted cumulative GPA in effect for the week, as
+          captured by the snapshot. Null where no snapshot version covers the
+          week.

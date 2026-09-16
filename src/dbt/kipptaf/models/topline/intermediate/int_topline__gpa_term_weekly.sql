@@ -9,8 +9,10 @@ with
             dbt_valid_to,
             gpa_y1,
 
-            cast(dbt_valid_from as date) as dbt_valid_from_date,
-            cast(dbt_valid_to as date) as dbt_valid_to_date,
+            /* a bare cast(... as date) truncates in UTC, shifting an evening
+               local capture to the next day */
+            date(dbt_valid_from, '{{ var("local_timezone") }}') as dbt_valid_from_date,
+            date(dbt_valid_to, '{{ var("local_timezone") }}') as dbt_valid_to_date,
 
             /* snapshot-fed: derive locally — this snapshot has no stored
                _dbt_source_project, and adding it upstream would not help since
