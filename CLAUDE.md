@@ -277,10 +277,9 @@ exploration that led nowhere (keep only the conclusion).
   hosted server) wins any job it covers. `dagster` (homebrew) keeps only what
   `dagster-plus` cannot do: staleness causes, automation-condition evaluations,
   partition statuses, check executions, sensors, schedules, backfills,
-  hybrid-agent health, compute logs, and `get_run_logs`, the one tool whose
-  `dagster-plus` counterpart is a strict subset. The duplicates are denied in
-  `settings.json`, so a denial there means the other server owns that job.
-  Details in `.claude/context/dagster-plus.md`.
+  hybrid-agent health, and compute logs. Nothing overlaps: every duplicate is
+  denied in `settings.json`, so a denial there means the other server owns that
+  job. Details in `.claude/context/dagster-plus.md`.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
   - `gh issue develop`

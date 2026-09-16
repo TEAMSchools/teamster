@@ -18,17 +18,18 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `get_asset_selection_metrics` — credit and runtime reporting), alert policies
   (read, plus write via a config document), Dagster+ Issues, asset browsing and
   definitions (`get_assets`, `get_asset`), deployment listing, code locations,
-  run listing, run detail, run launches, re-execution, and run termination.
-  Duplicates on both sides are denied in `settings.json` — one tool per job.
+  run listing, run detail, run logs, run launches, re-execution, and run
+  termination. The homebrew duplicates are denied in `settings.json` — one tool
+  per job.
 - **`get_run` here returns 9 fields**, and every field the homebrew one had is
   still reachable:
   - `parentRunId` / `rootRunId` / `repositoryOrigin` → already in this tool's
     own `tags`, as `dagster/parent_run_id`, `dagster/root_run_id` and
     `dagster/code_location`. `dagster/auto_retry_run_id` gives the forward link
     to the retry.
-  - `assetSelection` / `stepKeysToExecute` →
-    `mcp__dagster__get_run_logs(filter_types=["ASSET_MATERIALIZATION_PLANNED"])`,
-    one event per selected asset, each carrying `step_key`.
+  - `assetSelection` / `stepKeysToExecute` → this server's own `get_run_logs`,
+    whose `ASSET_MATERIALIZATION_PLANNED` events are on page 1, one per selected
+    asset, each carrying `step_key`.
   - `stepStats` → no direct replacement. This tool's `stats` gives
     `steps_succeeded` / `steps_failed` / `materializations`, and per-step
     timings come from the `STEP_START` / `STEP_SUCCESS` / `STEP_FAILURE` event
@@ -54,21 +55,25 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `job_name` does not discriminate much here anyway, because
   automation-condition runs are all `__ASSET_JOB`.
 
-- **1 job stays on the homebrew server, and it is a context-cost call rather
-  than a capability one.** `get_run_logs` here caps `limit` at 100 — passing
-  1000 is a validation error — and has no `filter_types`. The homebrew one
-  allows 1000 and returns only the matching events; its filtering is also
-  client-side, so the real edge is the 10x page size. Measured on the same
-  failed run: 4 calls and 329 events here, against 1 call and 2 events there,
-  for the identical `error.message`.
-  - The error payload here is RICHER, not poorer: `className`, `message`,
-    `stack` and `cause`. Walk `error.cause` for the nested parent error — it is
-    this server's equivalent of the homebrew `error.errorChain`, which came back
-    `[]` on the same event.
-  - The event-type vocabularies differ. This server uses DagsterEventType names
-    (`STEP_FAILURE`, `ASSET_MATERIALIZATION_PLANNED`); the homebrew
-    `filter_types` takes GraphQL `__typename` values
-    (`ExecutionStepFailureEvent`, `RunFailureEvent`).
+- **This server owns run logs outright, and the tool overlap is now zero.** The
+  homebrew `get_run_logs` was dropped in `dagster-plus-mcp` once the only thing
+  it uniquely provided — the compute-log `logKey` — moved inside
+  `mcp__dagster__get_run_compute_logs` and
+  `mcp__dagster__get_captured_logs_metadata`, which now take `run_id` plus an
+  optional `step_key` and resolve the key themselves. Nothing here needs a deny
+  for log reading any more.
+  - This tool caps `limit` at 100 (passing 1000 is a validation error), has no
+    `filter_types`, and returns events oldest-first, so a step failure at the
+    end of a long run is several pages in — 4 pages and 329 events on one
+    100-second run.
+  - Its error payload is `className`, `message`, `stack` and `cause`. Walk
+    `error.cause` for the nested parent error.
+  - Event types are DagsterEventType names (`STEP_FAILURE`, `LOGS_CAPTURED`,
+    `ASSET_MATERIALIZATION_PLANNED`), not GraphQL `__typename` values.
+  - **It cannot reach compute logs.** Its `LOGS_CAPTURED` event omits `logKey`,
+    that key is an opaque 8-character string not derivable from `run_id` and
+    `step_key`, and the files live in Dagster's own S3 bucket. Step-pod
+    stdout/stderr comes only from `mcp__dagster__get_run_compute_logs`.
 
   Identical arguments do NOT mean identical payloads — compare the payloads
   before flipping anything else.
