@@ -38,6 +38,15 @@ Spec:
   `coalesce(x.illuminate_subject_area, <raw column>)`.** A bare join yields NULL
   for an unmapped subject, and NULL never matches at the resolver, so rows would
   silently drop.
+- **Reference the crosswalk's columns in lowercase in SQL** — `x.source_system`,
+  `x.raw_subject`, `x.illuminate_subject_area`. The columns are declared
+  PascalCase in the sheet and the properties file, but sqlfluff CP02 rewrites
+  identifier references to lowercase and BigQuery resolves column references
+  case-insensitively, so the lowercase form binds correctly. Verified against
+  the built crosswalk. Only the YAML declarations stay PascalCase.
+- **Every literal in a UNION ALL branch needs an explicit alias** — write
+  `'pearson' as source_system`, never a bare `'pearson'`. sqlfluff AL03 fails
+  the bare form.
 - Two PRs. PR 1 is kipptaf only. PR 2 drops the column from the `pearson`,
   `kippmiami` and `cambium` projects, and lands only after PR 1 has materialized
   in prod.
@@ -272,17 +281,18 @@ with
 
         union all
 
-        select distinct 'pearson', `subject`,
+        select distinct 'pearson' as source_system, `subject` as raw_subject,
         from {{ ref("int_pearson__all_assessments") }}
 
         union all
 
-        select distinct 'fldoe', assessment_subject,
+        select distinct 'fldoe' as source_system, assessment_subject as raw_subject,
         from {{ ref("int_fldoe__all_assessments") }}
 
         union all
 
-        select distinct 'renlearn', _dagster_partition_subject,
+        select distinct
+            'renlearn' as source_system, _dagster_partition_subject as raw_subject,
         from {{ ref("stg_renlearn__star") }}
     )
 
@@ -290,9 +300,9 @@ select r.source_system, r.raw_subject,
 from raw_subjects as r
 left join
     {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-    on r.source_system = x.Source_System
-    and r.raw_subject = x.Raw_Subject
-where r.raw_subject is not null and x.Raw_Subject is null
+    on r.source_system = x.source_system
+    and r.raw_subject = x.raw_subject
+where r.raw_subject is not null and x.raw_subject is null
 ```
 
 - [ ] **Step 2: Register the test with warn severity**
@@ -424,12 +434,12 @@ select
     s.anchor_date,
     s.source_type,
 
-    coalesce(x.Illuminate_Subject_Area, s.raw_subject) as subject_area,
+    coalesce(x.illuminate_subject_area, s.raw_subject) as subject_area,
 from scores as s
 left join
     {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-    on s.source_system = x.Source_System
-    and s.raw_subject = x.Raw_Subject
+    on s.source_system = x.source_system
+    and s.raw_subject = x.raw_subject
 ```
 
 Keep any column the existing tail already projects. `coalesce` is a simple
@@ -540,12 +550,12 @@ the crosswalk join and re-derive the column under its original name:
                 cast(sa.student_number as string), sa.state_student_id
             ) as student_identifier,
 
-            coalesce(x.Illuminate_Subject_Area, sa.raw_subject) as illuminate_subject,
+            coalesce(x.illuminate_subject_area, sa.raw_subject) as illuminate_subject,
         from state_all as sa
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on sa.source_system = x.Source_System
-            and sa.raw_subject = x.Raw_Subject
+            on sa.source_system = x.source_system
+            and sa.raw_subject = x.raw_subject
     ),
 ```
 
@@ -597,12 +607,12 @@ Add a new CTE immediately after it:
         select
             va.*,
 
-            coalesce(x.Illuminate_Subject_Area, va.raw_subject) as illuminate_subject,
+            coalesce(x.illuminate_subject_area, va.raw_subject) as illuminate_subject,
         from vendor_all as va
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on va.source_system = x.Source_System
-            and va.raw_subject = x.Raw_Subject
+            on va.source_system = x.source_system
+            and va.raw_subject = x.raw_subject
     ),
 ```
 
@@ -702,12 +712,12 @@ that produces the `subject` column the downstream join expects:
         select
             p.*,
 
-            coalesce(x.Illuminate_Subject_Area, p.raw_subject) as `subject`,
+            coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
         from prev_yr_state_test as p
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on p.source_system = x.Source_System
-            and p.raw_subject = x.Raw_Subject
+            on p.source_system = x.source_system
+            and p.raw_subject = x.raw_subject
     ),
 ```
 
@@ -800,15 +810,15 @@ Add a CTE right after `state_test_union`:
             s.*,
 
             case
-                when coalesce(x.Illuminate_Subject_Area, s.raw_subject) = 'Text Study'
+                when coalesce(x.illuminate_subject_area, s.raw_subject) = 'Text Study'
                 then 'Reading'
                 else 'Math'
             end as `subject`,
         from state_test_union as s
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
-            on s.source_system = x.Source_System
-            and s.raw_subject = x.Raw_Subject
+            on s.source_system = x.source_system
+            and s.raw_subject = x.raw_subject
     ),
 ```
 
