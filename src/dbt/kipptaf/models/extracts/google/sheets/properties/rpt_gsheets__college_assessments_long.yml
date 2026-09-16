@@ -15,81 +15,119 @@ models:
       The CCR course, teacher and section are grouped rather than aggregated, as
       are the three lifetime SAT highs. Independent `max()` calls over them
       could pair one row's course with another row's teacher.
+
+
+      Column names are the sheet's headers, spelled for a reader rather than for
+      SQL. A consumer selecting from the warehouse relation has to backtick
+      them.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - student_number
-              - test_type
-              - administration_type
-              - test_date
+              - "`Student Number`"
+              - "`Test Type`"
+              - "`Administration Type`"
+              - "`Test Date`"
     columns:
-      - name: region
+      - name: "`Region`"
         data_type: string
         description: Region the student's school belongs to.
-      - name: schoolid
+      - name: "`School ID`"
         data_type: int64
         description: PowerSchool identifier for the student's school.
-      - name: school
+      - name: "`School`"
         data_type: string
         description: Abbreviated name of the student's school.
-      - name: student_number
+      - name: "`Student Number`"
         data_type: int64
         description: PowerSchool student number.
-      - name: salesforce_id
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Salesforce ID`"
         data_type: string
         description: Salesforce contact identifier for the student.
-      - name: student_name
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Student Name`"
         data_type: string
         description: Student's full name, last name first.
-      - name: student_first_name
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Student First Name`"
         data_type: string
         description: Student's first name.
-      - name: student_last_name
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Student Last Name`"
         data_type: string
         description: Student's last name.
-      - name: grade_level
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Grade Level`"
         data_type: int64
         description: Grade the student is enrolled in this academic year.
-      - name: student_email
+      - name: "`Student Email`"
         data_type: string
         description: Student's network email address.
-      - name: enroll_status
+        config:
+          meta:
+            contains_pii: true
+      - name: "`Enroll Status`"
         data_type: string
         description: >-
           Enrollment status of the student, spelled out. Always reads Currently
           Enrolled, because the model filters to that status. Retained so a
           reader of the sheet can see the scope without consulting the model.
-      - name: ktc_cohort
+      - name: "`KTC Cohort`"
         data_type: int64
         description: KIPP Through College cohort the student belongs to.
-      - name: graduation_year
+      - name: "`Graduation Year`"
         data_type: int64
         description: Year the student is expected to graduate high school.
-      - name: year_in_network
+      - name: "`Year in Network`"
         data_type: int64
         description: Count of years the student has attended a network school.
-      - name: iep_status
+      - name: "`IEP Status`"
         data_type: string
         description: Whether the student has an IEP.
-      - name: grad_iep_exempt_status_overall
+      - name: "`Grad IEP Exempt Status Overall`"
         data_type: string
         description: >-
           Whether the student is exempt from graduation testing requirements
           because of an IEP.
-      - name: cumulative_y1_gpa
+      - name: "`Cumulative Y1 GPA`"
         data_type: float64
-        description: Cumulative year-one GPA earned to date.
-      - name: cumulative_y1_gpa_projected
+        description: Weighted cumulative year-one GPA earned to date.
+      - name: "`Cumulative Y1 GPA Unweighted`"
         data_type: float64
-        description: Projected cumulative year-one GPA for the full year.
-      - name: college_match_gpa
+        description: Unweighted cumulative year-one GPA earned to date.
+      - name: "`Projected Cumulative Y1 GPA`"
+        data_type: float64
+        description: >-
+          Weighted cumulative year-one GPA projected for the full year.
+      - name: "`Projected Cumulative Y1 GPA Unweighted`"
+        data_type: float64
+        description: >-
+          Unweighted cumulative year-one GPA projected for the full year.
+      - name: "`Current Y1 GPA Weighted`"
+        data_type: float64
+        description: >-
+          Weighted year-one GPA for the academic year in progress, taken from
+          the student's current PowerSchool reporting term. Unlike the
+          cumulative columns it covers this year alone, so it moves as grades
+          post. Null where the student has no current-term PowerSchool GPA row.
+      - name: "`College Match GPA`"
         data_type: numeric
         description: GPA used to match the student to colleges.
-      - name: college_match_gpa_bands
+      - name: "`College Match GPA Bands`"
         data_type: string
         description: Band the college match GPA falls into.
-      - name: ccr_course
+      - name: "`CCR Course`"
         data_type: string
         description: >-
           Course standing in for the student's College and Career Readiness
@@ -97,14 +135,14 @@ models:
           homeroom, when the student has no active College and Career section —
           from SY26-27 the regions schedule those for grades 11 and 12 only. `No
           Data` means no active course enrollment at all.
-      - name: ccr_teacher_name
+      - name: "`CCR Teacher Name`"
         data_type: string
-        description: Teacher of record for `ccr_course`, last name first.
-      - name: ccr_section
+        description: Teacher of record for the CCR course, last name first.
+      - name: "`CCR Section`"
         data_type: string
         description: >-
-          Section identifier for `ccr_course`. Reads the period expression on a
-          College and Career or Advisory row, and the section number (for
+          Section identifier for the CCR course. Reads the period expression on
+          a College and Career or Advisory row, and the section number (for
           example `9M311`) on a homeroom row, whose period expression is always
           `HR(A)` or `HR(R)` and carries no information.
       - name: "`SAT Composite Superscore`"
@@ -123,26 +161,26 @@ models:
         description: >-
           Highest SAT Math section score across all sittings. Official SAT only,
           and repeated on every row for the student.
-      - name: test_type
+      - name: "`Test Type`"
         data_type: string
         description: >-
-          The test itself — SAT, PSAT 8/9, PSAT10, PSAT NMSQT, ACT. Named
-          test_type for historical reasons; administration_type is what
+          The test itself — SAT, PSAT 8/9, PSAT10, PSAT NMSQT, ACT. Named for
+          the test type for historical reasons; the administration type is what
           distinguishes an official sitting from a practice one.
-      - name: administration_type
+      - name: "`Administration Type`"
         data_type: string
         description: >-
           Official or Practice. Practice rows come from Illuminate and are
           converted onto the same scale as their official counterpart, so scores
           are comparable, but an official attainment decision should filter to
           Official.
-      - name: test_date
+      - name: "`Test Date`"
         data_type: date
         description: Date the student sat the test.
       - name: "`Composite Score`"
         data_type: numeric
         description: Composite scale score for this sitting.
-      - name: total_highest_score_by_test
+      - name: "`Highest Score by Test - Composite`"
         data_type: string
         description: >-
           Whether this sitting is the student's highest composite for this test
@@ -163,7 +201,7 @@ models:
         description: >-
           EBRW scale score for this sitting. On the ACT this column carries the
           Reading score, which shares the same aligned subject bucket.
-      - name: ebrw_reading_highest_score_by_test
+      - name: "`Highest Score by Test - EBRW`"
         data_type: string
         description: >-
           Whether this sitting is the student's highest EBRW or Reading score
@@ -181,7 +219,7 @@ models:
       - name: "`Math Score`"
         data_type: numeric
         description: Math scale score for this sitting.
-      - name: math_highest_score_by_test
+      - name: "`Highest Score by Test - Math`"
         data_type: string
         description: >-
           Whether this sitting is the student's highest Math score for this test
