@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "dagster": {
-      "command": "/workspaces/teamster/scripts/dagster-mcp-launch.sh",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dagster-mcp-launch.sh",
       "args": []
     },
     "bigquery": {
@@ -13,7 +13,7 @@
       }
     },
     "dbt": {
-      "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dbt-mcp-launch.sh",
       "args": [],
       "env": {
         "DBT_HOST": "us1.dbt.com",
@@ -50,7 +50,7 @@
       "args": ["-y", "@upstash/context7-mcp"]
     },
     "tableau": {
-      "command": "/workspaces/teamster/scripts/tableau-mcp-launch.sh",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/tableau-mcp-launch.sh",
       "args": [],
       "env": {
         "TRANSPORT": "stdio"

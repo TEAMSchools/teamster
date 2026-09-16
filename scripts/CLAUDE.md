@@ -12,6 +12,7 @@ scripts: `bash scripts/<name>.sh`.
 | `dbt-mcp-launch.sh`                                 | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                                                                                                                                                                                                                                                          |
 | `cube-rest-mcp-launch.sh`                           | MCP launcher (dev mode only): fetch `CUBE_API_SECRET`, exec `src/cube/mcp/server.py` in stdio. Default cube MCP path is the Cloud Run deploy — use this only when iterating on the server itself.                                                                                                                                    |
 | `tableau-mcp-launch.sh`                             | MCP launcher: fetch Tableau connection config (server/site/PAT) from 1Password item `Tableau Server PAT - Dagster` (Data Team vault), exec `@tableau/mcp-server`. Reuses the same PAT as the Dagster Tableau refresh assets.                                                                                                         |
+| `cloud-session-setup.sh`                            | Setup script for Claude Code cloud sessions: registers the three third-party plugin marketplaces, installs `gke-mcp`, writes Google ADC from `TEAMSTER_GCP_SA_KEY_B64` when set. Paste its path into the cloud environment's **Setup script** field; see _Cloud sessions_ below.                                                                                                                                                             |
 | `audit_marts_yaml.py`                               | Audit mart YAMLs against BigQuery + Dagster (#3678)                                                                                                                                                                                                                                                                                  |
 | `avro-schema-update.py`                             | Rewrite Avro data in GCS with updated schema (flat records only — stringifies values and drops nulls; for nested schemas use `reencode_avro_partitions.py`)                                                                                                                                                                          |
 | `backfill_google_directory_student_external_ids.py` | One-shot: backfill Workspace `externalIds[type='organization']` for existing student accounts (#3950)                                                                                                                                                                                                                                |
@@ -104,6 +105,35 @@ Pattern:
   `uv export --script foo.py --no-hashes > /tmp/requirements.txt && uv pip install --system --no-cache -r /tmp/requirements.txt`,
   then `CMD ["python", "foo.py"]`. `CMD ["uv", "run", "foo.py"]` reinstalls on
   every Cloud Run cold start. See `src/cube/mcp/Dockerfile`.
+
+## Cloud sessions
+
+Claude Code cloud sessions (claude.ai/code, mobile, routines) clone the repo and
+read `.mcp.json`, so the launchers resolve — but the VM has no `gcloud` login,
+no 1Password CLI, and an egress allowlist that covers package managers only.
+What that means per server, verified 2026-09-16:
+
+| Server                                   | Cloud session   | Blocker                                                                          |
+| ---------------------------------------- | --------------- | -------------------------------------------------------------------------------- |
+| `context7`, `github`                     | works           | —                                                                                |
+| `bigquery`, `gcp-observability`, `gke`   | credential only | `*.googleapis.com` is already reachable; set `TEAMSTER_GCP_SA_KEY_B64`           |
+| `dagster`, `dbt`, `tableau`              | blocked         | `op read` needs 1Password, and `dagster.cloud` / `us1.dbt.com` are denied egress |
+
+Two ways to unblock the last row, both requiring changes outside this repo:
+
+- Add the hosts under **Allowed domains** on the cloud environment, then supply
+  the secrets as environment variables and teach each launcher to prefer them
+  over `op read`. `downloads.1password.com` is also denied, so installing `op`
+  in the cloud is not a shortcut around this.
+- Deploy the server behind HTTPS and register it as a claude.ai connector, the
+  way `cube` already works. Connector traffic goes through Anthropic rather than
+  the session's network, so it needs no allowlist entry.
+
+`.mcp.json` uses `${CLAUDE_PROJECT_DIR:-.}/scripts/<name>.sh` for launcher
+paths. `CLAUDE_PROJECT_DIR` is not set in Claude Code's own process, so this
+always expands to the `.` fallback; MCP servers are spawned with cwd set to the
+project root, which is what makes it resolve. A worktree session therefore runs
+that worktree's launcher, not the main checkout's.
 
 ## Testing standalone PEP 723 scripts
 
