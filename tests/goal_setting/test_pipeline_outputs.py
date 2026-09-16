@@ -241,7 +241,7 @@ def test_pipeline_reproduces_sy27_bucket_counts_from_synthetic_roster():
     p = run_group(GROUP, 2026, _synthetic_roster(rows), SY27_TARGETS, baseline=None)
 
     goals = {(g.region, g.school, g.grade_level): g for g in p.goals}
-    counts: dict[tuple, dict[str, int]] = {}
+    counts: dict[tuple, dict[str | None, int]] = {}
     for rec in p.records:
         by_bucket = counts.setdefault((rec.region, rec.school, rec.grade_level), {})
         by_bucket[rec.bucket] = by_bucket.get(rec.bucket, 0) + 1

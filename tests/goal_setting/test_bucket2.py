@@ -23,7 +23,7 @@ def goal(n_to_move: int, school="TEAM", grade=1) -> SchoolGoal:
     )
 
 
-def appr(score: float, **kw):
+def appr(score: float | None, **kw):
     return student(is_approaching=True, projected_score=score, **kw)
 
 

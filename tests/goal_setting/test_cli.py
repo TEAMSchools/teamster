@@ -100,19 +100,26 @@ def _factory(rows, target_rows=None, live=None):
     replay or a diff meaningless.
     """
 
-    made: list[FakeClient] = []
+    return _Factory(rows, target_rows, live)
 
-    def make():
+
+class _Factory:
+    """Callable client factory that keeps every client it handed out."""
+
+    def __init__(self, rows, target_rows, live):
+        self._rows = rows
+        self._target_rows = target_rows
+        self._live = live
+        self.clients: list[FakeClient] = []
+
+    def __call__(self) -> FakeClient:
         client = FakeClient(
-            rows,
-            targets() if target_rows is None else target_rows,
-            _live_matching_crosswalk() if live is None else live,
+            self._rows,
+            targets() if self._target_rows is None else self._target_rows,
+            _live_matching_crosswalk() if self._live is None else self._live,
         )
-        made.append(client)
+        self.clients.append(client)
         return client
-
-    make.clients = made  # type: ignore[attr-defined]
-    return make
 
 
 def _crosswalk_without(region: str, path: Path) -> Path:
