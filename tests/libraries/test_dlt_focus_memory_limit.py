@@ -111,7 +111,7 @@ def test_memory_only_override_preserves_the_helm_cpu_limit() -> None:
 
     assert override.merge_behavior == K8sConfigMergeBehavior.DEEP
 
-    merged = K8sContainerContext._merge_k8s_config(  # noqa: SLF001
+    merged = K8sContainerContext._merge_k8s_config(
         UserDefinedDagsterK8sConfig(
             container_config={"resources": HELM_STEP_POD_RESOURCES}
         ),

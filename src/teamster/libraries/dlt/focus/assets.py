@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from typing import Any, get_args
 
 import dlt
@@ -294,11 +294,7 @@ def build_focus_dlt_assets(
     sql_database_credentials: ConnectionStringCredentials,
     code_location: str,
     tables: list[ProbeTable],
-    # `Mapping[str, Any]`, not `dict[str, object]`: `dict` is invariant in its
-    # value type, so a nested `dagster-k8s/config` literal (the only op_tags any
-    # caller passes) is rejected by the type checker at the call site. Mapping is
-    # covariant, and matches what Dagster's own `op_tags` accepts.
-    op_tags: Mapping[str, Any] | None = None,
+    op_tags: dict[str, object] | None = None,
 ):
     """Build ONE two-mode @dlt_assets over all Focus tables.
 
