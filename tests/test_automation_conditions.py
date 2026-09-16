@@ -1059,10 +1059,12 @@ class TestKipptafDbtAssets:
 
         A dbt snapshot's config.materialized is 'snapshot', not view or
         ephemeral, so both inherit dbt_table_automation_condition() by default.
-        Their upstreams are a view (int_powerschool__gpa_cumulative) and an
-        ephemeral model (int_powerschool__gpa_term_current), so ancestor-updated
-        recursion reaches every PowerSchool grade table and fired each snapshot
-        about 143 times a day. Refs #5218.
+        Their upstreams are a table (int_powerschool__gpa_cumulative) and an
+        ephemeral model (int_powerschool__gpa_term_current). The ephemeral
+        upstream drives ancestor-updated view-chain recursion through every
+        PowerSchool grade table for gpa_term; the table upstream drives a
+        plain any_deps_updated() on its own eager rebuilds for gpa_cumulative.
+        Both fired each snapshot about 143 times a day. Refs #5218.
         """
         from teamster.libraries.dbt.dagster_dbt_translator import (
             CustomDagsterDbtTranslator,

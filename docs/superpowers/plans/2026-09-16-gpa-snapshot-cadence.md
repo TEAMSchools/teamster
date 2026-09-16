@@ -23,8 +23,10 @@ pytest, trunk.
 ## Global Constraints
 
 - Spec: `docs/superpowers/specs/2026-09-16-gpa-snapshot-cadence-design.md`.
-- Cron value is exactly `0 23 * * *`. Not `0 0 * * *` — midnight shifts
-  `dbt_valid_from_date` attribution by a day for all three consumers.
+- Cron value is exactly `0 23 * * *`. Not `0 0 * * *` —
+  `int_powerschool__gpa_term_lookback` matches a local-midnight boundary
+  instant; 23:00 clears it with an hour of margin, 00:00 lands just past it and
+  can resolve one day stale. See the spec's "Why 23:00..." section.
 - No `cron_timezone` key. It defaults to the code location's `LOCAL_TIMEZONE`,
   which is `America/New_York` for kipptaf.
 - The new key goes inside the existing `config.meta.dagster` block, above

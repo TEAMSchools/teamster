@@ -19,9 +19,11 @@ snapshots:
           group: powerschool
           # 1x/day instead of eager. A snapshot inherits
           # dbt_table_automation_condition() (materialized is 'snapshot', not
-          # view/ephemeral), and its upstream int_powerschool__gpa_cumulative is
-          # a view, so ancestor-updated recursion reaches every PowerSchool
-          # grade table — 147 merges and 2.23 slot hours a day.
+          # view/ephemeral). Its upstream int_powerschool__gpa_cumulative is
+          # itself materialized: table (not a view), so the churn comes from
+          # plain any_deps_updated() firing on that table's own eager
+          # rebuilds, not from ancestor-updated view-chain recursion — 147
+          # merges and 2.23 slot hours a day.
           #
           # 23:00 and not 00:00: all three consumers resolve at day grain
           # (int_topline__gpa_cumulative_weekly dedupes on dbt_valid_from_date;
