@@ -8,9 +8,10 @@ models:
       any consumer reads it.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - Source_System
-            - Raw_Subject
+          arguments:
+            combination_of_columns:
+              - Source_System
+              - Raw_Subject
           config:
             severity: error
     columns:
