@@ -1,48 +1,113 @@
 models:
   - name: int_amplify__pm_met_criteria
+    description: >-
+      Evaluates a progress-monitoring round against the internal method's custom
+      goals, one row per student per round per measure standard.
+
+      Internal method only. `cumulative_growth_words` comes from
+      `stg_google_sheets__dibels_pm_goals`, the frozen snapshot of goals the
+      internal method computes by spreading a cohort's required growth across a
+      round from school-day counts. Amplify's aimline method supplies a
+      per-student target instead and has no equivalent of any column here, so it
+      is evaluated by its own sibling model rather than a branch in this one.
+
+      Two filters keep that scope and are load-bearing rather than cosmetic.
+      `int_amplify__all_assessments` and
+      `int_students__dibels_participation_roster` each carry a row per data
+      method now, so the roster join matches on `model_type` and the score side
+      filters to `Internal`. Without both, a student's Internal and Aimline rows
+      join to each other and every row multiplies.
+
+      The rollup runs in three stages. Each measure standard is scored against
+      its cumulative growth target, then rolled up per `measure_name_code` so
+      that a code composed of several standards requires all of them — this is
+      what makes "met ORF" mean both Reading Fluency and Reading Accuracy. Then
+      the codes are combined per round by `pm_goal_criteria`, `AND` requiring
+      every code and anything else requiring one. T&L set `AND` network-wide for
+      every K-8 round from SY26-27, so the OR path applies to history only.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            # region and assessment_grade_int are omitted deliberately: both are
+            # functionally determined by the student, and including grade would
+            # let a mid-year grade change admit two rows for one evaluated
+            # measure instead of failing.
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - admin_season
+              - round_number
+              - measure_standard
     columns:
       - name: academic_year
         data_type: int64
         description:
           Starting calendar year of the school year, extracted from school_year
           (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: region
         data_type: string
+        description:
+          The city form of the region — Newark, Camden, Miami, Paterson.
       - name: admin_season
         data_type: string
+        description: >-
+          The PM season the round belongs to, BOY->MOY or MOY->EOY. Named
+          admin_season because it joins the expectation gate's column of that
+          name; it is not a benchmark season.
       - name: assessment_grade
         data_type: string
         description: Grade level of the assessment administered.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: assessment_grade
       - name: assessment_grade_int
         data_type: int64
         description: Assessment grade as integer (K mapped to 0).
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: assessment_grade_int
       - name: measure_standard
         data_type: string
+        description: >-
+          The individual measure evaluated, at the grain the goals sheet sets
+          targets on — for example Reading Fluency (ORF) and Reading Accuracy
+          (ORF-Accu) are separate standards under one measure_name_code.
       - name: round_number
         data_type: int64
+        description: >-
+          The PM round, from the expectation gate. Round numbers run
+          consecutively across the year rather than restarting each season.
       - name: benchmark_goal
         data_type: int64
+        description: >-
+          Amplify's published grade-level standard for the season, unpadded,
+          from the frozen goals sheet. Reported so a reader can see the real
+          standard; it is not the bar the verdict uses.
+      - name: benchmark_goal_padded
+        data_type: int64
+        description: >-
+          The standard plus academics' 3-word planning buffer, and the bar
+          met_admin_benchmark_goal compares against. Distinct from the growth
+          target — it answers "at grade level yet" rather than "on pace".
+
+          The two were one column until SY26-27, holding the padded figure under
+          the bare name; the sheet was backfilled when they split, so this
+          column is populated on every year and needs no fallback. It carries a
+          not_null test at the staging model, because a hand-paste that omitted
+          it would make every comparison read 0 rather than fail.
       - name: round_growth_words_goal
         data_type: int64
+        description: The growth this round alone is expected to produce.
       - name: cumulative_growth_words
         data_type: int64
+        description: >-
+          The running growth target through this round, and what
+          met_measure_standard_goal compares against. The internal method
+          derives it by spreading a cohort's required growth across the season's
+          rounds using school-day counts.
       - name: pm_goal_criteria
         data_type: string
+        description: >-
+          How the round's measure codes combine. AND requires every code. NULL
+          is the OR criteria — it routes to max(), so one complete code
+          satisfies the round — and it is the only other value the column ever
+          holds, in any year. Academics used NULL to let a student pass by
+          meeting one complete set of measures rather than all of them; every
+          SY26-27 row is AND, so a student must now meet every measure.
       - name: student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
@@ -58,49 +123,134 @@ models:
         description:
           Short measure abbreviation extracted from the expanded measure name
           parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: measure_name_code
       - name: measure_standard_score
         data_type: float64
-        description: Raw assessment score, cast from the source score column.
+        description: >-
+          The score evaluated, from int_amplify__all_assessments. Where a
+          student sat several probes in a round, this is the best score for the
+          measure, later probe winning a same-day tie.
         config:
           meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: measure_standard_score
+            contains_pii: true
       - name: start_date
         data_type: date
         description:
-          The start date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: start_date
+          First day of the PM round window, from the expectation gate.
       - name: end_date
         data_type: date
-        description:
-          The end date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: end_date
+        description: Last day of the PM round window, from the expectation gate.
       - name: completed_test_round
         data_type: boolean
-      - name: met_measure_standard_goal
-        data_type: int64
-      - name: met_admin_benchmark_goal
-        data_type: int64
-      - name: met_measure_name_code_goal
-        data_type: int64
-      - name: met_pm_round_criteria
-        data_type: int64
-      - name: met_pm_round_overall_criteria
+        description: >-
+          Whether the student was tested on every measure the round expected,
+          from the participation roster. The roster owns this because it is the
+          model that turns an expected-but-absent measure into a row;
+          int_amplify__all_assessments carries scored rows only.
+
+          It exists because a round's met/not-met cannot be computed at all for
+          a student who did not finish it — under AND, at least. A skipped
+          measure leaves an AND round indeterminate, since there is no way to
+          know whether the student would have met it, so the round cannot be
+          credited. Under NULL (the OR criteria) one passing measure settles the
+          round and completeness is irrelevant. That is why
+          met_pm_round_overall_criteria gates on this in the AND branch and not
+          the NULL one.
+      - name: completed_test_round_int
         data_type: int64
         description:
-          Categorical mapping of completed_test_round, met_pm_round_criteria,
-          pm_goal_criteria.
+          completed_test_round as 1/0, for aggregation in the BI layer.
+      - name: met_measure_standard_goal
+        data_type: int64
+        description: >-
+          1 when the score reaches cumulative_growth_words for this measure
+          standard, else 0.
+      - name: met_admin_benchmark_goal
+        data_type: int64
+        description: >-
+          1 when the score reaches benchmark_goal_padded, else 0 — at grade
+          level rather than on pace. Independent of met_measure_standard_goal,
+          and a student can meet either without the other. The two converge in
+          the season's last round, where cumulative_growth_words is set to
+          benchmark_goal outright.
+
+          Recomputed every round and not latched — a student who clears the
+          standard in one round and dips below it in the next reads 1 then 0. It
+          is also a leaf — nothing in this model aggregates it, and the whole
+          met/not-met chain runs on met_measure_standard_goal alone.
+      - name: met_measure_name_code_goal
+        data_type: int64
+        description: >-
+          1 when every measure standard under this measure_name_code met its
+          growth goal, else 0. Only NWF and ORF carry more than one standard —
+          NWF is Letter Sounds plus Decoding, ORF is Reading Fluency plus
+          Reading Accuracy — so this is what stops a partial pass on either one
+          from counting. For the single-standard codes it copies
+          met_measure_standard_goal through.
+      - name: met_pm_round_criteria
+        data_type: int64
+        description: >-
+          The round-level rollup of met_measure_name_code_goal, combined by
+          pm_goal_criteria — the minimum across codes under AND, the maximum
+          otherwise.
+      - name: met_pm_round_overall_criteria
+        data_type: int64
+        description: >-
+          met_pm_round_criteria gated on participation, so a round only counts
+          as met when the student was also tested on everything it expected.
+
+          The case has an AND branch and a null branch, and that is complete —
+          pm_goal_criteria never holds the string 'OR' in any year. Null IS the
+          OR criteria, and pm_goal_criteria's own case sends it to max(), which
+          lets one complete measure code satisfy the round. Academics used that
+          until SY25-26; every SY26-27 row is AND, so a student must now meet
+          every measure.
+
+          The null branch deliberately skips completed_test_round, unlike the
+          AND branch. pm_goal_criteria governs how multiple EXPECTED measures
+          combine, so a null-criteria round has no multi-measure requirement and
+          a valid score counts without checking that every probe was finished.
+          Unexpected probes are already excluded upstream by the expectation
+          gate.
+      - name: measure_standard_goal_status
+        data_type: string
+        description: >-
+          met_measure_standard_goal as a label rather than a flag — Met or Not
+          Met. A labelled twin of the flag, carrying no logic the flag does not
+          already have, so that the dashboard's goal-type selector can pick
+          between the three status columns instead of converting each numeric
+          flag itself. Round Incomplete never applies to it — a single measure
+          standard in a single round cannot be partly finished — though the
+          extract adds Not Tested to all three status columns.
+      - name: admin_benchmark_goal_status
+        data_type: string
+        description: >-
+          met_admin_benchmark_goal as a label rather than a flag — Met or Not
+          Met. The twin of the flag, for the same reason as
+          measure_standard_goal_status, and per round rather than latched, since
+          the flag it labels is.
+      - name: pm_round_status
+        data_type: string
+        description: >-
+          The round verdict as three states rather than two — Met, Not Met, or
+          Round Incomplete. met_pm_round_overall_criteria carries the same
+          verdict as a 0/1 flag, where 0 means both "did not meet" and "could
+          not be evaluated"; this column separates them so a consumer can report
+          an unfinished round as unmeasurable instead of as a failure.
+
+          Round Incomplete is narrower than "the student did not finish the
+          round", because a missing measure only matters when it could still
+          have changed the answer. Under AND a single failed measure settles the
+          round no matter what is missing, so a student who failed something
+          they did sit is Not Met. Under the null (OR) criteria the reverse
+          holds — a single pass settles it, so an incomplete round is
+          unmeasurable only when everything sat was missed. Keying this off
+          met_pm_round_overall_criteria = 0 instead of met_pm_round_criteria
+          overstates Round Incomplete roughly fourfold.
+
+          A fourth state, Not Tested, does not and cannot appear here — this
+          model holds scored rows only, so a student who was expected to test
+          and was not has no row at all. rpt_tableau__dibels_dashboard drives
+          from the expectation gate instead, and coalesces the resulting gap to
+          Not Tested. Keep the two distinct in reporting. Not Tested means no
+          probe was sat for this measure in this round; Round Incomplete means
+          some were and some were not, which is why the round cannot be scored.

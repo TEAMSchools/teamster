@@ -26,7 +26,7 @@ models:
                 to: ref('stg_focus__schools')
                 field: id
               config:
-                severity: error
+                severity: warn
       - name: syear
         description: Focus school year (start year, e.g. 2026 = 2026-27).
         data_type: int

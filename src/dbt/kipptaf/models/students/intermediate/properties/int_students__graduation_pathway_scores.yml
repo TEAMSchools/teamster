@@ -13,6 +13,13 @@ models:
       per-student standing.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Same tick as int_students__graduation_path_codes, its only
+          # consumer. The eager table condition rebuilt this ~140 times a
+          # day; the consumer reads it twice. Refs #5310
+          automation_condition:
+            cron_schedule: 0 3,16 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           description: >-

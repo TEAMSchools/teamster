@@ -29,13 +29,11 @@ with
 
         select
             s.student_number,
-            s.schoolid,
 
+            fg.schoolid,
             fg.yearid + 1990 as academic_year,
             fg.course_number,
-
-            c.course_name,
-
+            fg.course_name,
             fg.potential_credit_hours as credit_hours,
             fg.y1_percent_grade_adjusted as y1_grade_percent,
             fg.y1_letter_grade as y1_grade_letter,
@@ -43,9 +41,9 @@ with
             'Y1' as term,
 
             if(
-                sch.name = 'KIPP Newark Collegiate Academy',
+                fg.school_name = 'KIPP Newark Collegiate Academy',
                 'Newark Collegiate Academy',
-                sch.name
+                fg.school_name
             ) as schoolname,
 
             0 as is_stored,
@@ -57,14 +55,6 @@ with
             and fg.exclude_from_gpa = 0
             and current_date('{{ var("local_timezone") }}')
             between fg.termbin_start_date and fg.termbin_end_date
-        inner join
-            {{ ref("stg_powerschool__courses") }} as c
-            on c.course_number = fg.course_number
-            and c._dbt_source_project = fg._dbt_source_project
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on s.schoolid = sch.school_number
-            and s._dbt_source_project = sch._dbt_source_project
         where s.grade_level >= 5
     )
 
