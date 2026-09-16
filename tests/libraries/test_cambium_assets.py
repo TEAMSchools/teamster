@@ -1,7 +1,11 @@
 import re
 
 import pytest
-from dagster import AssetsDefinition, MultiPartitionsDefinition
+from dagster import (
+    AssetsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 
 from teamster.code_locations.kippcamden.cambium.assets import njgpa as camden_njgpa
 from teamster.code_locations.kippcamden.cambium.assets import njsla as camden_njsla
@@ -13,6 +17,7 @@ from teamster.code_locations.kippnewark.cambium.assets import njsla as newark_nj
 from teamster.code_locations.kippnewark.cambium.assets import (
     njsla_science as newark_njsla_science,
 )
+from teamster.libraries.cambium.assets import build_remote_file_regex
 
 # The tail after `Record_File`. NJGPA's is verified against the real Cambium
 # file. The NJSLA tails are the guesses the optional group has to accept,
@@ -180,4 +185,38 @@ def test_one_feeds_asset_never_matches_another_feeds_file(asset, other, district
         assert pattern.match(path) is None, (
             f"{asset.key.to_user_string()} matches {path},"
             f" which belongs to {other.key.to_user_string()}"
+        )
+
+
+def test_a_prefix_token_does_not_shadow_a_longer_one():
+    # build_remote_file_regex reads its alternations off the partitions
+    # definition, so the order is the generator's to get right. `Fall|FallBlock`
+    # matches `Fall` and leaves `Block` to fail against the next literal, which
+    # would skip a file that IS a declared partition. ADMINISTRATIONS holds one
+    # value today, so nothing else exercises this.
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "administration_year": StaticPartitionsDefinition(["2026"]),
+            "administration": StaticPartitionsDefinition(["Fall", "FallBlock"]),
+        }
+    )
+
+    pattern = re.compile(
+        build_remote_file_regex(
+            partitions_def=partitions_def,
+            district_code="7325",
+            filename_suffix_regex=r"_GPA",
+        )
+    )
+
+    for season in ["Fall", "FallBlock"]:
+        filename = _filename(
+            year="2026", season=season, district_code="7325", tail="_GPA"
+        )
+
+        match = pattern.match(filename)
+
+        assert match is not None, f"{filename} does not match"
+        assert match.group("administration") == season, (
+            f"{filename} captured {match.group('administration')}, not {season}"
         )
