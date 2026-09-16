@@ -138,10 +138,15 @@ in the result becomes `[redacted: secret material]` and an `additionalContext`
 note says why. Fires for Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch,
 and MCP tools. Does NOT fire for Edit.
 
-**MCP spill files are Bash-unreadable:** a large MCP result that overflows the
-context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
-(`jq`/`cat`) on that path is denied by the hook. Use a subagent (as the spill
-message suggests) or reconstruct the data from prior tool output instead.
+**MCP spill files are Bash-readable — read them directly, never dispatch a
+subagent.** A large MCP result that overflows the context budget dumps to
+`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`, shaped
+`{result: string}` where `result` is itself a JSON string. No hook blocks that
+path: Rule 2's protected set is `settings.json`, `settings.local.json`,
+`hooks/*.sh` and `shell-snapshots/`, none of which match `.claude/projects/`.
+Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
+suggests a subagent — ignore that; verified 2026-09-16 after following the old
+"Bash-unreadable" note here burned a ~42k-token dispatch to run one `jq length`.
 
 ## Context injection (`tool-gotchas.sh`)
 
@@ -194,12 +199,26 @@ draft the change and hand it to the user. Full procedure, `permissions.deny`
 semantics, and the settings-integrity checks load from
 `.claude/rules/claude-settings.md` on the first read of one of those files.
 
-If the hook blocks a `git commit -m` message,
-`rm -f .claude/scratch/commit-msg.txt`, Write the message there, then
-`git commit -F .claude/scratch/commit-msg.txt`. Keep the Bash `description`
-generic; it is scanned too.
+If the hook blocks a `git commit -m` message, Write the message into your
+SESSION scratchpad (absolute path given in the system prompt), one file per
+commit — `<scratchpad>/commit-msg-<slug>.txt` — then
+`git commit -F <that path>`. What makes this work is that Write's `content` is
+scan-exempt and no hook rule covers the scratchpad; the specific path is
+otherwise incidental. Never use a shared fixed path like
+`.claude/scratch/commit-msg.txt`: `.claude/scratch/` is per-checkout, so
+concurrent sessions in one worktree overwrite each other, and the old `rm -f`
+remedy destroys another session's pending message. Worse, a stale file makes
+Write fail while a batched `git commit -F` still runs — committing the OTHER
+session's message. Keep the Bash `description` generic; it is scanned too.
 
 ## Scratch directory
 
-`.claude/scratch/` is gitignored and writable by all tools. Use it for temp
-files (commit messages, draft content) that would otherwise be blocked by hooks.
+`.claude/scratch/` is gitignored and writable by all tools, but it is shared per
+checkout — every session working that checkout sees the same files. Use it only
+for temp files that must live IN the checkout, such as the hook-probe harnesses
+in `.claude/hooks/CLAUDE.md`, and give each a distinctive name.
+
+Everything session-local — commit messages, draft bodies, query output,
+intermediate scratch — goes in the session scratchpad instead (absolute path in
+the system prompt). It is isolated per session, so it needs no `rm -f` dance and
+cannot collide with a concurrent session.

@@ -102,6 +102,7 @@ select
     r.completed_test_round,
     r.completed_test_round_int,
     r.participation_group,
+    r.round_test_status,
 
     null as met_measure_standard_goal,
     null as met_admin_benchmark_goal,
@@ -121,7 +122,11 @@ select
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
+    if(b.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
+
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
+
+    cast(null as string) as aimline_trajectory_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -289,6 +294,7 @@ select
     rs.completed_test_round,
     rs.completed_test_round_int,
     rs.participation_group,
+    rs.round_test_status,
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
@@ -316,7 +322,11 @@ select
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
+    if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
+
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
+
+    cast(null as string) as aimline_trajectory_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -512,17 +522,20 @@ select
     rs.completed_test_round,
     rs.completed_test_round_int,
     rs.participation_group,
+    rs.round_test_status,
 
-    null as met_measure_standard_goal,
-
+    pm.met_aimline_goal as met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
 
-    null as measure_standard_goal_status,
-    null as admin_benchmark_goal_status,
-
+    coalesce(
+        pm.measure_standard_goal_status, 'Not Tested'
+    ) as measure_standard_goal_status,
+    coalesce(
+        pm.admin_benchmark_goal_status, 'Not Tested'
+    ) as admin_benchmark_goal_status,
     coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
 
     r.overall_aimline_composite_level as aimline_cohort_level,
@@ -537,7 +550,26 @@ select
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
+    if(a.measure_standard is null, 'Not Tested', 'Tested') as measure_test_status,
+
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
+
+    -- academics' four reporting buckets plus the untested row, deliberately
+    -- ignoring round completeness: their legend has no Round Incomplete slice,
+    -- so a row classifies on its own verdict. Read off the two flags rather
+    -- than aimline_category, which applies T&L's benchmark-wins rule and would
+    -- report a below-aimline row as meeting one.
+    case
+        when a.measure_standard is null
+        then 'Not Tested'
+        when pm.met_aimline_goal is null
+        then 'No Aimline Data'
+        when pm.met_aimline_goal = 0
+        then 'Below Aimline'
+        when pm.met_admin_benchmark_goal = 1
+        then 'On Track to Benchmark'
+        else 'On Aimline, Below Benchmark'
+    end as aimline_trajectory_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join

@@ -442,6 +442,17 @@ models:
         data_type: int64
         description:
           completed_test_round as 1/0, for aggregation in the BI layer.
+      - name: round_test_status
+        data_type: string
+        description: >-
+          The round's testing state in academics' words — Not Tested, Round
+          Incomplete, or Fully Tested. Carried from
+          int_students__dibels_participation_roster, which owns it. Use this for
+          percent fully tested by round; on AY2025 aimline it reads 15,242 Fully
+          Tested, 1,769 Round Incomplete and 7,590 Not Tested at round grain.
+
+          Round grain, not row grain, so it repeats across every expected
+          measure in the round.
       - name: participation_group
         data_type: string
         description: >-
@@ -456,9 +467,16 @@ models:
           than the assessed grade.
       - name: met_measure_standard_goal
         data_type: int64
-        description:
-          1 when the score reaches the round's cumulative growth target for this
-          measure standard, else 0. Internal method.
+        description: >-
+          1 when the measure hit its goal for the round, else 0. Populated on
+          BOTH PM methods, against a different target each: the Internal branch
+          compares the score to the round's cumulative growth target, the
+          Aimline branch carries met_aimline_goal, which is Amplify's verdict
+          against the student's aimline. Null on an Aimline row where Amplify
+          published no verdict.
+        config:
+          meta:
+            contains_pii: true
       - name: met_admin_benchmark_goal
         data_type: int64
         description:
@@ -481,14 +499,27 @@ models:
           only when the student was tested on everything it expected.
       - name: measure_standard_goal_status
         data_type: string
-        description:
-          met_measure_standard_goal as a label -- Met or Not Met, or Not Tested
-          where no evaluation exists.
+        description: >-
+          met_measure_standard_goal as a label. Met or Not Met on both PM
+          methods, Not Tested where no evaluation exists, plus No Aimline Data
+          on Aimline rows where Amplify published no verdict for a probe that
+          was sat -- a state the Internal method has no equivalent for, and not
+          a miss.
+
+          Both PM branches populate this, so one BI field reads across methods.
+          Before 2026-09-15 the Aimline branch hardcoded it to null.
+        config:
+          meta:
+            contains_pii: true
       - name: admin_benchmark_goal_status
         data_type: string
-        description:
+        description: >-
           met_admin_benchmark_goal as a label -- Met or Not Met, or Not Tested
-          where no evaluation exists.
+          where no evaluation exists. Populated on both PM methods; before
+          2026-09-15 the Aimline branch hardcoded it to null.
+        config:
+          meta:
+            contains_pii: true
       - name: pm_round_status
         data_type: string
         description: >-
@@ -531,8 +562,14 @@ models:
         data_type: string
         description: >-
           T&L's reporting category -- Meeting Aimline On-Track, Meeting Aimline
-          Off-Track, Below Aimline, Not Tested, or No Aimline Status. Aimline
-          rows only.
+          Off-Track, Below Aimline, No Aimline Data On-Track, No Aimline Data
+          Off-Track, or Round Incomplete. Aimline rows only, and Not Tested here
+          where the student has no row in the aimline model at all.
+
+          Round Incomplete and Not Tested are different states: Round Incomplete
+          means the student sat some of the round's measures but not all, Not
+          Tested means no row exists because they sat nothing. Do not collapse
+          them.
         config:
           meta:
             contains_pii: true
@@ -543,9 +580,70 @@ models:
         data_type: string
         description:
           Grade taken from the last character of the matched ELA course name.
+      - name: measure_test_status
+        data_type: string
+        description: >-
+          Whether THIS measure was tested — Tested or Not Tested. Row grain, so
+          it is the field behind percent tested.
+
+          Aggregate it per measure per round, never pooled. A single network
+          figure hides the variation that matters: AY2025 aimline pools to
+          79.1%, while the per-measure per-round rates in one season run from
+          67.2% to 94.6%.
+
+          Group by expected_measure_standard, not expected_measure_name_code.
+          The name code merges sub-measures off one probe, and while a pair is
+          never split once both are expected -- zero exceptions in 7,399 AY2025
+          student-rounds for ORF and 7,524 for NWF -- the two are not always
+          both expected. Reading Accuracy is a BOY to MOY measure only, with
+          zero expected rows in rounds 5 to 8 where Reading Fluency runs on, so
+          a name-code rate blends two populations in one season and means only
+          one of them in the other.
+
+          Academics separate the two questions and this column is the measure
+          half: a student who did not sit a measure the round expected did not
+          test that measure, whatever the round's own state. round_test_status
+          answers the round question, and the two agree — every measure in a Not
+          Tested round reads Not Tested, every measure in a Fully Tested round
+          reads Tested, and only a Round Incomplete round mixes them.
+
+          Derived from whether a scored row joined, which is why this extract is
+          the only place it can live: both PM criteria models carry scored rows
+          only, so an untested measure has no row in them at all. The expected
+          measure comes from the expectation gate this model joins.
       - name: scheduled
         data_type: int64
         description: 1 when the student matched an ELA section, else 0.
+      - name: aimline_trajectory_category
+        data_type: string
+        description: >-
+          Academics' four reporting buckets for the aimline views, plus the
+          untested row. Five values — `Below Aimline`, `On Aimline, Below
+          Benchmark`, `On Track to Benchmark`, `No Aimline Data` and `Not
+          Tested`; the second carries a comma of its own, so quote it when
+          filtering. Aimline rows only — null on the BM and Internal branches.
+          Every aimline row lands in exactly one bucket, so the five sum to the
+          expected rows and a percent-of-total stack needs no filtering.
+
+          It crosses the two flags directly, `met_aimline_goal` for the verdict
+          and `met_admin_benchmark_goal` for the trajectory, and that is
+          deliberate rather than reading `aimline_category`. The category
+          applies T&L's benchmark-wins rule, so 713 AY2025 rows sit in Meeting
+          Aimline, On-Track with `met_aimline_goal = 0` — reporting a
+          below-aimline row as meeting one. For the intervention-targeting views
+          these buckets feed, the verdict is what academics mean.
+
+          It also ignores round completeness, where `aimline_category` puts
+          Round Incomplete first and overrides everything. Academics' legend has
+          no Round Incomplete slice, so a row here classifies on its own verdict
+          whatever the round's state. The two columns therefore disagree on the
+          2,554 AY2025 Round Incomplete rows by design — do not union or compare
+          them. `round_test_status` still carries the round question separately.
+
+          Measured against the branch build on 2026-09-15, AY2025, of 35,484
+          tested rows — `Below Aimline` 18,284, `On Aimline, Below Benchmark`
+          7,431, `On Track to Benchmark` 6,456, `No Aimline Data` 3,313. A
+          further 9,383 rows are `Not Tested`, for 44,867 expected rows in all.
       - name: mtss_enrollment
         data_type: string
         description: MTSS programme the student is enrolled in, if any.

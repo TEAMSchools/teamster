@@ -1,16 +1,55 @@
 ---
 name: dibels-dashboard
 description: >-
-  Use when building or maintaining any part of the DIBELS dashboard suite -- the
-  Bright Spots tracker (#4952), the PM/aimline migration (#3834), benchmark
-  completion tracking (#4902), or anything touching
-  stg_google_sheets__dibels_foundation_goals,
-  stg_google_sheets__dibels_brightspot_goals, rpt_tableau__dibels_brightspots,
-  rpt_gsheets__dibels_bm_goals_calculations, int_amplify__all_assessments, or
-  rpt_tableau__dibels_dashboard and their lineage.
+  Use for ANY DIBELS work -- reading, explaining, querying, modelling, goal
+  setting, Tableau views, or answering a question about the numbers. Not only
+  code changes: invoke it before answering anything about DIBELS, because the
+  reference document it points at carries decisions that are not recoverable
+  from the SQL. Triggers: the DIBELS dashboard or Literacy Dashboard, the Bright
+  Spots tracker (#4952), the PM/aimline migration (#3834), benchmark completion
+  tracking (#4902), aimline categories, foundation or benchmark or PM goal
+  setting, the Amplify DIBELS spreadsheet, or anything touching
+  int_amplify__all_assessments, int_amplify__pm_met_criteria,
+  int_amplify__pm_met_criteria_aimline, int_amplify__benchmark_student_summary,
+  int_students__dibels_participation_roster, rpt_tableau__dibels_dashboard,
+  rpt_gsheets__dibels_bm_goals_calculations,
+  rpt_gsheets__dibels_pm_goal_setting, stg_google_sheets__dibels_* or their
+  lineage.
 ---
 
 # DIBELS Dashboard
+
+## Before you finish: update this skill and the reference document
+
+**Not optional, and not gated on the user asking.** Any session that changes a
+DIBELS model, discovers something about how the data behaves, or settles a
+question with academics updates BOTH:
+
+- `docs/models/dibels-dashboard-data-model.md` — the published reference. It is
+  in the mkdocs nav, so a wrong page here is a bug, not a stale note.
+- this skill, for anything a future session needs BEFORE it opens a file.
+
+The reason is specific to this domain. Most of what matters about DIBELS is not
+recoverable from the SQL: which choices are T&L's and must not be 'corrected',
+which are ours, what academics were asked and answered, and which apparent bugs
+are recorded intent. On 2026-09-15 a session called a documented T&L rule a bug
+and started changing it; the yml description is what stopped that. A session
+that leaves its findings only in a PR body has lost them.
+
+What to write down, beyond the change itself:
+
+- A rule that looks wrong but is deliberate — say whose decision it is, and that
+  it must not be corrected.
+- A value or label rename — the old name, the new one, and the date, because
+  academics will ask about a word they still use.
+- Anything measured — row counts, category distributions, coverage rates — with
+  the academic year, since the next reader cannot tell a real shift from a
+  method change without it.
+- A dead end: an MCP that cannot reach a source, a check that proves nothing.
+
+Put column and model semantics in the model's properties yml, workflow and
+reasoning here, and the narrative in the reference document. The repo's yml
+conventions still apply to descriptions.
 
 Covers the whole DIBELS dashboard suite. Documented below: the Bright Spots
 tracker / foundation goals retrofit (#4952) -- benchmark-goal work, not
@@ -582,6 +621,49 @@ Paste target: named range `src_google_sheets__dibels__bm_goals`, spreadsheet
 `rpt_gsheets__dibels_bm_goals_calculations`, which carries the current year
 only. Unlike the foundation_goals paste, the column set does not change, so no
 `stage_external_sources` re-stage is needed -- a value-only paste.
+
+#### Generate only the regions prod is missing -- never regenerate one already there
+
+**The default is additive, per region.** Ask prod what it already holds,
+generate only the regions absent from it, and append. A region already in the
+tab is frozen and stays frozen.
+
+```sql
+select academic_year, region, count(*) as rows_
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__dibels_bm_goals
+where academic_year = <year>
+group by academic_year, region
+order by region
+```
+
+Anything listed there is done. Generate the complement, not the whole year.
+
+The reason is that **the paste is not idempotent.** Only the goal columns are
+stable -- they come from the frozen foundation goals sheet. The
+`n_admin_season_*` headcounts are computed from live assessment data, so the
+same region regenerated a week later returns different numbers as more students
+test. Regenerating a region that is already present therefore does not "refresh"
+it: it silently replaces figures that were already set and reported against with
+figures from a later moment, and nothing in the sheet or the warehouse records
+that it happened. Regions are goal-set at different times precisely because
+their testing windows close at different times, so each one's snapshot is
+supposed to be taken once, when that region's window closes.
+
+**The one exception is a defect in the calculation**, where the frozen numbers
+are wrong rather than merely old. Then replace the whole academic year rather
+than part of it, so every region's rows come from the same code at the same
+moment. That happened on 2026-09-15: all 74 AY2026 rows were regenerated after
+the `bl_wb` non-determinism fix, deliberately overriding the additive rule.
+Treat a full-year replace as the thing that needs justifying, not the default.
+
+`select * except(...)` has no bearing here -- the model emits the current year
+only, so "the whole year" and "everything the model returns" are the same set.
+
+Related caution, worth checking before assuming a region is simply missing:
+**Miami has benchmark goals in the tab but no foundation goals at all.**
+Foundation goals cover Camden, Newark and Paterson only, so Miami's benchmark
+numbers do not come from this lineage and cannot be produced by generating them
+here. A Miami row absent from the tab is not a row this procedure can add.
 
 **Verify by year, not by row count.** A populated prior year makes the totals
 look healthy:
@@ -1156,6 +1238,64 @@ thing -- it filters `academic_year = current_academic_year`, so it is empty
 whenever the new year's PM calendar has not been entered. Empty is the expected
 state mid-rollover, not a defect.
 
+### A whole region missing: read Amplify's file before tracing any join
+
+When the calendar checks above pass and an entire region still has no scores,
+**the export itself is the first suspect, not the pipeline.** On 2026-09-15 I
+gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
+union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
+checking the top of the hierarchy, where the answer was sitting: Amplify's
+SY2026-2027 export contains no Miami schools at all. The account was renamed
+from `Kipp New Jersey And Miami` to `Kipp New Jersey` and their schools left it.
+
+Run this before anything else:
+
+```sql
+select
+    school_year,
+    district_name,
+    school_name,
+    count(*) as n_rows,
+    count(distinct student_primary_id_studentnumber) as n_students,
+    cast(max(sync_date) as string) as last_sync,
+from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
+where school_year = '2026-2027'
+group by school_year, district_name, school_name
+order by school_name
+```
+
+That is the external over the landed file -- the top of the hierarchy, no
+dependencies. Swap the year to see the contrast with SY2025-2026.
+
+Four rules for this class of question:
+
+- **`kippmiami_amplify` is deliberately absent from the union.** Amplify exports
+  one network account and it lands in `kippnewark`'s bucket; region comes from
+  `int_people__location_crosswalk`. Do not "fix" the union.
+- **Amplify renames schools between years, and the rename is not the bug until
+  you prove it.** `Kipp Hatch Middle` became `Kipp Hatch Academy` and
+  `Kipp Sumner Elementary` became `Kipp Sumner Academy` for SY2026-2027; the
+  crosswalk absorbed both. A rename it misses produces a **null region**, not
+  missing rows -- so compare row counts layer by layer and check for null
+  regions before concluding anything. Identical counts across layers means
+  nothing is being dropped at the join.
+- **Confirm by student number, not by school name.** Matching the file's
+  `student_primary_id_studentnumber` against enrollment rules out a rename
+  entirely, because it never touches a name. That is the check that actually
+  closes the question.
+- **Reading the raw SFTP file is available and cheap.** Credentials come from
+  the pytest session fixture, so a throwaway `tests/**/test_zz_*.py` using
+  `SSH_RESOURCE_AMPLIFY.process_config_and_initialize()` plus
+  `setup_for_execution(build_init_resource_context())` can list the tree and
+  download a file. Do not report an export as empty without it when the question
+  is whether the vendor sent the data. Print aggregates only, never student
+  rows, and delete the test file afterwards.
+
+Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
+live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
+`/PM`, and every file is a daily cumulative snapshot (704 of them), so the asset
+takes the newest match by mtime.
+
 ### Verifying a year that is not in prod yet -- go to the source
 
 When you need to check something about an academic year whose rows are not in
@@ -1171,7 +1311,42 @@ academics source is a separate sheet:
 <https://docs.google.com/spreadsheets/d/1-fLmFQz94yAuotVYkzTxOxv6O129V3I2LDhdPY16HIc>
 
 Academics replace this each year, so re-read it rather than trusting the values
-recorded here, and update this link if they move it. What it decides:
+recorded here, and update this link if they move it.
+
+**Reading it needs ADC from Python -- both MCP routes fail.** Do not spend time
+rediscovering this:
+
+- The **BigQuery MCP cannot read a Sheets external at all.** Its service account
+  carries no Drive scope, so `src_google_sheets__*` returns
+  `Permission denied while getting Drive credentials`. Sharing the file with
+  anyone changes nothing -- it is a missing OAuth scope, not a file permission.
+- The **Drive MCP reads it, then `check-output.sh` redacts the whole response**
+  as containing a high-entropy string, which any real spreadsheet has somewhere.
+  `read_file_content` and `get_file_metadata` both come back as
+  `[redacted: secret material]` with no content.
+
+What works is `scripts/read_sheet_tabs.py`, which requests
+`spreadsheets.readonly` and `drive.readonly` through ADC and writes each tab to
+a local TSV:
+
+```bash
+uv run --with google-api-python-client --with google-auth python \
+    .claude/skills/dibels-dashboard/scripts/read_sheet_tabs.py \
+    <spreadsheet_id> .claude/scratch dibels
+```
+
+The third argument filters tabs by substring, which matters on the academics
+workbook -- it carries 15+ tabs and only `DIBELS Goals` is the goal source. Then
+Read the TSVs.
+
+Two things that make it work, both easy to undo by accident. It prints only tab
+names and row/column counts, never cell values, so the output scanner has no
+payload to catch -- if you add a line that echoes sheet contents, the whole run
+gets redacted again. And keep the output directory free of UUIDs: passing a path
+containing the session id redacts the run, because the scanner reads the UUID
+itself as high-entropy.
+
+What the sheet decides:
 
 **Grades 6-8 are goal-set at EOY only.** Verified identical in AY2025 and
 AY2026: grades K-5 carry both MOY and EOY foundation goals, grades 6-8 carry EOY
@@ -2036,8 +2211,41 @@ three-in-a-row variant.
   and do not derive the verdict from `goal` either: that is the season-end
   target and reproduces `aimline_status` on only five rows in six.
 
-Validated on AY2025 in dev: 36,486 rows, exact grain, six tests pass, 21 rows
-lost to the roster join (five Newark students, in the yml).
+Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
+lost to the roster join (2 Newark students, in the yml).
+
+### "% meeting aimline, overall and by measure" is three grains, and all three already exist
+
+Academics' phrasing hides three questions. Asked on 2026-09-15 what they meant,
+the answer was: did the student meet the aimline on this measure standard this
+round, on every expected standard under one measure name code, and on every
+expected standard in the round. Same AND-gate shape as the testing states.
+
+**Do not build anything for this.** All three are already columns:
+`met_aimline_goal`, `met_measure_name_code_goal`, and `met_pm_round_criteria` /
+`met_pm_round_overall_criteria` (the second variant also requires full
+participation). "% not meeting" is the inverse of the same flags -- it needs no
+new field either.
+
+Three things to say when this comes up:
+
+- **Take it from the verdict, not from `aimline_category`.** The category
+  applies T&L's benchmark-wins rule, so 696 AY2025 rows read
+  `Meeting Aimline, On-Track` while below the aimline. For an
+  intervention-targeting metric the label undercounts the problem set.
+- **Name the grain on every view.** AY2025 "% not meeting" runs 56.8% at measure
+  standard, 65.1% at name code, 72.9% at round, and 77.6% at round with the
+  participation gate -- all four defensible, so an unlabelled 57% and an
+  unlabelled 78% will both get quoted as the same metric.
+- **The gate is over EXPECTED standards, never all possible ones.** Reading
+  Accuracy has zero expected rows in rounds 5 to 8, so ORF from round 5 needs
+  Reading Fluency alone. Requiring both would fail every grade 3-8 student for
+  the back half of the year by definition.
+
+Two decisions belong to academics: whether grain 3 uses the participation gate
+(their wording says yes), and whether the no-verdict rows count as not met
+(12,695 of 44,865 at measure grain, so the choice moves each rate by 10 to 20
+points).
 
 ### The met/not-met flags have labelled twins, and the workbook needs a change
 
