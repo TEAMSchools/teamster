@@ -1,25 +1,27 @@
 # GitHub MCP gotchas
 
-- **The mangling is on the READ side, not the write side.** `pull_request_read`
-  / `issue_read` strip `<...>` tokens (e.g. `<role>`, `<col>`) — in prose,
-  inside inline backticks, and inside fenced blocks — and entity-encode
-  `&`→`&amp;`, `"`→`&#34;`, `'`→`&#39;`, `<=`→`&lt;=`, `>=`→`&gt;=` in the body
-  they return. So a body read back through them shows phantom corruption even
-  when storage is clean. Verify the TRUE stored body with raw
+- **Neither the read nor the write tools mangle body text. Escaped characters in
+  a read result are transport encoding, not corruption.** `pull_request_read` /
+  `issue_read` render `<`, `>` and `&` as the JSON escapes `\u003c`, `\u003e`
+  and `\u0026`, and a double quote as `\"`. Those decode losslessly, so a body
+  that looks corrupted in a read result is NOT corrupted: do not rewrite one to
+  "fix" it, and do not read an escaped token as a dropped one.
+- Verified 2026-09-16 on PR #5350 (comment 5702796794): `<role>`, `<col>`,
+  `<notatag>`, `<zz>`, `<br>`, `<strong>`, `<=`, `>=`, `&`, `&&` and both quote
+  styles, each in prose, an inline code span and a fenced block, posted with
+  `gh api` and read back with `issue_read` `method=get_comments`. Every token
+  came back at identical count and decoded to the raw `--jq .body` bytes; zero
+  HTML entities (`&amp;`, `&#34;`, `&#39;`, `&lt;`, `&gt;`) appeared anywhere.
+  Nothing is stripped and nothing is entity-encoded. The write side was verified
+  separately 2026-09-02 at PR #5105, comment 5515033123; `&` and `"` are safe in
+  titles and code spans.
+- Read the TRUE stored body with raw
   `gh api repos/<owner>/<repo>/pulls/<n> --jq .body` (a GET — works via Bash,
-  whereas `gh pr view` is denied) before re-writing to "fix" it.
-- **The write tools do NOT alter body text** — verified 2026-09-02 by posting
-  bare `<role>` / `<col>` tokens plus `&`, `"` and `'` through
-  `add_issue_comment` in prose, a code span, and a fence: the stored body came
-  back identical (probe recorded at PR #5105, comment 5515033123). `&` and `"`
-  are safe in titles and code spans. An older note here claimed `issue_write` /
-  `create_pull_request` strip and encode on write; that was the read tools
-  misleading the observer.
-- **Never round-trip a body through the MCP read tools into a write.** The read
-  encodes, so writing that body back stores the entities for real, and the next
-  round-trip double-encodes them (`&amp;` → `&amp;amp;`). Edit a PR body with
+  whereas `gh pr view` is denied) when you need exact bytes to diff, since it
+  skips the JSON escaping. Edit a body with
   `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, sourcing the
-  text from a raw GET or from your own draft.
+  text from a raw GET or your own draft; `-F body=@<file>` also avoids
+  shell-quoting trouble on large markdown.
 - **Never hard-wrap body text.** GitHub renders every single newline in a PR
   body, issue body, or comment as a line break, so 80-column prose displays as a
   ragged narrow column (verified: PR #4933's body renders 69 forced breaks
@@ -65,11 +67,9 @@ The root CLAUDE.md names the allowed `gh` subcommands; the mechanics live here.
   `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
   big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
   comment creation via `gh api`.
-- Editing a PR **body** — round-tripping a body fetched through the MCP read
-  tools and back out through `mcp__github__update_pull_request` stores the
-  read's entities for real. Edit cleanly via
-  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (raw, no
-  re-encoding).
+- Editing a PR **body** —
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` takes the
+  text from a file, which beats passing a long markdown body inline.
 - Replying to a PR inline review comment in-thread —
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use

@@ -180,9 +180,14 @@ mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
 — prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
 which has full scopes.
 
-`gh run rerun` fails the same way as the below: the `ghu_*` token lacks
-`workflow` scope, and the `GITHUB_TOKEN=` fallback returns "cannot be retried".
-Hand reruns to the user or push a commit to re-trigger.
+`gh run rerun` needs that same `GITHUB_TOKEN=` prefix, and with it, it works —
+so rerun a transiently failed CI job yourself instead of handing it over. Plain
+`gh run rerun <id> --failed` fails with "Resource not accessible by integration"
+because the `ghu_*` token lacks `workflow` scope; prefixing `GITHUB_TOKEN=`
+reruns it. Success prints NOTHING, so confirm it took by re-reading the run
+status rather than by the empty output. Verified 2026-09-16 on run 35135448204
+(a transient Artifact Registry 401 in a `dagster-cloud-deploy / merge` job,
+green on the rerun). Only the `--failed` form was exercised.
 
 `gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
 `ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
