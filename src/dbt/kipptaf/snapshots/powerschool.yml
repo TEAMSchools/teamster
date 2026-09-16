@@ -17,6 +17,21 @@ snapshots:
       meta:
         dagster:
           group: powerschool
+          # 1x/day instead of eager. A snapshot inherits
+          # dbt_table_automation_condition() (materialized is 'snapshot', not
+          # view/ephemeral), and its upstream int_powerschool__gpa_cumulative is
+          # a view, so ancestor-updated recursion reaches every PowerSchool
+          # grade table — 147 merges and 2.23 slot hours a day.
+          #
+          # 23:00 and not 00:00: all three consumers resolve at day grain
+          # (int_topline__gpa_cumulative_weekly dedupes on dbt_valid_from_date;
+          # int_powerschool__gpa_term_lookback matches midnight boundaries). An
+          # end-of-day capture keeps a Monday change on Monday. Midnight moves
+          # it to Tuesday and shifts every topline weekly value by a day.
+          #
+          # Intra-day versions are lost. No consumer reads them. Refs #5218
+          automation_condition:
+            cron_schedule: 0 23 * * *
           asset_key:
             - kipptaf
             - powerschool
@@ -39,6 +54,20 @@ snapshots:
       meta:
         dagster:
           group: powerschool
+          # 1x/day instead of eager, for the same reason as
+          # snapshot_powerschool__gpa_cumulative above — 138 merges and 3.90
+          # slot hours a day. Its upstream int_powerschool__gpa_term_current is
+          # ephemeral, so ancestor-updated recursion reaches the same
+          # PowerSchool grade tables.
+          #
+          # Consumers int_topline__gpa_term_weekly and
+          # int_powerschool__gpa_term_lookback both resolve at day grain, and
+          # the lookback matches the first instant of the day after
+          # current_date - N, so an end-of-day capture is what its
+          # "value in effect at the END of that lookback day" contract needs.
+          # Refs #5218
+          automation_condition:
+            cron_schedule: 0 23 * * *
           asset_key:
             - kipptaf
             - powerschool
