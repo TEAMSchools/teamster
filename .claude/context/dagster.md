@@ -2,9 +2,9 @@
 
 ## Asset diagnosis
 
-When verifying failures, fetch the most recent run per job (`list_runs` with
-`job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
-result sets misses retries and recoveries.
+When verifying failures, fetch the most recent run per job
+(`mcp__dagster-plus__list_runs` with `job_name=..., limit=1`, no status filter)
+— bulk cross-referencing capped result sets misses retries and recoveries.
 
 Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`,
 or mart `facts`/`dimensions`/`bridges`) —
@@ -16,14 +16,13 @@ or mart `facts`/`dimensions`/`bridges`) —
 opaque token.
 
 - **This server targets a branch deployment via a `deployment` arg**, omitted
-  for prod — `launch_multiple_runs`, `list_runs`, `get_run_logs`, and
-  `get_run_compute_logs` all accept it. On `dagster-plus` the equivalent is
-  `deployment_name`, and it is REQUIRED on every call. List the branch
-  deployments with `mcp__dagster-plus__list_deployments` and
-  `deployment_type="branch"` — this server's `list_deployments` returns only
-  `prod`, which is why it is denied. The names are opaque hashes, so map a
-  specific PR to its hash from that PR's `deploy` job log line
-  `Deploying to branch deployment <hash>` (job id from the
+  for prod — `launch_multiple_runs`, `get_run_logs`, and `get_run_compute_logs`
+  all accept it. On `dagster-plus` the equivalent is `deployment_name`, and it
+  is REQUIRED on every call. List the branch deployments with
+  `mcp__dagster-plus__list_deployments` and `deployment_type="branch"` — this
+  server's `list_deployments` returns only `prod`, which is why it is denied.
+  The names are opaque hashes, so map a specific PR to its hash from that PR's
+  `deploy` job log line `Deploying to branch deployment <hash>` (job id from the
   `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
   `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
   deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
@@ -37,23 +36,25 @@ opaque token.
   condition, which skips views) — within minutes of the post-merge location
   deploy. To confirm a rollout landed: `get_location_load_history` (new commit
   LOADED) → `list_runs` / `get_asset_materializations` for the asset.
-- **Schedule/sensor-launched runs report `assetSelection: null`** in
-  `list_runs`. Recover the asset keys from
-  `get_run_logs(filter_types=["ASSET_MATERIALIZATION_PLANNED"])` — one event per
-  selected asset, each naming the asset and carrying `step_key`, all at the
-  start of the log. `mcp__dagster-plus__get_run` has neither `assetSelection`
-  nor `stepKeysToExecute`, so this is the route. A `step_key` converts `__` →
-  `/` (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
-  Cross-check with `get_asset_partition_statuses`, or
-  `mcp__dagster-plus__get_assets` for a whole prefix, before declaring a
-  backfill complete — failure-triage groupings keyed on `assetSelection`
-  silently drop these.
-- `mcp__dagster__list_runs` caps at `limit=100` with no truncation signal;
-  paginate via `cursor` for incident triage that may exceed 100 runs.
+- **Schedule/sensor-launched runs report no asset selection.** Neither
+  `mcp__dagster-plus__list_runs` nor `mcp__dagster-plus__get_run` returns one at
+  all, and the homebrew tools reported it as `null` for these. Recover the asset
+  keys from `get_run_logs(filter_types=["ASSET_MATERIALIZATION_PLANNED"])` — one
+  event per selected asset, each naming the asset and carrying `step_key`, all
+  at the start of the log. `mcp__dagster-plus__get_run` has neither
+  `assetSelection` nor `stepKeysToExecute`, so this is the route. A `step_key`
+  converts `__` → `/` (`kipptaf__tableau__ops_dashboard` →
+  `kipptaf/tableau/ops_dashboard`). Cross-check with
+  `get_asset_partition_statuses`, or `mcp__dagster-plus__get_assets` for a whole
+  prefix, before declaring a backfill complete — failure-triage groupings keyed
+  on `assetSelection` silently drop these.
+- `mcp__dagster-plus__list_runs` caps at `limit=100`; paginate via `cursor`,
+  which is the last run's id, for incident triage exceeding 100 runs.
 - A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
   `partitionStatusCounts` while its partition runs already execute — use
-  `list_runs(tags={"dagster/backfill": "<id>"})` for real per-partition
-  progress.
+  `get_asset_partition_statuses` on the backfilled asset for real progress.
+  Filtering runs by the `dagster/backfill` tag is no longer available:
+  `mcp__dagster-plus__list_runs` has no tag filter.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.
@@ -66,7 +67,7 @@ opaque token.
   call materializes immediately, so state the asset and partition in plain text
   first.
 - A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
-  `zero_api_errors`) that fired an alert — `list_runs(statuses=["FAILURE"])` and
+  `zero_api_errors`) that fired an alert — `list_runs(status="FAILURE")` and
   day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).
   The check payload often lacks the offending entity id — recover it from the
   run's `LogMessageEvent` compute logs (`context.log.info` lines).
@@ -85,7 +86,9 @@ opaque token.
   automation). `get_run_logs` hides `materializationFailureType` — confirm
   FAILED-vs-SKIPPED via GraphQL `FailedToMaterializeEvent` fields.
 - `get_run_logs` needs the full run UUID (abbreviated ids fail). To find a
-  schedule's runs: `list_runs` with `tags={"dagster/schedule_name": "<name>"}`.
+  schedule's or sensor's runs, use `get_tick_history` — each tick carries its
+  `runIds`. `mcp__dagster-plus__list_runs` has no tag filter, so
+  `dagster/schedule_name` is not a route any more.
 
 ## Run failure diagnosis
 

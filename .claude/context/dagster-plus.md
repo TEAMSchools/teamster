@@ -18,8 +18,8 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `get_asset_selection_metrics` — credit and runtime reporting), alert policies
   (read, plus write via a config document), Dagster+ Issues, asset browsing and
   definitions (`get_assets`, `get_asset`), deployment listing, code locations,
-  run detail, run launches, re-execution, and run termination. Duplicates on
-  both sides are denied in `settings.json` — one tool per job.
+  run listing, run detail, run launches, re-execution, and run termination.
+  Duplicates on both sides are denied in `settings.json` — one tool per job.
 - **`get_run` here returns 9 fields**, and every field the homebrew one had is
   still reachable:
   - `parentRunId` / `rootRunId` / `repositoryOrigin` → already in this tool's
@@ -39,22 +39,34 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `SAFE_TERMINATE`. A run whose worker is gone will not clear. Fall back to
   `mcp__dagster__free_concurrency_slots` to unblock the pool, and to the
   Dagster+ UI to force-cancel.
-- **2 jobs stay on the homebrew server** because this server's tool is a strict
+- **`list_runs` here has no `tags`, `run_ids`, or time-range filter.** It does
+  return each run's full `tags`, so client-side filtering works over a paged
+  stream, but the 2 lookups that needed a server-side tag filter have their own
+  routes now:
+  - a schedule's or sensor's runs → `mcp__dagster__get_tick_history`, where each
+    tick carries its `runIds`.
+  - a backfill's progress → `mcp__dagster__get_asset_partition_statuses` on the
+    backfilled asset.
+
+  It also **500s intermittently on broad filters** (`status: "SUCCESS"`,
+  `job_name: "__ASSET_JOB"` each failed then succeeded on retry) and is reliable
+  on narrow ones. Retry rather than concluding the filter is unsupported.
+  `job_name` does not discriminate much here anyway, because
+  automation-condition runs are all `__ASSET_JOB`.
+
+- **1 job stays on the homebrew server** because this server's tool is a strict
   subset, not because of preference. Identical arguments do NOT mean identical
-  payloads — compare the payloads before flipping anything else:
-  - `list_runs` — this one has no `tags`, `run_ids`, or time-range filter, and
-    `job_name` does not discriminate here because automation-condition runs are
-    all `__ASSET_JOB`. It DOES return each run's full `tags`, so filtering
-    client-side is possible, but only by paging an unfiltered stream 100 runs at
-    a time. It also 500s intermittently on broad filters (`status: "SUCCESS"`,
-    `job_name: "__ASSET_JOB"`) and is reliable on narrow ones — retry rather
-    than concluding the filter is unsupported.
-  - `get_run_logs` — no `filter_types`. Events here carry `event_type` and
-    `error`, but the order is oldest-first with a 100-event cap, so a step
-    failure at the end of a long run is several pages in. Verified: page 1 of a
-    100-second failed run covered its first 9 seconds. The alert route is not a
-    substitute either — `get_run_alert_notifications` returns empty because this
-    deployment has no Dagster+ alert policies configured.
+  payloads — compare the payloads before flipping anything else. `get_run_logs`
+  has no `filter_types`. Events here carry `event_type` and `error`, but the
+  order is oldest-first with a 100-event cap, so a step failure at the end of a
+  long run is several pages in. Verified: page 1 of a 100-second failed run
+  covered its first 9 seconds.
+- **The alert route is not a substitute for reading logs.** 13 alert policies
+  exist, but none fires on run failure: the run-scoped ones are `JOB_SUCCESS`
+  and `JOB_LONG_RUNNING`, and the rest are asset-health, `TICK_FAILURE`,
+  `CODE_LOCATION_ERROR` and `AGENT_UNAVAILABLE`. So
+  `get_run_alert_notifications` on a failed run returns empty. Revisit if a
+  `JOB_FAILURE` policy is ever added.
 - `list_code_locations` here drops `updatedTimestamp` and `repositories`, but
   the commit hash is in the `image` tag and
   `mcp__dagster__get_location_load_history` is the rollout-verification tool
