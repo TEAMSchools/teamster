@@ -1054,6 +1054,52 @@ class TestKipptafDbtAssets:
                     f"{name} is a regular view but got non-view condition"
                 )
 
+    def test_gpa_snapshots_get_cron_condition(self, nodes_by_name):
+        """The two PowerSchool GPA snapshots must be on the 23:00 cron condition.
+
+        A dbt snapshot's config.materialized is 'snapshot', not view or
+        ephemeral, so both inherit dbt_table_automation_condition() by default.
+        The two churn by different routes. gpa_cumulative depends on
+        int_powerschool__gpa_cumulative, a table, so a plain
+        any_deps_updated() fires on that table's own eager rebuilds.
+        gpa_term is declared on the ephemeral
+        int_powerschool__gpa_term_current, for which dagster-dbt makes no
+        asset, so its Dagster dep is int_powerschool__gpa_term, a view, and
+        _build_any_ancestor_updated follows views down to the district source
+        tables. Both routes fired each snapshot about 143 times a day.
+        Refs #5218.
+        """
+        from teamster.libraries.dbt.dagster_dbt_translator import (
+            CustomDagsterDbtTranslator,
+        )
+
+        translator = CustomDagsterDbtTranslator(
+            code_location="kipptaf", local_timezone="America/New_York"
+        )
+        expected = dbt_cron_automation_condition(
+            "0 23 * * *", cron_timezone="America/New_York"
+        )
+
+        for name in (
+            "snapshot_powerschool__gpa_term",
+            "snapshot_powerschool__gpa_cumulative",
+        ):
+            props = nodes_by_name[name]
+
+            assert props["config"]["materialized"] == "snapshot", (
+                f"{name} is no longer a snapshot; this test's premise is stale"
+            )
+            assert translator.get_automation_condition(props) == expected, (
+                f"{name} did not get the 0 23 * * * cron condition"
+            )
+            # _get_dbt_meta or-shorts the whole top-level meta dict, so
+            # automation_condition and asset_key must sit on the same side.
+            # A misplaced key drops the explicit asset_key and the resolved
+            # key loses its 'powerschool' segment.
+            assert translator.get_asset_key(props) == AssetKey(
+                ["kipptaf", "powerschool", name]
+            ), f"{name} lost its explicit asset_key"
+
     def test_table_view_table_chain_exists_in_kipptaf(self, all_specs, specs_by_key):
         """Find and validate a real table→view→table chain in kipptaf.
 

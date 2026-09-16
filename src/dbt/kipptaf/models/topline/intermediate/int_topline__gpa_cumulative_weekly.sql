@@ -8,8 +8,10 @@ with
             dbt_valid_to,
             cumulative_y1_gpa_projected_unweighted,
 
-            cast(dbt_valid_from as date) as dbt_valid_from_date,
-            cast(dbt_valid_to as date) as dbt_valid_to_date,
+            /* a bare cast(... as date) truncates in UTC, shifting an evening
+               local capture to the next day */
+            date(dbt_valid_from, '{{ var("local_timezone") }}') as dbt_valid_from_date,
+            date(dbt_valid_to, '{{ var("local_timezone") }}') as dbt_valid_to_date,
 
             /* snapshot-fed: derive locally — the check strategy never backfills
                the stored column across history (see kipptaf CLAUDE.md) */
