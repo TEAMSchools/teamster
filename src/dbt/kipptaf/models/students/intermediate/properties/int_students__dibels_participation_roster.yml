@@ -151,6 +151,27 @@ models:
           case expression. It reads the ENROLLED grade level, not the assessed
           grade, so a student assessed at a different grade mid-year is grouped
           by where they are enrolled.
+      - name: round_test_status
+        data_type: string
+        description: >-
+          The round's testing state in academics' words — Not Tested, Round
+          Incomplete, or Fully Tested. They distinguish three cases and this
+          column is the one field that carries all three: a student who sat
+          nothing in the round is Not Tested, one who sat some but not all of
+          the measures the round expected is Round Incomplete, and one who sat
+          everything is Fully Tested.
+
+          Not Tested keys on actual_row_count reaching zero rather than on
+          completed_test_round, which cannot tell nothing-sat from
+          some-sat-not-all. Fully Tested keys on completed_test_round itself so
+          the two columns can never disagree, which also means the Benchmark
+          fallbacks in that column apply here.
+
+          This is the round half of the pair academics asked for. The measure
+          half cannot live here — this model is at round grain and only counts
+          the expected measures — so it is measure_test_status on
+          rpt_tableau__dibels_dashboard, the only relation with a row per
+          expected measure.
       - name: completed_test_round_int
         data_type: int64
         description: Conditional on completed_test_round.

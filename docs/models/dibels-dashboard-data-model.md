@@ -354,6 +354,61 @@ If a score exists in Amplify but no matching row exists in the expected
 assessments config, it is silently excluded. This is intentional — new measures
 or grades only appear once the data team adds them to the config.
 
+#### A whole region can be missing, and dbt is usually not the cause
+
+Miami has no AY2026 DIBELS data anywhere in the warehouse, and nothing in this
+repo can fix it — Amplify's export does not contain them. Established 2026-09-15
+by reading the raw SFTP file directly, after three wrong theories (a missing
+union member, a crosswalk gap, the `is_self_contained` exclusion).
+
+Check the source first, at the top of the hierarchy, before tracing a single
+join:
+
+```sql
+select
+    school_year,
+    district_name,
+    school_name,
+    count(*) as n_rows,
+    count(distinct student_primary_id_studentnumber) as n_students,
+    cast(max(sync_date) as string) as last_sync,
+from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
+where school_year = '2026-2027'
+group by school_year, district_name, school_name
+order by school_name
+```
+
+For SY2026-2027 that returns 16 schools, all NJ, `district_name` of
+`Kipp New Jersey`. Swap the year for `2025-2026` and it returns
+`Kipp New Jersey And Miami` with Kipp Courage Academy and Kipp Royalty Academy
+present. The account was renamed and Miami's schools left it. The PM file has
+the same shape.
+
+Three things make this class of question easy to get wrong:
+
+- **One network account lands in `kippnewark`'s bucket.** Region is resolved
+  from `int_people__location_crosswalk`, never from `_dbt_source_relation`, and
+  `kippmiami_amplify` is deliberately not in the union — so Miami's absence from
+  that union is by design and is not the defect.
+- **Amplify renames schools between years.** `Kipp Hatch Middle` became
+  `Kipp Hatch Academy` and `Kipp Sumner Elementary` became `Kipp Sumner Academy`
+  for SY2026-2027, and both are absorbed by the crosswalk. A rename the
+  crosswalk misses surfaces as a **null region**, not as missing rows, so check
+  for null regions and compare row counts across layers before blaming the
+  export.
+- **Confirm by student number, not by school name.** Matching the file's
+  `student_primary_id_studentnumber` against AY2026 enrollment rules out a
+  rename entirely: 4,952 Newark, 1,568 Camden, 792 Paterson, 11 not enrolled,
+  zero Miami.
+
+The gap is wider than the two schools that left. Miami has five schools with
+reading enrollment in AY2026 — Courage, Royalty, Legacy ES, Legacy MS, Miami
+Tech — and none are in the Amplify account. Courage and Royalty were in it for
+SY2025-2026 and were dropped; Legacy and Miami Tech were never added. Fixing the
+export is also not sufficient for the dashboard: Miami has benchmark goals in
+the BM Goals tab but no foundation goals and no PM rounds scaffold, so
+participation has nothing to measure against until both are built.
+
 #### Internal structure
 
 **Restructured for SY26-27.** The Benchmark half moved out to
@@ -872,6 +927,76 @@ is _higher_ than the At/Above rate — meaning `max()` picks the Well Below rate
 and uses it to compute the expected At/Above student count. Whether this is
 intentional needs confirmation with T&L before the next BOY goals run. Tracked
 in issue [#3834](https://github.com/TEAMSchools/teamster/issues/3834).
+
+##### The `bl_wb` columns were silently null, non-deterministically
+
+Fixed 2026-09-15. Worth reading before trusting any pre-fix paste.
+
+The six `*_bl_wb` columns are not computed on the row that carries them. The
+`n_admin_season_*_bl_wb` counts only evaluate on rows whose
+`aggregated_measure_standard_level` is `Below/Well Below`, while the output row
+is the `At/Above` one, so the final `SELECT` self-joins `needed_count_calcs` to
+itself and pulls them from the sibling row on
+`b.grade_goal_type = 'Well Below'`.
+
+The `rn` dedup that feeds both sides partitioned on
+`aggregated_measure_standard_level`, which has two values, and **had no
+`ORDER BY`**. `grade_goal_type` comes from `foundation_measure_standard_level`,
+which has three — `At/Above`, `Below`, `Well Below` — and only `At/Above` and
+`Well Below` match a foundation goal row, so a `Below` student's
+`grade_goal_type` is null. The `Below/Well Below` partition therefore mixed
+students whose goal type was `Well Below` with students whose was null, and
+`rn = 1` picked between them arbitrarily. Land on a `Below` student and the
+self-join found nothing: all six `bl_wb` columns came back null for that school,
+including the REGION-level ones, which cannot legitimately vary by school.
+
+Three consequences, all observed:
+
+- **It varied by region purely by luck.** The odds of a good pick track the Well
+  Below share of the non-At/Above students. Newark's is high enough that it read
+  correct everywhere; Camden and Paterson had blanks. Newark being "good" was
+  never evidence of correctness.
+- **It varied between builds.** The AY2026 paste is blank on Camden K, 1 and 4,
+  while the model at the time of the fix was blank on 1, 6 and 8 — same code,
+  different draw.
+- **The region column disagreed with itself across schools** in the same region
+  and grade, e.g. Camden grade 1 reading 82 for LSP and null for Sumner.
+
+The fix partitions `rn` on `foundation_measure_standard_level` instead, which is
+a strict refinement of the aggregated level, and adds `order by student_number`
+so the pick is deterministic. One row now survives per goal type, so the
+`Well Below` sibling always exists where any Well Below student does.
+
+Verified on AY2026 after the fix: zero nulls in all three regions, the region
+value identical across every school in a region, `at_above + bl_wb = all` exact
+on all nine Camden grades, and the school counts summing exactly to the region
+count.
+
+**One narrower gap survives the fix**, raised in review on #5315 and confirmed.
+The `rn` partition is still scoped by `e.school`, so a `Well Below` survivor row
+exists only where that school actually has a Well Below student at that grade
+and period. A school with `Below` students but none `Well Below` still finds no
+sibling, and its six `bl_wb` columns still come back null — reproducing the
+region-disagrees-with-itself symptom, from absent data rather than a bad draw.
+
+It is far narrower than what was fixed: before, a bad draw could null any school
+that HAD Well Below students, which is nearly all of them. Checking every year
+the model has emitted, grouped by region, school, grade and period, exactly one
+group in 429 hits it — AY2024 — and AY2026 is clean at zero, which is why the
+fix shipped as-is.
+
+The permanent fix is to drop `aggregated_measure_standard_level` from the six
+`n_admin_season_*_bl_wb` window partitions. Those windows partition by the very
+column their own `if()` filters on, which is what forces the value to zero on
+the `At/Above` anchor row and creates the need for a sibling at all — the
+`at_above` columns have no such problem. Widening the partition puts the
+combined count directly on the anchor row and the self-join disappears, along
+with this gap. Tracked as a follow-up, with a test asserting
+`count(distinct n_admin_season_region_gl_bl_wb) = 1` per region, grade and
+period, which is the invariant both failure modes break.
+
+**Any paste taken before 2026-09-15 carries these nulls and should be
+regenerated.**
 
 #### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_bm_goals`
 
@@ -1536,6 +1661,111 @@ the same student × round combination. The current model filters enrollment date
 correctly, but the dual-row case may still occur at the edges. This is a
 candidate for simplification in a future cleanup pass.
 
+#### Testing state: the three states academics use, at two grains
+
+Academics are specific about test completion, and their wording maps to three
+states rather than a boolean:
+
+- a student who did not sit a **measure** the round expected did not test that
+  measure
+- a student who sat **nothing** in a round is Not Tested for that round
+- a student who sat **some but not all** of the round's expected measures is
+  Round Incomplete for that round
+
+They want two percentages out of this: **percent tested by measure** and
+**percent fully tested by round**. Those are different grains, so they take two
+columns.
+
+`round_test_status` on this model carries the round half — Not Tested, Round
+Incomplete, Fully Tested. `completed_test_round` alone cannot, because a false
+value covers both nothing-sat and some-sat-not-all; the split comes from
+`actual_row_count = 0`. Fully Tested keys on `completed_test_round` itself so
+the two columns can never disagree.
+
+`measure_test_status` on `rpt_tableau__dibels_dashboard` carries the measure
+half — Tested or Not Tested, at row grain. It **cannot** live on this model or
+on either PM criteria model:
+
+- this model is at round grain and only COUNTS the expected measures
+- `int_amplify__pm_met_criteria` and `_aimline` carry scored rows only —
+  measured 2026-09-15, zero rows with a null `measure_standard_score` in either,
+  so an untested measure has no row in them at all
+
+The extract is the only relation with a row per expected measure, because it
+drives from the expectation gate and left-joins the scores. So that is where the
+measure-grain flag belongs. (An earlier version of the roster's
+`completed_test_round` description claimed this model "turns an
+expected-but-absent measure into a row". It does not, and that sentence was
+corrected on 2026-09-15.)
+
+The two agree by construction, verified on AY2025 aimline:
+
+| `round_test_status` | Measure Tested | Measure Not Tested |
+| ------------------- | -------------: | -----------------: |
+| Fully Tested        |         33,640 |                  0 |
+| Round Incomplete    |          1,842 |              1,456 |
+| Not Tested          |              0 |              7,927 |
+
+Zero leakage in either direction — every measure in a Not Tested round reads Not
+Tested, every measure in a Fully Tested round reads Tested, and only Round
+Incomplete mixes them.
+
+##### Report the rate per measure per round, not pooled
+
+A single network percent-tested figure is close to meaningless and should not be
+put on a view. Pooling every measure and round in AY2025 aimline gives 79.1%
+(35,482 of 44,865), while the actual per-measure per-round rates in the BOY→MOY
+season alone run from **67.2% to 94.6%** — a 27-point spread the pooled number
+erases. The reportable grain is measure × season × round, sliced by region or
+school as needed.
+
+##### Report participation at measure standard, not at name code
+
+`expected_measure_name_code` groups sub-measures that come off one probe — `ORF`
+covers Reading Accuracy and Reading Fluency, `NWF` covers Decoding and Letter
+Sounds. It is tempting to report percent tested at that grain, reasoning that
+one sitting produces both sub-scores. **Do not.** Academics mean the separate
+measure standards, and the data agrees with them.
+
+Two facts, measured on AY2025 aimline, settle it together.
+
+**A pair is never split once both are expected.** Across 7,399 student-rounds
+where both ORF measures were expected, zero had one tested and the other not;
+same for NWF across 7,524. So a student cannot have Reading Accuracy done
+without Reading Fluency. That half of the probe reasoning holds.
+
+**But the two are not always both expected.** Reading Accuracy is a **BOY→MOY
+measure only** — rounds 1 to 4, with zero expected rows in rounds 5 to 8, while
+Reading Fluency runs all eight:
+
+| Season  | Round |   ORF | ORF-Accu |  Maze | NWF-CLS | NWF-WRC |
+| ------- | ----- | ----: | -------: | ----: | ------: | ------: |
+| BOY→MOY | 1     | 2,945 |    2,945 |     — |     807 |     807 |
+| BOY→MOY | 2     | 1,340 |    1,340 |     — |     800 |     800 |
+| BOY→MOY | 3     | 2,916 |    2,916 | 2,916 |   1,181 |   1,181 |
+| BOY→MOY | 4     |   201 |      201 |     — |   1,286 |   1,286 |
+| MOY→EOY | 5     |   545 |        0 |     — |     951 |     951 |
+| MOY→EOY | 6     | 1,903 |        0 | 1,240 |   1,279 |   1,279 |
+| MOY→EOY | 7     | 1,358 |        0 |     — |     896 |     896 |
+| MOY→EOY | 8     | 2,876 |        0 | 1,529 |     324 |     324 |
+
+The two standards therefore have different denominators, and an `ORF` name-code
+rate is a 50/50 blend in BOY→MOY but pure Reading Fluency in MOY→EOY — one label
+meaning two different things across the year. Maze is rounds 3, 6 and 8 only,
+the same trap in a different shape.
+
+Reporting at measure standard costs nothing, since the paired standards read
+identical rates wherever both are expected. It just also stays correct where
+only one is.
+
+Goal attainment is at measure standard for an independent reason: each standard
+carries its own target.
+
+`round_test_status` is round grain and repeats on every expected measure in the
+round, which the BI layer's LOD / `COUNTD` default already handles. At roster
+grain AY2025 aimline is 15,242 Fully Tested of 24,601 rounds — again, report it
+per season and round rather than as one number.
+
 #### AY 2026–2027 considerations
 
 The BM branch is unaffected by the aimline migration. The PM branches require
@@ -1705,28 +1935,52 @@ Two things the sibling needs that the internal model does not:
   design and the rollups treat null as unknown rather than as a miss. This
   generalises the completion asymmetry: under `AND` one miss settles the round
   however much is unknown, under the null (OR) criteria one pass does, and only
-  where neither has happened is the round unresolved — reported as
-  `No Aimline Status`.
+  where neither has happened is the round unresolved.
 
 `aimline_category` carries T&L's reporting categories, taken from their PM
-guidance document: **Meeting Aimline, On-Track**, **Meeting Aimline,
-Off-Track**, **Below Aimline**, **Not Tested**, and a fifth, **No Aimline
-Status**, for the rows their four do not cover.
+guidance document, plus two the model adds for rows their four do not cover. Six
+values as of 2026-09-15, with AY2025 counts:
+
+| Value                          | AY2025 rows | Source       |
+| ------------------------------ | ----------: | ------------ |
+| **Below Aimline**              |      16,813 | T&L          |
+| **Meeting Aimline, Off-Track** |       7,071 | T&L          |
+| **Meeting Aimline, On-Track**  |       6,844 | T&L          |
+| **Round Incomplete**           |       2,554 | T&L, renamed |
+| **No Aimline Data, Off-Track** |       1,688 | model        |
+| **No Aimline Data, On-Track**  |       1,534 | model        |
 
 The cascade tests in that order, and two things about it are T&L's decisions
-rather than ours. `Not Tested` comes first and overrides the rest, because they
-define it at the round and not the row — a student not tested on one or more of
-the round's expected measures is Not Tested for that round, including on the
-measures they did sit. It is the same `completed_test_round` gate the internal
-method applies, surfaced as a category. And `Meeting Aimline, On-Track` fires on
-the benchmark alone, per their written rule that a student meeting benchmark but
-not aimline still belongs there, so the label overstates what it checks; that
-wording is theirs, recorded so nobody 'corrects' it.
+rather than ours. `Round Incomplete` comes first and overrides the rest, because
+they define it at the round and not the row — a student not tested on one or
+more of the round's expected measures is incomplete for that round, including on
+the measures they did sit. It is the same `completed_test_round` gate the
+internal method applies, surfaced as a category. And `Meeting Aimline, On-Track`
+fires on the benchmark ahead of the aimline verdict, per their written rule that
+a student meeting benchmark but not aimline still belongs there, so the label
+overstates what it checks — 696 of its 6,844 AY2025 rows are actually below the
+aimline. That wording is theirs, recorded so nobody 'corrects' it.
 
-`No Aimline Status` exists because academics chose, when asked, to show the
-score and flag the missing target rather than hide the row or call it Not
-Tested. Those students were tested, so Not Tested would be false, and Below
-Aimline would report a non-failure as a failure.
+**`Round Incomplete` and `Not Tested` are different states, and the extract
+carries both.** Round Incomplete means the student sat some of the round's
+measures but not all. Not Tested means no row exists in this model at all,
+because they sat nothing — the extract's `coalesce` names those. The category
+read `Not Tested` for the incomplete case until 2026-09-15, which put the words
+"Not Tested" on rows displaying a score.
+
+The two `No Aimline Data` values exist because academics chose, when asked, to
+show the score and flag the missing target rather than hide the row or call it
+Not Tested. Those students were tested, so Not Tested would be false, and Below
+Aimline would report a non-failure as a failure. They split by benchmark the
+same way the Meeting values do, because a missing aimline verdict says nothing
+about whether the student is on pace.
+
+That split is also a fix. Until 2026-09-15 the benchmark branch fired before any
+aimline check and swallowed the null case, so 1,534 AY2025 rows read
+`Meeting Aimline, On-Track` with no aimline verdict behind the claim, while the
+other 1,688 sat in a single undifferentiated `No Aimline Status`. Missing data
+is deliberately NOT folded into T&L's benchmark-wins rule: that rule is about a
+student who missed a known aimline, and these rows have no aimline to miss.
 
 `missed_aimline_consecutive` is the two-rounds-in-a-row signal, per measure and
 within one PM season. Consecutive means consecutive among the rounds the student
@@ -1736,9 +1990,84 @@ and 3 only streaks across round 2 correctly. Where the student was expected in a
 round and missed it, the streak falls back to their last recorded verdict, so an
 absence does not break a run either. T&L dropped the three-in-a-row variant.
 
-On AY2025 the model produces 36,486 rows on an exact grain, from 36,507 aimline
-rows in `all_assessments` — the 21-row loss is five Newark students, documented
-in the yml.
+**The labelled twins reached this model late.** The internal sibling has carried
+`measure_standard_goal_status` and `admin_benchmark_goal_status` since the
+`*_status` work; the aimline model did not, and the extract hardcoded both to
+`null` on the Aimline branch, so a Tableau view had nothing to bind to on half
+the PM rows. Added 2026-09-15. `measure_standard_goal_status` is three-valued
+here — Met, Not Met, **No Aimline Data** — because this method has a state the
+internal one does not; `admin_benchmark_goal_status` stays two-valued, since the
+benchmark standard is always published for the rows the model keeps. Both use
+the internal method's vocabulary rather than Amplify's At or Above / Below, so
+one BI field reads across both methods; `aimline_status` carries Amplify's
+wording verbatim for anyone who needs it. `met_measure_standard_goal` likewise
+now carries `met_aimline_goal` through on the Aimline branch instead of null.
+
+The measure-level status is independent of the round gate, which is what makes
+the display coherent: a row can read `Round Incomplete` and `Met` together — the
+round is unfinished, that measure passed.
+
+On AY2025 the model produces 36,504 rows on an exact grain, and the six category
+counts above sum to exactly that. `all_assessments` holds 36,514 aimline rows
+for the year over 36,507 distinct keys, and 3 of those rows, for 2 Newark
+students, do not survive the roster join — documented in the yml.
+
+#### Aimline attainment: the three grains academics report
+
+Academics asked on 2026-09-15 for "% not meeting aimline, overall and by
+measure." That phrase covers three questions, not two, and they are the same
+AND-gate shape as the testing states on the participation roster:
+
+1. did the student meet the aimline on **this measure standard** this round
+2. did they meet it on **every expected standard under one measure name code**
+3. did they meet it on **every expected standard in the round**
+
+All three already exist as columns — no modelling was needed, which is the main
+thing to know before anyone builds them again:
+
+| Question | Column                                                    |
+| -------- | --------------------------------------------------------- |
+| 1        | `met_aimline_goal`                                        |
+| 2        | `met_measure_name_code_goal`                              |
+| 3        | `met_pm_round_criteria` / `met_pm_round_overall_criteria` |
+
+"Not meeting" is the inverse of `met_aimline_goal = 1`, so it needs no separate
+field. Take it from the verdict columns and **not** from `aimline_category`: the
+category applies T&L's benchmark-wins rule, so 696 AY2025 rows read
+`Meeting Aimline, On-Track` while sitting below the aimline. For a metric whose
+purpose is finding students who need intervention, the label undercounts the
+problem set by exactly those rows.
+
+Measured on AY2025 aimline, each grain at its own unit of analysis:
+
+| Grain                      |  Units |    Met | Not met | No verdict | % not met |
+| -------------------------- | -----: | -----: | ------: | ---------: | --------: |
+| Measure standard           | 44,865 | 13,886 |  18,284 |     12,695 |     56.8% |
+| Measure name code          | 29,935 |  7,362 |  13,742 |      8,831 |     65.1% |
+| Round, verdicts only       | 20,250 |  3,993 |  10,757 |      5,500 |     72.9% |
+| Round, participation-gated | 20,250 |  3,613 |  12,552 |      4,085 |     77.6% |
+
+The percentage is over rows with a verdict. The rate climbs as the gate widens,
+which is what an AND does — but it means 57% and 78% are both defensible answers
+to "% not meeting aimline," so **every view must state its grain** or the two
+get quoted interchangeably.
+
+Two choices belong to academics, not to the model. Whether grain 3 uses the
+participation gate — their wording, "all expected measure standards," says yes,
+and it matches their rule that an untested required measure is a miss, but
+`met_pm_round_overall_criteria` reports 0 for an unresolved round, so read the
+rate off the flag and the label off `pm_round_status`. And whether the
+no-verdict rows count as not met: at 12,695 of 44,865 at measure grain they are
+not a rounding residual, and folding them in drops each rate by 10 to 20 points.
+
+The gate is over **expected** standards, never all theoretically possible ones,
+and that is load-bearing rather than incidental. Reading Accuracy has zero
+expected rows in rounds 5 to 8, so `ORF` from round 5 onward requires Reading
+Fluency alone; if the gate required both, every grade 3-8 student would fail ORF
+for the back half of the year by definition. PSF (rounds 1 to 3), Comprehension
+(3, 6 and 8) and WRF (round 8 only) have the same shape. The per-round
+expectation counts are tabulated under
+[Report participation at measure standard, not at name code](#report-participation-at-measure-standard-not-at-name-code).
 
 #### `met_admin_benchmark_goal` is per round, not latched
 
