@@ -206,6 +206,13 @@ change). That is intended — a teacher with no audited sections has no gradeboo
 to audit — but it means the exclusion moves the denominator, not just the
 numerator, on any teacher-level rate built from this model.
 
+All of these scope predicates use `!=`, which drops NULLs along with the
+excluded value. None of `course_number`, `school_level_alt`,
+`_dbt_source_project` or `exclude_from_gpa` carries a `not_null` test, and all
+four are fully populated in AY 2026-2027 — but if rows ever go missing from the
+audit with no obvious cause, check those columns for NULLs before suspecting the
+flag logic.
+
 Two sibling models (`int_powerschool__student_course_grades_spine`,
 `rpt_tableau__gradebook_gpa`) filter non-academic courses with a shared
 `cc_course_number not in (...)` list naming all of the above plus `SEM22106S1`.
