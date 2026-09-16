@@ -37,23 +37,35 @@ def expected_name(subject: str, bucket: str) -> str:
 
 def compare(xw: Crosswalk, live_rows: list[dict]) -> list[str]:
     problems = []
-    live = {(r["region"], int(r["programid"])): r["specprog_name"] for r in live_rows}
+    live: dict[tuple[str, int], set[str]] = {}
+    for r in live_rows:
+        key = (r["region"], int(r["programid"]))
+        live.setdefault(key, set()).add(r["specprog_name"])
     for p in xw.programs:
-        name = live.get((p.region, p.programid))
+        names = live.get((p.region, p.programid))
         want = expected_name(p.subject, p.bucket)
-        if name is None:
+        if names is None:
             problems.append(
                 f"{p.region}: crosswalk program id {p.programid} ({want}) not found in PowerSchool"
             )
-        elif name != want:
+        elif len(names) > 1:
+            joined = ", ".join(sorted(names))
             problems.append(
-                f"{p.region}: program id {p.programid} is '{name}' in PowerSchool but '{want}' in crosswalk"
+                f"{p.region}: program id {p.programid} has {len(names)} names in "
+                f"PowerSchool ({joined}); crosswalk expects '{want}'"
             )
+        else:
+            (name,) = names
+            if name != want:
+                problems.append(
+                    f"{p.region}: program id {p.programid} is '{name}' in PowerSchool but '{want}' in crosswalk"
+                )
     known = {(p.region, p.programid) for p in xw.programs}
-    for (region, pid), name in sorted(live.items()):
+    for (region, pid), names in sorted(live.items()):
         if (region, pid) not in known:
+            joined = ", ".join(sorted(names))
             problems.append(
-                f"{region}: PowerSchool bucket program {pid} '{name}' is not in crosswalk"
+                f"{region}: PowerSchool bucket program {pid} '{joined}' is not in crosswalk"
             )
     return problems
 

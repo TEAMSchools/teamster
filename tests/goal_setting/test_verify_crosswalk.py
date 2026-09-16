@@ -53,3 +53,11 @@ def test_sql_scopes_regions_and_bucket_names():
 def test_sql_emits_a_valid_bigquery_regex_literal():
     q = sql(["Camden"])
     assert r"(kipp\w+)_" in q
+
+
+def test_two_live_names_for_one_program_id_are_reported():
+    rows = full_live() + [live("Newark", 7375, "Bucket 3 - Math")]
+    (problem,) = compare(XW, rows)
+    assert "7375" in problem
+    assert "2 names" in problem
+    assert "Bucket 2 - Math" in problem and "Bucket 3 - Math" in problem

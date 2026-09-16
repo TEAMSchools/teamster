@@ -14,7 +14,7 @@ def explain(run_dir: Path, student_number: int, region: str | None = None) -> li
         rows = [
             r
             for r in csv.DictReader(fh)
-            if int(r["student_number"]) == student_number
+            if r["student_number"] == str(student_number)
             and (region is None or r["region"] == region)
         ]
     if not rows:
