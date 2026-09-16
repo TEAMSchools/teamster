@@ -205,7 +205,7 @@ jobs:
       # the build session
       - name: Initialize build session
         id: ci-init
-        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@dabeb57f7c4426fe594232d6ea654336776f6a23 # v1.13.20
+        uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@9d42f43caccde5530d35443af05115882067d771 # v1.13.22
         if: needs.prerun.outputs.result != 'skip'
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
