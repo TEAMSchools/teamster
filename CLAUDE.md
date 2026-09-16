@@ -274,12 +274,16 @@ exploration that led nowhere (keep only the conclusion).
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
 - Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
-  hosted server) wins any job it covers. `dagster` (homebrew) keeps only what
-  `dagster-plus` cannot do: staleness causes, automation-condition evaluations,
-  partition statuses, check executions, sensors, schedules, backfills,
-  hybrid-agent health, and compute logs. Nothing overlaps: every duplicate is
-  denied in `settings.json`, so a denial there means the other server owns that
-  job. Details in `.claude/context/dagster-plus.md`.
+  hosted server) wins any job it covers. `dagster` (homebrew) keeps what
+  `dagster-plus` cannot do, in 5 groups: automation (sensors, schedules, ticks,
+  condition evaluations), backfill listing and control, asset history (staleness
+  causes, partition counts, check executions, materializations), compute logs,
+  and infrastructure (agent and daemon health, code-location load history and
+  reload, concurrency slots). Nothing overlaps. Most `mcp__dagster__*` denials
+  in `settings.json` mean `dagster-plus` owns that job, but
+  `launch_multiple_runs` and `set_sensor_cursor` have no official counterpart,
+  so those 2 are off entirely rather than relocated. Details in
+  `.claude/context/dagster-plus.md`.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
   - `gh issue develop`
