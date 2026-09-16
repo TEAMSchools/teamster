@@ -72,9 +72,14 @@ Before step 1, do two things:
    stale catalog has already produced a confident-but-wrong "unanswerable" in a
    prior session. If a field or view you need appears to be missing, refresh
    `meta` before concluding it is unavailable.
-3. **Filter `response_type` explicitly** on every assessment query. Never rely
-   on the silent default blend — see `assessment-cube-reference.md` (Shared
-   conventions) for the accepted values and the default.
+3. **Filter `response_type` explicitly** on every assessment query, defaulting
+   to `overall`. i-Ready now carries a `group` row per domain and DIBELS one per
+   sub-measure — for i-Ready they outnumber the subject-level rows about 4.7 to
+   1, so an unfiltered student count or proficiency rate counts each student
+   once per domain and is wrong by a multiple while looking entirely plausible.
+   Only widen past `overall` when a domain-, sub-measure-, or standard-level
+   breakdown was actually asked for. Accepted values are in
+   `assessment-cube-reference.md` (Shared conventions).
 4. **State confidence and flag every inference.** Give each answer a High /
    Medium / Low confidence rating, and explicitly list every interpretation or
    default you chose on the participant's behalf. Surface these for human
@@ -211,6 +216,13 @@ section of `assessment-cube-reference.md`:
   section; NJSLA / NJGPA implies NJ state; FAST / EOC implies FL state. Select a
   source with `assessment_type`, not `is_internal_assessment` (see Shared
   conventions).
+  - **A domain or sub-measure name is a family hint too, and it does not sound
+    like one.** "Phonics", "vocabulary", "number and operations", "algebra and
+    algebraic thinking", "measurement and data", or a comprehension breakdown
+    means i-Ready domains; a named DIBELS measure means DIBELS sub-measures. A
+    question about phonics is an i-Ready question, and answering it needs
+    `response_type = 'group'` — the one case where widening past `overall` is
+    correct rather than a defect.
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
 
@@ -220,8 +232,10 @@ section of `assessment-cube-reference.md`:
    `response_type`, grain, performance bands, subject fields, enrollment
    resolution, teacher attribution, domain rollup.
 2. **Internal — Illuminate** — `QA` / `MQQ` / `CRQ` module conventions.
-3. **Vendor normed diagnostics — i-Ready** — grade-level placement scale.
-4. **Vendor normed diagnostics — DIBELS** — benchmark tiers.
+3. **Vendor normed diagnostics — i-Ready** — grade-level placement scale, and
+   the per-domain `group` rows.
+4. **Vendor normed diagnostics — DIBELS** — benchmark tiers, and the
+   per-sub-measure `group` rows.
 5. **Vendor normed diagnostics — STAR** — `Level 1`–`Level 5`.
 6. **NJ state** — NJSLA, NJSLA-Science, and NJGPA conventions.
 7. **FL state** — FAST, FL-Science, and EOC conventions.
