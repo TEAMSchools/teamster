@@ -34,5 +34,22 @@ models:
         data_type: int64
       - name: total_4yr_grad
         data_type: int64
+      - name: total_graduates
+        data_type: int64
+        description:
+          CSGF's own field tooltip reads "Include All Students Who Received a
+          Diploma." Distinct from total_4yr_grad -- not scoped to co.cohort =
+          var("current_academic_year") at all, since a student who received a
+          diploma this year can belong to an earlier cohort (5th-year/held-back
+          graduate) or a later one (early graduate), and both count here even
+          though grad_roster's cohort filter excludes them from every other
+          column on this model. Counts distinct students with exitcode = 'G1'
+          whose academic_year + 1 equals the current academic year, grouped by
+          school only. Added 2026-09-11 when CSGF's Portal task added this
+          column; confirmed real students exist in both the earlier- and
+          later-cohort direction for all three current HS schools (e.g. KIPP
+          Cooper Norcross High School has 87 on-time cohort-2026 grads per
+          total_4yr_grad, plus 3 cohort-2025 and 4 cohort-2027 grads this column
+          adds, for 94 total).
       - name: pct_grad
         data_type: float64

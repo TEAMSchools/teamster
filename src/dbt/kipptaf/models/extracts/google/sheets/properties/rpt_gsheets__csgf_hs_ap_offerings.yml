@@ -32,7 +32,10 @@ models:
       `ap_course_name`), same as any course a given school simply doesn't offer.
       Confirmed none of the 11 real courses were taught network-wide as of the
       2026-2027 cycle (2025-2026 academic year); revisit this list if that
-      changes.
+      changes. Scoped to enroll_status in (0, 3) -- Currently Enrolled or
+      Graduated -- to match rpt_gsheets__csgf_hs_enrollment's population; see
+      rpt_gsheets__csgf_hs_sat.yml for the full rationale (same fix, applied to
+      all four HS-scoped student-level models on 2026-09-11).
     columns:
       - name: school_name
         data_type: string
