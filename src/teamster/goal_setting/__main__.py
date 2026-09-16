@@ -81,6 +81,27 @@ def _err(msg: str) -> int:
     return 1
 
 
+def _check_crosswalk_covers(group, xw, xw_path: Path) -> None:
+    """Every region x bucket the group can emit must resolve to a program id.
+
+    Runs before the first query, so a crosswalk missing a region fails in a
+    second instead of after the roster fetch, the rules, and three of the four
+    output files.
+    """
+    missing = [
+        f"{region} {group.subject} {bucket}"
+        for region in group.regions
+        for bucket in outputs.PROGRAM_BUCKETS
+        if not xw.has_program(region, group.subject, bucket)
+    ]
+    if missing:
+        raise ConfigError(
+            f"{xw_path} has no program id for group '{group.name}': "
+            + ", ".join(missing)
+            + ". Add the rows, or drop the region from the group."
+        )
+
+
 def _rollout(a: argparse.Namespace, client_factory) -> int:
     rules_path = a.rules or DEFAULT_RULES_DIR / f"ay{a.year}.yaml"
     xw_path = a.crosswalk or DEFAULT_RULES_DIR / "ps_programs.yaml"
@@ -91,6 +112,7 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
             f"{rules_path} is for academic_year {rules.academic_year}, not {a.year}"
         )
     group = rules.group(a.group)
+    _check_crosswalk_covers(group, xw, xw_path)
 
     client = client_factory()
     problems = verify_crosswalk.run(client, xw)

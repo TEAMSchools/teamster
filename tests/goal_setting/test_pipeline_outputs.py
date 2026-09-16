@@ -156,6 +156,18 @@ def test_write_run_writes_five_files_in_expected_shapes(tmp_path):
     assert "bucket4_outcome" in sb[0] and "rank" in sb[0] and "projected_score" in sb[0]
 
 
+def test_write_run_writes_nothing_when_a_program_id_is_missing(tmp_path):
+    from teamster.goal_setting.config import ConfigError, Crosswalk
+
+    p = run_group(GROUP, 2026, roster(), TARGETS, baseline=None)
+    m = build(p, "r" * 40, "c" * 40, [], None, False)
+    empty = Crosswalk(programs=[])
+    with pytest.raises(ConfigError) as e:
+        write_run(tmp_path / "run", p, m, empty)
+    assert "Newark Math Bucket 1" in str(e.value)
+    assert not (tmp_path / "run").exists()
+
+
 def test_summary_tables_mention_school_and_untested_count():
     p = run_group(GROUP, 2026, roster(), TARGETS, baseline=None)
     text = summary_tables(p)

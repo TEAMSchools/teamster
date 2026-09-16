@@ -58,7 +58,9 @@ def program_rows(p: Proposal, xw: Crosswalk) -> list[dict]:
 
 
 def write_run(out_dir: Path, p: Proposal, manifest: dict, xw: Crosswalk) -> list[Path]:
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # Build every row set before opening a file. program_rows raises when the
+    # crosswalk is missing a region, and a half-written run folder reads as a
+    # complete one to the next --input replay.
     student_rows = [
         asdict(r)
         for r in sorted(
@@ -73,10 +75,15 @@ def write_run(out_dir: Path, p: Proposal, manifest: dict, xw: Crosswalk) -> list
         )
     ]
     student_cols = list(student_rows[0]) if student_rows else []
+    goal_rows = school_goal_rows(p)
+    ps_rows = program_rows(p, xw)
+    manifest_text = json.dumps(manifest, indent=2) + "\n"
+
+    out_dir.mkdir(parents=True, exist_ok=True)
     written = [
         _write_csv(
             out_dir / "school_goals.csv",
-            school_goal_rows(p),
+            goal_rows,
             [
                 "Academic_Year",
                 "School_ID",
@@ -88,7 +95,7 @@ def write_run(out_dir: Path, p: Proposal, manifest: dict, xw: Crosswalk) -> list
         ),
         _write_csv(
             out_dir / "ps_programs.csv",
-            program_rows(p, xw),
+            ps_rows,
             ["region", "student_number", "programid", "enter_date", "exit_date"],
         ),
         _write_csv(out_dir / "student_buckets.csv", student_rows, student_cols),
@@ -99,7 +106,7 @@ def write_run(out_dir: Path, p: Proposal, manifest: dict, xw: Crosswalk) -> list
         ),
     ]
     mpath = out_dir / "manifest.json"
-    mpath.write_text(json.dumps(manifest, indent=2) + "\n")
+    mpath.write_text(manifest_text)
     written.append(mpath)
     return written
 

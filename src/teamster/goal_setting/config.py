@@ -215,6 +215,12 @@ class Crosswalk(Strict):
                 )
         return self
 
+    def has_program(self, region: str, subject: str, bucket: str) -> bool:
+        return any(
+            (p.region, p.subject, p.bucket) == (region, subject, bucket)
+            for p in self.programs
+        )
+
     def program_id(self, region: str, subject: str, bucket: str) -> int:
         for p in self.programs:
             if (p.region, p.subject, p.bucket) == (region, subject, bucket):

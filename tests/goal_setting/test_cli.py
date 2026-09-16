@@ -26,8 +26,10 @@ class FakeClient:
         self.roster_rows = roster_rows
         self.target_rows = target_rows
         self.live_programs = live_programs
+        self.n_queries = 0
 
     def query(self, sql: str):
+        self.n_queries += 1
         if "int_iready__diagnostic_results" in sql:
             return FakeResult(self.roster_rows)
         if "int_assessments__academic_goals" in sql:
@@ -98,14 +100,29 @@ def _factory(rows, target_rows=None, live=None):
     replay or a diff meaningless.
     """
 
+    made: list[FakeClient] = []
+
     def make():
-        return FakeClient(
+        client = FakeClient(
             rows,
             targets() if target_rows is None else target_rows,
             _live_matching_crosswalk() if live is None else live,
         )
+        made.append(client)
+        return client
 
+    make.clients = made  # type: ignore[attr-defined]
     return make
+
+
+def _crosswalk_without(region: str, path: Path) -> Path:
+    """Copy the committed crosswalk with one region's rows removed."""
+    import yaml
+
+    data = yaml.safe_load((REPO / "config/goal_setting/ps_programs.yaml").read_text())
+    data["programs"] = [p for p in data["programs"] if p["region"] != region]
+    path.write_text(yaml.safe_dump(data))
+    return path
 
 
 def run(argv, tmp_path, live=None):
@@ -330,6 +347,30 @@ def test_crosswalk_problem_aborts_rollout(tmp_path, capsys):
         client_factory=_factory(roster_rows(), live=live),
     )
     assert rc == 1 and "not found in PowerSchool" in capsys.readouterr().err
+
+
+def test_group_region_without_crosswalk_rows_aborts_before_querying(tmp_path, capsys):
+    xw = _crosswalk_without("Paterson", tmp_path / "ps_programs.yaml")
+    factory = _factory(roster_rows())
+    rc = main(
+        [
+            "rollout",
+            "--year",
+            "2026",
+            "--group",
+            "nj_math_1_2",
+            "--out",
+            str(tmp_path / "r"),
+            "--crosswalk",
+            str(xw),
+            "--plan",
+        ],
+        client_factory=factory,
+    )
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "Paterson Math Bucket 1" in err and "Paterson Math Bucket 3" in err
+    assert sum(c.n_queries for c in factory.clients) == 0
 
 
 def test_show_replays_a_student(tmp_path, capsys):
