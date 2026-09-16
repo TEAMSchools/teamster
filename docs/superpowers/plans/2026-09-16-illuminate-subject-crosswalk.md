@@ -311,13 +311,23 @@ Append to `src/dbt/kipptaf/tests/properties.yml`:
 
 ```yaml
 - name: stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources
-  description:
+  description: >-
     Lists any source-and-raw-subject pair present in the data but missing from
-    the crosswalk. Warn, not error, because an unmapped subject falls back to
-    its raw value rather than dropping the row.
+    the crosswalk. Severity is the project default, warn rather than error,
+    because an unmapped subject falls back to its raw value rather than dropping
+    the row.
   config:
-    severity: warn
+    meta:
+      dagster:
+        ref:
+          name: stg_google_sheets__assessments__vendor_subject_crosswalk
 ```
+
+Do NOT add `severity: warn`. `dbt_project.yml` already sets
+`data_tests: +severity: warn` project-wide, so an explicit copy is dead config.
+`config.meta.dagster.ref` is the one per-test field that belongs here — 56 of
+the 57 registered singular tests carry it, and it attaches the result to the
+Dagster asset. Descriptions in this file use the `>-` folded-block form.
 
 That file exists and already registers the sibling singular tests, including
 `int_collegeboard__ap_unpivot__crosswalk_resolves`. Match the surrounding
