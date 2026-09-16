@@ -138,10 +138,15 @@ in the result becomes `[redacted: secret material]` and an `additionalContext`
 note says why. Fires for Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch,
 and MCP tools. Does NOT fire for Edit.
 
-**MCP spill files are Bash-unreadable:** a large MCP result that overflows the
-context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
-(`jq`/`cat`) on that path is denied by the hook. Use a subagent (as the spill
-message suggests) or reconstruct the data from prior tool output instead.
+**MCP spill files are Bash-readable — read them directly, never dispatch a
+subagent.** A large MCP result that overflows the context budget dumps to
+`~/.claude/projects/<proj>/<session>/tool-results/<tool>-<ts>.txt`, shaped
+`{result: string}` where `result` is itself a JSON string. No hook blocks that
+path: Rule 2's protected set is `settings.json`, `settings.local.json`,
+`hooks/*.sh` and `shell-snapshots/`, none of which match `.claude/projects/`.
+Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
+suggests a subagent — ignore that; verified 2026-09-16 after following the old
+"Bash-unreadable" note here burned a ~42k-token dispatch to run one `jq length`.
 
 ## Context injection (`tool-gotchas.sh`)
 
