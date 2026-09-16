@@ -186,3 +186,9 @@ scrubbed post-boot, so `op run` silently breaks after the first Codespace
 restart. Keep `scripts/dagster-mcp-launch.sh` as the launcher. Package
 internals:
 [TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
+
+That launcher holds the only copy of the `DAGSTER_CLOUD_API_TOKEN` 1Password
+reference, and both Dagster servers get their credentials from it. When
+something else needs the token, source it with `--no-exec` — which populates the
+variables and skips starting the server — instead of adding a second reference.
+`scripts/dagster-plus-mcp-headers.sh` is the working example.

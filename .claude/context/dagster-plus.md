@@ -122,6 +122,12 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   slash-separated string.
 - Tools return `structuredContent` alongside the text block, unlike the homebrew
   server's raw JSON strings.
-- Auth is OAuth per user, so the first call in a fresh Codespace needs `/mcp` →
-  authenticate. Header auth (`Dagster-Cloud-Organization: kipptaf` plus a bearer
-  token) also works and is the path for a service user.
+- Auth is the same `DAGSTER_CLOUD_API_TOKEN` the homebrew server uses, not
+  OAuth, so no `/mcp` authenticate step is needed in a fresh Codespace. The
+  `headersHelper` field in `.mcp.json` runs
+  `scripts/dagster-plus-mcp-headers.sh` at connection time, which sources
+  `scripts/dagster-mcp-launch.sh --no-exec` and prints
+  `{"Authorization": "Bearer …", "Dagster-Cloud-Organization": "kipptaf"}`. A
+  401 from every tool means that helper failed — run it directly and check it
+  emits JSON on stdout and nothing on stderr. Claude Code kills it after 10s; it
+  takes about 0.7s.
