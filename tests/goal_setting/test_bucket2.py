@@ -94,6 +94,24 @@ def test_same_student_number_in_two_schools_is_ranked_independently():
     assert by_school["Rise"].bucket == "Bucket 2"
 
 
+def test_null_projected_score_is_never_admitted():
+    # A student flagged approaching with no projected score used to tie with
+    # the seeded prev_score of None, take rank 0, and clear any cutoff.
+    for n_to_move in (0, 5):
+        nulls = appr(None, student_number=8001)
+        scored = appr(410, student_number=8002)
+        out = {
+            r.student_number: r
+            for r in top_approaching_to_move(
+                [nulls, scored], [goal(n_to_move)], "admit"
+            )
+        }
+        assert out[8001].rank == 2, n_to_move
+        assert out[8001].bucket is None, n_to_move
+        assert out[8001].reason.endswith("not ranked: no projected score"), n_to_move
+        assert out[8002].bucket == ("Bucket 2" if n_to_move else None), n_to_move
+
+
 def test_none_strategy_is_identity():
     recs = [appr(410)]
     assert none(recs, [goal(3)], "admit") == recs
