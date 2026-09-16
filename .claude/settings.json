@@ -213,7 +213,7 @@
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
-    "dagster-expert@dagster": true,
+    "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
@@ -239,12 +239,6 @@
       }
     },
     "superpowers-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "obra/superpowers"
-      }
-    },
-    "superpowers-dev": {
       "source": {
         "source": "github",
         "repo": "obra/superpowers"

@@ -7,7 +7,6 @@ with
         select
             rr.powerschool_student_number as student_number,
             rr.assessment_id,
-            rr.response_type,
             rr.response_type_id,
             rr.response_type_code,
             rr.response_type_description,
@@ -22,6 +21,11 @@ with
 
             rr.date_taken as test_date,
 
+            -- Null here is a real assigned-but-not-taken record, not a join
+            -- defect: response_rollup LEFT JOINs responses onto the scaffold's
+            -- "expected to take" grain.
+            coalesce(rr.response_type, 'not_taken') as response_type,
+
             to_json_string(rr.assessment_ids) as assessment_ids_json,
 
             rr.assessment_id as source_assessment_id,
@@ -31,12 +35,6 @@ with
 
             c.administered_date,
 
-            -- assessment_date_key: the date used for academic-year / calendar
-            -- rollups -- administration date where present (internal/college),
-            -- else the student's test date. State/vendor administrations span a
-            -- window and carry no single administration date, so the join to
-            -- dim_dates must key on this to resolve academic_year for them
-            -- (#4546).
             coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
 
             cast(null as numeric) as scale_score,
@@ -194,6 +192,10 @@ with
             cast(percentile as numeric) as national_percentile,
 
             overall_relative_placement_int >= 4 as is_mastery,
+
+            'overall' as response_type,
+            cast(null as string) as response_type_code,
+            cast(null as string) as response_type_description,
         from {{ ref("int_iready__diagnostic_results") }}
         where
             overall_scale_score is not null
@@ -201,8 +203,92 @@ with
             and completion_date is not null
     ),
 
+    -- Domain-level rows. module_code stays the subject, same FK-resolution
+    -- reason as DIBELS above. No 'relative_placement is not null' predicate
+    -- because int_iready__domain_unpivot already enforces it (#4709).
+    iready_domain_scores_raw as (
+        select
+            student_id as student_number,
+            academic_year_int as academic_year,
+            `subject` as module_code,
+            illuminate_subject,
+            test_round as administration_period,
+            completion_date as test_date,
+            `start_date`,
+            _dbt_source_project,
+
+            relative_placement as proficiency_level,
+
+            'iready' as score_source,
+            'group' as response_type,
+
+            domain_name as response_type_code,
+
+            initcap(replace(domain_name, '_', ' ')) as response_type_description,
+
+            cast(scale_score as numeric) as scale_score,
+            cast(null as numeric) as national_percentile,
+
+            -- Matched on labels, not an ordinal, because no per-domain
+            -- equivalent of overall_relative_placement_int exists upstream. The
+            -- accepted_values test on relative_placement guards the strings.
+            relative_placement
+            in ('Early On Grade Level', 'Mid or Above Grade Level') as is_mastery,
+        from {{ ref("int_iready__domain_unpivot") }}
+        where
+            completion_date is not null
+            and _dbt_source_project is not null
+            and relative_placement != 'Not Assessed'
+            and domain_name != 'comprehension_overall'
+    ),
+
+    iready_all_raw as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+        from iready_scores_raw
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+        from iready_domain_scores_raw
+    ),
+
     -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
     -- same-day retests and fiscal-year re-pull duplicates exist upstream.
+    -- partition_by includes response_type_code because domain rows share
+    -- module_code with the subject-level anchor -- without it every domain row
+    -- and its anchor collapse into one row, silently.
     -- partition_by deliberately omits academic_year: a physical test pulled
     -- under two fiscal-year partitions has the same test_date but a differing
     -- pull-derived academic_year, so keying on academic_year would keep both
@@ -211,22 +297,66 @@ with
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
     -- deterministic. Remove this dedupe when staging is fixed.
-    -- Measured at 273,791 input rows for #5252 -- below the ~1M threshold for
-    -- the ranked-column rewrite, so this stays on the macro. Don't re-measure.
-    iready_scores as (
-        {{
-            dbt_utils.deduplicate(
-                relation="iready_scores_raw",
-                partition_by="""
+    -- #5252 measured this site at 273,791 input rows and left it on
+    -- dbt_utils.deduplicate as below the ~1M ranked-column threshold. The
+    -- domain union above changes that. Re-measured against prod 2026-09-16:
+    -- 1,561,075 input rows (274,013 anchor + 1,287,062 domain), with the model
+    -- at 13.62 slot hours over the trailing 7 days. Both gate conditions in
+    -- .claude/rules/dbt-sql.md hold, so this site takes the ranked-column form.
+    -- The window reads the whole union rather than each branch, or the tie-break
+    -- ranks per branch and an anchor row can survive alongside its own domain.
+    iready_all_raw_ranked as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+
+            row_number() over (
+                partition by
                     _dbt_source_project,
                     student_number,
                     administration_period,
                     module_code,
+                    response_type_code,
                     test_date
-                """,
-                order_by="start_date desc, scale_score desc, academic_year desc",
-            )
-        }}
+                order by `start_date` desc, scale_score desc, academic_year desc
+            ) as rn,
+        from iready_all_raw
+    ),
+
+    iready_scores as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+        from iready_all_raw_ranked
+        where rn = 1
     ),
 
     star_scores_raw as (
@@ -286,13 +416,13 @@ with
         }}
     ),
 
-    -- DIBELS benchmark composites are unique at this grain upstream
-    -- (verified); no dedupe needed.
+    -- Already unique at the (student, year, period, date, measure_standard)
+    -- grain, so no dedupe here. The unique test on assessment_score_key is
+    -- what holds that.
     dibels_scores as (
         select
             student_number,
             academic_year,
-            measure_standard as module_code,
             illuminate_subject,
             `period` as administration_period,
             client_date as test_date,
@@ -301,16 +431,24 @@ with
             measure_standard_level as proficiency_level,
 
             'dibels' as score_source,
+            'Composite' as module_code,
 
             cast(measure_standard_score as numeric) as scale_score,
             cast(measure_percentile as numeric) as national_percentile,
 
             measure_standard_level_int >= 3 as is_mastery,
+
+            if(measure_standard = 'Composite', 'overall', 'group') as response_type,
+
+            case
+                when measure_standard != 'Composite' then measure_standard
+            end as response_type_code,
+
+            case
+                when measure_standard != 'Composite' then measure_name
+            end as response_type_description,
         from {{ ref("int_amplify__all_assessments") }}
-        where
-            assessment_type = 'Benchmark'
-            and measure_standard = 'Composite'
-            and client_date is not null
+        where assessment_type = 'Benchmark' and client_date is not null
     ),
 
     vendor_all as (
@@ -327,6 +465,9 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
         from iready_scores
 
         union all
@@ -344,6 +485,10 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+
+            'overall' as response_type,
+            cast(null as string) as response_type_code,
+            cast(null as string) as response_type_description,
         from star_scores
 
         union all
@@ -361,6 +506,9 @@ with
             scale_score,
             national_percentile,
             is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
         from dibels_scores
     ),
 
@@ -515,8 +663,6 @@ select
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
-    -- state administrations carry no administration date; test_date is the
-    -- calendar date used for academic-year rollups (#4546)
     su.test_date as assessment_date_key,
 
     su.scale_score,
@@ -527,7 +673,7 @@ select
     su.performance_band as proficiency_level,
     su.is_proficient as is_mastery,
 
-    cast(null as string) as response_type,
+    'overall' as response_type,
     cast(null as string) as response_type_code,
     cast(null as string) as response_type_description,
     cast(null as string) as response_type_root_description,
@@ -568,6 +714,7 @@ select
                 "va.administration_period",
                 "va.module_code",
                 "va.test_date",
+                "va.response_type_code",
             ]
         )
     }} as assessment_score_key,
@@ -608,8 +755,6 @@ select
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
-    -- vendor administrations carry no administration date; test_date is the
-    -- calendar date used for academic-year rollups (#4546)
     va.test_date as assessment_date_key,
 
     va.scale_score,
@@ -619,10 +764,10 @@ select
     va.national_percentile,
     va.proficiency_level,
     va.is_mastery,
+    va.response_type,
+    va.response_type_code,
+    va.response_type_description,
 
-    cast(null as string) as response_type,
-    cast(null as string) as response_type_code,
-    cast(null as string) as response_type_description,
     cast(null as string) as response_type_root_description,
     cast(null as bool) as is_replacement,
     cast(null as numeric) as performance_band_label_number,
