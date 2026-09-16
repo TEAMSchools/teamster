@@ -2,9 +2,11 @@
 
 ## Never
 
-- **Emit PII values** to any external surface: PR comments, commits, issues,
-  Slack, Asana, scheduled-agent output. Redact to `Student A` or column names
-  first. Local scratch and the terminal are fine. See _PII reference_.
+- **Emit PII values** to any surface outside this session: PR comments, commits,
+  issues, Slack, Asana, scheduled-agent output. Private and internal does not
+  exempt a surface; the audience is wider and longer-lived than the person
+  asking. Redact to `Student A` or column names first. Local scratch and the
+  terminal are fine. See _PII reference_.
 - **Push to `main`.** Hand a main push to the user; do not retry. Editing and
   committing LOCAL `main` is allowed when the user asks.
 - **Run a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs`** unless
