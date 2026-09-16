@@ -20,32 +20,31 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   definitions (`get_assets`, `get_asset`), deployment listing, run detail, code
   locations, run launches, and re-execution. Duplicates on both sides are denied
   in `settings.json` — one tool per job.
-- **4 jobs stay on the homebrew server** because this server's tool is a strict
+- **3 jobs stay on the homebrew server** because this server's tool is a strict
   subset, not because of preference: `list_runs` (this one has no `tags`,
-  `run_ids`, or time-range filters), `get_run_logs` (no `filter_types`),
-  `terminate_runs` (this one takes 1 run id and no `terminate_policy`), and
-  `get_asset_health` (see the health bullet below).
+  `run_ids`, or time-range filters), `get_run_logs` (no `filter_types`), and
+  `terminate_runs` (this one takes 1 run id and no `terminate_policy`).
 - `list_asset_checks` is the only route to an asset's check NAMES, which
   `mcp__dagster__get_asset_check_executions` requires as `check_name`. Use the
   two together.
-- **`get_asset` / `get_assets` report health as 4 flat status strings**, with
-  none of the detail behind them. Use them for the definition, lineage, and
-  metadata, and `get_assets` with a `prefix` for a cheap health sweep. For the
-  detail, only 1 of the 3 metadata blocks on `mcp__dagster__get_asset_health` is
-  worth the second call:
-  - `assetChecksStatusMetadata` (`numFailedChecks`, `numWarningChecks`,
-    `totalNumChecks`) — keep. It is the only 1-call answer to "how many checks
-    are failing right now", for up to 250 asset keys. `list_asset_checks`
-    returns check names with NO status, and `get_asset_check_executions` needs a
-    `check_name` per call. The Insights metrics `__dagster_asset_check_errors` /
-    `__dagster_asset_check_successes` count check outcomes over a time window,
-    not current state.
-  - `materializationStatusMetadata` — redundant. `get_asset_partition_statuses`
-    returns `numMaterialized` / `numPartitions` / `numFailed`, which gives the
-    same missing count (verified: 349 of 450, 0 failed, matching
-    `numMissingPartitions: 101`). Only `latestFailedRunId` is unique to it.
-  - `freshnessStatusMetadata` — redundant. Its `lastMaterializedTimestamp` is
-    `get_asset`'s `latest_materialization_timestamp`.
+- **`health` is 4 current-state enums** — `asset_health`,
+  `materialization_status`, `asset_checks_status`, `freshness_status`, each
+  `HEALTHY` / `DEGRADED` / `WARNING` / `UNKNOWN` / `NOT_APPLICABLE`, derived
+  from each check's and partition's latest execution whenever that ran.
+  `get_assets` with a `prefix` returns them for a whole prefix, which is the
+  asset health sweep; `get_asset_health` on the homebrew server is denied. The
+  enums carry no counts, so drill down from a non-HEALTHY one:
+  - `asset_checks_status` → `list_asset_checks` for the check names, then
+    `mcp__dagster__get_asset_check_executions` per name for pass/fail. The
+    Insights metrics `__dagster_asset_check_errors` /
+    `__dagster_asset_check_successes` count outcomes over a time window instead,
+    so a check that failed before the window and has not re-run since reads 0
+    there while the enum still reads DEGRADED.
+  - `materialization_status` → `mcp__dagster__get_asset_partition_statuses` for
+    `numMaterialized` / `numPartitions` / `numFailed`. Verified: an asset
+    reading `HEALTHY` returned 349 of 450 materialized, so a HEALTHY partitioned
+    asset can still be 101 partitions short.
+  - `freshness_status` → `get_asset`'s own `latest_materialization_timestamp`.
 - **`list_deployments` with `deployment_type="branch"` returns the branch
   deployments**, which the homebrew server's `list_deployments` does not. The
   names are opaque hashes, so mapping a specific PR to its hash still goes

@@ -40,8 +40,10 @@ opaque token.
 - **Schedule/sensor-launched runs report `assetSelection: null`** in
   `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
   keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
-  Cross-check with `get_asset_health` before declaring a backfill complete —
-  failure-triage groupings keyed on `assetSelection` silently drop these.
+  Cross-check with `get_asset_partition_statuses`, or
+  `mcp__dagster-plus__get_assets` for a whole prefix, before declaring a
+  backfill complete — failure-triage groupings keyed on `assetSelection`
+  silently drop these.
 - `mcp__dagster__list_runs` caps at `limit=100` with no truncation signal;
   paginate via `cursor` for incident triage that may exceed 100 runs.
 - A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
