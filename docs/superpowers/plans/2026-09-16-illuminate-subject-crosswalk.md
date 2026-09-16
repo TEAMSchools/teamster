@@ -796,6 +796,20 @@ the crosswalk join replaces the inbound half of a round trip.
 - Produces: no output column change. The `subject` column keeps its `Reading` /
   `Math` values.
 
+`state_test_union` has FOUR branches, not three. The fourth reads
+`stg_renlearn__star` and derives `subject` from `star_discipline`, which is
+already `Reading`/`Math` and is NOT an `illuminate_subject` value. That branch
+stays outside the crosswalk's scope: it keeps deriving `subject` itself, takes
+`cast(null as string)` padding for `raw_subject` and `source_system` so the
+positional `union all` still lines up, and the resolving CTE passes its value
+through with `if(s.assessment_type = 'Star EOY', s.subject, <shared case>)`.
+Routing it through the shared case would remap every `Reading` to `Math`.
+
+Keep the separators as positional `union all` and pad every branch to the same
+column list. Do not switch to `full union all corresponding` — the repo's SQL
+conventions name enumerated branches like these as the case that takes padding
+instead.
+
 - [ ] **Step 1: Capture the prod baseline**
 
 ```sql
