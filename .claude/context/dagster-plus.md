@@ -18,27 +18,37 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `get_asset_selection_metrics` — credit and runtime reporting), alert policies
   (read, plus write via a config document), Dagster+ Issues, asset browsing and
   definitions (`get_assets`, `get_asset`), deployment listing, code locations,
-  run launches, and re-execution. Duplicates on both sides are denied in
-  `settings.json` — one tool per job.
-- **4 jobs stay on the homebrew server** because this server's tool is a strict
+  run launches, re-execution, and run termination. Duplicates on both sides are
+  denied in `settings.json` — one tool per job.
+- **`terminate_run` here has no `terminate_policy`**, so it can only
+  `SAFE_TERMINATE`. A run whose worker is gone will not clear. Fall back to
+  `mcp__dagster__free_concurrency_slots` to unblock the pool, and to the
+  Dagster+ UI to force-cancel.
+- **3 jobs stay on the homebrew server** because this server's tool is a strict
   subset, not because of preference. Identical arguments do NOT mean identical
   payloads — compare the payloads before flipping anything else:
-  - `list_runs` — this one has no `tags`, `run_ids`, or time-range filter. It
-    DOES return each run's full `tags`, so filtering client-side is possible,
-    but only by paging an unfiltered stream 100 runs at a time. A backfill's
-    partition runs or a schedule that last fired days ago is unbounded paging.
+  - `list_runs` — this one has no `tags`, `run_ids`, or time-range filter, and
+    `job_name` does not discriminate here because automation-condition runs are
+    all `__ASSET_JOB`. It DOES return each run's full `tags`, so filtering
+    client-side is possible, but only by paging an unfiltered stream 100 runs at
+    a time. It also 500s intermittently on broad filters (`status: "SUCCESS"`,
+    `job_name: "__ASSET_JOB"`) and is reliable on narrow ones — retry rather
+    than concluding the filter is unsupported.
   - `get_run` — this one returns 9 fields. The homebrew one adds
     `assetSelection`, `stepKeysToExecute`, `parentRunId`, `rootRunId`,
     `stepStats` (per-step status and attempt timings), `updateTime`, and
     `repositoryOrigin`. Its only unique field is `run_config_yaml`, which is
-    `{}` in this repo because no asset passes run config.
+    `{}` in this repo because no asset passes run config. `assetSelection` and
+    `stepKeysToExecute` ARE recoverable from the run's log — the
+    `ASSET_MATERIALIZATION_PLANNED` events name every selected asset and carry
+    `step_key`, and they are at the START of the log (verified: all 24 on page 1
+    of a 24-asset run). That is 2 calls for what the homebrew tool answers in 1.
   - `get_run_logs` — no `filter_types`. Events here carry `event_type` and
     `error`, but the order is oldest-first with a 100-event cap, so a step
     failure at the end of a long run is several pages in. Verified: page 1 of a
-    100-second failed run covered its first 9 seconds.
-  - `terminate_runs` — this one takes 1 run id and no `terminate_policy`. The
-    homebrew one has `MARK_AS_CANCELED_IMMEDIATELY`, which force-cancels a run
-    whose worker is gone; `SAFE_TERMINATE` will not clear one.
+    100-second failed run covered its first 9 seconds. The alert route is not a
+    substitute either — `get_run_alert_notifications` returns empty because this
+    deployment has no Dagster+ alert policies configured.
 - `list_code_locations` here drops `updatedTimestamp` and `repositories`, but
   the commit hash is in the `image` tag and
   `mcp__dagster__get_location_load_history` is the rollout-verification tool
