@@ -47,6 +47,11 @@ Spec:
 - **Every literal in a UNION ALL branch needs an explicit alias** — write
   `'pearson' as source_system`, never a bare `'pearson'`. sqlfluff AL03 fails
   the bare form.
+- **When a task moves the mapping, audit that model's properties descriptions.**
+  A column description that says the value is "mapped upstream" becomes false
+  the moment the mapping moves into the model. Grep the model's properties file
+  for `illuminate_subject` and for prose describing an upstream mapping, and
+  rewrite it to name the crosswalk join and its raw-value fallback.
 - Two PRs. PR 1 is kipptaf only. PR 2 drops the column from the `pearson`,
   `kippmiami` and `cambium` projects, and lands only after PR 1 has materialized
   in prod.
