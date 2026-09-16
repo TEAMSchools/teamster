@@ -444,12 +444,21 @@ models:
         data_type: boolean
       - name: is_retained_year
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: cohort_graduated
         data_type: int64
       - name: is_retained_ever
         data_type: boolean
+        config:
+          meta:
+            contains_pii: true
       - name: boy_status
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: cohort_secondary
         data_type: int64
       - name: entry_schoolid
@@ -493,6 +502,9 @@ models:
           special program's `programid` and Miami supplies the `custom_863`
           option id -- a hospital or a center school has no Florida school
           number to use instead.
+        config:
+          meta:
+            contains_pii: true
       - name: reporting_school_name
         data_type: string
         description: >-
@@ -500,11 +512,17 @@ models:
           for an in-district enrollment; for an out-of-district placement, the
           PowerSchool special-program name, or for Miami the decoded
           `custom_863` option label.
+        config:
+          meta:
+            contains_pii: true
       - name: school_level
         data_type: string
         description: >-
           ES, MS or HS for an in-district enrollment, or `OD` when
           `is_out_of_district` is true, matching `reporting_schoolid`.
+        config:
+          meta:
+            contains_pii: true
       - name: _dbt_source_project
         data_type: string
         description: |
@@ -872,6 +890,9 @@ models:
         data_type: string
         description:
           Whether the Salesforce contact has a FAFSA submission on file.
+        config:
+          meta:
+            contains_pii: true
       - name: salesforce_contact_college_match_gpa_band
         data_type: string
         description:
