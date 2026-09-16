@@ -93,10 +93,13 @@ models:
         data_type: string
         description: >-
           Subject area aligned to illuminate_subject_area values in
-          int_assessments__course_enrollments. For internal scores this is the
-          scaffold subject_area; for state and vendor scores it is the
-          `illuminate_subject` column mapped upstream (e.g. Reading -> Text
-          Study, Math -> Mathematics).
+          int_assessments__course_enrollments. For state and vendor scores this
+          is resolved from each source's raw subject value via a LEFT JOIN to
+          stg_google_sheets__assessments__vendor_subject_crosswalk, falling back
+          to the raw value when a source_system/raw_subject pair has no
+          crosswalk row. For internal scores this remains the scaffold's
+          subject_area, passed through unchanged, because that branch's
+          source_system is always null and so never matches the crosswalk.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area
@@ -184,6 +187,8 @@ unit_tests:
         rows: []
       - input: ref('int_amplify__all_assessments')
         rows: []
+      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+        rows: []
     expect:
       rows:
         - {
@@ -217,7 +222,7 @@ unit_tests:
               5 as student_id,
               2024 as academic_year_int,
               'BOY' as test_round,
-              'Text Study' as illuminate_subject,
+              'Reading' as subject,
               'kippnewark' as _dbt_source_project,
               date('2024-09-15') as completion_date,
               650 as overall_scale_score
@@ -226,7 +231,7 @@ unit_tests:
               5 as student_id,
               2024 as academic_year_int,
               'BOY' as test_round,
-              'Text Study' as illuminate_subject,
+              'Reading' as subject,
               'kippnewark' as _dbt_source_project,
               date('2024-09-15') as completion_date,
               650 as overall_scale_score
@@ -235,7 +240,7 @@ unit_tests:
               5 as student_id,
               2024 as academic_year_int,
               'BOY' as test_round,
-              'Text Study' as illuminate_subject,
+              'Reading' as subject,
               'kippnewark' as _dbt_source_project,
               date('2024-09-22') as completion_date,
               655 as overall_scale_score
@@ -243,6 +248,13 @@ unit_tests:
         rows: []
       - input: ref('int_amplify__all_assessments')
         rows: []
+      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+        rows:
+          - {
+              Source_System: iready,
+              Raw_Subject: Reading,
+              Illuminate_Subject_Area: Text Study,
+            }
     expect:
       rows:
         - {
