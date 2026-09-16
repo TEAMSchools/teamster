@@ -76,6 +76,9 @@ class Target(Strict):
     column: str | None = None
     values: dict[str, dict[int, float]] | None = None  # region -> grade -> target
 
+    # A subclass model_config REPLACES the parent's rather than merging with
+    # it, so extra="forbid" must be restated here even though Strict already
+    # sets it.
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     @model_validator(mode="before")
@@ -219,7 +222,7 @@ def _load_yaml(path: Path) -> dict:
     return data
 
 
-def _validate(model: type[BaseModel], data: dict, path: Path):
+def _validate[M: BaseModel](model: type[M], data: dict, path: Path) -> M:
     try:
         return model.model_validate(data)
     except ValidationError as e:
