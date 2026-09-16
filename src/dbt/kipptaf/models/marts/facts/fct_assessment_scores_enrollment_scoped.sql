@@ -297,27 +297,66 @@ with
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
     -- deterministic. Remove this dedupe when staging is fixed.
-    -- #5252 measured this site at 273,791 input rows and left it on the macro
-    -- as below the ~1M ranked-column threshold. The domain union above changes
-    -- that. Re-measured against prod 2026-09-16: 1,561,075 input rows (274,013
-    -- anchor + 1,287,062 domain), with the model at 13.62 slot hours over the
-    -- trailing 7 days. Both gate conditions in .claude/rules/dbt-sql.md now
-    -- hold, so this site is due the ranked-column form.
-    iready_scores as (
-        {{
-            dbt_utils.deduplicate(
-                relation="iready_all_raw",
-                partition_by="""
+    -- #5252 measured this site at 273,791 input rows and left it on
+    -- dbt_utils.deduplicate as below the ~1M ranked-column threshold. The
+    -- domain union above changes that. Re-measured against prod 2026-09-16:
+    -- 1,561,075 input rows (274,013 anchor + 1,287,062 domain), with the model
+    -- at 13.62 slot hours over the trailing 7 days. Both gate conditions in
+    -- .claude/rules/dbt-sql.md hold, so this site takes the ranked-column form.
+    -- The window reads the whole union rather than each branch, or the tie-break
+    -- ranks per branch and an anchor row can survive alongside its own domain.
+    iready_all_raw_ranked as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+
+            row_number() over (
+                partition by
                     _dbt_source_project,
                     student_number,
                     administration_period,
                     module_code,
                     response_type_code,
                     test_date
-                """,
-                order_by="start_date desc, scale_score desc, academic_year desc",
-            )
-        }}
+                order by `start_date` desc, scale_score desc, academic_year desc
+            ) as rn,
+        from iready_all_raw
+    ),
+
+    iready_scores as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            `start_date`,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            national_percentile,
+            is_mastery,
+            response_type,
+            response_type_code,
+            response_type_description,
+        from iready_all_raw_ranked
+        where rn = 1
     ),
 
     star_scores_raw as (
