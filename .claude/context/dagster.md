@@ -18,9 +18,11 @@ opaque token.
 - **The dagster MCP targets a branch deployment via a `deployment` arg.**
   `launch_run`, `launch_multiple_runs`, `get_run`, `get_run_logs`,
   `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
-  (omit for prod). `list_deployments` may return only `prod` — recover a PR's
-  branch-deployment name (an opaque hash) from its `deploy` job log line
-  `Deploying to branch deployment <hash>` (job id from the
+  (omit for prod). List the branch deployments with
+  `mcp__dagster-plus__list_deployments` and `deployment_type="branch"` — this
+  server's `list_deployments` returns only `prod`, which is why it is denied.
+  The names are opaque hashes, so map a specific PR to its hash from that PR's
+  `deploy` job log line `Deploying to branch deployment <hash>` (job id from the
   `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
   `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
   deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
@@ -57,8 +59,9 @@ opaque token.
   day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).
   The check payload often lacks the offending entity id — recover it from the
   run's `LogMessageEvent` compute logs (`context.log.info` lines).
-- `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
-  prior call (`"[\"a\",\"b\"]"`), not a bare list.
+- Discover assets by prefix with `mcp__dagster-plus__get_assets`; this server's
+  `search_assets` is denied as a duplicate. Note the server's own instructions
+  block still names `search_assets` — ignore that line.
 - **`ASSET_FAILED_TO_MATERIALIZE` on a SUCCESS run is usually benign**: planned
   events are written at run creation from the execution plan (the op cannot
   retract them); the Dagster+ PROD backend — not OSS, not branch deployments —

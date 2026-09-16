@@ -13,11 +13,16 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `create_or_update_alert_policy`, and `delete_alert_policy` execute on the
   first call. The homebrew server's `confirm=True` preview does not apply here,
   so state the target in plain text before calling one.
-- **Reach for this server for the 3 things the homebrew one cannot do**:
-  Insights metrics (`get_asset_metrics`, `get_job_metrics`,
-  `get_deployment_metrics`, `get_asset_selection_metrics` — credit and runtime
-  reporting), alert policies (read, plus write via a config document), and
-  Dagster+ Issues.
+- **This server owns 5 jobs.** Insights metrics (`get_asset_metrics`,
+  `get_job_metrics`, `get_deployment_metrics`, `get_asset_selection_metrics` —
+  credit and runtime reporting), alert policies (read, plus write via a config
+  document), Dagster+ Issues, asset browsing (`get_assets`), and deployment
+  listing. The homebrew server owns every other job, and the duplicate tools on
+  both sides are denied in `settings.json` — one tool per job.
+- **`list_deployments` with `deployment_type="branch"` returns the branch
+  deployments**, which the homebrew server's `list_deployments` does not. The
+  names are opaque hashes, so mapping a specific PR to its hash still goes
+  through that PR's `deploy` job log (see `.claude/context/dagster.md`).
 - `get_assets` / `get_asset` return more per asset than `search_assets` +
   `get_asset_health` combined: the health rollup, partition definition, job
   names, downstream keys, and metadata entries in one call. Prefer it for asset
