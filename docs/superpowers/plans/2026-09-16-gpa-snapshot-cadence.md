@@ -36,8 +36,11 @@ pytest, trunk.
   `config.meta` is present. Both snapshots already keep `group` and `asset_key`
   under `config.meta`, so the new key must go there too. Putting it under a
   top-level `meta` would silently drop `asset_key`.
-- No SQL changes. No Python changes. No changes to either snapshot's `strategy`,
-  `unique_key`, `check_cols`, or `dbt_valid_to_current`.
+- No Python changes. No changes to either snapshot's `strategy`, `unique_key`,
+  `check_cols`, or `dbt_valid_to_current`. This PR does include one small SQL
+  change alongside the cadence change: both topline GPA models' date cast is
+  fixed to be timezone-aware (see the spec's "Why 23:00..." and "Accepted loss"
+  sections).
 - All work happens in the worktree at
   `/workspaces/teamster/.worktrees/cbini/perf/claude-gpa-snapshot-cadence` on
   branch `cbini/perf/claude-gpa-snapshot-cadence`. Every `git` call is

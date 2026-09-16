@@ -25,11 +25,13 @@ snapshots:
           # rebuilds, not from ancestor-updated view-chain recursion — 147
           # merges and 2.23 slot hours a day.
           #
-          # 23:00 and not 00:00: all three consumers resolve at day grain
-          # (int_topline__gpa_cumulative_weekly dedupes on dbt_valid_from_date;
-          # int_powerschool__gpa_term_lookback matches midnight boundaries). An
-          # end-of-day capture keeps a Monday change on Monday. Midnight moves
-          # it to Tuesday and shifts every topline weekly value by a day.
+          # 23:00 and not 00:00: chosen for int_powerschool__gpa_term_lookback,
+          # which matches versions against a local-midnight boundary instant.
+          # 23:00 clears that boundary with an hour of margin; 00:00 lands
+          # just past it and can resolve one day stale on sub-second
+          # run-start timing. The topline models derive their date with
+          # date(..., local_timezone), so the cron hour doesn't affect their
+          # attribution either way.
           #
           # Intra-day versions are lost. No consumer reads them. Refs #5218
           automation_condition:
