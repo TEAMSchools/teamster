@@ -8,9 +8,9 @@ paths:
 
 Loads on the first read of dbt YAML or a Cube file. Distilled 2026-09-09 from
 the U.S. Department of Education's student privacy site and the regulation it
-links to. The outbound rule (never emit PII values to PR comments, issues,
-Slack, Asana, or agent output) lives in the root CLAUDE.md _Never_ block; this
-file decides what "PII" means when you apply it.
+links to. The outbound rule (never emit PII values to commits, PR comments,
+issues, or agent output) lives in the root CLAUDE.md _Never_ block; this file
+decides what "PII" means when you apply it.
 
 Sources, in order of authority:
 
@@ -164,10 +164,11 @@ acceptable; both forms are `config.meta.contains_pii: true`.
 - **A PII-heavy new model** gets a one-line confirmation of scope with the user
   before tagging: direct-only, or direct plus student-level content. The default
   when no one answers is tiers 1 through 3.
-- **Outbound surfaces** (PR comments, issue bodies, Slack, Asana, scheduled
-  agents): redact values from any tier-1 through tier-4 column to `Student A` or
-  to the column name before posting. Aggregates with no small cell may go out as
+- **Outbound surfaces** (commits, PR comments, issue bodies, scheduled agents):
+  redact values from any tier-1 through tier-4 column to `Student A` or to the
+  column name before posting. Aggregates with no small cell may go out as
   numbers. The row content of a query result is PII even when the query had no
-  name column.
+  name column. Asana and the `#data_team` Slack channel are internal staff
+  surfaces and take unredacted values; for any other Slack channel, ask first.
 - **Staff data** is outside FERPA but not outside policy. `staff_pii` in Cube
   and the root CLAUDE.md line about staff contact information govern it.
