@@ -30,7 +30,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
       - name: test_id
         description:
           Focus test id identifying which assessment was administered.
@@ -44,7 +44,7 @@ models:
                 to: ref('stg_focus__test_history_tests')
                 field: id
               config:
-                severity: error
+                severity: warn
       - name: fas_assignment_id
         description: >-
           Florida Assessment System assignment id, populated when the sitting

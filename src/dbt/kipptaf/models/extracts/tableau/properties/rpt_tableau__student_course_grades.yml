@@ -189,13 +189,8 @@ models:
       - name: gpa_y1
         data_type: float64
         description: >-
-          Y1 GPA as of the row's term. For the prior year this is RECONSTRUCTED
-          as a running credit-weighted GPA through each term, because
-          PowerSchool stores only the end-of-year value. It is deliberately not
-          anchored to that stored value, so the Q4 reading will not equal the Y1
-          reading. Temporary; see TODO(#4687) (kept here deliberately, despite
-          the no-tracking-refs-in-descriptions convention, so a removal grep for
-          this marker also finds this YAML).
+          Y1 GPA as of the row's term. PowerSchool stores only the end-of-year
+          value, so prior-year rows carry that value on every term.
       - name: gpa_y1_unweighted
         data_type: float64
         description: Unweighted Y1 GPA as of the row's term.
@@ -460,23 +455,15 @@ models:
       - name: y1_course_in_progress_percent_grade_adjusted
         data_type: float64
         description: >-
-          Year-to-date course percent as of the row's marking period. For the
-          year in progress this is the real running value from the gradebook.
-          For the prior year it is RECONSTRUCTED from stored quarter grades — Q1
-          is exact, Q4 is anchored to the stored Y1 percent and is exact, Q2 and
-          Q3 are approximations that agree with the year value to within half a
-          point on 97.0 percent of courses. The reconstruction is temporary; see
-          TODO(#4687) in the model.
+          Year-to-date course percent as of the row's marking period, from the
+          live gradebook. Current-year rows only; PowerSchool stores no running
+          value for completed years.
       - name: y1_course_in_progress_letter_grade_adjusted
         data_type: string
         description: >-
-          Year-to-date course letter as of the row's marking period. For the
-          year in progress this comes from the gradebook. For the prior year it
-          is RECONSTRUCTED by banding the reconstructed percent back through the
-          course's own grade scale, so it inherits that percent's accuracy — Q1
-          and Q4 exact, Q2 and Q3 approximate. Carries F and F* on the same
-          prefix rule as quarter_course_letter_grade. Temporary; see TODO(#4687)
-          in the model.
+          Year-to-date course letter as of the row's marking period, from the
+          live gradebook. Current-year rows only. Carries F and F* on the same
+          prefix rule as quarter_course_letter_grade.
       - name: y1_course_in_progress_grade_points
         data_type: float64
         description: In-progress Y1 grade points (current-year rows only).
@@ -628,8 +615,8 @@ models:
         data_type: string
         description: >-
           Best-available adjusted Y1 course letter grade — the final stored Y1
-          grade once the year is complete, falling back to the in-progress Y1
-          grade for the current year.
+          grade on Y1 rows of completed years, the in-progress Y1 grade on
+          current-year rows. Null on Q1-Q4 rows of completed years.
       - name: section_or_period
         data_type: string
         description: >-

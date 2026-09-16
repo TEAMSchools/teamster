@@ -252,7 +252,7 @@ select
     c.lastfirst as student_name,
     c.ktc_cohort,
     c.record_type_name as record_type_name,
-    c.contact_owner_name as counselor_name,
+    c.contact_college_counselor_name as counselor_name,
     c.contact_kipp_ms_graduate as is_kipp_ms_graduate,
     c.contact_kipp_hs_graduate as is_kipp_hs_graduate,
     c.contact_current_kipp_student as current_kipp_student,
