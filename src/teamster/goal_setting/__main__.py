@@ -102,10 +102,22 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
         prior_manifest = diff.load_prior_manifest(a.input / "manifest.json")
         if prior_manifest is None:
             return _err(f"{a.input} has no manifest.json")
-        expected = next(i for i in prior_manifest["inputs"] if i["file"] == input_name)
+        expected = next(
+            (i for i in prior_manifest["inputs"] if i["file"] == input_name), None
+        )
+        if expected is None:
+            raise ConfigError(
+                f"{a.input}/manifest.json has no input entry for {input_name}; "
+                f"was it a run of group {group.name}?"
+            )
         rows = archive.read_input(a.input / "inputs" / input_name, expected["sha256"])
         records = archive.rows_to_records(rows)
     else:
+        if group.source not in SOURCES:
+            raise ConfigError(
+                f"source '{group.source}' has no adapter wired into the CLI. "
+                f"Mapped sources: {', '.join(sorted(SOURCES))}"
+            )
         records = SOURCES[group.source].fetch(client, group, a.year)
         rows = archive.records_to_rows(records)
 
@@ -131,6 +143,8 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
         group, a.year, records, targets, baseline, force_stale=a.force_stale
     )
 
+    # diff_manifests reads only school_goals and bucket_counts; the other fields
+    # are filled at write time, after the verdict has cleared.
     report = diff.diff_manifests(
         prior, manifest.build(proposal, "", "", [], None, a.force_stale)
     )

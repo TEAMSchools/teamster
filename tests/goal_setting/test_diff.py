@@ -55,6 +55,28 @@ def test_identical_manifests_is_no_change():
     )
 
 
+def test_diff_manifests_ignores_run_metadata():
+    """The CLI diffs a manifest built without SHAs or inputs; only the
+    proposal fields may influence the verdict."""
+    prior = copy.deepcopy(BASE)
+    prior.update(
+        rules_sha="a" * 64,
+        crosswalk_sha="b" * 64,
+        inputs=[{"file": "iready_boy_nj_math_1_2.csv", "row_count": 10}],
+        run_at="2026-09-15T12:00:00+00:00",
+    )
+    cur = copy.deepcopy(BASE)
+    cur.update(
+        rules_sha="c" * 64,
+        crosswalk_sha="d" * 64,
+        inputs=[],
+        run_at="2026-09-16T12:00:00+00:00",
+    )
+    rep = diff_manifests(prior, cur)
+    assert rep.verdict == "no change"
+    assert rep.goal_changes == [] and rep.count_changes == []
+
+
 def test_goal_and_count_changes_are_listed():
     cur = copy.deepcopy(BASE)
     cur["school_goals"][0].update(bubble_parameter=0.48, n_to_move=11, goal=0.40)

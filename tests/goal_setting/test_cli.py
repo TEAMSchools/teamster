@@ -192,6 +192,44 @@ def test_replay_from_inputs_is_byte_identical(tmp_path):
         assert (first / name).read_bytes() == (second / name).read_bytes()
 
 
+def test_replay_from_wrong_group_folder_is_a_clear_error(tmp_path, capsys):
+    first, manifests = tmp_path / "first", tmp_path / "manifests"
+    factory = _factory(roster_rows())
+    main(
+        [
+            "rollout",
+            "--year",
+            "2026",
+            "--group",
+            "nj_math_1_2",
+            "--out",
+            str(first),
+            "--manifest-dir",
+            str(manifests),
+        ],
+        client_factory=factory,
+    )
+    capsys.readouterr()
+    rc = main(
+        [
+            "rollout",
+            "--year",
+            "2026",
+            "--group",
+            "nj_math_k",
+            "--out",
+            str(tmp_path / "k"),
+            "--manifest-dir",
+            str(manifests),
+            "--input",
+            str(first),
+            "--plan",
+        ],
+        client_factory=factory,
+    )
+    assert rc == 1 and "no input entry" in capsys.readouterr().err
+
+
 def test_second_run_diffs_against_committed_manifest(tmp_path, capsys):
     first, second, manifests = tmp_path / "a", tmp_path / "b", tmp_path / "m"
     factory = _factory(roster_rows())
