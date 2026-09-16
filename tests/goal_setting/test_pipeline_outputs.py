@@ -45,9 +45,10 @@ def test_run_group_assigns_every_student_once():
     # target 0.50 of 9 tested = 4.5 -> bp = (4.5 - 3) / 4 = 0.38 -> ceil(4 * 0.38) = 2
     assert sum(r.bucket == "Bucket 1" for r in p.records) == 3
     assert sum(r.bucket == "Bucket 2" for r in p.records) == 2
-    # remaining approaching (2) + below stretch reacher (1)
-    assert sum(r.bucket == "Bucket 3" for r in p.records) == 3
-    assert sum(r.bucket == "Bucket 4" for r in p.records) == 2
+    # stretch reachers only: the left-out approaching student at 400 and the
+    # below student at 380, both of whom reach level 5 with stretch growth
+    assert sum(r.bucket == "Bucket 3" for r in p.records) == 2
+    assert sum(r.bucket == "Bucket 4" for r in p.records) == 3
     assert {r.bucket4_outcome for r in p.records if r.bucket == "Bucket 4"} == {
         "below",
         "untested",
@@ -91,7 +92,7 @@ def test_manifest_has_no_student_identifiers_and_counts_bucket4_outcomes():
         assert str(r.student_number) not in text
     outcomes = {(b["bucket"], b["bucket4_outcome"]): b["n"] for b in m["bucket_counts"]}
     assert (
-        outcomes[("Bucket 4", "untested")] == 1 and outcomes[("Bucket 4", "below")] == 1
+        outcomes[("Bucket 4", "untested")] == 1 and outcomes[("Bucket 4", "below")] == 2
     )
     assert m["bubble_parameters"] == [
         {"region": "Newark", "grade_level": 1, "bubble_parameter": 0.38}
@@ -134,7 +135,7 @@ def test_write_run_writes_five_files_in_expected_shapes(tmp_path):
         "enter_date",
         "exit_date",
     ]
-    assert len(programs) == 8  # buckets 1-3 only
+    assert len(programs) == 7  # buckets 1-3 only
     assert {p_["programid"] for p_ in programs} == {"7577", "7375", "7574"}
     assert (
         programs[0]["enter_date"] == "2026-07-01"

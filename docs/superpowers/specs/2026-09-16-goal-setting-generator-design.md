@@ -131,7 +131,7 @@ groups:
     target: { from: goals_sheet, column: grade_band_goal }
     school_goal: bubble_parameter
     bucket2: { strategy: top_approaching_to_move, ties: admit }
-    bucket3: { strategy: remaining_approaching_or_stretch }
+    bucket3: { strategy: stretch_reachers }
     amendments: { max_per_school_grade_subject: 3, to_buckets: [2] }
     freshness: { min_tested_share: 0.85, roster_tolerance: 0.15 }
 ```
@@ -229,9 +229,9 @@ warehouse.
   students by projected score within school and grade; `admit` uses `rank()`
   semantics so ties at the cutoff all enter, `strict` uses `row_number()` with
   student number as the tiebreak.
-- `bucket3.*` as named. `remaining_approaching_or_stretch` is what the SY27
-  one-off built: remaining approaching students plus anyone not already placed
-  whose stretch level is proficient.
+- `bucket3.*` as named. `stretch_reachers` is what the SY27 one-off built and
+  what the decisions memo records; `remaining_approaching_or_stretch` stays in
+  the registry for regions that keep the production rule.
 - Bucket 1 is every proficient student. Bucket 4 is everyone else, recorded as
   two outcomes: `bucket_4_below` for tested students and `bucket_4_untested` for
   the rest. Both load to PowerSchool as no program. The split exists so a whole

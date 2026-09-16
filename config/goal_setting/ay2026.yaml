@@ -15,7 +15,9 @@ groups:
     target: { from: goals_sheet, column: grade_band_goal }
     school_goal: bubble_parameter
     bucket2: { strategy: top_approaching_to_move, ties: admit }
-    bucket3: { strategy: remaining_approaching_or_stretch }
+    # SY27 decision: students reaching Mid/Above with stretch growth; remaining
+    # Early On students are Bucket 4
+    bucket3: { strategy: stretch_reachers }
     # Open item: the methodology doc says both "to Bucket 2 only" and
     # "to Buckets 2 and 3". Change to_buckets when T&L confirms.
     amendments: { max_per_school_grade_subject: 3, to_buckets: [2] }
