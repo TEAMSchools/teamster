@@ -45,19 +45,15 @@ with
             is_approaching_int,
             is_below_int,
 
-            case
-                when illuminate_subject = 'Text Study'
-                then 'Reading'
-                when illuminate_subject = 'Mathematics'
-                then 'Math'
-            end as `subject`,
+            `subject` as raw_subject,
+            'pearson' as source_system,
 
         from {{ ref("int_pearson__all_assessments") }}
         where
             assessment_name = 'NJSLA'
             and not (assessmentgrade = 'Grade 8' and `subject` like 'Algebra%')
 
-        union all
+        full union all corresponding
 
         select
             f.student_number,
@@ -74,7 +70,8 @@ with
             f.is_approaching_int,
             f.is_below_int,
 
-            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
+            f.assessment_subject as raw_subject,
+            'fldoe' as source_system,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
         where
@@ -83,7 +80,7 @@ with
             and f.scale_score is not null
             and f.assessment_grade != '3'
 
-        union all
+        full union all corresponding
 
         select
             f.student_number,
@@ -100,7 +97,8 @@ with
             f.is_approaching_int,
             f.is_below_int,
 
-            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
+            f.assessment_subject as raw_subject,
+            'fldoe' as source_system,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
         where
@@ -109,7 +107,14 @@ with
             and f.scale_score is not null
             and f.assessment_grade = '3'
 
-        union all
+        -- `star_discipline` is not an illuminate_subject value (it is already
+        -- Reading/Math), so this branch is outside the crosswalk's scope and
+        -- keeps deriving `subject` directly. `full union all corresponding`
+        -- reconciles it against the raw_subject/source_system columns the
+        -- other three branches carry instead, matching by name so this
+        -- branch's `subject` and the others' raw_subject/source_system
+        -- null-fill rather than colliding positionally.
+        full union all corresponding
 
         select
             student_display_id as student_number,
@@ -132,6 +137,28 @@ with
             rn_subject_round = 1
             and screening_period_window_name = 'Spring'
             and grade_level between 1 and 2
+    ),
+
+    state_test_resolved as (
+        select
+            s.* except (raw_subject, source_system, `subject`),
+
+            if(
+                s.assessment_type = 'Star EOY',
+                s.`subject`,
+                case
+                    when
+                        coalesce(x.illuminate_subject_area, s.raw_subject)
+                        = 'Text Study'
+                    then 'Reading'
+                    else 'Math'
+                end
+            ) as `subject`,
+        from state_test_union as s
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on s.source_system = x.source_system
+            and s.raw_subject = x.raw_subject
     ),
 
     iready as (
@@ -288,7 +315,7 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
-            state_test_union as st
+            state_test_resolved as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
             and co.iready_subject = st.subject
