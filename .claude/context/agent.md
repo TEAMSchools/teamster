@@ -23,9 +23,6 @@ Injected on the first `Agent` or `Workflow` call in a session.
   files (`reportMissingImports`, "not accessed", "not iterable") are expected
   false positives.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
-- Subagents cannot Write report files; the harness refuses with "Subagents
-  should return findings as text". Have them return the report as final text and
-  persist it to the scratchpad yourself.
 
 ## Price ratios
 

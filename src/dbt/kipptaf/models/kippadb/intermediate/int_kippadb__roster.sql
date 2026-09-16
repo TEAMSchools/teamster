@@ -17,7 +17,7 @@ with
             ) as is_es_grad,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
-            {{ ref("stg_powerschool__schools") }} as s
+            {{ ref("int_students__schools") }} as s
             on co.entry_schoolid = s.school_number
             and co._dbt_source_project = s._dbt_source_project
         where co.rn_year = 1

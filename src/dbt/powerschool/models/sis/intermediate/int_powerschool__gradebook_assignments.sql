@@ -34,5 +34,10 @@ with
             on tc.districtteachercategoryid = dtc.districtteachercategoryid
     )
 
-select *, upper(left(category_name, 1)) as category_code,
+select
+    *,
+
+    (totalpointvalue / 2) as half_total_point_value,
+
+    upper(left(category_name, 1)) as category_code,
 from assignment_category

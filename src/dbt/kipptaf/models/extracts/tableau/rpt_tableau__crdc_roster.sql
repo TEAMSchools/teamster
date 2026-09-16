@@ -161,7 +161,7 @@ with
 
             if(g.grade like 'F%', false, true) as passed_course,
 
-        from {{ ref("base_powerschool__course_enrollments") }} as c
+        from {{ ref("int_students__course_enrollments") }} as c
         -- left rather than inner to be able to see students who attempted but didnt
         -- earn a y1 grade
         left join
@@ -178,7 +178,7 @@ with
             -- submission is always for the previous school year
             c.cc_academic_year = {{ var("current_academic_year") - 1 }}
             -- miami does their own submission
-            and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+            and c._dbt_source_project != 'kippmiami'
 
         union all
         -- credit recovery courses, which only exist in storedgrades
@@ -244,7 +244,7 @@ with
             and schoolname = 'KIPP Summer School'
             and storecode = 'Y1'
             -- miami does their own submission
-            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+            and _dbt_source_project != 'kippmiami'
     ),
 
     final_schedule as (

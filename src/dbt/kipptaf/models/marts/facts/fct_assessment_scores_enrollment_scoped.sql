@@ -284,17 +284,22 @@ with
         from iready_domain_scores_raw
     ),
 
-    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test, so
-    -- students who retest the same subject on the same day arrive as separate
-    -- rows. Remove this dedupe when staging is fixed.
-    --
-    -- Two things the partition key gets right and would be easy to "fix"
-    -- wrong. It includes response_type_code, because domain rows share
-    -- module_code with the subject-level anchor, and without it every domain
-    -- and its anchor collapse into one row. It omits academic_year, which
-    -- guards the fiscal-year re-pull of #4388 -- fixed, but structural and
-    -- due to recur each July 1, so adding academic_year here would let a
-    -- re-pulled sitting through as two rows.
+    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
+    -- same-day retests and fiscal-year re-pull duplicates exist upstream.
+    -- partition_by includes response_type_code because domain rows share
+    -- module_code with the subject-level anchor -- without it every domain row
+    -- and its anchor collapse into one row, silently.
+    -- partition_by deliberately omits academic_year: a physical test pulled
+    -- under two fiscal-year partitions has the same test_date but a differing
+    -- pull-derived academic_year, so keying on academic_year would keep both
+    -- rows -- they then double-count once academic_year is resolved from the
+    -- test date (#4546). A date belongs to exactly one academic year, so
+    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
+    -- never distinct sittings. academic_year desc makes the survivor
+    -- deterministic. Remove this dedupe when staging is fixed.
+    -- #5252 measured 273,791 input rows and left this on the macro as below the
+    -- ~1M ranked-column threshold. The domain union above adds ~1.57M eligible
+    -- rows, so re-measure before assuming the macro is still the right form.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -338,11 +343,21 @@ with
             and _dbt_source_project is not null
     ),
 
-    -- Permanent, not a workaround for #4388 (which is fixed): STAR records
-    -- each sitting under its own assessment_id and students genuinely retest
-    -- the same subject on the same day, so this grain is coarser than staging
-    -- on purpose. scale_score desc keeps the best sitting. academic_year is
-    -- omitted from the partition as the same July-1 guard as i-Ready above.
+    -- This dedupe is permanent, not a workaround for #4388. STAR records each
+    -- sitting under its own assessment_id, and students genuinely retest the
+    -- same subject on the same day -- 144 rows as of 2026-09-01 -- so the fact
+    -- grain (which carries no attempt dimension) is coarser than staging on
+    -- purpose. scale_score desc keeps the best sitting.
+    -- partition_by deliberately omits academic_year: a physical test pulled
+    -- under two fiscal-year partitions has the same test_date but a differing
+    -- pull-derived academic_year, so keying on academic_year would keep both
+    -- rows -- they then double-count once academic_year is resolved from the
+    -- test date (#4546). A date belongs to exactly one academic year, so
+    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
+    -- never distinct sittings. academic_year desc makes the survivor
+    -- deterministic.
+    -- Measured at 8,128 input rows for #5252 -- below the ~1M threshold for the
+    -- ranked-column rewrite, so this stays on the macro. Don't re-measure.
     star_scores as (
         {{
             dbt_utils.deduplicate(
@@ -463,7 +478,8 @@ with
     -- GRAIN — scores sharing a grain can carry different dates. RT rows abut but
     -- never overlap within a (school_id, region), so BETWEEN matches one row.
     reporting_terms as (
-        select `type`, code, `name`, `start_date`, end_date, region, school_id,
+        select
+            `type`, code, `name`, `start_date`, end_date, region, school_id, grade_band,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
     )
@@ -509,6 +525,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},
@@ -594,6 +611,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},
@@ -685,6 +703,7 @@ select
                     "rt.start_date",
                     "rt.region",
                     "rt.school_id",
+                    "rt.grade_band",
                 ]
             )
         }},

@@ -436,6 +436,20 @@ models:
       - name: dibels_most_recent_composite
         data_type: string
         description: First non-null of measure_standard_level.
+      - name: boy_probe_eligible
+        data_type: string
+        description: >-
+          Yes when the student's BOY DIBELS composite was Below or Well Below
+          Benchmark, so they are eligible for BOY-to-MOY progress monitoring. No
+          Test when no BOY benchmark row exists. Whole-year: every benchmark row
+          for a student carries the same value, which is why collapsing to one
+          row per student-year upstream is safe. Read this rather than
+          re-deriving it from dibels_boy_composite.
+      - name: moy_probe_eligible
+        data_type: string
+        description: >-
+          The MOY equivalent of boy_probe_eligible, gating MOY-to-EOY progress
+          monitoring. EOY has no counterpart because EOY opens no PM season.
       - name: is_exempt_iready
         data_type: boolean
         description:

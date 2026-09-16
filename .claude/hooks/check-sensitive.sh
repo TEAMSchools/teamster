@@ -105,15 +105,18 @@ fi
 #    the full corpus.
 _env_scan=$(echo "${no_content}" | sed -E 's/\.env\.(example|sample|template|dist)([^a-zA-Z]|$)/\2/g')
 if echo "${_env_scan}" | grep -qiE '\.env[.a-z]*' ||
-	echo "${no_content}" | grep -qiE '(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
-	deny "check-sensitive.sh Rule 1: an argument matches a secret-file pattern (dotenv, .ssh or .kube dirs, key/cert files, credentials or secrets JSON, netrc, secret-volume, devcontainer tpl, or the bare word env). If it is a real secret file, do not read or name it; ask the user. If it is prose, write 'environment variable' and 'dotenv'."
+	echo "${no_content}" | grep -qiE '(^|[ /])(\.ssh|\.kube|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
+	deny "check-sensitive.sh Rule 1: an argument matches a secret-file pattern (dotenv, .ssh or .kube dirs, credentials or secrets JSON, netrc, secret-volume, devcontainer tpl, or the bare word env). If it is a real secret file, do not read or name it; ask the user. If it is prose, write 'environment variable' and 'dotenv'."
 fi
 
-# 1b. File-extension patterns scoped to path_only (named path keys incl. MCP
-#     uri/url/localPath/source, recursive) — catches cert/key files under those
-#     keys without scanning free-text fields like a SQL `sql` parameter, where a
-#     dot-attribute such as record.key would otherwise false-positive.
-if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
+# 1b. Cert/key file extensions, scoped to path_only (named path keys incl. MCP
+#     uri/url/localPath/source, recursive). The leading class requires a
+#     filename character, glob star, slash, or start-of-string before the dot,
+#     so a real path (server.key, /etc/ssl/site.pem, *.key, ~/.key) matches
+#     while a bare dot-attribute in a command (jq '... | .key') does not.
+#     These extensions live ONLY here — Rule 1's (^|[ /]) anchor made it fire
+#     on the jq form and miss every real filename.
+if echo "${path_only}" | grep -qiE '(^|[*A-Za-z0-9_~/-])\.(cer|key|pem)([ /]|$)'; then
 	deny "check-sensitive.sh Rule 1b: a path argument ends in .cer, .key, or .pem (certificate or private key). Do not open it; ask the user."
 fi
 

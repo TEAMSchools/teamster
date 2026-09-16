@@ -53,7 +53,24 @@ fi
 # Extract all string values from tool_response (Claude Code's PostToolUse payload
 # key). Fall back to the whole payload when .tool_response is absent so a
 # payload-key drift (content under a different key) can't skip scanning (#20).
-combined=$(jq -r '[(.tool_response // .) | .. | strings] | join(" ")' <<<"${input}")
+# Image blocks carry the rendered picture as base64 — Read returns
+# {type:"image", file:{base64}}, MCP tools {type:"image", data}, the API
+# {type:"image", source:{data}} — and any real image trips the 120-char
+# heuristic. Drop ONLY that carrier, and only when it is base64-shaped; every
+# sibling string (paths, mime types, a plaintext data field) is still scanned.
+combined=$(jq -r '
+  def is_b64: type == "string" and test("^[A-Za-z0-9+/=[:space:]]+$");
+  def carrier(f): (try f catch null) // null;
+  def strip_images:
+    if type == "object" then
+      (if .type == "image" then
+         (if (carrier(.file.base64) | is_b64) then del(.file.base64) else . end)
+         | (if (carrier(.data) | is_b64) then del(.data) else . end)
+         | (if (carrier(.source.data) | is_b64) then del(.source.data) else . end)
+       else . end)
+      | with_entries(.value |= strip_images)
+    elif type == "array" then map(strip_images) else . end;
+  [(.tool_response // .) | strip_images | .. | strings] | join(" ")' <<<"${input}")
 
 # Decode candidate blobs and re-scan (catches encoded secrets). Two explicit
 # passes — standard base64 and url-safe base64 (#16) — so path separators aren't

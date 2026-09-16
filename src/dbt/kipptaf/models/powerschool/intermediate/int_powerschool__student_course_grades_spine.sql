@@ -5,13 +5,12 @@ with
                 relations=[
                     source("kippnewark_powerschool", model.name),
                     source("kippcamden_powerschool", model.name),
-                    source("kippmiami_powerschool", model.name),
                     source("kipppaterson_powerschool", model.name),
                 ]
             )
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
-select *, {{ extract_source_project() }} as _dbt_source_project,
-from union_relations
+select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
+
+from union_relations as ur

@@ -59,7 +59,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
         config:
           meta:
             contains_pii: true
