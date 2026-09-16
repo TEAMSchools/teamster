@@ -44,7 +44,16 @@ def test_duplicate_student_year_subject_aborts_naming_school():
         check([a, b], [goal()], {("Newark", 1): 0.5}, "bubble_parameter")
     msg = str(e.value)
     assert "Newark" in msg and "TEAM" in msg and "grade 1" in msg and "Math" in msg
-    assert "2 buckets" in msg
+    assert "2 rows" in msg and "Bucket 1, Bucket 2" in msg
+
+
+def test_duplicate_rows_with_one_bucket_do_not_report_1_buckets():
+    a = student(bucket="Bucket 1", student_number=7)
+    with pytest.raises(InvariantError) as e:
+        check([a, a], [goal()], {("Newark", 1): 0.5}, "bubble_parameter")
+    msg = str(e.value)
+    assert "1 buckets" not in msg
+    assert "2 rows" in msg and "bucket(s) Bucket 1" in msg
 
 
 def test_student_without_bucket_fails():

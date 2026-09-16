@@ -31,11 +31,14 @@ def check(
         if r.bucket is None:
             failures.append(f"{_where(r)}: a student has no bucket")
     for rows in seen.values():
-        buckets = {x.bucket for x in rows}
         if len(rows) > 1:
+            # Two rows carrying the SAME bucket is still a failure, so report
+            # the row count and the distinct labels separately: "1 buckets"
+            # reads as a non-problem.
+            buckets = sorted({str(x.bucket) for x in rows})
             failures.append(
-                f"{_where(rows[0])}: one student holds {len(buckets)} buckets "
-                f"({', '.join(sorted(str(b) for b in buckets))}) across {len(rows)} rows"
+                f"{_where(rows[0])}: one student holds {len(rows)} rows for this "
+                f"year and subject, with bucket(s) {', '.join(buckets)}"
             )
 
     goal_keys = {g.group_key for g in goals}

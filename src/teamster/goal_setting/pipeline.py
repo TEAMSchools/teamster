@@ -31,7 +31,10 @@ class Proposal:
 def resolve(slot: str, name: str):
     path = STRATEGIES[slot][name]
     if path is None:
-        raise NotImplementedError(f"{slot} strategy '{name}' is not implemented yet")
+        raise NotImplementedError(
+            f"{slot} strategy '{name}' is not implemented yet; planned for a "
+            "later PR (see the design spec's rollout order)"
+        )
     module, _, attr = path.partition(":")
     return getattr(importlib.import_module(module), attr)
 
