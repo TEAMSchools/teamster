@@ -45,7 +45,7 @@ def build_remote_file_regex(
     district_code: str,
     filename_suffix_regex: str,
 ) -> str:
-    """Compose a Cambium summative record filename regex from its partitions.
+    r"""Compose a Cambium summative record filename regex from its partitions.
 
     The alternations are read back off `partitions_def` rather than from a
     parallel list, so a filename this regex matches always captures a DECLARED
@@ -56,7 +56,7 @@ def build_remote_file_regex(
         partitions_def: the asset's own partitions definition, from
             `build_partitions_def`.
         district_code: the region's 4-digit NJ district code, hardcoded rather
-            than matched with `\\d+` because each region has its own Couchdrop
+            than matched with `\d+` because each region has its own Couchdrop
             folder and `build_sftp_file_asset` raises on multiple matches.
         filename_suffix_regex: the fragment between `Record_File` and `.csv`.
             NJGPA's is the literal `_GPA`. NJSLA has sent no file yet, so its
