@@ -81,6 +81,19 @@ def test_reason_names_rank_and_n_to_move():
     assert r.reason == "approaching, projected 409, rank 1 of 12 to move"
 
 
+def test_same_student_number_in_two_schools_is_ranked_independently():
+    team = appr(500, school="TEAM", student_number=42)
+    rise = appr(300, school="Rise", student_number=42)
+    out = top_approaching_to_move(
+        [team, rise], [goal(1, school="TEAM"), goal(5, school="Rise")], "admit"
+    )
+    by_school = {r.school: r for r in out}
+    assert by_school["TEAM"].reason.endswith("rank 1 of 1 to move")
+    assert by_school["Rise"].reason.endswith("rank 1 of 5 to move")
+    assert by_school["TEAM"].bucket == "Bucket 2"
+    assert by_school["Rise"].bucket == "Bucket 2"
+
+
 def test_none_strategy_is_identity():
     recs = [appr(410)]
     assert none(recs, [goal(3)], "admit") == recs

@@ -18,7 +18,12 @@ def top_approaching_to_move(
         if r.is_approaching:
             by_group.setdefault(r.group_key, []).append(r)
 
-    ranked: dict[int, tuple[int, str]] = {}  # student_number -> (rank, reason)
+    # (region, group_key, student_number) -> (rank, reason). Group_key alone
+    # isn't enough: the same student_number can appear twice under one group
+    # key across two records only if region also matches, but different
+    # regions/schools issue student numbers independently, so region is part
+    # of the identity too.
+    ranked: dict[tuple[str, tuple[str, str, int], int], tuple[int, str]] = {}
     for key, group in by_group.items():
         n = to_move.get(key, 0)
         ordered = sorted(
@@ -35,12 +40,13 @@ def top_approaching_to_move(
                 f"approaching, projected {_fmt(r.projected_score)}, "
                 f"rank {rank} of {n} to move"
             )
-            ranked[r.student_number] = (rank, reason)
+            ranked[(r.region, r.group_key, r.student_number)] = (rank, reason)
 
     out = []
     for r in records:
-        if r.student_number in ranked and r.is_approaching:
-            rank, reason = ranked[r.student_number]
+        ranked_key = (r.region, r.group_key, r.student_number)
+        if ranked_key in ranked and r.is_approaching:
+            rank, reason = ranked[ranked_key]
             admitted = rank <= to_move.get(r.group_key, 0)
             out.append(
                 r.with_(
