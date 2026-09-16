@@ -44,6 +44,15 @@ def test_iready_sql_names_group_filters():
     assert "annual_typical_growth_measure" in q and "annual_stretch_growth_measure" in q
     assert "stg_google_sheets__iready__crosswalk" in q
     assert "TODO(#5317)" in q
+    assert "'TEAM Academy Charter School'" in q
+    assert "ir.region = case co.region" in q
+
+
+def test_iready_sql_rejects_unknown_region():
+    g = GROUP.model_copy(update={"regions": ["Atlantis"]})
+    with pytest.raises(ConfigError) as e:
+        iready_boy.sql(g, 2026)
+    assert "Atlantis" in str(e.value)
 
 
 def test_goals_sql_maps_subject_to_illuminate_area():

@@ -3,13 +3,18 @@
 Adds annual_typical_growth_measure directly to the BOY scale score. That is
 exact for a baseline diagnostic (gain is 0 by definition) and sidesteps the
 null diagnostic_gain in staging for AY2026.
+
+Rows with a NULL i-Ready region (124 in AY2026) will not match any roster
+student under IREADY_REGION and so are correctly excluded from is_tested; the
+real plan run compares the resulting tested count against the SY27 one-off
+(1,522 tested for NJ grades 1-2 math) to quantify that loss.
 """
 
 from __future__ import annotations
 
 from teamster.goal_setting.adapters import sql_list
 from teamster.goal_setting.adapters.roster_sql import ROSTER, roster_where
-from teamster.goal_setting.config import Group
+from teamster.goal_setting.config import ConfigError, Group
 from teamster.goal_setting.records import StudentRecord
 
 IREADY = "`teamster-332318.kipptaf_iready.int_iready__diagnostic_results`"
@@ -18,10 +23,35 @@ CROSSWALK = (
 )
 ASSESSMENT = "i-Ready BOY"
 
+# Roster region (config.Group.regions) -> the district label carried by
+# int_iready__diagnostic_results.region. Verified 2026-09-16 by an aggregate
+# query (no student rows): the value set does NOT follow a "KIPP <Region>"
+# pattern (Newark and Camden carry legal-entity names), so this is an
+# explicit mapping, not a derived one.
+IREADY_REGION = {
+    "Newark": "TEAM Academy Charter School",
+    "Camden": "KIPP Cooper Norcross Academy",
+    "Paterson": "KIPP Paterson",
+    "Miami": "KIPP Miami",
+}
+
+
+def _region_case(group: Group) -> str:
+    whens = " ".join(
+        f"when '{region}' then '{IREADY_REGION[region]}'" for region in group.regions
+    )
+    return f"case co.region {whens} end"
+
 
 def sql(group: Group, academic_year: int) -> str:
+    unknown = [r for r in group.regions if r not in IREADY_REGION]
+    if unknown:
+        raise ConfigError(
+            f"iready_boy has no IREADY_REGION mapping for: {', '.join(unknown)}"
+        )
+
     # Interpolates only pydantic-validated rules-file values (region/grade/
-    # subject), never external user input.
+    # subject) and the IREADY_REGION constant above, never external user input.
     # trunk-ignore(bandit/B608): see comment above
     return f"""
     with
@@ -36,6 +66,7 @@ def sql(group: Group, academic_year: int) -> str:
             select
                 student_id as student_number,
                 student_grade_int as grade_level,
+                region,
                 overall_scale_score,
                 -- TODO(#5317): switch to level_number_with_typical once typical growth is non-null in staging
                 overall_scale_score + annual_typical_growth_measure as scale_plus_typical,
@@ -46,10 +77,12 @@ def sql(group: Group, academic_year: int) -> str:
               and test_round = 'BOY'
               and rn_subj_round = 1
               and student_grade_int in ({sql_list(group.grades)})
+              and region in ({sql_list(IREADY_REGION[r] for r in group.regions)})
         ),
         ir_lvl as (
             select
                 ir.student_number,
+                ir.region,
                 ir.scale_plus_typical,
                 xt.`level` as level_typical,
                 xs.`level` as level_stretch
@@ -73,7 +106,9 @@ def sql(group: Group, academic_year: int) -> str:
         ir.scale_plus_typical as projected_score,
         ir.level_stretch as stretch_level
     from {ROSTER} as co
-    left join ir_lvl as ir on co.student_number = ir.student_number
+    left join ir_lvl as ir
+        on co.student_number = ir.student_number
+        and ir.region = {_region_case(group)}
     where {roster_where(group, academic_year)}
     """
 
