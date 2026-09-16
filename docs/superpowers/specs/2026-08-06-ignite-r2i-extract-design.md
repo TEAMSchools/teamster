@@ -99,22 +99,36 @@ Precedent for an outbound funder share of this shape:
 
 New directory `src/dbt/kipptaf/models/extracts/ignite/`.
 
-| Model                              | Purpose                                                            |
+As built (2026-09-16). Intermediates sit under `intermediate/`; the whole tree
+inherits `contract: enforced: true` and the `extracts` schema from
+`dbt_project.yml`.
+
+| Node                               | Purpose                                                            |
 | ---------------------------------- | ------------------------------------------------------------------ |
+| `seed_ignite__treatment_sections`  | 17 resolved/pending treated sections; identifiers only, no names   |
+| `seed_ignite__school_nces_ids`     | `schoolid` to NCES school id, supplied by hand                     |
 | `int_ignite__student_id_crosswalk` | `student_number` to masked numeric `stu_id`; retained, never sent  |
-| `int_ignite__enrollment_scaffold`  | population; one row per student per academic year                  |
 | `int_ignite__attendance`           | `days_present` and `days_enrolled` per student per school per year |
-| `int_ignite__state_assessment`     | NJSLA and NJGPA reshaped into the math, reading, writing families  |
+| `int_ignite__state_assessment`     | NJSLA and NJGPA reshaped into the math and reading families        |
 | `int_ignite__interim_assessment`   | iReady beginning-of-year and end-of-year by subject                |
-| `int_ignite__treatment_assignment` | the seam; site-lead classes to sections to students to six flags   |
+| `int_ignite__treatment_assignment` | the seam; treated sections to students to the class-level flags    |
 | `rpt_ignite__student_level`        | Table 1                                                            |
 | `rpt_ignite__course_level`         | Table 2                                                            |
 | `rpt_ignite__teacher_course`       | anonymized classroom file returned to Mathematica                  |
 
-Plus a seed, `seed_ignite__school_nces_ids.csv`, mapping `schoolid` to NCES
-school ID. NCES school identifiers are absent from the warehouse — every
-existing `nces_id` column refers to a **college**, and every `nces_course_id` is
-a SCED course code. The values are public CCD data for a handful of schools.
+No separate `int_ignite__enrollment_scaffold` was needed —
+`rpt_ignite__student_level` derives the population and the longest-enrolled
+school pick inline, which keeps the school-choice rule adjacent to the row it
+governs.
+
+NCES school identifiers are absent from the warehouse — every existing `nces_id`
+column refers to a **college**, and every `nces_course_id` is a SCED course
+code. Only three KIPP NJ schools enrol grades 9-12, so the seed holds three
+rows. **If the two Newark schools share one NCES id**, `school_id` cannot
+distinguish the two treatment sites and Mathematica must key school-level
+analysis on `school_name` instead; this also means a student who transferred
+between them would collide on `(stu_id, school_id, school_year)`, which the
+longest-enrolled rule avoids by emitting one row per student-year.
 
 ### Upstreams
 
@@ -180,27 +194,42 @@ Deidentification rules:
   upload.
 - Both `rpt_` models set `contract: enforced: true`, per repo convention.
 
-### The treatment seam
+### The treatment seam (revised 2026-09-16)
 
-`int_ignite__treatment_assignment` reads a Google Sheets source shaped to the
-site-lead template: school name, teacher name, school year, subject, course
-name, grade level, class period, semester, and the three `cls_treatment_*`
-flags.
+The site-lead classroom list arrived on 2026-08-31 and again, expanded, on
+2026-09-16. Resolving it disproved this spec's original assumption, so the
+approach below replaces it.
 
-The join is well-supported. `int_extracts__course_enrollments_by_term` already
-carries `teacher_name`, `course_name`, `grade_level`, `section_or_period`, and
-`semester` **alongside** `course_number`, `section_number`, and `sectionid`. The
-site lead supplies the five descriptive fields; the model resolves them to the
-three identifier fields owed back in the template's blue columns.
+**Course-name matching does not work.** The list numbers courses in Arabic
+(`ENG100`, `Algebra 1`, `English 300`) where PowerSchool uses Roman
+(`English I`, `Algebra I`, `English III`), and it appends an `ICR` label that is
+not part of any PowerSchool course name. Teacher name is also unreliable as a
+key, because five of the fifteen named teachers are in-class-resource
+co-teachers who hold no section of record.
 
-Student-level flags roll up from the course grain: a student receives
-`treatment_cp = 1` when they appear in any class where `cls_treatment_cp = 1`,
-and likewise for `rdc` and `rr`.
+**What does work is class period plus the service-model suffix PowerSchool
+carries in `section_number`** — `3ICR`, `56DBICR`, `2ICS`, `4consult` — with
+teacher-of-record used as corroboration where the named teacher does hold the
+section. On that basis 12 of 17 live classes resolved to an exact course and
+section number; four further rows were withdrawn by the researchers themselves,
+and five remain ambiguous pending confirmation from school staff.
 
-Site leads type course and teacher names by hand, so near-misses against
-PowerSchool values are expected. Resolution prefers `sectionid` where period
-disambiguates, and an explicit unmatched-rows test fails the build rather than
-letting a dropped class silently zero a treatment flag.
+The resolved identifiers live in `seed_ignite__treatment_sections`, a seed of 17
+rows carrying course and section numbers only. **Teacher names are deliberately
+absent** — they are staff PII and must not enter a commit; the working
+resolution sheet that holds them stays in `.claude/scratch/`. Rows marked
+`pending` carry null identifiers and contribute no treated students, so filling
+those five cells and rebuilding is the entire update path.
+
+`int_ignite__treatment_assignment` expands that seed to the students enrolled in
+each resolved section. Student-level flags roll up from the course grain: a
+student receives `treatment_cp = 1` when they appear in any class where
+`cls_treatment_cp = 1`, and likewise for `rdc` and `rr`.
+
+**Only routine data cycles ran at KIPP NJ.** Mathematica confirmed on 2026-09-16
+that `treatment_cp` and `treatment_rr` should be zero throughout, so the study
+cannot estimate those two effects here. Verified treated populations are 67
+students in school year 2025 and 151 in 2026.
 
 ### Population parameters
 

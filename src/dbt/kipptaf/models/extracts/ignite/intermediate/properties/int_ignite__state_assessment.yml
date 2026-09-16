@@ -1,0 +1,103 @@
+models:
+  - name: int_ignite__state_assessment
+    description:
+      New Jersey state assessment results reshaped into the per-subject column
+      families Mathematica's template expects — one row per student per academic
+      year, with a math (`_m`) and reading (`_r`) block. Sourced from
+      `int_pearson__all_assessments` for scores and from `stg_pearson__njsla`
+      for accommodation and exemption flags, which the intermediate model does
+      not carry forward. Two limitations are structural rather than fixable
+      here. First, New Jersey administers no separate writing assessment, so
+      Mathematica's optional `_w` family has no source and is omitted. Second,
+      NJGPA carries no accommodation or exemption fields at all, so those flags
+      are null for a student whose only result is NJGPA — which is most eleventh
+      graders.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description:
+          KIPP student number, taken from Pearson's `localstudentidentifier`.
+
+      - name: academic_year
+        data_type: int64
+        description:
+          Start year of the school year. Note that NJSLA results for academic
+          year 2025 had not loaded as of 2026-09-16 — only NJGPA is present — so
+          a phase-2 submission covering SY2025-2026 waits on that load.
+
+      - name: test_score_m
+        data_type: numeric
+        description:
+          Scale score on the math state assessment. Where a student sat both an
+          end-of-course test and NJGPA in one year, NJSLA is preferred as the
+          state summative assessment.
+
+      - name: test_grd_m
+        data_type: int64
+        description: Grade level of the math test taken.
+
+      - name: test_subj_m_eoc
+        data_type: string
+        description:
+          End-of-course math subject — Algebra I, Algebra II or Geometry. Null
+          for a general Mathematics or NJGPA administration, which is what
+          Mathematica's template expects for a non-end-of-course test.
+
+      - name: test_name_m
+        data_type: string
+        description: Name of the math test taken, either NJSLA or NJGPA.
+
+      - name: accom_m
+        data_type: int64
+        description:
+          1 where the student had a testing accommodation on the math test.
+          Derived from Pearson's `uniqueaccommodation` and `mlaccommodation`
+          fields, which are yes/no flags. Mathematica also asks for an
+          accommodation CODE, but New Jersey's file supplies only these flags —
+          no code exists to send, so no `accom_code_m` column is produced.
+
+      - name: exemption_m
+        data_type: int64
+        description:
+          1 where the student was exempt from the math test. Derived from
+          `iepexemptfrompassing`, which reads `N` on every row in scope, so this
+          is zero throughout rather than merely sparse.
+
+      - name: test_score_r
+        data_type: numeric
+        description:
+          Scale score on the reading and English language arts assessment.
+
+      - name: test_grd_r
+        data_type: int64
+        description: Grade level of the reading test taken.
+
+      - name: test_subj_r_eoc
+        data_type: string
+        description:
+          End-of-course reading subject. Always null — New Jersey administers no
+          end-of-course English language arts assessment.
+
+      - name: test_name_r
+        data_type: string
+        description: Name of the reading test taken, either NJSLA or NJGPA.
+
+      - name: accom_r
+        data_type: int64
+        description:
+          1 where the student had a testing accommodation on the reading test.
+          Same flag-only limitation as `accom_m`.
+
+      - name: exemption_r
+        data_type: int64
+        description:
+          1 where the student was exempt from the reading test. Zero throughout,
+          as with `exemption_m`.

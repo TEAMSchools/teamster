@@ -1,0 +1,165 @@
+models:
+  - name: rpt_ignite__course_level
+    description:
+      Table 2 of the IGNITE R2I evaluation submission to Mathematica. One row
+      per student per course, restricted to English, Math, Science and History
+      as the data request specifies, for grades 9-12 across the two academic
+      years in scope. Column names deliberately mirror Mathematica's template
+      rather than this project's conventions, because the file is pasted
+      straight into their workbook. Carries no student or state identifier —
+      students appear only under the masked `stu_id` from
+      `int_ignite__student_id_crosswalk`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - stu_id
+              - school_year
+              - course_number
+              - section_number
+          config:
+            severity: error
+    columns:
+      - name: stu_id
+        data_type: int64
+        description:
+          Masked student identifier. Joins to Table 1 on the same value.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: school_year
+        data_type: int64
+        description:
+          Four-digit year at the END of the school year, per Mathematica's
+          codebook — so 2025 is SY2024-2025. Derived as `academic_year + 1`
+          because this warehouse stores the START year. Getting this backwards
+          shifts every row by a year with no error surfacing, which is why it
+          carries an accepted-values test.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [2025, 2026]
+                quote: false
+              config:
+                severity: error
+
+      - name: course_grade
+        data_type: string
+        description:
+          Final year course grade reduced to a single letter, so `A+` and `A-`
+          both become `A` and `F*` becomes `F`. Sourced from the `Y1` store code
+          with transfer grades excluded, since a transfer grade was not earned
+          in the KIPP course. Null where no year grade was stored.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [A, B, C, D, F]
+              config:
+                severity: warn
+
+      - name: school_id
+        data_type: int64
+        description:
+          NCES school identifier from `seed_ignite__school_nces_ids`. Null until
+          those public Common Core of Data values are supplied by hand.
+
+      - name: course_number
+        data_type: string
+        description: PowerSchool course number.
+
+      - name: section_number
+        data_type: string
+        description:
+          PowerSchool section number. An `ICR`, `ICS` or `consult` suffix
+          denotes the special-education service model.
+
+      - name: course_period
+        data_type: string
+        description:
+          Class period as PowerSchool expresses it, for example `3(A)` or
+          `1-2(A)` for a double block.
+
+      - name: subject
+        data_type: string
+        description:
+          Mapped from PowerSchool `credit_type` — ENG to English, MATH to
+          Mathematics, SCI to Science, SOC to History. SOC is social studies
+          broadly, so a course such as African American Studies is reported as
+          History; it is the closest available credit type.
+
+      - name: grade_level
+        data_type: int64
+        description: Student's grade level, as a number.
+
+      - name: semester
+        data_type: int64
+        description:
+          1 for a fall-only course and 2 for a spring-only course. Null for a
+          year-long course, which is most of them — Mathematica's field is
+          marked "if applicable" and neither value is true of a full-year class.
+
+      - name: course_name
+        data_type: string
+        description: PowerSchool course name.
+
+      - name: course_selfcont
+        data_type: int64
+        description:
+          1 where the student is flagged self-contained. Mathematica defines
+          this as an attribute of the class, but only a student-level flag
+          exists here, so it is an approximation at the student-course grain.
+
+      - name: classid
+        data_type: string
+        description:
+          PowerSchool `sectionid`, supplied as Mathematica's optional unique
+          class identifier so a class remains identifiable even where course
+          number, section number and period do not distinguish it.
+
+      - name: treatment_cp
+        data_type: int64
+        description:
+          1 if the student was in any co-planning class that year. Zero
+          throughout — Mathematica confirmed only routine data cycles ran at
+          KIPP NJ.
+
+      - name: treatment_rdc
+        data_type: int64
+        description:
+          1 if the student was in any routine data cycles class that year.
+
+      - name: treatment_rr
+        data_type: int64
+        description:
+          1 if the student was in any repeated reading class that year. Zero
+          throughout, per the same confirmation as `treatment_cp`.
+
+      - name: cls_treatment_cp
+        data_type: int64
+        description: 1 if THIS class ran co-planning. Zero throughout.
+
+      - name: cls_treatment_rdc
+        data_type: int64
+        description: 1 if THIS class ran routine data cycles.
+
+      - name: cls_treatment_rr
+        data_type: int64
+        description: 1 if THIS class ran repeated reading. Zero throughout.
+
+      - name: passed
+        data_type: int64
+        description:
+          1 where the course grade is A through D, 0 where F. Null rather than 0
+          where no grade was stored, so a missing grade is not reported as a
+          failure.
+
+      - name: passed_c
+        data_type: int64
+        description:
+          1 where the course grade is C or better. Null rather than 0 where no
+          grade was stored.

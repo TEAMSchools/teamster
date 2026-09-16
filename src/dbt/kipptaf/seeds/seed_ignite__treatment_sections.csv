@@ -1,0 +1,18 @@
+ref_id,school_name,academic_year,course_number,section_number,class_period,treatment_cp,treatment_rdc,treatment_rr,status
+R01,KIPP Newark Collegiate Academy,2025,MAT02056G3,3ICR,3,0,1,0,resolved
+R02,KIPP Newark Collegiate Academy,2025,MAT02056G3,4ICR,4,0,1,0,resolved
+R03,KIPP Newark Collegiate Academy,2025,SCI03151F1,New6,6,0,1,0,resolved
+R04,KIPP Newark Collegiate Academy,2025,SCI03151F1,New7,7,0,1,0,resolved
+R05,KIPP Newark Collegiate Academy,2025,ENG01051S1,New12DB,1-2,0,1,0,resolved
+R06,KIPP Newark Collegiate Academy,2025,ENG01052G3,4,4,0,1,0,resolved
+R07,KIPP Newark Collegiate Academy,2024,ENG01051D1,56DBICR,5-6,0,1,0,resolved
+R08,KIPP Newark Lab High School,2025,ENG01051F2,1,1,0,1,0,resolved
+R09,KIPP Newark Lab High School,2025,ENG01052F3,7,7,0,1,0,resolved
+R10,KIPP Newark Lab High School,2025,ENG01052G4,2,2,0,1,0,resolved
+R11,KIPP Newark Lab High School,2024,MAT02056F3,6,6,0,1,0,resolved
+R12,KIPP Newark Lab High School,2024,SCI03151G1,3ICR,3,0,1,0,resolved
+Q1,KIPP Newark Collegiate Academy,2025,,,3,0,1,0,pending
+Q2,KIPP Newark Collegiate Academy,2024,,,2,0,1,0,pending
+Q3,KIPP Newark Lab High School,2025,,,,0,1,0,pending
+Q4,KIPP Newark Lab High School,2025,,,,0,1,0,pending
+Q5,KIPP Newark Lab High School,2025,,,,0,1,0,pending
