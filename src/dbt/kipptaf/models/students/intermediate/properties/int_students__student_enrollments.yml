@@ -655,6 +655,9 @@ models:
           direct-certification code, not an individual determination. The
           underlying Focus mapping (in int_focus__students) resolves to F, R or
           P as soon as Focus records a per-student determination.
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_application_status
         data_type: string
         description:
