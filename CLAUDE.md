@@ -277,8 +277,8 @@ exploration that led nowhere (keep only the conclusion).
   hosted server) wins any job it covers. `dagster` (homebrew) keeps only what
   `dagster-plus` cannot do: staleness causes, automation-condition evaluations,
   partition statuses, check executions, sensors, schedules, backfills,
-  hybrid-agent health, compute logs, and the 3 tools whose `dagster-plus`
-  counterpart is a strict subset (`list_runs`, `get_run_logs`,
+  hybrid-agent health, compute logs, and the 4 tools whose `dagster-plus`
+  counterpart is a strict subset (`list_runs`, `get_run`, `get_run_logs`,
   `terminate_runs`). The duplicates are denied in `settings.json`, so a denial
   there means the other server owns that job. Details in
   `.claude/context/dagster-plus.md`.

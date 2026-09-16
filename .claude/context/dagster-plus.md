@@ -17,13 +17,32 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   (`get_asset_metrics`, `get_job_metrics`, `get_deployment_metrics`,
   `get_asset_selection_metrics` — credit and runtime reporting), alert policies
   (read, plus write via a config document), Dagster+ Issues, asset browsing and
-  definitions (`get_assets`, `get_asset`), deployment listing, run detail, code
-  locations, run launches, and re-execution. Duplicates on both sides are denied
-  in `settings.json` — one tool per job.
-- **3 jobs stay on the homebrew server** because this server's tool is a strict
-  subset, not because of preference: `list_runs` (this one has no `tags`,
-  `run_ids`, or time-range filters), `get_run_logs` (no `filter_types`), and
-  `terminate_runs` (this one takes 1 run id and no `terminate_policy`).
+  definitions (`get_assets`, `get_asset`), deployment listing, code locations,
+  run launches, and re-execution. Duplicates on both sides are denied in
+  `settings.json` — one tool per job.
+- **4 jobs stay on the homebrew server** because this server's tool is a strict
+  subset, not because of preference. Identical arguments do NOT mean identical
+  payloads — compare the payloads before flipping anything else:
+  - `list_runs` — this one has no `tags`, `run_ids`, or time-range filter. It
+    DOES return each run's full `tags`, so filtering client-side is possible,
+    but only by paging an unfiltered stream 100 runs at a time. A backfill's
+    partition runs or a schedule that last fired days ago is unbounded paging.
+  - `get_run` — this one returns 9 fields. The homebrew one adds
+    `assetSelection`, `stepKeysToExecute`, `parentRunId`, `rootRunId`,
+    `stepStats` (per-step status and attempt timings), `updateTime`, and
+    `repositoryOrigin`. Its only unique field is `run_config_yaml`, which is
+    `{}` in this repo because no asset passes run config.
+  - `get_run_logs` — no `filter_types`. Events here carry `event_type` and
+    `error`, but the order is oldest-first with a 100-event cap, so a step
+    failure at the end of a long run is several pages in. Verified: page 1 of a
+    100-second failed run covered its first 9 seconds.
+  - `terminate_runs` — this one takes 1 run id and no `terminate_policy`. The
+    homebrew one has `MARK_AS_CANCELED_IMMEDIATELY`, which force-cancels a run
+    whose worker is gone; `SAFE_TERMINATE` will not clear one.
+- `list_code_locations` here drops `updatedTimestamp` and `repositories`, but
+  the commit hash is in the `image` tag and
+  `mcp__dagster__get_location_load_history` is the rollout-verification tool
+  anyway — so this server owns it.
 - `list_asset_checks` is the only route to an asset's check NAMES, which
   `mcp__dagster__get_asset_check_executions` requires as `check_name`. Use the
   two together.
