@@ -16,10 +16,10 @@ or mart `facts`/`dimensions`/`bridges`) —
 opaque token.
 
 - **This server targets a branch deployment via a `deployment` arg**, omitted
-  for prod — `launch_multiple_runs`, `list_runs`, `get_run_logs`,
-  `get_run_compute_logs`, and `terminate_runs` all accept it. On `dagster-plus`
-  the equivalent is `deployment_name`, and it is REQUIRED on every call. List
-  the branch deployments with `mcp__dagster-plus__list_deployments` and
+  for prod — `launch_multiple_runs`, `list_runs`, `get_run_logs`, and
+  `get_run_compute_logs` all accept it. On `dagster-plus` the equivalent is
+  `deployment_name`, and it is REQUIRED on every call. List the branch
+  deployments with `mcp__dagster-plus__list_deployments` and
   `deployment_type="branch"` — this server's `list_deployments` returns only
   `prod`, which is why it is denied. The names are opaque hashes, so map a
   specific PR to its hash from that PR's `deploy` job log line
@@ -38,8 +38,12 @@ opaque token.
   deploy. To confirm a rollout landed: `get_location_load_history` (new commit
   LOADED) → `list_runs` / `get_asset_materializations` for the asset.
 - **Schedule/sensor-launched runs report `assetSelection: null`** in
-  `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
-  keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
+  `list_runs`. Recover the asset keys from
+  `get_run_logs(filter_types=["ASSET_MATERIALIZATION_PLANNED"])` — one event per
+  selected asset, each naming the asset and carrying `step_key`, all at the
+  start of the log. `mcp__dagster-plus__get_run` has neither `assetSelection`
+  nor `stepKeysToExecute`, so this is the route. A `step_key` converts `__` →
+  `/` (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
   Cross-check with `get_asset_partition_statuses`, or
   `mcp__dagster-plus__get_assets` for a whole prefix, before declaring a
   backfill complete — failure-triage groupings keyed on `assetSelection`
