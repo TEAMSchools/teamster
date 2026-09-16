@@ -156,6 +156,125 @@ def test_write_run_writes_five_files_in_expected_shapes(tmp_path):
     assert "bucket4_outcome" in sb[0] and "rank" in sb[0] and "projected_score" in sb[0]
 
 
+SY27_TARGETS = {
+    ("Newark", 1): 0.35,
+    ("Camden", 1): 0.35,
+    ("Paterson", 1): 0.25,
+    ("Newark", 2): 0.24,
+    ("Camden", 2): 0.22,
+    ("Paterson", 2): 0.24,
+}
+
+# Rows where the one-off's Bucket 2 count exceeds its own n_bubble_to_move,
+# which only happens when students tie at the cutoff and `ties: admit` lets
+# them all in. The synthetic roster gives every approaching student a distinct
+# score, so it cannot reproduce those ties from the aggregate fixture alone:
+# the tied scores are per-student data the fixture does not carry.
+FIXTURE_TIE_ROWS = {
+    ("Newark", "KURA", 1),
+    ("Newark", "Life", 1),
+    ("Newark", "Life", 2),
+    ("Newark", "SPARK", 2),
+    ("Newark", "Seek", 1),
+    ("Newark", "THRIVE", 1),
+    ("Newark", "THRIVE", 2),
+}
+
+
+def _fixture_rows() -> list[dict]:
+    path = Path(__file__).parent / "fixtures" / "nj_math_1_2_ay2026_school_goals.csv"
+    with path.open() as fh:
+        return list(csv.DictReader(fh))
+
+
+def _synthetic_roster(rows: list[dict]) -> list:
+    """One student per roster seat, built from a fixture row's aggregates."""
+    school_ids: dict[tuple[str, str], int] = {}
+    out = []
+    for r in rows:
+        where = dict(
+            region=r["region"],
+            school=r["school"],
+            grade_level=int(r["grade_level"]),
+            subject="Math",
+            school_id=school_ids.setdefault(
+                (r["region"], r["school"]), len(school_ids) + 1
+            ),
+        )
+        n_roster, n_tested = int(r["n_roster"]), int(r["n_tested"])
+        n_prof, n_appr = int(r["n_projected_proficient"]), int(r["n_early_on"])
+        n_below = n_tested - n_prof - n_appr
+
+        proficient = [
+            student(
+                **where, projected_level=5, projected_score=500 - i, stretch_level=5
+            )
+            for i in range(n_prof)
+        ]
+        # distinct descending scores, so ranking has no ties to resolve
+        approaching = [
+            student(
+                **where, projected_level=4, projected_score=412 - i, stretch_level=4
+            )
+            for i in range(n_appr)
+        ]
+        below = [
+            student(
+                **where, projected_level=3, projected_score=300 - i, stretch_level=4
+            )
+            for i in range(n_below)
+        ]
+
+        # Bucket 3 is the stretch reachers among students Buckets 1 and 2 leave
+        # behind: lowest-scoring approaching first, then below.
+        n_admitted = min(int(r["n_bubble_to_move"]), n_appr)
+        leftover = list(reversed(approaching[n_admitted:])) + below
+        for s in leftover[: int(r["bucket_3"])]:
+            out.append(s.with_(stretch_level=5))
+        out += proficient + approaching[:n_admitted] + leftover[int(r["bucket_3"]) :]
+        out += [untested(**where) for _ in range(n_roster - n_tested)]
+    return out
+
+
+def test_pipeline_reproduces_sy27_bucket_counts_from_synthetic_roster():
+    rows = _fixture_rows()
+    p = run_group(GROUP, 2026, _synthetic_roster(rows), SY27_TARGETS, baseline=None)
+
+    goals = {(g.region, g.school, g.grade_level): g for g in p.goals}
+    counts: dict[tuple, dict[str, int]] = {}
+    for rec in p.records:
+        by_bucket = counts.setdefault((rec.region, rec.school, rec.grade_level), {})
+        by_bucket[rec.bucket] = by_bucket.get(rec.bucket, 0) + 1
+
+    assert len(goals) == len(rows) == 16
+    ties = set()
+    for r in rows:
+        key = (r["region"], r["school"], int(r["grade_level"]))
+        g = goals[key]
+        assert g.bubble_parameter == float(r["bubble_parameter"]), key
+        assert g.n_to_move == int(r["n_bubble_to_move"]), key
+        assert g.goal == float(r["school_goal"]), key
+
+        c = counts[key]
+        expected_b2 = min(int(r["n_bubble_to_move"]), int(r["n_early_on"]))
+        assert c.get("Bucket 1", 0) == int(r["bucket_1"]), key
+        assert c.get("Bucket 2", 0) == expected_b2, key
+        assert c.get("Bucket 3", 0) == int(r["bucket_3"]), key
+        assert c.get("Bucket 4", 0) == int(r["n_roster"]) - sum(
+            (
+                int(r["bucket_1"]),
+                expected_b2,
+                int(r["bucket_3"]),
+            )
+        ), key
+        if expected_b2 != int(r["bucket_2"]):
+            ties.add(key)
+
+    # Every row the synthetic roster cannot match is a row the one-off admitted
+    # extra students into on a tie. If this set changes, the rules changed.
+    assert ties == FIXTURE_TIE_ROWS
+
+
 def test_write_run_writes_nothing_when_a_program_id_is_missing(tmp_path):
     from teamster.goal_setting.config import ConfigError, Crosswalk
 
