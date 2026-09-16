@@ -107,17 +107,21 @@ def diff_manifests(prior: dict | None, current: dict) -> DiffReport:
     rep = DiffReport(verdict="no change")
 
     old_goals = {_goal_key(g): g for g in prior["school_goals"]}
-    for g in current["school_goals"]:
-        o = old_goals.get(_goal_key(g))
-        if o is None or any(o[f] != g[f] for f in GOAL_FIELDS):
+    new_goals = {_goal_key(g): g for g in current["school_goals"]}
+    for key in sorted(
+        set(old_goals) | set(new_goals), key=lambda k: tuple(str(x) for x in k)
+    ):
+        o, g = old_goals.get(key), new_goals.get(key)
+        if o is None or g is None or any(o[f] != g[f] for f in GOAL_FIELDS):
+            region, school, grade_level, subject = key
             rep.goal_changes.append(
                 {
-                    "region": g["region"],
-                    "school": g["school"],
-                    "grade_level": g["grade_level"],
-                    "subject": g["subject"],
+                    "region": region,
+                    "school": school,
+                    "grade_level": grade_level,
+                    "subject": subject,
                     "old": {f: (o or {}).get(f) for f in GOAL_FIELDS},
-                    "new": {f: g[f] for f in GOAL_FIELDS},
+                    "new": {f: (g or {}).get(f) for f in GOAL_FIELDS},
                 }
             )
 

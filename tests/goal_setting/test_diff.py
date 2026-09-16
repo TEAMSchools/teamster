@@ -79,6 +79,52 @@ def test_goal_and_count_changes_are_listed():
     assert "0.52" in text and "0.48" in text and "Bucket 2" in text
 
 
+def test_goal_row_removed_in_current_is_listed():
+    prior = copy.deepcopy(BASE)
+    prior["school_goals"].append(
+        {
+            "region": "Newark",
+            "school": "Rise",
+            "school_id": 2,
+            "grade_level": 1,
+            "subject": "Math",
+            "bubble_parameter": 0.55,
+            "n_to_move": 8,
+            "goal": 0.44,
+        }
+    )
+    cur = copy.deepcopy(BASE)
+    rep = diff_manifests(prior, cur)
+    removed = [c for c in rep.goal_changes if c["school"] == "Rise"]
+    assert len(removed) == 1
+    assert removed[0]["new"] == {
+        "bubble_parameter": None,
+        "n_to_move": None,
+        "goal": None,
+    }
+    assert rep.verdict == "changed counts"
+
+
+def test_bucket_count_row_removed_in_current_is_listed():
+    prior = copy.deepcopy(BASE)
+    prior["bucket_counts"].append(
+        {
+            "region": "Newark",
+            "school": "Rise",
+            "grade_level": 1,
+            "subject": "Math",
+            "bucket": "Bucket 2",
+            "bucket4_outcome": None,
+            "n": 5,
+        }
+    )
+    cur = copy.deepcopy(BASE)
+    rep = diff_manifests(prior, cur)
+    removed = [c for c in rep.count_changes if c["school"] == "Rise"]
+    assert len(removed) == 1
+    assert removed[0]["old"] == 5 and removed[0]["new"] == 0
+
+
 def test_student_depth_additive_only():
     prior = [
         {
