@@ -79,6 +79,13 @@ def test_group_missing_raises(tmp_path):
         rules.group("nope")
 
 
+def test_target_column_must_be_a_known_goals_column(tmp_path):
+    bad = GOOD.replace("column: grade_band_goal", "column: grade_band_gaol")
+    with pytest.raises(ConfigError) as e:
+        load_rules(write(tmp_path, bad))
+    assert "grade_band_gaol" in str(e.value)
+
+
 CROSSWALK = """
 programs:
   - {region: Camden, subject: Math, bucket: "Bucket 3", programid: 7374}

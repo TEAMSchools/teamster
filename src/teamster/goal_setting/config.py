@@ -73,7 +73,17 @@ class Levels(Strict):
 
 class Target(Strict):
     from_: Literal["goals_sheet", "inline"]
-    column: str | None = None
+    column: (
+        Literal[
+            "grade_goal",
+            "school_goal",
+            "region_goal",
+            "organization_goal",
+            "grade_band_goal",
+            "assessment_band_goal",
+        ]
+        | None
+    ) = None
     values: dict[str, dict[int, float]] | None = None  # region -> grade -> target
 
     # A subclass model_config REPLACES the parent's rather than merging with
@@ -229,7 +239,8 @@ def _validate[M: BaseModel](model: type[M], data: dict, path: Path) -> M:
         lines = []
         for err in e.errors():
             loc = ".".join(str(x) for x in err["loc"])
-            lines.append(f"  {loc}: {err['msg']}")
+            input_suffix = f" (got {err['input']!r})" if "input" in err else ""
+            lines.append(f"  {loc}: {err['msg']}{input_suffix}")
         raise ConfigError(f"{path}:\n" + "\n".join(lines)) from e
 
 

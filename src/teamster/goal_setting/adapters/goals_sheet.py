@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from teamster.goal_setting.adapters import sql_list
-from teamster.goal_setting.config import Group
+from teamster.goal_setting.config import ConfigError, Group
 
 GOALS = "`teamster-332318.kipptaf_assessments.int_assessments__academic_goals`"
 ILLUMINATE_AREAS = {
@@ -19,7 +19,8 @@ class MissingTargets(Exception):
 
 def sql(group: Group, academic_year: int) -> str:
     # Interpolates only pydantic-validated rules-file values (region/grade/
-    # subject/column), never external user input.
+    # subject; column is a Literal of int_assessments__academic_goals's own
+    # column names), never external user input.
     # trunk-ignore(bandit/B608): see comment above
     return f"""
     select region, grade_level, max({group.target.column}) as target
@@ -32,7 +33,7 @@ def sql(group: Group, academic_year: int) -> str:
     """
 
 
-def targets_from_rows(rows: list[dict], group: Group) -> Targets:
+def targets_from_rows(rows: list[dict], group: Group, academic_year: int) -> Targets:
     targets = {
         (r["region"], int(r["grade_level"])): float(r["target"])
         for r in rows
@@ -46,8 +47,8 @@ def targets_from_rows(rows: list[dict], group: Group) -> Targets:
     ]
     if missing:
         raise MissingTargets(
-            f"goals sheet has no {group.target.column} for {group.subject} in academic_year "
-            "rows: "
+            f"goals sheet has no {group.target.column} for {group.subject} in "
+            f"academic_year {academic_year} rows: "
             + ", ".join(missing)
             + ". Enter the region targets in the goals sheet, or set target.from: inline in "
             "the rules file."
@@ -57,14 +58,12 @@ def targets_from_rows(rows: list[dict], group: Group) -> Targets:
 
 def fetch_targets(client, group: Group, academic_year: int) -> Targets:
     rows = [dict(r) for r in client.query(sql(group, academic_year)).result()]
-    return targets_from_rows(rows, group)
+    return targets_from_rows(rows, group, academic_year)
 
 
 def inline_targets(group: Group) -> Targets:
-    # Invariant already enforced by Target's model_validator (from_ == "inline"
-    # requires values); this narrows the type.
-    # trunk-ignore(bandit/B101): see comment above
-    assert group.target.values is not None
+    if group.target.values is None:
+        raise ConfigError("target.from is inline but target.values is missing")
     return {
         (region, int(grade)): float(v)
         for region, grades in group.target.values.items()

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from teamster.goal_setting.adapters import archive, goals_sheet, iready_boy, roster_sql
-from teamster.goal_setting.config import load_rules
+from teamster.goal_setting.config import ConfigError, load_rules
 
 from .fixtures.roster_small import student, untested
 
@@ -71,13 +71,26 @@ def test_inline_targets_from_config():
 def test_targets_from_rows_reports_every_missing_pair():
     rows = [{"region": "Newark", "grade_level": 1, "target": 0.35}]
     with pytest.raises(goals_sheet.MissingTargets) as e:
-        goals_sheet.targets_from_rows(rows, GROUP)
+        goals_sheet.targets_from_rows(rows, GROUP, 2026)
     msg = str(e.value)
     assert (
         "Camden grade 1" in msg
         and "Paterson grade 2" in msg
         and "Newark grade 1" not in msg
     )
+    assert "2026" in msg
+
+
+def test_inline_targets_without_values_raises():
+    g = GROUP.model_copy(
+        update={
+            "target": GROUP.target.model_copy(
+                update={"from_": "inline", "column": None, "values": None}
+            )
+        }
+    )
+    with pytest.raises(ConfigError):
+        goals_sheet.inline_targets(g)
 
 
 def test_baseline_sql_pins_a_date():
