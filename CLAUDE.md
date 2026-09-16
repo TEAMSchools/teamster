@@ -2,11 +2,11 @@
 
 ## Never
 
-- **Emit PII values** to any surface outside this session: PR comments, commits,
-  issues, Slack, Asana, scheduled-agent output. Private and internal does not
-  exempt a surface; the audience is wider and longer-lived than the person
-  asking. Redact to `Student A` or column names first. Local scratch and the
-  terminal are fine. See _PII reference_.
+- **Emit PII values** to git or GitHub — commits, PR comments, issues — or to
+  scheduled-agent output, whose destination is not visible when you write it.
+  Git history is permanent. Redact to `Student A` or column names first. Slack,
+  Asana, the terminal, and local scratch are internal and fine; a Slack Connect
+  or guest channel is not. See _PII reference_.
 - **Push to `main`.** Hand a main push to the user; do not retry. Editing and
   committing LOCAL `main` is allowed when the user asks.
 - **Run a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs`** unless
@@ -180,10 +180,11 @@ untagged columns can still be PII. The definition (34 CFR §99.3 verbatim), the
 column decision procedure, and the surrogate-key and small-cell rules are in
 `.claude/rules/ferpa-pii.md`, which loads on the first read of dbt YAML or a
 Cube file. Read it before tagging, before answering a raw-warehouse question,
-and before posting query rows anywhere outbound. Short form: names, contact,
-`student_number` and other school-facing ids, birth data, free text about a
-person, and student-level grades, attendance, or status flags are PII; database
-surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
+and before posting query rows to git, GitHub, or agent output. Short form:
+names, contact, `student_number` and other school-facing ids, birth data, free
+text about a person, and student-level grades, attendance, or status flags are
+PII; database surrogate keys (`studentid`, `dcid`) and aggregates without small
+cells are not.
 
 ## Superpowers skill overrides
 
