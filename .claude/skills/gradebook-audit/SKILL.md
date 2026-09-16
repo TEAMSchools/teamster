@@ -294,9 +294,10 @@ correctly.
    `rpt_tableau__gradebook_audit` apply to all regions. The only exclusions,
    applied in `category_join`'s `WHERE` clause (and matched in
    `int_extracts__gradebook_audit_student_flags`'s own filters, which both
-   reports inherit), are `_dbt_source_project != 'kippmiami'` and
-   `school_level_alt != 'ES'` (MS/HS only). Confirm sections for the new region
-   appear in `rpt_tableau__gradebook_audit`.
+   reports inherit), are `_dbt_source_project != 'kippmiami'`,
+   `school_level_alt != 'ES'` (MS/HS only), `exclude_from_gpa = 0`, and
+   `course_number != 'SEM22106G1'` (KIPP Newark Lab advisory). Confirm sections
+   for the new region appear in `rpt_tableau__gradebook_audit`.
 
 ---
 
@@ -597,13 +598,19 @@ Check in order:
    filtered to flagged-only, so absence there just means no flag fired.)
    Category-level: query `rpt_tableau__gradebook_audit` filtered to
    `row_type = 'category_summary'` for the section/quarter/category.
-2. **In scope at all?** Two silent exclusion rules apply in `category_join`'s
+2. **In scope at all?** Four silent exclusion rules apply in `category_join`'s
    `WHERE` (`rpt_tableau__gradebook_audit`) and matched in
    `int_extracts__gradebook_audit_student_flags`'s own filters:
    - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
      2026-2027 onward)
    - `school_level_alt != 'ES'` — ES is excluded everywhere; ES is handled
      separately by `rpt_tableau__gradebook_es_comments`
+   - `exclude_from_gpa = 0` — drops Lunch, Early Dismissal and Study Hall, which
+     carry `excludefromgpa = 1` in PowerSchool
+   - `course_number != 'SEM22106G1'` — KIPP Newark Lab's Advisory; graded, but
+     no course-level expectation grain exists (see the reference doc's
+     _Course-level scope_). A Lab teacher who teaches only advisory has no rows
+     in either model at all
 3. **For a student-level flag, did it survive the aggregation into
    `rpt_tableau__gradebook_audit`?** `student_flags_aggregate` groups
    `int_extracts__gradebook_audit_student_flags` to

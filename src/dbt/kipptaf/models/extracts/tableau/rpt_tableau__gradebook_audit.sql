@@ -133,6 +133,9 @@ with
             and s.school_level_alt != 'ES'
             and s._dbt_source_project != 'kippmiami'
             and s.exclude_from_gpa = 0
+            -- LAB advisory: graded, but no course-level expectation grain exists;
+            -- see docs/models/gradebook-audit-data-model.md
+            and s.course_number != 'SEM22106G1'
     ),
 
     category_summary as (
