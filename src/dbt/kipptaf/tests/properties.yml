@@ -984,9 +984,13 @@ data_tests:
             name: rpt_schoolmint_grow__users
 
   - name: stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources
-    description:
+    description: >-
       Lists any source-and-raw-subject pair present in the data but missing from
-      the crosswalk. Warn, not error, because an unmapped subject falls back to
-      its raw value rather than dropping the row.
+      the crosswalk. Severity is the project default, warn rather than error,
+      because an unmapped subject falls back to its raw value rather than
+      dropping the row.
     config:
-      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__assessments__vendor_subject_crosswalk
