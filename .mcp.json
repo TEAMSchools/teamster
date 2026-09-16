@@ -4,6 +4,10 @@
       "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dagster-mcp-launch.sh",
       "args": []
     },
+    "dagster-plus": {
+      "type": "http",
+      "url": "https://mcp.agent.dagster.cloud/mcp"
+    },
     "bigquery": {
       "command": "npx",
       "args": ["-y", "@toolbox-sdk/server", "--prebuilt=bigquery", "--stdio"],
