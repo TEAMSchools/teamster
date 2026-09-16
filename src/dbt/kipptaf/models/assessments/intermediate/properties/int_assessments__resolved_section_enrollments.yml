@@ -97,10 +97,13 @@ models:
         data_type: string
         description: >-
           Subject area of the assessment, aligned to illuminate_subject_area
-          values in int_assessments__course_enrollments. For internal scores
-          this is the scaffold subject_area; for state, iReady, STAR, and DIBELS
-          scores it is the `illuminate_subject` column mapped upstream (e.g.
-          Reading -> Text Study, Math -> Mathematics).
+          values in int_assessments__course_enrollments. Carried through from
+          int_assessments__score_anchors, where state and vendor scores are
+          resolved from each source's raw subject value via a LEFT JOIN to
+          stg_google_sheets__assessments__vendor_subject_crosswalk, falling back
+          to the raw value when a source_system/raw_subject pair has no
+          crosswalk row, and internal scores keep the scaffold's subject_area
+          unchanged.
         config:
           meta:
             source_column: int_assessments__scaffold.subject_area

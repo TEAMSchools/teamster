@@ -18,6 +18,12 @@ with
         select distinct
             'renlearn' as source_system, _dagster_partition_subject as raw_subject,
         from {{ ref("stg_renlearn__star") }}
+
+        union all
+
+        -- amplify has no raw subject column; the blended layer supplies this
+        -- literal, so the pair is checked against the sheet rather than data.
+        select 'amplify' as source_system, 'DIBELS' as raw_subject,
     )
 
 select r.source_system, r.raw_subject,
