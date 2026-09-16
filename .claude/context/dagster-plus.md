@@ -13,21 +13,47 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `create_or_update_alert_policy`, and `delete_alert_policy` execute on the
   first call. The homebrew server's `confirm=True` preview does not apply here,
   so state the target in plain text before calling one.
-- **This server owns 5 jobs.** Insights metrics (`get_asset_metrics`,
-  `get_job_metrics`, `get_deployment_metrics`, `get_asset_selection_metrics` —
-  credit and runtime reporting), alert policies (read, plus write via a config
-  document), Dagster+ Issues, asset browsing (`get_assets`), and deployment
-  listing. The homebrew server owns every other job, and the duplicate tools on
-  both sides are denied in `settings.json` — one tool per job.
+- **Prefer this server for any job it covers.** It owns Insights metrics
+  (`get_asset_metrics`, `get_job_metrics`, `get_deployment_metrics`,
+  `get_asset_selection_metrics` — credit and runtime reporting), alert policies
+  (read, plus write via a config document), Dagster+ Issues, asset browsing and
+  definitions (`get_assets`, `get_asset`), deployment listing, run detail, code
+  locations, run launches, and re-execution. Duplicates on both sides are denied
+  in `settings.json` — one tool per job.
+- **4 jobs stay on the homebrew server** because this server's tool is a strict
+  subset, not because of preference: `list_runs` (this one has no `tags`,
+  `run_ids`, or time-range filters), `get_run_logs` (no `filter_types`),
+  `terminate_runs` (this one takes 1 run id and no `terminate_policy`), and
+  `get_asset_health` (see the health bullet below).
+- `list_asset_checks` is the only route to an asset's check NAMES, which
+  `mcp__dagster__get_asset_check_executions` requires as `check_name`. Use the
+  two together.
+- **`get_asset` / `get_assets` report health as 4 flat status strings**, with
+  none of the detail behind them. Use them for the definition, lineage, and
+  metadata, and `get_assets` with a `prefix` for a cheap health sweep. For the
+  detail, only 1 of the 3 metadata blocks on `mcp__dagster__get_asset_health` is
+  worth the second call:
+  - `assetChecksStatusMetadata` (`numFailedChecks`, `numWarningChecks`,
+    `totalNumChecks`) — keep. It is the only 1-call answer to "how many checks
+    are failing right now", for up to 250 asset keys. `list_asset_checks`
+    returns check names with NO status, and `get_asset_check_executions` needs a
+    `check_name` per call. The Insights metrics `__dagster_asset_check_errors` /
+    `__dagster_asset_check_successes` count check outcomes over a time window,
+    not current state.
+  - `materializationStatusMetadata` — redundant. `get_asset_partition_statuses`
+    returns `numMaterialized` / `numPartitions` / `numFailed`, which gives the
+    same missing count (verified: 349 of 450, 0 failed, matching
+    `numMissingPartitions: 101`). Only `latestFailedRunId` is unique to it.
+  - `freshnessStatusMetadata` — redundant. Its `lastMaterializedTimestamp` is
+    `get_asset`'s `latest_materialization_timestamp`.
 - **`list_deployments` with `deployment_type="branch"` returns the branch
   deployments**, which the homebrew server's `list_deployments` does not. The
   names are opaque hashes, so mapping a specific PR to its hash still goes
   through that PR's `deploy` job log (see `.claude/context/dagster.md`).
-- `get_assets` / `get_asset` return more per asset than `search_assets` +
-  `get_asset_health` combined: the health rollup, partition definition, job
-  names, downstream keys, and metadata entries in one call. Prefer it for asset
-  overview. It does NOT return staleness causes or automation-condition
-  evaluations — those stay on the homebrew server.
+- `get_assets` / `get_asset` return more per asset than `search_assets` did: the
+  health rollup, partition definition, job names, downstream keys, and metadata
+  entries in one call. They do NOT return staleness causes or
+  automation-condition evaluations — those stay on the homebrew server.
 - `get_assets` `cursor` is the asset key's JSON-string form (`"[\"a\",\"b\"]"`),
   and `prefix` is a list of key parts (`["kipptaf", "extracts"]`), not a
   slash-separated string.

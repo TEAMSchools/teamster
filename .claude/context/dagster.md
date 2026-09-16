@@ -15,14 +15,15 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
-- **The dagster MCP targets a branch deployment via a `deployment` arg.**
-  `launch_run`, `launch_multiple_runs`, `get_run`, `get_run_logs`,
-  `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
-  (omit for prod). List the branch deployments with
-  `mcp__dagster-plus__list_deployments` and `deployment_type="branch"` — this
-  server's `list_deployments` returns only `prod`, which is why it is denied.
-  The names are opaque hashes, so map a specific PR to its hash from that PR's
-  `deploy` job log line `Deploying to branch deployment <hash>` (job id from the
+- **This server targets a branch deployment via a `deployment` arg**, omitted
+  for prod — `launch_multiple_runs`, `list_runs`, `get_run_logs`,
+  `get_run_compute_logs`, and `terminate_runs` all accept it. On `dagster-plus`
+  the equivalent is `deployment_name`, and it is REQUIRED on every call. List
+  the branch deployments with `mcp__dagster-plus__list_deployments` and
+  `deployment_type="branch"` — this server's `list_deployments` returns only
+  `prod`, which is why it is denied. The names are opaque hashes, so map a
+  specific PR to its hash from that PR's `deploy` job log line
+  `Deploying to branch deployment <hash>` (job id from the
   `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
   `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
   deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
@@ -50,10 +51,14 @@ opaque token.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.
-- `mcp__dagster__launch_run` for a **partitioned** asset takes the partition via
-  `tags={"dagster/partition": "<key>"}` — there is no partition arg. The key
-  must match the asset's `partitions_def` fmt (e.g. `DailyPartitionsDefinition`
-  `%m/%d/%Y` → `05/11/2026`). Preview with `confirm=False` first.
+- Launch a **partitioned** asset with `mcp__dagster-plus__launch_asset_run` and
+  its explicit `partition` argument; this server's `launch_run` is denied, and
+  it had no partition arg (the partition went in
+  `tags={"dagster/partition": "<key>"}`). The key must match the asset's
+  `partitions_def` fmt (e.g. `DailyPartitionsDefinition` `%m/%d/%Y` →
+  `05/11/2026`). There is no `confirm=False` preview on `dagster-plus` — the
+  call materializes immediately, so state the asset and partition in plain text
+  first.
 - A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
   `zero_api_errors`) that fired an alert — `list_runs(statuses=["FAILURE"])` and
   day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).

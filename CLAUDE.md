@@ -273,12 +273,13 @@ exploration that led nowhere (keep only the conclusion).
   `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
-- Dagster: two servers, one tool per job — the duplicates are denied in
-  `settings.json`, so a denial there means the other server owns that job.
-  `dagster` (homebrew) owns runs, logs, launches, diagnosis, sensors, schedules,
-  backfills, and hybrid-agent health. `dagster-plus` (Dagster's hosted server)
-  owns Insights metrics, alert policies, Issues, asset browsing (`get_assets`),
-  and deployment listing. Neither is a superset; details in
+- Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
+  hosted server) wins any job it covers. `dagster` (homebrew) keeps only what
+  `dagster-plus` cannot do: asset diagnosis and health detail, sensors,
+  schedules, backfills, hybrid-agent health, compute logs, and the 3 tools whose
+  `dagster-plus` counterpart is a strict subset (`list_runs`, `get_run_logs`,
+  `terminate_runs`). The duplicates are denied in `settings.json`, so a denial
+  there means the other server owns that job. Details in
   `.claude/context/dagster-plus.md`.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
