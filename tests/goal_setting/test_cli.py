@@ -327,6 +327,78 @@ def test_second_run_diffs_against_committed_manifest(tmp_path, capsys):
     assert "verdict: no change" in capsys.readouterr().out
 
 
+def test_forced_prior_run_is_not_used_as_baseline(tmp_path, capsys):
+    manifests = tmp_path / "m"
+    prior = manifests / "ay2026" / "nj_math_1_2.json"
+    prior.parent.mkdir(parents=True)
+    prior.write_text(
+        json.dumps(
+            {
+                "gate_overridden": True,
+                "school_goals": [],
+                "bucket_counts": [],
+                # a truncated read: one school, two students
+                "inputs": [
+                    {
+                        "file": "iready_boy_nj_math_1_2.csv",
+                        "counts_by_school_grade": [
+                            {
+                                "region": "Newark",
+                                "school": "TEAM",
+                                "grade_level": 1,
+                                "n": 2,
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+    )
+    out = tmp_path / "run"
+    rc = main(
+        [
+            "rollout",
+            "--year",
+            "2026",
+            "--group",
+            "nj_math_1_2",
+            "--out",
+            str(out),
+            "--manifest-dir",
+            str(manifests),
+        ],
+        client_factory=_factory(roster_rows()),
+    )
+    assert rc == 0
+    printed = capsys.readouterr().out
+    assert "was forced past the freshness gate" in printed
+    assert "--baseline-date" in printed
+    m = json.loads((out / "manifest.json").read_text())
+    assert (
+        "no baseline available; roster counts were not compared to a prior run"
+        in m["gate_warnings"]
+    )
+
+
+def test_missing_against_prints_reclassification_warning(tmp_path, capsys):
+    first, second, manifests = tmp_path / "a", tmp_path / "b", tmp_path / "m"
+    factory = _factory(roster_rows())
+    base = ["rollout", "--year", "2026", "--group", "nj_math_1_2"]
+    main(
+        [*base, "--out", str(first), "--manifest-dir", str(manifests)],
+        client_factory=factory,
+    )
+    assert "reclassification was NOT checked" not in capsys.readouterr().out
+    rc = main(
+        [*base, "--out", str(second), "--manifest-dir", str(manifests)],
+        client_factory=factory,
+    )
+    printed = capsys.readouterr().out
+    assert rc == 0
+    assert "student-level reclassification was NOT checked" in printed
+    assert printed.index("NOT checked") < printed.index("region | school | gr |")
+
+
 def test_reclassification_exits_nonzero_without_flag(tmp_path, capsys):
     first, second, manifests = tmp_path / "a", tmp_path / "b", tmp_path / "m"
     rows = roster_rows()

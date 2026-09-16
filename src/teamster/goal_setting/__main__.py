@@ -177,7 +177,19 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
     manifest_path = a.manifest_dir / f"ay{a.year}" / f"{group.name}.json"
     prior = diff.load_prior_manifest(manifest_path)
     baseline = None
-    if prior is not None:
+    if prior is not None and prior.get("gate_overridden"):
+        # A forced run recorded whatever truncated roster it was forced past.
+        # Deriving the next run's baseline from it launders that truncation
+        # into the tolerance band and the gate never fires again.
+        if a.baseline_date:
+            baseline = roster_sql.fetch_baseline(client, group, a.year, a.baseline_date)
+        else:
+            print(
+                f"WARNING: prior run {manifest_path} was forced past the freshness "
+                "gate; its counts are not used as a baseline. Pass --baseline-date "
+                "to compare against the roster."
+            )
+    elif prior is not None:
         baseline = {
             (c["region"], c["school"], c["grade_level"]): c["n"]
             for i in prior["inputs"]
@@ -195,7 +207,8 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
     report = diff.diff_manifests(
         prior, manifest.build(proposal, "", "", [], None, a.force_stale)
     )
-    if a.against and (a.against / "student_buckets.csv").exists():
+    student_depth = bool(a.against and (a.against / "student_buckets.csv").exists())
+    if student_depth:
         with (a.against / "student_buckets.csv").open() as fh:
             report = diff.add_student_depth(
                 report, list(csv.DictReader(fh)), proposal.records
@@ -203,6 +216,14 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
 
     print(report.render())
     print()
+    if prior is not None and not student_depth:
+        # Without a prior run folder the diff sees counts only, so a school
+        # holding at 12 Bucket 2 students with a different 12 inside reads as
+        # unchanged and the reclassification guard can never fire.
+        print(
+            "WARNING: student-level reclassification was NOT checked; pass "
+            "--against <prior run folder> to check it."
+        )
     print(outputs.summary_tables(proposal))
 
     if report.verdict == "reclassifies" and not a.allow_reclassification:
