@@ -47,7 +47,7 @@ jobs:
           plugins: |
             superpowers@superpowers-dev
             context7@claude-plugins-official
-            dagster-expert@dagster
+            dagster@dagster
             dbt@dbt-agent-marketplace
 
           # Optional: Add claude_args to customize behavior and configuration
