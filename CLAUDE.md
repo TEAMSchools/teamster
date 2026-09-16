@@ -4,9 +4,10 @@
 
 - **Emit PII values** to git or GitHub — commits, PR comments, issues — or to
   scheduled-agent output, whose destination is not visible when you write it.
-  Git history is permanent. Redact to `Student A` or column names first. Slack,
-  Asana, the terminal, and local scratch are internal and fine; a Slack Connect
-  or guest channel is not. See _PII reference_.
+  Git history is permanent. Redact to `Student A` or column names first. The
+  `#data_team` Slack channel, Asana, the terminal, and local scratch take
+  unredacted values; for any other Slack channel, ask first. See _PII
+  reference_.
 - **Push to `main`.** Hand a main push to the user; do not retry. Editing and
   committing LOCAL `main` is allowed when the user asks.
 - **Run a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs`** unless
