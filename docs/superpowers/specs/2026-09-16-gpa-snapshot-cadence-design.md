@@ -31,9 +31,13 @@ recurses through view chains to the nearest table boundary, plus a plain
 `any_deps_updated()` check against direct dependencies regardless of their
 materialization.
 
-- `int_powerschool__gpa_term_current` is `materialized: ephemeral`, so
-  `snapshot_powerschool__gpa_term`'s ancestor-updated recursion reaches every
-  PowerSchool grade table upstream of it.
+- `snapshot_powerschool__gpa_term` is declared on
+  `int_powerschool__gpa_term_current`, which is `materialized: ephemeral`.
+  dagster-dbt creates no asset for an ephemeral model (verified against the
+  built asset graph), so the snapshot's Dagster dep is instead
+  `int_powerschool__gpa_term`, a view. `_VIEW_SELECTION` matches it, so
+  ancestor-updated recursion follows it down to the district source tables. The
+  ephemeral model itself plays no part in the condition.
 - `int_powerschool__gpa_cumulative` is `materialized: table` in its
   `src/dbt/kipptaf/models/powerschool/intermediate/properties/` YAML — not a
   view. (`ref()` resolves to the kipptaf project's own copy of this model name,
@@ -98,10 +102,11 @@ both regardless.
 
 There is no dependency-ordering concern to solve by sharing a consumer's tick.
 `int_powerschool__gpa_term_current` is ephemeral and inlines into the snapshot's
-own query, so `snapshot_powerschool__gpa_term` reads a live view over the
-current PowerSchool tables at the cron tick. `int_powerschool__gpa_cumulative`
-is a table that refreshes on its own eager automation condition through the day,
-so `snapshot_powerschool__gpa_cumulative` reads whatever that table's last
+own query, and the `int_powerschool__gpa_term` view it reads is computed on
+read, so `snapshot_powerschool__gpa_term` sees the current PowerSchool tables at
+the cron tick. `int_powerschool__gpa_cumulative` is a table that refreshes on
+its own eager automation condition through the day, so
+`snapshot_powerschool__gpa_cumulative` reads whatever that table's last
 materialization holds at 23:00 — in practice current, since the table rebuilds
 on every upstream change, but not itself a live view read.
 
