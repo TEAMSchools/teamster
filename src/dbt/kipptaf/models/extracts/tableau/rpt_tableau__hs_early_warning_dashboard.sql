@@ -61,7 +61,7 @@ select
     gr.term_letter_grade_adjusted as term_grade_letter_adjusted,
     gr.y1_percent_grade_adjusted as y1_grade_percent_adjusted,
     gr.y1_letter_grade as y1_grade_letter,
-    gr.need_60 as need_65,
+    gr.need_60,
 
     si.courses_credittype as credittype,
     si.courses_course_name as course_name,

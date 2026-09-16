@@ -92,7 +92,7 @@ select
         true,
         false
     ) as is_ca_exception,
-from {{ ref("int_powerschool__ada") }} as ada
+from {{ ref("int_students__ada") }} as ada
 inner join
     intervention_scaffold as sc
     on ada._dbt_source_project = sc._dbt_source_project

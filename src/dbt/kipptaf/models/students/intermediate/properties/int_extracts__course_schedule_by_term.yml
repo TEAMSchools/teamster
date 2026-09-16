@@ -41,6 +41,14 @@ models:
             source_system: PowerSchool
             source_model: base_powerschool__sections
             source_column: school_abbreviation
+      - name: school_name
+        data_type: string
+        description: Full school name (e.g. 'KIPP Rise Academy').
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: school_name
       - name: school_level
         data_type: string
         description: School level (ES, MS, HS).

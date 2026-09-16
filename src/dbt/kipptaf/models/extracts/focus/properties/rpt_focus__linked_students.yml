@@ -10,6 +10,7 @@ models:
       minted ID are dropped. Produces 2 columns in `LINKED_STUDENTS` contract
       order.
     config:
+      enabled: false
       contract:
         enforced: true
     data_tests:
@@ -18,6 +19,8 @@ models:
             combination_of_columns:
               - primary_student_id
               - secondary_student_id
+          config:
+            enabled: false
     columns:
       - name: primary_student_id
         data_type: string
@@ -28,6 +31,7 @@ models:
           - not_null:
               config:
                 severity: error
+                enabled: false
       - name: secondary_student_id
         data_type: string
         description:
@@ -38,8 +42,11 @@ models:
           - not_null:
               config:
                 severity: error
+                enabled: false
 unit_tests:
   - name: test_linked_students_normalizes_pair
+    config:
+      enabled: false
     description:
       A bidirectional sibling edge (a->b and b->a) collapses to one row, with
       the lexicographically-smaller minted Focus id as PRIMARY_STUDENT_ID and

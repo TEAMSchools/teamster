@@ -26,6 +26,12 @@ models:
               - contact_slot
           config:
             severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              regexp_contains(contact_slot, r'^(contact_[0-9]+|emergency_[1-4])$')
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: integer
@@ -37,21 +43,13 @@ models:
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1`, `contact_2`, or
-          `emergency_1` through `emergency_4`.
+          Which contact this row represents. Parent slots are numbered densely
+          from `contact_1` with no fixed upper bound — families with more
+          recorded parent-type relationships get more slots. `emergency_1`
+          through `emergency_4` are the four fixed `custom_attributes` `emrg_N`
+          sets mapped positionally.
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - accepted_values:
-              arguments:
-                values:
-                  - contact_1
-                  - contact_2
-                  - emergency_1
-                  - emergency_2
-                  - emergency_3
-                  - emergency_4
               config:
                 severity: error
       - name: _dbt_source_project
@@ -70,6 +68,21 @@ models:
           regions. Used with `_dbt_source_project` to key the contact person in
           the dimension — the id space is per-source-system, so the region is
           always part of the key.
+      - name: person_identity
+        data_type: string
+        description:
+          The contact's identity as a person, independent of the student they
+          are attached to and the slot they occupy — the Finalsite contact UUID
+          on the Finalsite branch, the Focus person id on the Focus branch. Null
+          for every emergency slot on both branches, which are scalar custom
+          fields on the student's own record rather than linked contact records;
+          a consumer keying on a person falls back to (student, slot) there.
+          `dim_student_contact_persons`, `bridge_student_contacts`, and
+          `rpt_deanslist__family_contacts` all key on this column, so they agree
+          on who is the same person.
+        config:
+          meta:
+            contains_pii: true
       - name: finalsite_contact_id
         data_type: string
         description:
@@ -137,11 +150,23 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: phone_untyped
+        data_type: string
+        description:
+          The contact's first phone number carrying no type label, if any.
+          Finalsite lets a number be saved without selecting a type, and such a
+          number reaches none of the typed columns above — this is where it
+          lands, so a consumer can still reach the family. Always null on the
+          Focus branch, which types every number it stores.
+        config:
+          meta:
+            contains_pii: true
       - name: phone_primary
         data_type: string
         description:
-          The contact's first/best phone number regardless of type — a fallback
-          for phones the typed columns miss.
+          The contact's first/best phone number regardless of type, whether or
+          not a type label is set. To recover a number the typed columns miss,
+          use `phone_untyped`, which reports only genuinely untyped numbers.
         config:
           meta:
             contains_pii: true
@@ -180,10 +205,10 @@ unit_tests:
   - name: test_focus_slotting_contact_1_and_emergency_ranks
     description: >-
       Pins the Focus branch slotting. student_number is the Focus
-      local_student_id with its 8400 prefix stripped. contact_1 is the
-      sort_order 1 link. emergency_N ranks every emergency-flagged link by
-      sort_order INCLUDING the sort_order 1 link, so the primary contact
-      deliberately occupies both contact_1 and emergency_1. A link that is not
+      local_student_id, 8400 prefix included. contact_1 is the sort_order 1
+      link. emergency_N ranks every emergency-flagged link by sort_order
+      INCLUDING the sort_order 1 link, so the primary contact deliberately
+      occupies both contact_1 and emergency_1. A link that is not
       emergency-flagged and is not sort_order 1 produces no row at all.
     model: int_students__contacts
     given:
@@ -237,6 +262,7 @@ unit_tests:
             cast(null as string) as phone_home,
             cast(null as string) as phone_daytime,
             cast(null as string) as phone_work,
+            cast(null as string) as phone_untyped,
             cast(null as string) as phone_primary,
             cast(null as bool) as is_emergency,
             cast(null as bool) as is_pickup,
@@ -258,7 +284,7 @@ unit_tests:
     expect:
       rows:
         - {
-            student_number: 123456,
+            student_number: 8400123456,
             _dbt_source_project: kippmiami,
             contact_slot: contact_1,
             relationship: Mother,
@@ -266,7 +292,7 @@ unit_tests:
             is_custodial: true,
           }
         - {
-            student_number: 123456,
+            student_number: 8400123456,
             _dbt_source_project: kippmiami,
             contact_slot: emergency_1,
             relationship: Mother,
@@ -274,7 +300,7 @@ unit_tests:
             is_custodial: true,
           }
         - {
-            student_number: 123456,
+            student_number: 8400123456,
             _dbt_source_project: kippmiami,
             contact_slot: emergency_2,
             relationship: Father,

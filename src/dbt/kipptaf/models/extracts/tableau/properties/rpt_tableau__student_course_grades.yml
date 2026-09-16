@@ -8,9 +8,11 @@ models:
       Student-grain as-of-today measures (cumulative GPA, needed-GPA, 1/2/4-week
       lookbacks) populate current-year rows only. Students filtered to
       is_enrolled_recent — the year was completed or the enrollment is currently
-      active, so mid-year withdrawals drop. Newark and Camden only — Miami is
-      hard-excluded (region unsupported in the rebuilt dashboard) and Paterson
-      is pending gradebook data.
+      active, so mid-year withdrawals drop. Newark, Camden and Paterson; Miami
+      is hard-excluded (region unsupported in the rebuilt dashboard).
+
+      Miami's exclusion is ratified on #4996, matching the hard exclusion
+      already stated above.
     data_tests:
       # TODO(#3915): returns to error when the storedgrades double-write cleanup
       # completes. All duplicates are prior-year storedgrades rows; current-year
@@ -38,7 +40,8 @@ models:
         description: Display form of the academic year (e.g. 2025-26).
       - name: region
         data_type: string
-        description: District region (Newark or Camden; see model description).
+        description: >-
+          District region (Newark, Camden or Paterson; see model description).
       - name: school_level
         data_type: string
         description: School level (ES/MS/HS) from the year's enrollment.
@@ -144,6 +147,14 @@ models:
       - name: ada
         data_type: float64
         description: Average daily attendance for the year.
+      - name: unweighted_ada
+        data_type: float64
+        description: Unweighted average daily attendance for the year.
+      - name: weighted_ada
+        data_type: float64
+        description: >-
+          Weighted average daily attendance for the year, the value used for
+          high school students from SY26 onward.
       - name: ada_above_or_at_80
         data_type: boolean
         description: ADA at or above 80 percent.
@@ -178,19 +189,14 @@ models:
       - name: gpa_y1
         data_type: float64
         description: >-
-          Y1 GPA as of the row's term. For the prior year this is RECONSTRUCTED
-          as a running credit-weighted GPA through each term, because
-          PowerSchool stores only the end-of-year value. It is deliberately not
-          anchored to that stored value, so the Q4 reading will not equal the Y1
-          reading. Temporary; see TODO(#4687) (kept here deliberately, despite
-          the no-tracking-refs-in-descriptions convention, so a removal grep for
-          this marker also finds this YAML).
+          Y1 GPA as of the row's term. PowerSchool stores only the end-of-year
+          value, so prior-year rows carry that value on every term.
       - name: gpa_y1_unweighted
         data_type: float64
         description: Unweighted Y1 GPA as of the row's term.
       - name: gpa_total_credit_hours
         data_type: float64
-        description: Total Y1 GPA credit hours for the year. NULL on Y1 rows.
+        description: Total Y1 GPA credit hours for the year.
       - name: gpa_n_failing_y1
         data_type: int64
         description: >-
@@ -224,15 +230,19 @@ models:
           Unweighted Y1 GPA in effect 28 days ago (current-year rows only).
       - name: n_failing_y1_1_week_prior
         data_type: int64
-        description: Failing Y1 grade count 7 days ago (current-year rows only).
+        description:
+          Failing Y1 grade count 7 days ago (current-year rows only; null when
+          the student had no Y1 GPA at that point).
       - name: n_failing_y1_2_week_prior
         data_type: int64
         description:
-          Failing Y1 grade count 14 days ago (current-year rows only).
+          Failing Y1 grade count 14 days ago (current-year rows only; null when
+          the student had no Y1 GPA at that point).
       - name: n_failing_y1_4_week_prior
         data_type: int64
         description:
-          Failing Y1 grade count 28 days ago (current-year rows only).
+          Failing Y1 grade count 28 days ago (current-year rows only; null when
+          the student had no Y1 GPA at that point).
       - name: gpa_y1_prior_quarter
         data_type: float64
         description: >-
@@ -445,23 +455,15 @@ models:
       - name: y1_course_in_progress_percent_grade_adjusted
         data_type: float64
         description: >-
-          Year-to-date course percent as of the row's marking period. For the
-          year in progress this is the real running value from the gradebook.
-          For the prior year it is RECONSTRUCTED from stored quarter grades — Q1
-          is exact, Q4 is anchored to the stored Y1 percent and is exact, Q2 and
-          Q3 are approximations that agree with the year value to within half a
-          point on 97.0 percent of courses. The reconstruction is temporary; see
-          TODO(#4687) in the model.
+          Year-to-date course percent as of the row's marking period, from the
+          live gradebook. Current-year rows only; PowerSchool stores no running
+          value for completed years.
       - name: y1_course_in_progress_letter_grade_adjusted
         data_type: string
         description: >-
-          Year-to-date course letter as of the row's marking period. For the
-          year in progress this comes from the gradebook. For the prior year it
-          is RECONSTRUCTED by banding the reconstructed percent back through the
-          course's own grade scale, so it inherits that percent's accuracy — Q1
-          and Q4 exact, Q2 and Q3 approximate. Carries F and F* on the same
-          prefix rule as quarter_course_letter_grade. Temporary; see TODO(#4687)
-          in the model.
+          Year-to-date course letter as of the row's marking period, from the
+          live gradebook. Current-year rows only. Carries F and F* on the same
+          prefix rule as quarter_course_letter_grade.
       - name: y1_course_in_progress_grade_points
         data_type: float64
         description: In-progress Y1 grade points (current-year rows only).
@@ -533,6 +535,30 @@ models:
           no letter ladder. The second case does NOT require need_60 to be null
           — a student at 95 percent has a perfectly good need_60 and still gets
           a null need_next, because there is nothing above an A to need.
+      - name: office_hours_priority_rank
+        data_type: int64
+        description: >-
+          Rank of this course among the student's courses for the same term, 1
+          being the lowest percent grade. Intended for an intervention or
+          office-hours list that caps how many teachers one student is sent to:
+          filter to rank <= N.
+
+          Null whenever quarter_course_percent_grade is null. Ungraded courses
+          are excluded from the ranking rather than sorted last, so a course
+          with nothing posted yet can never look like a student's most urgent
+          one.
+
+          Unique within the partition rather than tie-preserving. Two courses on
+          the same percent take consecutive ranks, broken by course_number so
+          the pick is reproducible across rebuilds. A tie-preserving rank would
+          let a "top 4" filter return five or more courses, which would change
+          how many sessions a student is sent to for a reason invisible to
+          whoever reads the list.
+
+          Partitioned on the term, so a Y1 row ranks the student's year-to-date
+          course grades and a quarter row ranks that quarter's. That follows
+          quarter_course_percent_grade, whose own meaning already changes with
+          the row's term.
       - name: category_name_code
         data_type: string
         description: Gradebook category code (e.g. F/S/W; NULL on Y1 rows).
@@ -589,8 +615,8 @@ models:
         data_type: string
         description: >-
           Best-available adjusted Y1 course letter grade — the final stored Y1
-          grade once the year is complete, falling back to the in-progress Y1
-          grade for the current year.
+          grade on Y1 rows of completed years, the in-progress Y1 grade on
+          current-year rows. Null on Q1-Q4 rows of completed years.
       - name: section_or_period
         data_type: string
         description: >-

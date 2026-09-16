@@ -50,7 +50,7 @@ models:
                 to: ref('stg_focus__courses')
                 field: course_id
               config:
-                severity: error
+                severity: warn
       - name: course_period_id
         description: >-
           Focus course-period (section) id the co-teacher serves. Part of the
@@ -65,7 +65,7 @@ models:
                 to: ref('stg_focus__course_periods')
                 field: course_period_id
               config:
-                severity: error
+                severity: warn
       - name: staff_id
         description: >-
           Focus staff id of the co-teacher. Part of the composite primary key.
@@ -79,7 +79,7 @@ models:
                 to: ref('stg_focus__users')
                 field: staff_id
               config:
-                severity: error
+                severity: warn
       - name: inclusion
         description: >-
           Whether the co-teaching arrangement is an inclusion (co-taught

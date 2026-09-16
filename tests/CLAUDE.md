@@ -116,8 +116,9 @@ runs all of them; each `test_*.sh` covers one rule area; `helpers.sh` provides
   / `OUTPUT_HOOK` env overrides:
   `HOOK=/abs/scratch/check-sensitive-x.sh OUTPUT_HOOK=/abs/scratch/check-output-x.sh bash tests/hooks/run_all.sh`.
 - Reading a `test_*.sh` range that contains secret-shaped fixtures (`op://`, key
-  headers, cloud tokens) trips `check-output.sh` on the Read result. Read clean
-  ranges only, or anchor Edits on a non-fixture line (e.g. `print_summary`).
+  headers, cloud tokens) gets the whole Read result redacted by
+  `check-output.sh`. Read clean ranges only, or anchor Edits on a non-fixture
+  line (e.g. `print_summary`).
 - Synthetic secret fixtures: split the literal (`"sk_live""_..."`,
   `'-----BEGIN ''PRIVATE KEY-----'`) so gitleaks' source scan misses it but bash
   rebuilds the value at run time — cleaner than a `trunk-ignore`, which trips

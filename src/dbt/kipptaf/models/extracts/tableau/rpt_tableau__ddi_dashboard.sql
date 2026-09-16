@@ -24,7 +24,7 @@ with
             {{ ref("int_people__location_crosswalk") }} as cw
             on il.school = cw.location_name
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as pw
+            {{ ref("int_students__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
             and cw.location_powerschool_school_id = pw.schoolid
             and il.completion_date between pw.week_start_monday and pw.week_end_sunday
@@ -153,8 +153,14 @@ with
             and cc.courses_credittype = sf.powerschool_credittype
             and sf.rn_year = 1
         where
-            co.enroll_status = 0
-            and co.is_enrolled_week_end
+            /* Eligibility is enrollment as of the week end, not current
+               enroll_status: that column is student-level and current-only, so
+               pinning it to 0 retroactively erased the assessment history of every
+               student who had since withdrawn, transferred, or graduated (#4807).
+               Withdrawn (2) and graduated (3) are in scope; inactive (1) and
+               pre-registered (-1) stay out -- never report against either. */
+            co.is_enrolled_week_end
+            and co.enroll_status in (0, 2, 3)
             and not co.is_out_of_district
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
@@ -515,7 +521,7 @@ left join
     and r.home_work_location_dagster_code_location
     = regexp_extract(t._dbt_source_relation, r'(kipp\w+)_')
 inner join
-    {{ ref("int_powerschool__calendar_week") }} as w
+    {{ ref("int_students__calendar_week") }} as w
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join

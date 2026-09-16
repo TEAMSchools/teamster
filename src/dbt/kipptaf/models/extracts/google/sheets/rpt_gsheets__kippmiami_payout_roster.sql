@@ -339,10 +339,10 @@ with
             ) as criteria,
         from {{ ref("int_amplify__all_assessments") }} as amp
         inner join
-            {{ ref("stg_powerschool__students") }} as s
+            {{ ref("int_students__students") }} as s
             on amp.student_number = s.student_number
             and s.enroll_status = 0
-            and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+            and s._dbt_source_project = 'kippmiami'
         where amp.measure_standard = 'Composite' and amp.academic_year = 2024
         group by amp.academic_year, amp.assessment_grade_int
 
@@ -387,7 +387,6 @@ with
             cu.criteria as criteria_actual,
 
             if(cu.criteria >= pc.criteria, true, false) as is_met_criteria,
-        -- if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
         from {{ ref("stg_people__miami_performance_criteria") }} as pc
         left join
             criteria_union as cu

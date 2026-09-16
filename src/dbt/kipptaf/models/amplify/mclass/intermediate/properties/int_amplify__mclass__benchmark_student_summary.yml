@@ -2,6 +2,18 @@ models:
   - name: int_amplify__mclass__benchmark_student_summary
     config:
       materialized: table
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_primary_id
+              - school_year
+              - benchmark_period
+              - assessment_grade
+          config:
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -233,7 +245,11 @@ models:
         data_type: string
       - name: student_primary_id
         data_type: int64
-        description: Student primary identifier (student number).
+        description: >-
+          Network student number. Miami rows through SY2025 carry the bare
+          pre-Focus number in the source; they are brought onto the
+          8400-prefixed Focus student number here, after the crosswalk resolves
+          the region.
         config:
           meta:
             source_system: Amplify
@@ -447,17 +463,6 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: enrollment_grade_int
-      - name: surrogate_key
-        data_type: string
-        description:
-          Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: surrogate_key
-            column_role: primary_key
       - name: region
         data_type: string
       - name: school
@@ -584,60 +589,40 @@ models:
         data_type: numeric
       - name: additional_student_id_primarysisid
         data_type: string
-      - name: reading_comprehension_maze_local_percentile
+      - name: basic_comprehension_maze_local_percentile
         data_type: numeric
-      - name: official_teacher_staff_id
+        description: Local percentile for the Maze measure. SFTP rows only.
+      - name: enrollment_teacher_staff_id
         data_type: string
         description:
-          Enrollment teacher staff ID(s), pipe-delimited when multiple. First
-          non-null of enrollment_teacher_staff_id, official_teacher_staff_id.
-      - name: official_teacher_name
+          Enrollment teacher staff id(s), pipe-delimited when multiple.
+      - name: enrollment_teacher_name
         data_type: string
-        description:
-          Enrollment teacher name(s), pipe-delimited when multiple. First
-          non-null of enrollment_teacher_name, official_teacher_name.
-      - name: client_date
+        description: Enrollment teacher name(s), pipe-delimited when multiple.
+      - name: device_date
         data_type: date
-        description:
-          Date the assessment was administered on the device. First non-null of
-          device_date, client_date.
-      - name: dibels_composite_score_lexile
+        description: Date the assessment was administered on the device.
+      - name: composite_score_lexile
         data_type: string
-        description:
-          First non-null of composite_score_lexile,
-          dibels_composite_score_lexile.
-      - name: reading_comprehension_maze_score
+        description: Lexile band for the composite score.
+      - name: basic_comprehension_maze_score
         data_type: numeric
-        description:
-          First non-null of basic_comprehension_maze_score,
-          reading_comprehension_maze_score.
-      - name: reading_comprehension_maze_semester_growth
+        description: Maze score.
+      - name: basic_comprehension_maze_semester_growth
         data_type: string
-        description:
-          First non-null of basic_comprehension_maze_semester_growth,
-          reading_comprehension_maze_semester_growth.
-      - name: reading_comprehension_maze_year_growth
+        description: Maze semester growth classification.
+      - name: basic_comprehension_maze_year_growth
         data_type: string
-        description:
-          First non-null of basic_comprehension_maze_year_growth,
-          reading_comprehension_maze_year_growth.
-      - name: reading_comprehension_maze_national_norm_percentile
+        description: Maze year growth classification.
+      - name: basic_comprehension_maze_national_norm_percentile
         data_type: numeric
-        description:
-          First non-null of basic_comprehension_maze_national_norm_percentile,
-          reading_comprehension_maze_national_norm_percentile.
-      - name: reading_comprehension_maze_level
+        description: Maze national norm percentile.
+      - name: basic_comprehension_maze_level
         data_type: string
-        description:
-          First non-null of basic_comprehension_maze_level,
-          reading_comprehension_maze_level.
-      - name: reading_comprehension_maze_tested_out
+        description: Maze benchmark level.
+      - name: basic_comprehension_maze_tested_out
         data_type: boolean
-        description:
-          First non-null of basic_comprehension_maze_tested_out,
-          reading_comprehension_maze_tested_out.
-      - name: reading_comprehension_maze_discontinued
+        description: Whether the student tested out of Maze.
+      - name: basic_comprehension_maze_discontinued
         data_type: boolean
-        description:
-          First non-null of basic_comprehension_maze_discontinued,
-          reading_comprehension_maze_discontinued.
+        description: Whether Maze was discontinued for the student.

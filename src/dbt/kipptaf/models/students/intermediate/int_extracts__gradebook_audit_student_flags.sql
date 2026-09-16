@@ -93,9 +93,9 @@ left join
     and s.sectionid = qg.sectionid
     and s._dbt_source_project = qg._dbt_source_project
     and s.`quarter` = qg.storecode
-    and qg.grades_type = 'last_year'  /* summer toggle: see skill */
+    and qg.grades_type = 'current_year'  /* summer toggle: see skill */
 where
-    s.academic_year = {{ var("current_academic_year") - 1 }}  /* summer toggle: see skill */
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
     and s.rn_year = 1
     and s.enroll_status = 0

@@ -1,17 +1,223 @@
--- Staging columns plus their decoded custom-field labels. Drives from staging
--- and LEFT JOINs the pivot: BigQuery UNPIVOT drops entities whose unpivoted
--- columns are all null, so the pivot alone is not a complete entity spine.
-select
-    s.*,
+with
+    -- One row per ESE Exceptionalities log entry. Unlike Focus's own
+    -- "ESE Primary Computed" query, the Primary checkbox (log_field4) is not
+    -- required: it marks which exceptionality leads, not whether a plan exists.
+    ese_entries as (
+        select
+            student_id,
+            log_entry_id,
 
-    p.ethnicity_hispanic_or_latino_label,
-    p.race_white_label,
-    p.race_black_or_african_american_label,
-    p.race_asian_label,
-    p.sex_label,
-    p.race_american_indian_or_alaska_native_label,
-    p.race_native_hawaiian_or_other_pacific_islander_label,
-    p.residence_county_label,
-    p.language_label,
-from {{ ref("stg_focus__students") }} as s
-left join {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
+            max(
+                if(slot_column_name = 'log_field3', value_code, null)
+            ) as exceptionality_code,
+
+            max(
+                if(slot_column_name = 'log_field5', value_code, null)
+            ) as placement_code,
+
+            max(if(slot_column_name = 'log_field12', value, null)) as dismissal_date,
+        from {{ ref("int_focus__custom_field_log__unpivot") }}
+        where field_title = 'ESE Exceptionalities'
+        group by student_id, log_entry_id
+    ),
+
+    ese_students as (
+        select distinct student_id,
+        from ese_entries
+        where
+            placement_code in ('P', 'T')
+            and dismissal_date is null
+            and exceptionality_code != 'L'
+    ),
+
+    labeled as (
+        select
+            s.*,
+
+            p.label_ethnicity_hispanic_or_latino as ethnicity_hispanic_or_latino_label,
+            p.label_race_white as race_white_label,
+            p.label_race_black_or_african_american
+            as race_black_or_african_american_label,
+            p.label_race_asian as race_asian_label,
+            p.label_sex as sex_label,
+            p.label_race_american_indian_or_alaska_native
+            as race_american_indian_or_alaska_native_label,
+            p.label_race_native_hawaiian_or_other_pacific_islander
+            as race_native_hawaiian_or_other_pacific_islander_label,
+            p.label_residence_county as residence_county_label,
+            p.label_language as language_label,
+            p.label_ese_fefp_code as ese_fefp_code_label,
+            p.code_section_504_eligible as section_504_eligible_code,
+            p.label_section_504_eligible as section_504_eligible_label,
+            p.label_english_language_learner_pk_12
+            as english_language_learner_pk_12_label,
+            p.label_gifted_eligibility as gifted_eligibility_label,
+            p.label_homeless_student_pk_12 as homeless_student_pk_12_label,
+            p.label_homeless_unaccompanied_youth as homeless_unaccompanied_youth_label,
+            p.label_free_reduced_meals_program as free_reduced_meals_program_label,
+            p.code_idea_educational_environment as idea_educational_environment_code,
+            p.label_idea_educational_environment as idea_educational_environment_label,
+
+            ese.student_id is not null as has_iep,
+        from {{ ref("stg_focus__students") }} as s
+        left join
+            {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
+        left join ese_students as ese on s.student_id = ese.student_id
+    ),
+
+    raced as (
+        select
+            *,
+
+            (
+                if(race_black_or_african_american_label = 'Yes', 1, 0)
+                + if(race_white_label = 'Yes', 1, 0)
+                + if(race_asian_label = 'Yes', 1, 0)
+                + if(race_american_indian_or_alaska_native_label = 'Yes', 1, 0)
+                + if(race_native_hawaiian_or_other_pacific_islander_label = 'Yes', 1, 0)
+            ) as race_count,
+        from labeled
+    ),
+
+    coded as (
+        select
+            *,
+
+            regexp_extract(homeless_student_pk_12_label, r'\[(\w+)\]') as homeless_c,
+
+            left(homeless_unaccompanied_youth_label, 1) as unaccompanied_c,
+
+            regexp_extract(free_reduced_meals_program_label, r'\[(\w+)\]') as meal_c,
+        from raced
+    ),
+
+    conformed as (
+        select
+            *,
+
+            -- The Focus student_id (8400-prefixed) is the Miami student number.
+            -- The bare pre-migration number lives on powerschool_id for
+            -- returning students and is no longer a join key.
+            student_id as student_number,
+
+            date(birthdate) as dob,
+
+            regexp_extract(sex_label, r'\[(\w+)\]') as gender,
+
+            lpad(cast(disis_id as string), 7, '0') as state_studentnumber,
+
+            if(has_iep, 'SPED', null) as spedlep,
+
+            -- PowerSchool's fedethnicity: 1 = Hispanic/Latino, 0 = not. The
+            -- label is the stable key for this select option.
+            case
+                ethnicity_hispanic_or_latino_label when 'Yes' then 1 when 'No' then 0
+            end as fedethnicity,
+
+            -- Y and N both assert a 504 plan (N is 504-eligible but not IDEA);
+            -- I and Z are explicit negatives; unset stays null, not false.
+            case
+                when section_504_eligible_code in ('Y', 'N')
+                then true
+                when section_504_eligible_code in ('I', 'Z')
+                then false
+            end as is_504,
+
+            case
+                when gifted_eligibility_label like 'Student was determined eligible%'
+                then 'Y'
+                when gifted_eligibility_label is not null
+                then 'N'
+            end as gifted_and_talented,
+
+            case
+                regexp_extract(english_language_learner_pk_12_label, r'\[(\w+)\]')
+                when 'LY'
+                then true
+                when 'LF'
+                then false
+                when 'LA'
+                then false
+                when 'LZ'
+                then false
+                when 'TZ'
+                then false
+                when 'ZZ'
+                then false
+            end as lep_status,
+
+            -- FLDOE homeless codes describe the student's nighttime residence. Any
+            -- residence type means homeless, and N is the not-homeless default. The
+            -- network domain splits homeless by custody instead, so the separate
+            -- unaccompanied-youth field decides Y2 versus Y1. That field is a
+            -- 5-option select, not a flag: Y, C and U all mean unaccompanied, N
+            -- means homeless but accompanied, and Z means not homeless. A null check
+            -- would therefore mislabel an accompanied homeless student as Y2.
+            case
+                when homeless_c = 'N'
+                then 'N'
+                when homeless_c is null
+                then null
+                when unaccompanied_c in ('Y', 'C', 'U')
+                then 'Y2'
+                else 'Y1'
+            end as homeless_code,
+
+            case
+                homeless_c
+                when 'A'
+                then 1
+                when 'B'
+                then 2
+                when 'D'
+                then 3
+                when 'E'
+                then 4
+            end as homeless_primary_nighttime_residence_code,
+
+            -- Florida's meal-eligibility element carries both per-student eligibility
+            -- and school-level program status. The eligibility codes map onto the
+            -- network F/R/P domain; CEP and Provision 2 describe the school's program
+            -- rather than the student, so they carry no per-student signal and stay
+            -- null. Code 2 is retired upstream (DO NOT USE AFTER 1516).
+            case
+                meal_c
+                when 'F'
+                then 'F'
+                when 'D'
+                then 'F'
+                when 'C'
+                then 'F'
+                when '9'
+                then 'F'
+                when '3'
+                then 'R'
+                when 'E'
+                then 'R'
+                when 'R'
+                then 'R'
+                when '1'
+                then 'P'
+                when '0'
+                then 'P'
+            end as lunchstatus,
+
+            case
+                when race_count > 1
+                then 'T'
+                when race_black_or_african_american_label = 'Yes'
+                then 'B'
+                when race_white_label = 'Yes'
+                then 'W'
+                when race_asian_label = 'Yes'
+                then 'A'
+                when race_american_indian_or_alaska_native_label = 'Yes'
+                then 'I'
+                when race_native_hawaiian_or_other_pacific_islander_label = 'Yes'
+                then 'P'
+            end as ethnicity,
+        from coded
+    )
+
+select *, if(homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
+from conformed

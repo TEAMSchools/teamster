@@ -1,10 +1,4 @@
 with
-    -- NJ Finalsite branch: the SIS-agnostic student-contacts union (cutover
-    -- regions only — the region scope lives in int_finalsite__student_contacts),
-    -- reduced to enrolled students by crosswalking the Finalsite enrollment id
-    -- to a PowerSchool student number. The crosswalk union also carries Miami's
-    -- Focus contacts, but they never match here because
-    -- int_finalsite__student_contacts unions only cutover regions.
     finalsite as (
         select
             fc.contact_slot,
@@ -17,6 +11,7 @@ with
             fc.phone_home,
             fc.phone_daytime,
             fc.phone_work,
+            fc.phone_untyped,
             fc.phone_primary,
             fc.is_emergency,
             fc.is_pickup,
@@ -38,14 +33,10 @@ with
     ),
 
     -- Miami Focus branch, replacing the branch that read the frozen
-    -- pre-migration kippmiami_powerschool snapshot. Focus stores the KIPP
-    -- student number 8400-prefixed in local_student_id, so student_number is
-    -- derived by stripping that prefix rather than crosswalked. Deriving beats
-    -- joining int_finalsite__contact_id_attributes on
-    -- focus_student_id_prefixed: its powerschool_student_number agrees with the
-    -- stripped value wherever it is populated, but it is null for every
-    -- Focus-native student (no pre-migration PowerSchool record), so the join
-    -- would silently drop most of Miami.
+    -- pre-migration `kippmiami_powerschool` snapshot. The 8400-prefixed Focus
+    -- id in `local_student_id` is the Miami student number, so it is cast
+    -- rather than crosswalked: `int_finalsite__contact_id_attributes` is null
+    -- for every Focus-native student and would silently drop most of Miami.
     focus_base as (
         select
             student_id,
@@ -68,7 +59,12 @@ with
             email as email_current,
             home_address as address_home,
 
-            safe_cast(substr(local_student_id, 5) as int64) as student_number,
+            -- Focus types every phone it stores, so there is no untyped number
+            -- to recover on this branch. The column exists to keep both
+            -- branches union-compatible.
+            cast(null as string) as phone_untyped,
+
+            safe_cast(local_student_id as int64) as student_number,
         from {{ ref("int_focus__student_contacts") }}
     ),
 
@@ -76,14 +72,6 @@ with
         select *, 'contact_1' as contact_slot, from focus_base where sort_order = 1
     ),
 
-    -- Every emergency-flagged link is ranked, including the sort_order 1 row
-    -- that also lands in contact_1 — the two are distinct contact_slot values,
-    -- so the model's (student_number, _dbt_source_project, contact_slot) grain
-    -- holds and one person may legitimately occupy both slots. person_id breaks
-    -- sort_order ties so slot assignment is stable across rebuilds. Capped at 4
-    -- to match the outgoing PowerSchool branch: int_students__contacts_pivot
-    -- enumerates a fixed slot list ending at emergency_4, so higher ranks would
-    -- materialize rows no consumer reads.
     focus_emergency_ranked as (
         select
             *,
@@ -117,6 +105,7 @@ with
             phone_home,
             phone_daytime,
             phone_work,
+            phone_untyped,
             phone_primary,
             address_home,
             is_emergency,
@@ -141,6 +130,7 @@ with
             phone_home,
             phone_daytime,
             phone_work,
+            phone_untyped,
             phone_primary,
             address_home,
             is_emergency,
@@ -165,6 +155,7 @@ with
             phone_home,
             phone_daytime,
             phone_work,
+            phone_untyped,
             phone_primary,
             address_home,
             is_emergency,
@@ -178,52 +169,59 @@ with
             cast(null as string) as finalsite_contact_id,
         from focus_slotted
         where student_number is not null
+    ),
+
+    all_contacts as (
+        select
+            student_number,
+            _dbt_source_project,
+            contact_slot,
+            personid,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+        from finalsite
+
+        union all
+
+        select
+            student_number,
+            _dbt_source_project,
+            contact_slot,
+            personid,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email_current,
+            phone_mobile,
+            phone_home,
+            phone_daytime,
+            phone_work,
+            phone_untyped,
+            phone_primary,
+            address_home,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+        from focus
     )
 
-select
-    student_number,
-    _dbt_source_project,
-    contact_slot,
-    personid,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email_current,
-    phone_mobile,
-    phone_home,
-    phone_daytime,
-    phone_work,
-    phone_primary,
-    address_home,
-    is_emergency,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-from finalsite
-
-union all
-
-select
-    student_number,
-    _dbt_source_project,
-    contact_slot,
-    personid,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email_current,
-    phone_mobile,
-    phone_home,
-    phone_daytime,
-    phone_work,
-    phone_primary,
-    address_home,
-    is_emergency,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-from focus
+select *, coalesce(finalsite_contact_id, personid) as person_identity,
+from all_contacts

@@ -1,2 +1,144 @@
 models:
   - name: int_google_sheets__dibels_expected_assessments
+    description: >
+      Which DIBELS measures each region expects to administer, to which grade,
+      in which window -- the membership gate every downstream DIBELS model
+      inner-joins to decide whether a score counts.
+
+      This is the internal method's chain, and Benchmark's. It reads the
+      16-column Expected Assessments range only. The aimline method reads the
+      18-column by-levels range through
+      int_google_sheets__dibels__expected_assessments_by_levels -- a separate
+      model, not a branch here. The two methods were briefly unioned behind a
+      data_model discriminator; splitting them at the source is simpler, keeps
+      this model's column set identical to what its consumers already expect,
+      and removes the every-consumer-must-filter-data_model trap.
+
+      Benchmark lives here and only here. It tests every student against one set
+      of expectations, so it has no cohort split and no per-method variant --
+      **Benchmark will never be by levels.**
+
+      The reporting terms CTE explodes grade_band into one row per grade level
+      so a grade picks up its own band's window rather than whichever band the
+      join happened to reach first. A Benchmark window carries no band and
+      applies to every grade.
+
+      Rows are switched off with assessment_include rather than filtered in SQL,
+      so which years and grades are live is a sheet decision. A non-null
+      assessment_include means excluded, and downstream models express that as
+      assessment_include is null.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - grade
+              - admin_season
+              - test_code
+              - measure_standard
+    columns:
+      - name: academic_year
+        description: >
+          Academic year as the starting calendar year -- 2025 is SY25-26.
+      - name: region
+        description: Region name -- Camden, Miami, Newark or Paterson.
+      - name: grade
+        description:
+          Grade level the expectation applies to, with kindergarten as 0.
+      - name: assessment_include
+        description: >
+          The off switch. Null means the row is live; false means it is
+          excluded, and every downstream consumer expresses that as
+          assessment_include is null. Used to retire a year or a grade band
+          without deleting sheet rows -- AY2024 PM is off, and 99 AY2023
+          Benchmark rows are off because upper grades did not sit the assessment
+          that year.
+      - name: pm_goal_include
+        description: >
+          Gates whether a PM row's goal is displayed. False marks a
+          scaffold-fill row -- a measure tested at least once that season but
+          not in this round, kept so the goal trajectory stays continuous. Null
+          means the measure is tested this round.
+      - name: pm_goal_criteria
+        description: >
+          Whether a student must meet all tested standards in a round or any of
+          them. AND network-wide for SY26-27.
+      - name: assessment_type
+        description: >
+          Benchmark or PM. Derived from admin_season in the staging model.
+      - name: test_type
+        description: Assessment family the row belongs to, from the sheet.
+      - name: discipline
+        description: Discipline the measure sits under, from the sheet.
+      - name: subject_area
+        description: Subject area the measure sits under, from the sheet.
+      - name: measure_standard
+        description: >
+          Raw measure and standard token from the sheet, such as the composite
+          or an individual measure at a benchmark level. The three
+          expected_measure_ columns below are parsed out of it.
+      - name: test_code
+        description: >
+          Reporting term code the row maps to -- LIT1 through LIT11 for a PM
+          round, LIT1 to LIT3 for a Benchmark season. Joined to the terms CTE to
+          pick up the window.
+      - name: admin_season
+        description: >
+          BOY, MOY or EOY for a Benchmark row; BOY->MOY or MOY->EOY for a PM
+          round. Matches the reporting terms name column.
+      - name: month_round
+        description: Month label for the round, derived from its own start date.
+      - name: illuminate_subject
+        description: Illuminate subject the measure maps to, from the sheet.
+      - name: iready_subject
+        description: i-Ready subject the measure maps to, from the sheet.
+      - name: ps_credit_type
+        description:
+          PowerSchool credit type the measure maps to, from the sheet.
+      - name: matching_pm_season
+        description: >
+          The PM season a Benchmark row anchors -- BOY maps to BOY->MOY, MOY to
+          MOY->EOY. Null on PM rows. Lets a PM goal reach back to the Benchmark
+          score it grows from.
+      - name: expected_measure_name_code
+        description: Measure code parsed from measure_standard.
+      - name: expected_measure_name
+        description: Measure name parsed from measure_standard.
+      - name: expected_measure_standard
+        description: >
+          Benchmark level parsed from measure_standard. This is what a student
+          score is compared against.
+      - name: grade_level_text
+        description: Grade level as text, with 0 rendered as K.
+      - name: round_number
+        description: >
+          Round number parsed from test_code with a regex, so a double-digit
+          round survives. Miami runs 11 rounds, and reading the last character
+          would fold rounds 10 and 11 onto 0 and 1.
+      - name: start_date
+        description: >
+          First day of the window, from the terms CTE. Null when no reporting
+          terms row covers the row's year, region, season, code and grade --
+          either the calendar is not entered yet, or the sheet defines an
+          expectation for a grade the region did not enrol that year.
+      - name: end_date
+        description: Last day of the window, from the terms CTE.
+      - name: min_pm_round
+        description: >
+          Lowest round number in the row's season, per year, region, season and
+          grade. Marks where a season's trajectory starts.
+      - name: max_pm_round
+        description: >
+          Highest round number in the row's season, on the same partition as
+          min_pm_round. Marks where a season's trajectory ends.
+      - name: expected_row_count
+        description: >
+          How many measures a student at this grade owes for this round, per
+          year, region, grade, season and round. A countif rather than a count,
+          because this model deliberately does not filter its own
+          assessment_include / pm_goal_include columns -- a WHERE here would run
+          before min_pm_round and max_pm_round and silently redefine them. So
+          every row survives and only the live ones are counted. Read this
+          rather than re-deriving it; the participation roster used to compute
+          its own copy.

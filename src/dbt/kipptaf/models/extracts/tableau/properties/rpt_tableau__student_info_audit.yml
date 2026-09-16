@@ -1,5 +1,8 @@
 models:
   - name: rpt_tableau__student_info_audit
+    description: >-
+      Network-wide data quality audit, Miami included. Miami held 12,294 rows in
+      prod as of 2026-08-27. Ratified on #4996.
     columns:
       - name: db_name
         data_type: string

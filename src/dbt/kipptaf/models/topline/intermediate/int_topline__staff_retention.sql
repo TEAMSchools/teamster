@@ -26,7 +26,7 @@ with
                 then cw.academic_year - 1
                 else cw.academic_year
             end as attrition_year,
-        from {{ ref("int_powerschool__calendar_week") }} as cw
+        from {{ ref("int_students__calendar_week") }} as cw
         inner join
             attrition_effective_dates as aed on cw.academic_year = aed.academic_year
         where cw.academic_year >= 2025  /* first year of topline */

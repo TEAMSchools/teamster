@@ -1,0 +1,28 @@
+sources:
+  - name: cambium
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
+      var('cambium_schema', project_name ~ '_cambium') }}"
+    tables:
+      - name: src_cambium__njgpa
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - cambium
+                - njgpa
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cambium/njgpa/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cambium/njgpa/"

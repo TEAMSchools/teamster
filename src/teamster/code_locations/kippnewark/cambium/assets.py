@@ -1,0 +1,75 @@
+from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from teamster.code_locations.kippnewark.cambium.schema import NJGPA_SCHEMA, NJSLA_SCHEMA
+from teamster.libraries.cambium.assets import (
+    build_partitions_def,
+    build_remote_file_regex,
+)
+from teamster.libraries.sftp.assets import build_sftp_file_asset
+
+ssh_resource_key = "ssh_couchdrop"
+remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/cambium"
+key_prefix = [CODE_LOCATION, "cambium"]
+
+DISTRICT_CODE = "7325"
+
+partitions_def = build_partitions_def(
+    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    # Spring 2026 is the first administration New Jersey reported through
+    # Cambium; everything before it came through Pearson.
+    first_administration_year=2026,
+    # Spring is the only season Cambium sends. The fall tokens were Pearson-era
+    # cruft and never appeared in a Cambium filename.
+    administrations=["Spring"],
+)
+
+njgpa = build_sftp_file_asset(
+    asset_key=[*key_prefix, "njgpa"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njgpa",
+    remote_file_regex=build_remote_file_regex(
+        partitions_def=partitions_def,
+        district_code=DISTRICT_CODE,
+        filename_suffix_regex=r"_GPA",
+    ),
+    avro_schema=NJGPA_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=partitions_def,
+)
+
+njsla = build_sftp_file_asset(
+    asset_key=[*key_prefix, "njsla"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla",
+    remote_file_regex=build_remote_file_regex(
+        partitions_def=partitions_def,
+        district_code=DISTRICT_CODE,
+        # Cambium has sent no NJSLA file, so the subject token is a guess;
+        # optional, so the asset matches whether it carries one or not.
+        filename_suffix_regex=r"(_\w+)?",
+    ),
+    avro_schema=NJSLA_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=partitions_def,
+)
+
+# Shares NJSLA_SCHEMA with njsla, the way the two Pearson assets share theirs.
+# Cambium has sent neither file, so there is no evidence the science layout
+# differs, and one stub is one place to correct when the files arrive.
+njsla_science = build_sftp_file_asset(
+    asset_key=[*key_prefix, "njsla_science"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla_science",
+    remote_file_regex=build_remote_file_regex(
+        partitions_def=partitions_def,
+        district_code=DISTRICT_CODE,
+        # Cambium has sent no NJSLA file, so the subject token is a guess;
+        # optional, so the asset matches whether it carries one or not.
+        filename_suffix_regex=r"(_\w+)?",
+    ),
+    avro_schema=NJSLA_SCHEMA,
+    ssh_resource_key=ssh_resource_key,
+    partitions_def=partitions_def,
+)
+
+assets = [
+    njgpa,
+    njsla,
+    njsla_science,
+]

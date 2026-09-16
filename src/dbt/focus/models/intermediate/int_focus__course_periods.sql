@@ -1,6 +1,3 @@
--- Staging columns plus their decoded custom-field labels. Drives from staging
--- and LEFT JOINs the pivot: BigQuery UNPIVOT drops entities whose unpivoted
--- columns are all null, so the pivot alone is not a complete entity spine.
 select
     s.*,
 

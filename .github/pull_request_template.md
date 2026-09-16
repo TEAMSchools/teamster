@@ -1,13 +1,22 @@
 # Pull Request
 
+> **Write this whole PR in plain language.** Read `.github/PLAIN_LANGUAGE.md`
+> and follow it: every sentence does a job, one idea per sentence, active voice,
+> common words. Only the "For Claude" fold-out at the bottom is exempt.
+
 ## Summary & Motivation
 
-> "When merged, this pull request will..."
+> What changed and why. A reviewer skimming just this section should understand
+> the change. Save tradeoffs, edge cases, and verification detail for "Reviewer
+> Notes" below.
 
-## AI Assistance
+"When merged, this pull request will..."
 
-> If Claude Code authored or co-authored this PR, briefly note what was
-> AI-assisted vs. human-directed in the summary above
+## Reviewer Notes
+
+> Optional. Name what's worth a second look and why, in a line or two each. Full
+> technical detail, exact values, and edge cases belong in "For Claude" below.
+> Delete if there's nothing here.
 
 ## Self-review
 
@@ -74,3 +83,19 @@
 - [Dagster "kinds" Reference](https://docs.dagster.io/guides/build/assets/metadata-and-tags/kind-tags#supported-icons)
 - [Automated checks](https://teamschools.github.io/teamster/CONTRIBUTING/#automated-checks)
 - [dbt Conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/)
+
+<details>
+<summary>For Claude</summary>
+
+> Full technical detail behind the Reviewer Notes flags above — exact values,
+> edge cases, full reasoning — plus anything else simplified or cut from Summary
+> for plain-language readability, AI involvement, and anything a future
+> `@claude` invocation needs. Delete if there's nothing to add.
+
+<!-- e.g. "Claude-assisted, human-directed. Reviewer Notes flags the column-
+projection call -- full reasoning: it matches
+stg_focus__gradebook_assignments, which projects unpopulated columns for the
+same reason, but the schedule / student_report_card_grades precedent goes
+the other way for wide Florida-reporting tables." -->
+
+</details>

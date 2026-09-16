@@ -18,10 +18,10 @@ select
     c.reason as commlog_reason,
     c.response as commlog_notes,
     c.topic as commlog_topic,
-from {{ ref("int_powerschool__attendance_streak") }} as st
+from {{ ref("int_students__attendance_streak") }} as st
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
-    on st.studentid = co.studentid
+    on st.student_number = co.student_number
     and st.yearid = co.yearid
     and st._dbt_source_project = co._dbt_source_project
 left join

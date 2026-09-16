@@ -71,8 +71,13 @@ models:
         data_type: float64
       - name: y1_grade_letter
         data_type: string
-      - name: need_65
+      - name: need_60
         data_type: float64
+        description: >-
+          Percentage the student needs on their remaining work to finish the
+          year at 60, which is the lowest passing grade on both grading scales
+          the high schools use. Previously exposed under the name need_65, which
+          did not match the calculation behind it or any grading scale in use.
       - name: credittype
         data_type: string
       - name: course_name

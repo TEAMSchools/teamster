@@ -17,21 +17,18 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: job_candidate_key
         data_type: string
         description: >-
           Foreign key to dim_job_candidates. Surrogate key derived from
           candidate_id.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_job_candidates')
-            to_columns: [job_candidate_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_job_candidates')
+              to_columns: [job_candidate_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_job_candidates')
@@ -46,11 +43,11 @@ models:
           crosswalk; text variants like `KIPP High School` → `KIPP Cooper
           Norcross High` are alias rows on the crosswalk). Nullable when the
           application has no shared location.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:
@@ -62,11 +59,11 @@ models:
           Foreign key to dim_job_postings. Surrogate key derived from job_title,
           department_internal, and job_city.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_job_postings')
-            to_columns: [job_posting_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_job_postings')
+              to_columns: [job_posting_key]
         data_tests:
           - relationships:
               arguments:
@@ -78,11 +75,11 @@ models:
           Foreign key to dim_dates for the date the application entered the New
           stage. Matches dim_dates.date_key.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

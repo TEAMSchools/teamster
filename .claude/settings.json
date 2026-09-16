@@ -1,4 +1,7 @@
 {
+  "env": {
+    "MCP_TIMEOUT": "90000"
+  },
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
@@ -25,7 +28,6 @@
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
       "mcp__dagster__get_asset_condition_evaluations",
-      "mcp__dagster__get_asset_health",
       "mcp__dagster__get_asset_materializations",
       "mcp__dagster__get_asset_partition_statuses",
       "mcp__dagster__get_asset_staleness",
@@ -35,15 +37,10 @@
       "mcp__dagster__get_daemon_health",
       "mcp__dagster__get_location_load_history",
       "mcp__dagster__get_run_compute_logs",
-      "mcp__dagster__get_run_logs",
-      "mcp__dagster__get_run",
       "mcp__dagster__get_tick_history",
       "mcp__dagster__list_backfills",
-      "mcp__dagster__list_code_locations",
-      "mcp__dagster__list_runs",
       "mcp__dagster__list_schedules",
       "mcp__dagster__list_sensors",
-      "mcp__dagster__search_assets",
       "mcp__dbt__get_job_details",
       "mcp__dbt__get_job_run_details",
       "mcp__dbt__get_job_run_error",
@@ -148,10 +145,22 @@
       "Read(//home/vscode/.kube/**)",
       "Read(//home/vscode/.ssh/**)",
       "Read(//proc/**)",
-      "Read(/env/**)"
+      "Read(/env/**)",
+      "mcp__dagster__get_asset_health",
+      "mcp__dagster__get_run_group",
+      "mcp__dagster__get_run",
+      "mcp__dagster__launch_multiple_runs",
+      "mcp__dagster__launch_run",
+      "mcp__dagster__list_code_locations",
+      "mcp__dagster__list_deployments",
+      "mcp__dagster__list_runs",
+      "mcp__dagster__reexecute_run",
+      "mcp__dagster__search_assets",
+      "mcp__dagster__set_sensor_cursor",
+      "mcp__dagster__terminate_runs"
     ]
   },
-  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
+  "enabledMcpjsonServers": ["dagster", "dagster-plus", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
       {
@@ -184,7 +193,7 @@
         ]
       },
       {
-        "matcher": "mcp__.*",
+        "matcher": "Agent|Workflow|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -210,9 +219,8 @@
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
-    "dagster-expert@dagster": true,
+    "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
-    "dignified-python@dagster": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "superpowers@superpowers-marketplace": true

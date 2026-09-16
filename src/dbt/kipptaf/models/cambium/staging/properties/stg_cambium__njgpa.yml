@@ -1,0 +1,14 @@
+models:
+  - name: stg_cambium__njgpa
+    description: >-
+      Union of Newark and Camden stg_cambium__njgpa (the cambium package model),
+      which already carries the shared NJ-assessment shape. Column docs and
+      tests live there; this wrapper adds _dbt_source_project.
+    config:
+      materialized: table
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Source REGION ('kippnewark' / 'kippcamden'), from
+          extract_source_project(). Despite the name it is not the vendor.

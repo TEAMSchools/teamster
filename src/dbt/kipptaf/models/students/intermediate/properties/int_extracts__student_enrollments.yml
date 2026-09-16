@@ -1,8 +1,22 @@
 models:
   - name: int_extracts__student_enrollments
+    description: >-
+      Network-wide enrollment extract, Miami included. Miami held 1,760 AY2026
+      rows in prod as of 2026-08-27. Consumers that filter on `is_enrolled_y1`,
+      `is_enrolled_recent` or `is_out_of_district` dropped Miami entirely until
+      #5038 populated those flags upstream; `is_self_contained` is still null
+      for Miami by design. Ratified on #4996.
     config:
       schema: extracts
       materialized: table
+      meta:
+        dagster:
+          # Eager rebuilt this table ~145 times a day. Its fastest consumers are
+          # hourly: the Clever extract job (@hourly) and rpt_tableau__ops_dashboard
+          # (0 * * * *). Everything else reads it nightly or pulls on open
+          # (Connected Sheets). Refs #5215
+          automation_condition:
+            cron_schedule: 0 * * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -829,6 +843,23 @@ models:
       - name: self_contained_status
         data_type: string
         description: Conditional on is_self_contained.
+      - name: homeless_status
+        data_type: string
+        description:
+          Decoded homelessness status for the enrollment year — Not Homeless,
+          Homeless - With Guardian, or Homeless - Unaccompanied. Conditional on
+          homeless_code. Null where the code is unset or unrecognized, and for
+          Miami, which does not populate the field. May disagree with
+          is_homeless on closed years, which reads current status for every
+          year.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+        description:
+          Decoded primary nighttime residence for the enrollment year —
+          Shelters, transitional housing / Doubled-up / Unsheltered / Hotels or
+          Motels. Conditional on homeless_primary_nighttime_residence_code. Null
+          where no selection was made and outside New Jersey, which is the only
+          state that collects it.
       - name: state_studentnumber
         data_type: string
         description:
@@ -904,6 +935,18 @@ models:
         description:
           The enrollment status of the student. Categorical mapping of
           enroll_status.
+      - name: exited_hs
+        data_type: string
+        description:
+          Whether the student graduated or completed high school, per exitcode =
+          'G1' (Gen Table 6 cat=exitcodes, labeled "Graduated from a KIPP NJ
+          school"). The codeset also lists 'GR' ("Graduated"), 'EG' ("Early
+          Graduate"), and 'L' ("Graduation Code"), but none of the three has
+          ever been assigned to a real enrollment record network-wide -- 'G1' is
+          the only graduation code actually in use, so checking it alone is
+          sufficient. Shared by rpt_gsheets__csgf_hs_postsec_pathways and
+          rpt_gsheets__csgf_hs_enrollment -- promoted here from a duplicated
+          per-model calculation so both stay in sync.
       - name: race_ethnicity
         data_type: string
         description:

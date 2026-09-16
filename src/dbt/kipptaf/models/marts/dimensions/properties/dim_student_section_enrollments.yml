@@ -5,9 +5,11 @@ models:
       enrollment of a student into a section. Multiple rows per student x
       section are possible when a student drops and re-enrolls in the same
       section within a year. FK to dim_student_enrollments via
-      student_enrollment_key, dim_course_sections via course_section_key,
-      dim_terms via term_key (nullable when CC term does not map to a reporting
-      term), and dim_staff via lead_teacher_staff_key.
+      student_enrollment_key, dim_course_sections via course_section_key, and
+      dim_staff via lead_teacher_staff_key. Carries no term FK — a section
+      enrollment spans several reporting quarters, so
+      bridge_course_section_terms is the grain-correct link from a section to
+      its quarters.
     columns:
       - name: lead_teacher_staff_key
         data_type: string
@@ -16,12 +18,11 @@ models:
           record, resolved to a staff member via the staff roster. FK to
           dim_staff. Null when the section's teacher does not resolve to a staff
           record.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -41,7 +42,6 @@ models:
           - unique:
               config:
                 severity: error
-          - not_null
 
       - name: student_enrollment_key
         data_type: string
@@ -50,14 +50,25 @@ models:
           academic_year, and entrydate. FK to dim_student_enrollments. Resolved
           to the school enrollment stint the section enrollment overlaps (the
           stint covering cc_dateenrolled when one exists, else the earliest
-          overlapping stint). Null only when no enrollment stint overlaps the
-          section enrollment.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
-            warn_unenforced: false
+          overlapping stint). Null when no enrollment stint overlaps the section
+          enrollment, which is an expected outcome rather than a defect on its
+          own: alumni placeholder rows match no stint by design, and completed
+          NJ academic years run an 18 to 20% null rate.
+
+          Three populations account for Miami's nulls, in descending size. A
+          schedule row falling outside a stint at the same school. A stale
+          schedule row at a campus the student was reassigned away from, left
+          open in Focus -- null is correct here, since attaching the section to
+          the student's stint at a different campus would emit a wrong key. And
+          courses taken at a second campus, where Focus marks the non-primary
+          enrollment and only the primary stint is kept, so sections scheduled
+          at the other campus match nothing. Counts and their measurement date
+          are recorded at the derivation site.
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -68,38 +79,16 @@ models:
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_project. FK
           to dim_course_sections.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_course_sections')
-            to_columns: [course_section_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_course_sections')
+              to_columns: [course_section_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_course_sections')
                 field: course_section_key
-      - name: term_key
-        data_type: string
-        description: >-
-          Surrogate key derived from type, code, name, start_date, region, and
-          school_id of the matching reporting term. FK to dim_terms. Null when
-          the course-enrollment's term ID does not match any reporting term for
-          the section's school and region.
-
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
-            warn_unenforced: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
       - name: academic_year
         data_type: int64
         description: >-

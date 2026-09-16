@@ -56,7 +56,8 @@ with
             localstudentidentifier,
             is_proficient,
 
-            illuminate_subject as `subject`,
+            `subject` as raw_subject,
+            'pearson' as source_system,
             njsla_aggregated_proficiency as njsla_proficiency,
 
             academic_year + 1 as academic_year_plus,
@@ -75,7 +76,8 @@ with
 
             is_proficient,
 
-            illuminate_subject as `subject`,
+            assessment_subject as raw_subject,
+            'fldoe' as source_system,
             fast_aggregated_proficiency as proficiency,
 
             academic_year + 1 as academic_year_plus,
@@ -87,6 +89,15 @@ with
             scale_score is not null
             and assessment_name = 'FAST'
             and administration_window = 'PM3'
+    ),
+
+    prev_yr_state_test_resolved as (
+        select p.*, coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
+        from prev_yr_state_test as p
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on p.source_system = x.source_system
+            and p.raw_subject = x.raw_subject
     ),
 
     prev_yr_iready as (
@@ -131,6 +142,8 @@ with
             boy_composite,
             moy_composite,
             eoy_composite,
+            boy_probe_eligible,
+            moy_probe_eligible,
 
             'Reading' as iready_subject,
 
@@ -138,7 +151,7 @@ with
                 partition by student_number, academic_year order by client_date desc
             ) as rn_year,
 
-        from {{ ref("int_amplify__all_assessments") }}
+        from {{ ref("int_amplify__benchmark_student_summary") }}
         where measure_standard = 'Composite'
     ),
 
@@ -200,7 +213,7 @@ with
             if(t.abbreviation like 'S%', t.name, 'Year') as mtss_enrollment,
         from {{ ref("int_powerschool__spenrollments") }} as sp
         inner join
-            {{ ref("stg_powerschool__terms") }} as t
+            {{ ref("int_students__terms") }} as t
             on sp.enter_date = t.firstday
             and sp.exit_date = t.lastday
             and sp.academic_year = t.academic_year
@@ -242,6 +255,8 @@ select
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+    coalesce(db.boy_probe_eligible, 'No Test') as boy_probe_eligible,
+    coalesce(db.moy_probe_eligible, 'No Test') as moy_probe_eligible,
 
     coalesce(
         dr.measure_standard_level, 'No Composite Score Available'
@@ -299,7 +314,7 @@ left join
     and co.student_number = fp.student_number
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test as py
+    prev_yr_state_test_resolved as py
     /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
