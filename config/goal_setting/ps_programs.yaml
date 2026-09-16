@@ -1,0 +1,24 @@
+# PowerSchool special program ids for bucket programs, verified against
+# int_powerschool__spenrollments on 2026-09-16. Ids are scoped to each
+# region's PowerSchool instance, so the same number may appear under two
+# regions. Uniqueness is enforced on (region, programid). Bucket 4 has no
+# program. Miami is absent pending confirmation of where its buckets live.
+programs:
+  - { region: Camden, subject: Reading, bucket: Bucket 1, programid: 7376 }
+  - { region: Camden, subject: Math, bucket: Bucket 1, programid: 7375 }
+  - { region: Camden, subject: Reading, bucket: Bucket 2, programid: 7173 }
+  - { region: Camden, subject: Math, bucket: Bucket 2, programid: 7174 }
+  - { region: Camden, subject: Reading, bucket: Bucket 3, programid: 7373 }
+  - { region: Camden, subject: Math, bucket: Bucket 3, programid: 7374 }
+  - { region: Newark, subject: Reading, bucket: Bucket 1, programid: 7578 }
+  - { region: Newark, subject: Math, bucket: Bucket 1, programid: 7577 }
+  - { region: Newark, subject: Reading, bucket: Bucket 2, programid: 7374 }
+  - { region: Newark, subject: Math, bucket: Bucket 2, programid: 7375 }
+  - { region: Newark, subject: Reading, bucket: Bucket 3, programid: 7573 }
+  - { region: Newark, subject: Math, bucket: Bucket 3, programid: 7574 }
+  - { region: Paterson, subject: Reading, bucket: Bucket 1, programid: 1633 }
+  - { region: Paterson, subject: Math, bucket: Bucket 1, programid: 1634 }
+  - { region: Paterson, subject: Reading, bucket: Bucket 2, programid: 1635 }
+  - { region: Paterson, subject: Math, bucket: Bucket 2, programid: 1636 }
+  - { region: Paterson, subject: Reading, bucket: Bucket 3, programid: 1637 }
+  - { region: Paterson, subject: Math, bucket: Bucket 3, programid: 1638 }
