@@ -35,9 +35,14 @@ class StudentRecord:
         return replace(self, **changes)
 
     @property
-    def group_key(self) -> tuple[str, str, int]:
-        """Partition key for ranking and goals: school, subject, grade."""
-        return (self.school, self.subject, self.grade_level)
+    def group_key(self) -> tuple[str, str, str, int]:
+        """Partition key for ranking and goals: region, school, subject, grade.
+
+        Region leads the key because school names are not unique across
+        regions: a Newark and a Camden school can share a name and must still
+        get their own goal row and their own Bucket 2 ranking.
+        """
+        return (self.region, self.school, self.subject, self.grade_level)
 
 
 @dataclass(frozen=True)
@@ -58,5 +63,5 @@ class SchoolGoal:
     goal: float
 
     @property
-    def group_key(self) -> tuple[str, str, int]:
-        return (self.school, self.subject, self.grade_level)
+    def group_key(self) -> tuple[str, str, str, int]:
+        return (self.region, self.school, self.subject, self.grade_level)

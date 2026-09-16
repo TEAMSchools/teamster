@@ -102,6 +102,31 @@ def test_region_rollup_lands_within_a_point_of_target():
         assert implied <= SY27_TARGETS[key] + 0.03  # per-school ceiling overshoots
 
 
+def test_same_school_name_in_two_regions_gets_separate_goal_rows():
+    recs = [
+        student(region="Newark", school="Rise", is_proficient=True),
+        student(region="Newark", school="Rise", is_approaching=True),
+        student(region="Camden", school="Rise", is_below=True),
+    ]
+    counts = {c.group_key: c for c in count_by_school(recs)}
+    assert len(counts) == 2
+    assert counts[("Newark", "Rise", "Math", 1)].n_roster == 2
+    assert counts[("Camden", "Rise", "Math", 1)].n_roster == 1
+
+    goals = {
+        g.group_key: g
+        for g in bubble_parameter(
+            list(counts.values()), {("Newark", 1): 0.5, ("Camden", 1): 0.5}
+        )
+    }
+    assert set(goals) == {
+        ("Newark", "Rise", "Math", 1),
+        ("Camden", "Rise", "Math", 1),
+    }
+    assert goals[("Newark", "Rise", "Math", 1)].n_to_move == 0  # bp 0, already at .5
+    assert goals[("Camden", "Rise", "Math", 1)].n_approaching == 0
+
+
 def test_bubble_parameter_zero_approaching_gives_none_and_zero_to_move():
     counts = [SchoolCounts("Newark", "TEAM", 1, 1, "Math", 10, 10, 2, 0, 8)]
     (g,) = bubble_parameter(counts, {("Newark", 1): 0.5})

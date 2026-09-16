@@ -1,4 +1,4 @@
-"""Counts per school, subject, and grade. The input to school goals."""
+"""Counts per region, school, subject, and grade. The input to school goals."""
 
 from __future__ import annotations
 
@@ -21,12 +21,12 @@ class SchoolCounts:
     n_below: int
 
     @property
-    def group_key(self) -> tuple[str, str, int]:
-        return (self.school, self.subject, self.grade_level)
+    def group_key(self) -> tuple[str, str, str, int]:
+        return (self.region, self.school, self.subject, self.grade_level)
 
 
 def count_by_school(records: list[StudentRecord]) -> list[SchoolCounts]:
-    acc: dict[tuple[str, str, int], dict] = {}
+    acc: dict[tuple[str, str, str, int], dict] = {}
     for r in records:
         a = acc.setdefault(
             r.group_key,
