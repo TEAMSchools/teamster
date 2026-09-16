@@ -47,13 +47,14 @@ with
 
             `subject` as raw_subject,
             'pearson' as source_system,
+            cast(null as string) as `subject`,
 
         from {{ ref("int_pearson__all_assessments") }}
         where
             assessment_name = 'NJSLA'
             and not (assessmentgrade = 'Grade 8' and `subject` like 'Algebra%')
 
-        full union all corresponding
+        union all
 
         select
             f.student_number,
@@ -72,6 +73,7 @@ with
 
             f.assessment_subject as raw_subject,
             'fldoe' as source_system,
+            cast(null as string) as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
         where
@@ -80,7 +82,7 @@ with
             and f.scale_score is not null
             and f.assessment_grade != '3'
 
-        full union all corresponding
+        union all
 
         select
             f.student_number,
@@ -99,6 +101,7 @@ with
 
             f.assessment_subject as raw_subject,
             'fldoe' as source_system,
+            cast(null as string) as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
         where
@@ -107,15 +110,11 @@ with
             and f.scale_score is not null
             and f.assessment_grade = '3'
 
-        -- `star_discipline` is not an illuminate_subject value (it is already
-        -- Reading/Math), so this branch is outside the crosswalk's scope and
-        -- keeps deriving `subject` directly. `full union all corresponding`
-        -- reconciles it against the raw_subject/source_system columns the
-        -- other three branches carry instead, matching by name so this
-        -- branch's `subject` and the others' raw_subject/source_system
-        -- null-fill rather than colliding positionally.
-        full union all corresponding
+        union all
 
+        -- `star_discipline` is not an illuminate_subject value (it is
+        -- already Reading/Math), so this branch stays outside the
+        -- crosswalk's scope and keeps deriving `subject` directly.
         select
             student_display_id as student_number,
 
@@ -130,6 +129,9 @@ with
             if(state_benchmark_category_level < 4, 1, 0) as is_proficient_int,
             if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
+
+            cast(null as string) as raw_subject,
+            cast(null as string) as source_system,
 
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
         from {{ ref("stg_renlearn__star") }}
