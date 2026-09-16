@@ -645,13 +645,19 @@ models:
         data_type: string
         description:
           Categorical lunch-status mapping for the New Jersey regions, based on
-          academic_year, eligibility_name, is_directly_certified, lunchstatus,
-          region, and rn_year -- P for full pay, R for reduced, F for free, E
-          for exempt, T for temporary. Null for Miami today -- Focus's meal
-          field currently carries only a school-level CEP direct-certification
-          code, not an individual determination. The underlying Focus mapping
-          (in int_focus__students) resolves to F, R or P as soon as Focus
-          records a per-student determination.
+          academic_year, eligibility_name, lunchstatus, region, and rn_year -- P
+          for full pay, R for reduced, F for free, E for exempt, T for
+          temporary. For the current year in NJ this is Titan's own eligibility
+          determination, direct certification included -- a directly certified
+          student can be certified at the reduced level (Medicaid Reduced), so
+          the direct-certification flag does not imply free. Null for Miami
+          today -- Focus's meal field currently carries only a school-level CEP
+          direct-certification code, not an individual determination. The
+          underlying Focus mapping (in int_focus__students) resolves to F, R or
+          P as soon as Focus records a per-student determination.
+        config:
+          meta:
+            contains_pii: true
       - name: lunch_application_status
         data_type: string
         description:
