@@ -57,7 +57,7 @@ with
             localstudentidentifier as student_number,
             academic_year,
             subject_area,
-            illuminate_subject,
+            `subject` as raw_subject,
             discipline,
             module_code,
             administration_period,
@@ -77,6 +77,7 @@ with
             test_date,
             cast(null as numeric) as percent_correct,
 
+            'pearson' as source_system,
             'state_nj' as score_source,
         from {{ ref("int_pearson__all_assessments") }}
         where
@@ -89,7 +90,7 @@ with
             student_number,
             academic_year,
             assessment_subject as subject_area,
-            illuminate_subject,
+            assessment_subject as raw_subject,
             discipline,
             test_code as module_code,
             scale_score,
@@ -110,6 +111,7 @@ with
             test_date,
             cast(null as numeric) as percent_correct,
 
+            'fldoe' as source_system,
             'state_fl' as score_source,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
@@ -121,7 +123,8 @@ with
             state_student_id,
             academic_year,
             subject_area,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             discipline,
             module_code,
             grade_level,
@@ -145,7 +148,8 @@ with
             state_student_id,
             academic_year,
             subject_area,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             discipline,
             module_code,
             grade_level,
@@ -170,7 +174,13 @@ with
             coalesce(
                 cast(sa.student_number as string), sa.state_student_id
             ) as student_identifier,
+
+            coalesce(x.illuminate_subject_area, sa.raw_subject) as illuminate_subject,
         from state_all as sa
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on sa.source_system = x.source_system
+            and sa.raw_subject = x.raw_subject
     ),
 
     iready_scores_raw as (
@@ -178,7 +188,7 @@ with
             student_id as student_number,
             academic_year_int as academic_year,
             subject as module_code,
-            illuminate_subject,
+            `subject` as raw_subject,
             test_round as administration_period,
             completion_date as test_date,
             `start_date`,
@@ -186,6 +196,7 @@ with
 
             overall_relative_placement as proficiency_level,
 
+            'iready' as source_system,
             'iready' as score_source,
 
             cast(overall_scale_score as numeric) as scale_score,
@@ -211,7 +222,7 @@ with
             student_id as student_number,
             academic_year_int as academic_year,
             `subject` as module_code,
-            illuminate_subject,
+            `subject` as raw_subject,
             test_round as administration_period,
             completion_date as test_date,
             `start_date`,
@@ -219,6 +230,7 @@ with
 
             relative_placement as proficiency_level,
 
+            'iready' as source_system,
             'iready' as score_source,
             'group' as response_type,
 
@@ -247,7 +259,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             `start_date`,
@@ -268,7 +281,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             `start_date`,
@@ -310,7 +324,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             `start_date`,
@@ -342,7 +357,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             `start_date`,
@@ -364,7 +380,7 @@ with
             student_display_id as student_number,
             academic_year,
             star_subject as module_code,
-            illuminate_subject,
+            _dagster_partition_subject as raw_subject,
             screening_period_window_name as administration_period,
             completed_date_value as test_date,
             assessment_id,
@@ -372,6 +388,7 @@ with
 
             state_benchmark_category_name as proficiency_level,
 
+            'renlearn' as source_system,
             'star' as score_source,
 
             cast(unified_score as numeric) as scale_score,
@@ -423,13 +440,14 @@ with
         select
             student_number,
             academic_year,
-            illuminate_subject,
             `period` as administration_period,
             client_date as test_date,
             _dbt_source_project,
 
             measure_standard_level as proficiency_level,
 
+            'DIBELS' as raw_subject,
+            'amplify' as source_system,
             'dibels' as score_source,
             'Composite' as module_code,
 
@@ -456,7 +474,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             _dbt_source_project,
@@ -476,7 +495,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             _dbt_source_project,
@@ -497,7 +517,8 @@ with
             student_number,
             academic_year,
             module_code,
-            illuminate_subject,
+            raw_subject,
+            source_system,
             administration_period,
             test_date,
             _dbt_source_project,
@@ -510,6 +531,18 @@ with
             response_type_code,
             response_type_description,
         from dibels_scores
+    ),
+
+    vendor_resolved as (
+        select
+            va.*,
+
+            coalesce(x.illuminate_subject_area, va.raw_subject) as illuminate_subject,
+        from vendor_all as va
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on va.source_system = x.source_system
+            and va.raw_subject = x.raw_subject
     ),
 
     -- Reporting quarters. A score's quarter comes from the date it was
@@ -682,10 +715,11 @@ select
 
     sr.resolution_type as enrollment_resolution,
 from state_union as su
--- the resolver keys state scores on illuminate_subject (the state->course
--- subject mapping), not the raw subject_area the assessment_score_key hashes.
--- join on su.illuminate_subject = sr.subject_area or every row drops.
--- INNER scopes the fact to state scores with a resolved section.
+-- the resolver keys state scores on illuminate_subject (the crosswalk's
+-- state->Illuminate subject mapping), not the raw subject_area the
+-- assessment_score_key hashes. join on su.illuminate_subject = sr.subject_area
+-- or every row drops. INNER scopes the fact to state scores with a resolved
+-- section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
     on su.student_number = sr.powerschool_student_number
@@ -773,10 +807,11 @@ select
     cast(null as numeric) as performance_band_label_number,
 
     sr.resolution_type as enrollment_resolution,
-from vendor_all as va
--- the resolver keys vendor scores on illuminate_subject (the vendor->course
--- subject mapping), not the raw vendor subject the assessment_score_key
--- hashes. INNER scopes the fact to vendor scores with a resolved section.
+from vendor_resolved as va
+-- the resolver keys vendor scores on illuminate_subject (the crosswalk's
+-- vendor->Illuminate subject mapping), not the raw vendor subject the
+-- assessment_score_key hashes. INNER scopes the fact to vendor scores with a
+-- resolved section.
 inner join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
     on va.student_number = sr.powerschool_student_number
