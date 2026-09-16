@@ -41,24 +41,42 @@ models:
       - name: "`Student Number`"
         data_type: int64
         description: PowerSchool student number.
+        config:
+          meta:
+            contains_pii: true
       - name: "`Salesforce ID`"
         data_type: string
         description: Salesforce contact identifier for the student.
+        config:
+          meta:
+            contains_pii: true
       - name: "`Student Name`"
         data_type: string
         description: Student's full name, last name first.
+        config:
+          meta:
+            contains_pii: true
       - name: "`Student First Name`"
         data_type: string
         description: Student's first name.
+        config:
+          meta:
+            contains_pii: true
       - name: "`Student Last Name`"
         data_type: string
         description: Student's last name.
+        config:
+          meta:
+            contains_pii: true
       - name: "`Grade Level`"
         data_type: int64
         description: Grade the student is enrolled in this academic year.
       - name: "`Student Email`"
         data_type: string
         description: Student's network email address.
+        config:
+          meta:
+            contains_pii: true
       - name: "`Enroll Status`"
         data_type: string
         description: >-
