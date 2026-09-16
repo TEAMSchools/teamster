@@ -226,8 +226,6 @@ select
 
     model_type,
 
-    'Text Study' as illuminate_subject,
-
     benchmark_goal_season,
     aggregated_measure_standard_level,
     foundation_measure_standard_level,
@@ -284,7 +282,6 @@ select
 
     s.model_type,
 
-    'Text Study' as illuminate_subject,
     'NA' as benchmark_goal_season,
 
     -- Benchmark-only. PM carries no measure_standard_level_int, so prod's two

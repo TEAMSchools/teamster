@@ -243,11 +243,6 @@ models:
           must filter this column or every eligible student is counted once per
           method. It is also in max_score's partition, so the two methods do not
           rank against each other when picking a round's highest probe.
-      - name: illuminate_subject
-        data_type: string
-        description: >-
-          Course-subject mapping used by the section-enrollment resolver. All
-          DIBELS measures are reading-family, so this is constant Text Study.
       - name: _dbt_source_project
         data_type: string
         description: >-
