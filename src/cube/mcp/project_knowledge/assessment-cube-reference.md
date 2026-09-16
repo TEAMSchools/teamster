@@ -159,13 +159,38 @@ Apply to every assessment source unless a source section overrides them.
   `Outside Round` sittings lose roughly a third. So a Cube count will not
   reconcile to a vendor or state report, and the gap is expected, not a bug. Say
   which one you are quoting.
-- **Region coverage is uneven, and Paterson is the outlier.** Paterson carries
-  Illuminate and DIBELS for 2025-26 only, plus NJSLA and NJSLA-Science for
-  2022-23 and 2023-24 — and no i-Ready, STAR, or NJGPA at all. Its state history
-  therefore reaches back further than its internal history, the reverse of every
-  other region (Newark and Camden run Illuminate from 2014-15). A narrow
-  Paterson result is expected coverage, not a load failure; say which regions a
-  "network-wide" answer actually covers.
+- **Region coverage is uneven, and it moves.** Distinct students with an
+  `overall` score across 2025-26 and 2026-27, measured 2026-09-16:
+
+  | Source     | Newark | Camden | Miami | Paterson |
+  | ---------- | -----: | -----: | ----: | -------: |
+  | Illuminate | 10,219 |  3,286 |     — |      992 |
+  | i-Ready    | 10,685 |  3,569 | 1,427 |      802 |
+  | DIBELS     | 10,129 |  3,212 | 1,372 |    1,322 |
+  | STAR       |      — |      — |   413 |        — |
+  | FAST       |      — |      — |   978 |        — |
+  | FL-Science |      — |      — |   286 |        — |
+  | FL EOC     |      — |      — |    67 |        — |
+  | NJGPA      |    131 |    179 |     — |        — |
+
+  Read this as a floor on what exists, not a statement about what a region
+  administers. Notable gaps: **Miami carries no Illuminate**, STAR is
+  **Miami-only**, and Paterson has no NJGPA (no high school). Paterson's state
+  history reaches back further than its internal history — NJSLA and
+  NJSLA-Science for 2022-23 and 2023-24 — the reverse of every other region
+  (Newark and Camden run Illuminate from 2014-15).
+
+- **A coverage claim in this file can go stale with no code change, so verify
+  before repeating one.** i-Ready arrives as a single shared NJ export that the
+  Newark pipeline ingests, and region is resolved from each student's enrollment
+  rather than from the file it came in. So a region joins or leaves i-Ready
+  coverage when the vendor export changes, with no repository change and nothing
+  to review. That is exactly how this file came to claim Paterson had no i-Ready
+  while Paterson had 802 students in 2026-27. Treat every coverage statement
+  here as an observation with a date on it, and re-run the count when a
+  "network-wide" answer depends on it.
+- **A narrow result is expected coverage, not a load failure.** Say which
+  regions a "network-wide" answer actually covers.
 - **`is_foundations` marks intervention courses, and it reaches this view.**
   Sourced from `dim_courses` through the course join, `TRUE` when the section is
   a Foundations (intervention) course. It is the only intervention signal on the
@@ -334,10 +359,17 @@ Apply to every assessment source unless a source section overrides them.
   NJSLA" framing must therefore use MOY (or a prior-year EOY); an EOY-vs-NJSLA
   comparison within one year is concurrent-or-trailing, not predictive. Say
   which it is — the direction of the claim depends on it.
-- **Region coverage: Newark, Camden, and Miami only — there is no i-Ready data
-  for Paterson.** A "compare i-Ready across all regions" question therefore
-  returns three of the four regions; say so rather than implying network-wide
-  coverage.
+- **Region coverage: all four regions now, but not for the same years.** Newark
+  and Camden run from 2020-21. Miami runs 2020-21 through 2025-26. **Paterson
+  starts in 2026-27** — 802 students, 1,593 scores, measured 2026-09-16 — and
+  has nothing earlier, so any multi-year i-Ready trend is a three-region trend.
+  - **Miami has no 2026-27 i-Ready yet** while the three NJ regions do. That may
+    be a later benchmark window rather than a gap, but it is unverified — check
+    before reporting a 2026-27 network figure, because a network rate computed
+    today silently excludes Miami.
+  - Paterson appeared without any repository change, because i-Ready arrives as
+    one shared NJ export and region comes from enrollment (see Shared
+    conventions). Re-run the count rather than trusting this bullet.
 - **Growth is not in the model, and scale scores do not normalize across grade
   bands.** i-Ready's vendor growth norms (typical growth, percent progress to
   typical growth) are not ingested, so that metric cannot be computed — do not
