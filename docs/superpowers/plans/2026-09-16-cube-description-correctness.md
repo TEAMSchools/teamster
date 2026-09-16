@@ -117,7 +117,12 @@ FALSE_STRINGS: dict[str, tuple[str, ...]] = {
         # response_type values are overall / standard / group / null.
         # `strand` is not a value.
         "strand",
-        # These are null for every non-Illuminate source, not only for state.
+        # Both strings are false, for two different reasons. On
+        # percent_correct and performance_band_label_number the claim is too
+        # narrow — they are null for the vendor diagnostics as well as state.
+        # On response_type_code and response_type_description it is the wrong
+        # shape entirely: i-Ready domain rows and DIBELS sub-measure rows now
+        # POPULATE them.
         "Null for state assessments.",
         "Null for state.",
         # pct_proficient_formative covers QA, MQQ and CRQ only. Whether TP, UA,
@@ -186,6 +191,18 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 Line numbers are as of 2026-09-16. Read each member before editing; do not edit
 by line number alone.
+
+**The four `response_type*` replacements were revised once already.** They
+originally said only Illuminate populates these fields, which was true when the
+reviews behind this plan ran and is false now:
+`fct_assessment_scores_enrollment_scoped` unions i-Ready domain rows
+(`response_type = 'group'`, `response_type_code = domain_name`) and DIBELS
+sub-measure rows (`'group'` for any `measure_standard` other than `Composite`).
+Re-read those two branches of the model before writing the descriptions — this
+area is moving, and a "correction" that restates a stale claim is worse than the
+wrong description it replaces. The domain and sub-measure value lists are dated
+empirical inventories, so they stay in `assessment-cube-reference.md` and never
+go in a field description.
 
 - [ ] **Step 1: Correct `student_assessments.yml`**
 
@@ -257,22 +274,26 @@ non-Illuminate source.
 ```yaml
 - name: response_type_code
   description: >-
-    Short code identifying the response type. Null for state and vendor sources;
-    only Illuminate populates it.
+    Short code identifying the response type. Populated for Illuminate
+    standards, i-Ready domain names, and DIBELS measure standards. Null on the
+    overall or Composite row of each source, and for STAR and every state
+    source.
 ```
 
 ```yaml
 - name: response_type_description
   description: >-
-    Human-readable response-type description. Null for state and vendor sources;
-    only Illuminate populates it.
+    Human-readable response-type description. Populated alongside
+    response_type_code for Illuminate, for i-Ready domains (title-cased by
+    initcap, so "Number And Operations"), and for DIBELS measure names. Null on
+    overall rows, and for STAR and state sources.
 ```
 
 ```yaml
 - name: response_type_root_description
   description: >-
-    Description of the root (top-level) response type. Null for state and vendor
-    sources; only Illuminate populates it.
+    Description of the root (top-level) response type. Illuminate only — null
+    for STAR, for state sources, and for the i-Ready and DIBELS group rows.
 ```
 
 - [ ] **Step 4: Correct `response_type` in `student_assessment_scores.yml`**
@@ -284,12 +305,13 @@ overall, strand, standard). Null for state assessments.":
 ```yaml
 - name: response_type
   description: >-
-    Response-type breakdown. Values: overall, standard, group, null (singular
-    standard/group, not standards/groups). Not additive across types — always
-    filter it explicitly and default to overall. Only Illuminate populates
-    standard and group; every other source is null. Filter the null rows with
-    operator notSet, never equals "null", which matches the literal string and
-    silently returns zero rows.
+    Response-type breakdown. Values: overall, standard, group, null (singular,
+    not standards/groups). Not additive — always filter explicitly and default
+    to overall. Illuminate owns standard. i-Ready emits group per domain and
+    DIBELS per sub-measure, and for i-Ready those outnumber the overall rows
+    about 4.7 to 1. STAR and state are overall only. Filter nulls with operator
+    notSet, never equals "null", which matches the literal string and returns
+    zero rows.
 ```
 
 - [ ] **Step 5: Correct the two band descriptions in

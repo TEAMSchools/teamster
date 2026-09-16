@@ -23,12 +23,22 @@ Apply to every assessment source unless a source section overrides them.
 - **`response_type` — always filter it explicitly.** Values: `overall`,
   `standard`, `group`, `null` (singular `standard` / `group`, not the older
   `standards` / `groups`). Not additive across types. Default to `overall`
-  unless a standard- or group-level breakdown is explicitly requested. Only
-  Illuminate populates `standard` / `group`; every other source is
-  `response_type = null` (overall only). To isolate those null rows, filter with
-  operator `notSet` (or `set` for present) — `equals "null"` matches the literal
-  string, not SQL NULL, and silently returns zero rows. This holds for any NULL
-  filter.
+  unless a standard- or group-level breakdown is explicitly requested. To
+  isolate null rows, filter with operator `notSet` (or `set` for present) —
+  `equals "null"` matches the literal string, not SQL NULL, and silently returns
+  zero rows. This holds for any NULL filter.
+  - **`group` is no longer Illuminate-only.** i-Ready now emits one `group` row
+    per domain and DIBELS one per sub-measure, alongside their `overall` rows.
+    Illuminate still owns `standard`. STAR and every state source remain
+    `overall` only. The per-source detail is in each section below.
+  - **The blend is now severe enough to change an answer, not just shade it.**
+    For i-Ready, `group` rows outnumber subject-level rows by roughly 4.7 to 1
+    (274,013 subject-level against 1,287,062 domain rows, measured as dedupe
+    input against prod on 2026-09-16 — input rows, not view rows). A student
+    count or proficiency rate computed without `response_type = 'overall'`
+    therefore counts each student once per domain, which reads as a plausible
+    number and is wrong by a multiple. Before this change an unfiltered i-Ready
+    query was merely redundant; now it is a defect.
 - **Headline metric: `pct_proficient`.** It is the one score measure comparable
   across the incompatible scales of all sources (proficient scores / total).
   `is_mastery` is the underlying per-score proficient flag. `scale_score`,
@@ -266,7 +276,30 @@ Apply to every assessment source unless a source section overrides them.
   (`category`): Math and ELA.
 - **Grade field: use `grade_level`. `grade_level_tested` is null on every
   i-Ready row** — filtering by it returns zero rows silently.
-- `response_type = null` (overall only — no standards breakdown).
+- **`response_type` = `overall` for the subject-level score, `group` for each
+  domain.** Domain-level rows are new; the section below was written when
+  i-Ready was overall-only.
+  - `response_type_code` carries the raw domain name (`number_and_operations`,
+    `phonics`); `response_type_description` is the same string title-cased by
+    `initcap`, so it reads `Number And Operations` — capital `And` included.
+    Filter on the code, not the description.
+  - Math domains: `number_and_operations`, `algebra_and_algebraic_thinking`,
+    `geometry`, `measurement_and_data`. ELA domains: `phonological_awareness`,
+    `phonics`, `high_frequency_words`, `vocabulary`, plus two comprehension
+    families — `comprehension_informational_text` / `comprehension_literature`
+    and `reading_comprehension_informational_text` /
+    `reading_comprehension_literature` / `reading_comprehension_overall`. Which
+    family a row uses depends on the upstream export, so check the values for
+    the slice you are querying rather than assuming one naming.
+  - `comprehension_overall` is deliberately excluded from this view, as are rows
+    whose placement is `Not Assessed`. A domain total that disagrees with the
+    vendor report by those rows is expected, not a load failure.
+  - **`national_percentile` is null on every domain row** — it exists only at
+    subject level. `scale_score` and `proficiency_level` are both populated per
+    domain, and `is_mastery` uses the same two-band cutoff as the subject score.
+  - Domain rows carry the subject in `module_code`, the same value as their
+    subject-level anchor, so `module_code` alone does not separate them.
+    `response_type` does.
 - **Proficiency:** `proficiency_level` is i-Ready's grade-level placement scale
   — `3 or More Grade Levels Below`, `2 Grade Levels Below`,
   `1 Grade Level Below`, `Early On Grade Level`, `Mid or Above Grade Level`.
@@ -347,7 +380,24 @@ Apply to every assessment source unless a source section overrides them.
   share will look worse than i-Ready's for the same students — one logged
   session saw 22% versus 10% in the same grade. Compare each instrument to
   itself over time, never to the other.
-- `response_type = null` (overall only).
+- **`response_type` = `overall` for the Composite score, `group` for each
+  sub-measure.** Sub-measure rows are new; the tier guidance above was written
+  when DIBELS was Composite-only.
+  - `response_type_code` carries the measure standard and
+    `response_type_description` the measure name; both are null on the Composite
+    row. So `response_type = 'overall'` and `response_type_code notSet` select
+    the same rows.
+  - `module_code` is the literal `Composite` on **every** DIBELS row, including
+    sub-measure rows. It does not distinguish them — `response_type` does.
+  - `national_percentile` is populated per sub-measure, unlike i-Ready's domain
+    rows.
+  - **Only Benchmark rows reach this view.** Progress-monitoring sittings are
+    filtered out upstream, so a DIBELS count here is benchmark-only and will not
+    match a vendor report that includes progress monitoring.
+  - The four benchmark tiers and the comparability warning above apply to the
+    Composite score. A sub-measure carries its own tier, so do not pool tier
+    counts across sub-measures or read a sub-measure tier as the student's
+    overall tier.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated. `performance_band_label_number` is null.
