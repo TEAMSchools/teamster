@@ -199,12 +199,18 @@ models:
           stg_google_sheets__assessments__course_subject_crosswalk.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - Source_System
-            - Raw_Subject
+          arguments:
+            combination_of_columns:
+              - Source_System
+              - Raw_Subject
           config:
             severity: error
 ```
+
+`combination_of_columns` nests under `arguments:`. The flat form raises
+`MissingArgumentsPropertyInGenericTestDeprecation` at parse time, and 209 of the
+213 `unique_combination_of_columns` declarations in this project already use the
+nested form.
 
 - [ ] **Step 4: Stage the external table and build**
 
