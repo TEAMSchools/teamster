@@ -1,0 +1,7 @@
+region,grade_level,n_tested,n_projected_proficient,n_early_on,bubble_parameter,n_bubble_to_move,implied_region_pct,target
+Camden,1,144,22,29,0.98,29,0.354,0.35
+Camden,2,176,23,35,0.45,17,0.227,0.22
+Newark,1,510,122,108,0.52,59,0.355,0.35
+Newark,2,505,82,108,0.36,41,0.244,0.24
+Paterson,1,100,20,14,0.36,6,0.26,0.25
+Paterson,2,87,6,23,0.65,15,0.241,0.24
