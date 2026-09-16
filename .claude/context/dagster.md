@@ -98,7 +98,8 @@ A step failure's real exception is the **bottom of the error chain**:
 `DagsterExecutionStepExecutionError` and the day2 collector's
 `errorClass`/`errorDetail` only show the wrapper — read the chain bottom before
 theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
-rate-limiting).
+rate-limiting). On `dagster-plus` the same walk is `error.cause`, nested one
+level per link, on the event whose `event_type` is `STEP_FAILURE`.
 
 Exception — a `dbt build` step failure has an EMPTY `errorChain`; the parsed dbt
 errors (compilation error, failing model, log path) are already in the top-level

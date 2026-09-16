@@ -54,13 +54,25 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
   `job_name` does not discriminate much here anyway, because
   automation-condition runs are all `__ASSET_JOB`.
 
-- **1 job stays on the homebrew server** because this server's tool is a strict
-  subset, not because of preference. Identical arguments do NOT mean identical
-  payloads — compare the payloads before flipping anything else. `get_run_logs`
-  has no `filter_types`. Events here carry `event_type` and `error`, but the
-  order is oldest-first with a 100-event cap, so a step failure at the end of a
-  long run is several pages in. Verified: page 1 of a 100-second failed run
-  covered its first 9 seconds.
+- **1 job stays on the homebrew server, and it is a context-cost call rather
+  than a capability one.** `get_run_logs` here caps `limit` at 100 — passing
+  1000 is a validation error — and has no `filter_types`. The homebrew one
+  allows 1000 and returns only the matching events; its filtering is also
+  client-side, so the real edge is the 10x page size. Measured on the same
+  failed run: 4 calls and 329 events here, against 1 call and 2 events there,
+  for the identical `error.message`.
+  - The error payload here is RICHER, not poorer: `className`, `message`,
+    `stack` and `cause`. Walk `error.cause` for the nested parent error — it is
+    this server's equivalent of the homebrew `error.errorChain`, which came back
+    `[]` on the same event.
+  - The event-type vocabularies differ. This server uses DagsterEventType names
+    (`STEP_FAILURE`, `ASSET_MATERIALIZATION_PLANNED`); the homebrew
+    `filter_types` takes GraphQL `__typename` values
+    (`ExecutionStepFailureEvent`, `RunFailureEvent`).
+
+  Identical arguments do NOT mean identical payloads — compare the payloads
+  before flipping anything else.
+
 - **The alert route is not a substitute for reading logs.** 13 alert policies
   exist, but none fires on run failure: the run-scoped ones are `JOB_SUCCESS`
   and `JOB_LONG_RUNNING`, and the rest are asset-health, `TICK_FAILURE`,
