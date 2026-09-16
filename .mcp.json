@@ -6,7 +6,8 @@
     },
     "dagster-plus": {
       "type": "http",
-      "url": "https://mcp.agent.dagster.cloud/mcp"
+      "url": "https://mcp.agent.dagster.cloud/mcp",
+      "headersHelper": "${CLAUDE_PROJECT_DIR:-.}/scripts/dagster-plus-mcp-headers.sh"
     },
     "bigquery": {
       "command": "npx",
