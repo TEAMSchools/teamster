@@ -243,12 +243,6 @@
         "source": "github",
         "repo": "obra/superpowers"
       }
-    },
-    "superpowers-dev": {
-      "source": {
-        "source": "github",
-        "repo": "obra/superpowers"
-      }
     }
   },
   "autoMemoryEnabled": false
