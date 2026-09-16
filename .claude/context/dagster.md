@@ -39,13 +39,13 @@ opaque token.
   LOADED) → `list_runs` / `get_asset_materializations` for the asset.
 - **Schedule/sensor-launched runs report no asset selection.** Neither
   `mcp__dagster-plus__list_runs` nor `mcp__dagster-plus__get_run` returns one at
-  all, and the homebrew tools reported it as `null` for these. Recover the asset
-  keys from `mcp__dagster-plus__get_run_logs` — the
-  `ASSET_MATERIALIZATION_PLANNED` events are on page 1, one event per selected
-  asset, each naming the asset and carrying `step_key`, all at the start of the
-  log. `mcp__dagster-plus__get_run` has neither `assetSelection` nor
-  `stepKeysToExecute`, so this is the route. A `step_key` converts `__` → `/`
-  (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
+  all — verified on `140a55b5-8841-474f-bced-d1aa2cde9ffd`, an
+  automation-condition run whose `get_run` payload carries neither
+  `assetSelection` nor `stepKeysToExecute`. Recover the asset keys from
+  `mcp__dagster-plus__get_run_logs` — the `ASSET_MATERIALIZATION_PLANNED` events
+  are on page 1, one event per selected asset, each naming the asset and
+  carrying `step_key`, all at the start of the log. A `step_key` converts `__` →
+  `/` (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
   Cross-check with `get_asset_partition_statuses`, or
   `mcp__dagster-plus__get_assets` for a whole prefix, before declaring a
   backfill complete — failure-triage groupings keyed on `assetSelection`

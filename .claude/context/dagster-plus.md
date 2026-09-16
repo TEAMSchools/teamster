@@ -29,7 +29,16 @@ superset. Gotchas for that one: `.claude/context/dagster.md`.
     to the retry.
   - `assetSelection` / `stepKeysToExecute` → this server's own `get_run_logs`,
     whose `ASSET_MATERIALIZATION_PLANNED` events are on page 1, one per selected
-    asset, each carrying `step_key`.
+    asset, each carrying `step_key`. That page is the only route here:
+    `mcp__dagster__get_run_group` returned a populated `assetSelection` even for
+    automation-condition runs, and it is denied, so nothing on either server
+    hands you the selection without reading a log page.
+  - the whole re-execution chain → `list_runs` returns every run's `tags`,
+    `status` and timestamps, so a chain whose members share one page costs no
+    extra call. Otherwise walk `dagster/root_run_id`, then
+    `dagster/auto_retry_run_id` forward, one `get_run` per hop. Verified on the
+    pair `74dfbc07` (root, `will_retry: true`) and `140a55b5`
+    (`retry_number: 1`, `will_retry: false`).
   - `stepStats` → no direct replacement. This tool's `stats` gives
     `steps_succeeded` / `steps_failed` / `materializations`, and per-step
     timings come from the `STEP_START` / `STEP_SUCCESS` / `STEP_FAILURE` event
