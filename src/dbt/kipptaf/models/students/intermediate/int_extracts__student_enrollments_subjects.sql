@@ -56,7 +56,8 @@ with
             localstudentidentifier,
             is_proficient,
 
-            illuminate_subject as `subject`,
+            `subject` as raw_subject,
+            'pearson' as source_system,
             njsla_aggregated_proficiency as njsla_proficiency,
 
             academic_year + 1 as academic_year_plus,
@@ -75,7 +76,8 @@ with
 
             is_proficient,
 
-            illuminate_subject as `subject`,
+            assessment_subject as raw_subject,
+            'fldoe' as source_system,
             fast_aggregated_proficiency as proficiency,
 
             academic_year + 1 as academic_year_plus,
@@ -87,6 +89,15 @@ with
             scale_score is not null
             and assessment_name = 'FAST'
             and administration_window = 'PM3'
+    ),
+
+    prev_yr_state_test_resolved as (
+        select p.*, coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
+        from prev_yr_state_test as p
+        left join
+            {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
+            on p.source_system = x.source_system
+            and p.raw_subject = x.raw_subject
     ),
 
     prev_yr_iready as (
@@ -303,7 +314,7 @@ left join
     and co.student_number = fp.student_number
     and sj.discipline = fp.discipline
 left join
-    prev_yr_state_test as py
+    prev_yr_state_test_resolved as py
     /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
