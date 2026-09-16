@@ -209,6 +209,61 @@ def test_replay_from_inputs_is_byte_identical(tmp_path):
         assert (first / name).read_bytes() == (second / name).read_bytes()
 
 
+def _first_run_then_replay(tmp_path, replay_targets):
+    """Run once against the sheet, then replay with a different sheet answer."""
+    first, second, manifests = tmp_path / "first", tmp_path / "second", tmp_path / "m"
+    rows = roster_rows()
+    base = ["rollout", "--year", "2026", "--group", "nj_math_1_2"]
+    assert (
+        main(
+            [*base, "--out", str(first), "--manifest-dir", str(manifests)],
+            client_factory=_factory(rows),
+        )
+        == 0
+    )
+    committed = manifests / "ay2026" / "nj_math_1_2.json"
+    before = committed.read_bytes()
+    rc = main(
+        [
+            *base,
+            "--out",
+            str(second),
+            "--manifest-dir",
+            str(manifests),
+            "--input",
+            str(first),
+        ],
+        client_factory=_factory(rows, target_rows=replay_targets),
+    )
+    return rc, first, second, committed, before
+
+
+def _moved_targets():
+    return [
+        {"region": r, "grade_level": g, "target": 0.9}
+        for r in ("Newark", "Camden", "Paterson")
+        for g in (1, 2)
+    ]
+
+
+def test_replay_uses_prior_targets_not_the_sheet(tmp_path):
+    rc, first, second, _, _ = _first_run_then_replay(tmp_path, _moved_targets())
+    assert rc == 0
+    for name in ("school_goals.csv", "ps_programs.csv", "explain.csv"):
+        assert (first / name).read_bytes() == (second / name).read_bytes(), name
+
+
+def test_replay_does_not_touch_committed_manifest(tmp_path, capsys):
+    rc, _, second, committed, before = _first_run_then_replay(
+        tmp_path, _moved_targets()
+    )
+    assert rc == 0
+    assert committed.read_bytes() == before
+    # the replay still produced its own run folder
+    assert (second / "manifest.json").exists()
+    assert "replay: committed manifest left unchanged" in capsys.readouterr().out
+
+
 def test_replay_from_wrong_group_folder_is_a_clear_error(tmp_path, capsys):
     first, manifests = tmp_path / "first", tmp_path / "manifests"
     factory = _factory(roster_rows())

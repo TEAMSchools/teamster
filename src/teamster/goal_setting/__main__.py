@@ -102,6 +102,28 @@ def _check_crosswalk_covers(group, xw, xw_path: Path) -> None:
         )
 
 
+def _targets_from_prior(
+    prior_manifest: dict, folder: Path
+) -> dict[tuple[str, int], float]:
+    """Region targets as the replayed run saw them, not as the sheet reads today.
+
+    A replay exists to reproduce a frozen run from its saved inputs. Refetching
+    the targets defeats that: Teaching and Learning can edit the goals sheet
+    between the run and the replay, and the replay would silently produce
+    different goals from identical inputs.
+    """
+    targets = {
+        (g["region"], int(g["grade_level"])): float(g["target"])
+        for g in prior_manifest.get("school_goals", [])
+    }
+    if not targets:
+        raise ConfigError(
+            f"{folder}/manifest.json records no school goals, so the run's "
+            "region targets cannot be recovered for a replay."
+        )
+    return targets
+
+
 def _rollout(a: argparse.Namespace, client_factory) -> int:
     rules_path = a.rules or DEFAULT_RULES_DIR / f"ay{a.year}.yaml"
     xw_path = a.crosswalk or DEFAULT_RULES_DIR / "ps_programs.yaml"
@@ -134,7 +156,9 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
             )
         rows = archive.read_input(a.input / "inputs" / input_name, expected["sha256"])
         records = archive.rows_to_records(rows)
+        replay_targets = _targets_from_prior(prior_manifest, a.input)
     else:
+        replay_targets = None
         if group.source not in SOURCES:
             raise ConfigError(
                 f"source '{group.source}' has no adapter wired into the CLI. "
@@ -143,11 +167,12 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
         records = SOURCES[group.source].fetch(client, group, a.year)
         rows = archive.records_to_rows(records)
 
-    targets = (
-        goals_sheet.inline_targets(group)
-        if group.target.from_ == "inline"
-        else goals_sheet.fetch_targets(client, group, a.year)
-    )
+    if replay_targets is not None:
+        targets = replay_targets
+    elif group.target.from_ == "inline":
+        targets = goals_sheet.inline_targets(group)
+    else:
+        targets = goals_sheet.fetch_targets(client, group, a.year)
 
     manifest_path = a.manifest_dir / f"ay{a.year}" / f"{group.name}.json"
     prior = diff.load_prior_manifest(manifest_path)
@@ -202,12 +227,18 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
         force_stale=a.force_stale,
     )
     written = outputs.write_run(a.out, proposal, m, xw)
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(a.out / "manifest.json", manifest_path)
     print("\nwrote:")
     for w in written:
         print(f"  {w}")
-    print(f"  {manifest_path}  (commit this one)")
+    if a.input:
+        # A replay reproduces a past run; the committed manifest is the record
+        # of the run that was actually loaded, and a replay must not stand in
+        # for it.
+        print("replay: committed manifest left unchanged")
+    else:
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(a.out / "manifest.json", manifest_path)
+        print(f"  {manifest_path}  (commit this one)")
     return 0
 
 
