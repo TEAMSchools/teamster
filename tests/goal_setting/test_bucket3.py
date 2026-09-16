@@ -28,6 +28,12 @@ def test_remaining_approaching_takes_only_left_out_approaching():
     assert [r.bucket for r in out] == ["Bucket 3", "Bucket 2", None]
 
 
+def test_remaining_approaching_with_empty_reason_names_projected_level():
+    (r,) = remaining_approaching([appr_left_out(reason="", projected_level=4)], LEVELS)
+    assert r.bucket == "Bucket 3"
+    assert r.reason == "projected level 4; remaining approaching"
+
+
 def test_stretch_reachers_takes_anyone_unplaced_whose_stretch_level_is_proficient():
     out = stretch_reachers(
         [

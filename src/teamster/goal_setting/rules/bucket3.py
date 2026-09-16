@@ -17,12 +17,16 @@ def _is_stretch_reacher(r: StudentRecord, levels: Levels) -> bool:
 def remaining_approaching(
     records: list[StudentRecord], levels: Levels
 ) -> list[StudentRecord]:
-    return [
-        r.with_(bucket="Bucket 3", reason=f"{r.reason}; remaining approaching")
-        if _unplaced_tested(r) and r.is_approaching
-        else r
-        for r in records
-    ]
+    out = []
+    for r in records:
+        if _unplaced_tested(r) and r.is_approaching:
+            base = r.reason or f"projected level {r.projected_level}"
+            out.append(
+                r.with_(bucket="Bucket 3", reason=f"{base}; remaining approaching")
+            )
+        else:
+            out.append(r)
+    return out
 
 
 def stretch_reachers(
