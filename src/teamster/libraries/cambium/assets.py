@@ -1,41 +1,42 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
-# Spring is the only administration Cambium sends. The fall tokens were
-# Pearson-era cruft and never appeared in a Cambium file.
-#
-# Closed list, not an open `\w+`. A token that matches the filename regex but is
-# NOT a declared partition raises inside Dagster's resolve_run_requests, which
-# processes every run request for a tick in one pass -- so the whole tick fails,
-# the cursor is not persisted on FAILURE, the file is re-listed forever, and
-# every one of that region's Couchdrop assets stalls until a redeploy. Bounded,
-# an unexpected token fails to MATCH instead, which skips the file and leaves
-# the rest of the sensor working.
-ADMINISTRATIONS = ["Spring"]
 
-# Not named fiscal_year: this is the 4-digit year as it appears in the filename,
-# while academic year comes from the file's own assessment_year field. The range
-# covers the value whether Cambium means calendar year or school-year-end year.
-# Range start is the first Cambium administration. Range end is exclusive:
-# results for an academic year land in the NEXT fiscal year, so the current
-# fiscal year itself has no results yet.
-FIRST_ADMINISTRATION_YEAR = 2026
+def build_partitions_def(
+    current_fiscal_year: int,
+    first_administration_year: int,
+    administrations: list[str],
+) -> MultiPartitionsDefinition:
+    r"""Build a Cambium summative feed's partitions definition.
 
-
-def build_partitions_def(current_fiscal_year: int) -> MultiPartitionsDefinition:
-    """Build the partitions definition every Cambium summative feed shares.
+    Both dimensions are closed lists rather than an open `\d{4}` or `\w+`, and
+    `build_remote_file_regex` builds the filename alternations from them. A
+    token that MATCHES the regex but is not a declared partition raises inside
+    Dagster's resolve_run_requests, which processes every run request for a tick
+    in one pass -- so the whole tick fails, the cursor is not persisted, the file
+    is re-listed forever, and every one of that region's Couchdrop assets stalls
+    until a redeploy. Closed, an unexpected token fails to match instead, which
+    skips the file and leaves the rest of the sensor working.
 
     Args:
         current_fiscal_year: the code location's `CURRENT_FISCAL_YEAR.fiscal_year`.
+            The range ends EXCLUSIVE of it, because results for an academic year
+            land in the NEXT fiscal year, so the current one has no results yet.
+        first_administration_year: the 4-digit year of the region's first Cambium
+            administration. Not a fiscal year: this is the year as it appears in
+            the filename, while academic year comes from the file's own
+            `assessment_year` field. A range covers the value whether Cambium
+            means calendar year or school-year-end year.
+        administrations: the season tokens Cambium puts in the filename.
     """
     return MultiPartitionsDefinition(
         {
             "administration_year": StaticPartitionsDefinition(
                 [
                     str(year)
-                    for year in range(FIRST_ADMINISTRATION_YEAR, current_fiscal_year)
+                    for year in range(first_administration_year, current_fiscal_year)
                 ]
             ),
-            "administration": StaticPartitionsDefinition(ADMINISTRATIONS),
+            "administration": StaticPartitionsDefinition(administrations),
         }
     )
 
@@ -49,8 +50,8 @@ def build_remote_file_regex(
 
     The alternations are read back off `partitions_def` rather than from a
     parallel list, so a filename this regex matches always captures a DECLARED
-    partition key. That invariant used to rest on two module constants being
-    edited together in each code location; here it holds by construction.
+    partition key. The invariant holds by construction, not by passing the same
+    values to two functions.
 
     Args:
         partitions_def: the asset's own partitions definition, from
@@ -69,9 +70,9 @@ def build_remote_file_regex(
 
     def alternation(dimension: str) -> str:
         # Longest first, so a token that is a prefix of another does not shadow
-        # it. Moot while ADMINISTRATIONS holds one value, but the Pearson-era
-        # tokens included both `Fall` and `FallBlock`, and `Fall|FallBlock`
-        # matches `Fall` and leaves `Block` to fail against the next literal.
+        # it. Moot while a region sends one season, but the Pearson-era tokens
+        # included both `Fall` and `FallBlock`, and `Fall|FallBlock` matches
+        # `Fall` and leaves `Block` to fail against the next literal.
         return "|".join(sorted(dimensions[dimension], key=len, reverse=True))
 
     return (

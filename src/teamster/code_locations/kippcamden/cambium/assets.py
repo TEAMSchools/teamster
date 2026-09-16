@@ -13,7 +13,13 @@ key_prefix = [CODE_LOCATION, "cambium"]
 DISTRICT_CODE = "1799"
 
 partitions_def = build_partitions_def(
-    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year
+    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    # Spring 2026 is the first administration New Jersey reported through
+    # Cambium; everything before it came through Pearson.
+    first_administration_year=2026,
+    # Spring is the only season Cambium sends. The fall tokens were Pearson-era
+    # cruft and never appeared in a Cambium filename.
+    administrations=["Spring"],
 )
 
 # Cambium has not delivered an NJSLA file yet, so the tail of the njsla and
