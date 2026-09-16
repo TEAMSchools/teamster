@@ -36,6 +36,17 @@ def test_school_missing_from_roster_but_in_baseline_is_an_error():
         [counts()], CFG, {("Newark", "TEAM", 1): 100, ("Newark", "Rise", 1): 80}
     )
     assert not res.ok and "Rise" in res.errors[0] and "0 students" in res.errors[0]
+    assert "Math" in res.errors[0]
+
+
+def test_roster_exactly_at_upper_tolerance_is_not_a_warning():
+    res = check([counts(n_roster=115, n_tested=110)], CFG, {("Newark", "TEAM", 1): 100})
+    assert res.ok and res.warnings == []
+
+
+def test_roster_exactly_at_lower_tolerance_is_not_an_error():
+    res = check([counts(n_roster=85, n_tested=85)], CFG, {("Newark", "TEAM", 1): 100})
+    assert res.ok
 
 
 def test_no_baseline_is_a_single_warning():

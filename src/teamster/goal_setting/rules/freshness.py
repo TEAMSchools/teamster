@@ -33,6 +33,8 @@ def check(
         res.errors.append("roster fetch returned 0 rows")
         return res
 
+    subject = counts[0].subject
+
     for c in counts:
         where = f"{c.region} {c.school} grade {c.grade_level} {c.subject}"
         share = 0.0 if c.n_roster == 0 else c.n_tested / c.n_roster
@@ -48,8 +50,8 @@ def check(
                     f"{where}: no baseline row; {c.n_roster} students fetched"
                 )
                 continue
-            low = base * (1 - cfg.roster_tolerance)
-            high = base * (1 + cfg.roster_tolerance)
+            low = round(base * (1 - cfg.roster_tolerance), 6)
+            high = round(base * (1 + cfg.roster_tolerance), 6)
             if c.n_roster < low:
                 res.errors.append(
                     f"{where}: roster {c.n_roster} is below baseline {base} "
@@ -70,7 +72,7 @@ def check(
         for (region, school, grade), base in sorted(baseline.items()):
             if (region, school, grade) not in fetched:
                 res.errors.append(
-                    f"{region} {school} grade {grade}: 0 students fetched, "
-                    f"baseline {base}"
+                    f"{region} {school} grade {grade} {subject}: 0 students "
+                    f"fetched, baseline {base}"
                 )
     return res
