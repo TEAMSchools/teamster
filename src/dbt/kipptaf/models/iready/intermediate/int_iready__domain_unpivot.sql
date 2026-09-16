@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             student_id,
             `subject`,
+            illuminate_subject,
             academic_year_int,
             `start_date`,
             completion_date,
@@ -94,6 +95,7 @@ with
 select
     student_id,
     `subject`,
+    illuminate_subject,
     academic_year_int,
     `start_date`,
     completion_date,
