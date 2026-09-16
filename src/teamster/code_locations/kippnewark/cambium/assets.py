@@ -1,7 +1,6 @@
 from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kippnewark.cambium.schema import NJGPA_SCHEMA, NJSLA_SCHEMA
 from teamster.libraries.cambium.assets import (
-    UNKNOWN_FILENAME_SUFFIX_REGEX,
     build_partitions_def,
     build_remote_file_regex,
 )
@@ -42,7 +41,9 @@ njsla = build_sftp_file_asset(
     remote_file_regex=build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
-        filename_suffix_regex=UNKNOWN_FILENAME_SUFFIX_REGEX,
+        # Cambium has sent no NJSLA file, so the subject token is a guess;
+        # optional, so the asset matches whether it carries one or not.
+        filename_suffix_regex=r"(_\w+)?",
     ),
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
@@ -58,7 +59,9 @@ njsla_science = build_sftp_file_asset(
     remote_file_regex=build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
-        filename_suffix_regex=UNKNOWN_FILENAME_SUFFIX_REGEX,
+        # Cambium has sent no NJSLA file, so the subject token is a guess;
+        # optional, so the asset matches whether it carries one or not.
+        filename_suffix_regex=r"(_\w+)?",
     ),
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,

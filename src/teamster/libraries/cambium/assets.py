@@ -1,18 +1,5 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
-# Pass as `filename_suffix_regex` for a feed whose filename Cambium has not sent
-# yet. Cambium replaced Pearson's trailing `_Spring` with `_GPA` on NJGPA, so a
-# feed it has never delivered may carry a subject token there, or none at all;
-# optional, the asset matches either way. Replace with the literal token once a
-# real file lands.
-#
-# Permissive is safe only because `remote_dir_regex` scopes each asset to its
-# own folder and the sensor anchors its match at the start of the path, so
-# `cambium/njsla` cannot match a path under `cambium/njsla_science`. Two files
-# in one folder still raise "Found multiple files matching" inside
-# `build_sftp_file_asset`, which is the loud failure we want.
-UNKNOWN_FILENAME_SUFFIX_REGEX = r"(_\w+)?"
-
 
 def build_partitions_def(
     current_fiscal_year: int,
@@ -72,9 +59,15 @@ def build_remote_file_regex(
         district_code: the region's 4-digit NJ district code, hardcoded rather
             than matched with `\d+` because each region has its own Couchdrop
             folder and `build_sftp_file_asset` raises on multiple matches.
-        filename_suffix_regex: the fragment between `Record_File` and `.csv`.
-            NJGPA's is the literal `_GPA`. NJSLA has sent no file yet, so its
-            suffix is an optional group -- see the call site.
+        filename_suffix_regex: the fragment between `Record_File` and `.csv`,
+            a literal token where Cambium has delivered a file. A feed Cambium
+            has never sent can pass a permissive group instead, which is safe
+            because `remote_dir_regex` scopes each asset to its own folder and
+            the sensor anchors its match at the start of the path -- so
+            `cambium/njsla` cannot match a path under `cambium/njsla_science`.
+            Two files landing in one folder still raise "Found multiple files
+            matching" inside `build_sftp_file_asset`, which is the loud failure
+            we want.
     """
     dimensions = {
         d.name: d.partitions_def.get_partition_keys()
