@@ -24,9 +24,10 @@ log() { printf '[cloud-setup] %s\n' "$*"; }
 # automatically. The three third-party marketplaces have to be registered here
 # or their plugins are silently missing for the whole session.
 #
-# Note the marketplace NAME comes from the marketplace repo's own manifest, not
-# from the key used in extraKnownMarketplaces: obra/superpowers registers as
-# "superpowers-dev".
+# Each marketplace's registered NAME comes from its own manifest, and an add is
+# refused when that name is already declared in settings against a different
+# repo. obra/superpowers-marketplace is the marketplace; obra/superpowers is one
+# of the plugins inside it, which self-names "superpowers-dev".
 # ---------------------------------------------------------------------------
 
 add_marketplace() {
@@ -43,11 +44,11 @@ install_plugin() {
 
 add_marketplace "dagster-io/skills"
 add_marketplace "dbt-labs/dbt-agent-skills"
-add_marketplace "obra/superpowers"
+add_marketplace "obra/superpowers-marketplace"
 
 install_plugin "dagster-expert@dagster"
 install_plugin "dbt@dbt-agent-marketplace"
-install_plugin "superpowers@superpowers-dev"
+install_plugin "superpowers@superpowers-marketplace"
 
 # ---------------------------------------------------------------------------
 # 2. gke-mcp binary
