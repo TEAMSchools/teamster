@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from teamster.goal_setting.adapters import sql_list
+from teamster.goal_setting.adapters import QueryClient, sql_list
 from teamster.goal_setting.config import Crosswalk
 
 SPENROLLMENTS = "`teamster-332318.kipptaf_powerschool.int_powerschool__spenrollments`"
@@ -70,7 +70,7 @@ def compare(xw: Crosswalk, live_rows: list[dict]) -> list[str]:
     return problems
 
 
-def run(client, xw: Crosswalk) -> list[str]:
+def run(client: QueryClient, xw: Crosswalk) -> list[str]:
     regions = sorted({p.region for p in xw.programs})
     rows = [
         {

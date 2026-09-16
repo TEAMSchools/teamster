@@ -12,7 +12,7 @@ real plan run compares the resulting tested count against the SY27 one-off
 
 from __future__ import annotations
 
-from teamster.goal_setting.adapters import sql_list
+from teamster.goal_setting.adapters import QueryClient, sql_list
 from teamster.goal_setting.adapters.roster_sql import ROSTER, roster_where
 from teamster.goal_setting.config import ConfigError, Group
 from teamster.goal_setting.records import StudentRecord
@@ -55,6 +55,18 @@ def sql(group: Group, academic_year: int) -> str:
     # trunk-ignore(bandit/B608): see comment above
     return f"""
     with
+        co as (
+            select
+                region,
+                student_number,
+                school,
+                schoolid,
+                grade_level,
+                iready_subject,
+                {_region_case(group)} as iready_region
+            from {ROSTER} as co
+            where {roster_where(group, academic_year)}
+        ),
         xw as (
             select grade_level, `level`, scale_low, scale_high
             from {CROSSWALK}
@@ -101,19 +113,18 @@ def sql(group: Group, academic_year: int) -> str:
         co.schoolid as school_id,
         co.grade_level,
         co.iready_subject as subject,
-        ir.scale_plus_typical is not null as is_tested,
         ir.level_typical as projected_level,
         ir.scale_plus_typical as projected_score,
-        ir.level_stretch as stretch_level
-    from {ROSTER} as co
+        ir.level_stretch as stretch_level,
+        ir.scale_plus_typical is not null as is_tested
+    from co
     left join ir_lvl as ir
         on co.student_number = ir.student_number
-        and ir.region = {_region_case(group)}
-    where {roster_where(group, academic_year)}
+        and co.iready_region = ir.region
     """
 
 
-def fetch(client, group: Group, academic_year: int) -> list[StudentRecord]:
+def fetch(client: QueryClient, group: Group, academic_year: int) -> list[StudentRecord]:
     rows = client.query(sql(group, academic_year)).result()
     return [
         StudentRecord(

@@ -28,7 +28,7 @@ class FakeClient:
         self.live_programs = live_programs
         self.n_queries = 0
 
-    def query(self, sql: str):
+    def query(self, sql: str, job_config=None):
         self.n_queries += 1
         if "int_iready__diagnostic_results" in sql:
             return FakeResult(self.roster_rows)
@@ -307,6 +307,56 @@ def test_replay_from_wrong_group_folder_is_a_clear_error(tmp_path, capsys):
         client_factory=factory,
     )
     assert rc == 1 and "no input entry" in capsys.readouterr().err
+
+
+def _k_group_targets():
+    # grade 0 satisfies nj_math_k's own missing-target check; grade 1 is what
+    # the FakeClient's fixed roster rows (all grade_level=1) actually need at
+    # the school_goal step.
+    return [
+        {"region": r, "grade_level": g, "target": 0.5}
+        for r in ("Newark", "Camden", "Paterson")
+        for g in (0, 1)
+    ]
+
+
+def test_against_folder_from_another_group_is_a_clear_error(tmp_path, capsys):
+    first, manifests = tmp_path / "first", tmp_path / "manifests"
+    main(
+        [
+            "rollout",
+            "--year",
+            "2026",
+            "--group",
+            "nj_math_1_2",
+            "--out",
+            str(first),
+            "--manifest-dir",
+            str(manifests),
+        ],
+        client_factory=_factory(roster_rows()),
+    )
+    capsys.readouterr()
+    rc = main(
+        [
+            "rollout",
+            "--year",
+            "2026",
+            "--group",
+            "nj_math_k",
+            "--out",
+            str(tmp_path / "k"),
+            "--manifest-dir",
+            str(manifests),
+            "--against",
+            str(first),
+            "--plan",
+        ],
+        client_factory=_factory(roster_rows(), target_rows=_k_group_targets()),
+    )
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "nj_math_1_2" in err and "nj_math_k" in err
 
 
 def test_second_run_diffs_against_committed_manifest(tmp_path, capsys):

@@ -31,6 +31,12 @@ def test_existing_bucket_2_and_3_are_kept():
     assert [r.bucket4_outcome for r in out] == [None, None]
 
 
+def test_untouched_approaching_student_gets_an_approaching_reason():
+    (r,) = finalize([student(is_approaching=True, projected_level=4, reason="")])
+    assert (r.bucket, r.bucket4_outcome) == ("Bucket 4", "below")
+    assert r.reason == "projected level 4, approaching, not selected"
+
+
 def test_left_out_approaching_becomes_bucket_4_below_with_rank_reason():
     (r,) = finalize(
         [

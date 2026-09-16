@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from teamster.goal_setting.adapters import sql_list
+from teamster.goal_setting.adapters import QueryClient, sql_list
 from teamster.goal_setting.config import Group
 from teamster.goal_setting.rules.freshness import Baseline
 
@@ -42,7 +42,9 @@ def baseline_sql(group: Group, academic_year: int, as_of: date) -> str:
     """
 
 
-def fetch_baseline(client, group: Group, academic_year: int, as_of: date) -> Baseline:
+def fetch_baseline(
+    client: QueryClient, group: Group, academic_year: int, as_of: date
+) -> Baseline:
     rows = client.query(baseline_sql(group, academic_year, as_of)).result()
     return {
         (r["region"], r["school"], int(r["grade_level"])): int(r["n"]) for r in rows

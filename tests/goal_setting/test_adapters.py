@@ -45,7 +45,8 @@ def test_iready_sql_names_group_filters():
     assert "stg_google_sheets__iready__crosswalk" in q
     assert "TODO(#5317)" in q
     assert "'TEAM Academy Charter School'" in q
-    assert "ir.region = case co.region" in q
+    assert "as iready_region" in q
+    assert "co.iready_region = ir.region" in q
 
 
 def test_iready_sql_rejects_unknown_region():

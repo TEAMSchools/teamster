@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from teamster.goal_setting.adapters import sql_list
+from teamster.goal_setting.adapters import QueryClient, sql_list
 from teamster.goal_setting.config import ConfigError, Group
 
 GOALS = "`teamster-332318.kipptaf_assessments.int_assessments__academic_goals`"
@@ -56,7 +56,7 @@ def targets_from_rows(rows: list[dict], group: Group, academic_year: int) -> Tar
     return targets
 
 
-def fetch_targets(client, group: Group, academic_year: int) -> Targets:
+def fetch_targets(client: QueryClient, group: Group, academic_year: int) -> Targets:
     rows = [dict(r) for r in client.query(sql(group, academic_year)).result()]
     return targets_from_rows(rows, group, academic_year)
 

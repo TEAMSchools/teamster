@@ -31,9 +31,14 @@ def finalize(records: list[StudentRecord]) -> list[StudentRecord]:
                 )
             )
         else:
-            reason = (
-                r.reason or f"projected level {r.projected_level}, below approaching"
-            )
+            if r.reason:
+                reason = r.reason
+            elif r.is_approaching:
+                reason = (
+                    f"projected level {r.projected_level}, approaching, not selected"
+                )
+            else:
+                reason = f"projected level {r.projected_level}, below approaching"
             out.append(
                 r.with_(bucket="Bucket 4", bucket4_outcome="below", reason=reason)
             )

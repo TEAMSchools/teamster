@@ -13,6 +13,7 @@ import argparse
 import csv
 import shutil
 import sys
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
@@ -24,7 +25,13 @@ from teamster.goal_setting import (
     show,
     verify_crosswalk,
 )
-from teamster.goal_setting.adapters import archive, goals_sheet, iready_boy, roster_sql
+from teamster.goal_setting.adapters import (
+    QueryClient,
+    archive,
+    goals_sheet,
+    iready_boy,
+    roster_sql,
+)
 from teamster.goal_setting.config import ConfigError, load_crosswalk, load_rules
 from teamster.goal_setting.pipeline import FreshnessError, run_group
 from teamster.goal_setting.rules.invariants import InvariantError
@@ -124,7 +131,7 @@ def _targets_from_prior(
     return targets
 
 
-def _rollout(a: argparse.Namespace, client_factory) -> int:
+def _rollout(a: argparse.Namespace, client_factory: Callable[[], QueryClient]) -> int:
     rules_path = a.rules or DEFAULT_RULES_DIR / f"ay{a.year}.yaml"
     xw_path = a.crosswalk or DEFAULT_RULES_DIR / "ps_programs.yaml"
     rules = load_rules(rules_path)
@@ -209,6 +216,26 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
     )
     student_depth = bool(a.against and (a.against / "student_buckets.csv").exists())
     if student_depth:
+        against_manifest = diff.load_prior_manifest(a.against / "manifest.json")
+        found_group = (
+            "no manifest.json"
+            if against_manifest is None
+            else against_manifest["group"]
+        )
+        found_year = (
+            "no manifest.json"
+            if against_manifest is None
+            else against_manifest["academic_year"]
+        )
+        if (
+            against_manifest is None
+            or found_group != group.name
+            or found_year != a.year
+        ):
+            raise ConfigError(
+                f"{a.against} is a run of {found_group} for academic_year "
+                f"{found_year}, not {group.name} {a.year}"
+            )
         with (a.against / "student_buckets.csv").open() as fh:
             report = diff.add_student_depth(
                 report, list(csv.DictReader(fh)), proposal.records
@@ -263,7 +290,10 @@ def _rollout(a: argparse.Namespace, client_factory) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None, client_factory=adapters.client) -> int:
+def main(
+    argv: list[str] | None = None,
+    client_factory: Callable[[], QueryClient] = adapters.client,
+) -> int:
     a = _parser().parse_args(argv)
     try:
         if a.cmd == "rollout":
