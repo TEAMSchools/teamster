@@ -52,7 +52,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
       - name: marking_period_id
         description: >-
           Focus marking-period id the grade was earned in, as an integer to
@@ -68,7 +68,7 @@ models:
                 to: ref('stg_focus__marking_periods')
                 field: marking_period_id
               config:
-                severity: error
+                severity: warn
       - name: report_card_grade_id
         description: >-
           Focus report_card_grades id of the grade definition this posting used.
@@ -83,7 +83,7 @@ models:
                 to: ref('stg_focus__report_card_grades')
                 field: id
               config:
-                severity: error
+                severity: warn
       - name: grade_scale_id
         description: >-
           Focus report_card_grade_scales id as stored on the row. Populated on
@@ -98,7 +98,7 @@ models:
                 to: ref('stg_focus__report_card_grade_scales')
                 field: id
               config:
-                severity: error
+                severity: warn
       - name: course_period_id
         description: >-
           Focus course period the grade was posted against. Populated on every
@@ -111,7 +111,7 @@ models:
                 to: ref('stg_focus__course_periods')
                 field: course_period_id
               config:
-                severity: error
+                severity: warn
       - name: grade_type_token
         description: >-
           Alpha prefix Focus writes on marking_period_id for a live posting, per

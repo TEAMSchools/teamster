@@ -3,13 +3,19 @@ models:
     columns:
       - name: grade_level
         data_type: string
+        description: Grade level as an integer, K mapped to 0.
       - name: measure_standard
         data_type: string
+        description: The measure the row applies to, e.g. Reading Fluency (ORF).
       - name: measure_name_code
         data_type: string
+        description: Short measure abbreviation, e.g. ORF.
       - name: description
         data_type: string
+        description: Plain-language description of what the measure assesses.
       - name: measure_standard_translation
         data_type: string
+        description: Spanish translation of the measure standard name.
       - name: description_translation
         data_type: string
+        description: Spanish translation of the measure description.
