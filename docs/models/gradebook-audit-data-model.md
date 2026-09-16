@@ -178,8 +178,50 @@ report. The July 2026 split moved that branch's logic into its own model,
 for ops review instead — `rpt_tableau__gradebook_audit` now carries zero student
 PII. See both models' own sections below for the current design.
 
-Both models filter `school_level_alt != 'ES'` and
-`_dbt_source_project != 'kippmiami'`.
+Both models filter `school_level_alt != 'ES'`,
+`_dbt_source_project != 'kippmiami'`, and `exclude_from_gpa = 0`, and both
+exclude KIPP Newark Lab's Advisory course (`course_number != 'SEM22106G1'`).
+
+**Course-level scope.** Non-academic courses leave the audit two different ways,
+and the distinction matters when adding a new exclusion:
+
+- **Incidentally, via `exclude_from_gpa = 0`** — Lunch, Early Dismissal and
+  Study Hall (the `LOG*` course numbers) all carry `excludefromgpa = 1` in
+  PowerSchool, so they never enter scope. No explicit rule names them here.
+- **Explicitly, via `course_number != 'SEM22106G1'`** — KIPP Newark Lab's
+  Advisory, the one graded course (`exclude_from_gpa = 0`) that should not be
+  held to the standard bar. Lab is the only school that runs it, and it is
+  expected to carry roughly one grade per week. Because
+  `int_powerschool__u_expectations_qtd_unpivot` is keyed on
+  `region × school_level × academic_year × quarter × category` with no
+  course-level grain, advisory cannot be given its own expectation — it inherits
+  the Newark/HS bar and fails `not_enough_assignments` on nearly every category
+  row. Excluding it is the cheap fix; a real per-course expectation would be a
+  grain change cascading through every downstream join. Added September 2026
+  (Zendesk 482117).
+
+Excluding advisory drops teachers who teach _only_ advisory out of the model
+entirely, so Lab's teacher denominator falls (51 → 48 at the time of the
+change). That is intended — a teacher with no audited sections has no gradebook
+to audit — but it means the exclusion moves the denominator, not just the
+numerator, on any teacher-level rate built from this model.
+
+All of these scope predicates use `!=`, which drops NULLs along with the
+excluded value. None of `course_number`, `school_level_alt`,
+`_dbt_source_project` or `exclude_from_gpa` carries a `not_null` test, and all
+four are fully populated in AY 2026-2027 — but if rows ever go missing from the
+audit with no obvious cause, check those columns for NULLs before suspecting the
+flag logic.
+
+Two sibling models (`int_powerschool__student_course_grades_spine`,
+`rpt_tableau__gradebook_gpa`) filter non-academic courses with a shared
+`cc_course_number not in (...)` list naming all of the above plus `SEM22106S1`.
+That list is deliberately **not** reused here: every `LOG*` entry is already
+redundant with `exclude_from_gpa = 0`, and `SEM22106S1` has no sections in AY
+2026-2027. If advisory ever needs excluding at another school, add the course
+number explicitly rather than widening to `course_name` or `credit_type` —
+`credit_type = 'STUDY'` would also catch College and Career III/IV, Life Skills
+I–IV and Student Government, which are audited today.
 
 Sections whose PowerSchool term overlaps only a single quarter are excluded
 upstream by `int_extracts__course_schedule_by_term`
@@ -451,10 +493,11 @@ table in the `extracts` schema, matching its `int_extracts__course_*` siblings.
 
 Source is `int_extracts__course_enrollments_by_term`, filtered `rn_year = 1`,
 `enroll_status = 0`, `not is_out_of_district`, `school_level_alt != 'ES'`,
-`_dbt_source_project != 'kippmiami'`, `exclude_from_gpa = 0`, and inner-joined
-to `int_extracts__course_schedule_by_term` (the orphan-scoping fix described
-above). Grades/comments come from the `quarter_course_grades` union it defines
-(`base_powerschool__final_grades` for the current year,
+`_dbt_source_project != 'kippmiami'`, `exclude_from_gpa = 0`,
+`course_number != 'SEM22106G1'` (see _Course-level scope_ above), and
+inner-joined to `int_extracts__course_schedule_by_term` (the orphan-scoping fix
+described above). Grades/comments come from the `quarter_course_grades` union it
+defines (`base_powerschool__final_grades` for the current year,
 `stg_powerschool__storedgrades` for the prior year during the summer toggle —
 the summer-toggle markers live here). Carries full student PII (name, student
 number) — acceptable because it is an internal intermediate read only by the two

@@ -11,7 +11,7 @@ models:
       concept. Three boolean flags carried on every row: not_enough_assignments
       (category_summary rows only), has_grade_above_100 and
       has_grade_below_70_no_comment (broadcast from an aggregate over
-      rpt_gsheets__gradebook_audit_student_flags — section x quarter facts,
+      int_extracts__gradebook_audit_student_flags — section x quarter facts,
       identical across all rows for a given section). Two health booleans,
       computed across all of a teacher's sections for the quarter and broadcast
       onto every row: is_healthy_gradebook_all_flags (false if any of the three
