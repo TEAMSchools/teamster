@@ -9,9 +9,10 @@ and the methodology digest `sy27-goal-setting-reference.md` in the same folder.
 
 Every fall the data team sets a school goal for each school, grade, and subject,
 and places each student in Bucket 1 to 4. The stored results live in two places:
-school and region goals in the academic goals Google Sheet
-(`stg_google_sheets__assessments__academic_goals`), and buckets in PowerSchool
-special programs named `Bucket N - Subject`, read by
+school and region goals in the academic goals Google Sheet (staged as
+`stg_google_sheets__assessments__academic_goals` and read through
+`int_assessments__academic_goals`, the intermediate that carries `region`), and
+buckets in PowerSchool special programs named `Bucket N - Subject`, read by
 `int_extracts__student_enrollments_subjects.nj_student_tier`. Every dashboard,
 the tier roster sheet, and the Illuminate programs feed read those stored
 values.
@@ -204,12 +205,20 @@ and both land every student in Bucket 4. The gate checks, per school and grade:
   `--baseline-date`. A hand-set floor is the fallback, not the primary.
 - Tested share against the group's `min_tested_share`.
 
-Two severities. A tested share or roster count below the hard floor is an error
-and aborts with the school, grade, and both numbers printed. Drift outside
-tolerance but above the floor is a warning, printed in the summary and recorded
-in the manifest as `gate_warnings`, so a real enrollment change does not train
-the team to override. `--force-stale` overrides an error and stamps
-`gate_overridden: true` plus the failing rows into the manifest.
+Roster drift is not symmetric. A roster count below `baseline * (1 - tolerance)`
+is an error and aborts with the school, grade, and both numbers printed, because
+a short read and a real decline look the same and only one of them is safe to
+compute from. A count above `baseline * (1 + tolerance)` is a warning, printed
+in the summary and recorded in the manifest as `gate_warnings`: growth cannot be
+a truncated read. A tested share below `min_tested_share` is an error. A school
+with no baseline row is a warning.
+
+An enrollment decline past the tolerance is therefore a real stop, and clearing
+it takes either `--force-stale` or a `--baseline-date` closer to today, whose
+snapshot reflects the decline. `--force-stale` stamps `gate_overridden: true`
+plus the failing rows into the manifest, and a manifest carrying that flag is
+never used as the next run's baseline — the run says so and asks for
+`--baseline-date`.
 
 ### Rules
 
@@ -278,6 +287,13 @@ withdrawals as the cause, and a one-line verdict: `no change`,
 The last verdict exits non-zero unless `--allow-reclassification` is passed, so
 a re-run after a partial PowerSchool load cannot silently reclassify a student
 who already holds a program.
+
+A run with a prior manifest but no `--against` folder therefore prints a warning
+that student-level reclassification was not checked, above the summary tables,
+so a silent count-depth diff is never mistaken for a clean one. An `--input`
+replay is the other side of the same rule: it takes its region targets from the
+run it replays rather than from today's goals sheet, and it never overwrites the
+committed manifest, which is the record of the run that was actually loaded.
 
 The student-level baseline is an artifact the design never commits. If the prior
 folder is gone, the diff degrades to counts, and a school holding at 12 Bucket 2
@@ -369,11 +385,13 @@ the same delta until new form rows arrive.
 
 After the goals are pasted and the programs imported, this command reads the
 stored state back and diffs it against the run. Goals: query
-`stg_google_sheets__assessments__academic_goals` and compare every school row
-against the manifest's school goals, reporting missing, extra, and mismatched
-rows. Buckets: query `int_powerschool__spenrollments` for the group's regions,
-year, and program ids, join the form responses, and classify every student in
-the run's `student_buckets.csv` plus every student holding a bucket program:
+`int_assessments__academic_goals` — the intermediate over the sheet, which
+carries `region`, and the same model the rollout reads targets from — and
+compare every school row against the manifest's school goals, reporting missing,
+extra, and mismatched rows. Buckets: query `int_powerschool__spenrollments` for
+the group's regions, year, and program ids, join the form responses, and
+classify every student in the run's `student_buckets.csv` plus every student
+holding a bucket program:
 
 - `match`: stored bucket equals the run's bucket.
 - `not_loaded`: in the run, no program in PowerSchool.
