@@ -418,10 +418,21 @@ In `dibels_scores`:
             'amplify' as source_system,
 ```
 
-`internal_scores` gets no crosswalk. Give it
-`cast(null as string) as raw_subject,` and
-`cast(null as string) as source_system,` so the UNION ALL branches line up
-positionally.
+`internal_scores` gets no crosswalk, but it must NOT be nulled out. It carries a
+real `subject_area` sourced from `int_assessments__scaffold` — 2,263,546 rows,
+84% of this model, all non-null. Pass that value through as the raw column and
+leave only the source key null:
+
+```sql
+            subject_area as raw_subject,
+
+            cast(null as string) as source_system,
+```
+
+The join then misses on the null `source_system`, and the `coalesce` in Step 4
+falls back to `raw_subject`, returning the scaffold's own `subject_area`
+unchanged. Giving `raw_subject` a null here instead would null `subject_area`
+for every internal row and drop all of them at the resolver.
 
 - [ ] **Step 3: Carry both new columns through the `scores` union**
 
@@ -456,9 +467,10 @@ Keep any column the existing tail already projects. `coalesce` is a simple
 function, so sqlfluff ST06 wants it after the plain column refs — that is why it
 sits last.
 
-`internal_scores` rows carry NULL on both key columns, so the join misses and
-`coalesce` returns NULL — which is what `subject_area` already is for internal
-rows today.
+`internal_scores` rows carry a null `source_system`, so the join misses and
+`coalesce` returns their `raw_subject` — the scaffold's `subject_area`, passed
+through unchanged. Prod has zero null `subject_area` values across all 2,693,065
+rows, so any null in the rebuilt model is a defect, not a pre-existing state.
 
 - [ ] **Step 5: Build the model and its tests**
 
