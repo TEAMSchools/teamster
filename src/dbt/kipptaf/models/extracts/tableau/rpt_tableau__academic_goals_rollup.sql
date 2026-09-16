@@ -141,30 +141,22 @@ with
             and grade_level between 1 and 2
     ),
 
-    state_test_crosswalked as (
+    state_test_resolved as (
         select
-            s.* except (raw_subject),
+            s.* except (raw_subject, source_system, `subject`),
 
-            coalesce(x.illuminate_subject_area, s.raw_subject) as subject_area,
+            case
+                when s.source_system is null
+                then s.`subject`
+                when coalesce(x.illuminate_subject_area, s.raw_subject) = 'Text Study'
+                then 'Reading'
+                else 'Math'
+            end as `subject`,
         from state_test_union as s
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
             on s.source_system = x.source_system
             and s.raw_subject = x.raw_subject
-    ),
-
-    state_test_resolved as (
-        select
-            * except (source_system, subject_area, `subject`),
-
-            case
-                when source_system is null
-                then `subject`
-                when subject_area = 'Text Study'
-                then 'Reading'
-                else 'Math'
-            end as `subject`,
-        from state_test_crosswalked
     ),
 
     iready as (
