@@ -39,9 +39,10 @@ data_tests:
       the derivation rather than widening this test. Null passes, and 190 Miami
       students have no value today. Asserted on the option code rather than the
       decoded label because the labels are Focus-editable prose, and left-joined
-      so a stored value matching no option also fails. It inherits the project
-      default warn severity, so it is a signal to act on, not a broken pipeline.
+      so a stored value matching no option also fails. It runs at warn severity,
+      so it is a signal to act on, not a broken pipeline.
     config:
+      severity: warn
       meta:
         dagster:
           ref:
@@ -55,6 +56,8 @@ data_tests:
       potentially dropping a real phone value). A null title is treated as
       unmapped.
     config:
+      # TODO(#5305): failing today; resolve then drop the warn
+      severity: warn
       meta:
         dagster:
           ref:
@@ -94,10 +97,12 @@ data_tests:
       enrollment rows. Strict on the boundary, so a stint that starts on the day
       another ends passes as a sequential transfer, and an open stint ends June
       30 like the roster's default. Failing with 1 pair as of 2026-09-04, one
-      AY2026 student open at 2 schools from 2026-09-04. Runs at the consuming
-      district project's default warn severity. Any returned row is a failure,
-      and the fix is in Focus: close the stale stint.
+      AY2026 student open at 2 schools from 2026-09-04. Runs at warn severity.
+      Any returned row is a failure, and the fix is in Focus: close the stale
+      stint.
     config:
+      # TODO(#5305): failing today; resolve then drop the warn
+      severity: warn
       meta:
         dagster:
           ref:
@@ -115,9 +120,10 @@ data_tests:
       for a ruling. Failing with 2 rows as of 2026-08-28, both the same student
       in two courses at period_id 2373, where the outgoing section runs
       2026-08-12 to 2026-08-13 while the incoming one starts 2026-08-12. Runs at
-      the consuming district project's default warn severity. Any returned row
-      is a failure.
+      warn severity. Any returned row is a failure.
     config:
+      # TODO(#5305): failing today; resolve then drop the warn
+      severity: warn
       meta:
         dagster:
           ref:

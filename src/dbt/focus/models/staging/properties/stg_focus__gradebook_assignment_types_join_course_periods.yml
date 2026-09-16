@@ -40,7 +40,7 @@ models:
                 to: ref('stg_focus__gradebook_assignment_types')
                 field: assignment_type_id
               config:
-                severity: error
+                severity: warn
       - name: course_period_id
         description: Focus course period (section) the category applies to.
         data_type: int

@@ -45,3 +45,7 @@ Loads on the first read under `.worktrees/`. For Bash-only worktree work
   `git -C <worktree> push -u origin <new>`.
 - A Codespace restart can delete `.worktrees/` and desync refs. Invoke
   `resuming-a-branch`.
+- A fresh worktree has no `dbt_packages/`, so the first dbt command fails on
+  missing `dbt_utils`. Run
+  `uv run dbt deps --project-dir <worktree>/src/dbt/<project>` before any
+  `dbt build`/`compile` there, in its own Bash call.

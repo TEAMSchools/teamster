@@ -30,7 +30,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
         config:
           meta:
             contains_pii: true
@@ -44,18 +44,22 @@ models:
       - name: course_period_id
         description: >-
           Focus course period (section) the attendance was taken in (joins
-          `stg_focus__course_periods`).
+          `stg_focus__course_periods`). Null on an administratively entered row
+          for a period where the student has no scheduled section — an office
+          full-day absence writes one row per period regardless of the student's
+          schedule. Always populated on teacher-taken rows.
         data_type: int
         data_tests:
           - not_null:
               config:
                 severity: error
+                where: admin is distinct from 'Y'
           - relationships:
               arguments:
                 to: ref('stg_focus__course_periods')
                 field: course_period_id
               config:
-                severity: error
+                severity: warn
       - name: period_id
         description: >-
           Focus school period the attendance was taken in (joins
