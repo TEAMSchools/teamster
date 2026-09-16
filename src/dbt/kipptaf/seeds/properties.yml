@@ -1,0 +1,125 @@
+seeds:
+  - name: seed_ignite__treatment_sections
+    description:
+      The IGNITE site-lead classroom list, resolved to PowerSchool course and
+      section numbers. One row per class the site leads reported running an R2I
+      practice in. Twelve rows are resolved; five await confirmation from school
+      staff on which of several candidate sections was meant, and carry null
+      identifiers with `status = 'pending'` until answered. Teacher names are
+      deliberately absent — they are staff PII and the resolution worksheet
+      holding them stays in local scratch. Match a `ref_id` beginning `Q` to the
+      correspondingly numbered question in that worksheet. Resolution used class
+      period plus the ICR/ICS suffix PowerSchool carries in section numbers,
+      corroborated by teacher-of-record; course names could not be matched
+      directly because the site-lead list numbers courses in Arabic (ENG100,
+      Algebra 1) where PowerSchool uses Roman (English I, Algebra I).
+    config:
+      column_types:
+        ref_id: string
+        school_name: string
+        academic_year: int64
+        course_number: string
+        section_number: string
+        class_period: string
+        treatment_cp: int64
+        treatment_rdc: int64
+        treatment_rr: int64
+        status: string
+    columns:
+      - name: ref_id
+        description:
+          Stable row label. `R` rows are resolved; `Q` rows correspond to the
+          numbered questions sent to school staff.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+
+      - name: school_name
+        description:
+          PowerSchool school name, used as part of the section join key.
+
+      - name: academic_year
+        description:
+          Start year of the school year, so 2024 is SY2024-2025. The site-lead
+          list expressed these as `24-25` and `25-26`.
+
+      - name: course_number
+        description:
+          PowerSchool course number. Null while `status` is `pending`.
+
+      - name: section_number
+        description:
+          PowerSchool section number. Null while `status` is `pending`.
+
+      - name: class_period
+        description:
+          Class period as the site leads reported it, kept as text because
+          double-block classes read `1-2` and `5-6`. Retained for audit; the
+          join uses course and section number.
+
+      - name: treatment_cp
+        description:
+          Co-planning indicator. Zero on every row — Mathematica confirmed only
+          routine data cycles ran at KIPP NJ.
+
+      - name: treatment_rdc
+        description: Routine data cycles indicator.
+
+      - name: treatment_rr
+        description: Repeated reading indicator. Zero on every row.
+
+      - name: status
+        description:
+          Either `resolved` or `pending`. Only `resolved` rows are read
+          downstream, so a pending section contributes no treated students.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [resolved, pending]
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+
+  - name: seed_ignite__school_nces_ids
+    description:
+      NCES school identifiers for the three KIPP NJ schools enrolling grades
+      9-12, which Mathematica requires as `school_id`. These identifiers are
+      public Common Core of Data values and exist nowhere in the warehouse —
+      every `nces_id` column elsewhere in this project refers to a college, and
+      every `nces_course_id` is a SCED course code. Values must be supplied by
+      hand.
+    config:
+      column_types:
+        schoolid: int64
+        school_name: string
+        region: string
+        nces_school_id: int64
+    columns:
+      - name: schoolid
+        description: PowerSchool school id, the join key to enrollment data.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+
+      - name: school_name
+        description: PowerSchool school name, for human verification only.
+
+      - name: region
+        description: KIPP NJ region, either Newark or Camden.
+
+      - name: nces_school_id
+        description:
+          NCES school identifier sent to Mathematica as `school_id`. Null until
+          supplied; a null here means the outbound `school_id` is blank for
+          every student at that school, so this is checked before submission
+          rather than left to the reviewer to notice.

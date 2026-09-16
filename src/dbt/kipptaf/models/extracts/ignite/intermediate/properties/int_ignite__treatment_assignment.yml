@@ -1,0 +1,81 @@
+models:
+  - name: int_ignite__treatment_assignment
+    description:
+      One row per student per treated section for the IGNITE R2I evaluation.
+      This is the seam between the classroom list the IGNITE site leads supplied
+      and KIPP NJ's own scheduling data. The site leads named a teacher, a
+      course and a class period; the resolved course and section numbers live in
+      `seed_ignite__treatment_sections`, and this model expands them to the
+      students enrolled in those sections. Only rows the seed marks `resolved`
+      are read, so sections still awaiting school confirmation contribute no
+      treated students rather than guessed ones. Filling the seed's pending rows
+      and rebuilding is the whole update path.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - course_number
+              - section_number
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: int64
+        description:
+          KIPP student number of a student enrolled in a treated section. Warns
+          rather than errors when absent from the crosswalk, because a student
+          outside the grades 9-12 population (for example an eighth grader
+          scheduled into a high school section) would otherwise drop from the
+          submission silently.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_ignite__student_id_crosswalk')
+                field: student_number
+
+      - name: academic_year
+        data_type: int64
+        description:
+          Start year of the school year, so 2024 is SY2024-2025. Mathematica's
+          `school_year` is this value plus one.
+
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school id of the school owning the section.
+
+      - name: school_name
+        data_type: string
+        description: PowerSchool name of the school owning the section.
+
+      - name: course_number
+        data_type: string
+        description:
+          PowerSchool course number of the treated section, resolved from the
+          site-lead classroom list.
+
+      - name: section_number
+        data_type: string
+        description:
+          PowerSchool section number of the treated section. Carries the service
+          model as a suffix in this data — `ICR` for in-class resource, `ICS`
+          for in-class support, `consult` for consultation — which is what made
+          the site-lead list resolvable, since the list's course names do not
+          match PowerSchool's.
+
+      - name: cls_treatment_cp
+        data_type: int64
+        description:
+          Co-planning indicator for the class. Zero throughout — Mathematica
+          confirmed on 2026-09-16 that only routine data cycles ran at KIPP NJ.
+
+      - name: cls_treatment_rdc
+        data_type: int64
+        description: Routine data cycles indicator for the class.
+
+      - name: cls_treatment_rr
+        data_type: int64
+        description:
+          Repeated reading indicator for the class. Zero throughout, per the
+          same confirmation as `cls_treatment_cp`.

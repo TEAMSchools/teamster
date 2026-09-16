@@ -1,0 +1,43 @@
+models:
+  - name: int_ignite__student_id_crosswalk
+    description:
+      Maps each in-scope student to the masked, de-identified `stu_id` supplied
+      to Mathematica for the IGNITE R2I evaluation. The masked id is derived
+      from `student_number` by a salted `farm_fingerprint` reduced to nine
+      digits, because Mathematica's template requires a number with no decimals.
+      The derivation is deterministic and holds no stored state, so the same
+      student resolves to the same `stu_id` on every run — which is what lets
+      the phase-2 state-assessment upload in October join to the phase-1
+      submission. The salt lives in the `ignite_id_salt` project variable and
+      must never change. This model retains the mapping the data sharing
+      agreement requires KIPP NJ to keep, and is never itself sent outbound.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: stu_id
+        data_type: int64
+        description:
+          Masked student identifier sent to Mathematica. Nine digits, derived
+          from a salted fingerprint of `student_number`. The uniqueness test is
+          load-bearing rather than cosmetic — reducing the fingerprint to nine
+          digits admits a small chance of collision, and the test converts that
+          risk into a build failure instead of two students silently sharing an
+          identifier in a research file.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+
+      - name: student_number
+        data_type: int64
+        description:
+          KIPP student number. School-facing identifier and therefore PII, so it
+          is never projected into any outbound `rpt_ignite__` model.
+        data_tests:
+          - unique:
+              config:
+                severity: error

@@ -1,0 +1,118 @@
+models:
+  - name: rpt_ignite__teacher_course
+    description:
+      The anonymized Teacher and Course Identification file returned to
+      Mathematica. Mathematica asked for their site-lead classroom list back
+      with the teacher name column removed and the course, section and period
+      numbers filled in. Teacher names never enter this pipeline at all — the
+      seed feeding it holds identifiers only, because staff names are PII and
+      the working resolution sheet that carries them stays in local scratch. The
+      course name, grade levels and period reported here come from PowerSchool
+      rather than from the site-lead list, which gives Mathematica authoritative
+      values instead of the approximations in the original file; the list's own
+      reported period is retained alongside for comparison. Rows still awaiting
+      confirmation from school staff appear with a `pending` status and null
+      identifiers, so the file states plainly which classes are unresolved
+      rather than omitting them.
+    columns:
+      - name: ref_id
+        data_type: string
+        description:
+          Stable row label. `R` rows are resolved; `Q` rows correspond to the
+          numbered questions outstanding with school staff.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+
+      - name: status
+        data_type: string
+        description:
+          Either `resolved` or `pending`. A pending row contributes no treated
+          students to Tables 1 and 2.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [resolved, pending]
+              config:
+                severity: error
+
+      - name: school_year
+        data_type: int64
+        description:
+          Four-digit year at the END of the school year, matching Tables 1 and
+          2.
+
+      - name: school_name
+        data_type: string
+        description: School the class was taught at.
+
+      - name: subject
+        data_type: string
+        description:
+          Subject mapped from PowerSchool credit type. Null for a pending row,
+          which has no resolved section to read a credit type from.
+
+      - name: course_name
+        data_type: string
+        description:
+          PowerSchool course name. Differs from the name on the site-lead list,
+          which used Arabic numbering such as ENG100 and appended an `ICR` label
+          that is not part of any PowerSchool course name.
+
+      - name: course_number
+        data_type: string
+        description: PowerSchool course number. Null while pending.
+
+      - name: section_number
+        data_type: string
+        description:
+          PowerSchool section number. Null while pending. An `ICR`, `ICS` or
+          `consult` suffix denotes the special-education service model, and that
+          suffix is what made most of the site-lead list resolvable.
+
+      - name: classid
+        data_type: string
+        description:
+          PowerSchool section id, supplied as a unique class identifier. Where a
+          section spans terms it carries more than one section id and the lowest
+          is reported.
+
+      - name: powerschool_period
+        data_type: string
+        description:
+          Period as PowerSchool records it, for example `3(A)`. More than one
+          value appears where the section meets across periods.
+
+      - name: reported_class_period
+        data_type: string
+        description:
+          Period exactly as the site leads reported it, kept for comparison
+          against `powerschool_period`.
+
+      - name: grade_levels
+        data_type: string
+        description:
+          Grade levels actually enrolled in the section, which frequently differ
+          from the single grade the site-lead list recorded.
+
+      - name: student_count
+        data_type: int64
+        description:
+          Distinct students enrolled in the section, so Mathematica can sanity
+          check the size of each treated class.
+
+      - name: cls_treatment_cp
+        data_type: int64
+        description: 1 if the class ran co-planning. Zero throughout.
+
+      - name: cls_treatment_rdc
+        data_type: int64
+        description: 1 if the class ran routine data cycles.
+
+      - name: cls_treatment_rr
+        data_type: int64
+        description: 1 if the class ran repeated reading. Zero throughout.
