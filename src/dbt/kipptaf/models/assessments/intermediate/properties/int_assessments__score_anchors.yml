@@ -184,6 +184,8 @@ unit_tests:
         rows: []
       - input: ref('int_amplify__all_assessments')
         rows: []
+      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+        rows: []
     expect:
       rows:
         - {
@@ -217,7 +219,7 @@ unit_tests:
               5 as student_id,
               2024 as academic_year_int,
               'BOY' as test_round,
-              'Text Study' as illuminate_subject,
+              'Reading' as subject,
               'kippnewark' as _dbt_source_project,
               date('2024-09-15') as completion_date,
               650 as overall_scale_score
@@ -226,7 +228,7 @@ unit_tests:
               5 as student_id,
               2024 as academic_year_int,
               'BOY' as test_round,
-              'Text Study' as illuminate_subject,
+              'Reading' as subject,
               'kippnewark' as _dbt_source_project,
               date('2024-09-15') as completion_date,
               650 as overall_scale_score
@@ -235,7 +237,7 @@ unit_tests:
               5 as student_id,
               2024 as academic_year_int,
               'BOY' as test_round,
-              'Text Study' as illuminate_subject,
+              'Reading' as subject,
               'kippnewark' as _dbt_source_project,
               date('2024-09-22') as completion_date,
               655 as overall_scale_score
@@ -243,6 +245,13 @@ unit_tests:
         rows: []
       - input: ref('int_amplify__all_assessments')
         rows: []
+      - input: ref('stg_google_sheets__assessments__vendor_subject_crosswalk')
+        rows:
+          - {
+              Source_System: iready,
+              Raw_Subject: Reading,
+              Illuminate_Subject_Area: Text Study,
+            }
     expect:
       rows:
         - {
