@@ -95,9 +95,11 @@ Pattern:
 - A **hosted** (`"type": "http"`) server has no launcher, and `${VAR}` in its
   `headers` resolves against the shell, where this container keeps no secrets.
   Point `headersHelper` at a script instead: Claude Code runs it at connection
-  time, parses stdout as a JSON object of headers, and kills it after 10s. That
-  keeps the token out of the environment and out of `.mcp.json`, which is
-  checked in. `dagster-plus-mcp-headers.sh` is the reference.
+  time, parses stdout as a JSON object of headers, and kills it after 10s. The
+  token then lives only in that helper process, and never in `.mcp.json`, which
+  is checked in. Claude Code logs the header back as
+  `"Authorization":"[REDACTED]"`, so it does not reach the subprocess debug log
+  either. `dagster-plus-mcp-headers.sh` is the reference.
 - Adding an MCP for a system Dagster already integrates? Reuse its 1Password
   item rather than minting new credentials — `dagster-cloud.yaml`'s
   `op-<system>` `secretKeyRef` confirms the item exists (item name ≈ secret

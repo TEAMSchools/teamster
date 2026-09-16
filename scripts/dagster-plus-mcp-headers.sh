@@ -6,8 +6,9 @@
 #
 # The 1Password reference lives only in dagster-mcp-launch.sh. Sourcing that
 # with --no-exec reuses its fetch without starting the homebrew server, so the
-# token exists solely in this short-lived subprocess -- never in the
-# environment, never written to a config file.
+# token lives and dies with this process: exported here, inherited by jq, gone
+# in under a second. It never reaches a persistent shell and is never written
+# to a config file.
 
 set -euo pipefail
 
