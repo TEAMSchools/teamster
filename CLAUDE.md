@@ -273,6 +273,10 @@ exploration that led nowhere (keep only the conclusion).
   `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
+- Dagster: `dagster` (homebrew) for diagnosis, sensors, schedules, backfills,
+  and hybrid-agent health; `dagster-plus` (Dagster's hosted server) for Insights
+  metrics, alert policies, and Issues, which `dagster` does not expose. Neither
+  is a superset.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
   - `gh issue develop`
