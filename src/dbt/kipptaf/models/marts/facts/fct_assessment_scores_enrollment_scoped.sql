@@ -297,9 +297,12 @@ with
     -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
     -- never distinct sittings. academic_year desc makes the survivor
     -- deterministic. Remove this dedupe when staging is fixed.
-    -- #5252 measured 273,791 input rows and left this on the macro as below the
-    -- ~1M ranked-column threshold. The domain union above adds ~1.57M eligible
-    -- rows, so re-measure before assuming the macro is still the right form.
+    -- #5252 measured this site at 273,791 input rows and left it on the macro
+    -- as below the ~1M ranked-column threshold. The domain union above changes
+    -- that. Re-measured against prod 2026-09-16: 1,561,075 input rows (274,013
+    -- anchor + 1,287,062 domain), with the model at 13.62 slot hours over the
+    -- trailing 7 days. Both gate conditions in .claude/rules/dbt-sql.md now
+    -- hold, so this site is due the ranked-column form.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
