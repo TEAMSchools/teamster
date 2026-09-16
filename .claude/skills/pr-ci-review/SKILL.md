@@ -107,6 +107,13 @@ Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
 SQL. After fixing external state (defer relations, transient BQ errors), trigger
 a fresh `dbt build` — don't rely on the retry.
 
+A `Clone - Staging` run recreates the `zz_stg_*` tables while it runs, so a CI
+run in flight at the same time fails `Not found: Table zz_stg_kipptaf_<x>.<y>`
+on models the PR never touched (run 70403224899793 overlapped a CI run this way,
+4 unrelated nodes). Check `list_jobs_runs` for an overlapping clone before
+reading the failure as a bug, wait for the clone to finish, then re-push for a
+fresh build.
+
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
 Changing a source's schema (e.g. adding a `target=staging` branch) marks the

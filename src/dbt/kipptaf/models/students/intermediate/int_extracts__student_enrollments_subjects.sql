@@ -131,6 +131,8 @@ with
             boy_composite,
             moy_composite,
             eoy_composite,
+            boy_probe_eligible,
+            moy_probe_eligible,
 
             'Reading' as iready_subject,
 
@@ -138,7 +140,7 @@ with
                 partition by student_number, academic_year order by client_date desc
             ) as rn_year,
 
-        from {{ ref("int_amplify__all_assessments") }}
+        from {{ ref("int_amplify__benchmark_student_summary") }}
         where measure_standard = 'Composite'
     ),
 
@@ -242,6 +244,8 @@ select
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+    coalesce(db.boy_probe_eligible, 'No Test') as boy_probe_eligible,
+    coalesce(db.moy_probe_eligible, 'No Test') as moy_probe_eligible,
 
     coalesce(
         dr.measure_standard_level, 'No Composite Score Available'

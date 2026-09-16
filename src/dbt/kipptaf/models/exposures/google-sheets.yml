@@ -819,6 +819,7 @@ exposures:
     depends_on:
       - ref("rpt_gsheets__gradebook_audit_template")
       - ref("rpt_gsheets__gradebook_audit_current_expectations")
+      - ref("rpt_gsheets__gradebook_audit_all_weeks")
     config:
       meta:
         dagster:

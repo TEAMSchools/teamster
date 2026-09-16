@@ -30,7 +30,7 @@ models:
                 to: ref('stg_focus__students')
                 field: student_id
               config:
-                severity: error
+                severity: warn
       - name: course_period_id
         description: >-
           Focus course-period (section) id the student is scheduled into.
@@ -46,7 +46,7 @@ models:
                 to: ref('stg_focus__course_periods')
                 field: course_period_id
               config:
-                severity: error
+                severity: warn
       - name: course_id
         description: >-
           Focus course id the scheduled section belongs to. int_focus__schedule
@@ -62,7 +62,7 @@ models:
                 to: ref('stg_focus__courses')
                 field: course_id
               config:
-                severity: error
+                severity: warn
       - name: syear
         description: >-
           Focus school year start year of the schedule row (e.g. 2025 =

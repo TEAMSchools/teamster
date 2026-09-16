@@ -74,6 +74,7 @@ nav:
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
       - CSGF Data Model: models/csgf-data-model.md
       - HS Early Warning Data Model: models/hs-early-warning-data-model.md
+      - DIBELS Dashboard Data Model: models/dibels-dashboard-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:
