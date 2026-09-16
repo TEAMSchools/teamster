@@ -52,7 +52,7 @@ jobs:
           plugins: |
             superpowers@superpowers-dev
             context7@claude-plugins-official
-            dagster-expert@dagster
+            dagster@dagster
             dbt@dbt-agent-marketplace
             ponytail@ponytail
           track_progress: true
