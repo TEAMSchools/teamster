@@ -587,17 +587,41 @@ count `region_outperformed`. The old spellings should return no rows at all. A
 subgroup still reading zero across every test code is the signature of a
 vocabulary mismatch, not of poor performance.
 
-### Open — 195 comparison rows still find no Region partner
+### Open — 4,032 comparisons have no counterpart and display as losses
 
-Normalizing the two labels does not close the gap entirely. 65
-`Black Or African American` rows and 130 `Non-Econ. Disadvantaged` rows still
-match no Region row, and the problem is broader than those two subgroups: **573
-of 870 `Neighborhood Schools` rows have no Region partner at all.**
+Measured 2026-09-17 with both of this branch's fixes applied: **4,032 rows, 36%
+of all non-Region comparison rows, find no `Region` partner — and every one of
+them renders `region_outperformed = false`.** The dashboard shows KTAF losing
+where there is nothing to compare against.
 
-Not diagnosed. The self-join keys on ten columns and the likely culprits are
-`school_level` and `grade_range_band`, which reach the sheet rows as typed
-values but reach the derived rows through `any_value()` in the
-`test_code_metadata` lookup. Start there, not at the subgroup labels.
+An earlier version of this page put the figure at 195 and blamed `school_level`
+/ `grade_range_band` reaching derived rows through `any_value()`. Both were
+wrong. The 195 counted only the two relabelled subgroups, and relaxing the join
+one column at a time attributes **0%** to `school_level`, `grade_range_band`,
+`discipline` or `comparison_demographic_group`.
+
+These are not key mismatches. They are genuine absences: the state or city
+reports a subgroup, test, year and region where KTAF has no comparable row,
+because KTAF had no students in that cell. The largest are `Asian` (513) and
+`White` (350), exactly the shape that explanation predicts. No single column
+accounts for it — relaxing `region` recovers 51%, `subgroup` 40%,
+`academic_year` 33% and `test_code` 22%, and those overlap.
+
+So the defect is not the missing partner. It is the rendering:
+
+```sql
+if(b.percent_proficient > a.percent_proficient, true, false) as region_outperformed
+```
+
+`b.percent_proficient > a.percent_proficient` already evaluates to NULL when
+there is no partner. The `if(x, true, false)` wrapper is what collapses that
+NULL into `false`. Removing the wrapper on all three booleans would let the
+workbook tell "we lost" apart from "there is no comparison" — the same
+distinction the subgroup-label fix was about, an order of magnitude larger.
+
+Not done here: it moves 4,032 rows from `false` to NULL on a live dashboard, and
+how Tableau renders a null boolean in each view is a question for whoever owns
+the workbook, not a silent change to make alongside a documentation pass.
 
 ### Open — comparison data stops at academic year 2024
 

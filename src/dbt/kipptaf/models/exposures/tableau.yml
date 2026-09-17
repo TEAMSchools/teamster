@@ -707,6 +707,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__state_assessments_dashboard")
       - ref("rpt_tableau__state_assessments_dashboard_comps")
+    url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/7102
     config:
       meta:
         dagster:

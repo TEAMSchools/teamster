@@ -619,10 +619,17 @@ Work in this order.
 3. **Does a Region partner row exist at all?** Self-join the view to itself on
    the ten keys — year, school level, grade range band, assessment name,
    discipline, test code, region, demographic group, demographic subgroup —
-   filtering `b.comparison_entity = 'Region'`, and count the nulls. **195 rows
-   network-wide currently have no partner even with canonical spelling**, and
-   573 of 870 `Neighborhood Schools` rows have none; see the reference doc's
-   open issue before treating a null as new.
+   filtering `b.comparison_entity = 'Region'`, and count the misses. **About
+   4,000 rows, a third of all non-Region rows, have no partner**, and each one
+   currently displays as a loss rather than as "no comparison". That is the
+   expected state rather than a new bug — mostly subgroups KTAF has no students
+   in. Read the reference doc before investigating.
+
+   When diagnosing, relax one join column at a time instead of guessing. Nine
+   view-expanding subqueries exceed BigQuery's query-planning limit, so pull the
+   view once into memory and do it there — roughly 14,000 aggregate rows, no
+   PII.
+
 4. **Is the year in the sheet at all?** Comparison data stops at
    `academic_year = 2024`. NJ has no 2019 or 2020 rows, and Paterson starts
    at 2023.
