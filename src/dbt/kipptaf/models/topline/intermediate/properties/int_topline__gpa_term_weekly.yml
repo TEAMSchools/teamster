@@ -8,9 +8,7 @@ models:
       week reports the freshest value known during it. That boundary instant is
       built in the local timezone, and comparing it against the version's
       validity span as a half-open interval resolves every week to exactly one
-      version. Snapshot rows captured from developer dev schemas are excluded,
-      because their region prefix otherwise matches the join and repeats the
-      week. Feeds int_topline__student_metrics, which scores each row against
+      version. Feeds int_topline__student_metrics, which scores each row against
       the 3.00 bar.
     config:
       materialized: table

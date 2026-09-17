@@ -14,11 +14,6 @@ with
                CLAUDE.md) */
             {{ extract_source_project() }} as _dbt_source_project,
         from {{ ref("snapshot_powerschool__gpa_term") }}
-        where
-            /* TODO(#4318): drop once dev-relation ghost rows are purged — the
-               prod snapshot holds zz_cbini_* rows whose region regex matches
-               the join below, so they fan a student-week out a second time */
-            regexp_contains(_dbt_source_relation, r'\.`kipp[a-z]+_powerschool`\.')
     ),
 
     enrollment_weeks as (
