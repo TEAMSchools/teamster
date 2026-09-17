@@ -327,6 +327,6 @@ with
         dbt_utils.deduplicate(
             relation="student_week",
             partition_by="_dbt_source_project, student_number, week_start_monday, discipline",
-            order_by="is_enrolled_week desc, rn_year asc",
+            order_by="is_enrolled_week desc, is_enrolled_week_end desc, rn_year asc",
         )
     }}
