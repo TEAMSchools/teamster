@@ -3,11 +3,12 @@ sources:
     description: >-
       Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved
       to Focus). Permanent history source for stored grades, attendance, the
-      course enrollments they hang off (#5193), and section teachers (#5260) —
-      12 permanent tables in total. Rebuilt from the frozen externals with the
-      8400 Focus prefix on student_number and an AY2025 bound applied (#5012).
-      The dataset must not be dropped. Declared BQ-native (plain schema, no
-      target branch) so every target reads the prod tables directly.
+      course enrollments they hang off (#5193), section teachers (#5260), and
+      the calendars, terms, and enrollment stints the network calendar models
+      read — 17 permanent tables in total. Rebuilt from the frozen externals
+      with the 8400 Focus prefix on student_number and an AY2025 bound applied
+      (#5012). The dataset must not be dropped. Declared BQ-native (plain
+      schema, no target branch) so every target reads the prod tables directly.
     schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__courses
@@ -118,3 +119,48 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__section_teachers
+      - name: int_powerschool__calendar_day
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__calendar_day
+      - name: int_powerschool__calendar_week
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__calendar_week
+      - name: int_powerschool__terms
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__terms
+      - name: int_powerschool__student_enrollment_union
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__student_enrollment_union
+      - name: stg_powerschool__terms
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - stg_powerschool__terms
