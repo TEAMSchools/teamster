@@ -45,3 +45,115 @@ models:
           Semester the quarter falls in -- S1 for Q1 and Q2, S2 for Q3 and Q4.
       - name: is_current_term
         description: Whether today falls within the quarter's date range.
+
+unit_tests:
+  - name: unit_terms_quarter_source_priority
+    description: >-
+      Which source supplies a quarter's dates, and that the fallback contributes
+      each quarter exactly once. School 1 has the quarter only in termbins, so
+      its termbins dates come through. School 2 has it only in the raw terms
+      table, so the fallback branch supplies the terms firstday and lastday --
+      this row is the whole point of the fallback and disappears if the
+      anti-join direction ever inverts. School 3 has it in both sources on
+      disagreeing dates, so termbins wins and the terms row is anti-joined out,
+      leaving one row rather than two. Every fixture date is in the past, so
+      is_current_term is false throughout.
+    model: int_powerschool__terms
+    given:
+      - input: ref('stg_powerschool__terms')
+        rows:
+          # school 1 -- year record only; the quarter lives in termbins
+          - {
+              id: 100,
+              schoolid: 1,
+              yearid: 30,
+              academic_year: 2020,
+              abbreviation: 20-21,
+              semester: null,
+              firstday: 2020-09-01,
+              lastday: 2021-06-18,
+              isyearrec: 1,
+            }
+          # school 2 -- quarter record only; no termbins row exists
+          - {
+              id: 200,
+              schoolid: 2,
+              yearid: 31,
+              academic_year: 2021,
+              abbreviation: Q1,
+              semester: S1,
+              firstday: 2021-09-01,
+              lastday: 2021-11-05,
+              isyearrec: 0,
+            }
+          # school 3 -- both sources, on disagreeing dates
+          - {
+              id: 300,
+              schoolid: 3,
+              yearid: 32,
+              academic_year: 2022,
+              abbreviation: 22-23,
+              semester: null,
+              firstday: 2022-09-01,
+              lastday: 2023-06-16,
+              isyearrec: 1,
+            }
+          - {
+              id: 301,
+              schoolid: 3,
+              yearid: 32,
+              academic_year: 2022,
+              abbreviation: Q1,
+              semester: S1,
+              firstday: 2022-09-01,
+              lastday: 2022-11-04,
+              isyearrec: 0,
+            }
+      - input: ref('stg_powerschool__termbins')
+        rows:
+          - {
+              termid: 100,
+              schoolid: 1,
+              storecode: Q1,
+              date1: 2020-09-01,
+              date2: 2020-11-06,
+            }
+          - {
+              termid: 300,
+              schoolid: 3,
+              storecode: Q1,
+              date1: 2022-09-06,
+              date2: 2022-11-11,
+            }
+    expect:
+      rows:
+        - {
+            schoolid: 1,
+            yearid: 30,
+            academic_year: 2020,
+            term: Q1,
+            term_start_date: 2020-09-01,
+            term_end_date: 2020-11-06,
+            semester: S1,
+            is_current_term: false,
+          }
+        - {
+            schoolid: 2,
+            yearid: 31,
+            academic_year: 2021,
+            term: Q1,
+            term_start_date: 2021-09-01,
+            term_end_date: 2021-11-05,
+            semester: S1,
+            is_current_term: false,
+          }
+        - {
+            schoolid: 3,
+            yearid: 32,
+            academic_year: 2022,
+            term: Q1,
+            term_start_date: 2022-09-06,
+            term_end_date: 2022-11-11,
+            semester: S1,
+            is_current_term: false,
+          }

@@ -950,9 +950,9 @@ base `main`. Put `Closes #5390` in the body so the PR lands on the project board
 — never `gh project item-add` a PR. Carry these facts into the body: the
 1,864,931 recovered days, the 1,312,174 that gain a real quarter and the 552,757
 that do not, the unchanged 16,035,288 membership total as the no-fan-out proof,
-and the `int_powerschool__student_course_grades_spine` blast radius of 106,976
-added `kippnewark` rows against 4,232,063. End the body with
-`🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
+and the `int_powerschool__student_course_grades_spine` blast radius, measured on
+a local `kippnewark` dev build at 143,635 added rows against 4,232,025. End the
+body with `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
 
 - [ ] **Step 4: Verify the created PR**
 

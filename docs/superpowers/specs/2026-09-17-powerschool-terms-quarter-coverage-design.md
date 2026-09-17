@@ -107,8 +107,15 @@ The `calcs` CTE's `inner join` to `int_students__terms` becomes a `left join`.
 restriction survives. In the projection:
 
 ```sql
-coalesce(t.academic_year, mem.yearid + 1990) as academic_year,
+mem.yearid + 1990 as academic_year,
 ```
+
+`academic_year` comes from the membership row rather than the term spine,
+because the left join nulls every term column on a day no quarter covers.
+Neither union branch of the membership CTE carries an `academic_year` column, so
+the arithmetic is the only available form. It is value-identical where the join
+matches: `int_students__terms` keys `yearid` to `academic_year - 1990` on both
+its branches, and the join matches on `mem.yearid = t.yearid`.
 
 `t.term` and `t.semester` stay null on the residual rows. This is the backstop
 for the 552,757 days that still match no quarter after change 1, not the primary
@@ -170,8 +177,10 @@ these models. Re-run the reproduce query in #5390 after that merges.
 `int_powerschool__student_course_grades_spine`, in the same package, builds a
 `term_spine` from `int_powerschool__terms` and inner joins it to course
 enrollments on `(schoolid, yearid)`. A school-year that gains 4 quarters turns 1
-spine row per course enrollment into 5. For `kippnewark` that is 106,976 added
-rows against 4,232,063 today, 2.5 percent, across 14 school-years.
+spine row per course enrollment into 5. Measured on a local `kippnewark` dev
+build, that is 143,635 added rows against 4,232,025 today, 3.4 percent, across
+the 17 school-year pairs that gain quarters. Rows in every other school-year are
+unchanged, at 3,090,648 on both sides.
 
 Those rows are not padding. Every affected `yearid` has real quarter rows in
 `stg_powerschool__storedgrades` — between 4,820 and 104,341 per year — and the
@@ -179,12 +188,19 @@ spine's quarter joins key on `(studentid, yearid, course_number, quarter)`
 without `schoolid`, so the added rows land historical quarter grades that
 currently have nowhere to go.
 
-`int_powerschool__ada_term` groups and partitions on `semester` and `term`. It
-gains real term rows rather than the single null-term group a left-join-only fix
-would have created. Its grain is
-`(_dbt_source_project, student_number, academic_year, term)` and its rollup
-windows partition by `semester`, so a residual null-term row forms its own group
-and cannot alter a real term's rate.
+`int_powerschool__ada_term` groups on `semester` and `term`. It gains real term
+rows rather than the single null-term group a left-join-only fix would have
+created. Its grain is
+`(_dbt_source_project, student_number, academic_year, term)` at
+`severity: error`. A residual null-term row is safe on that grain because
+`semester` and `term` both come from the left-joined term spine and go null
+together, so each student-year yields at most one null-term group.
+
+The year-level rollups are a different matter: they partition by
+`(_dbt_source_project, student_number, academic_year)` with no semester or term,
+so they do take in the recovered days. That is the fix working as intended —
+those days are real membership the quarter join was discarding — but it means
+year-level ADA figures move for the affected school-years, not just gain rows.
 
 `rpt_tableau__attendance_dashboard` projects `term` and floors on
 `calendardate >= '{{ var("current_academic_year") - 1 }}-07-01'`. The NJ
@@ -228,5 +244,5 @@ after the next prod rebuild.
 - `int_powerschool__terms`, `int_students__terms`, and
   `int_students__attendance_daily` keep their existing uniqueness tests at
   `severity: error`.
-- `int_powerschool__student_course_grades_spine` grows by the projected count
-  and its added rows carry non-null quarter grades.
+- `int_powerschool__student_course_grades_spine` grows by the measured count and
+  its added rows carry non-null quarter grades.
