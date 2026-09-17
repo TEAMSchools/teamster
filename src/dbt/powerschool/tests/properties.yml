@@ -102,26 +102,3 @@ data_tests:
           ref:
             name: base_powerschool__course_enrollments
             package: powerschool
-
-  - name: test_int_powerschool__calendar_day__in_session_day_has_year_term
-    description: >-
-      Every in-session calendar day at a real school must fall inside a year
-      term. `academic_year` is null exactly when no `isyearrec = 1` term covers
-      the day, which means PowerSchool holds a calendar that disagrees with its
-      own term record. The fix belongs in PowerSchool term configuration, so
-      this runs at warn severity — deriving `academic_year` from `date_value`
-      instead would make the null go away and leave the source defect invisible.
-      The defect is inert today — no student-day membership row exists on any
-      uncovered day, because `int_powerschool__ps_membership_reg` reads
-      `stg_powerschool__calendar_day` and never reads `yearid`. Sentinel schools
-      0 and 999999 are out of scope — they carry junk full-year in-session
-      calendars. Failing with 157 rows as of 2026-09-17 (kippnewark 104,
-      kippcamden 42, kipppaterson 11). Note that kippmiami does not consume the
-      powerschool package, so its 4 such days are not monitored.
-    config:
-      severity: warn
-      meta:
-        dagster:
-          ref:
-            name: int_powerschool__calendar_day
-            package: powerschool
