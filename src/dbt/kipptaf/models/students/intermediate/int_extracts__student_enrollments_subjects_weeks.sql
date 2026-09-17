@@ -308,22 +308,16 @@ select
     cw.date_count,
 
     if(
-        co.entrydate <= cw.week_start_monday and co.exitdate > cw.week_start_monday,
-        true,
-        false
+        cw.week_start_monday between co.entrydate and co.exitdate, true, false
     ) as is_enrolled_week,
 
     if(
-        co.entrydate <= cw.week_end_sunday and co.exitdate > cw.week_end_sunday,
-        true,
-        false
+        cw.week_end_sunday between co.entrydate and co.exitdate, true, false
     ) as is_enrolled_week_end,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 inner join
     {{ ref("int_students__calendar_week") }} as cw
     on co.academic_year = cw.academic_year
     and co.schoolid = cw.schoolid
-    -- exitdate is exclusive: it equals the next stint's entrydate, so the last
-    -- enrolled day is the day before it.
     and co.entrydate <= cw.school_week_end_date
-    and co.exitdate > cw.school_week_start_date
+    and co.exitdate >= cw.school_week_start_date
