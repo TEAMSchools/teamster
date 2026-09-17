@@ -1,5 +1,15 @@
 models:
   - name: int_powerschool__terms
+    description: >-
+      One row per school, school year, and quarter, with the quarter's date
+      range. Quarter dates resolve from termbins where termbins carries the
+      quarter, and from the raw terms table's own Q1-Q4 record where it does
+      not. Termbins is authoritative on the overlap because it is what every
+      quarter in this model resolved through historically, and the two sources
+      disagree on dates for a minority of quarters. The fallback branch exists
+      because some school years have no termbins rows at all even though terms
+      carries their quarter records, which left those years with no quarter rows
+      and dropped their membership days at every quarter-grain join downstream.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -9,3 +19,29 @@ models:
               - term
           config:
             severity: error
+    columns:
+      - name: schoolid
+        description: The School_Number of the school the quarter belongs to.
+      - name: yearid
+        description: >-
+          A number representing which school year the quarter belongs to, 35 for
+          2025-2026.
+      - name: academic_year
+        description: >-
+          The school year's starting year, so 2025 for 2025-2026. Derived
+          upstream as yearid plus 1990.
+      - name: term
+        description: Quarter code -- Q1, Q2, Q3, or Q4.
+      - name: term_start_date
+        description: >-
+          First calendar date of the quarter. From the termbins date1, or from
+          the terms record's firstday on the fallback branch.
+      - name: term_end_date
+        description: >-
+          Last calendar date of the quarter. From the termbins date2, or from
+          the terms record's lastday on the fallback branch.
+      - name: semester
+        description: >-
+          Semester the quarter falls in -- S1 for Q1 and Q2, S2 for Q3 and Q4.
+      - name: is_current_term
+        description: Whether today falls within the quarter's date range.
