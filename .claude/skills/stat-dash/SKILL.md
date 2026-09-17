@@ -616,14 +616,13 @@ Work in this order.
    `rpt_tableau__state_assessments_dashboard_comps` for the region and year, and
    compare against the Step 4 vocabulary. A value outside it finds no Region
    partner and every comparison reads `false`.
-3. **Does a Region partner row exist at all?** Self-join the view to itself on
-   the ten keys — year, school level, grade range band, assessment name,
-   discipline, test code, region, demographic group, demographic subgroup —
-   filtering `b.comparison_entity = 'Region'`, and count the misses. **About
-   4,000 rows, a third of all non-Region rows, have no partner**, and each one
-   currently displays as a loss rather than as "no comparison". That is the
-   expected state rather than a new bug — mostly subgroups KTAF has no students
-   in. Read the reference doc before investigating.
+3. **Does a Region partner row exist at all?** About 4,000 rows, a third of all
+   non-Region rows, have no partner — overwhelmingly subgroups KTAF has no
+   students in. **That is the expected state, not a bug**, and it does not
+   surface as a wrong number: Advanced Comps lays the entities out as columns,
+   so a missing Region is simply an empty cell. It bites only through the
+   `region_outperformed` quick filter, which cannot tell a real loss from an
+   absent comparison. Read the reference doc before investigating.
 
    When diagnosing, relax one join column at a time instead of guessing. Nine
    view-expanding subqueries exceed BigQuery's query-planning limit, so pull the

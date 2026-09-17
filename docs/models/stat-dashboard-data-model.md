@@ -587,41 +587,49 @@ count `region_outperformed`. The old spellings should return no rows at all. A
 subgroup still reading zero across every test code is the signature of a
 vocabulary mismatch, not of poor performance.
 
-### Open — 4,032 comparisons have no counterpart and display as losses
+### Known — 4,032 comparisons have no counterpart, and the filters conflate that with a loss
 
 Measured 2026-09-17 with both of this branch's fixes applied: **4,032 rows, 36%
-of all non-Region comparison rows, find no `Region` partner — and every one of
-them renders `region_outperformed = false`.** The dashboard shows KTAF losing
-where there is nothing to compare against.
+of all non-Region comparison rows, find no `Region` partner**, and 4,022 of them
+carry a real percentage of their own.
 
-An earlier version of this page put the figure at 195 and blamed `school_level`
-/ `grade_range_band` reaching derived rows through `any_value()`. Both were
-wrong. The 195 counted only the two relabelled subgroups, and relaxing the join
-one column at a time attributes **0%** to `school_level`, `grade_range_band`,
-`discipline` or `comparison_demographic_group`.
-
-These are not key mismatches. They are genuine absences: the state or city
+These are not key mismatches. Relaxing the join one column at a time attributes
+**0%** to `school_level`, `grade_range_band`, `discipline` or
+`comparison_demographic_group`. They are genuine absences: the state or city
 reports a subgroup, test, year and region where KTAF has no comparable row,
-because KTAF had no students in that cell. The largest are `Asian` (513) and
-`White` (350), exactly the shape that explanation predicts. No single column
-accounts for it — relaxing `region` recovers 51%, `subgroup` 40%,
+because KTAF had no students in that cell. `Asian` (513) and `White` (350) are
+the largest, exactly the shape that explanation predicts. No single column
+accounts for it -- relaxing `region` recovers 51%, `subgroup` 40%,
 `academic_year` 33% and `test_code` 22%, and those overlap.
 
-So the defect is not the missing partner. It is the rendering:
+**They do not display as losses.** Advanced Comps lays the comparison entities
+out as columns, so a row with no Region counterpart renders with an empty Region
+cell and the other entities intact -- which is the correct representation. The
+three boolean columns are not drawn as marks anywhere in the workbook.
+
+What they are is **quick filters** on `Advanced Comps - 3-Column`, all three set
+to `level-members` with `ui-enumeration="all"`, so nothing is excluded today.
+The defect lives there:
 
 ```sql
 if(b.percent_proficient > a.percent_proficient, true, false) as region_outperformed
 ```
 
-`b.percent_proficient > a.percent_proficient` already evaluates to NULL when
-there is no partner. The `if(x, true, false)` wrapper is what collapses that
-NULL into `false`. Removing the wrapper on all three booleans would let the
-workbook tell "we lost" apart from "there is no comparison" — the same
-distinction the subgroup-label fix was about, an order of magnitude larger.
+`b.percent_proficient > a.percent_proficient` already evaluates to NULL with no
+partner; the `if(x, true, false)` wrapper collapses it to `false`. So picking
+`False` in that dropdown returns every row KTAF genuinely lost **plus** 4,032
+where there was nothing to compare, with no way to tell them apart. Dropping the
+three wrappers would give the filter an honest third state.
 
-Not done here: it moves 4,032 rows from `false` to NULL on a live dashboard, and
-how Tableau renders a null boolean in each view is a question for whoever owns
-the workbook, not a silent change to make alongside a documentation pass.
+Not done here, deliberately. It is a filter-usability problem rather than a
+wrong number on a dashboard, and it would drop 4,032 rows out of the `False`
+bucket for anyone holding a saved selection. That is the workbook owner's call.
+
+An earlier version of this page put the figure at 195, blamed `school_level` /
+`grade_range_band` reaching derived rows through `any_value()`, and said the
+rows displayed as losses. All three were wrong. The 195 counted only the two
+relabelled subgroups; the `any_value` hypothesis measures at 0%; and the display
+claim was made without reading the workbook.
 
 ### Open — comparison data stops at academic year 2024
 
