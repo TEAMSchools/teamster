@@ -28,10 +28,13 @@
 --
 -- Tiers:
 -- A - state id + first + last + DOB all match. Strongest.
--- B - state id + first + last match, DOB unavailable for the feed. Used by
--- Cambium NJGPA-A, whose staging model does not carry birth_date (the
--- raw file does; see the skill). Same strength as A minus the DOB
--- corroboration -- treat as strong but not conclusive.
+-- B - state id + first + last match, no usable DOB on the row. Weaker than
+-- it looks: state ids are known unreliable (#3954), so Tier B rests on
+-- a wrong-but-real state id also belonging to a same-named enrolled
+-- student. A high bar, not an impossible one for common names. Tier B
+-- fires on ANY row whose DOB is missing or unparseable, not only on
+-- feeds that structurally lack one -- check gap_dob coverage before
+-- assuming which assessments land here.
 -- C - DOB + first + last match, state id does NOT. Catches a row whose state
 -- id is itself wrong, which the absent/present-but-wrong split does not.
 -- D - DOB + last name match, first name differs. Nicknames. Annotated, and
@@ -42,6 +45,21 @@
 -- they `select * except (...)`, so it rides through unnamed. stg_cambium__njgpa
 -- and stg_pearson__njgpa use explicit column lists that omit it. Pearson NJGPA
 -- is deprecated so it will not accrue new rows; Cambium runs on Tier B.
+--
+-- The formats differ too, and silently. PARCC ships M/D/YYYY, NJSLA and NJSLA
+-- Science ship YYYY-MM-DD. An earlier version parsed only the ISO form, which
+-- nulled all 15,625 PARCC birth dates and demoted every PARCC gap to Tier B
+-- with nothing to signal it. Before adding a feed here, check its format
+-- rather than assuming.
+--
+-- Buckets: every flagged row lands in exactly one.
+-- resolved          - one candidate, grade check passed or not applicable
+-- flagged_for_review - one candidate, but the grade hard gate failed, or the
+-- only evidence was Tier D
+-- ambiguous         - more than one candidate satisfied a tier. The proposed
+-- student number is withheld: picked collapses with
+-- any_value, so naming one would be a coin flip.
+-- no_match          - no tier was satisfied at all
 --
 -- No fuzzy matching. Every transform is a deterministic string operation.
 with
@@ -118,7 +136,14 @@ with
             gap_last,
 
             cast(encoded_grade_str as int64) as expected_grade,
-            safe.parse_date('%Y-%m-%d', gap_dob_raw) as gap_dob,
+
+            -- PARCC ships M/D/YYYY while NJSLA and NJSLA Science ship
+            -- YYYY-MM-DD. Parsing only the ISO form silently nulls every
+            -- PARCC birth date and demotes those rows to Tier B.
+            coalesce(
+                safe.parse_date('%Y-%m-%d', gap_dob_raw),
+                safe.parse_date('%m/%d/%Y', gap_dob_raw)
+            ) as gap_dob,
         from gaps_graded
     ),
 
@@ -246,7 +271,6 @@ with
 
 select
     s.studenttestuuid as student_test_uuid,
-    s.student_number as proposed_student_number,
     s.tiers,
     s.assessment_version,
     s.test_code,
@@ -254,7 +278,16 @@ select
     s.grade_level,
     s.grade_is_informational,
 
+    -- picked collapses with any_value, so for an ambiguous gap the candidate
+    -- is an arbitrary one of several. Withhold it rather than present a
+    -- coin-flip as a proposal.
+    if(
+        s.n_candidates > 1, cast(null as int64), s.student_number
+    ) as proposed_student_number,
+
     case
+        when s.n_candidates > 1
+        then 'ambiguous'
         when not s.grade_is_informational and not s.grade_matches
         then 'flagged_for_review'
         when s.tiers = 'D'
@@ -262,19 +295,18 @@ select
         else 'resolved'
     end as bucket,
 from scored as s
-where s.n_candidates = 1
 
 union all
 
 select
     g.studenttestuuid as student_test_uuid,
-    cast(null as int64) as proposed_student_number,
     cast(null as string) as tiers,
     g.assessment_version,
     g.test_code,
     g.expected_grade,
     cast(null as int64) as grade_level,
     cast(null as bool) as grade_is_informational,
+    cast(null as int64) as proposed_student_number,
 
     'no_match' as bucket,
 from gaps_typed as g

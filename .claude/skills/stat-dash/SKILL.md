@@ -207,7 +207,7 @@ Three criteria, in the order they bind:
 | tier | identity evidence                               | note                                 |
 | ---- | ----------------------------------------------- | ------------------------------------ |
 | A    | state id + first + last + DOB                   | strongest                            |
-| B    | state id + first + last, DOB unavailable        | Cambium; strong, not conclusive      |
+| B    | state id + first + last, no usable DOB          | weakest auto-resolving tier          |
 | C    | DOB + first + last, state id does **not** match | catches a wrong state id             |
 | D    | DOB + last, first differs                       | nicknames; never auto-resolved alone |
 
@@ -234,8 +234,8 @@ is a package column add and needs the cross-project staging dance.
    printing it -- 36-character UUIDs also trip the output scanner, so a printed
    result often comes back redacted anyway.
 
-3. **Report the bucket split** -- `resolved`, `flagged_for_review`, `no_match`
-   -- and the tier distribution. Ask before handing over rows.
+3. **Report the bucket split** -- `resolved`, `flagged_for_review`, `ambiguous`,
+   `no_match` -- and the tier distribution. Ask before handing over rows.
 4. **Deliver `resolved` in batches of 20**, as a plain two-column delimited
    block inside a fenced code block, `Student_Test_UUID` then `Student_Number`,
    so it pastes into two sheet columns without markdown pipes riding along. Wait

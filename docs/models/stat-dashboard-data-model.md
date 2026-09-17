@@ -736,7 +736,11 @@ They are two different problems:
   repair looks like.
 
 The 2 ambiguous rows are working as designed: more than one student satisfies
-the tiers, so the rules decline rather than guess.
+the tiers, so the rules decline rather than guess. Note that figure comes from
+the **audit-replay** procedure, which is separate code from the analysis itself.
+The analysis gained its own `ambiguous` bucket only after a review caught that
+it had been dropping such rows from every bucket -- so an older run of it will
+undercount.
 
 Re-run the audit after any batch of sheet entries. The procedure is in the
 `stat-dash` skill; it writes per-row detail to a local file and reports only
