@@ -6,7 +6,6 @@ with
                     source("kippnewark_powerschool", "stg_powerschool__terms"),
                     source("kippcamden_powerschool", "stg_powerschool__terms"),
                     source("kipppaterson_powerschool", "stg_powerschool__terms"),
-                    source("kippmiami_powerschool", "stg_powerschool__terms"),
                 ]
             )
         }}
@@ -20,9 +19,8 @@ select
 
     -- Guards a quarter-grain join against a duplicate raw record for the same
     -- school/year/term, so consumers attaching termbins columns see one row
-    -- per quarter. No such duplicate exists today -- all 2,118 keys across the
-    -- four districts are singletons, 193 of them Miami's -- so this is
-    -- defensive only.
+    -- per quarter. No such duplicate exists today -- all 1,925 keys across the
+    -- three NJ districts are singletons -- so this is defensive only.
     row_number() over (
         partition by schoolid, yearid, abbreviation, {{ extract_source_project() }}
         order by id
