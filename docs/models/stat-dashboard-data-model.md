@@ -420,17 +420,47 @@ The same applies to the prod `stg_*` table: it is a table, not a live read, so
 it reports pre-edit values indefinitely. Judging current sheet contents from it
 is a standing trap.
 
-### Interim loads on record
+### A missing value means the state did not provide it
 
-| loaded     | academic year | entity | scope                             | rows | source                                |
-| ---------- | ------------- | ------ | --------------------------------- | ---: | ------------------------------------- |
-| 2026-09-17 | 2025          | State  | NJ, `Total` / `All Students` only |   51 | NJDOE/press slide, spring 2026 column |
+That is the whole rule. `total_students` empty does not mark a row as
+provisional, second-rate or media-sourced — it means the state published a
+percentage and no count for that cell. It happens in press figures, which almost
+never carry counts, and it happens in official files, which sometimes omit them
+for a particular subgroup. Same cause, one rule.
 
-That load is 17 test codes across Camden, Newark and Paterson — the six 3-8 Math
-codes, the six 3-8 ELA codes, `ELA09`, `GEO01`, `ALG02`, and `ALG01` written to
-both MS and HS. No science, because Cambium had not reported science; no
-`ELA10`, which is deprecated. Percentages only, no denominators. Replace it when
-the official file lands, using the full-swap procedure.
+So do not infer provenance from a null. The AY2024 rows missing a denominator
+for one subgroup in two regions are official data with a gap, not a press
+figure, and nothing in the row distinguishes them.
+
+**To see which rows are affected, ask the sheet rather than trusting a list:**
+
+```sql
+select academic_year, region, comparison_entity,
+       count(*) as rows_affected,
+       count(distinct aligned_test_code) as test_codes,
+       string_agg(distinct comparison_demographic_subgroup) as subgroups
+from `teamster-332318`.kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics
+where total_students is null and percent_proficient is not null
+group by 1, 2, 3
+order by 1 desc, 2, 3
+```
+
+Read it through ADC, not the BigQuery MCP — see above. This is derived, so it is
+never out of date, which a written inventory of loads cannot promise.
+
+### Load log
+
+Only the things the query above cannot recover: when a load happened and what it
+came from. Add one line per load. **If the query returns an academic year with
+no line here, this log is behind** — that visible mismatch is the point of
+keeping it short.
+
+- **2026-09-17, AY2025, NJ State, 51 rows.** NJDOE press slide, "met or exceeded
+  expectations in 2025 and 2026", 2026 column. 17 test codes across Camden,
+  Newark and Paterson: six 3-8 Math, six 3-8 ELA, `ELA09`, `GEO01`, `ALG02`, and
+  `ALG01` written to both MS and HS. No science, because Cambium had not
+  reported it; no `ELA10`, deprecated. Replace when the official file lands,
+  using the full-swap procedure.
 
 ### Comparison entities
 
