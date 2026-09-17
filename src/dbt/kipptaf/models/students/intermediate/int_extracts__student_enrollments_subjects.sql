@@ -92,12 +92,28 @@ with
     ),
 
     prev_yr_state_test_resolved as (
-        select p.*, coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
+        select
+            p._dbt_source_project,
+            p.statestudentidentifier,
+            p.academic_year_plus,
+
+            coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
+
+            /* NJGPA runs in both Fall and Spring, so one student can have two
+               rows per subject-year. max() ignores NULL, so a real NJSLA
+               proficiency always beats an NJGPA row, which carries none. */
+            max(p.njsla_proficiency) as njsla_proficiency,
+
         from prev_yr_state_test as p
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x
             on p.source_system = x.source_system
             and p.raw_subject = x.raw_subject
+        group by
+            p._dbt_source_project,
+            p.statestudentidentifier,
+            p.academic_year_plus,
+            `subject`
     ),
 
     prev_yr_iready as (
