@@ -125,9 +125,10 @@ Almost always an unresolved `localstudentidentifier`.
    own academic year and district.** The sheet only overrides the identifier;
    the join still needs year and district to match an enrollment with
    `rn_year = 1`. If there is no such enrollment, a sheet row changes nothing
-   and becomes permanent dead weight. This is the unmatchable category, it is
-   currently 8 of 20 outstanding rows, and it is an Ops question -- see the
-   reference doc.
+   and becomes permanent dead weight. This is the unmatchable category and it is
+   an Ops question, not a sheet one -- see the reference doc. Check the academic
+   year before spending time on it: the dashboard publishes a rolling window, so
+   a flagged row old enough to fall outside it is not worth chasing.
 
    ```sql
    select academic_year, _dbt_source_project, student_number
@@ -283,12 +284,20 @@ Ask, and do not guess:
 - Which **region** the comparison is for.
 - Which **comparison entity** — `City`, `State`, or `Neighborhood Schools`.
   Neighborhood Schools is Miami only.
-- Whether the figures are **percent proficient** and whether a **denominator**
-  (tested students) is shown. Both columns are required.
+- Whether the figures are **percent proficient**, and whether a **denominator**
+  (tested students) is shown.
 
-If a denominator is absent, stop and say so. `total_students` feeds
-`total_proficient_students` and the weighted ALG01 rollup; inventing it corrupts
-both.
+**A missing denominator is normal for a media source and is not a reason to
+stop.** Leave `total_students` empty and load the percentage. Never invent a
+denominator -- it feeds `total_proficient_students` and the weighted ALG01
+rollup, and a fabricated one corrupts both silently.
+
+Say out loud what the empty denominator costs, because it is not visible
+anywhere: the row will populate the five views fed by the `state_comps` CTE,
+which reads `avg(percent_proficient)` directly, and will arrive in **Advanced
+Comps with a NULL percentage**, because that model recomputes
+`safe_divide(sum(proficient), sum(total))`. Verified against production. The row
+is present and the number is gone.
 
 ### Step 2 — read the image, and show your reading before emitting rows
 
@@ -333,6 +342,31 @@ model sets `assessment_name = 'NJGPA'` and distinguishes the vendor on
 writing `NJGPA-A` here silently matches nothing.
 
 `season` is always `Spring`.
+
+### Conventions specific to a media-sourced load
+
+- **`Total` / `All Students` only.** Press figures carry no demographic
+  breakouts. One row per test code per region; subgroups wait for the official
+  file.
+- **ALG01 comes mixed and is written to both levels.** Media never separates
+  Algebra I taken in middle school from high school. Write the same published
+  figure to both the `MS` and `HS` `school_level` rows, `remove_row = FALSE` on
+  both. Known to be imprecise; the weighted rollup `remove_row` exists for needs
+  counts, which an interim load does not have. Corrected when the official file
+  lands.
+- **Report, do not adjudicate.** Load what the state published. A redesigned
+  assessment, a vendor change, or a year-over-year swing that looks implausible
+  is worth _mentioning_ to the requester, but it is not a reason to withhold,
+  smooth or footnote the figure in the sheet. We do not make the rules of
+  comparison.
+- **`assessment_name` stays `NJSLA` for Cambium-era NJSLA.** The Spring 2026
+  administration is Cambium's redesigned form, but the vendor form lives in
+  `assessment_version` (`NJSLA-A`, mirroring `NJGPA-A`) on the score side, and
+  the comps join keys on `assessment_name`. Writing a version string into the
+  sheet's `assessment_name` matches nothing.
+- **`Neighborhood Schools` is Miami only.** A NJ statewide figure is
+  `comparison_entity = 'State'`, written once per NJ region -- Camden, Newark
+  and Paterson each get their own row, because the sheet is region-grained.
 
 ### Step 4 — map the demographic vocabulary
 

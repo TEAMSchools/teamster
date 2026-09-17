@@ -71,8 +71,10 @@ of them is a gap in the past and cannot be fixed by a re-pull. And
 `stg_pearson__njgpa` is **moot**: the Pearson form of that test is retired.
 
 [`src/dbt/cambium/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md)
-still describes NJSLA and NJSLA Science as Pearson-only and needs updating to
-match.
+describes NJSLA and NJSLA Science as Pearson-only, and that remains **correct**
+as a statement about the pipeline: the vendor has changed, but Cambium score
+files for those two assessments have not arrived yet, so nothing ingests them.
+Update it when the first files land, not before.
 
 The union happens at kipptaf `int_pearson__all_assessments`, over five
 relations:
@@ -125,6 +127,18 @@ not import the cambium package at all.
 
 Florida is a separate leg entirely — `int_fldoe__all_assessments`, unioned in at
 the reporting view rather than here.
+
+### The dashboard publishes a rolling window, not all history
+
+`rpt_tableau__state_assessments_dashboard` filters scores to
+`academic_year >= current_academic_year - 7`, so roughly the last seven years
+reach the workbook while the models underneath retain everything back to PARCC.
+
+This is worth checking before spending effort on an old defect. A flagged score
+or an unrepaired identifier in a year that has rolled out of the window is not
+visible to anyone and does not need fixing — the 8 unmatchable rows below are
+all academic year 2017 or 2018 and fall into exactly that category. Confirm the
+filter rather than trusting this sentence; the constant is in the model.
 
 ## Repairing a student number that does not resolve
 
@@ -308,6 +322,47 @@ The sheet is also a **metadata** source, separately from being a comps source:
 `test_code_metadata` CTE purely to look up `school_level`, `grade_range_band`
 and `discipline` per test code. A test code absent from the sheet loses that
 metadata for KTAF's own rows.
+
+### Interim comps from media, before the official files
+
+Official comparison files do not arrive in usable form until roughly November.
+In the meantime the state's headline results circulate through press coverage
+and district decks, and those figures are entered as interim comps so the
+dashboard is not blank for the current year. The rule of thumb is that **we do
+not make rules of comparison, we report what the state reports** -- an interim
+figure is loaded as published, not adjusted or withheld because a year-over-year
+comparison would be awkward.
+
+Three things are always true of a media-sourced figure, and they constrain what
+it can do.
+
+**There is no denominator, and that silently breaks Advanced Comps.** Press
+figures give a percentage and nothing else, so `total_students` is left empty.
+The two comps paths then behave differently, and the difference is not obvious:
+
+| path                                             | how it derives the percentage                     | result with no denominator |
+| ------------------------------------------------ | ------------------------------------------------- | -------------------------- |
+| `state_comps` CTE (five views)                   | `avg(percent_proficient)` straight from the sheet | **works**                  |
+| `rpt_tableau__state_assessments_dashboard_comps` | `safe_divide(sum(proficient), sum(total))`        | **null**                   |
+
+Verified 2026-09-17: of the sheet rows carrying a percentage with no
+denominator, every one reaches the comps view with a NULL `percent_proficient`.
+They are not dropped -- the row is there and the number is gone. So an interim
+comp populates Overview, the Landing Page, Demographics, Proficiency YoY and the
+Teacher/Student Roster, and contributes nothing usable to Advanced Comps until
+the official file supplies counts.
+
+**Only `Total` / `All Students`.** Media reporting carries no demographic
+breakouts, so an interim load fills exactly one demographic row per test code
+and region. Every subgroup row waits for the official file.
+
+**ALG01 arrives mixed.** Media figures never separate Algebra I taken in middle
+school from Algebra I taken in high school; one combined number is published.
+The interim convention is to write that same figure to **both** the MS and the
+HS `school_level` rows, with `remove_row = FALSE` on both. This is deliberately
+imprecise and known to be so -- the weighted MS/HS rollup that `remove_row`
+exists to build needs counts, which an interim load does not have. It is
+corrected when the official file lands.
 
 ### Comparison entities
 
