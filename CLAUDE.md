@@ -194,7 +194,10 @@ cells are not.
   `superpowers:writing-plans` ("Save plans to:"), and
   `superpowers:using-git-worktrees`. Pause the skill, run the flow, then write
   specs to `docs/superpowers/specs/...` or plans to `docs/superpowers/plans/...`
-  on the new branch.
+  on the new branch. After committing a spec, push it and comment its branch URL
+  (`.../blob/<branch>/docs/superpowers/specs/...`, never a commit SHA) on the
+  issue — `superpowers:brainstorming` stops at commit, and Phase 2 step 5 of
+  `docs/guides/superpowers.md` never loads into context.
 - `finishing-a-development-branch` / `using-git-worktrees`: this repo uses `uv`,
   not `poetry`/`pip`. Run `uv run dbt build --select <model>+` alongside the
   skills' other tests.
