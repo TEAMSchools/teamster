@@ -10,6 +10,20 @@ models:
           column_name: id
           config:
             severity: error
+      # Source data-quality guard: an in-session day that no isyearrec = 1 term
+      # covers means PowerSchool holds a calendar disagreeing with its own term
+      # record. The fix belongs in PowerSchool term configuration, so this is
+      # surveillance only — deriving academic_year from date_value instead would
+      # hide the source defect. Scoped past sentinel schools 0 and 999999, which
+      # carry junk full-year in-session calendars. kippmiami does not consume
+      # this package, so its days are not monitored.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              academic_year is not null or insession != 1
+          config:
+            severity: warn
+            where: schoolid not in (0, 999999)
     columns:
       - name: id
         data_type: int64
