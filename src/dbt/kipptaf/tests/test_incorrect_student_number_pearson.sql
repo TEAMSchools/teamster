@@ -1,5 +1,4 @@
 select
-    a.assessment_version,
     a.studenttestuuid,
     a.localstudentidentifier,
     a.statestudentidentifier,
