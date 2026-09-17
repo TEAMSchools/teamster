@@ -33,6 +33,9 @@ models:
     columns:
       - name: student_number
         description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         description: Academic year the enrollment week belongs to.
       - name: week_start_monday
@@ -46,3 +49,6 @@ models:
           Weighted year-to-date term GPA in effect when the week closed, as
           captured by the snapshot. Null where no snapshot version covers that
           instant.
+        config:
+          meta:
+            contains_pii: true
