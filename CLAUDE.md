@@ -144,6 +144,11 @@ accept a subagent's self-report without the checks there.
 - Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a derived value: line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline.
+- Bound every foreground Bash result before it runs: `tail` on build and test
+  output, `git diff --stat` before a full diff, `sed -n 'a,bp'` over `cat`,
+  `2>/dev/null` on noisy tools. Bash results were 52% of everything that entered
+  main-session context in 2026-09 measurements, and every later turn re-reads
+  them.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
 - After any call that creates or updates a resource with string fields (issue
