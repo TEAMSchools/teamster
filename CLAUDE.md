@@ -2,9 +2,12 @@
 
 ## Never
 
-- **Emit PII values** to any external surface: PR comments, commits, issues,
-  Slack, Asana, scheduled-agent output. Redact to `Student A` or column names
-  first. Local scratch and the terminal are fine. See _PII reference_.
+- **Emit PII values** to git or GitHub — commits, PR comments, issues — or to
+  scheduled-agent output, whose destination is not visible when you write it.
+  Git history is permanent. Redact to `Student A` or column names first. The
+  `#data_team` Slack channel, Asana, the terminal, and local scratch take
+  unredacted values; for any other Slack channel, ask first. See _PII
+  reference_.
 - **Push to `main`.** Hand a main push to the user; do not retry. Editing and
   committing LOCAL `main` is allowed when the user asks.
 - **Run a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs`** unless
@@ -178,10 +181,11 @@ untagged columns can still be PII. The definition (34 CFR §99.3 verbatim), the
 column decision procedure, and the surrogate-key and small-cell rules are in
 `.claude/rules/ferpa-pii.md`, which loads on the first read of dbt YAML or a
 Cube file. Read it before tagging, before answering a raw-warehouse question,
-and before posting query rows anywhere outbound. Short form: names, contact,
-`student_number` and other school-facing ids, birth data, free text about a
-person, and student-level grades, attendance, or status flags are PII; database
-surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
+and before posting query rows to git, GitHub, or agent output. Short form:
+names, contact, `student_number` and other school-facing ids, birth data, free
+text about a person, and student-level grades, attendance, or status flags are
+PII; database surrogate keys (`studentid`, `dcid`) and aggregates without small
+cells are not.
 
 ## Superpowers skill overrides
 
@@ -226,6 +230,12 @@ exploration that led nowhere (keep only the conclusion).
 
 - Before adding a line to any CLAUDE.md: name the specific decision Claude will
   make differently because of it. If you cannot, cut it.
+- When a change deletes something, delete the text about it; do not add text
+  saying it was deleted. A tombstone ("`X` was retired", "there is no longer a
+  `Y`") reads like it passes the necessity test and does not — the decision it
+  guards against cannot arise once nothing surfaces the name. Add the negative
+  only when a live pointer survives, and then point at the replacement, not at
+  the corpse. Retirement history belongs in the commit message and the diff.
 - Where a new line goes: one MCP server's behavior goes in
   `.claude/context/<server>.md` (auto-injected on first use). One directory's
   specifics go in that directory's CLAUDE.md. Worktree mechanics go in
@@ -267,6 +277,17 @@ exploration that led nowhere (keep only the conclusion).
   `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
+- Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
+  hosted server) wins any job it covers. `dagster` (homebrew) keeps what
+  `dagster-plus` cannot do, in 5 groups: automation (sensors, schedules, ticks,
+  condition evaluations), backfill listing and control, asset history (staleness
+  causes, partition counts, check executions, materializations), compute logs,
+  and infrastructure (agent and daemon health, code-location load history and
+  reload, concurrency slots). Nothing overlaps. Most `mcp__dagster__*` denials
+  in `settings.json` mean `dagster-plus` owns that job, but
+  `launch_multiple_runs` and `set_sensor_cursor` have no official counterpart,
+  so those 2 are off entirely rather than relocated. Details in
+  `.claude/context/dagster-plus.md`.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
   - `gh issue develop`

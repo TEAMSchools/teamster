@@ -89,6 +89,10 @@ After the brainstorm conversation, Claude will:
 4. Write the approved design to a **spec file** at
    `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` — on the branch, not
    `main`. Commit and push.
+5. Comment the spec's GitHub URL on the issue
+   (`.../blob/<branch>/docs/superpowers/specs/...`) so the team reads it
+   rendered. Link the branch, not a commit SHA, so the link keeps showing the
+   current spec as Claude pushes revisions in Phase 3.
 
 !!! info "Nothing is written until we're on the branch"
 

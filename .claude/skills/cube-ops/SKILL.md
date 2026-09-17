@@ -37,8 +37,7 @@ compute-bound (#4464 moved the assessment star to tables for this).
   security-context delta, not a schema bug.
 - `access_policy` default-deny (no `securityContext` group matches any policy on
   the view) manifests as `WHERE (1 = 0)` plus `rlsAccessDenied` in
-  `sortedDimensions` of `/sql` output — same diagnostic signature as the old
-  `queryRewrite`-based deny.
+  `sortedDimensions` of `/sql` output.
 - **`/sql` reveals pre-aggregation coverage independent of access:** a covered
   query compiles to `FROM prod_pre_aggregations.<rollup>` (vs the fact view),
   and the access-deny `WHERE (1 = 0)` does not change the `FROM` — so you can
@@ -134,11 +133,11 @@ exercise it; a plain dev server silently default-denies every gated view.
   the prod BI/Superset surface. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`,
   default `true`) is the planner on both APIs and joining views is supported
   (multi-fact views); the old `JoinDefinitionStatic` note was a Playground
-  observation, not a SQL-API limit — verified `student_attendance_view` /
-  `staff_directory` / `student_assessment_scores_view` query cleanly.
-  **`checkAuth` DOES run in dev mode (verified on Cube 1.6.59 and 1.7.14)** —
-  the prior "REST skips auth in dev mode / needs `NODE_ENV=production`" claim
-  was WRONG, and Cube's own
+  observation, not a SQL-API limit — verified
+  `student_attendance_enrollment_daily_view` / `staff_directory` /
+  `student_assessment_scores_view` query cleanly. **`checkAuth` DOES run in dev
+  mode (verified on Cube 1.6.59 and 1.7.14)** — the prior "REST skips auth in
+  dev mode / needs `NODE_ENV=production`" claim was WRONG, and Cube's own
   `🔓 Authentication checks are disabled in developer mode` boot banner is
   misleading here: a signed `email` claim still resolves a full scope. To
   emulate over the REST Playground, paste `{"email": "<viewer>"}` into its
@@ -217,6 +216,9 @@ exercise it; a plain dev server silently default-denies every gated view.
   it; redirecting it breaks its surrogate-key join to prod
   `dim_staff_work_assignments`). Uncommitted scaffold — revert +
   `grep -r zz_ src/cube` before committing.
-- **`count_students` is seasonal.** On `student_enrollments` it anchors to
-  `is_current_record` (→ 0 off-season); validate location scoping with
-  `student_attendance`'s additive `count_students` over a date range.
+- **Validate location scoping with
+  `student_attendance_enrollment_daily.count_students` over a date range.** It
+  is unanchored and seasonal-safe — the fact carries a row for every enrolled
+  calendar day including breaks, so it returns real numbers year-round and a 0
+  can only mean a scope denial. That is the query `scripts/cube_rls_matrix.py`
+  ships as its default.

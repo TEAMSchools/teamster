@@ -424,10 +424,10 @@ apart, and any consumer counting PM must filter it or it double-counts.
 
 The Benchmark half is now a plain select from its own model, which computes the
 composites, both aggregated level columns, `benchmark_goal_season`,
-`overall_probe_eligible` and `actual_row_count` itself. Only four columns are
-added here: `illuminate_subject` as a constant, plus typed nulls for
-`probe_number`, `total_number_of_probes` and `score_change`, which are PM-only.
-Verified identical to the pre-split output on all 38 columns, every year.
+`overall_probe_eligible` and `actual_row_count` itself. Only three columns are
+added here: typed nulls for `probe_number`, `total_number_of_probes` and
+`score_change`, which are PM-only. Verified identical to the pre-split output on
+every column, every year.
 
 Both PM branches start from eligibility rather than from scores. Each reads
 `int_amplify__benchmark_student_summary` at `rn_pm_eligibility = 1` (one row per
