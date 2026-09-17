@@ -448,20 +448,6 @@ order by 1 desc, 2, 3
 Read it through ADC, not the BigQuery MCP — see above. This is derived, so it is
 never out of date, which a written inventory of loads cannot promise.
 
-### Load log
-
-Only the things the query above cannot recover: when a load happened and what it
-came from. Add one line per load. **If the query returns an academic year with
-no line here, this log is behind** — that visible mismatch is the point of
-keeping it short.
-
-- **2026-09-17, AY2025, NJ State, 51 rows.** NJDOE press slide, "met or exceeded
-  expectations in 2025 and 2026", 2026 column. 17 test codes across Camden,
-  Newark and Paterson: six 3-8 Math, six 3-8 ELA, `ELA09`, `GEO01`, `ALG02`, and
-  `ALG01` written to both MS and HS. No science, because Cambium had not
-  reported it; no `ELA10`, deprecated. Replace when the official file lands,
-  using the full-swap procedure.
-
 ### Comparison entities
 
 | `comparison_entity`    | Origin  | Meaning                                |
