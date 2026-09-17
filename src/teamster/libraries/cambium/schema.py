@@ -231,3 +231,58 @@ class NJGPA(SFTPFile):
     word_prediction: str | None = None
     word_to_word_dictionary_english_native_language: str | None = None
     writing_prompt_essay_type: str | None = None
+
+
+# Deliberate stub, built before Cambium delivered a file. As of 2026-09-16 the
+# only Cambium files on Couchdrop are the two NJGPA summative record files, so
+# no NJSLA header row has been seen and the real column set is unknown.
+#
+# Every field here is copied from `NJGPA` above, which WAS generated from a real
+# Cambium file, so the spacing convention is right even though the column set is
+# incomplete. The list is exactly what `stg_cambium__njgpa` reads: the filter
+# flags, the identifiers, the score columns, the demographics, and the
+# timestamps that resolve `test_date`. That is the demonstrated minimum for an
+# NJ-assessment staging model.
+#
+# Nothing NJSLA-specific is guessed here. Pearson's NJSLA schema carries 17
+# fields that have no Cambium counterpart — the science performance levels,
+# `claimcode`, `formid`, `sex`, `testformat` — and inventing their Cambium
+# spelling would put wrong names in a contract for no gain.
+#
+# The stub is safe because `check_avro_schema_valid` reports
+# `record_fields - schema_fields` as the `avro_schema_valid` check's `extras`
+# metadata. The first real file therefore materializes, passes, and NAMES every
+# column this stub is missing. Replace the stub from that list, not from a
+# guess. Until then the Avro carries only these columns; the rest are dropped.
+class NJSLA(SFTPFile):
+    american_indian_or_alaska_native: str | None = None
+    asian: str | None = None
+    assessment_grade: str | None = None
+    assessment_year: str | None = None
+    assessmentsessionactualstartdatetime: str | None = None
+    black_or_african_american: str | None = None
+    first_name: str | None = None
+    grade_level_when_assessed: str | None = None
+    hispanic_or_latino_ethnicity: str | None = None
+    last_or_surname: str | None = None
+    local_student_identifier: str | None = None
+    multilingual_learner: str | None = None
+    native_hawaiian_or_other_pacific_islander: str | None = None
+    period: str | None = None
+    state_student_identifier: str | None = None
+    student_test_uuid: str | None = None
+    student_with_disabilities: str | None = None
+    subject: str | None = None
+    summative_flag: str | None = None
+    test_attemptedness_flag: str | None = None
+    test_code: str | None = None
+    test_performance_level: str | None = None
+    test_scale_score: str | None = None
+    test_score_complete: str | None = None
+    test_status: str | None = None
+    two_or_more_races: str | None = None
+    unit_1_online_test_start_date_time: str | None = None
+    unit_2_online_test_start_date_time: str | None = None
+    unit_3_online_test_start_date_time: str | None = None
+    unit_4_online_test_start_date_time: str | None = None
+    white: str | None = None

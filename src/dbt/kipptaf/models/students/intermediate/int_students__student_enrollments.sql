@@ -641,7 +641,7 @@ select
         when ar.region = 'Miami'
         then ar.lunchstatus
         when ar.rn_year = 1
-        then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
+        then tpd.eligibility_name
     end as lunch_status,
 
     case

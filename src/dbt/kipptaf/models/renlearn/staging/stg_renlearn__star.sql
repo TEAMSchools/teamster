@@ -40,10 +40,6 @@ with
 
             safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
 
-            if(
-                _dagster_partition_subject = 'SM', 'Mathematics', 'Text Study'
-            ) as illuminate_subject,
-
             case
                 when _dagster_partition_subject = 'SM'
                 then 'Math'

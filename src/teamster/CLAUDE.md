@@ -78,9 +78,15 @@ Libraries fall into four patterns based on how they ingest data:
 | **Framework**      | dbt, dlt, google, airbyte, fivetran                                                                 | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
 | **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (dlt + SFTP + API; ODBC archived)               | Multiple factories per product line                             |
 
-Schema-only libraries (cambium, collegeboard, dayforce, fldoe, nsc, pearson,
+Schema-only libraries (collegeboard, dayforce, fldoe, nsc, pearson,
 performance_management) contain only Avro schemas — the asset is built in the
 code location using the generic SFTP factory.
+
+`cambium` is the exception: alongside its schemas it has an `assets.py` holding
+`build_partitions_def` and `build_remote_file_regex`. The filename regex is
+composed FROM the partitions definition, so a filename the regex matches always
+captures a declared partition key — put any new Cambium feed's regex through
+that function rather than hand-writing the alternations per code location.
 
 ## Code Location Structure
 

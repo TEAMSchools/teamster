@@ -2,9 +2,12 @@
 
 ## Never
 
-- **Emit PII values** to any external surface: PR comments, commits, issues,
-  Slack, Asana, scheduled-agent output. Redact to `Student A` or column names
-  first. Local scratch and the terminal are fine. See _PII reference_.
+- **Emit PII values** to git or GitHub — commits, PR comments, issues — or to
+  scheduled-agent output, whose destination is not visible when you write it.
+  Git history is permanent. Redact to `Student A` or column names first. The
+  `#data_team` Slack channel, Asana, the terminal, and local scratch take
+  unredacted values; for any other Slack channel, ask first. See _PII
+  reference_.
 - **Push to `main`.** Hand a main push to the user; do not retry. Editing and
   committing LOCAL `main` is allowed when the user asks.
 - **Run a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs`** unless
@@ -93,7 +96,8 @@ Decide these two things before every `Agent` call, including the first:
   Otherwise do it inline: a small edit with the files already loaded is cheaper
   on the main model than a cold subagent on a cheaper one.
 - Which `model`. Pass the cheapest one you expect to finish on the first try.
-  Omit it (inherit) for judgment calls and reviews you will act on.
+  Name it explicitly on every dispatch; pick the capable model for judgment
+  calls and reviews you will act on.
 
 Price ratios, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
@@ -114,6 +118,15 @@ accept a subagent's self-report without the checks there.
 
 ## Tooling
 
+- Open a file under `src/dbt/` or `src/cube/` with the Read tool, never `cat`.
+  Both trees carry `.claude/rules/*.md`, which load on a Read/Edit/Write path
+  match and never on a Bash command string — `cat` returns the file and silently
+  drops the conventions governing the edit you are about to make. Auto mode's
+  Bash-first instruction does not override this: it scopes itself to work Bash
+  can accomplish, and this is work Bash cannot.
+- Use Read/Edit/Write for all other file I/O, and Bash for `git`, `uv run`,
+  `gh`, `docker`, `trunk`, `ls`. On the native VS Code build Grep and Glob are
+  absent as tools, so search with `rg`/`grep` via Bash.
 - One-off deps: `uv run --with <pkg> python script.py`, not `uv add --dev`.
 - Credentialed one-offs run under pytest. The autouse session fixture in
   `tests/conftest.py` loads 1Password secrets, so live SFTP/API pulls, asset
@@ -131,10 +144,6 @@ accept a subagent's self-report without the checks there.
 - Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a derived value: line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline.
-- On the native VS Code build, Grep and Glob are absent as tools; search with
-  `rg`/`grep` via Bash. When the system prompt asks for Bash-first work (auto
-  mode), follow it. Otherwise use Read/Edit/Write for file I/O and Bash only for
-  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`.
 - Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
   The pipe truncates the output file. Filter afterward.
 - After any call that creates or updates a resource with string fields (issue
@@ -172,10 +181,11 @@ untagged columns can still be PII. The definition (34 CFR §99.3 verbatim), the
 column decision procedure, and the surrogate-key and small-cell rules are in
 `.claude/rules/ferpa-pii.md`, which loads on the first read of dbt YAML or a
 Cube file. Read it before tagging, before answering a raw-warehouse question,
-and before posting query rows anywhere outbound. Short form: names, contact,
-`student_number` and other school-facing ids, birth data, free text about a
-person, and student-level grades, attendance, or status flags are PII; database
-surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
+and before posting query rows to git, GitHub, or agent output. Short form:
+names, contact, `student_number` and other school-facing ids, birth data, free
+text about a person, and student-level grades, attendance, or status flags are
+PII; database surrogate keys (`studentid`, `dcid`) and aggregates without small
+cells are not.
 
 ## Superpowers skill overrides
 
@@ -188,6 +198,10 @@ surrogate keys (`studentid`, `dcid`) and aggregates without small cells are not.
 - `finishing-a-development-branch` / `using-git-worktrees`: this repo uses `uv`,
   not `poetry`/`pip`. Run `uv run dbt build --select <model>+` alongside the
   skills' other tests.
+- `subagent-driven-development`: a plan step of roughly 10 lines or fewer whose
+  files are already in context is done inline, not dispatched. The skill assumes
+  every task is dispatched; the repo's dispatch-or-inline test in _Subagents_
+  governs.
 - Ponytail yields to superpowers process skills. It governs the size of what
   gets built inside them, not whether they run.
 
@@ -216,6 +230,12 @@ exploration that led nowhere (keep only the conclusion).
 
 - Before adding a line to any CLAUDE.md: name the specific decision Claude will
   make differently because of it. If you cannot, cut it.
+- When a change deletes something, delete the text about it; do not add text
+  saying it was deleted. A tombstone ("`X` was retired", "there is no longer a
+  `Y`") reads like it passes the necessity test and does not — the decision it
+  guards against cannot arise once nothing surfaces the name. Add the negative
+  only when a live pointer survives, and then point at the replacement, not at
+  the corpse. Retirement history belongs in the commit message and the diff.
 - Where a new line goes: one MCP server's behavior goes in
   `.claude/context/<server>.md` (auto-injected on first use). One directory's
   specifics go in that directory's CLAUDE.md. Worktree mechanics go in
@@ -226,6 +246,10 @@ exploration that led nowhere (keep only the conclusion).
   This file keeps only what must be known BEFORE any tool runs: safety
   prohibitions, branch and PR etiquette, and rules whose violation produces a
   silently wrong answer rather than a loud error.
+- A new `.claude/rules/<topic>.md` whose `paths:` reach outside `src/dbt/` and
+  `src/cube/` needs the first _Tooling_ bullet widened to match. That bullet
+  names the trees to open with Read instead of `cat`; a rule outside them loads
+  for nobody who reads the file through Bash.
 - Bold is reserved for the _Never_ block.
 
 ## MCP servers
@@ -253,6 +277,17 @@ exploration that led nowhere (keep only the conclusion).
   `INFORMATION_SCHEMA`), engineering tasks, and ad-hoc SQL only after
   `cube meta` shows no view covers the columns.
 - dbt MCP `show`: only when `ref()`/`source()` resolution is needed.
+- Dagster: two servers, one tool per job, and `dagster-plus` (Dagster's own
+  hosted server) wins any job it covers. `dagster` (homebrew) keeps what
+  `dagster-plus` cannot do, in 5 groups: automation (sensors, schedules, ticks,
+  condition evaluations), backfill listing and control, asset history (staleness
+  causes, partition counts, check executions, materializations), compute logs,
+  and infrastructure (agent and daemon health, code-location load history and
+  reload, concurrency slots). Nothing overlaps. Most `mcp__dagster__*` denials
+  in `settings.json` mean `dagster-plus` owns that job, but
+  `launch_multiple_runs` and `set_sensor_cursor` have no official counterpart,
+  so those 2 are off entirely rather than relocated. Details in
+  `.claude/context/dagster-plus.md`.
 - GitHub: `mcp__github__*` first. The `gh`-via-Bash list below is an exhaustive
   allowlist; any other `gh` subcommand is forbidden via Bash.
   - `gh issue develop`

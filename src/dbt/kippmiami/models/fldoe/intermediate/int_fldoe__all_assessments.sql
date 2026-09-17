@@ -76,14 +76,6 @@ select
     ) as assessment_name,
 
     case
-        when t.assessment_subject like 'English Language Arts%'
-        then 'Text Study'
-        when t.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
-        then 'Mathematics'
-        else t.assessment_subject
-    end as illuminate_subject,
-
-    case
         when t.performance_level = 1
         then 'Below/Far Below'
         when t.performance_level = 2

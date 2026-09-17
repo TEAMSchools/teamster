@@ -150,10 +150,6 @@ select
         then 'At/Above'
     end as iready_proficiency,
 
-    case
-        wc.subject when 'Reading' then 'Text Study' when 'Math' then 'Mathematics'
-    end as illuminate_subject,
-
     if(
         cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
         0,

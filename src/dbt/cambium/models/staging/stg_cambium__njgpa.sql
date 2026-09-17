@@ -155,10 +155,6 @@ with
                 `subject`
             ) as aligned_subject,
 
-            if(
-                `subject` like 'English Language Arts%', 'Text Study', `subject`
-            ) as illuminate_subject,
-
             if(upper(`period`) like 'FALL%', 'Fall', `period`) as administration_period,
             if(upper(`period`) like 'FALL%', 'Fall', `period`) as `admin`,
 

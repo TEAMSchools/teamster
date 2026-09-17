@@ -1,4 +1,37 @@
 data_tests:
+  - name: rpt_gsheets__dibels_bm_goals_calculations__region_counts_school_invariant
+    description: >-
+      The n_admin_season_region_gl_* columns are region-wide figures carried on
+      every school's row, so within one academic year, region, grade and period
+      they must hold the same value on every row and never be null. A region
+      figure that differs between two schools in the same region is not a data
+      condition -- it is the model having computed it from something
+      school-scoped.
+
+      That is precisely what two successive bugs did to the three
+      n_admin_season_region_gl_bl_wb columns, and this test is the invariant
+      both of them broke. The counts were computed on a partition their own
+      filter excluded the output row from, so the model fetched them from a
+      sibling row per school, and the sibling either was not deterministically
+      chosen or did not exist. 18 of 27 region-grade-period groups failed this
+      assertion against the pre-fix model.
+
+      Covers the All, IEP and MLL variants. The count-of-distinct and null-count
+      halves catch different shapes, because count(distinct) ignores nulls: a
+      count other than one is disagreement between schools or an all-null group,
+      while a non-zero null count is the partial case, which would otherwise
+      look like one agreed value.
+
+      Deliberately not extended to the school-level columns -- those differ by
+      school legitimately -- nor to the other region-level families, which were
+      never computed through a sibling row. Widen it if that changes.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_gsheets__dibels_bm_goals_calculations
+
   - name: test_kippfwd_goals_over_time_collapse
     description: >-
       int_google_sheets__kippfwd__goals_unpivot collapses the goals sheet's
@@ -949,3 +982,15 @@ data_tests:
         dagster:
           ref:
             name: rpt_schoolmint_grow__users
+
+  - name: stg_google_sheets__assessments__vendor_subject_crosswalk__covers_all_sources
+    description: >-
+      Lists any source-and-raw-subject pair present in the data but missing from
+      the crosswalk. Severity is the project default, warn rather than error,
+      because an unmapped subject falls back to its raw value rather than
+      dropping the row.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__assessments__vendor_subject_crosswalk

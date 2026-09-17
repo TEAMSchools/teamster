@@ -30,6 +30,13 @@ select
     t.teachernumber,
     t.lastfirst as teacher_lastfirst,
 
+    {# TODO: refactor to gsheet, alongside the school_level_alt override #}
+    if(
+        term.academic_year >= 2025 and sec.schoolid = 179905 and sec.grade_level >= 5,
+        'MS',
+        sch.school_level
+    ) as school_level_alt,
+
     {# TODO: refactor to gsheet #}
     case
         cou.gradescaleid

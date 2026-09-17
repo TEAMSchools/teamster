@@ -35,7 +35,6 @@ with
                     "firstname",
                     "hispanicorlatinoethnicity",
                     "iep_status",
-                    "illuminate_subject",
                     "is_504",
                     "is_approaching_int",
                     "is_below_int",
