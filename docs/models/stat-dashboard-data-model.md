@@ -336,21 +336,12 @@ comparison would be awkward.
 Three things are always true of a media-sourced figure, and they constrain what
 it can do.
 
-**There is no denominator, and that silently breaks Advanced Comps.** Press
-figures give a percentage and nothing else, so `total_students` is left empty.
-The two comps paths then behave differently, and the difference is not obvious:
-
-| path                                             | how it derives the percentage                     | result with no denominator |
-| ------------------------------------------------ | ------------------------------------------------- | -------------------------- |
-| `state_comps` CTE (five views)                   | `avg(percent_proficient)` straight from the sheet | **works**                  |
-| `rpt_tableau__state_assessments_dashboard_comps` | `safe_divide(sum(proficient), sum(total))`        | **null**                   |
-
-Verified 2026-09-17: of the sheet rows carrying a percentage with no
-denominator, every one reaches the comps view with a NULL `percent_proficient`.
-They are not dropped -- the row is there and the number is gone. So an interim
-comp populates Overview, the Landing Page, Demographics, Proficiency YoY and the
-Teacher/Student Roster, and contributes nothing usable to Advanced Comps until
-the official file supplies counts.
+**There is no denominator.** Press figures give a percentage and nothing else,
+so `total_students` is left empty. That used to destroy the figure on its way to
+Advanced Comps; the model now falls back to the reported percentage, so an
+interim comp populates all six views. The counts stay empty, which is the honest
+representation of what a press figure contains. See _Every comps group is one
+source row_ below.
 
 **Only `Total` / `All Students`.** Media reporting carries no demographic
 breakouts, so an interim load fills exactly one demographic row per test code
@@ -363,6 +354,54 @@ HS `school_level` rows, with `remove_row = FALSE` on both. This is deliberately
 imprecise and known to be so -- the weighted MS/HS rollup that `remove_row`
 exists to build needs counts, which an interim load does not have. It is
 corrected when the official file lands.
+
+### Every comps group is one source row, and the percentage falls back
+
+`grouped_comps` in `rpt_tableau__state_assessments_dashboard_comps` re-derives
+`percent_proficient` as `safe_divide(sum(proficient), sum(total))` rather than
+carrying the source value through. The intent is weighting: a group assembled
+from several rows should be sized, not averaged.
+
+**Measured 2026-09-17: it never assembles more than one row.** All 13,897 groups
+have `source_rows = 1`, and none mixes a row that has a denominator with one
+that does not. The re-derivation aggregates a single row every time.
+
+That is harmless where a denominator exists and destructive where one does not
+-- `safe_divide` returns null, so a percentage the sheet actually carried
+arrived blank. Every denominator-less row behaved that way, which is what made
+interim media comps unusable in Advanced Comps while working fine in the other
+five views, since the `state_comps` CTE reads `avg(percent_proficient)` directly
+and never recomputes.
+
+The model now falls back:
+
+```sql
+if(
+    weighted_percent_proficient is null and source_rows = 1,
+    reported_percent_proficient,
+    weighted_percent_proficient
+) as percent_proficient
+```
+
+The `source_rows = 1` guard is the part that matters. One-row groups are a
+property of today's grain, not a guarantee -- so if the grain ever changes and a
+group gains rows, this degrades to null rather than silently averaging two
+percentages unweighted, which would be wrong in a way nobody would notice.
+
+Measured against production before shipping: 13,897 rows before and after, 12
+rows move from null to a value, **zero** existing values change,
+`total_students` unchanged, and 2 `region_outperformed` booleans flip because a
+recovered percentage can now participate in the Region self-join.
+
+**A flag on the sheet was considered and rejected for this job.** A
+`preliminary` boolean would be a second, hand-maintained source of truth for
+something the data already states -- `total_students is null` identifies exactly
+these rows -- and the two can disagree, with no test to catch it. Provenance is
+a fair reason to add such a column later; driving the arithmetic is not.
+
+The counts remain null on these rows: Advanced Comps shows the percentage with
+blank `total_students` and `total_proficient_students`, which is the honest
+representation of what a press figure contains.
 
 ### Comparison entities
 

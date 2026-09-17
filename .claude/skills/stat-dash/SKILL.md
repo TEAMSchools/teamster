@@ -28,8 +28,10 @@ not just before editing.
 
 **Three facts that cause most of the wrong answers here:**
 
-- `academic_year` is the STARTING year. Spring 2025 testing is
-  `academic_year = 2024`. Confirm with the user before generating any row.
+- `academic_year` is the STARTING year of the school year. Testing happens in
+  the spring, so a source reporting "2026 results" means the 2025-2026 school
+  year, which is `academic_year = 2025`. The published label always runs one
+  ahead of the warehouse value. Confirm before generating any row.
 - **There are two comps calculations, not one.** The `state_comps` CTE inside
   `rpt_tableau__state_assessments_dashboard` and the separate
   `rpt_tableau__state_assessments_dashboard_comps` read different things. A
@@ -477,19 +479,34 @@ when the official comparison file lands.
 
 ---
 
-## Procedure: Replace bootstrapped rows with the official file
+## Procedure: Replace interim comps with the official file
 
-When the official comparison data arrives:
+When the official comparison data arrives, **replace the entire contents of the
+tab, not the interim rows individually.** Surgical row-level replacement means
+matching seven key columns by hand across hundreds of rows, and a single missed
+row leaves a press figure sitting among official ones with nothing marking it. A
+full swap is both easier and safer.
 
-1. Identify the provisional rows — same `academic_year`, `region` and
-   `comparison_entity` as the bootstrap.
-2. Replace rather than append. The sheet has a
-   `dbt_utils.unique_combination_of_columns` test on seven columns including
-   year, test code, school level, region, entity, group and subgroup; appending
-   a second copy fails it.
-3. Rebuild and re-run the Step 6 audit, then diff `percent_proficient` against
-   the provisional values and report any figure that moved materially. A
-   transcription error that survived into a board conversation is worth naming.
+1. **Build the complete replacement set first**, covering every academic year
+   the sheet should carry, not only the new one. The official file is the
+   authority for its own year; prior years come from the current sheet.
+2. **Snapshot what is there before overwriting.** Query the staging model and
+   keep the result locally. A Google Sheets paste is not easily undone, and the
+   external table reads the sheet live, so a bad paste is visible downstream
+   almost immediately.
+3. **Clear the range and paste the full set.** Do not append. The sheet carries
+   a `dbt_utils.unique_combination_of_columns` test over seven columns, so a
+   duplicated key fails the build rather than silently double-counting — but a
+   **stale row that the new set simply omits is caught by nothing.** That
+   asymmetry is the reason for the full swap.
+4. **Rebuild and run the Step 6 audit**, then diff `percent_proficient` for the
+   replaced year against what was there before, and report any figure that moved
+   materially. An interim figure that was transcribed wrong and has since been
+   quoted is worth naming out loud rather than quietly correcting.
+5. **Confirm the denominators arrived.** Counts are the point of the official
+   file. If `total_students` is still empty after the swap, the rows are interim
+   in everything but name, and Advanced Comps is still showing a percentage with
+   nothing behind it.
 
 ---
 
