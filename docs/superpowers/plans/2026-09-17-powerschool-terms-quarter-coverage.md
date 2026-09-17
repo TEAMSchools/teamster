@@ -10,12 +10,13 @@ days by giving `int_powerschool__terms` a `terms`-sourced quarter fallback and
 left joining the term spine.
 
 **Architecture:** `int_powerschool__terms` today derives quarter dates only from
-`stg_powerschool__termbins`, so 143 NJ school-years with no `termbins` rows
-produce no quarters. Add a second branch over `stg_powerschool__terms`'s own
-`Q1`-`Q4` rows, anti-joined against the `termbins` branch on
-`(schoolid, yearid, term)` so `termbins` stays authoritative and no existing
-value changes. Then make the attendance model's term join a `LEFT JOIN` as the
-backstop for the residual, and fix two inert defects in `int_students__terms`.
+`stg_powerschool__termbins`, so 94 quarters across 25 NJ school-years with no
+`termbins` row produce no quarters. Add a second branch over
+`stg_powerschool__terms`'s own `Q1`-`Q4` rows, anti-joined against the
+`termbins` branch on `(schoolid, yearid, term)` so `termbins` stays
+authoritative and no existing value changes. Then make the attendance model's
+term join a `LEFT JOIN` as the backstop for the residual, and fix two inert
+defects in `int_students__terms`.
 
 **Tech Stack:** dbt on BigQuery. Source-system package `src/dbt/powerschool`
 consumed by `kippnewark` / `kippcamden` / `kipppaterson`; network project
@@ -115,8 +116,9 @@ left join
 group by tq._dbt_source_project
 ```
 
-Expected: `school_years_missing_from_termbins` sums to 143 across `kippnewark`,
-`kippcamden`, and `kipppaterson`. A nonzero figure is the gap this task closes.
+Expected: 94 uncovered quarters across 25 school-years -- `kippnewark` 65 across
+17, `kippcamden` 29 across 8, `kipppaterson` none. A nonzero figure is the gap
+this task closes.
 
 - [ ] **Step 3: Rewrite the package model**
 
@@ -329,8 +331,8 @@ models:
       not. Termbins is authoritative on the overlap because it is what every
       quarter in this model resolved through historically, and the two sources
       disagree on dates for a minority of quarters. The fallback branch exists
-      because 143 New Jersey school-years have no termbins rows at all even
-      though terms carries their quarter records.
+      because some school years have no termbins rows at all even though terms
+      carries their quarter records.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -385,8 +387,8 @@ a `-m` flag would get denied for goes through. One file per commit; never a
 shared path under `.claude/scratch/`, which concurrent sessions share.
 
 Subject: `fix(dbt): fall back to terms for quarters termbins omits`. Body: the
-143 uncovered school-years and that termbins stays authoritative on the overlap.
-End with `Refs #5390` and
+94 uncovered quarters across 25 school-years and that termbins stays
+authoritative on the overlap. End with `Refs #5390` and
 `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`.
 
 ```bash

@@ -32,10 +32,11 @@ inner join
 where t.isyearrec = 1 and t.schoolid != 0
 ```
 
-143 New Jersey school-years have no `termbins` rows at all, so they produce no
-quarter rows — even though `stg_powerschool__terms` carries the `Q1` through
-`Q4` records for those same school-years, each with its own `firstday` and
-`lastday`.
+94 quarters across 25 New Jersey school-years have no `termbins` row, so they
+produce no quarter rows — even though `stg_powerschool__terms` carries their
+`Q1` through `Q4` records, each with its own `firstday` and `lastday`. 21 of
+those school-years have no quarter coverage at all today. By region: kippnewark
+65 quarters across 17 school-years, kippcamden 29 across 8, kipppaterson none.
 
 Classified by cause, the 1,864,931 dropped days are:
 
