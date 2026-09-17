@@ -24,10 +24,9 @@ Injected on the first `Agent` or `Workflow` call in a session.
   false positives.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
 
-## Price ratios
+## Model and effort
 
-The decision rules are in the root CLAUDE.md _Subagents_ section. Numbers behind
-them:
+The decision rules are in the root CLAUDE.md _Subagents_ section. Behind them:
 
 - Per token, Fable costs 5x Sonnet and Opus 2.5x. On Opus the gap is smaller, so
   inline wins more often.
