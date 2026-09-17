@@ -23,6 +23,9 @@ Injected on the first `Agent` or `Workflow` call in a session.
   files (`reportMissingImports`, "not accessed", "not iterable") are expected
   false positives.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
+- For searches that would return many file hits, dispatch
+  `subagent_type: Explore`. It returns a conclusion, and the hits never enter
+  the main context, where they are re-read on every later turn.
 
 ## Price ratios
 
@@ -33,14 +36,19 @@ them:
   inline wins more often.
 - A cached context token costs a fraction of a cold one, which is why a small
   inline edit beats a cold subagent.
+- Measured 2026-09: subagents were 13% of project spend; the orchestrator's
+  context size was the rest. Keep large reads out of the main context before
+  optimizing tiers.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
-- Effort is settable only on Workflow `agent()`, not `Agent`.
+- Effort is settable on Workflow `agent()` and in a `.claude/agents/<name>.md`
+  frontmatter definition, not on `Agent`.
 
 ## Verifying the result
 
 - Subagents abandon multi-step tasks partway. Scope each dispatch to one file or
-  one commit, and inspect the diff and `git log` before marking it complete.
+  one commit, and inspect `git diff --stat`, the build result, and `git log`
+  before marking it complete. Read the full diff only when a check fails.
 - A subagent's "pre-existing failure" baseline is the working tree AS
   DISPATCHED, including your uncommitted edits. Check whether your own change
   caused the failure before accepting that framing.
