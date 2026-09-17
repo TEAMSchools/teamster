@@ -60,6 +60,7 @@ with
 
     powerschool_quarters as (
         select
+            _dbt_source_relation,
             schoolid,
             yearid,
             academic_year,
@@ -70,6 +71,45 @@ with
             is_current_term,
             _dbt_source_project,
         from {{ ref("int_powerschool__terms") }}
+    ),
+
+    -- `rn = 1` has to filter here rather than in the full join below: a
+    -- one-sided condition in a FULL JOIN `ON` does not filter, so a superseded
+    -- row would survive as an unmatched left row.
+    powerschool_canonical as (
+        select
+            _dbt_source_relation,
+            dcid,
+            `name`,
+            firstday,
+            lastday,
+            abbreviation,
+            importmap,
+            terminfo_guid,
+            psguid,
+            ip_address,
+            whomodifiedtype,
+            transaction_date,
+            id,
+            yearid,
+            noofdays,
+            schoolid,
+            yearlycredithrs,
+            termsinyear,
+            portion,
+            autobuildbin,
+            isyearrec,
+            periods_per_day,
+            days_per_cycle,
+            attendance_calculation_code,
+            sterms,
+            suppresspublicview,
+            whomodifiedid,
+            academic_year,
+            fiscal_year,
+            _dbt_source_project,
+        from {{ ref("stg_powerschool__terms") }}
+        where rn = 1
     ),
 
     -- A small number of historical quarters exist in `int_powerschool__terms`
@@ -85,7 +125,6 @@ with
         -- create time and Dagster rebuilds a view only when its raw SQL
         -- changes, so a `*` here would never pick up a column added upstream.
         select
-            p._dbt_source_relation,
             p.dcid,
             p.name,
             p.firstday,
@@ -124,14 +163,16 @@ with
                 p._dbt_source_project, q._dbt_source_project
             ) as _dbt_source_project,
             coalesce(p.academic_year, q.academic_year) as academic_year,
-        from {{ ref("stg_powerschool__terms") }} as p
+            coalesce(
+                p._dbt_source_relation, q._dbt_source_relation
+            ) as _dbt_source_relation,
+        from powerschool_canonical as p
         full join
             powerschool_quarters as q
             on p.schoolid = q.schoolid
             and p.yearid = q.yearid
             and p.abbreviation = q.term
             and p._dbt_source_project = q._dbt_source_project
-            and p.rn = 1
     )
 
 select
