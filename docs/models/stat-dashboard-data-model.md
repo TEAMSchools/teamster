@@ -170,12 +170,15 @@ sheet. It reads the unioned model, so it covers Cambium as well. Its own name is
 still Pearson-flavoured; renaming it, and renaming
 `int_pearson__all_assessments`, remain open.
 
-**The detector is non-blocking.** It sets no `severity`, so it inherits
-kipptaf's project default of `warn`. A failing row does not fail a build or CI —
-it produces a warning nobody is required to read, which is why the 9 Cambium
-rows below have sat unresolved since the Spring 2026 administration. Raising it
-to `error` is a decision about whether an unrepaired score should stop a deploy,
-not an oversight to quietly correct.
+**The detector is non-blocking, and that is deliberate.** It sets no `severity`,
+so it inherits kipptaf's project default of `warn`. A failing row does not fail
+a build or CI.
+
+Leave it that way. Some of what it flags cannot be fixed at all — a test whose
+student has no enrollment that year, or an identifier no evidence resolves. An
+`error` severity would block every deploy on a condition nobody can clear, which
+trains people to ignore it or to route around it. A warning that sometimes goes
+unread is the accepted cost of a check that flags genuinely unfixable things.
 
 Its failure rows contain `firstname` and `lastorsurname`. **Those are student
 PII — never paste them into a PR, an issue, or Slack.** Quote the UUID and the
@@ -243,35 +246,43 @@ The concentration in the two oldest years points at the second. Compare with the
 shape: rows no model-side join can resolve, tracked as an Ops item rather than
 repaired in dbt.
 
-### Open recommendation — resolve Cambium nulls from the state id
+### The state id is not a substitute for the local id
 
-Not implemented. Recorded here because the evidence is already gathered.
+**`statestudentidentifier` is not reliable.** That is the reason identity
+resolution runs on `localstudentidentifier` in the first place, and it is not a
+hunch -- [#3954](https://github.com/TEAMSchools/teamster/issues/3954),
+`fix(powerschool): state_studentnumber collisions across distinct students`, is
+open on exactly this.
 
-Every one of the 9 Cambium rows currently failing the test (6 Camden, 3 Newark)
-carries a populated `statestudentidentifier`, and **all 9 resolve 1:1 to a
-PowerSchool enrollment** for the same academic year and district — zero null
-state ids, zero fan-out. So the Cambium failure mode is mechanically recoverable
-and does not need a human at all:
+So a bare fallback like this is **unsafe** and should not be built:
 
 ```sql
-coalesce(
-    x.student_number,          -- crosswalk sheet, for a wrong value
-    s.localstudentidentifier,  -- what the vendor sent
-    sid.student_number         -- proposed: resolved from statestudentidentifier
-) as localstudentidentifier
+-- DO NOT DO THIS
+coalesce(x.student_number, s.localstudentidentifier, sid.student_number)
 ```
 
-The precedent exists in the building: the preliminary-scores branch of
-`rpt_tableau__state_assessments_dashboard` already joins `e.state_studentnumber`
-this way. Cost is a new dependency on `base_powerschool__student_enrollments`
-inside the intermediate, region-keyed and `rn_year = 1`; there is no cycle,
-because enrollments does not read the assessment side.
+A naked state-id join attaches a score to whatever student happens to share that
+id. It fails silently, because the join succeeds and the resulting row looks
+entirely normal.
 
-**It addresses one mode and does not replace the sheet.** The fallback would
-clear the absent mode permanently. The present-but-wrong mode has no automated
-recovery at all, so the crosswalk stays regardless -- for every vendor, however
-clean a given file looks. Read this as reducing volume, not as removing the
-hand-entry step.
+Resolving from the state id is acceptable **only when it carries the same
+corroboration the local-id path carries**: an enrollment in the test's own
+academic year and district, a first and last name match, a date of birth match
+where the feed supplies one, and a grade check where the test code encodes a
+grade. That is precisely what
+[`analyses/state_assessment_tiered_crosswalk_match.sql`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql)
+already does -- Tier A is state id plus both names plus date of birth, and Tier
+B drops only the date of birth, and only where the feed does not carry one.
+
+Which is why the fallback has not been built. Done safely it is not a
+`coalesce`; it is the whole matcher embedded in an intermediate, for a
+population a person can clear in a few minutes. The matcher stays where it is,
+proposing rows for a human to accept.
+
+The evidence that started this is still worth keeping: all 9 Cambium rows that
+were failing carried a populated `statestudentidentifier` resolving 1:1 to an
+enrollment, and all 9 also matched on first and last name. That is what made
+them safe to repair -- the name agreement, not the state id on its own.
 
 ## Comparisons: two independent paths
 
@@ -695,8 +706,14 @@ against what a human had entered.
 never contradict a human judgement, which is what makes them safe to run as a
 proposer rather than an authority.
 
-The 13 that do not reproduce are the thing to fix, and they are two different
-problems:
+**The 13 that do not reproduce are left alone, deliberately.** They are recorded
+here rather than repaired. Nothing about them is urgent — the rows already in
+the sheet are doing whatever they do today, and changing them without knowing
+why they were entered risks breaking a repair that was correct for a reason the
+fields do not carry. Read this section before touching any of them; do not treat
+the list as a work queue.
+
+They are two different problems:
 
 - **The 6 `no_pick_not_enrolled` rows are inert.** They are the unmatchable
   category described above, already sitting in the sheet. The crosswalk
@@ -711,6 +728,12 @@ problems:
   human to look, not a rule change -- resist adding a tier to absorb them until
   a deterministic, generalizable pattern is actually visible, which is the same
   discipline the AP protocol applies to its own no-match bucket.
+
+  At least one of them is a **date-of-birth disagreement**: an NJSLA row whose
+  entered `Student_Number` belongs to a student whose date of birth does not
+  match the vendor file. That is the shape worth checking first on the other
+  six, because a DOB mismatch alongside a name match is what a wrong-student
+  repair looks like.
 
 The 2 ambiguous rows are working as designed: more than one student satisfies
 the tiers, so the rules decline rather than guess.
