@@ -1,5 +1,7 @@
 # GitHub MCP gotchas
 
+- Pass `minimal_output: true` on every `mcp__github__*` read unless you need a
+  field it drops.
 - **Neither the read nor the write tools mangle body text. Escaped characters in
   a read result are transport encoding, not corruption.** `pull_request_read` /
   `issue_read` render `<`, `>` and `&` as the JSON escapes `\u003c`, `\u003e`
@@ -34,8 +36,6 @@
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
-- Pass `minimal_output: true` on every `mcp__github__*` read unless you need a
-  field it drops.
 
 ## `gh`-via-Bash allowlist details
 

@@ -23,8 +23,6 @@ Injected on the first `Agent` or `Workflow` call in a session.
   files (`reportMissingImports`, "not accessed", "not iterable") are expected
   false positives.
 - Subagents name specific files in `git add`, never `-u`, `-A`, or `.`.
-- Searches that would return many hits: dispatch `subagent_type: Explore`. The
-  hits stay out of the main context.
 
 ## Price ratios
 
@@ -35,9 +33,9 @@ them:
   inline wins more often.
 - A cached context token costs a fraction of a cold one, which is why a small
   inline edit beats a cold subagent.
-- Work that produces bulky output (builds, test runs, wide searches, multi-file
-  reads) belongs in a subagent even on the same tier. The orchestrator pays for
-  its own context on every later turn; a subagent's context is paid once.
+- The orchestrator pays for its own context on every later turn; a subagent's
+  context is paid once. That is why bulky output belongs in a subagent even on
+  the same tier.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
 - Effort is settable on Workflow `agent()` and in a `.claude/agents/<name>.md`
