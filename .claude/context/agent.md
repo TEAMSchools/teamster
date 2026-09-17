@@ -35,8 +35,9 @@ them:
   inline wins more often.
 - A cached context token costs a fraction of a cold one, which is why a small
   inline edit beats a cold subagent.
-- Subagents are about 13% of spend; the orchestrator's context is the rest. Keep
-  large reads out of the main context before tuning tiers.
+- Work that produces bulky output (builds, test runs, wide searches, multi-file
+  reads) belongs in a subagent even on the same tier. The orchestrator pays for
+  its own context on every later turn; a subagent's context is paid once.
 - A retry costs more than the tier you saved. When in doubt, go up a tier.
 - A skill's own model guidance wins over these rules.
 - Effort is settable on Workflow `agent()` and in a `.claude/agents/<name>.md`
