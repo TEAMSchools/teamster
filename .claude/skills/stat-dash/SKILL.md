@@ -96,7 +96,9 @@ Almost always an unresolved `localstudentidentifier`.
    rather than by local id — the local id is the thing under suspicion.
 2. **Check whether the detector already flags it.** Run
    `test_incorrect_student_number_pearson`. Its failure rows carry
-   `assessment_version`, `studenttestuuid`, both identifiers, and the name.
+   `studenttestuuid`, both identifiers, the name and the test code. Whether
+   `localstudentidentifier` is null is what tells you the mode; the test code
+   tells you the assessment.
 3. **Read which failure mode it is** — they need different fixes:
 
    | Symptom                                  | Mode              | Fix                 |
