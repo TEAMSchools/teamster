@@ -36,6 +36,15 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: academic_year
+        description: >-
+          The school year's starting year, so 2025 for 2025-2026. Taken from the
+          quarter row covering the day, and from the membership row's own school
+          year on a day no quarter covers.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: is_attendance_recorded
         description: >-
           Whether the source system recorded attendance for this student-day at
@@ -114,12 +123,13 @@ models:
           Membership weight for the day; the portion of a student's membership
           this school claims. Legacy name — prefer is_in_membership. Constant 1
           on the Focus branch.
-      - name: academic_year
-        description: Academic year from the terms join.
       - name: semester
-        description: Reporting semester from the terms join.
+        description: >-
+          Reporting semester from the terms join. Null on a day no quarter
+          covers.
       - name: term
-        description: Reporting term from the terms join.
+        description: >-
+          Reporting term from the terms join. Null on a day no quarter covers.
       - name: week_start_monday
         description: Monday of the calendar week the row falls in.
       - name: week_end_sunday

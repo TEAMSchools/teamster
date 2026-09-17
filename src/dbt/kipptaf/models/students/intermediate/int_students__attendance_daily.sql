@@ -176,9 +176,12 @@ with
             mem.week_end_sunday,
             mem.week_number_academic_year,
 
-            t.academic_year,
             t.semester,
             t.term,
+
+            -- A day no quarter covers keeps its membership year rather than
+            -- going null, so academic_year stays non-null on every row.
+            coalesce(t.academic_year, mem.yearid + 1990) as academic_year,
 
             abs(mem.attendancevalue - 1) as is_absent,
 
@@ -237,7 +240,7 @@ with
             <= current_date('{{ var("local_timezone") }}') as is_realized,
 
         from memberships as mem
-        inner join
+        left join
             {{ ref("int_students__terms") }} as t
             on mem.yearid = t.yearid
             and mem.schoolid = t.schoolid
