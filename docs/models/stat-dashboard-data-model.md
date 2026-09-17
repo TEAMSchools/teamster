@@ -54,13 +54,25 @@ answered by downloading the `.twb` — see the `tableau-workbook-xml` skill.
 
 ## Scores: the NJ dual-vendor union
 
-New Jersey is migrating state assessment reporting from **Pearson Access Next**
-to **Cambium TIDE**. NJGPA completed the move at the Spring 2026 administration.
-The remaining assessments are migrating too; the administration they move on is
-not recorded here yet, and
+The NJ DOE has **changed vendors for all state testing**, from **Pearson Access
+Next** to **Cambium TIDE**. The cutover is a date, not a per-assessment rollout:
+
+| administration                       | vendor  |
+| ------------------------------------ | ------- |
+| through **December 2025**            | Pearson |
+| **Spring 2026** and everything after | Cambium |
+
+December 2025 was the last Pearson data KTAF implemented. Every NJ
+administration from Spring 2026 onward is Cambium.
+
+Two consequences worth stating plainly. The Pearson relations in the union are
+**history**, not a live feed -- they will not accrue new rows, so a gap in one
+of them is a gap in the past and cannot be fixed by a re-pull. And
+`stg_pearson__njgpa` is **moot**: the Pearson form of that test is retired.
+
 [`src/dbt/cambium/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md)
-still describes NJSLA and NJSLA Science as Pearson-only. Treat that file as the
-thing to update when the date is known.
+still describes NJSLA and NJSLA Science as Pearson-only and needs updating to
+match.
 
 The union happens at kipptaf `int_pearson__all_assessments`, over five
 relations:
@@ -193,12 +205,12 @@ an enrollment with `rn_year = 1`. When the student has no enrollment in that
 year and district, no value in the sheet makes the join succeed -- the row stays
 flagged and the sheet gains an entry that does nothing and never expires.
 
-As of 2026-09-16 this is 8 of the 20 outstanding rows: 4 NJSLA and 4 PARCC, 6
-Newark and 2 Camden, and **every one of them is academic year 2017 or 2018**.
-All 8 match exactly one student by name somewhere in PowerSchool -- a different
-year, a different district, or both -- and none of them match in the year the
-test belongs to. Four also match a single student by state id on that widened
-search.
+As of 2026-09-17 this is 8 of what were 20 outstanding rows -- the other 12 have
+been repaired -- and they are 4 NJSLA and 4 PARCC, 6 Newark and 2 Camden,
+**every one of them academic year 2017 or 2018**. All 8 match exactly one
+student by name somewhere in PowerSchool -- a different year, a different
+district, or both -- and none of them match in the year the test belongs to.
+Four also match a single student by state id on that widened search.
 
 That a name resolves on the widened search is what makes this category
 deceptive: it looks solvable right up to the point where you notice the year
@@ -376,6 +388,66 @@ keys after, so nothing merges and `percent_proficient`, `total_students` and
 workbook carries a `<manual-sort>` dictionary on this field listing the derived
 vocabulary, so the two sheet spellings previously fell to the end of the axis.
 
+#### Exactly what moved
+
+Measured against production on 2026-09-16 by simulating the normalization on the
+live view, before the fix shipped. Kept here so the change stays auditable after
+the pull request is closed.
+
+Only the three comparison booleans move. `Black Or African American` gains 85 of
+337 rows; `Non-Econ. Disadvantaged` gains 154 of 671. One row additionally gains
+`region_matched`. Nothing flips the other way.
+
+`Black Or African American`, 85 flips:
+
+| academic year | region   | rows | flips |
+| ------------- | -------- | ---: | ----: |
+| 2020          | Miami    |   45 |     0 |
+| 2021          | Miami    |   45 |     4 |
+| 2022          | Miami    |   45 |     7 |
+| 2023          | Miami    |   45 |     8 |
+| 2024          | Camden   |   38 |    19 |
+| 2024          | Miami    |   45 |    13 |
+| 2024          | Newark   |   38 |    31 |
+| 2024          | Paterson |   36 |     3 |
+
+`Non-Econ. Disadvantaged`, 154 flips:
+
+| academic year | region   | rows | flips |
+| ------------- | -------- | ---: | ----: |
+| 2018          | Camden   |   38 |    12 |
+| 2018          | Newark   |   38 |    18 |
+| 2020          | Miami    |   45 |     0 |
+| 2021          | Camden   |   33 |    14 |
+| 2021          | Miami    |   45 |     0 |
+| 2021          | Newark   |   38 |    17 |
+| 2022          | Camden   |   35 |    11 |
+| 2022          | Miami    |   45 |     2 |
+| 2022          | Newark   |   38 |    17 |
+| 2023          | Camden   |   36 |    14 |
+| 2023          | Miami    |   45 |     3 |
+| 2023          | Newark   |   38 |    19 |
+| 2023          | Paterson |   38 |     0 |
+| 2024          | Camden   |   38 |    10 |
+| 2024          | Miami    |   45 |     0 |
+| 2024          | Newark   |   38 |    16 |
+| 2024          | Paterson |   38 |     1 |
+
+Newark 2024 is the largest single cell, 31 of 38 rows. The pre-2024
+`Black Or African American` rows are all Miami, because the NJ regions only
+switched to that spelling at 2024.
+
+**A zero-flip cell is not a failed match.** Miami 2020 and 2021 do find their
+Region partner; KTAF Miami simply did not outperform in those cells. Flip count
+and match count are different things.
+
+To re-check after a rebuild, group
+`rpt_tableau__state_assessments_dashboard_comps` by year, region and subgroup
+for the sheet-sourced entities (`City`, `State`, `Neighborhood Schools`) and
+count `region_outperformed`. The old spellings should return no rows at all. A
+subgroup still reading zero across every test code is the signature of a
+vocabulary mismatch, not of poor performance.
+
 ### Open — 195 comparison rows still find no Region partner
 
 Normalizing the two labels does not close the gap entirely. 65
@@ -431,6 +503,50 @@ all carried district SIS IDs, and the fix was a join against
 not 440 sheet entries. The 69 rows in this sheet are the one-off kind: raw
 values span 4 to 9 digits correcting to 5 or 6, which is scattered data entry
 error, not one translatable id space.
+
+### Open — the crosswalk sheet holds 13 rows that do not hold up
+
+Audited 2026-09-17: all 81 crosswalk rows were replayed through the matching
+rules in
+[`analyses/state_assessment_tiered_crosswalk_match.sql`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql)
+using each row's raw pre-repair identifier, and the rules' pick was compared
+against what a human had entered.
+
+| outcome                |  rows | meaning                                                  |
+| ---------------------- | ----: | -------------------------------------------------------- |
+| agrees                 |    66 | the rules independently reach the same student           |
+| ambiguous              |     2 | tiers fire on more than one student; needs a person      |
+| `no_pick_identity`     |     7 | enrolled that year, but no tier is satisfied             |
+| `no_pick_not_enrolled` |     6 | the entered student has no enrollment in the test's year |
+| **disagrees**          | **0** | —                                                        |
+
+**Zero disagreements across 81 hand-entered rows** is the headline: the rules
+never contradict a human judgement, which is what makes them safe to run as a
+proposer rather than an authority.
+
+The 13 that do not reproduce are the thing to fix, and they are two different
+problems:
+
+- **The 6 `no_pick_not_enrolled` rows are inert.** They are the unmatchable
+  category described above, already sitting in the sheet. The crosswalk
+  overrides the identifier, but the downstream join still fails on academic year
+  and district, so these entries do nothing at all. They are candidates for
+  removal, not repair -- but confirm against the enrollment history first, since
+  an enrollment record added later would make them live.
+- **The 7 `no_pick_identity` rows are unexplained.** The student is enrolled in
+  the right year and district, but name, date of birth and state id do not
+  satisfy any tier. Either the person entering had context the fields do not
+  carry, or a name changed between the vendor file and PowerSchool. These need a
+  human to look, not a rule change -- resist adding a tier to absorb them until
+  a deterministic, generalizable pattern is actually visible, which is the same
+  discipline the AP protocol applies to its own no-match bucket.
+
+The 2 ambiguous rows are working as designed: more than one student satisfies
+the tiers, so the rules decline rather than guess.
+
+Re-run the audit after any batch of sheet entries. The procedure is in the
+`stat-dash` skill; it writes per-row detail to a local file and reports only
+counts, because the per-row output carries student identifiers.
 
 ### Open — the exposure has no `url`
 
