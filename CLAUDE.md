@@ -39,8 +39,6 @@ specifics live there.
   its structure, plain-language sections first and a "For Claude" fold-out last.
   Label with the conventional-commit type, source systems, and `dagster`/`dbt`
   when applicable.
-- IDE selection arrives only in `<ide_selection>` tags. If the user says "this"
-  with no selection, ask for the snippet.
 - At the investigation-to-build pivot, ask whether to run
   `superpowers:brainstorming`. A design settled in conversation does not waive
   it.
@@ -92,14 +90,15 @@ specifics live there.
 Decide these two things before every `Agent` call, including the first:
 
 - Dispatch or stay inline. Dispatch when the task writes a lot, would flood your
-  context with reading, can run in parallel, or needs a fresh reviewer.
-  Otherwise do it inline: a small edit with the files already loaded is cheaper
-  on the main model than a cold subagent on a cheaper one.
+  context with reading (builds, test runs, wide searches: `Explore`), can run in
+  parallel, or needs a fresh reviewer, even on the same tier. Otherwise do it
+  inline: a small edit with the files already loaded is cheaper on the main
+  model than a cold subagent on a cheaper one.
 - Which `model`. Pass the cheapest one you expect to finish on the first try.
   Name it explicitly on every dispatch; pick the capable model for judgment
   calls and reviews you will act on.
 
-Price ratios, dispatch-prompt rules, and Workflow cleanup inject from
+Model and effort rules, dispatch-prompt rules, and Workflow cleanup inject from
 `.claude/context/agent.md` on the first `Agent` or `Workflow` call. Do not
 accept a subagent's self-report without the checks there.
 
@@ -127,6 +126,13 @@ accept a subagent's self-report without the checks there.
 - Use Read/Edit/Write for all other file I/O, and Bash for `git`, `uv run`,
   `gh`, `docker`, `trunk`, `ls`. On the native VS Code build Grep and Glob are
   absent as tools, so search with `rg`/`grep` via Bash.
+- Bound foreground Bash output before it runs: `2>&1 | tail -n 30` on builds and
+  tests, `git diff --stat` before a full diff. Every result is re-read on every
+  later turn.
+- Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
+  The pipe truncates the output file. Filter afterward.
+- IDE selection arrives only in `<ide_selection>` tags. If the user says "this"
+  with no selection, ask for the snippet.
 - One-off deps: `uv run --with <pkg> python script.py`, not `uv add --dev`.
 - Credentialed one-offs run under pytest. The autouse session fixture in
   `tests/conftest.py` loads 1Password secrets, so live SFTP/API pulls, asset
@@ -135,22 +141,23 @@ accept a subagent's self-report without the checks there.
   plain `uv run python` gets no secrets; do not read that failure as a missing
   credential, and do not call `op` (hook-blocked). See
   [tests/CLAUDE.md](tests/CLAUDE.md).
-- Smoke-test the runtime path: call the method against a mock or in a `try`
-  block. `hasattr` and `import` pass when an SDK sub-resource is missing.
 - Arm the Monitor in the same turn you say you will watch something. An exited
   monitor and a waiting one are both silent.
 - Do not truncate or hand off work because the session feels long. The harness
   compacts automatically.
+- The Claude CLI is not on `$PATH`. The user runs `claude` commands in their
+  terminal.
+
+## Verification
+
+- Smoke-test the runtime path: call the method against a mock or in a `try`
+  block. `hasattr` and `import` pass when an SDK sub-resource is missing.
 - Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a derived value: line length, `grep -c`, a
   checksum. A misread is far likelier than a rewriting pipeline.
-- Never pipe `Bash(run_in_background=true)` output through `head`/`tail`/`grep`.
-  The pipe truncates the output file. Filter afterward.
 - After any call that creates or updates a resource with string fields (issue
   title, PR body, commit message), check the returned values match intent.
   Malformed parameters succeed with the wrong payload.
-- The Claude CLI is not on `$PATH`. The user runs `claude` commands in their
-  terminal.
 - Verify third-party tool behavior from source or `--help` before describing it.
 
 ## Linting
