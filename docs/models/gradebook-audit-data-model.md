@@ -567,6 +567,20 @@ warehouse rows were correct throughout; only the label merged them. If you
 change this expression, that uniqueness property is what to re-check, and the
 collision query is in
 [#5379](https://github.com/TEAMSchools/teamster/issues/5379).
+`int_extracts__course_schedule_by_term` carries a
+`dbt_utils.unique_combination_of_columns` test on
+`_dbt_source_project, academic_year, schoolid, teacher_number, course_number, quarter, section_or_period`
+that fails at `error` severity if the property is ever lost.
+
+!!! warning "The expression exists twice, and both copies must agree"
+`int_extracts__course_enrollments_by_term` derives its own `section_or_period`
+from the same raw PowerSchool columns, for the student-facing side. That copy is
+what `int_extracts__gradebook_audit_student_flags` projects, and therefore what
+reaches the `rpt_gsheets__gradebook_audit_student_flags` Google Sheet — the
+teacher-facing report never reads it. The two are not joined and neither derives
+from the other, so an edit to one silently diverges from the other. Change both,
+or hoist the label into a single shared column first. This is tracked as
+follow-up work in [#5383](https://github.com/TEAMSchools/teamster/issues/5383).
 
 #### Which workbook consumes this
 

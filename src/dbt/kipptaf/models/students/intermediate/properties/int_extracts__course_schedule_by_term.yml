@@ -16,6 +16,18 @@ models:
               - quarter
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - academic_year
+              - schoolid
+              - teacher_number
+              - course_number
+              - quarter
+              - section_or_period
+          config:
+            severity: error
     columns:
       - name: _dbt_source_project
         data_type: string
