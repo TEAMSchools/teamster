@@ -35,8 +35,7 @@
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
 - Pass `minimal_output: true` on every `mcp__github__*` read unless you need a
-  field it drops. Measured 2026-09: 0 of 910 calls set it, at 3.1k chars per
-  result.
+  field it drops.
 
 ## `gh`-via-Bash allowlist details
 
