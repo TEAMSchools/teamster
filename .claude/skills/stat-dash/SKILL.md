@@ -156,19 +156,21 @@ Almost always an unresolved `localstudentidentifier`.
    with no code change. One row per test, not per student: a student with four
    bad test rows needs four rows here.
 
-5. **Rebuild and re-check.** Google Sheets externals read live, so rebuilding
-   the staging model into your dev schema picks up the edit with no
-   `stage_external_sources`:
+5. **Re-check by reading the sheet external directly**, with a Python client on
+   ADC — the BigQuery MCP 403s on a Drive-backed external but ADC has Drive
+   scope, and this reads the sheet live with no build:
 
-   ```bash
-   uv run dbt build \
-     --select stg_google_sheets__pearson__student_crosswalk \
-     --project-dir src/dbt/kipptaf --target dev --defer --state target/prod
+   ```python
+   client.query('''
+     select count(*) as crosswalk_rows
+     from `teamster-332318`.kipptaf_google_sheets.src_google_sheets__pearson__student_crosswalk
+   ''')
    ```
 
-   Then re-run the detector and confirm the row is gone. **Never judge the
-   sheet's current contents from the prod `stg_` table** — it is frozen at the
-   last prod build.
+   Confirm the row count rose by what you added, then re-run the detector once
+   the models rebuild. **Never judge the sheet's current contents from the prod
+   `stg_` table** — that is a table frozen at the last prod build, not a live
+   read, so it reports pre-edit values indefinitely.
 
 **Do not quote the student's name in a PR, issue, or Slack.** Quote the UUID.
 
@@ -424,36 +426,65 @@ Never set `remove_row = TRUE` on anything else.
 
 ### Step 6 — audit after the paste, before telling anyone it is done
 
-Rebuild into dev and check the grain and the plausibility of the values:
+**Read the sheet external directly. Do not build anything.** The BigQuery MCP
+service account has no Drive scope and 403s on a sheet-backed external, but ADC
+does, so a Python client queries the live sheet — no dbt build, no
+`stage_external_sources`, and the answer reflects the paste seconds after it
+happens. A `--target staging` build is a shared write needing authorization, and
+the copy it makes is frozen at build time, so it cannot answer "did my paste
+land" anyway.
 
-```bash
-uv run dbt build \
-  --select stg_google_sheets__state_test_comparison_demographics \
-  --project-dir src/dbt/kipptaf --target dev --defer --state target/prod
+```python
+# uv run python <script.py>
+from google.cloud import bigquery
+
+client = bigquery.Client(project="teamster-332318")
+rows = list(client.query('''
+  select
+    countif(academic_year = <year>) as rows_entered,
+    count(distinct if(academic_year = <year>, aligned_test_code, null)) as test_codes,
+    count(distinct if(academic_year = <year>, region, null)) as regions,
+    countif(academic_year = <year> and percent_proficient > 1) as pct_over_one,
+    countif(academic_year = <year> and percent_proficient is null) as pct_null,
+    countif(academic_year = <year> and total_students is not null) as has_denominator,
+    countif(academic_year = <year>
+            and comparison_demographic_subgroup != 'All Students') as not_all_students,
+    min(if(academic_year = <year>, percent_proficient, null)) as min_pct,
+    max(if(academic_year = <year>, percent_proficient, null)) as max_pct,
+    count(*) as sheet_rows_total
+  from `teamster-332318`.kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics
+''').result())
 ```
 
-Then, against the rebuilt `zz_<user>_kipptaf_google_sheets` copy:
+What each answer has to be:
+
+- **`pct_over_one` must be 0.** Anything else is the percentage-entered-as-a-
+  -percentage mistake, which computes cleanly and inflates every comparison
+  100x.
+- **`min_pct` / `max_pct` must bracket the source figures.** Cheap catch for a
+  column-offset paste.
+- **`rows_entered` must equal what you generated**, and `sheet_rows_total` must
+  have grown by exactly that much — a short count means the paste truncated.
+- **`has_denominator` will be 0 for a media load.** Expected, not a fault.
+- **`not_all_students` must be 0** for a media load.
+
+Also check the whole sheet for duplicate keys, since the uniqueness test fires
+at build time rather than at paste time:
 
 ```sql
-select
-  academic_year, region, comparison_entity,
-  count(*) as rows_entered,
-  count(distinct aligned_test_code) as test_codes,
-  countif(percent_proficient > 1) as pct_over_one,
-  countif(percent_proficient is null or total_students is null) as missing_values,
-  min(percent_proficient) as min_pct,
-  max(percent_proficient) as max_pct
-from <rebuilt table>
-where academic_year = <year>
-group by 1, 2, 3
-order by 1, 2, 3
+select count(*) from (
+  select academic_year, aligned_test_code, school_level, region, comparison_entity,
+         comparison_demographic_group, comparison_demographic_subgroup
+  from `teamster-332318`.kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics
+  group by 1,2,3,4,5,6,7
+  having count(*) > 1
+)
 ```
 
-`pct_over_one` must be 0 — anything else is the percentage-versus-fraction
-mistake. Compare `rows_entered` and `test_codes` against the prior year for the
-same region and entity; a large drop means the deck covered fewer test codes
-than the official file will, which is expected for a bootstrap but should be
-stated to the user so it is replaced in November.
+Compare `rows_entered` and `test_codes` against the prior year for the same
+region and entity. A large drop means the source covered fewer test codes than
+the official file will, which is expected for an interim load but should be said
+out loud so it gets replaced.
 
 Finally confirm the comparisons actually resolve — a row that finds no Region
 partner reads `false`, indistinguishable from a genuine loss:

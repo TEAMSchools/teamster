@@ -403,6 +403,35 @@ The counts remain null on these rows: Advanced Comps shows the percentage with
 blank `total_students` and `total_proficient_students`, which is the honest
 representation of what a press figure contains.
 
+### Reading the sheets: ADC, not the BigQuery MCP
+
+Both Google Sheets sources behind this dashboard are Drive-backed externals. The
+BigQuery MCP service account has no Drive scope and returns 403 on them. **ADC
+does have Drive scope**, so a Python client reads the external directly and sees
+the sheet live — which is the only way to answer "did that paste land" without
+waiting on a build.
+
+Do not reach for a `--target staging` build to inspect rows. It is a shared
+write that needs authorization, and the table it produces is frozen at build
+time, so it answers a different question than the one usually being asked. Build
+only when something downstream has to read the result.
+
+The same applies to the prod `stg_*` table: it is a table, not a live read, so
+it reports pre-edit values indefinitely. Judging current sheet contents from it
+is a standing trap.
+
+### Interim loads on record
+
+| loaded     | academic year | entity | scope                             | rows | source                                |
+| ---------- | ------------- | ------ | --------------------------------- | ---: | ------------------------------------- |
+| 2026-09-17 | 2025          | State  | NJ, `Total` / `All Students` only |   51 | NJDOE/press slide, spring 2026 column |
+
+That load is 17 test codes across Camden, Newark and Paterson — the six 3-8 Math
+codes, the six 3-8 ELA codes, `ELA09`, `GEO01`, `ALG02`, and `ALG01` written to
+both MS and HS. No science, because Cambium had not reported science; no
+`ELA10`, which is deprecated. Percentages only, no denominators. Replace it when
+the official file lands, using the full-swap procedure.
+
 ### Comparison entities
 
 | `comparison_entity`    | Origin  | Meaning                                |

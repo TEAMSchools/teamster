@@ -26,9 +26,28 @@ Single quotes inside a BigQuery string literal escape with a **backslash**
 
 The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
 ("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
-scope. To inspect a sheet-backed source's rows, build the staging model via dbt
-(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
-query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
+scope. **ADC does have Drive scope, so query the external directly from a Python
+client instead** — no dbt build, no `stage_external_sources`, and it reads the
+sheet live, so a paste is verifiable seconds after it happens:
+
+```python
+# uv run python <script.py>
+from google.cloud import bigquery
+
+client = bigquery.Client(project="teamster-332318")
+rows = client.query("select ... from `teamster-332318`.<dataset>.<src_table>")
+```
+
+Verified 2026-09-17 against
+`kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics`.
+This supersedes the older advice to build the staging model into `zz_stg_*` and
+query that — a `--target staging` build is a shared write needing authorization,
+and the copy it produces is frozen at build time, so it cannot answer "did my
+paste land". Build into a dev/staging table only when something downstream must
+read it, not to look at rows.
+
+Prefer this over `bq` for reading sheets too: `bq` uses gcloud user creds that
+expire mid-session, while ADC does not.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
