@@ -245,7 +245,12 @@ is a package column add and needs the cross-project staging dance.
    Tier-D-only matches.
 6. **Present `no_match` separately** and say which kind: no enrollment that year
    (unmatchable, not a sheet problem) versus enrolled but no tier satisfied.
-7. **Audit after the paste.** See below.
+7. **Present `ambiguous` separately**, as a table, never in a paste block. These
+   rows carry **no** `proposed_student_number` on purpose — more than one
+   student satisfied a tier, and the query withholds the candidate rather than
+   emitting an arbitrary one. A person picks among the candidates or decides
+   none of them fit. Never guess, and never default to the first.
+8. **Audit after the paste.** See below.
 
 ### Procedure: Audit the crosswalk against the rules
 

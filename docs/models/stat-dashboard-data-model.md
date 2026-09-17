@@ -272,7 +272,11 @@ where the feed supplies one, and a grade check where the test code encodes a
 grade. That is precisely what
 [`analyses/state_assessment_tiered_crosswalk_match.sql`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql)
 already does -- Tier A is state id plus both names plus date of birth, and Tier
-B drops only the date of birth, and only where the feed does not carry one.
+B drops only the date of birth. Note Tier B fires on **any** row without a
+usable date of birth, not only on a feed that structurally lacks one: a
+malformed or unexpectedly-formatted value lands there too, silently. Since Tier
+B then rests on a state id, and #3954 says those are unreliable, it is the
+weakest tier that still auto-resolves.
 
 Which is why the fallback has not been built. Done safely it is not a
 `coalesce`; it is the whole matcher embedded in an intermediate, for a

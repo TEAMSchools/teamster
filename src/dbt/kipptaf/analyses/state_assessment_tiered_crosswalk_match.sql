@@ -61,6 +61,13 @@
 -- any_value, so naming one would be a coin flip.
 -- no_match          - no tier was satisfied at all
 --
+-- Conservation: every gaps_typed row reaches exactly one bucket, because
+-- arm one emits one row per key in picked and arm two emits exactly the
+-- gaps_typed keys absent from picked. That holds only while gaps_typed is the
+-- anti-join's left side. Filtering gaps_typed itself, rather than candidates,
+-- without matching the anti-join would silently drop rows again -- which is
+-- the bug this structure replaced.
+--
 -- No fuzzy matching. Every transform is a deterministic string operation.
 with
     gaps as (
