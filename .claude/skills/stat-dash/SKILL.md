@@ -37,6 +37,10 @@ not just before editing.
   bug. See the reference doc.
 - `int_pearson__all_assessments` carries **both** Pearson and Cambium. Its name
   is a known misnomer. Never assume a row in it is Pearson.
+- **The vendor changed on a date, not per assessment.** Through December 2025 it
+  is Pearson; Spring 2026 and everything after is Cambium, for all NJ state
+  testing. So the Pearson relations are history and will not gain rows -- a gap
+  in one cannot be fixed by a re-pull -- and `stg_pearson__njgpa` is moot.
 
 ---
 
@@ -162,6 +166,103 @@ Almost always an unresolved `localstudentidentifier`.
    last prod build.
 
 **Do not quote the student's name in a PR, issue, or Slack.** Quote the UUID.
+
+---
+
+## Procedure: Generate crosswalk rows for every flagged test
+
+Use this instead of resolving rows one at a time when the detector has a batch
+outstanding. The logic lives in
+[`src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql`](../../../src/dbt/kipptaf/analyses/state_assessment_tiered_crosswalk_match.sql);
+this is the runbook. It is modelled on `collegeboard-ap-data-ingest-protocol`,
+which solves the same problem for AP.
+
+**PII.** Output carries names, dates of birth and student numbers. Terminal and
+local scratch only -- never a PR, issue, commit or any file under version
+control. Write results to a file and report only counts.
+
+### What the rules require
+
+Three criteria, in the order they bind:
+
+1. **Enrollment gate, hard, every tier.** The candidate must have an enrollment
+   row for the test's own `academic_year` and `_dbt_source_project` with
+   `rn_year = 1`. Without it the sheet cannot help at all -- see the unmatchable
+   category above.
+2. **Grade corroboration.** Codes ending `03`-`08` encode the grade, so
+   enrollment `grade_level` must equal it: a **hard gate**, mismatch routes to
+   `flagged_for_review`. HS codes (`ALG01`, `ALG02`, `GEO01`, `ELA09`, `ELA10`,
+   `ELAGP`, `MATGP`, `SCI11`) do not encode grade -- students sit Algebra I in
+   grade 8 or 9 and the pathway tests in 11 -- so there it is **informational
+   only and never gates**.
+3. **Identity**: state id, first name, last name, date of birth.
+
+| tier | identity evidence                               | note                                 |
+| ---- | ----------------------------------------------- | ------------------------------------ |
+| A    | state id + first + last + DOB                   | strongest                            |
+| B    | state id + first + last, DOB unavailable        | Cambium; strong, not conclusive      |
+| C    | DOB + first + last, state id does **not** match | catches a wrong state id             |
+| D    | DOB + last, first differs                       | nicknames; never auto-resolved alone |
+
+**DOB is not available everywhere, and that is not a vendor property.**
+`stg_pearson__njsla` / `_njsla_science` / `_parcc` carry `birthdate` only
+because they `select * except (...)`, so it rides through unnamed.
+`stg_cambium__njgpa` and `stg_pearson__njgpa` use explicit column lists that
+omit it, though the raw files have it. Cambium therefore runs on Tier B. Adding
+`birth_date` to the cambium package staging model would lift it to Tier A; that
+is a package column add and needs the cross-project staging dance.
+
+### Steps
+
+1. **Count first.** Run the detector and report how many rows are outstanding,
+   split by mode. Ask before running the match.
+2. **Compile and run:**
+
+   ```bash
+   uv run dbt compile --project-dir src/dbt/kipptaf --target prod \
+     --select "path:analyses/state_assessment_tiered_crosswalk_match.sql"
+   ```
+
+   Then execute the compiled SQL. Write the result to a local CSV rather than
+   printing it -- 36-character UUIDs also trip the output scanner, so a printed
+   result often comes back redacted anyway.
+
+3. **Report the bucket split** -- `resolved`, `flagged_for_review`, `no_match`
+   -- and the tier distribution. Ask before handing over rows.
+4. **Deliver `resolved` in batches of 20**, as a plain two-column delimited
+   block inside a fenced code block, `Student_Test_UUID` then `Student_Number`,
+   so it pastes into two sheet columns without markdown pipes riding along. Wait
+   after each batch. Never dump every batch at once.
+5. **Present `flagged_for_review` separately**, as a table for individual
+   decisions -- never in a paste block. These are grade-gate failures and
+   Tier-D-only matches.
+6. **Present `no_match` separately** and say which kind: no enrollment that year
+   (unmatchable, not a sheet problem) versus enrolled but no tier satisfied.
+7. **Audit after the paste.** See below.
+
+### Procedure: Audit the crosswalk against the rules
+
+Replays every existing sheet row through the tiers using its raw pre-repair
+identifier and compares the rules' pick to what a human entered. Run it after
+any batch of entries, and periodically.
+
+Outcomes: `agrees`, `ambiguous`, `no_pick_identity`, `no_pick_not_enrolled`, and
+`DISAGREES`.
+
+**A disagreement is serious** -- it means a sheet row points at a different
+student than the evidence supports. Investigate before assuming the rules are
+wrong; the sheet has no test protecting it.
+
+The 2026-09-17 baseline was 81 rows: 66 agree, 2 ambiguous, 7
+`no_pick_identity`, 6 `no_pick_not_enrolled`, **0 disagreements**. The reference
+doc carries the interpretation. Compare against that baseline rather than
+treating any non-agreeing row as new.
+
+Resist adding a tier to absorb `no_pick_identity` rows. A new tier is justified
+only by a deterministic, generalizable pattern, the same bar the AP protocol
+sets for its no-match bucket -- otherwise the rules drift toward rubber-stamping
+whatever is already in the sheet, which destroys their value as an independent
+check.
 
 ---
 
