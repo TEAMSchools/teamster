@@ -1,6 +1,6 @@
--- Miami is absent from this list on purpose: the Focus branch of
--- int_students__terms floors at syear 2018, so Focus already supplies Miami
--- terms across the whole PowerSchool archive range (#4750).
+-- Miami is absent from this list. Focus does not supply Miami quarters for
+-- every school before AY2025, and the archive's quarters overlap the Focus ones
+-- with different dates, so wiring Miami in needs a precedence rule (#5397).
 with
     union_relations as (
         {{
