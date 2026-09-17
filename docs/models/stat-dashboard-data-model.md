@@ -1,0 +1,440 @@
+# STAT Dashboard Data Model
+
+Reference for the **State Testing Analysis Tool (STAT)** — the Tableau workbook
+KTAF uses to read state assessment results across Newark, Camden, Miami and
+Paterson.
+
+Row counts and other measurements in this document were taken against production
+on 2026-09-16. They are here to make a claim checkable, not because they stay
+true; re-run the query beside a number before relying on it.
+
+## What is STAT?
+
+One workbook, two reporting models, and a Google Sheet of hand-entered
+comparison figures. It answers two different questions that people routinely
+confuse:
+
+- **How did our students do?** Student-level scores, proficiency bands, growth
+  year over year, and teacher rosters.
+- **How did we do against everyone else?** KTAF proficiency next to the host
+  city, the state, and (in Miami) a named set of neighborhood schools.
+
+The second question has no warehouse source. Nobody publishes comparison
+proficiency in a form we can ingest, so it is typed into a sheet by hand. Most
+of the surprises in this pipeline come from that fact.
+
+## The workbook
+
+Exposure `state_testing_analysis_tool` in
+`src/dbt/kipptaf/models/exposures/tableau.yml`. Tableau LSID
+`31b6a4a9-e0ca-479b-8f44-0daaa52e109b`, project `Production`.
+
+Six published views and one hidden dashboard, drawing on two embedded extracts:
+
+| View                      | Datasource                                       |
+| ------------------------- | ------------------------------------------------ |
+| Landing Page              | `rpt_tableau__state_assessments_dashboard`       |
+| Overview                  | `rpt_tableau__state_assessments_dashboard`       |
+| Demographics              | `rpt_tableau__state_assessments_dashboard`       |
+| Teacher/Student Roster    | `rpt_tableau__state_assessments_dashboard`       |
+| Proficiency YoY           | `rpt_tableau__state_assessments_dashboard`       |
+| **Advanced Comps**        | `rpt_tableau__state_assessments_dashboard_comps` |
+| _Sarba's Report_ (hidden) | `rpt_tableau__state_assessments_dashboard`       |
+
+**Only Advanced Comps reads the comps model.** Three worksheets sit on it —
+`Advanced Comps - 3-Column`, `- 5-column` and `- Header` — plus an orphan
+worksheet `Sheet 52` that is bound to the comps datasource but placed on no
+dashboard. A change confined to `rpt_tableau__state_assessments_dashboard_comps`
+cannot move any number on the other five views.
+
+Both datasources are **embedded extracts**. The Tableau MCP cannot read
+calculated-field text and returns HTTP 500 on `get-datasource-metadata` for an
+embedded extract, so any question about what the workbook does with a field is
+answered by downloading the `.twb` — see the `tableau-workbook-xml` skill.
+
+## Scores: the NJ dual-vendor union
+
+New Jersey is migrating state assessment reporting from **Pearson Access Next**
+to **Cambium TIDE**. NJGPA completed the move at the Spring 2026 administration.
+The remaining assessments are migrating too; the administration they move on is
+not recorded here yet, and
+[`src/dbt/cambium/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/cambium/CLAUDE.md)
+still describes NJSLA and NJSLA Science as Pearson-only. Treat that file as the
+thing to update when the date is known.
+
+The union happens at kipptaf `int_pearson__all_assessments`, over five
+relations:
+
+```text
+kippnewark_pearson.int_pearson__all_assessments    ]
+kippcamden_pearson.int_pearson__all_assessments    ]  Pearson
+kipppaterson_pearson.int_pearson__all_assessments  ]
+
+kippnewark_cambium.stg_cambium__njgpa              ]  Cambium
+kippcamden_cambium.stg_cambium__njgpa              ]
+```
+
+**The model's name is a misnomer and a rename is pending.** It carries two
+vendors. Anything reading it should not assume Pearson.
+
+Cambium ships a completely different schema — snake_case headers against
+Pearson's camel case, with only 11 of 225 column names in common — so
+`stg_cambium__njgpa` in the cambium package does the vocabulary mapping into the
+Pearson-shaped columns before kipptaf ever sees it. The two vendors' aligned
+columns are computed in two different places and have to be kept in step by
+hand:
+
+| Vendor  | Where the aligned columns are computed                    |
+| ------- | --------------------------------------------------------- |
+| Pearson | `int_pearson__all_assessments` in the **pearson** package |
+| Cambium | `stg_cambium__njgpa` in the **cambium** package           |
+
+A cambium-package model cannot call into the pearson package, so the race, IEP
+and ML mappings are deliberately restated rather than shared. If you change one,
+change the other.
+
+`assessment_version` is what tells the two apart downstream: `NJGPA` is the
+retired Pearson form, `NJGPA-A` the Cambium adaptive form. They use different
+score scales and therefore different graduation cut scores, which is why the
+cut-score sheet joins on `assessment_version` and not on `assessment_name`.
+
+Production distribution:
+
+| `assessment_version` | kippnewark | kippcamden | kipppaterson |
+| -------------------- | ---------: | ---------: | -----------: |
+| PARCC                |     12,637 |      2,988 |            — |
+| NJSLA                |     32,278 |     11,931 |          324 |
+| NJSLA Science        |      4,985 |      1,819 |          116 |
+| NJGPA (Pearson)      |      3,081 |      1,049 |            — |
+| NJGPA-A (Cambium)    |        564 |        249 |            — |
+
+Paterson does not sit for NJGPA and has `stg_pearson__njgpa` disabled; it does
+not import the cambium package at all.
+
+Florida is a separate leg entirely — `int_fldoe__all_assessments`, unioned in at
+the reporting view rather than here.
+
+## Repairing a student number that does not resolve
+
+Assessment rows arrive keyed on the vendor's `localstudentidentifier`, which is
+supposed to be the network `student_number`. Sometimes it isn't, and the
+assessment row then fails to join to an enrollment and disappears from the
+dashboard silently.
+
+The repair chain, in kipptaf `int_pearson__all_assessments`:
+
+```sql
+coalesce(x.student_number, s.localstudentidentifier) as localstudentidentifier
+-- x = stg_google_sheets__pearson__student_crosswalk, on student_test_uuid
+```
+
+**The repair is applied after the union, so it already covers every vendor.**
+There is no Pearson-specific and Cambium-specific version of this: one sheet,
+one join, keyed on the test UUID. A Cambium correction goes in the same sheet as
+a Pearson one and works with no code change, because `stg_cambium__njgpa`
+already aliases `student_test_uuid` to `studenttestuuid` before the union.
+
+The sheet is named for Pearson only because Pearson was the sole vendor when it
+was built. Renaming it is deferred, not forgotten -- see _Deferred work_ below.
+
+`test_incorrect_student_number_pearson` is the detector. It returns any row from
+2017 onward whose `localstudentidentifier` is null or fails to resolve to an
+enrollment, and its failure rows carry the `studenttestuuid` you paste into the
+sheet. It reads the unioned model, so it covers Cambium as well. Its own name is
+still Pearson-flavoured; renaming it, and renaming
+`int_pearson__all_assessments`, remain open.
+
+**The detector is non-blocking.** It sets no `severity`, so it inherits
+kipptaf's project default of `warn`. A failing row does not fail a build or CI —
+it produces a warning nobody is required to read, which is why the 9 Cambium
+rows below have sat unresolved since the Spring 2026 administration. Raising it
+to `error` is a decision about whether an unrepaired score should stop a deploy,
+not an oversight to quietly correct.
+
+Its failure rows contain `firstname` and `lastorsurname`. **Those are student
+PII — never paste them into a PR, an issue, or Slack.** Quote the UUID and the
+count.
+
+### Failure modes -- and they are modes, not vendors
+
+The distinction that matters is how the identifier is broken, not who sent it.
+
+- **Absent.** The identifier arrives null, so the join has nothing to match on.
+  Mechanically recoverable: `statestudentidentifier` resolves to the same
+  student. No human judgement required.
+- **Present but wrong.** No rule recovers the intended student, so a person has
+  to decide who the test belongs to. The crosswalk sheet is the only mechanism
+  for this, and it is permanent.
+
+The second mode is the dangerous one. A wrong identifier that happens to be a
+_valid_ `student_number` resolves to the wrong student silently, and the
+detector never fires because the join succeeds. That is not hypothetical: the
+Paterson rows in the spec below FK'd into Newark students and passed every test
+until someone went looking.
+
+**Do not read these modes as vendor properties.** As of the Spring 2026
+administration all 11 outstanding Pearson failures are the wrong mode and all 9
+Cambium failures are the absent mode, so the two currently look like vendor
+traits. They are not. That Cambium reading comes from a single file -- 850 rows,
+one administration -- against eight years and ~71,000 rows of Pearson history.
+Cambium's `local_student_identifier` in that file is clean where populated (zero
+non-numeric values, 804 of 804 non-null values resolving 1:1, only 5- and
+6-digit widths), but one file is no basis for assuming the next one will be.
+Triage by mode; never conclude a vendor cannot produce a mode.
+
+### The third category: no enrollment in the year the test was taken
+
+Some failing rows are neither mode, and **the crosswalk cannot repair them.**
+Check for this before entering anything in the sheet.
+
+The repair only overrides `localstudentidentifier`. The join still needs
+`student_number`, `academic_year` and `_dbt_source_project` to land together on
+an enrollment with `rn_year = 1`. When the student has no enrollment in that
+year and district, no value in the sheet makes the join succeed -- the row stays
+flagged and the sheet gains an entry that does nothing and never expires.
+
+As of 2026-09-16 this is 8 of the 20 outstanding rows: 4 NJSLA and 4 PARCC, 6
+Newark and 2 Camden, and **every one of them is academic year 2017 or 2018**.
+All 8 match exactly one student by name somewhere in PowerSchool -- a different
+year, a different district, or both -- and none of them match in the year the
+test belongs to. Four also match a single student by state id on that widened
+search.
+
+That a name resolves on the widened search is what makes this category
+deceptive: it looks solvable right up to the point where you notice the year
+does not line up. The remaining explanations are an Ops or enrollment-history
+question, not an identifier question:
+
+- the student genuinely was not at that region that year, so the test row is
+  filed to the wrong district;
+- the enrollment record for 2017 or 2018 is missing, a gap in the PARCC-era
+  history rather than a broken id;
+- the name match is a different person who shares the name.
+
+The concentration in the two oldest years points at the second. Compare with the
+8 Paterson orphans in
+[#3956](https://github.com/TEAMSchools/teamster/issues/3956), which are the same
+shape: rows no model-side join can resolve, tracked as an Ops item rather than
+repaired in dbt.
+
+### Open recommendation — resolve Cambium nulls from the state id
+
+Not implemented. Recorded here because the evidence is already gathered.
+
+Every one of the 9 Cambium rows currently failing the test (6 Camden, 3 Newark)
+carries a populated `statestudentidentifier`, and **all 9 resolve 1:1 to a
+PowerSchool enrollment** for the same academic year and district — zero null
+state ids, zero fan-out. So the Cambium failure mode is mechanically recoverable
+and does not need a human at all:
+
+```sql
+coalesce(
+    x.student_number,          -- crosswalk sheet, for a wrong value
+    s.localstudentidentifier,  -- what the vendor sent
+    sid.student_number         -- proposed: resolved from statestudentidentifier
+) as localstudentidentifier
+```
+
+The precedent exists in the building: the preliminary-scores branch of
+`rpt_tableau__state_assessments_dashboard` already joins `e.state_studentnumber`
+this way. Cost is a new dependency on `base_powerschool__student_enrollments`
+inside the intermediate, region-keyed and `rn_year = 1`; there is no cycle,
+because enrollments does not read the assessment side.
+
+**It addresses one mode and does not replace the sheet.** The fallback would
+clear the absent mode permanently. The present-but-wrong mode has no automated
+recovery at all, so the crosswalk stays regardless -- for every vendor, however
+clean a given file looks. Read this as reducing volume, not as removing the
+hand-entry step.
+
+## Comparisons: two independent paths
+
+The single most common mistake in this pipeline is assuming there is one comps
+calculation. There are two, they read different things, and they disagree by
+design.
+
+```text
+                    stg_google_sheets__state_test_comparison_demographics
+                    (hand-entered City / State / Neighborhood figures)
+                              |                          |
+                              |                          |
+         +--------------------+                          +------------------+
+         |                                                                  |
+         v                                                                  v
+  rpt_tableau__state_assessments_dashboard                 rpt_tableau__state_assessments_dashboard_comps
+  `state_comps` CTE                                        `appended` CTE, third branch
+         |                                                                  ^
+         | filters to Total / All Students                                  |
+         | pivots to 3 wide columns                                         | unions with
+         v                                                                  |
+  proficiency_city / _state /                              int_tableau__state_assessments_demographic_comps
+  _neighborhood_schools                                    (KTAF's OWN results, aggregated from student rows)
+         |                                                                  |
+         v                                                                  v
+  five views                                                        Advanced Comps
+```
+
+**Path one — embedded in the score view.** The `state_comps` CTE inside
+`rpt_tableau__state_assessments_dashboard` reads the sheet directly, filters to
+`comparison_demographic_group = 'Total'` and
+`comparison_demographic_subgroup = 'All Students'`, and pivots the three
+comparison entities into three wide columns (`proficiency_city`,
+`proficiency_state`, `proficiency_neighborhood_schools`). No demographic
+breakdown, no KTAF-derived rows. This is what most views show.
+
+**Path two — the long comps model.**
+`rpt_tableau__state_assessments_dashboard_comps` unions the sheet rows with
+KTAF's own results computed from student-level scores in
+`int_tableau__state_assessments_demographic_comps`, keeps every demographic
+subgroup, and emits one row per comparison. Only Advanced Comps reads it.
+
+A number that differs between Overview and Advanced Comps is usually these two
+paths, not a bug.
+
+The sheet is also a **metadata** source, separately from being a comps source:
+`int_tableau__state_assessments_demographic_comps` reads it in its
+`test_code_metadata` CTE purely to look up `school_level`, `grade_range_band`
+and `discipline` per test code. A test code absent from the sheet loses that
+metadata for KTAF's own rows.
+
+### Comparison entities
+
+| `comparison_entity`    | Origin  | Meaning                                |
+| ---------------------- | ------- | -------------------------------------- |
+| `City`                 | sheet   | the host city LEA                      |
+| `State`                | sheet   | statewide                              |
+| `Neighborhood Schools` | sheet   | a named comparison set, **Miami only** |
+| `Region`               | derived | KTAF in that region                    |
+| `KTAF NJ`              | derived | all NJ regions combined                |
+| `KTAF FL`              | derived | Miami                                  |
+
+`region_matched`, `region_outperformed` and `region_matched_or_outperformed` are
+computed by self-joining each row to its `comparison_entity = 'Region'` partner
+on ten columns, including `comparison_demographic_subgroup`. **A row whose
+subgroup string has no Region partner gets `false`, not null** — the join yields
+null and `if(null, true, false)` collapses it. A missing comparison and a lost
+comparison are indistinguishable on the dashboard.
+
+### Controlled vocabulary
+
+`comparison_demographic_subgroup`, after the normalization in
+`stg_google_sheets__state_test_comparison_demographics`:
+
+`African American` · `All Students` · `American Indian` · `Asian` ·
+`Economically Disadvantaged` · `Female` · `Hispanic` · `Male` · `ML` ·
+`Native Hawaiian` · `Non Economically Disadvantaged` · `Other` ·
+`SE Accommodation` · `Students With Disabilities` · `White`
+
+Guarded by an `accepted_values` test at `severity: error`. Extend it
+deliberately when a genuinely new subgroup appears — never to make a build pass.
+
+Test codes carried by the sheet: `ELA03`–`ELA10`, `ELAGP`, `MAT03`–`MAT08`,
+`MATGP`, `ALG01`, `ALG02`, `GEO01`, `SCI05`, `SCI08`, `SCI11`, `SOC08`.
+
+`ALG01` is the awkward one. Overall comparisons split MS from HS, but official
+sources publish demographic breakdowns only for grades 8+ combined. The sheet
+therefore carries HS-only ALG01 rows flagged `remove_row = true`, which the
+staging model filters out of the main branch and re-aggregates in a second
+branch into a single weighted `Total` / `All Students` row. `ALG02` totals are
+10th grade only and `GEO01` follows the same pattern for grades 9 and 10, while
+their demographic rows include every student who took the test.
+
+## Known issues
+
+### Resolved — the subgroup vocabulary was split, and comparisons read false
+
+Fixed in this model. Recorded because the shape recurs.
+
+The sheet used two spellings that the KTAF-derived rows never use, and the
+self-join above matches on that exact string:
+
+| Sheet side                  | Derived side                     |
+| --------------------------- | -------------------------------- |
+| `Black Or African American` | `African American`               |
+| `Non-Econ. Disadvantaged`   | `Non Economically Disadvantaged` |
+
+The effect was total and silent: **0 of 337** `Black Or African American` rows
+and **0 of 671** `Non-Econ. Disadvantaged` rows ever read
+`region_outperformed = true`, while spelling-matched `Hispanic` read true on 145
+of 296. Normalizing flips 239 rows to true and none to false.
+
+The two labels broke differently, and one has a date:
+
+- `African American` was used by the NJ regions for **AY2018–2023**.
+- `Black Or African American` appears in NJ for **AY2024 only**, and in Miami
+  for AY2020–2024.
+- `Non-Econ. Disadvantaged` is used everywhere, every year.
+
+So the NJ Black/African American comparison **worked through AY2023 and broke
+when AY2024 was entered**, which would have read as "the 2024 comps look worse."
+Miami's never worked. The economic-disadvantage comparison has never worked
+anywhere, in any year.
+
+Normalizing changes no aggregate — 13,897 rows before, 13,897 distinct grouping
+keys after, so nothing merges and `percent_proficient`, `total_students` and
+`total_proficient_students` are byte-identical. It also fixes a sort: the
+workbook carries a `<manual-sort>` dictionary on this field listing the derived
+vocabulary, so the two sheet spellings previously fell to the end of the axis.
+
+### Open — 195 comparison rows still find no Region partner
+
+Normalizing the two labels does not close the gap entirely. 65
+`Black Or African American` rows and 130 `Non-Econ. Disadvantaged` rows still
+match no Region row, and the problem is broader than those two subgroups: **573
+of 870 `Neighborhood Schools` rows have no Region partner at all.**
+
+Not diagnosed. The self-join keys on ten columns and the likely culprits are
+`school_level` and `grade_range_band`, which reach the sheet rows as typed
+values but reach the derived rows through `any_value()` in the
+`test_code_metadata` lookup. Start there, not at the subgroup labels.
+
+### Open — comparison data stops at academic year 2024
+
+The sheet carries nothing for AY2025 or later, for any region. Official
+comparison files do not arrive until roughly November, so the intervening months
+are covered by transcribing figures out of whatever NJDOE and district
+presentations circulate. See the `stat-dash` skill for that procedure.
+
+Coverage is also uneven historically — NJ has no 2019 or 2020 rows (COVID), and
+Paterson begins at 2023.
+
+### Deferred work on the crosswalk
+
+All of this was considered and deliberately postponed in September 2026. The
+sheet is used as-is meanwhile, with Cambium corrections going into the existing
+tab alongside the Pearson ones.
+
+1. **Rename it off the Pearson name.** It serves every NJ vendor. A rename
+   touches the spreadsheet, the named range, the source entry, `sheet_range`,
+   the staging model and its properties, the Dagster asset key, and the one
+   `ref()` in `int_pearson__all_assessments` -- and leaves two orphaned
+   relations in `kipptaf_google_sheets` that dbt will not drop. The August 2026
+   Cambium ingestion spec logged this first.
+2. **Add a vendor column.** Provenance only; no UUID appears under both vendors
+   (72,021 rows, 72,021 distinct UUIDs), so it would never be part of the join
+   key.
+3. **Move the per-localid corrections into district intermediates and retire the
+   sheet.** This is the endpoint the Paterson ID-translation spec names: _"File
+   a follow-up issue to move the per-localid corrections to kippnewark /
+   kippcamden intermediates analogous to the Paterson pattern; then the
+   crosswalk can be retired."_ No such issue was found open as of 2026-09-16.
+   Note that this only works for corrections with a derivable rule -- the
+   present-but-wrong mode has none, so some manual surface survives any version
+   of this.
+4. **Close two staging-layer gaps.** The model has no uniqueness test and no
+   column descriptions, which the staging-layer rule requires.
+
+The relevant precedent for (3) is that this repo fixes _systematic_ identifier
+problems structurally and _one-off_ ones with a sheet row. Paterson's 440 rows
+all carried district SIS IDs, and the fix was a join against
+`stg_powerschool__studentcorefields.prevstudentid` at the kipppaterson layer,
+not 440 sheet entries. The 69 rows in this sheet are the one-off kind: raw
+values span 4 to 9 digits correcting to 5 or 6, which is scattered data entry
+error, not one translatable id space.
+
+### Open — the exposure has no `url`
+
+`state_testing_analysis_tool` omits `url:`, which
+[`src/dbt/kipptaf/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/CLAUDE.md)
+lists as required for every exposure. Cosmetic, but it is the reason the
+workbook link has to be looked up by LSID.
