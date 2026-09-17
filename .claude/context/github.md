@@ -1,5 +1,7 @@
 # GitHub MCP gotchas
 
+- Pass `minimal_output: true` on every `mcp__github__*` read unless you need a
+  field it drops.
 - **Neither the read nor the write tools mangle body text. Escaped characters in
   a read result are transport encoding, not corruption.** `pull_request_read` /
   `issue_read` render `<`, `>` and `&` as the JSON escapes `\u003c`, `\u003e`

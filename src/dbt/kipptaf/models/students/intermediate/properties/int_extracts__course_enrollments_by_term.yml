@@ -1268,8 +1268,15 @@ models:
       - name: section_or_period
         data_type: string
         description: >
-          Period expression for HS students (external_expression); section
-          number for non-HS students (section_number).
+          Display label identifying one section to a school-based staff member.
+          HS combines the external expression (period/day schedule) with the
+          section number, because two HS sections of the same course can meet in
+          the same period with the same teacher, and the period alone does not
+          tell them apart. Non-HS uses the section number alone. Held identical
+          to the column of the same name on
+          int_extracts__course_schedule_by_term, which derives it independently
+          from the same PowerSchool columns for the teacher-facing side of the
+          gradebook audit.
       - name: pct_enrolled_in_quarter
         data_type: float64
         description: >

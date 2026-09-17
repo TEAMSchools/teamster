@@ -64,9 +64,9 @@ right. Say "yes" or "looks good" to approve each section.
 
 After the brainstorm conversation, Claude will:
 
-1. Open a GitHub issue with `gh issue create` — labeled with the appropriate
-   conventional commit type (`feat`, `fix`, `refactor`, etc.) and any related
-   system labels.
+1. Open a GitHub issue through the GitHub connector — labeled with the
+   appropriate conventional commit type (`feat`, `fix`, `refactor`, etc.) and
+   any related system labels.
 2. **Ask you: worktree or branch switch?** These are two ways to create a
    development branch. Claude will not choose for you.
    - **Branch switch** — switches your current workspace to the new branch. One
@@ -194,18 +194,24 @@ You won't use these every time, but they're available when you need them:
 
 ## Choosing a Model and Effort Level
 
-Two knobs control cost and quality, and they buy different things:
+Three knobs control cost and quality, and they buy different things:
 
 - **Model tier** (Haiku → Sonnet → Opus → Fable) buys judgment per token —
   better questions, sharper pushback, deeper design insight.
 - **Effort** (`low` → `xhigh`) buys investigation — more thinking, more
   verification, more files read before answering.
+- **Compaction threshold** (`/autocompact 150k`, or `autoCompactWindow` in
+  settings) caps what every turn re-reads. Claude Code's default on 1M-window
+  models is about 967k. Measured across this repo's sessions in 2026-09,
+  re-reading context was 71% of Opus orchestrator spend, and turns above 300k
+  context were over half of it. Set it once; it matters more than model or
+  effort.
 
-Set them with `/model` before starting a session. Rules of thumb: spend on tier
-when the work is judgment-bound (design, brainstorming); spend on effort when it
-is investigation-bound (review, debugging). Structure substitutes for effort — a
-Superpowers workflow or a human in the loop supplies the breadth and
-depth-checking the model would otherwise need effort budget for.
+Set model and effort with `/model` before starting a session. Rules of thumb:
+spend on tier when the work is judgment-bound (design, brainstorming); spend on
+effort when it is investigation-bound (review, debugging). Structure substitutes
+for effort — a Superpowers workflow or a human in the loop supplies the breadth
+and depth-checking the model would otherwise need effort budget for.
 
 | Session type                                       | Model / effort       |
 | -------------------------------------------------- | -------------------- |
@@ -220,10 +226,12 @@ orchestrator is the only quality gate over subagent work — under-effort there
 compounds silently), and running it at `xhigh` (Opus at max deliberation tends
 to redo the subagents' work instead of reviewing it).
 
-Subagent dispatches are Claude's job, not yours — the root `CLAUDE.md` binds the
-tiers (mechanical tasks → `haiku`, integration and reviews → `sonnet`, design
-and final review → `opus`), and skills like subagent-driven-development carry
-their own model-selection guidance.
+Effort buys quality, not savings. Measured across the same sessions, output
+tokens were 11-23% of spend at every effort level, so dropping to `medium` does
+not lower cost in a useful way.
+
+Subagent model choice is Claude's job, not yours. The root `CLAUDE.md`
+_Subagents_ section governs it.
 
 ## Common Mistakes
 
