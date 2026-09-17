@@ -481,11 +481,25 @@ when the official comparison file lands.
 
 ## Procedure: Replace interim comps with the official file
 
-When the official comparison data arrives, **replace the entire contents of the
-tab, not the interim rows individually.** Surgical row-level replacement means
-matching seven key columns by hand across hundreds of rows, and a single missed
-row leaves a press figure sitting among official ones with nothing marking it. A
-full swap is both easier and safer.
+**First decide which job this is.** Adding a year the sheet does not yet carry
+is an append: there are no keys to collide with, nothing to remove, and the
+uniqueness test protects you. Replacing a year that already has rows is the full
+swap below. Check before touching anything:
+
+```sql
+select academic_year, comparison_entity, count(*) as rows_present
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__state_test_comparison_demographics
+where academic_year = <year>
+group by 1, 2
+```
+
+Empty result means append. Anything else means swap.
+
+When the official comparison data arrives for a year already present, **replace
+the entire contents of the tab, not the interim rows individually.** Surgical
+row-level replacement means matching seven key columns by hand across hundreds
+of rows, and a single missed row leaves a press figure sitting among official
+ones with nothing marking it. A full swap is both easier and safer.
 
 1. **Build the complete replacement set first**, covering every academic year
    the sheet should carry, not only the new one. The official file is the
@@ -507,6 +521,56 @@ full swap is both easier and safer.
    file. If `total_students` is still empty after the swap, the rows are interim
    in everything but name, and Advanced Comps is still showing a percentage with
    nothing behind it.
+
+---
+
+## Procedure: Verify a comps model change against production
+
+Run this for any change to `rpt_tableau__state_assessments_dashboard_comps` or
+its upstreams. The model feeds a dashboard people quote in meetings, and the
+interesting failure is not an error -- it is a value quietly moving on a row
+nobody was looking at.
+
+Compile the model, then compare the compiled SQL against the production
+relation. Four rules, each of which exists because the obvious version of the
+check is blind to something:
+
+1. **Confirm the projected key is unique on both sides before joining.** The
+   final `SELECT` does not project `focus_level` even though `grouped_comps`
+   groups on it, so duplicate projected keys are possible in principle. If the
+   key is not unique the join fans out and every count below is meaningless.
+   Compare `count(*)` against `count(distinct format('%T', (<key columns>)))` on
+   each side.
+2. **Full outer join, never inner.** An inner join cannot see a row that
+   appeared or vanished -- exactly the damage a bad `GROUP BY` or a lost union
+   branch does. Count `rows_only_in_prod` and `rows_only_in_new` explicitly and
+   expect zero of each.
+3. **Compare every value column with `IS DISTINCT FROM`, not `!=`.** `!=` is
+   null-blind: `null != 0.42` is null, not true, so a row whose value appeared
+   or disappeared passes silently. Since null-to-value is the most common
+   deliberate change here, `!=` would hide the very thing being verified.
+4. **Separate "a null became a value" from "an existing value moved."** These
+   are different events and lumping them loses the signal. A dedicated counter
+   for `p.percent_proficient is not null and n.<col> is distinct from p.<col>`
+   is the one that must read zero unless the change was meant to restate
+   existing figures.
+
+Value columns to cover, all six: `percent_proficient`, `total_students`,
+`total_proficient_students`, `region_matched`, `region_outperformed`,
+`region_matched_or_outperformed`. Omitting a column means not verifying it; say
+which ones were compared rather than implying all of them.
+
+Worked example, the 2026-09-17 percentage fallback: 13,897 rows both sides,
+13,897 distinct keys both sides, 0 rows on either side alone, 12 rows null to
+value, **0 existing values moved**, `total_students` and
+`total_proficient_students` unchanged, and 2 each on `region_outperformed` and
+`region_matched_or_outperformed` because a recovered percentage can now
+participate in the Region self-join. `region_matched` stayed at 0, which is the
+right shape -- exact equality was never going to newly fire.
+
+Expect knock-on changes in the three booleans whenever a percentage changes, and
+say so up front. A reviewer who is told only about the percentages will read a
+moved boolean as an unexplained regression.
 
 ---
 
