@@ -39,8 +39,8 @@ models:
       - name: academic_year
         description: >-
           The school year's starting year, so 2025 for 2025-2026. Taken from the
-          quarter row covering the day, and from the membership row's own school
-          year on a day no quarter covers.
+          membership row's own school year, so it is non-null on every row
+          including a day no reporting quarter covers.
         data_tests:
           - not_null:
               config:

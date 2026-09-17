@@ -179,9 +179,10 @@ with
             t.semester,
             t.term,
 
-            -- A day no quarter covers keeps its membership year rather than
-            -- going null, so academic_year stays non-null on every row.
-            coalesce(t.academic_year, mem.yearid + 1990) as academic_year,
+            -- From the membership row, not the term spine: the left join nulls
+            -- every term column on a day no quarter covers. Identical where
+            -- the join matches -- the spine keys yearid to academic_year - 1990.
+            mem.yearid + 1990 as academic_year,
 
             abs(mem.attendancevalue - 1) as is_absent,
 
