@@ -358,5 +358,12 @@ models:
       - name: section_or_period
         data_type: string
         description: >
-          External expression for HS sections (period/day schedule); section
-          number for non-HS sections.
+          Display label identifying one section to a school-based staff member.
+          HS sections use the external expression (period/day schedule) followed
+          by the section number, because two HS sections of the same course can
+          meet in the same period with the same teacher, and the period alone
+          does not tell them apart. HS section numbers already lead with the
+          period and add a qualifier, so the combined label reads as period plus
+          qualifier. Non-HS sections use the section number alone, which names
+          the cohort and is already unique. A null external expression yields
+          the bare section number rather than a null label.

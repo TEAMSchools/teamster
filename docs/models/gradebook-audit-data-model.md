@@ -534,6 +534,55 @@ assignment that fails the no-flags bar for its category
 exactly `(number of sections) × 4` rows for the quarter — no separate anchor-row
 concept, unlike the pre-July-2026 design below.
 
+#### The display label is load-bearing, and lives upstream
+
+The dashboard groups its section rows on `section_or_period`, not on
+`sectionid`, so that column has to be **unique per section within a teacher,
+course, and quarter** or the workbook silently adds two sections together. It is
+derived in `int_extracts__course_schedule_by_term`, not here:
+
+```sql
+if(
+    s.school_level_alt = 'HS',
+    array_to_string([s.external_expression, s.section_number], ' '),
+    s.section_number
+) as section_or_period
+```
+
+MS uses `section_number` alone, which is a cohort name (`5Columbia`) and already
+unique. HS combines the period with the section number, because two HS sections
+of one course can meet in the same period with the same teacher — a specials
+rotation, where PE rotates against Intro to VPA and Driver's Ed, or an AP course
+split by grade. HS section numbers across all 3 high schools already lead with
+the period and add a qualifier (`1a`, `1b`, `1ICR`, `2ACC`, `12DB`), so the
+combined label reads as period plus qualifier and needs no new source column.
+`array_to_string` skips nulls, so a section with no `external_expression` gets
+the bare section number rather than a null label.
+
+Before this fix the HS branch returned `external_expression` alone, which
+collapsed 28 sections at KIPP Newark Collegiate Academy into 14 rows and
+reported each teacher's two sections as one summed count — 6 assignments against
+a target of 4, flagged red, where each section had actually entered 3 of 4. The
+warehouse rows were correct throughout; only the label merged them. If you
+change this expression, that uniqueness property is what to re-check, and the
+collision query is in
+[#5379](https://github.com/TEAMSchools/teamster/issues/5379).
+
+#### Which workbook consumes this
+
+The live dashboard is **Academic & Gradebook Health Suite**
+(`b3c14d67-3130-46ac-82a0-0637a5cc2da5`), exposure
+`academic_gradebook_health_suite`, which reads this model plus 4 GPA and
+course-grade models. It refreshes by extract on that exposure's
+`cron_schedule: 0 4 * * *`. Four of its worksheets render section rows —
+`Your sections grid`, `Your sections flags`, `Teacher sections panel`, and
+`Sheet Card - shortfalls` — and every action filter and tooltip on the audit
+datasource slices on `section_or_period`, which is why the label's uniqueness
+propagates to the tooltips without a workbook change.
+
+The `gradebook_audit` exposure is disabled and points at a dead workbook. Do not
+read it as this model's consumer.
+
 **CTE chain:**
 
 1. `category_join` — `int_extracts__course_schedule_by_term` inner-joined to
