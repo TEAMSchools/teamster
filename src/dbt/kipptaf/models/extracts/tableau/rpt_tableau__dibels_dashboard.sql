@@ -127,6 +127,7 @@ select
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
     cast(null as string) as aimline_trajectory_category,
+    cast(null as string) as aimline_round_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -327,6 +328,7 @@ select
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
     cast(null as string) as aimline_trajectory_category,
+    cast(null as string) as aimline_round_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
@@ -570,6 +572,16 @@ select
         then 'On Track to Benchmark'
         else 'On Aimline, Below Benchmark'
     end as aimline_trajectory_category,
+
+    -- pm is null on the measures a student skipped, so the roster's
+    -- round-grain status supplies those rows rather than a window broadcast.
+    case
+        when rs.round_test_status = 'Not Tested'
+        then 'Not Tested'
+        when rs.round_test_status = 'Round Incomplete'
+        then 'Round Incomplete'
+        else coalesce(pm.aimline_round_category, 'Not Tested')
+    end as aimline_round_category,
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
