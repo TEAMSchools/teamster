@@ -782,6 +782,24 @@ data_tests:
           ref:
             name: stg_cambium__njgpa
 
+  - name: stg_cambium__njsla__not_empty
+    description: >-
+      stg_cambium__njsla must never build empty, for the same reason as its
+      NJGPA sibling above -- a dropped or renamed Cambium column reads entirely
+      NULL, the district staging filter returns zero rows, and every unique /
+      not_null test passes vacuously over an empty relation. NJSLA carries the
+      additional risk that Science, ELA and Mathematics all arrive in the one
+      file, so a single silent column change removes three assessments at once.
+      Declared here in kipptaf rather than in the cambium package because the
+      district projects' unscoped `data_tests: +severity: warn` overrides
+      installed-package test config.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_cambium__njsla
+
   - name: int_students__graduation_path_codes__cutoff_within_score_scale
     description: >-
       A graduation pathway cut score must be reachable on the scale of the
