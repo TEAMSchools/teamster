@@ -9,38 +9,27 @@ from dagster import (
 
 from teamster.code_locations.kippcamden.cambium.assets import njgpa as camden_njgpa
 from teamster.code_locations.kippcamden.cambium.assets import njsla as camden_njsla
-from teamster.code_locations.kippcamden.cambium.assets import (
-    njsla_science as camden_njsla_science,
-)
 from teamster.code_locations.kippnewark.cambium.assets import njgpa as newark_njgpa
 from teamster.code_locations.kippnewark.cambium.assets import njsla as newark_njsla
-from teamster.code_locations.kippnewark.cambium.assets import (
-    njsla_science as newark_njsla_science,
-)
 from teamster.libraries.cambium.assets import build_remote_file_regex
 
-# The tail after `Record_File`. NJGPA's is verified against the real Cambium
-# file. The NJSLA tails are the guesses the optional group has to accept,
-# including the empty one for a file that carries no subject token at all.
+# The tail after `Record_File`, verified against the real Cambium files.
 NJGPA_TAILS = ["_GPA"]
-NJSLA_TAILS = ["", "_SLA", "_ELA", "_MAT", "_SCI"]
+NJSLA_TAILS = ["_SLA"]
 
 # district code embedded in each region's filename
 ASSETS = [
     (newark_njgpa, "7325", NJGPA_TAILS),
     (newark_njsla, "7325", NJSLA_TAILS),
-    (newark_njsla_science, "7325", NJSLA_TAILS),
     (camden_njgpa, "1799", NJGPA_TAILS),
     (camden_njsla, "1799", NJSLA_TAILS),
-    (camden_njsla_science, "1799", NJSLA_TAILS),
 ]
 
-# Every ordered pair of feeds within one region. The njsla and njsla_science
-# file regexes are permissive after `Record_File`, so only the directory keeps
-# one feed's asset off another feed's file.
+# Every ordered pair of feeds within one region. Only the directory segment
+# keeps one feed's asset off another feed's file.
 REGIONS = [
-    ([newark_njgpa, newark_njsla, newark_njsla_science], "7325"),
-    ([camden_njgpa, camden_njsla, camden_njsla_science], "1799"),
+    ([newark_njgpa, newark_njsla], "7325"),
+    ([camden_njgpa, camden_njsla], "1799"),
 ]
 
 CROSS_FEED = [
@@ -164,11 +153,9 @@ def test_the_other_districts_file_does_not_match(asset, district_code, tails):
 
 @pytest.mark.parametrize(("asset", "other", "district_code"), CROSS_FEED)
 def test_one_feeds_asset_never_matches_another_feeds_file(asset, other, district_code):
-    # The njsla and njsla_science file regexes end in an optional `(_\w+)?`
-    # because Cambium has not sent either file and the subject token is a
-    # guess. That permissiveness is only safe because the directory segment
-    # scopes each asset to its own folder -- including `cambium/njsla` against
-    # a path under `cambium/njsla_science`, which shares the njsla prefix.
+    # A subject token this feed has never carried must still not pull in
+    # another feed's file, so the directory segment -- not the filename tail --
+    # is what scopes each asset to its own folder.
     pattern = _composed_regex(asset)
     declared = _declared(asset)
 

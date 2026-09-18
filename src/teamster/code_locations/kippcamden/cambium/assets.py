@@ -48,27 +48,7 @@ njsla = build_sftp_file_asset(
     partitions_def=partitions_def,
 )
 
-# Cambium sends ELA, Mathematics AND Science rows in the one njsla file, so this
-# asset matches nothing today and stg_cambium__njsla splits the subjects itself.
-# It stays wired because a file dropped in a folder no asset watches is ignored
-# silently, with no failed check to notice.
-njsla_science = build_sftp_file_asset(
-    asset_key=[*key_prefix, "njsla_science"],
-    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla_science",
-    remote_file_regex=build_remote_file_regex(
-        partitions_def=partitions_def,
-        district_code=DISTRICT_CODE,
-        # Cambium has sent no science-only file, so its subject token is
-        # unknown; optional, to match whether it carries one or not.
-        filename_suffix_regex=r"(_\w+)?",
-    ),
-    avro_schema=NJSLA_SCHEMA,
-    ssh_resource_key=ssh_resource_key,
-    partitions_def=partitions_def,
-)
-
 assets = [
     njgpa,
     njsla,
-    njsla_science,
 ]
