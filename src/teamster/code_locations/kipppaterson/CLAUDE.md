@@ -75,6 +75,8 @@ kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
 autocomm `extracts` job add nightly schedules; Cambium, Pearson and Finalsite
 `status_report` (`couchdrop_sftp_sensor`), Amplify
 (`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), EdPlan
-(`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. No
-Paterson SFTP asset passes an `automation_condition`, so
-`AutomationConditionSensor` covers the `dbt` assets only.
+(`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. The
+`AutomationConditionSensor` targets `AssetSelection.all()`, so it covers the
+`dbt` assets plus EdPlan `njsmart_powerschool`, the one Paterson SFTP asset that
+passes an `automation_condition` (`AutomationCondition.eager()`) — that asset
+materializes from either its own sensor or the automation sensor.
