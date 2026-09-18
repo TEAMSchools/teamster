@@ -220,8 +220,12 @@ Schoolid 30200801, AY2018, on 2019-06-12, 2019-06-13 and 2019-06-14. Q4's
 PowerSchool's own quarter stops 3 instructional days short of its own year. No
 fallback reading `terms.lastday` can close this.
 
-These days stay null. A separate issue is filed against the PowerSchool source
-data, and an inline comment at the derivation site references it.
+These days stay null.
+[#5409](https://github.com/TEAMSchools/teamster/issues/5409) tracks the source
+defect, and an inline comment at the derivation site references it. That issue
+cannot be fixed upstream — PowerSchool is retired in Miami and the archive is
+frozen — so closing it is a decision to accept the 511 days or to hand-patch the
+archived Q4 end date during a rebuild.
 
 ## Verification
 
