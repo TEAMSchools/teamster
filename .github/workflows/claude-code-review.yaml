@@ -60,7 +60,7 @@ jobs:
             /superpowers:requesting-code-review ${{ github.repository
             }}/pull/${{ github.event.pull_request.number }}.
 
-            Apply dagster-expert for Dagster assets and pipelines, and
+            Apply dagster:dagster-expert for Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
