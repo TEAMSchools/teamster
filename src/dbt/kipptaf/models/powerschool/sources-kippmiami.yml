@@ -3,11 +3,21 @@ sources:
     description: >-
       Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved
       to Focus). Permanent history source for stored grades, attendance, the
-      course enrollments they hang off (#5193), and section teachers (#5260) —
-      12 permanent tables in total. Rebuilt from the frozen externals with the
-      8400 Focus prefix on student_number and an AY2025 bound applied (#5012).
-      The dataset must not be dropped. Declared BQ-native (plain schema, no
-      target branch) so every target reads the prod tables directly.
+      course enrollments they hang off (#5193), section teachers (#5260), and
+      the calendars the network calendar models read — 14 permanent tables in
+      total. Enrollment stints and terms are deliberately absent. Focus is
+      Miami's sole enrollment source across all years, and the Focus branch of
+      int_students__terms floors at syear 2018 — Miami's first school year —
+      rather than at the SIS cutover, so Focus already supplies Miami terms
+      across the whole archive range. Unioning the archive's stints or terms
+      double-counts every row. The calendars are the opposite case, and that is
+      why they are here — int_students__calendar_day and
+      int_students__calendar_week floor their Focus branch at the cutover year,
+      so the archive covers the pre-AY2026 years Focus does not. Rebuilt from
+      the frozen externals with the 8400 Focus prefix on student_number and an
+      AY2025 bound applied (#5012). The dataset must not be dropped. Declared
+      BQ-native (plain schema, no target branch) so every target reads the prod
+      tables directly.
     schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__courses
@@ -118,3 +128,21 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__section_teachers
+      - name: int_powerschool__calendar_day
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__calendar_day
+      - name: int_powerschool__calendar_week
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__calendar_week

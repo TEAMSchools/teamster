@@ -12,17 +12,17 @@ models:
       (term, term_start_date, term_end_date, semester, is_current_term) are
       populated only on quarter rows -- for PowerSchool they are attached from
       the per-district int_powerschool__terms source, which resolves quarter
-      dates through termbins rather than the raw terms table's own quarter row,
-      and for Focus they are derived on Focus's quarter-type marking periods.
-      Consumers that need only the quarter grain (the former
-      int_powerschool__terms consumers) filter to term is not null at the call
-      site.
+      dates from termbins where termbins carries the quarter and from the raw
+      terms table's own quarter row where it does not, and for Focus they are
+      derived on Focus's quarter-type marking periods. Consumers that need only
+      the quarter grain (the former int_powerschool__terms consumers) filter to
+      term is not null at the call site.
     data_tests:
       # Two tests, because the two halves of the grain key on different
-      # columns. Quarter rows key on term, which termbins supplies; year and
-      # semester rows have no term at all and key on abbreviation, which comes
-      # straight off the raw terms row. One test over both would have to key on
-      # a column that is null for half the model.
+      # columns. Quarter rows key on term, which int_powerschool__terms
+      # supplies; year and semester rows have no term at all and key on
+      # abbreviation, which comes straight off the raw terms row. One test over
+      # both would have to key on a column that is null for half the model.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -83,17 +83,17 @@ models:
         description: >-
           Quarter code (Q1-Q4). Null for the year and semester rows a school
           year also carries. For PowerSchool, taken from the matching
-          int_powerschool__terms quarter row (resolved through termbins), not
-          from this row's own abbreviation. For Miami, from Focus's quarter-type
-          marking periods only.
+          int_powerschool__terms quarter row, not from this row's own
+          abbreviation. For Miami, from Focus's quarter-type marking periods
+          only.
       - name: term_start_date
         description: >-
-          First calendar date of the quarter, sourced from termbins for
-          PowerSchool. Null outside the quarter rows.
+          First calendar date of the quarter, sourced from
+          int_powerschool__terms for PowerSchool. Null outside the quarter rows.
       - name: term_end_date
         description: >-
-          Last calendar date of the quarter, sourced from termbins for
-          PowerSchool. Null outside the quarter rows.
+          Last calendar date of the quarter, sourced from int_powerschool__terms
+          for PowerSchool. Null outside the quarter rows.
       - name: semester
         description: >-
           Semester the quarter falls in (S1 for Q1/Q2, S2 for Q3/Q4). Null
@@ -164,7 +164,11 @@ models:
         description:
           Internal id of the PowerSchool user who last modified the record.
       - name: _dbt_source_relation
-        description: Source relation, passed through from the source union view.
+        description: >-
+          Source relation, passed through from the source union view. On the
+          PowerSchool branch it takes whichever side of the full join supplied
+          the row, so a quarter the raw terms table never carried still reports
+          its origin.
       - name: _dbt_source_project
         description:
           District code location, resolved from _dbt_source_relation for the

@@ -1,3 +1,6 @@
+-- Miami is absent from this list on purpose: the Focus branch of
+-- int_students__terms floors at syear 2018, so Focus already supplies Miami
+-- terms across the whole PowerSchool archive range (#4750).
 with
     union_relations as (
         {{
@@ -19,8 +22,8 @@ select
 
     -- Guards a quarter-grain join against a duplicate raw record for the same
     -- school/year/term, so consumers attaching termbins columns see one row
-    -- per quarter. No such duplicate exists today -- all 2,139 keys across the
-    -- four districts are singletons -- so this is defensive only.
+    -- per quarter. No such duplicate exists today -- all 1,925 keys across the
+    -- three NJ districts are singletons -- so this is defensive only.
     row_number() over (
         partition by schoolid, yearid, abbreviation, {{ extract_source_project() }}
         order by id

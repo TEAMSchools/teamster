@@ -238,3 +238,11 @@ own, so a call that worked under your user credential can still 403 under ADC.
 - **dbt Core Tools extension**: activates on
   `workspaceContains:**/dbt_project.yml` and parses projects on startup. Risk:
   extension may activate before `uv sync` installs dbt-core.
+- **uv cache lives outside the repo**: `UV_CACHE_DIR` points at
+  `/workspaces/.uv-cache` so the cache sits on the same filesystem as the venvs,
+  letting `UV_LINK_MODE=hardlink` share package files instead of copying them
+  into every worktree `.venv`. Both settings come from `devcontainer.json`, so a
+  change to either needs a container rebuild. After rebuilding, the old cache at
+  `~/.cache/uv` is unused and safe to delete. If a host ever puts the cache and
+  `/workspaces` on different filesystems, uv warns and falls back to copying
+  rather than failing.
