@@ -236,10 +236,10 @@ When summarizing the conversation, always preserve:
 Discard freely: full file contents already on disk, verbose tool output, and
 exploration that led nowhere (keep only the conclusion).
 
-## CLAUDE.md Editing Rules
+## Editing CLAUDE.md, context, rules, and skill files
 
-- Before adding a line to any CLAUDE.md: name the specific decision Claude will
-  make differently because of it. If you cannot, cut it.
+- Before adding a line to any of these files: name the specific decision Claude
+  will make differently because of it. If you cannot, cut it.
 - When a change deletes something, delete the text about it; do not add text
   saying it was deleted. A tombstone ("`X` was retired", "there is no longer a
   `Y`") reads like it passes the necessity test and does not — the decision it
@@ -260,7 +260,8 @@ exploration that led nowhere (keep only the conclusion).
   `src/cube/` needs the first _Tooling_ bullet widened to match. That bullet
   names the trees to open with Read instead of `cat`; a rule outside them loads
   for nobody who reads the file through Bash.
-- Bold is reserved for the _Never_ block.
+- Bold is reserved for the _Never_ block. Outside this file, bold only a line a
+  reader who skims must not miss.
 
 ## MCP servers
 
