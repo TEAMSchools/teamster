@@ -92,10 +92,8 @@ with
     ),
 
     -- grain projection, not dup-masking
-    -- required: AY2025 Spring exists only in Cambium, so without this CTE every
-    -- Cambium score orphans on the assessment_administration_key FK
-    -- assessment_type and assessment_name pass through, so this one CTE covers
-    -- both NJSLA and NJSLA Science
+    -- State NJ NJSLA and NJSLA Science via Cambium: one administration per
+    -- (module_code, period, academic_year, _dbt_source_project).
     state_nj_njsla_cambium_administrations as (
         select distinct
             subject_area,
