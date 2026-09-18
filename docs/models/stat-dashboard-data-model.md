@@ -140,6 +140,44 @@ visible to anyone and does not need fixing — the 8 unmatchable rows below are
 all academic year 2017 or 2018 and fall into exactly that category. Confirm the
 filter rather than trusting this sentence; the constant is in the model.
 
+### One test per student: Cambium scores an incomplete attempt separately
+
+Cambium reports an abandoned attempt as its own scored row rather than
+superseding it when the student later sits the test again. The two rows share a
+`statestudentidentifier`, a test code and a season, and differ only in
+`test_status` -- `pending` against `completed` -- and in the score.
+
+`testscorecomplete`, the Pearson signal for the same thing, is null on every
+Cambium row, so the Pearson predicate cannot see this. The filter that does
+lives in `int_pearson__all_assessments`:
+
+```sql
+where test_status is null or test_status = 'completed'
+```
+
+The null branch passes every Pearson row, where `union_relations` null-fills the
+column.
+
+What makes this hard to spot is that both rows also arrive with a null
+`localstudentidentifier`, so both are eligible for crosswalk repair. Give each a
+sheet entry and the crosswalk resolves both to the same student, the enrollment
+join matches both, and on the teacher/student roster view Tableau draws two
+marks in one cell -- the colored bar covers part of the column and the rest is
+blank. It reads as a rendering fault rather than a duplicate row.
+
+`studenttestuuid` is unique per row by construction, so the uniqueness test on
+it can never catch this. The test that does is the second
+`unique_combination_of_columns` on `int_pearson__all_assessments`, over
+`localstudentidentifier` + `academic_year` + `aligned_test_code` + `admin`,
+scoped to rows whose local id resolved. Unresolved rows are excluded on purpose:
+a Cambium load that lands before someone updates the sheet would otherwise fail
+the build for a data-entry backlog that `test_incorrect_student_number_pearson`
+already reports.
+
+Because the filter sits upstream of the crosswalk detector, a `pending` row no
+longer reaches it, so neither the detector nor the tiered matcher will propose
+one for the sheet.
+
 ## Repairing a student number that does not resolve
 
 Assessment rows arrive keyed on the vendor's `localstudentidentifier`, which is
