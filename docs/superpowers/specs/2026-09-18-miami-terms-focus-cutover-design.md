@@ -94,6 +94,27 @@ archive rows hold 193 distinct keys, so `rn = 1` drops nothing, matching the New
 Jersey districts. The wrapper comment's singleton count rises from 1,925 to
 2,118.
 
+### What it costs to carry frozen Miami in the wrappers
+
+Both wrappers are tables, so every rebuild re-materializes Miami's frozen rows.
+That is real but small. Measured against prod over the 30 days to 2026-09-18:
+`stg_powerschool__terms` rebuilt 5 times for 71.6 slot-seconds total,
+`int_powerschool__terms` 6 times for 21.2. Miami is about 9% of the rows in
+each, so roughly 7 slot-seconds a month of compute on data that will never
+change again.
+
+The alternative is to leave both wrappers alone and give `int_students__terms` a
+third UNION ALL arm reading the Miami archive sources directly, which costs
+nothing extra because that model is a view. It is rejected: the PowerSchool
+branch is a FULL JOIN between the staging and intermediate relations, so a Miami
+arm would duplicate that join rather than reuse it. Seven slot-seconds a month
+does not buy a second copy of the model's least obvious logic.
+
+This is also not a new pattern. Ten kipptaf PowerSchool wrappers already union
+the frozen archive, including `int_powerschool__calendar_day` and
+`int_powerschool__calendar_week`, which are the two the terms split is designed
+to match.
+
 ### Nothing here belongs in the shared powerschool package
 
 Adding Miami introduces no new join and no new calculation. It appends one
