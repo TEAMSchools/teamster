@@ -145,9 +145,22 @@ archive is bounded at AY2025 by its own rebuild post-hooks, which drop
 `yearid > 35`, so it cannot collide with Focus. This follows the sibling
 attendance model rather than adding a defensive predicate.
 
-If that bound ever fails, the model's existing `unique_combination_of_columns`
-on schoolid, yearid, term and source project scoped to `term is not null` fails
-loudly. That test is the guard.
+The two sources are disjoint in time, not merely in year number. Verified
+against prod 2026-09-18: the archive's last term ends 2026-06-30 and Focus's
+first term starts 2026-08-12. That matters because nothing downstream can tell
+the two arms apart — both carry `_dbt_source_project = 'kippmiami'`, so the date
+gap is what keeps a Miami consumer from mixing them.
+
+If the AY2025 bound ever fails, the model's existing
+`unique_combination_of_columns` on schoolid, yearid, term and source project
+scoped to `term is not null` catches a collision within one school-year. It does
+not catch every failure mode. `int_students__enrollment_daily` joins on
+schoolid, source project and a date range with no yearid, so two term rows in
+DIFFERENT years whose dates overlap would fan out there while that test still
+passes. Checked against prod: zero overlapping date-range pairs among Miami
+archive quarters at the same schoolid, so there is no fan-out today. Treat a
+future archive rebuild that widens a term's dates as a change that needs this
+re-checked, because no test covers it.
 
 ### 5. Correct the properties YAML
 
