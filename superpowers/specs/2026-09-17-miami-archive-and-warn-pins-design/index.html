@@ -1,0 +1,2101 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Miami archive sources, warn pins, and the uncovered-calendar-day test - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#miami-archive-sources-warn-pins-and-the-uncovered-calendar-day-test" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Miami archive sources, warn pins, and the uncovered-calendar-day test
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/launch-page-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Launch Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/carat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CARAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/csgf-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CSGF Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/hs-early-warning-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HS Early Warning Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/dibels-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIBELS Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/stat-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STAT Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-diagnostic-re-run-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the diagnostic re-run changed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What the diagnostic re-run changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-pins-do-not-belong-at-all-so-nothing-gets-re-pointed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pins do not belong at all, so nothing gets re-pointed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-tests-description-names-the-wrong-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One test's description names the wrong issue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#item-4-gets-a-test-not-a-model-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item 4 gets a test, not a model change
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#item-2-delete-13-pins-and-one-wrong-issue-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item 2 — delete 13 pins and one wrong issue reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#item-3-declare-five-miami-relations-and-add-them-to-five-wrappers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item 3 — declare five Miami relations and add them to five wrappers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#item-4-one-singular-test-on-the-uncovered-in-session-day" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Item 4 — one singular test on the uncovered in-session day
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-09-17-miami-archive-and-warn-pins-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="miami-archive-sources-warn-pins-and-the-uncovered-calendar-day-test">Miami archive sources, warn pins, and the uncovered-calendar-day test</h1>
+<p>Refs <a href="https://github.com/TEAMSchools/teamster/issues/4750">#4750</a>.</p>
+<p>Covers items 2, 3, and 4 of that issue's "What this issue needs next" list. Item
+1 is Ops work tracked in Asana. Item 5 became
+<a href="https://github.com/TEAMSchools/teamster/issues/5390">#5390</a>.</p>
+<h2 id="problem">Problem</h2>
+<p>Three unrelated defects share one diagnostic re-run, so they ship together.</p>
+<p><strong>Item 2.</strong> Thirteen dbt tests carry the comment
+<code># TODO(#5305): failing today; resolve then drop the warn</code> above their
+<code>severity: warn</code>. Issue #5305 closed on 2026-09-15 by #5322. The pins now point
+at a closed issue.</p>
+<p><strong>Item 3.</strong> Miami's frozen PowerSchool archive holds calendar, term, and
+enrollment relations that kipptaf never reads. The four kipptaf
+<code>union_relations</code> wrappers union Newark, Camden, and Paterson only, so Miami's
+pre-Focus history is absent from every network calendar and term model.</p>
+<p><strong>Item 4.</strong> <code>int_powerschool__calendar_day</code> left-joins <code>stg_powerschool__terms</code>
+on <code>isyearrec = 1</code>. A school day that no year term covers keeps a null <code>yearid</code>
+and a null <code>academic_year</code>. 157 such days are <code>insession = 1</code> at a real school
+across the three NJ districts.</p>
+<h2 id="what-the-diagnostic-re-run-changed">What the diagnostic re-run changed</h2>
+<p>Three findings contradict the issue body. Each changes the design.</p>
+<h3 id="the-pins-do-not-belong-at-all-so-nothing-gets-re-pointed">The pins do not belong at all, so nothing gets re-pointed</h3>
+<p>The issue asks to re-point the 13 pins at a live issue. Re-pointing assumes each
+test has a resolvable end state, after which the <code>warn</code> drops and the test goes
+back to <code>error</code>.</p>
+<p>None of them does. Every one monitors recurring data entry: an <code>fteid</code> scoped to
+the wrong school year, a pair of overlapping enrollment stints, a same-day exit
+and re-entry, an unmapped Focus phone-contact title, a multi-day
+course-enrollment overlap. Ops corrects the rows, and the next month's entry
+produces new ones. None reaches a stable zero, so "resolve then drop the warn"
+is a promise none of them can keep.</p>
+<p>The repo already has the shape these tests want. Two <code>severity: warn</code> tests
+carry no pin: <code>test_int_powerschool__gpa_cumulative_year__reconciles_stored</code> and
+<code>int_students__calendar_day__zero_enrollment_in_session_days</code>. The second one's
+comment says the fix belongs in Focus configuration, not in dbt. Both are
+permanent standing monitors, and that is what all 13 pinned tests are too.</p>
+<p>So item 2 deletes the pins and keeps every <code>severity: warn</code>.</p>
+<h3 id="one-tests-description-names-the-wrong-issue">One test's description names the wrong issue</h3>
+<p><code>int_powerschool__student_enrollment_union_no_shared_stint_boundary</code> describes
+itself as "Source defect surfaced by issue #3902". #3902 is closed, and its
+subject is orphaned survey submissions in <code>fct_survey_submissions</code>, not
+enrollment stint boundaries. The reference is wrong on both counts and goes with
+the pins.</p>
+<p>Contrast <code>#3915</code>, referenced by
+<code>base_powerschool__course_enrollments__no_studyear_course_overlap</code>. That issue
+is open, labeled <code>ops-tracked</code>, and genuinely tracks the 10,807 overlapping
+study-year course enrollments the test counts. It stays.</p>
+<h3 id="item-4-gets-a-test-not-a-model-change">Item 4 gets a test, not a model change</h3>
+<p>The issue frames item 4 as a fix to <code>int_powerschool__calendar_day</code>. Deriving
+<code>academic_year</code> from <code>date_value</code> instead of from the term join would make the
+null go away, and that is the reason not to do it.</p>
+<p>The null is a true signal. Paterson's academic year 2024 year term runs
+2024-09-03 through 2025-06-20 at both real schools. The 30 uncovered Paterson
+days at those schools sit at 2024-08-19 through 2024-09-02, 15 per school,
+before the school year's own first day, and 11 of them are marked in session.
+PowerSchool holds a calendar that disagrees with its own term record. A derived
+<code>academic_year</code> would paper over that and leave the source defect invisible.</p>
+<p>The defect is also inert. Zero student-day membership rows exist on any
+uncovered day in any district. This is not circular:
+<code>int_powerschool__ps_membership_reg</code> joins <code>stg_powerschool__calendar_day</code>, not
+<code>int_powerschool__calendar_day</code>, on <code>schoolid</code> plus a date range plus
+<code>insession = 1</code>, and never reads <code>yearid</code>. Populating <code>academic_year</code> cannot
+create a membership row or move an average-daily-attendance denominator.</p>
+<p>An inert source defect with no downstream effect is exactly what a warn-severity
+test is for.</p>
+<h2 id="decision">Decision</h2>
+<h3 id="item-2-delete-13-pins-and-one-wrong-issue-reference">Item 2 — delete 13 pins and one wrong issue reference</h3>
+<p>Delete the comment line
+<code># TODO(#5305): failing today; resolve then drop the warn</code> at each of these
+locations. Change nothing else on those tests: every <code>severity: warn</code> stays, and
+every <code>meta.dagster.ref</code> stays.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/dbt/finalsite/tests/properties.yml</code></td>
+<td>11, 45, 66, 83</td>
+</tr>
+<tr>
+<td><code>src/dbt/focus/tests/properties.yml</code></td>
+<td>59, 104, 125</td>
+</tr>
+<tr>
+<td><code>src/dbt/powerschool/tests/properties.yml</code></td>
+<td>15, 41, 58, 102</td>
+</tr>
+<tr>
+<td><code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__ps_enrollment_all.yml</code></td>
+<td>11, 20</td>
+</tr>
+</tbody>
+</table>
+<p>In <code>src/dbt/powerschool/tests/properties.yml</code>, also drop the sentence fragment
+"Source defect surfaced by issue #3902 —" from
+<code>int_powerschool__student_enrollment_union_no_shared_stint_boundary</code>'s
+description, leaving the row count that follows it.</p>
+<p><code>.claude/rules/dbt-yaml.md</code> already forbids tracking-issue references in a
+<code>description:</code>. Removing this one brings the file into line with that rule.</p>
+<h3 id="item-3-declare-five-miami-relations-and-add-them-to-five-wrappers">Item 3 — declare five Miami relations and add them to five wrappers</h3>
+<p>Add five tables to <code>src/dbt/kipptaf/models/powerschool/sources-kippmiami.yml</code>
+under the existing <code>kippmiami_powerschool</code> source, each following the file's
+established block shape with
+<code>config.meta.dagster.asset_key: [kippmiami, powerschool, &lt;name&gt;]</code>:</p>
+<ul>
+<li><code>int_powerschool__calendar_day</code></li>
+<li><code>int_powerschool__calendar_week</code></li>
+<li><code>int_powerschool__terms</code></li>
+<li><code>int_powerschool__student_enrollment_union</code></li>
+<li><code>stg_powerschool__terms</code></li>
+</ul>
+<p>Then add one <code>source("kippmiami_powerschool", "&lt;name&gt;")</code> line to each of the
+five matching kipptaf wrappers:</p>
+<table>
+<thead>
+<tr>
+<th>Wrapper</th>
+<th>Sole consumer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>models/powerschool/intermediate/int_powerschool__calendar_day.sql</code></td>
+<td><code>int_students__calendar_day</code></td>
+</tr>
+<tr>
+<td><code>models/powerschool/intermediate/int_powerschool__calendar_week.sql</code></td>
+<td><code>int_students__calendar_week</code></td>
+</tr>
+<tr>
+<td><code>models/powerschool/intermediate/int_powerschool__terms.sql</code></td>
+<td><code>int_students__terms</code></td>
+</tr>
+<tr>
+<td><code>models/powerschool/intermediate/int_powerschool__student_enrollment_union.sql</code></td>
+<td><code>int_students__student_enrollment_union</code></td>
+</tr>
+<tr>
+<td><code>models/powerschool/staging/stg_powerschool__terms.sql</code></td>
+<td><code>int_students__terms</code></td>
+</tr>
+</tbody>
+</table>
+<p>The fifth relation, <code>stg_powerschool__terms</code>, is not in the issue body.
+<code>int_students__terms</code> reads it directly for the quarter-grain side of its
+PowerSchool branch, so leaving it out would wire Miami's year terms into the
+network while its quarter terms stayed missing.</p>
+<p>Also update the <code>rn</code> comment in <code>stg_powerschool__terms.sql</code>. It currently reads
+"all 2,139 keys across the four districts are singletons" while the union covers
+three. With Miami added the union really is four districts, and the verified
+count today is 2,118 keys with zero duplicates, of which 193 are Miami's.</p>
+<p>The kipptaf consumer topology is strictly one-to-one, so nothing else in the
+project sees a row-set change.</p>
+<p>This is a source declaration plus a <code>union_relations</code> argument, so it is a
+single-PR change under <code>.claude/rules/dbt-models.md</code>: no district model changes,
+no new columns, no two-PR staging dance.</p>
+<h3 id="item-4-one-singular-test-on-the-uncovered-in-session-day">Item 4 — one singular test on the uncovered in-session day</h3>
+<p>Add
+<code>src/dbt/powerschool/tests/test_int_powerschool__calendar_day__in_session_day_has_year_term.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">schoolid</span><span class="p">,</span><span class="w"> </span><span class="n">date_value</span><span class="p">,</span><span class="w"> </span><span class="n">school_name</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_powerschool__calendar_day"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">insession</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">schoolid</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">999999</span><span class="p">)</span>
+</code></pre></div>
+<p><code>academic_year</code> is null exactly when no <code>isyearrec = 1</code> term covers the day, so
+the null is the whole predicate. No second join is needed.</p>
+<p>Declare it in <code>src/dbt/powerschool/tests/properties.yml</code> with <code>severity: warn</code>,
+no pin, a description that states what the defect is and where the fix belongs,
+and:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">meta</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">ref</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_powerschool__calendar_day</span>
+<span class="w">      </span><span class="nt">package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool</span>
+</code></pre></div>
+<p><code>package: powerschool</code> is required. Without it dagster-dbt resolves the ref
+against the running district project and logs an <code>AssetObservation</code> across every
+parent instead of an <code>AssetCheckResult</code> on the intended asset.</p>
+<p>The <code>schoolid not in (0, 999999)</code> scope follows the precedent in
+<code>int_students__calendar_day__zero_enrollment_in_session_days</code>. Sentinel schools
+0 and 999999 carry junk full-year in-session calendars. Leaving them in adds 59
+rows of noise and buries the real ones.</p>
+<h2 id="verification">Verification</h2>
+<p>Every number below was measured against prod on 2026-09-17.</p>
+<p><strong>Item 2.</strong> <code>dbt parse --no-partial-parse</code> on <code>main</code> and on the branch, then
+diff the <code>resource_type == 'test'</code> node names. The diff must be empty: this
+change deletes comments and prose, not nodes. Parse both sides fresh, per
+<code>.claude/rules/dbt-models.md</code>.</p>
+<p><strong>Item 3.</strong> All five Miami relations exist as frozen tables with column sets
+identical in name and type to Newark's, so <code>union_relations</code> grows no superset
+and adds no null-filled column:</p>
+<table>
+<thead>
+<tr>
+<th>Relation</th>
+<th>Columns (Miami and Newark)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_powerschool__calendar_day</code></td>
+<td>30</td>
+</tr>
+<tr>
+<td><code>int_powerschool__calendar_week</code></td>
+<td>20</td>
+</tr>
+<tr>
+<td><code>int_powerschool__terms</code></td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>int_powerschool__student_enrollment_union</code></td>
+<td>49</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__terms</code></td>
+<td>29</td>
+</tr>
+</tbody>
+</table>
+<p>Date ranges are disjoint, so nothing double-counts. The Miami archive covers
+academic years 2017 through 2025. The Focus branch of
+<code>int_students__calendar_day</code> floors at <code>focus_start_academic_year</code>, which
+is 2026. No cutover ceiling is added to the PowerSchool branch: that branch is
+network-wide and New Jersey has no Focus, so a ceiling would truncate all three
+NJ districts at 2026. Disjointness is asserted by query instead:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">"int_students__calendar_day"</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'kippmiami'</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Every academic year must appear once, never split across the two branches.</p>
+<p>Validate the new wrapper column lists with
+<code>dbt compile --select &lt;wrapper&gt; --target staging</code>. A dev-target compile expands
+to nothing because the dev dataset holds no copy of the source relations, and an
+empty expansion still compiles clean.</p>
+<p><strong>Item 4.</strong> The test must fail with 157 rows at warn severity:</p>
+<table>
+<thead>
+<tr>
+<th>District</th>
+<th>Rows</th>
+<th>Schools</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kippnewark</code></td>
+<td>104</td>
+<td>13</td>
+</tr>
+<tr>
+<td><code>kippcamden</code></td>
+<td>42</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>kipppaterson</code></td>
+<td>11</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p><code>kippmiami</code> holds 4 more such days but is not monitored: it does not consume the
+<code>powerschool</code> package, following the same limitation already documented on
+<code>base_powerschool__course_enrollments__no_studyear_course_overlap</code>.</p>
+<p>Run <code>uv run dbt build --select int_powerschool__calendar_day+</code> per NJ district.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<p><strong>Item 5</strong>, the <code>int_students__attendance_daily</code> term join, is #5390.
+Re-measured today it drops 1,864,931 membership rows, not the approximately
+3,890,000 the #4750 comment estimated. That issue also carries two latent
+defects in <code>int_students__terms</code>: the PowerSchool branch's <code>full join</code>, and an
+<code>and p.rn = 1</code> predicate inside that join's <code>ON</code> clause that does not filter
+<code>p</code>.</p>
+<p>Items 3 and 5 interact. Miami contributes 492,482 of the 1,864,931 dropped rows,
+and academic years 2018 and 2019 are 100 percent unmatched for Miami because
+<code>int_students__terms</code> carries no Miami PowerSchool terms today. Item 3 should
+recover part of that with no change to <code>int_students__attendance_daily</code>. How
+much is not measured. Re-run #5390's reproduce query after this PR merges.</p>
+<p><strong><code>int_powerschool__ps_membership_reg</code></strong> stays declared and unconsumed in
+<code>sources-kippnewark.yml</code>. It is a source declaration with no kipptaf model and
+no Dagster, Cube, or exposure consumer, and it is one of roughly 55 such orphans
+in that file, alongside <code>stg_powerschool__sections</code>, <code>stg_powerschool__person</code>,
+<code>int_powerschool__ps_enrollment_all</code>, and the whole graduation-plan family.
+Deleting this one singles out an arbitrary member of an established pattern. The
+orphan sweep is its own issue and is not filed yet.</p>
+<p><strong>The Ops backlog behind the 13 warn tests.</strong> Deleting the pins does not create
+Asana tasks for the underlying data-entry defects. Those defects are real and
+recurring, but the warn tests are the tracking mechanism now, and whether Ops
+also wants standing tasks is a separate call.</p>
+<h2 id="alternatives-considered">Alternatives considered</h2>
+<p><strong>Re-point the 13 pins at a new umbrella issue.</strong> Rejected. It preserves a
+promise none of the tests can keep and produces an issue that can never close.</p>
+<p><strong>Derive <code>academic_year</code> from <code>date_value</code> in <code>int_powerschool__calendar_day</code>.</strong>
+Rejected. It hides a true source defect and buys nothing, since no downstream
+model reads those rows.</p>
+<p><strong>Add a cutover ceiling to the kipptaf PowerSchool calendar branch.</strong> Rejected.
+The branch is network-wide, so a ceiling at <code>focus_start_academic_year</code> would
+truncate Newark, Camden, and Paterson at academic year 2026. The archive's own
+AY2025 bound already makes the two branches disjoint.</p>
+<p><strong>Fold item 5 into this PR.</strong> Rejected by the user. It is a behavior change to
+network attendance reporting, it needs its own consumer audit for null <code>term</code>
+and <code>semester</code>, and it is the only one of the four that moves a published
+metric.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
