@@ -750,9 +750,15 @@ Re-run the audit after any batch of sheet entries. The procedure is in the
 `stat-dash` skill; it writes per-row detail to a local file and reports only
 counts, because the per-row output carries student identifiers.
 
-### Open — the exposure has no `url`
+### The exposure needs the LSID, not a `url`
 
-`state_testing_analysis_tool` omits `url:`, which
+`state_testing_analysis_tool` omits `url:` and that is fine —
+`config.meta.dagster.asset.metadata.id`, the Tableau LSID, is what identifies
+the workbook. Do not add a `url` to make the exposure look complete.
+
 [`src/dbt/kipptaf/CLAUDE.md`](https://github.com/TEAMSchools/teamster/blob/main/src/dbt/kipptaf/CLAUDE.md)
-lists as required for every exposure. Cosmetic, but it is the reason the
-workbook link has to be looked up by LSID.
+lists `url` among required exposure fields, which is what prompted an earlier
+attempt to fill it in. The value invented for it pointed at an internal hostname
+that does not resolve. Several sibling exposures carry a literal `TBD` with an
+open TODO, which is the better signal: the field is not load-bearing, and a
+fabricated one is worse than an absent one.
