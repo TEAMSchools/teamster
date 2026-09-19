@@ -21,6 +21,31 @@ data_tests:
   +store_failures_as: view
   kipppaterson:
     +severity: warn
+  # stg_cambium__njgpa is disabled below, and disabling a model leaves its
+  # tests enabled — they would scan a relation Paterson never builds. Each
+  # name is dbt's generated test name; changing the njgpa yml's accepted
+  # values renames the test and re-orphans it here.
+  cambium:
+    staging:
+      properties:
+        unique_stg_cambium__njgpa_studenttestuuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_studenttestuuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_test_date:
+          +enabled: false
+        not_null_stg_cambium__njgpa_period:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa_period__Spring__Fall__FALL__FallBlock:
+          +enabled: false
+        not_null_stg_cambium__njgpa_administration_period:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa_administration_period__Spring__Fall:
+          +enabled: false
+        not_null_stg_cambium__njgpa_test_grade:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa_test_grade__False__11:
+          +enabled: false
 
 vars:
   local_timezone: America/New_York
@@ -71,6 +96,11 @@ models:
     +materialized: table
     staging:
       stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
+  cambium:
+    +materialized: table
+    staging:
+      stg_cambium__njgpa:
         +enabled: false
   deanslist:
     +materialized: table
@@ -153,6 +183,10 @@ sources:
     finalsite:
       contacts:
         +enabled: true
+  cambium:
+    cambium:
+      src_cambium__njgpa:
+        +enabled: false
   deanslist:
     deanslist:
       src_deanslist__dff_stats:

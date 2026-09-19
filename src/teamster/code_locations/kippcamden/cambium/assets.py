@@ -41,27 +41,7 @@ njsla = build_sftp_file_asset(
     remote_file_regex=build_remote_file_regex(
         partitions_def=partitions_def,
         district_code=DISTRICT_CODE,
-        # Cambium has sent no NJSLA file, so the subject token is a guess;
-        # optional, so the asset matches whether it carries one or not.
-        filename_suffix_regex=r"(_\w+)?",
-    ),
-    avro_schema=NJSLA_SCHEMA,
-    ssh_resource_key=ssh_resource_key,
-    partitions_def=partitions_def,
-)
-
-# Shares NJSLA_SCHEMA with njsla, the way the two Pearson assets share theirs.
-# Cambium has sent neither file, so there is no evidence the science layout
-# differs, and one stub is one place to correct when the files arrive.
-njsla_science = build_sftp_file_asset(
-    asset_key=[*key_prefix, "njsla_science"],
-    remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla_science",
-    remote_file_regex=build_remote_file_regex(
-        partitions_def=partitions_def,
-        district_code=DISTRICT_CODE,
-        # Cambium has sent no NJSLA file, so the subject token is a guess;
-        # optional, so the asset matches whether it carries one or not.
-        filename_suffix_regex=r"(_\w+)?",
+        filename_suffix_regex=r"_SLA",
     ),
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
@@ -71,5 +51,4 @@ njsla_science = build_sftp_file_asset(
 assets = [
     njgpa,
     njsla,
-    njsla_science,
 ]

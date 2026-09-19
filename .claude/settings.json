@@ -96,7 +96,6 @@
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
-      "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)"
     ],
@@ -217,13 +216,13 @@
     ]
   },
   "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "dagster@dagster": true,
     "dbt@dbt-agent-marketplace": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "superpowers@superpowers-dev": true
+    "superpowers@superpowers-dev": true,
+    "claude-md-management@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {

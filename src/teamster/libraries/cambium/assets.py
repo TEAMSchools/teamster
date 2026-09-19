@@ -63,11 +63,9 @@ def build_remote_file_regex(
             a literal token where Cambium has delivered a file. A feed Cambium
             has never sent can pass a permissive group instead, which is safe
             because `remote_dir_regex` scopes each asset to its own folder and
-            the sensor anchors its match at the start of the path -- so
-            `cambium/njsla` cannot match a path under `cambium/njsla_science`.
-            Two files landing in one folder still raise "Found multiple files
-            matching" inside `build_sftp_file_asset`, which is the loud failure
-            we want.
+            the sensor anchors its match at the start of the path. Two files
+            landing in one folder still raise "Found multiple files matching"
+            inside `build_sftp_file_asset`, which is the loud failure we want.
     """
     dimensions = {
         d.name: d.partitions_def.get_partition_keys()
