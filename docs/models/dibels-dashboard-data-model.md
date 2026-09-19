@@ -1999,23 +1999,46 @@ absence does not break a run either. T&L dropped the three-in-a-row variant.
 `measure_standard_goal_status` and `admin_benchmark_goal_status` since the
 `*_status` work; the aimline model did not, and the extract hardcoded both to
 `null` on the Aimline branch, so a Tableau view had nothing to bind to on half
-the PM rows. Added 2026-09-15. `measure_standard_goal_status` is three-valued
-here — Met, Not Met, **No Aimline Data** — because this method has a state the
-internal one does not; `admin_benchmark_goal_status` stays two-valued, since the
-benchmark standard is always published for the rows the model keeps. Both use
-academics' aimline vocabulary — `Meeting Aimline` / `Below Aimline` rather than
-the internal sibling's `Met` / `Not Met`, and rather than Amplify's own
-`At or Above` / `Below`. A reader of an aimline view then sees what the verdict
-is measured against. `admin_benchmark_goal_status` is the exception: it reads
-`Met Benchmark` / `Did Not Meet Benchmark` on BOTH methods, because the
-benchmark standard is the one grain that does not depend on method. Naming the
-benchmark in the value is what lets a reader tell `Met Benchmark` from
-`Meeting Aimline` at a glance. `met_measure_standard_goal` is likewise populated
-on the Aimline branch rather than null.
+the PM rows. Added 2026-09-15, and `met_measure_standard_goal` is likewise
+populated on the Aimline branch rather than null.
+
+##### The status vocabulary, settled 2026-09-19
+
+Four goal grains, each with a flag and a labelled twin. Three of the twins speak
+the method's own language; one deliberately does not.
+
+| Grain             | Internal                                   | Aimline                                                                  |
+| ----------------- | ------------------------------------------ | ------------------------------------------------------------------------ |
+| Measure standard  | Met / Not Met                              | Meeting Aimline / Below Aimline / **No Aimline Data**                    |
+| Measure name code | Met / Not Met                              | Meeting Aimline / Below Aimline / **No Aimline Data**                    |
+| Round             | Met / Not Met / Round Incomplete           | Meeting Aimline / Below Aimline / **No Aimline Data** / Round Incomplete |
+| Admin benchmark   | **Met Benchmark / Did Not Meet Benchmark** | **identical to Internal**                                                |
+
+Every one of them also carries `Not Tested`, which the extract's `coalesce`
+supplies where the student sat nothing.
+
+Three rules produced that table:
+
+- **Aimline columns say what the verdict is measured against.** A reader looking
+  at an aimline view sees `Below Aimline`, not `Not Met` — and not Amplify's own
+  `At or Above` / `Below` either, which stays on `aimline_status` upstream for
+  anyone who needs the vendor's literal wording.
+- **The benchmark grain reads the same on both methods**, because the benchmark
+  standard is the one thing here that does not depend on method. Naming the
+  benchmark in the value is what lets a reader tell `Met Benchmark` from
+  `Meeting Aimline` at a glance when both appear in one view.
+- **One spelling per concept.** `No Aimline Data` means the same thing at all
+  three aimline grains. The round column read `No Aimline Status` until
+  2026-09-19, which was two names for one condition.
+
+The consequence for BI: a view can switch between the three aimline grains
+without changing its colour legend, because the value sets are identical. A view
+combining an aimline grain with an internal one cannot, since only `Not Tested`
+is shared.
 
 The measure-level status is independent of the round gate, which is what makes
-the display coherent: a row can read `Round Incomplete` and `Met` together — the
-round is unfinished, that measure passed.
+the display coherent: a row can read `Round Incomplete` and `Meeting Aimline`
+together — the round is unfinished, that measure passed.
 
 On AY2025 the model produces 36,504 rows on an exact grain, and the six category
 counts above sum to exactly that. `all_assessments` holds 36,514 aimline rows

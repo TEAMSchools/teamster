@@ -313,16 +313,16 @@ select
 
     case
         when met_pm_round_overall_criteria = 1
-        then 'Met'
+        then 'Meeting Aimline'
         when met_pm_round_criteria = 0 and pm_goal_criteria = 'AND'
-        then 'Not Met'
+        then 'Below Aimline'
         when met_pm_round_criteria = 0 and completed_test_round
-        then 'Not Met'
+        then 'Below Aimline'
         when not completed_test_round
         then 'Round Incomplete'
         when met_pm_round_criteria is null
-        then 'No Aimline Status'
-        else 'Not Met'
+        then 'No Aimline Data'
+        else 'Below Aimline'
     end as pm_round_status,
 
     case

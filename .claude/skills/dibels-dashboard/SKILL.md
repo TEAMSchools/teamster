@@ -2276,9 +2276,11 @@ three-in-a-row variant.
 - `Meeting Aimline, On-Track` fires on the benchmark alone, per their rule that
   a student meeting benchmark but not aimline still belongs there. The label
   overstates what it checks; that is their wording.
-- `No Aimline Status` is the fifth category their four omit. Academics chose to
-  show the score and flag the missing target rather than hide the row or call it
-  Not Tested.
+- `No Aimline Data, On-Track` and `No Aimline Data, Off-Track` are the fifth and
+  sixth categories their four omit. Academics chose to show the score and flag
+  the missing target rather than hide the row or call it Not Tested. The same
+  words, `No Aimline Data`, name the same condition on every other aimline
+  status column -- one spelling network-wide since 2026-09-19.
 - `aimline_status` is the source the verdict is translated FROM, and stops at
   this model -- the extract does not publish it, because
   `measure_standard_goal_status` already carries the same verdict in academics'
@@ -2356,9 +2358,25 @@ expects one value set across both:
 | `Not Tested` |  9,383 | `Not Tested`      |  9,383 |
 | --           |     -- | `No Aimline Data` |  3,312 |
 
-`measure_name_code_goal_status` uses the same two value sets one grain up.
-`admin_benchmark_goal_status` is the exception -- `Met Benchmark` /
-`Did Not Meet Benchmark` / `Not Tested` on BOTH methods.
+The full vocabulary, settled 2026-09-19. Every column also carries `Not Tested`
+from the extract's coalesce.
+
+| Grain             | Internal                               | Aimline                                                              |
+| ----------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| Measure standard  | Met / Not Met                          | Meeting Aimline / Below Aimline / No Aimline Data                    |
+| Measure name code | Met / Not Met                          | Meeting Aimline / Below Aimline / No Aimline Data                    |
+| Round             | Met / Not Met / Round Incomplete       | Meeting Aimline / Below Aimline / No Aimline Data / Round Incomplete |
+| Admin benchmark   | Met Benchmark / Did Not Meet Benchmark | identical to Internal                                                |
+
+Three rules behind it: aimline columns name what the verdict is measured
+against; the benchmark grain reads the same on both because the standard does
+not depend on method; and `No Aimline Data` is the one spelling for that
+condition at every grain (the round column said `No Aimline Status` until
+2026-09-19).
+
+So a view can switch between the three aimline grains with one colour legend. A
+view mixing an aimline grain with an internal one cannot -- only `Not Tested` is
+shared.
 
 Only `Not Tested` is shared, so a combined view needs its own colour legend.
 `admin_benchmark_goal_status` reads `Met Benchmark` / `Did Not Meet Benchmark`

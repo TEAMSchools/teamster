@@ -162,11 +162,18 @@ models:
       - name: pm_round_status
         data_type: string
         description: >-
-          The round verdict as words rather than a flag — Met, Not Met, Round
-          Incomplete, or No Aimline Status. The counterpart of the internal
-          sibling's column of the same name, with one extra value: a round can
-          be unresolved here because Amplify published no verdict on a measure
-          that was needed to settle it.
+          The round verdict as words rather than a flag — Meeting Aimline, Below
+          Aimline, Round Incomplete, or No Aimline Data. The counterpart of the
+          internal sibling's column of the same name, which reads Met / Not Met,
+          with one extra value: a round can be unresolved here because Amplify
+          published no verdict on a measure that was needed to settle it.
+
+          The vocabulary matches measure_standard_goal_status and
+          measure_name_code_goal_status on this model, so the same words mean
+          the same thing at all three grains and a view can switch between them
+          without changing its colour legend. No Aimline Data is the same
+          wording those columns use for the same condition; it read No Aimline
+          Status until 2026-09-19, which was two spellings for one concept.
 
           Precedence is settled-first. A round the evidence settles reads Met or
           Not Met even when something is missing, because under AND one miss
@@ -178,7 +185,11 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: [Met, Not Met, Round Incomplete, No Aimline Status]
+                values:
+                  - Meeting Aimline
+                  - Below Aimline
+                  - Round Incomplete
+                  - No Aimline Data
       - name: aimline_round_category
         data_type: string
         description: >-
