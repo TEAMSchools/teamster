@@ -8,12 +8,12 @@ models:
 
       Only one stage differs between the two models. The internal method builds
       a cohort target and compares a score to it; the aimline method reads
-      Amplify's own verdict, `aimline_status`, so `met_aimline_goal` is a value
-      translated rather than a target computed. Everything after that stage —
-      pairing measure standards into a measure_name_code, combining codes by
-      pm_goal_criteria, gating on round completion — is method-agnostic and
-      mirrors the internal model deliberately, so the two can be compared line
-      for line.
+      Amplify's own verdict, `aimline_status`, so `met_measure_standard_goal` is
+      a value translated rather than a target computed. Everything after that
+      stage — pairing measure standards into a measure_name_code, combining
+      codes by pm_goal_criteria, gating on round completion — is method-agnostic
+      and mirrors the internal model deliberately, so the two can be compared
+      line for line.
 
       Three inputs, all filtered to the Aimline method. Scores, rounds,
       `aimline_status` and `goal` come from `int_amplify__all_assessments` where
@@ -32,9 +32,9 @@ models:
 
       Unlike the internal method, a verdict here can be genuinely absent.
       Amplify publishes no `aimline_status` on a share of probes even where a
-      goal is present, so `met_aimline_goal` is nullable by design and the
-      rollups treat null as unknown rather than as a miss. That propagates the
-      same asymmetry the completion gate rests on: under AND a single miss
+      goal is present, so `met_measure_standard_goal` is nullable by design and
+      the rollups treat null as unknown rather than as a miss. That propagates
+      the same asymmetry the completion gate rests on: under AND a single miss
       settles the round however much is unknown, under the null (OR) criteria a
       single pass does, and only where neither has happened is the round left
       unresolved.
@@ -336,7 +336,7 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: met_aimline_goal
+      - name: met_measure_standard_goal
         data_type: int64
         description: >-
           1 when Amplify placed the probe at or above the student's aimline, 0
@@ -347,11 +347,13 @@ models:
       - name: measure_standard_goal_status
         data_type: string
         description: >-
-          met_aimline_goal as a label — Met, Not Met, or No Aimline Data. Named
-          to match the internal sibling's column of the same name so one BI
-          field reads across both PM methods, which is why it says Met rather
-          than repeating Amplify's At or Above wording; aimline_status carries
-          that verbatim for anyone who needs it.
+          met_measure_standard_goal as a label — Meeting Aimline, Below Aimline,
+          or No Aimline Data. Named to match the internal sibling's column of
+          the same name, so one BI field addresses both PM methods, but the
+          VALUES are academics' aimline vocabulary rather than the sibling's Met
+          / Not Met. That is deliberate — a reader of an aimline view should see
+          what the verdict is about, and the aimline tabs are separate from the
+          internal ones, so the two value sets never share a colour legend.
 
           Third value exists because this method has a state the internal one
           does not: Amplify published no verdict for a probe that was sat. It is
@@ -361,6 +363,31 @@ models:
           the real verdict for the measures the student DID sit, so a row can
           read Round Incomplete and Met together without contradiction — the
           round is unfinished, that measure passed.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_goal_status
+        data_type: string
+        description: >-
+          met_measure_name_code_goal as a label — Meeting Aimline, Below
+          Aimline, or No Aimline Data, the same vocabulary as
+          measure_standard_goal_status. Meeting Aimline here means the student
+          met the aimline on EVERY measure standard under this measure name
+          code, so it is the column to read when someone asks about a measure
+          rather than a sub-score.
+
+          Only NWF and ORF carry more than one standard; for the other three
+          codes this equals measure_standard_goal_status by construction. Where
+          they differ it is by a lot — on AY2025 the two ORF standards disagree
+          on 34% of the student-rounds where both were scored, which moves the
+          reported meeting rate from 43.0% at standard grain to 28.8% here.
+
+          No Aimline Data covers two cases at this grain, both correctly unknown
+          rather than missed: no verdict on any standard in the code, and a
+          verdict on one standard while the other has none, where the partner
+          could still have gone either way. A partner that is BELOW the aimline
+          settles the code as Below Aimline regardless, because no verdict on
+          the other standard can rescue it.
         config:
           meta:
             contains_pii: true
@@ -378,10 +405,10 @@ models:
         data_type: int64
         description: >-
           1 when the score reaches benchmark_goal — at grade level rather than
-          on pace. Independent of met_aimline_goal, and a student can meet
-          either without the other. Recomputed every round and not latched, so a
-          student who clears the standard and later dips reads 1 then 0. Null
-          only where the gate publishes no standard for the measure at that
+          on pace. Independent of met_measure_standard_goal, and a student can
+          meet either without the other. Recomputed every round and not latched,
+          so a student who clears the standard and later dips reads 1 then 0.
+          Null only where the gate publishes no standard for the measure at that
           grade, which does not occur in the rows this model keeps but is
           guarded because `if(score >= null, 1, 0)` would otherwise return 0 and
           report a missing standard as a failure.
@@ -419,8 +446,8 @@ models:
       - name: previous_met_aimline_goal
         data_type: int64
         description: >-
-          met_aimline_goal on this student's previous round for this measure
-          standard, within the season. Carried so a reader can audit
+          met_measure_standard_goal on this student's previous round for this
+          measure standard, within the season. Carried so a reader can audit
           missed_aimline_consecutive rather than trust it.
       - name: missed_aimline_consecutive
         data_type: int64

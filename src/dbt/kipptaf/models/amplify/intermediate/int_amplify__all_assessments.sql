@@ -36,7 +36,7 @@ with
 
             cast(null as string) as aimline_status,
             cast(null as numeric) as goal,
-            cast(null as int64) as met_aimline_goal,
+            cast(null as int64) as met_measure_standard_goal,
 
             p.measure_standard_score_change as score_change,
 
@@ -115,7 +115,7 @@ with
                 then 1
                 when p.aimline_status = 'Below'
                 then 0
-            end as met_aimline_goal,
+            end as met_measure_standard_goal,
 
             -- the aimline source carries no score delta. Sits where branch 1's
             -- real column sits -- UNION ALL matches by position, not name.
@@ -216,7 +216,7 @@ select
     cast(null as numeric) as score_change,
     cast(null as string) as aimline_status,
     cast(null as numeric) as goal,
-    cast(null as int64) as met_aimline_goal,
+    cast(null as int64) as met_measure_standard_goal,
 
     boy_probe_eligible,
     moy_probe_eligible,
@@ -272,7 +272,7 @@ select
 
     s.aimline_status,
     s.goal,
-    s.met_aimline_goal,
+    s.met_measure_standard_goal,
 
     s.boy_probe_eligible,
     s.moy_probe_eligible,

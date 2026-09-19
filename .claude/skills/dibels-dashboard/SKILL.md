@@ -2156,14 +2156,68 @@ check 3, which is hand arithmetic from before the automation rather than a
 defect. Show the AY2025 row to academics rather than fixing it -- the sheet
 records what the goals were.
 
+### Every field change runs this check sequence before you report it
+
+Standing instruction from the dashboard owner, 2026-09-19, after a week in which
+unverified model changes made the Tableau build harder than the data warranted.
+Run ALL of it after ANY column add, rename, drop or logic change in the DIBELS
+chain. Do not report a change as done on a subset.
+
+1. **Read back what changed.** `git diff --name-only`, then `git diff` on the
+   SQL. A scripted edit is not evidence it landed where intended.
+2. **Union-branch balance**, whenever `rpt_tableau__dibels_dashboard` is
+   touched:
+   `uv run python .claude/scratch/gr-diff-union-branches.py <abs path>`. All
+   three branches must report the same projection count and **0 mismatched
+   ordinals**. BigQuery binds UNION ALL by POSITION, so a column added or
+   removed on one branch needs the same on the other two.
+3. **Contract column count matches the SQL.**
+   `grep -c "^      - name: " <properties yml>` against the projection count
+   from step 2. A rename can silently leave a DUPLICATE entry when the new name
+   already exists in the yml; grep the new name and confirm it appears once.
+4. **Dev build, green.** From the main checkout:
+
+   ```bash
+   uv run dbt build --project-dir <worktree>/src/dbt/kipptaf \
+     --favor-state --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod \
+     --select <every changed model and its extract>
+   ```
+
+   `--favor-state` ALONE is not enough -- it does not shadow a stale personal
+   dev copy, and this chain has one (`int_amplify__mclass__pm_student_summary`
+   in at least one developer schema predates the `device_date` rename, failing
+   with `Name device_date not found inside p`). `--defer --state` is what fixes
+   it, and from a worktree the state path must be ABSOLUTE.
+
+5. **Dev values against prod.** Query `zz_<user>_kipptaf_tableau` and
+   `kipptaf_tableau` side by side, grouped by `model_type`, counting each
+   distinct value of the changed column including nulls. For a rename or a
+   refactor every cell must match exactly; for a logic change, the deltas must
+   be the ones you intended and no others.
+6. **Column presence.** `INFORMATION_SCHEMA.COLUMNS` on the dev relation -- the
+   new name present, the old name absent.
+7. **Lint.**
+   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <changed files> </dev/null`,
+   with `trunk fmt` first if it reports formatting.
+8. **Update this skill and the reference document in the same turn**, not later.
+   Also flag any Tableau workbook exposure you could not verify -- the
+   datasource is embedded and VizQL returns 500 on those, so a dropped or
+   renamed column breaks a bound calc SILENTLY on the next extract refresh
+   rather than erroring. That check needs a human in Desktop.
+
+`dbt` and `trunk` output both trip the output scanner on high-entropy strings
+and come back fully redacted. Redirect to a file and pull specific patterns
+(`grep -oE "PASS=[0-9]+|ERROR=[0-9]+"`) rather than re-running to see it.
+
 ### The aimline sibling, and the three traps in it
 
 `int_amplify__pm_met_criteria_aimline` mirrors the internal model stage for
-stage. Only the first stage differs: `met_aimline_goal` translates Amplify's
-`aimline_status` instead of comparing a score to a cohort target. Inputs are
-`int_amplify__all_assessments` (`model_type = 'Aimline'`, which now carries
-`aimline_status`, `goal` and `met_aimline_goal` -- the translation lives there
-so every consumer reads one flag), the by-levels gate for `pm_goal_criteria`,
+stage. Only the first stage differs: `met_measure_standard_goal` translates
+Amplify's `aimline_status` instead of comparing a score to a cohort target.
+Inputs are `int_amplify__all_assessments` (`model_type = 'Aimline'`, which
+carries `aimline_status`, `goal` and `met_measure_standard_goal` -- the
+translation lives there so every consumer reads one flag, under the SAME name
+the internal method uses), the by-levels gate for `pm_goal_criteria`,
 `benchmark_goal` and the previous EXPECTED round, and the roster's Aimline rows
 for completion. It is wired into `rpt_tableau__dibels_dashboard` as a third
 UNION branch, told apart by `model_type`.
@@ -2175,11 +2229,14 @@ row carries. Join without it and every row doubles. The gate is unique on (year,
 region, grade, admin_season, round_number, expected_measure_standard,
 measure_standard_level) -- 2,108 of 2,108 -- so with it there is no fan-out.
 
-**Trap 2 -- `met_aimline_goal` is nullable on purpose.** Amplify publishes no
-status on a share of probes even where a goal is present, so the rollups treat
-null as unknown, not as a miss. Do not "fix" it to 0. `avg(...) = 1` would
-silently credit a code with an unpublished standard, which is why the code and
-round rollups use countif-plus-min/max instead of the internal model's avg.
+**Trap 2 -- `met_measure_standard_goal` is nullable on the Aimline branch on
+purpose.** Amplify publishes no status on a share of probes even where a goal is
+present, so the rollups treat null as unknown, not as a miss. Do not "fix" it
+to 0. (On the Internal branch the same column is never null on a sat row, which
+is why the two branches' status twins have different value counts.)
+`avg(...) = 1` would silently credit a code with an unpublished standard, which
+is why the code and round rollups use countif-plus-min/max instead of the
+internal model's avg.
 
 **Trap 3 -- the streak runs over EXPECTED rounds, not sat ones.** T&L define
 two-in-a-row as "two consecutive rounds that they were supposed to test on", so
@@ -2206,6 +2263,10 @@ three-in-a-row variant.
 - `No Aimline Status` is the fifth category their four omit. Academics chose to
   show the score and flag the missing target rather than hide the row or call it
   Not Tested.
+- `aimline_status` is the source the verdict is translated FROM, and stops at
+  this model -- the extract does not publish it, because
+  `measure_standard_goal_status` already carries the same verdict in academics'
+  wording. Read it here when you need Amplify's literal At or Above / Below.
 - `aimline_value_by_date` is not to be used -- academics are waiting on a
   definition from KIPP Foundation. Do not reach for it to fill a missing status,
   and do not derive the verdict from `goal` either: that is the season-end
@@ -2225,10 +2286,10 @@ round, on every expected standard under one measure name code, and on every
 expected standard in the round. Same AND-gate shape as the testing states.
 
 **Do not build anything for this.** All three are already columns:
-`met_aimline_goal`, `met_measure_name_code_goal`, and `met_pm_round_criteria` /
-`met_pm_round_overall_criteria` (the second variant also requires full
-participation). "% not meeting" is the inverse of the same flags -- it needs no
-new field either.
+`met_measure_standard_goal`, `met_measure_name_code_goal`, and
+`met_pm_round_criteria` / `met_pm_round_overall_criteria` (the second variant
+also requires full participation). "% not meeting" is the inverse of the same
+flags -- it needs no new field either.
 
 Three things to say when this comes up:
 
@@ -2265,10 +2326,22 @@ flags' null contract differs by method and the strings' does not.
 never null on a sat row; on the Aimline branch it is a `case` over
 `aimline_status` with no `else`, so 3,312 of 35,482 sat rows (9.3%) are null on
 AY2025. An `AVG()` of the flag therefore answers a different question per
-method. `measure_standard_goal_status` names every one of those states -- four
-values on Aimline (`Met` 13,886 / `Not Met` 18,284 / `No Aimline Data` 3,312 /
-`Not Tested` 9,383), three on Internal (11,096 / 24,386 / 9,383) -- so count
-`COUNTD([Student Number])` over an explicit value instead.
+method. `measure_standard_goal_status` names every one of those states -- so
+count `COUNTD([Student Number])` over an explicit value instead.
+
+**Its vocabulary differs by method on purpose**, so do not write a calc that
+expects one value set across both:
+
+| Internal     |   Rows | Aimline           |   Rows |
+| ------------ | -----: | ----------------- | -----: |
+| `Met`        | 11,096 | `Meeting Aimline` | 13,886 |
+| `Not Met`    | 24,386 | `Below Aimline`   | 18,284 |
+| `Not Tested` |  9,383 | `Not Tested`      |  9,383 |
+| --           |     -- | `No Aimline Data` |  3,312 |
+
+Only `Not Tested` is shared, so a combined view needs its own colour legend.
+`admin_benchmark_goal_status` keeps `Met` / `Not Met` on both, because the
+benchmark standard means the same thing either way.
 
 They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
 and "could not be evaluated". `Round Incomplete` keys on
@@ -2303,6 +2376,118 @@ the string version as a second calc for Colour and leave the numeric one for
 measures. The workbook's datasource is embedded, and Tableau's VizQL Data
 Service returns 500 on embedded sources, so the MCP cannot read the calculated
 fields -- this has to be checked in Desktop.
+
+### Measure grain and measure-standard grain differ by 15 points on ORF
+
+Measured 2026-09-19 on AY2025. `NWF` and `ORF` each carry two measure standards;
+`PSF`, `WRF` and `Comprehension` carry one. So for those two codes "met the
+measure" and "met a standard of the measure" are different questions, and the
+answers are far apart.
+
+The two ORF standards -- Reading Fluency (words per minute) and Reading Accuracy
+(percent correct) -- disagree on **41% of Internal student-rounds** where both
+were scored (34% on Aimline). NWF's pair come off one probe and disagree on 8.7%
+/ 16.7%.
+
+Reported meeting rate, standard grain against code grain:
+
+| Method   | Code | At standard |   At code |
+| -------- | ---- | ----------: | --------: |
+| Internal | ORF  |       35.3% | **20.5%** |
+| Internal | NWF  |       28.4% |     24.1% |
+| Aimline  | ORF  |       43.0% |     28.8% |
+| Aimline  | NWF  |       43.3% |     34.9% |
+
+**The trap is labelling, not arithmetic.** The Region Overview - PM tab's column
+selector reads "Measure" but is bound to `expected_measure_standard`, so a
+reader picking ORF gets the standard-grain figure under a measure-grain label.
+Both numbers are correct answers to different questions; only one matches the
+question the label asks.
+
+A measure-labelled view binds `expected_measure_name_code` with
+`met_measure_name_code_goal` / `measure_name_code_goal_status`. A
+standard-labelled view keeps the `_standard_` pair. Do not mix a dimension from
+one grain with a flag from the other.
+
+### Slice on `expected_*`, never on a scores-side column
+
+The dashboard has two parallel dimension sets. `expected_*` comes from the
+enrollment spine crossed with the expectation gate and is populated on EVERY PM
+row; the scores-side columns come through the LEFT join and are null wherever no
+probe happened. AY2025, 89,730 PM rows: every scores-side column is null on
+exactly the same 18,766 (9,383 per method), every spine column on zero.
+
+Binding a view to the wrong one deletes the untested students from the
+denominator. Nothing errors, every percentage still sums to 100, and the rate
+goes UP. The symptom is a Not Tested slice disappearing after a field swap.
+
+Three pairs are easy to confuse -- close names, identical values wherever both
+exist, only one survives a non-test:
+
+| Safe                         | Drops untested      |
+| ---------------------------- | ------------------- |
+| `expected_test`              | `period`            |
+| `expected_measure_name_code` | `measure_name_code` |
+| `expected_grade_level_int`   | `assessment_grade`  |
+
+Also safe: `expected_round_number`, `expected_measure_name`,
+`expected_measure_standard`, `expected_month_round`, `expected_start_date` /
+`expected_end_date`, `region`, `school`, `student_number`, `grade_level_int`,
+`round_test_status`, `measure_test_status`. Also unsafe: `measure_name`,
+`measure_standard`, `measure_standard_level`, `client_date`, `start_date`,
+`mclass_student_number`.
+
+This is the owner's deliberate design -- the spine exists to force the nulls to
+show -- so a view reaching for a scores-side dimension is a mistake to correct,
+not a style choice.
+
+### A code's standards are sat together, and a warn test guards the rollup
+
+**Do not add an `Incomplete Measure` status.** It was proposed 2026-09-19 and
+measured away: within a multi-standard code a student sits every standard or
+none, because the pair comes off ONE probe administration (NWF-CLS and NWF-WRC
+from a single NWF sitting, ORF and ORF-Accu from one passage). AY2025 partial
+groups: 0 on Internal, 0 on Aimline. A dead enum value costs the next reader
+more than it saves.
+
+Aimline's partials are a publication gap, not a participation gap -- 1,030
+groups where the student sat both and Amplify published one aimline, 868 where
+it published neither. `No Aimline Data` already names that. `n_sat` is never 1.
+
+`met_measure_name_code_goal` DEPENDS on the pairing: it rolls up with `avg()`
+over the code partition and sees only verdicted rows, so a half-sat group would
+report the sat standard's verdict as the whole measure's. Guarded by
+`rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none` at
+`severity: warn`.
+
+**If someone asks about that warning**, the diagnosis query, the corrected
+rollup SQL, and why the fix reuses the aimline sibling's countif/min pattern
+rather than a third shape are in the reference document under "If the
+measure-code pairing test fires". Do not re-derive it -- and note that the fix
+is the point at which `Incomplete Measure` stops being dead and becomes the
+right value to add.
+
+### The four goal grains each have a flag and a labelled twin
+
+| Grain             | Flag                            | Labelled twin                   |
+| ----------------- | ------------------------------- | ------------------------------- |
+| Measure standard  | `met_measure_standard_goal`     | `measure_standard_goal_status`  |
+| Measure name code | `met_measure_name_code_goal`    | `measure_name_code_goal_status` |
+| Round             | `met_pm_round_overall_criteria` | `pm_round_status`               |
+| Admin benchmark   | `met_admin_benchmark_goal`      | `admin_benchmark_goal_status`   |
+
+All four flags are 1/0/null on both methods, so a numeric selector works across
+them; all four twins are non-null on PM rows. The name-code twin was added
+2026-09-19 -- before that the selector returned a number on that one option and
+strings on the rest.
+
+**Each grain needs its own dimension on the view.** Measured on the 14,924
+multi-standard code groups: the standard and benchmark flags VARY within a name
+code (2,948 and 1,746 groups on Internal), while the code and round flags are
+constant across it (0 of 14,924). Display a code-grain or round-grain value
+broken out by measure standard and it repeats identically across the
+sub-standards -- the average stays right, but the view asserts a difference that
+does not exist.
 
 ### The aimline method has no visible target, and three ways to get that wrong
 

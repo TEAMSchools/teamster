@@ -220,7 +220,16 @@ models:
           between the three status columns instead of converting each numeric
           flag itself. Round Incomplete never applies to it — a single measure
           standard in a single round cannot be partly finished — though the
-          extract adds Not Tested to all three status columns.
+          extract adds Not Tested to all four status columns.
+      - name: measure_name_code_goal_status
+        data_type: string
+        description: >-
+          met_measure_name_code_goal as a label rather than a flag — Met or Not
+          Met. Met means the student met the goal on EVERY measure standard
+          under this measure name code, not just this one, so it is the column
+          to read when someone asks about a measure rather than a sub-score.
+          Only NWF and ORF carry more than one standard; for the other three
+          codes this equals measure_standard_goal_status by construction.
       - name: admin_benchmark_goal_status
         data_type: string
         description: >-

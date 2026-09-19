@@ -1012,3 +1012,31 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__assessments__vendor_subject_crosswalk
+
+  - name: rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none
+    description: >-
+      Within one measure name code, a student either sat every measure standard
+      under it or none of them. The two multi-standard codes come off a single
+      probe administration -- NWF-CLS and NWF-WRC are two scores from one NWF
+      sitting, ORF and ORF-Accu from one passage -- so a partial code group is
+      not a thing the assessment can produce. Measured on AY2025: 0 partial
+      groups on Internal, 0 on Aimline, against 12,466 and 10,568 fully-scored
+      ones.
+
+      met_measure_name_code_goal depends on that. It rolls the standard-level
+      verdicts up with an avg() over the code partition, and the rollup reads
+      only the rows that carry a verdict. If a student ever sat one standard and
+      not its partner, the flag would report that single standard's verdict as
+      the whole measure's -- so a student who sat Decoding, met it, and never
+      sat Letter Sounds would read as having met NWF. Wrong, and silent.
+
+      Warn rather than error because the condition is a source-behaviour change,
+      not a build failure, and the extract is still usable while it is triaged.
+      What to do when it fires is in the DIBELS reference document under "If the
+      measure-code pairing test fires".
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard

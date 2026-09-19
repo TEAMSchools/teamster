@@ -199,7 +199,7 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: goal
-      - name: met_aimline_goal
+      - name: met_measure_standard_goal
         data_type: int64
         description: >-
           aimline_status as a flag — 1 for At or Above, 0 for Below, null where

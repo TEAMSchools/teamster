@@ -11,11 +11,13 @@ models:
       Focus supplies a placement field or Ops confirms a mapping. Ratified on
       #4996.
 
-      The three `*_status` columns — `measure_standard_goal_status`,
-      `admin_benchmark_goal_status`, `pm_round_status` — are labelled twins of
-      the `met_*` flags beside them, so the dashboard's goal-type selector can
-      pick a column instead of converting a flag. They are PM-only and null on
-      every Benchmark row. On PM rows they are never null, because
+      The four `*_status` columns — `measure_standard_goal_status`,
+      `measure_name_code_goal_status`, `admin_benchmark_goal_status`,
+      `pm_round_status` — are labelled twins of the `met_*` flags beside them,
+      so the dashboard's goal-type selector can pick a column instead of
+      converting a flag. One per goal grain, so a selector offering all four
+      returns a string on every branch. They are PM-only and null on every
+      Benchmark row. On PM rows they are never null, because
       `int_amplify__pm_met_criteria` carries scored rows only and this model
       coalesces the resulting gap to `Not Tested` — a student who was expected
       to test and was not. So a null here means a Benchmark row, and nothing
@@ -468,12 +470,14 @@ models:
       - name: met_measure_standard_goal
         data_type: int64
         description: >-
-          1 when the measure hit its goal for the round, else 0. Populated on
-          BOTH PM methods, against a different target each: the Internal branch
-          compares the score to the round's cumulative growth target, the
-          Aimline branch carries met_aimline_goal, which is Amplify's verdict
-          against the student's aimline. Null on an Aimline row where Amplify
-          published no verdict.
+          1 when the measure hit its goal for the round, else 0. The single
+          measure-standard verdict for both PM methods, against a different
+          target each — the Internal branch compares the score to the round's
+          cumulative growth target, the Aimline branch carries Amplify's verdict
+          against the student's own aimline. Null means the student did not sit
+          the measure, and on an Aimline row additionally means Amplify
+          published no verdict for a probe they did sit. The labelled twin
+          separates those two states. Null is never a miss.
         config:
           meta:
             contains_pii: true
@@ -500,14 +504,40 @@ models:
       - name: measure_standard_goal_status
         data_type: string
         description: >-
-          met_measure_standard_goal as a label. Met or Not Met on both PM
-          methods, Not Tested where no evaluation exists, plus No Aimline Data
-          on Aimline rows where Amplify published no verdict for a probe that
-          was sat -- a state the Internal method has no equivalent for, and not
-          a miss.
+          met_measure_standard_goal as a label. The vocabulary differs by method
+          on purpose -- Met / Not Met on Internal rows, Meeting Aimline / Below
+          Aimline on Aimline rows, so a reader sees what the verdict is measured
+          against. Not Tested on both where the student did not sit the measure,
+          plus No Aimline Data on Aimline rows where Amplify published no
+          verdict for a probe that WAS sat -- a state the Internal method has no
+          equivalent for, and not a miss.
 
-          Both PM branches populate this, so one BI field reads across methods.
-          Before 2026-09-15 the Aimline branch hardcoded it to null.
+          Both PM branches populate this, so one BI field addresses either
+          method; a view combining them needs its own colour legend, since the
+          two value sets do not overlap except on Not Tested.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_goal_status
+        data_type: string
+        description: >-
+          met_measure_name_code_goal as a label, and the twin of
+          measure_standard_goal_status one grain up. Same value sets and the
+          same method split -- Met / Not Met on Internal, Meeting Aimline /
+          Below Aimline / No Aimline Data on Aimline, Not Tested on both.
+
+          It answers a different question from its sibling, and the difference
+          is large. The sibling reports one measure STANDARD; this reports
+          whether the student met the goal on every standard under the measure
+          name code. NWF and ORF have two standards each, the other three codes
+          one, so only those two differ -- but on AY2025 Internal ORF that is
+          35.3% meeting at standard grain against 20.5% here, because the two
+          ORF standards (Reading Fluency and Reading Accuracy) disagree on 41%
+          of the student-rounds where both were scored.
+
+          Use this column when a view is labelled by measure and the sibling
+          when it is labelled by measure standard. Reading a standard-grain rate
+          under a measure-grain label overstates attainment.
         config:
           meta:
             contains_pii: true
@@ -532,23 +562,6 @@ models:
           The student's composite level at the benchmark that opened the PM
           season, Below Benchmark or Well Below Benchmark, and the cohort key
           the by-levels expectation gate is split on. Aimline rows only.
-      - name: aimline_status
-        data_type: string
-        description: >-
-          Amplify's published verdict on whether the probe sat at or above the
-          student's individual aimline. Aimline rows only; null where Amplify
-          published none.
-        config:
-          meta:
-            contains_pii: true
-      - name: met_aimline_goal
-        data_type: int64
-        description: >-
-          aimline_status as a flag -- 1 At or Above, 0 Below, null where Amplify
-          published no verdict. Null is not a miss. Aimline rows only.
-        config:
-          meta:
-            contains_pii: true
       - name: missed_aimline_consecutive
         data_type: int64
         description: >-
@@ -638,11 +651,11 @@ models:
           Every aimline row lands in exactly one bucket, so the five sum to the
           expected rows and a percent-of-total stack needs no filtering.
 
-          It crosses the two flags directly, `met_aimline_goal` for the verdict
-          and `met_admin_benchmark_goal` for the trajectory, and that is
+          It crosses the two flags directly, `met_measure_standard_goal` for the
+          verdict and `met_admin_benchmark_goal` for the trajectory, and that is
           deliberate rather than reading `aimline_category`. The category
           applies T&L's benchmark-wins rule, so 713 AY2025 rows sit in Meeting
-          Aimline, On-Track with `met_aimline_goal = 0` — reporting a
+          Aimline, On-Track with `met_measure_standard_goal = 0` — reporting a
           below-aimline row as meeting one. For the intervention-targeting views
           these buckets feed, the verdict is what academics mean.
 

@@ -33,7 +33,7 @@ with
             a.student_number,
             a.aimline_status,
             a.goal,
-            a.met_aimline_goal,
+            a.met_measure_standard_goal,
             a.period as admin_season,
             a.overall_probe_eligible as measure_standard_level,
 
@@ -72,9 +72,9 @@ with
         select
             c.*,
 
-            p.met_aimline_goal as previous_expected_met_aimline_goal,
+            p.met_measure_standard_goal as previous_expected_met_aimline_goal,
 
-            lag(c.met_aimline_goal) over (
+            lag(c.met_measure_standard_goal) over (
                 partition by
                     c.academic_year,
                     c.student_number,
@@ -116,7 +116,7 @@ with
                 else 0
             end as met_admin_benchmark_goal,
 
-            countif(met_aimline_goal is null) over (
+            countif(met_measure_standard_goal is null) over (
                 partition by
                     academic_year,
                     admin_season,
@@ -125,7 +125,7 @@ with
                     student_number
             ) as n_code_unpublished,
 
-            min(met_aimline_goal) over (
+            min(met_measure_standard_goal) over (
                 partition by
                     academic_year,
                     admin_season,
@@ -216,11 +216,13 @@ with
             case
                 when not completed_test_round
                 then 'Round Incomplete'
-                when met_admin_benchmark_goal = 1 and met_aimline_goal is not null
+                when
+                    met_admin_benchmark_goal = 1
+                    and met_measure_standard_goal is not null
                 then 'Meeting Aimline, On-Track'
-                when met_aimline_goal = 1
+                when met_measure_standard_goal = 1
                 then 'Meeting Aimline, Off-Track'
-                when met_aimline_goal = 0
+                when met_measure_standard_goal = 0
                 then 'Below Aimline'
                 when met_admin_benchmark_goal = 1
                 then 'No Aimline Data, On-Track'
@@ -273,7 +275,7 @@ select
     completed_test_round,
     completed_test_round_int,
     aimline_status,
-    met_aimline_goal,
+    met_measure_standard_goal,
     met_admin_benchmark_goal,
     met_measure_name_code_goal,
     met_pm_round_criteria,
@@ -283,18 +285,26 @@ select
     aimline_category,
 
     if(
-        met_aimline_goal = 0 and previous_met_aimline_goal = 0, 1, 0
+        met_measure_standard_goal = 0 and previous_met_aimline_goal = 0, 1, 0
     ) as missed_aimline_consecutive,
 
     if(met_admin_benchmark_goal = 1, 'Met', 'Not Met') as admin_benchmark_goal_status,
 
     case
-        when met_aimline_goal = 1
-        then 'Met'
-        when met_aimline_goal = 0
-        then 'Not Met'
+        when met_measure_standard_goal = 1
+        then 'Meeting Aimline'
+        when met_measure_standard_goal = 0
+        then 'Below Aimline'
         else 'No Aimline Data'
     end as measure_standard_goal_status,
+
+    case
+        when met_measure_name_code_goal = 1
+        then 'Meeting Aimline'
+        when met_measure_name_code_goal = 0
+        then 'Below Aimline'
+        else 'No Aimline Data'
+    end as measure_name_code_goal_status,
 
     case
         when met_pm_round_overall_criteria = 1

@@ -1921,11 +1921,11 @@ the chain is actually method-specific.
 
 What differs is the first stage alone. The internal method computes a cohort
 target and compares a score to it; the aimline method reads Amplify's published
-verdict, so `met_aimline_goal` translates `aimline_status` rather than computing
-anything. `pm_goal_criteria` and `benchmark_goal` come from the by-levels gate
-instead of the frozen goals sheet. Everything downstream — the measure_name_code
-pairing, the AND/OR round rollup, the completion gate, `pm_round_status` —
-mirrors the internal model line for line.
+verdict, so `met_measure_standard_goal` translates `aimline_status` rather than
+computing anything. `pm_goal_criteria` and `benchmark_goal` come from the
+by-levels gate instead of the frozen goals sheet. Everything downstream — the
+measure_name_code pairing, the AND/OR round rollup, the completion gate,
+`pm_round_status` — mirrors the internal model line for line.
 
 Two things the sibling needs that the internal model does not:
 
@@ -1935,11 +1935,11 @@ Two things the sibling needs that the internal model does not:
   `'Yes'` an Internal row carries. Join without it and the gate matches both
   cohorts, doubling every row.
 - **A third truth value.** Amplify publishes no `aimline_status` on a share of
-  probes even where a goal is present, so `met_aimline_goal` is nullable by
-  design and the rollups treat null as unknown rather than as a miss. This
-  generalises the completion asymmetry: under `AND` one miss settles the round
-  however much is unknown, under the null (OR) criteria one pass does, and only
-  where neither has happened is the round unresolved.
+  probes even where a goal is present, so `met_measure_standard_goal` is
+  nullable by design on this branch and the rollups treat null as unknown rather
+  than as a miss. This generalises the completion asymmetry: under `AND` one
+  miss settles the round however much is unknown, under the null (OR) criteria
+  one pass does, and only where neither has happened is the round unresolved.
 
 `aimline_category` carries T&L's reporting categories, taken from their PM
 guidance document, plus two the model adds for rows their four do not cover. Six
@@ -2002,10 +2002,13 @@ the PM rows. Added 2026-09-15. `measure_standard_goal_status` is three-valued
 here — Met, Not Met, **No Aimline Data** — because this method has a state the
 internal one does not; `admin_benchmark_goal_status` stays two-valued, since the
 benchmark standard is always published for the rows the model keeps. Both use
-the internal method's vocabulary rather than Amplify's At or Above / Below, so
-one BI field reads across both methods; `aimline_status` carries Amplify's
-wording verbatim for anyone who needs it. `met_measure_standard_goal` likewise
-now carries `met_aimline_goal` through on the Aimline branch instead of null.
+academics' aimline vocabulary — `Meeting Aimline` / `Below Aimline` rather than
+the internal sibling's `Met` / `Not Met`, and rather than Amplify's own
+`At or Above` / `Below`. A reader of an aimline view then sees what the verdict
+is measured against. `admin_benchmark_goal_status` keeps `Met` / `Not Met`,
+because the benchmark standard means the same thing on both methods.
+`met_measure_standard_goal` is likewise populated on the Aimline branch rather
+than null.
 
 The measure-level status is independent of the round gate, which is what makes
 the display coherent: a row can read `Round Incomplete` and `Met` together — the
@@ -2029,18 +2032,18 @@ AND-gate shape as the testing states on the participation roster:
 All three already exist as columns — no modelling was needed, which is the main
 thing to know before anyone builds them again:
 
-| Question | Column                                                    |
-| -------- | --------------------------------------------------------- |
-| 1        | `met_aimline_goal`                                        |
-| 2        | `met_measure_name_code_goal`                              |
-| 3        | `met_pm_round_criteria` / `met_pm_round_overall_criteria` |
+| Question | Flag                                                      | Labelled twin                   |
+| -------- | --------------------------------------------------------- | ------------------------------- |
+| 1        | `met_measure_standard_goal`                               | `measure_standard_goal_status`  |
+| 2        | `met_measure_name_code_goal`                              | `measure_name_code_goal_status` |
+| 3        | `met_pm_round_criteria` / `met_pm_round_overall_criteria` | `pm_round_status`               |
 
-"Not meeting" is the inverse of `met_aimline_goal = 1`, so it needs no separate
-field. Take it from the verdict columns and **not** from `aimline_category`: the
-category applies T&L's benchmark-wins rule, so 696 AY2025 rows read
-`Meeting Aimline, On-Track` while sitting below the aimline. For a metric whose
-purpose is finding students who need intervention, the label undercounts the
-problem set by exactly those rows.
+"Not meeting" is the inverse of `met_measure_standard_goal = 1`, so it needs no
+separate field. Take it from the verdict columns and **not** from
+`aimline_category`: the category applies T&L's benchmark-wins rule, so 696
+AY2025 rows read `Meeting Aimline, On-Track` while sitting below the aimline.
+For a metric whose purpose is finding students who need intervention, the label
+undercounts the problem set by exactly those rows.
 
 Measured on AY2025 aimline, each grain at its own unit of analysis:
 
@@ -2349,14 +2352,196 @@ either PM method. Use `model_type` in a view, since it is the column that
 distinguishes the two PM methods from each other, and treat
 `assessment_type = 'PM'` as a readability alias for the pair.
 
+#### Measure grain versus measure-standard grain: a 15-point difference
+
+Two of the five measure name codes carry more than one standard — `NWF` covers
+Letter Sounds and Decoding, `ORF` covers Reading Fluency and Reading Accuracy.
+For those two, "met the measure" and "met a standard of the measure" are
+different questions with materially different answers, and the extract now
+carries a column for each.
+
+How often the two standards under one code disagree, AY2025, counting student ×
+round × code groups where both standards were scored:
+
+| Method   | Code    | Both scored | One met, one not | Split rate |
+| -------- | ------- | ----------: | ---------------: | ---------: |
+| Internal | **ORF** |       5,768 |            2,365 |  **41.0%** |
+| Internal | NWF     |       6,698 |              582 |       8.7% |
+| Aimline  | ORF     |       4,317 |            1,479 |      34.3% |
+| Aimline  | NWF     |       6,251 |            1,044 |      16.7% |
+
+What that does to a reported rate:
+
+| Method   | Code    | % meeting at standard | % meeting at code | Gap       |
+| -------- | ------- | --------------------: | ----------------: | --------- |
+| Internal | **ORF** |                 35.3% |         **20.5%** | −14.8 pts |
+| Internal | NWF     |                 28.4% |             24.1% | −4.3 pts  |
+| Aimline  | ORF     |                 43.0% |             28.8% | −14.2 pts |
+| Aimline  | NWF     |                 43.3% |             34.9% | −8.4 pts  |
+
+PSF, WRF and Comprehension are single-standard, so the two columns are identical
+there by construction.
+
+ORF is the case that matters. Reading Fluency is words per minute and Reading
+Accuracy is percent correct — genuinely independent, so a student can clear one
+and miss the other, and four times in ten they do. NWF's pair come off a single
+probe and track each other more closely.
+
+**The BI consequence.** A view whose measure selector is labelled "Measure"
+while bound to `expected_measure_standard` answers the standard-grain question
+under a measure-grain label, and for ORF that reads 35% where the answer to the
+question being asked is 20%. Bind a measure-labelled view to
+`expected_measure_name_code` and `met_measure_name_code_goal` /
+`measure_name_code_goal_status`; keep the standard-grain columns for a view
+labelled by standard.
+
+##### The rollup assumes the pair is sat together, and a test guards it
+
+Within a multi-standard code a student sits **every** standard under it or
+**none**. The pair comes off one probe administration — NWF-CLS and NWF-WRC are
+two scores from a single NWF sitting, ORF and ORF-Accu from one passage — so a
+half-sat code group is not something the assessment can produce. AY2025: zero
+partial groups on either method, against 12,466 fully-scored on Internal and
+10,568 on Aimline.
+
+That is load-bearing rather than incidental. `met_measure_name_code_goal` rolls
+the standard verdicts up with an `avg()` over the code partition, and the rollup
+sees only rows that carry a verdict. Sit one standard and skip its partner, and
+the flag reports the sat standard's verdict as the whole measure's — a student
+who met Decoding and never sat Letter Sounds would read as having met NWF.
+Wrong, and nothing would say so.
+
+Aimline's apparent partials are a different thing and are already handled: on
+1,030 AY2025 code groups the student sat both standards and Amplify published an
+aimline for only one, and on 868 more it published neither. Those resolve to
+`No Aimline Data`, correctly — the student is not un-tested, the vendor is
+un-decided. `n_sat` is never 1 on either method.
+
+`rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none` asserts it, at
+`severity: warn`.
+
+###### If the measure-code pairing test fires
+
+It means the source stopped pairing the two standards — Amplify split a code
+into separately-administered probes, or a new code gained a second standard from
+a different sitting. The extract keeps building; the code-grain numbers quietly
+start overstating attainment for the affected students.
+
+First, see which code broke and how far it spread:
+
+```sql
+select
+    model_type,
+    expected_measure_name_code,
+    count(*) as partial_groups,
+    countif(n_standards_sat = 1) as sat_exactly_one,
+from `teamster-332318`.kipptaf_dbt_test__audit
+    .rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none
+group by model_type, expected_measure_name_code
+order by partial_groups desc
+```
+
+Then fix the rollup so a partial group is unknown rather than a pass. In
+`int_amplify__pm_met_criteria`, the internal rollup currently reads:
+
+```sql
+if(
+    avg(met_measure_standard_goal) over (
+        partition by
+            academic_year, admin_season, round_number, measure_name_code,
+            student_number
+    )
+    = 1,
+    1,
+    0
+) as met_measure_name_code_goal,
+```
+
+It needs the count of standards actually verdicted against the count the gate
+expected, which the internal model does not carry today — the model holds scored
+rows only, so it cannot see a standard the student skipped. Bring the expected
+count in from `int_google_sheets__dibels_pm_expectations` as a window over the
+same partition, then gate the rollup on it:
+
+```sql
+case
+    when n_standards_verdicted < n_standards_expected
+    then null
+    when
+        avg(met_measure_standard_goal) over (
+            partition by
+                academic_year, admin_season, round_number, measure_name_code,
+                student_number
+        )
+        = 1
+    then 1
+    else 0
+end as met_measure_name_code_goal,
+```
+
+The aimline sibling already has the right shape — it uses `countif`-plus-`min`
+rather than `avg` precisely so an absent verdict stays unknown — so copy its
+`n_code_unpublished` / `code_min_met` pattern rather than inventing a third one.
+Its null then needs splitting at the status column, because `No Aimline Data`
+and a genuine participation gap would no longer mean the same thing: that is the
+point at which the `Incomplete Measure` value considered on 2026-09-19 becomes
+real, and it was left out then only because the state could not occur.
+
+Finally, re-measure the two rates in the table above. If the split rate moves,
+the reference figures here are stale and the BI guidance above needs restating
+with the new ones.
+
+#### Slice on the `expected_*` spine, never on a scores-side column
+
+The extract carries two parallel sets of dimensions, and which one a view binds
+to decides whether untested students are in the denominator or silently gone.
+
+The `expected_*` family comes from the enrollment spine crossed with the
+expectation gate, so it is populated on every PM row whether or not a probe
+happened. The scores-side columns come through the LEFT join to
+`int_amplify__all_assessments` and are null on exactly the rows where no probe
+happened. Measured on AY2025, 89,730 PM rows:
+
+| Always populated (safe to filter or slice)  | Null on 18,766 rows (drops untested) |
+| ------------------------------------------- | ------------------------------------ |
+| `expected_test`                             | `period`                             |
+| `expected_round_number`                     | —                                    |
+| `expected_measure_name_code`                | `measure_name_code`                  |
+| `expected_measure_name`                     | `measure_name`                       |
+| `expected_measure_standard`                 | `measure_standard`                   |
+| `expected_grade_level_int`                  | `assessment_grade`                   |
+| `expected_start_date` / `expected_end_date` | `start_date` / `client_date`         |
+| `expected_month_round`                      | —                                    |
+| `region`, `school`, `student_number`        | `mclass_student_number`              |
+| `grade_level_int`                           | `measure_standard_level`             |
+| `round_test_status`, `measure_test_status`  | —                                    |
+
+The split is exact: every scores-side column is null on the same 18,766 rows —
+9,383 per PM method — and every spine column on none of them.
+
+Three pairs are easy to confuse because the names are close and the values agree
+wherever both exist:
+
+- **`grade_level_int` is safe; `assessment_grade` is not.** One is enrolled
+  grade off the spine, the other is the grade Amplify recorded on the probe.
+- **`expected_measure_name_code` is safe; `measure_name_code` is not.** This one
+  matters for a measure-grain view, where the scores-side column sits beside the
+  right one in the field list under a near-identical name.
+- **`expected_test` is safe; `period` is not.** Both read `BOY->MOY`.
+
+The failure is silent in the worst way: the view still renders, every percentage
+still sums to 100, and the rate rises because the denominator quietly lost the
+students who did not test. A grey Not Tested slice disappearing after a field
+swap is the symptom.
+
 #### `met_measure_standard_goal` means two different things by branch
 
 Same column name, different measuring stick, and — the part that bites — a
 different null contract. On the Internal branch it is
 `score >= cumulative_growth_words`, a plain `if`, so it is **never null on a row
-the student sat**. On the Aimline branch it carries `met_aimline_goal` through,
-which is a `case` over `aimline_status` with no `else`, so it is null wherever
-Amplify published no status.
+the student sat**. On the Aimline branch the same column is a `case` over
+`aimline_status` with no `else`, so it is null wherever Amplify published no
+status.
 
 AY2025, per method, 44,865 rows each:
 
@@ -2380,16 +2565,19 @@ test", on the Aimline side it means "did not test **or** had no aimline". Count
 **Prefer the labelled twin.** `measure_standard_goal_status` names every state
 the numeric flag leaves as null, and is never itself null on either branch:
 
-| `measure_standard_goal_status` | Internal | Aimline |
-| ------------------------------ | -------: | ------: |
-| `Met`                          |   11,096 |  13,886 |
-| `Not Met`                      |   24,386 |  18,284 |
-| `Not Tested`                   |    9,383 |   9,383 |
-| `No Aimline Data`              |        — |   3,312 |
+| Internal value |   Rows | Aimline value     |   Rows |
+| -------------- | -----: | ----------------- | -----: |
+| `Met`          | 11,096 | `Meeting Aimline` | 13,886 |
+| `Not Met`      | 24,386 | `Below Aimline`   | 18,284 |
+| `Not Tested`   |  9,383 | `Not Tested`      |  9,383 |
+| —              |      — | `No Aimline Data` |  3,312 |
 
-Four values on the Aimline branch, three on the Internal one. The nulls are
-**not** folded into `Not Met` — the two unmeasurable states are named
-separately, which is what makes this the safe column to bind a view to.
+Four values on the Aimline branch, three on the Internal one, and **the two
+vocabularies deliberately differ** — see the sibling model section above. The
+nulls are **not** folded into the not-met value on either side; the two
+unmeasurable states are named separately, which is what makes this the safe
+column to bind a view to. A view that combines both methods needs its own colour
+legend, since only `Not Tested` is shared.
 
 #### Enrollment spine
 
@@ -2454,10 +2642,19 @@ Below alike, doubling every row.
 
 The internal method's own goal columns are `null` on this branch. Aimline builds
 no cohort trajectory, so it carries no day counts, no `starting_words` and no
-growth target, and its `benchmark_goal` comes from the gate unpadded. The five
-aimline-only columns — `aimline_cohort_level`, `aimline_status`,
-`met_aimline_goal`, `missed_aimline_consecutive`, `aimline_category` — are
-`null` on the other two branches in turn.
+growth target, and its `benchmark_goal` comes from the gate unpadded. The three
+aimline-only columns — `aimline_cohort_level`, `missed_aimline_consecutive`,
+`aimline_category` — are `null` on the other two branches in turn.
+
+`aimline_status` is **not** among them: Amplify's own `At or Above` / `Below`
+wording stops at `int_amplify__pm_met_criteria_aimline` and is not published to
+the extract, because `measure_standard_goal_status` already carries the same
+verdict in the vocabulary academics report in. Read it upstream when you need
+the vendor's literal wording.
+
+**The measure-standard verdict is not one of them.** It ships as
+`met_measure_standard_goal` on both PM branches — one column, one name, so a
+view can read the verdict across both methods without branching on `model_type`.
 
 **AY2026 resolves here and not on the internal branch.** The internal branch
 inner-joins the frozen PM goals sheet, which has no SY26-27 rows yet, so it
@@ -2643,9 +2840,11 @@ staging model. It provides probe-level detail (one row per student / measure /
 probe attempt within a PM period).
 
 The table above says what the file **carries**, not what the dashboard serves.
-Of those four, only `aimline_status` drives anything: `goal` stops at
-`int_amplify__pm_met_criteria_aimline` and is null-cast in the extract,
-`aimline_value_by_date` is not projected past the staging intermediate, and
+**None of the four reaches the extract under its own name.** `aimline_status`
+drives the verdict but stops at `int_amplify__pm_met_criteria_aimline`, which
+publishes it as `measure_standard_goal_status` in academics' vocabulary instead;
+`goal` reaches that model and is then null-cast in the extract;
+`aimline_value_by_date` is not projected past the staging intermediate; and
 `measure_standard_score_change` is not projected at all. Null rates, how the
 three aimline fields nest, and why `aimline_value_by_date` stays unused are
 under
