@@ -558,6 +558,19 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: aimline_round_category
+        data_type: string
+        description: >-
+          The reporting category for the whole round rather than one measure
+          standard, so a student appears once however many measures they sat.
+          Aimline rows only, and Not Tested here where the student has no row in
+          the aimline model at all.
+
+          Read this when a view spans every measure the round expected, and
+          aimline_category when the view is scoped to a single measure standard.
+          The two disagree by design: a student below the aimline on any one
+          measure reads Below Aimline for the round, so the round-level share
+          below is the higher of the two.
       - name: aimline_category
         data_type: string
         description: >-

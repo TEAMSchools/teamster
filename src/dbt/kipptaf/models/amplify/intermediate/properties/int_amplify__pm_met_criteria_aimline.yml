@@ -179,6 +179,36 @@ models:
           - accepted_values:
               arguments:
                 values: [Met, Not Met, Round Incomplete, No Aimline Status]
+      - name: aimline_round_category
+        data_type: string
+        description: >-
+          The same reporting category rolled up to the whole round, one value
+          per student per round rather than one per measure standard. Use it
+          when a view reads across every measure the round expected; use
+          aimline_category when a view is scoped to one measure standard.
+
+          Precedence is the row-level one, applied to the worst state the
+          student holds on any of that round's rows. Round Incomplete comes
+          first for the same reason it does per measure — it is already a
+          round-level judgment, and no student carries a partly-untested round
+          without it. Below Aimline then outranks No Aimline Data, on the
+          reading that a real negative verdict is worth more than a missing one;
+          that ordering is the only part of the cascade the row-level precedence
+          does not already decide.
+
+          A student who sat nothing in the round has no row here, and the
+          reporting extract names those Not Tested, exactly as it does for
+          aimline_category.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Round Incomplete
+                  - Below Aimline
+                  - No Aimline Data
+                  - Meeting Aimline, Off-Track
+                  - Meeting Aimline, On-Track
       - name: academic_year
         data_type: int64
         description:

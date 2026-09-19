@@ -2209,7 +2209,10 @@ three-in-a-row variant.
 - `aimline_value_by_date` is not to be used -- academics are waiting on a
   definition from KIPP Foundation. Do not reach for it to fill a missing status,
   and do not derive the verdict from `goal` either: that is the season-end
-  target and reproduces `aimline_status` on only five rows in six.
+  target and reproduces `aimline_status` on only five rows in six. What the
+  column measurably does, and what the missing definition would have to settle,
+  is under "The aimline method has no visible target" below -- the hold is
+  reversible, so read that before answering a question about it.
 
 Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
 lost to the roster join (2 Newark students, in the yml).
@@ -2256,6 +2259,17 @@ points).
 coalesces the untested gap to `Not Tested`, so on a PM row they are never null
 and null now means one thing only -- a Benchmark row.
 
+**Bind views to the status strings, not to the numeric flags**, because the
+flags' null contract differs by method and the strings' does not.
+`met_measure_standard_goal` on the Internal branch is a plain `if`, so it is
+never null on a sat row; on the Aimline branch it is a `case` over
+`aimline_status` with no `else`, so 3,312 of 35,482 sat rows (9.3%) are null on
+AY2025. An `AVG()` of the flag therefore answers a different question per
+method. `measure_standard_goal_status` names every one of those states -- four
+values on Aimline (`Met` 13,886 / `Not Met` 18,284 / `No Aimline Data` 3,312 /
+`Not Tested` 9,383), three on Internal (11,096 / 24,386 / 9,383) -- so count
+`COUNTD([Student Number])` over an explicit value instead.
+
 They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
 and "could not be evaluated". `Round Incomplete` keys on
 `met_pm_round_criteria`, NOT on the overall flag -- under `AND` a measure the
@@ -2289,6 +2303,88 @@ the string version as a second calc for Colour and leave the numeric one for
 measures. The workbook's datasource is embedded, and Tableau's VizQL Data
 Service returns 500 on embedded sources, so the MCP cannot read the calculated
 fields -- this has to be checked in Desktop.
+
+### The aimline method has no visible target, and three ways to get that wrong
+
+Measured 2026-09-19 on AY2025. Full tables in the reference doc under
+[Both methods have a moving target](../../../docs/models/dibels-dashboard-data-model.md);
+what a session needs before opening a file is here.
+
+**The extract's `goal` column is null on every Aimline row** -- all 44,865 of
+them on AY2025 -- because the branch hardcodes `null as goal`. The Internal
+branch fills the same column with `cumulative_growth_words`. So an internal PM
+view can show "scored 30 against a target of 21" and an aimline view cannot.
+That asymmetry is the current intended state; do not report it as a bug, and do
+not fill it from Amplify's `goal` (below).
+
+**`aimline_value_by_date` is the analogue of `cumulative_growth_words`, and is
+on hold rather than rejected.** It moves within a season -- 14,732 of the 19,467
+multi-probe student x measure standard x season partitions (76%) change -- while
+Amplify's `goal` is the fixed season-end endpoint and changes in 32 (0.2%).
+`aimline_status` is computed against the moving value, not against `goal`.
+
+Measured behaviour, AY2025: a straight line in calendar days (mean absolute
+residual 0.126 words against the line through each partition's first and last
+probe, max 1.0), monotonic non-decreasing on 29,051 of 29,051 consecutive pairs,
+never above `goal`, and equal to `goal` on only 10.9% of final probes.
+
+Unknown, and the reason for the hold: what anchors the line's two ends.
+Extrapolating to where each line reaches `goal` spreads over 52 dates across two
+months for Newark BOY->MOY, so there is no shared season-end anchor to describe.
+Academics are waiting on a definition from KIPP Foundation before using it.
+
+So: confirming it moves is NOT the missing piece and does not on its own reopen
+the decision -- but the hold is reversible, and this is the material to revisit
+it with when the definition lands. Do not reach for the column to fill a missing
+`aimline_status` in the meantime.
+
+**Amplify's `goal` is a per-student growth target, not the grade's bar.** It is
+written from the individual student's point of view -- where this student should
+reasonably reach by the end of the period, given where they started -- so two
+students in the same class on the same measure can correctly hold different
+goals. `benchmark_goal` is the opposite kind of thing: one published grade-level
+standard everyone is held to. A per-student endpoint is what the per-student
+aimline trajectory has to run to.
+
+It is therefore not `benchmark_goal` unpadded, which is the tempting guess and
+wrong for two rows in three: 36.6% of probe rows match our standard exactly,
+39.8% sit below it, 23.6% above. Grade 3 Reading Fluency BOY->MOY -- our
+standard 105, Amplify's goals 33 to 189. The rows that do match are students
+whose individual target coincides with the standard, not evidence the column is
+the standard. Never substitute either column for the other, and never label
+`goal` as a grade-level goal in a view.
+
+### A missing aimline `goal` is a school-grade condition, not thin data
+
+Grades 5 and 7 carry `goal` null rates of 15.9% and 14.6% against 1.7-3.4%
+elsewhere, which invites "those grades cancelled PM testing, so Amplify had too
+little data." Tested 2026-09-19 and rejected -- do not re-run this.
+
+- The students sat the probes: Newark Purpose grade 7 is 335 probe rows, 335
+  scored, 335 with no goal.
+- They have the BOY benchmark the goal derives from -- 99.6% of goal-null
+  students against 99.9% of goal-present ones. Prior-year PM is not an input to
+  the current year's goal at all.
+- It is binary per student: 1 of 759 grade-5 students had a mix of goal-present
+  and goal-null rows.
+- It concentrates in two cells -- Purpose grade 7 at 100% and Rise grade 5 at
+  88% are 72% of the whole problem, while TEAM grade 7 and PPMS grade 5 are at
+  zero.
+
+Reads as an mClass setup or rostering condition at those cells. **Nobody has
+asked Amplify what suppresses a `goal`** -- that is the open action, and until
+it is answered the above is inference from the pattern. The `aimline_status`
+gaps in the same grades (30.5% and 35.5%) are a superset and may have a separate
+cause; not investigated.
+
+### Filtering PM rows: `assessment_type` and `model_type` say the same thing
+
+On `rpt_tableau__dibels_dashboard`, `assessment_type = 'PM'` is exactly
+`model_type in ('Internal', 'Aimline')` -- AY2025 gives PM/Aimline 44,865,
+PM/Internal 44,865, Benchmark/BM 111,892, with no row crossing. Neither filter
+narrows the other, so adding both proves nothing. Use `model_type`: it is the
+column that separates the two PM methods, which is the filter a view actually
+needs.
 
 ### The OR criteria is spelled NULL, and it is live on history
 

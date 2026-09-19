@@ -207,6 +207,50 @@ with
             end as met_pm_round_overall_criteria,
 
         from round_criteria
+    ),
+
+    measure_category as (
+        select
+            *,
+
+            case
+                when not completed_test_round
+                then 'Round Incomplete'
+                when met_admin_benchmark_goal = 1 and met_aimline_goal is not null
+                then 'Meeting Aimline, On-Track'
+                when met_aimline_goal = 1
+                then 'Meeting Aimline, Off-Track'
+                when met_aimline_goal = 0
+                then 'Below Aimline'
+                when met_admin_benchmark_goal = 1
+                then 'No Aimline Data, On-Track'
+                else 'No Aimline Data, Off-Track'
+            end as aimline_category,
+
+        from round_overall
+    ),
+
+    round_category as (
+        select
+            *,
+
+            countif(aimline_category = 'Round Incomplete') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_incomplete,
+
+            countif(aimline_category = 'Below Aimline') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_below,
+
+            countif(aimline_category like 'No Aimline Data%') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_no_aimline,
+
+            countif(aimline_category = 'Meeting Aimline, Off-Track') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_off_track,
+
+        from measure_category
     )
 
 select
@@ -236,6 +280,7 @@ select
     met_pm_round_overall_criteria,
     previous_expected_round,
     previous_met_aimline_goal,
+    aimline_category,
 
     if(
         met_aimline_goal = 0 and previous_met_aimline_goal = 0, 1, 0
@@ -266,17 +311,15 @@ select
     end as pm_round_status,
 
     case
-        when not completed_test_round
+        when n_round_incomplete > 0
         then 'Round Incomplete'
-        when met_admin_benchmark_goal = 1 and met_aimline_goal is not null
-        then 'Meeting Aimline, On-Track'
-        when met_aimline_goal = 1
-        then 'Meeting Aimline, Off-Track'
-        when met_aimline_goal = 0
+        when n_round_below > 0
         then 'Below Aimline'
-        when met_admin_benchmark_goal = 1
-        then 'No Aimline Data, On-Track'
-        else 'No Aimline Data, Off-Track'
-    end as aimline_category,
+        when n_round_no_aimline > 0
+        then 'No Aimline Data'
+        when n_round_off_track > 0
+        then 'Meeting Aimline, Off-Track'
+        else 'Meeting Aimline, On-Track'
+    end as aimline_round_category,
 
-from round_overall
+from round_category
