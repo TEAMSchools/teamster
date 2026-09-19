@@ -160,7 +160,12 @@ select
         met_measure_name_code_goal = 1, 'Met', 'Not Met'
     ) as measure_name_code_goal_status,
 
-    if(met_admin_benchmark_goal = 1, 'Met', 'Not Met') as admin_benchmark_goal_status,
+    case
+        when met_admin_benchmark_goal = 1
+        then 'Met Benchmark'
+        when met_admin_benchmark_goal = 0
+        then 'Did Not Meet Benchmark'
+    end as admin_benchmark_goal_status,
 
     -- a round the student did not finish is unmeasurable rather than failed, but
     -- only where the missing measures could still have changed the answer: AND is

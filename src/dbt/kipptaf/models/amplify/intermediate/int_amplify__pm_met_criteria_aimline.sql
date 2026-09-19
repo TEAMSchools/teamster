@@ -288,7 +288,12 @@ select
         met_measure_standard_goal = 0 and previous_met_aimline_goal = 0, 1, 0
     ) as missed_aimline_consecutive,
 
-    if(met_admin_benchmark_goal = 1, 'Met', 'Not Met') as admin_benchmark_goal_status,
+    case
+        when met_admin_benchmark_goal = 1
+        then 'Met Benchmark'
+        when met_admin_benchmark_goal = 0
+        then 'Did Not Meet Benchmark'
+    end as admin_benchmark_goal_status,
 
     case
         when met_measure_standard_goal = 1

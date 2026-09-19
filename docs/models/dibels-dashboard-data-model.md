@@ -1846,10 +1846,11 @@ missing `'OR'` branch.
 "did not meet" and "could not be evaluated" — so the model also emits
 `pm_round_status`, which separates them into `Met`, `Not Met` and
 `Round Incomplete`. Two sibling columns label the other two flags for symmetry:
-`measure_standard_goal_status` and `admin_benchmark_goal_status`, each `Met` or
-`Not Met`. They exist so the dashboard's goal-type selector can pick a column
-rather than convert a flag, which keeps the judgment in SQL and out of a
-workbook calculation.
+`measure_standard_goal_status` (`Met` / `Not Met`) and
+`admin_benchmark_goal_status` (`Met Benchmark` / `Did Not Meet Benchmark`). They
+exist so the dashboard's goal-type selector can pick a column rather than
+convert a flag, which keeps the judgment in SQL and out of a workbook
+calculation.
 
 `Round Incomplete` is narrower than "the round was unfinished", because a
 missing measure only matters where it could still have changed the answer. Under
@@ -2005,10 +2006,12 @@ benchmark standard is always published for the rows the model keeps. Both use
 academics' aimline vocabulary — `Meeting Aimline` / `Below Aimline` rather than
 the internal sibling's `Met` / `Not Met`, and rather than Amplify's own
 `At or Above` / `Below`. A reader of an aimline view then sees what the verdict
-is measured against. `admin_benchmark_goal_status` keeps `Met` / `Not Met`,
-because the benchmark standard means the same thing on both methods.
-`met_measure_standard_goal` is likewise populated on the Aimline branch rather
-than null.
+is measured against. `admin_benchmark_goal_status` is the exception: it reads
+`Met Benchmark` / `Did Not Meet Benchmark` on BOTH methods, because the
+benchmark standard is the one grain that does not depend on method. Naming the
+benchmark in the value is what lets a reader tell `Met Benchmark` from
+`Meeting Aimline` at a glance. `met_measure_standard_goal` is likewise populated
+on the Aimline branch rather than null.
 
 The measure-level status is independent of the round gate, which is what makes
 the display coherent: a row can read `Round Incomplete` and `Met` together — the

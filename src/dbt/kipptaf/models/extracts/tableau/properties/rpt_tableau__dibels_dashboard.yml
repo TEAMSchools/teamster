@@ -565,9 +565,25 @@ models:
       - name: admin_benchmark_goal_status
         data_type: string
         description: >-
-          met_admin_benchmark_goal as a label -- Met or Not Met, or Not Tested
-          where no evaluation exists. Populated on both PM methods; before
-          2026-09-15 the Aimline branch hardcoded it to null.
+          met_admin_benchmark_goal as a label -- Met Benchmark, Did Not Meet
+          Benchmark, or Not Tested where the student did not sit the measure.
+          Populated on both PM methods.
+
+          The only status column whose values read identically on both, because
+          the benchmark standard is the one grain that does not depend on
+          method. The other three carry aimline vocabulary on Aimline rows and
+          internal vocabulary on Internal rows. The values name the benchmark
+          explicitly so a reader can tell Met Benchmark from Meeting Aimline at
+          a glance.
+
+          Three-valued on both, with no No Aimline Data equivalent: a verdict
+          needs only Amplify's published grade-level standard, which exists for
+          every expected row, so a student who sat the measure always has one.
+          Verified across every year -- zero null benchmark goals, zero scored
+          rows without a verdict.
+
+          The bar differs by method even though the wording does not. See
+          met_admin_benchmark_goal for the 3,162-row consequence.
         config:
           meta:
             contains_pii: true

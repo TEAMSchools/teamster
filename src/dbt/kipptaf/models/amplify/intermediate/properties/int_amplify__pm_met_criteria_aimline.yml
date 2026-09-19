@@ -394,10 +394,30 @@ models:
       - name: admin_benchmark_goal_status
         data_type: string
         description: >-
-          met_admin_benchmark_goal as a label — Met or Not Met. Two-valued
-          rather than three because the benchmark standard is always published
-          for the rows this model keeps, so there is no unknown state to name.
-          Matches the internal sibling's column of the same name.
+          met_admin_benchmark_goal as a label — Met Benchmark or Did Not Meet
+          Benchmark. Two-valued rather than three because the benchmark standard
+          is always published for the rows this model keeps, so there is no
+          unknown state to name. Verified across every year in the extract: zero
+          rows with a null benchmark_goal, and zero scored rows without a
+          verdict.
+
+          This is the ONLY status column that reads identically on both PM
+          methods, and deliberately so — the other three carry aimline
+          vocabulary here and internal vocabulary on the sibling, because they
+          measure different things per method. The benchmark standard does not.
+
+          The bar still differs, even though the words do not: the internal
+          sibling compares against the standard plus a 3-word planning buffer
+          and this one against the bare standard, which is 3,162 AY2025 rows
+          reading Met Benchmark here and Did Not Meet Benchmark there. Same
+          label, same question, different threshold, by T&L's choice.
+
+          A null would mean Amplify published no standard for the measure and
+          grade. The case preserves it rather than folding it into Did Not Meet
+          Benchmark, so if the by-levels gate's null-standard rounds ever become
+          score-eligible the state surfaces instead of reading as a miss. The
+          not_null test on benchmark_goal is the trip-wire; a fourth value would
+          be needed at that point, on this method only.
         config:
           meta:
             contains_pii: true

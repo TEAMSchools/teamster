@@ -2331,10 +2331,11 @@ points).
 
 `int_amplify__pm_met_criteria` emits three `*_status` strings beside its flags:
 `pm_round_status` (`Met` / `Not Met` / `Round Incomplete`),
-`measure_standard_goal_status` and `admin_benchmark_goal_status` (`Met` /
-`Not Met`). `rpt_tableau__dibels_dashboard` passes all three through and
-coalesces the untested gap to `Not Tested`, so on a PM row they are never null
-and null now means one thing only -- a Benchmark row.
+`measure_standard_goal_status` (`Met` / `Not Met`) and
+`admin_benchmark_goal_status` (`Met Benchmark` / `Did Not Meet Benchmark`).
+`rpt_tableau__dibels_dashboard` passes all three through and coalesces the
+untested gap to `Not Tested`, so on a PM row they are never null and null now
+means one thing only -- a Benchmark row.
 
 **Bind views to the status strings, not to the numeric flags**, because the
 flags' null contract differs by method and the strings' does not.
@@ -2355,9 +2356,14 @@ expects one value set across both:
 | `Not Tested` |  9,383 | `Not Tested`      |  9,383 |
 | --           |     -- | `No Aimline Data` |  3,312 |
 
+`measure_name_code_goal_status` uses the same two value sets one grain up.
+`admin_benchmark_goal_status` is the exception -- `Met Benchmark` /
+`Did Not Meet Benchmark` / `Not Tested` on BOTH methods.
+
 Only `Not Tested` is shared, so a combined view needs its own colour legend.
-`admin_benchmark_goal_status` keeps `Met` / `Not Met` on both, because the
-benchmark standard means the same thing either way.
+`admin_benchmark_goal_status` reads `Met Benchmark` / `Did Not Meet Benchmark`
+on both, because the benchmark standard is the one grain that does not depend on
+method. It is the only status column whose values match across the two.
 
 They exist because `met_pm_round_overall_criteria = 0` means both "did not meet"
 and "could not be evaluated". `Round Incomplete` keys on

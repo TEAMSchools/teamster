@@ -258,10 +258,21 @@ models:
       - name: admin_benchmark_goal_status
         data_type: string
         description: >-
-          met_admin_benchmark_goal as a label rather than a flag — Met or Not
-          Met. The twin of the flag, for the same reason as
-          measure_standard_goal_status, and per round rather than latched, since
-          the flag it labels is.
+          met_admin_benchmark_goal as a label rather than a flag — Met Benchmark
+          or Did Not Meet Benchmark. The twin of the flag, for the same reason
+          as measure_standard_goal_status, and per round rather than latched,
+          since the flag it labels is.
+
+          The values name the benchmark explicitly, unlike the other status
+          columns' bare Met / Not Met, because this is the one grain where both
+          PM methods use the same wording — the benchmark standard means the
+          same thing on either. A reader seeing Met Benchmark beside Meeting
+          Aimline should be able to tell which bar was cleared.
+
+          Null is preserved rather than folded into Did Not Meet Benchmark. It
+          cannot occur here, since this model's flag is a plain if(), but the
+          aimline sibling's flag is genuinely nullable and the two columns are
+          kept the same shape.
       - name: pm_round_status
         data_type: string
         description: >-
