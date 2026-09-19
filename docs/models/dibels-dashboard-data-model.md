@@ -2089,9 +2089,46 @@ on the internal method and not on this one.
 The consequence is that the same student at the same score can read at grade
 level on the aimline method and not on the internal one, three words apart —
 measured on AY2025, 9,117 aimline rows meet the unpadded standard against 5,758
-that would meet the padded one. Intended, not a reconciliation defect, but the
-two columns must not be compared or unioned as though they answered one
-question.
+that would meet the padded one at this model's grain.
+
+**Measured at the extract, the disagreement is exactly one-directional.** Of the
+35,496 AY2025 rows where the same student, standard, round and season is scored
+on both methods, 32,334 agree, **3,162 read met on Aimline and not met on
+Internal, and zero read the reverse.** One-directional is the signature of a
+uniformly higher bar rather than a computation that differs; if the reverse
+count is ever non-zero, something other than the pad has changed.
+
+Confirmed a second way on 2026-09-19: `met_admin_benchmark_goal_unpadded` on the
+Internal branch reproduces the Aimline column cell for cell — 8,731 met and
+26,751 not met on each. The pad is the whole of the difference.
+
+Intended, not a reconciliation defect, but the two columns must not be compared
+or unioned as though they answered one question.
+
+##### `met_admin_benchmark_goal_unpadded`, and why it exists unused
+
+Reviewed on 2026-09-19 and the split was **kept**: internal stays padded,
+aimline stays unpadded, and `met_admin_benchmark_goal` keeps its name on both.
+The argument for aligning them is real — "is this student at grade level on this
+standard" is the one question in the model that genuinely does not depend on
+method, the standard is Amplify's and identical on both branches, and a planning
+buffer is about goal-setting rather than about an at-grade-level verdict. It was
+weighed against the fact that changing either side moves a number T&L already
+read, and the recorded decision stood.
+
+What shipped instead is `met_admin_benchmark_goal_unpadded` on the **Internal
+branch only** — the same comparison against the bare published standard, null on
+Benchmark and Aimline rows. Nothing consumes it. It is there so that if
+academics later want an at-grade-level figure comparable across the two PM
+methods, the column is ready without a model change.
+
+Internal-only is deliberate: the aimline `met_admin_benchmark_goal` is already
+unpadded, so an unpadded variant there would be a byte-identical second copy.
+
+**Binding it to a view is a reporting change, not a wiring change.** It reads 1
+on 3,162 AY2025 rows where `met_admin_benchmark_goal` reads 0, which raises
+Internal at-grade-level attainment from 5,569 to 8,731. That needs T&L, not an
+engineering decision.
 
 The sibling also carries Amplify's per-student `goal`, the season-end target,
 for context only. Do not derive the aimline verdict from it: Amplify evaluates a

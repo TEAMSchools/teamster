@@ -2254,6 +2254,22 @@ three-in-a-row variant.
   aimline, so the two methods' `met_admin_benchmark_goal` are three words apart
   by design -- 9,117 aimline rows meet the unpadded standard against 5,758 that
   would meet the padded one. Never union or compare the two columns.
+  **Re-reviewed 2026-09-19 and KEPT.** The case for aligning them is good --
+  at-grade-level is the one question that does not depend on method -- but
+  changing either side moves a number T&L already read, so the split stands and
+  the name stays. Measured at the extract: of 35,496 rows scored on both
+  methods, 3,162 read met on Aimline and not on Internal, and ZERO the reverse.
+  One-directional is the signature of a uniformly higher bar; a non-zero reverse
+  count means something other than the pad has changed. Confirmed independently
+  -- `met_admin_benchmark_goal_unpadded` on Internal reproduces the Aimline
+  column cell for cell, 8,731 met and 26,751 not on each.
+- `met_admin_benchmark_goal_unpadded` exists on the INTERNAL branch and is
+  deliberately unused. It is the same comparison without the buffer, parked so a
+  future consumer wanting a cross-method at-grade-level figure needs no model
+  change. Null on Benchmark and Aimline rows, because aimline's is already
+  unpadded and a copy would be redundant. Binding it to a view raises Internal
+  attainment from 5,569 to 8,731 on AY2025 -- a T&L decision, not an engineering
+  one. Do not wire it up on your own initiative.
 - `Not Tested` overrides every other category, because they define it at the
   round: not tested on one or more of the round's expected measures means Not
   Tested for the whole round, including the measures they did sit.

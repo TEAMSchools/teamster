@@ -171,12 +171,37 @@ models:
           level rather than on pace. Independent of met_measure_standard_goal,
           and a student can meet either without the other. The two converge in
           the season's last round, where cumulative_growth_words is set to
-          benchmark_goal outright.
+          benchmark_goal_padded outright.
+
+          The aimline sibling's column of the same name compares against the
+          UNPADDED standard, so the two methods disagree on 3,162 AY2025 rows,
+          always in the same direction. That is T&L's recorded choice, not
+          drift; see met_admin_benchmark_goal_unpadded below and the padding
+          note in the DIBELS reference.
 
           Recomputed every round and not latched — a student who clears the
           standard in one round and dips below it in the next reads 1 then 0. It
           is also a leaf — nothing in this model aggregates it, and the whole
           met/not-met chain runs on met_measure_standard_goal alone.
+      - name: met_admin_benchmark_goal_unpadded
+        data_type: int64
+        description: >-
+          The same comparison as met_admin_benchmark_goal against the bare
+          published standard — 1 when the score reaches benchmark_goal, without
+          academics' 3-word planning buffer.
+
+          Deliberately unused. Nothing reads it, no view binds it, and it is
+          null on both other branches of the reporting extract. It exists so a
+          future consumer who wants an at-grade-level figure comparable with the
+          aimline method's has the column ready without a model change, since
+          the aimline sibling's met_admin_benchmark_goal is already unpadded.
+
+          Internal only, on purpose. Adding an unpadded variant on the aimline
+          branch would ship a byte-identical copy of the column already there.
+
+          Wiring this into a view CHANGES A PUBLISHED NUMBER — it reads 1 on
+          3,162 AY2025 rows where met_admin_benchmark_goal reads 0. That is a
+          reporting decision for T&L, not an implementation detail.
       - name: met_measure_name_code_goal
         data_type: int64
         description: >-

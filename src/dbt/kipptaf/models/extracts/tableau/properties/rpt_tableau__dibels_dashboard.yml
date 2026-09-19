@@ -483,9 +483,30 @@ models:
             contains_pii: true
       - name: met_admin_benchmark_goal
         data_type: int64
-        description:
+        description: >-
           1 when the score reaches the benchmark goal -- at grade level rather
           than on pace. Recomputed each round and not latched.
+
+          The bar differs by method, deliberately. Internal compares against
+          benchmark_goal plus academics' 3-word planning buffer; Aimline
+          compares against the bare published standard, because the pad exists
+          to make a cohort trajectory land past the bar and Aimline builds no
+          trajectory. On AY2025 that is 3,162 rows where the same student, same
+          score, same standard and same round reads 1 on Aimline and 0 on
+          Internal, and zero rows the other way. T&L's recorded choice; do not
+          reconcile the two columns or union them as one metric.
+      - name: met_admin_benchmark_goal_unpadded
+        data_type: int64
+        description: >-
+          met_admin_benchmark_goal against the bare published standard, with no
+          planning buffer. Internal rows only -- null on Benchmark rows and on
+          Aimline rows, where met_admin_benchmark_goal is already unpadded and a
+          second copy would be redundant.
+
+          Nothing consumes it. It is here so a future consumer wanting an
+          at-grade-level figure that IS comparable across the two PM methods has
+          it without a model change. Binding it to a view changes a published
+          number on 3,162 AY2025 rows, so that is T&L's call.
       - name: met_measure_name_code_goal
         data_type: int64
         description:

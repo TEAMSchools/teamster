@@ -64,6 +64,12 @@ with
                 measure_standard_score >= benchmark_goal_padded, 1, 0
             ) as met_admin_benchmark_goal,
 
+            -- not consumed by anything today; see the padding note in the
+            -- DIBELS reference before wiring it into a view.
+            if(
+                measure_standard_score >= benchmark_goal, 1, 0
+            ) as met_admin_benchmark_goal_unpadded,
+
             if(
                 avg(met_measure_standard_goal) over (
                     partition by
@@ -143,6 +149,7 @@ select
     completed_test_round_int,
     met_measure_standard_goal,
     met_admin_benchmark_goal,
+    met_admin_benchmark_goal_unpadded,
     met_measure_name_code_goal,
     met_pm_round_criteria,
     met_pm_round_overall_criteria,

@@ -106,6 +106,7 @@ select
 
     null as met_measure_standard_goal,
     null as met_admin_benchmark_goal,
+    null as met_admin_benchmark_goal_unpadded,
     null as met_measure_name_code_goal,
     null as met_pm_round_criteria,
     null as met_pm_round_overall_criteria,
@@ -298,6 +299,7 @@ select
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
+    pm.met_admin_benchmark_goal_unpadded,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
@@ -528,6 +530,7 @@ select
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
+    null as met_admin_benchmark_goal_unpadded,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
