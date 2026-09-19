@@ -2094,8 +2094,10 @@ The sibling also carries Amplify's per-student `goal`, the season-end target,
 for context only. Do not derive the aimline verdict from it: Amplify evaluates a
 probe against its own trajectory, so comparing a score to `goal` reproduces
 `aimline_status` on only about five rows in six. `aimline_status` is the only
-aimline field the model uses. The source carries a further aimline column whose
-derivation is undocumented, and academics have said not to use it.
+aimline field the model uses. The source's third aimline column,
+`aimline_value_by_date`, is on hold pending a definition from KIPP Foundation —
+what it does, and what is still unknown about it, is set out under
+[What `aimline_value_by_date` is](#what-aimline_value_by_date-is-and-what-is-still-unknown-about-it).
 
 The **goal** is season-level: `benchmark_goal` is the same number in every round
 of the season, unlike `cumulative_growth_words`, which climbs. The **flag** is
@@ -2130,11 +2132,48 @@ student × measure standard × season partitions holding more than one probe,
 (0.2%). One Kinder PSF student, BOY→MOY, shows the shape: scores 10 / 30 / 57 /
 59 against aimline values 9 / 15 / 19 / 26, with `goal` fixed at 29 throughout.
 
-**Do not surface `aimline_value_by_date` on that basis.** Academics said not to
-use it — recorded above under the sibling model — and the fact that it behaves
-like the internal trajectory is not new information that reopens the decision.
-The column is noted here so the next reader recognises what they have found and
-stops, rather than measuring it again and proposing the same change.
+##### What `aimline_value_by_date` is, and what is still unknown about it
+
+The column is **on hold, not rejected**: academics are waiting on a definition
+from KIPP Foundation, and a hold pending a definition is reversible in a way a
+judgement about the column's usefulness would not be. Documenting it is
+therefore worth doing now — when the definition arrives, this is the material to
+revisit the decision with, and in the meantime an undefined "do not use" is the
+kind of note that gets stepped over.
+
+What can be established from the data, measured on AY2025:
+
+- **It is the student's aimline evaluated on the probe's date.** Amplify's own
+  description is "expected aimline score for the assessment date", and
+  `aimline_status` is the score compared against this value — not against
+  `goal`.
+- **It is a straight line in calendar days.** Fitting each student × measure
+  standard × season to the line through its first and last probe leaves a mean
+  absolute residual of **0.126 words** over 28,542 rows, with a maximum of 1.0
+  and every row inside 1.5 — consistent with a linear interpolation rounded to
+  an integer, and inconsistent with a school-day or piecewise construction.
+- **It never decreases.** 29,051 of 29,051 consecutive probe pairs are
+  non-decreasing; zero go backwards.
+- **It never exceeds `goal`.** Zero rows of any kind. It reaches `goal` exactly
+  on 2,960 of 27,214 final probes (10.9%), which is what a trajectory still
+  short of the period end looks like.
+
+What is **not** established, and is the substance of the missing definition:
+
+- **What anchors the two ends of the line.** Extrapolating each fitted line
+  forward to where it would reach `goal` does not land on a shared date: Newark
+  BOY→MOY spreads across 52 distinct dates from 2025-11-17 to 2026-02-15. Some
+  of that is rounding noise on short spans, but not a two-month spread. So the
+  endpoint is not a single season-end date the way the internal method's is, and
+  the starting anchor — presumably the student's benchmark score, on some date —
+  has not been confirmed either.
+- **How Amplify picks the `goal` the line runs to.** Covered in the next
+  section: it is not our published standard for roughly two rows in three.
+
+Until both are answered the column cannot be explained to a school leader
+looking at it, which is the reason for the hold. Confirming that it moves — the
+first bullet above — is **not** the missing piece and does not by itself reopen
+the decision.
 
 Neither number reaches the dashboard today, by two different mechanisms:
 
@@ -2150,11 +2189,27 @@ against a target of 21"; an aimline view can show the verdict only. That is a
 real asymmetry between the two halves of the same dashboard, and it is the
 current intended state rather than an oversight.
 
-#### Amplify's `goal` is not our `benchmark_goal` unpadded
+#### Amplify's `goal` is a growth target for one student, not the grade's bar
 
-A reasonable guess, and wrong often enough to matter. Joined on region × grade ×
-season × measure standard against
-`int_google_sheets__dibels_pm_expectations.benchmark_goal`, AY2025:
+**This is a difference in kind before it is a difference in number.**
+`benchmark_goal` is a grade-level standard: one published figure that every
+student in a grade, region and measure is held to, and the same number whoever
+is looking at it. Amplify's `goal` is written from the individual student's
+point of view — where _this_ student should reasonably get to by the end of the
+period, given where they started. Two students in the same class on the same
+measure can correctly have different goals, and neither is the grade's bar.
+
+That is also what makes the aimline coherent: a per-student endpoint is what a
+per-student trajectory has to run to. The internal method builds one cohort
+trajectory to a shared padded standard; the aimline method builds a separate
+trajectory per student to a separate endpoint.
+
+So the two are not interchangeable even where they happen to agree. A view
+showing `goal` and labelling it "grade-level goal" is wrong about what it is
+displaying, no matter what the number is that day.
+
+The numbers bear this out. Joined on region × grade × season × measure standard
+against `int_google_sheets__dibels_pm_expectations.benchmark_goal`, AY2025:
 
 | Amplify `goal` vs our `benchmark_goal` | Probe rows |     % |
 | -------------------------------------- | ---------: | ----: |
@@ -2174,9 +2229,14 @@ it, 1,743 exactly on it and a tail to 57.
 The 3-word pad is a separate difference again — we add it, Amplify never does.
 The 2,717 rows landing on exactly `benchmark_goal + 3` are coincidence.
 
-So `benchmark_goal` cannot be substituted for `goal`, in either direction, and a
-view that shows one while labelling it the other is wrong for roughly two rows
-in three.
+The 36.6% that match exactly are the students for whom the individual target and
+the grade standard happen to coincide — not evidence that `goal` is the
+standard. Reading the agreement that way is how the substitution gets proposed.
+
+So `benchmark_goal` cannot be substituted for `goal` in either direction: wrong
+in value for roughly two rows in three, and wrong in meaning on all of them.
+When a view needs both — "where should this student be, and where is the grade
+bar" — show them as two separate fields with two separate labels.
 
 #### Null rates on the three aimline fields, and how they nest
 

@@ -2209,7 +2209,10 @@ three-in-a-row variant.
 - `aimline_value_by_date` is not to be used -- academics are waiting on a
   definition from KIPP Foundation. Do not reach for it to fill a missing status,
   and do not derive the verdict from `goal` either: that is the season-end
-  target and reproduces `aimline_status` on only five rows in six.
+  target and reproduces `aimline_status` on only five rows in six. What the
+  column measurably does, and what the missing definition would have to settle,
+  is under "The aimline method has no visible target" below -- the hold is
+  reversible, so read that before answering a question about it.
 
 Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
 lost to the roster join (2 Newark students, in the yml).
@@ -2314,24 +2317,42 @@ view can show "scored 30 against a target of 21" and an aimline view cannot.
 That asymmetry is the current intended state; do not report it as a bug, and do
 not fill it from Amplify's `goal` (below).
 
-**`aimline_value_by_date` really is the analogue of `cumulative_growth_words`,
-and is still not to be used.** It moves within a season -- 14,732 of the 19,467
+**`aimline_value_by_date` is the analogue of `cumulative_growth_words`, and is
+on hold rather than rejected.** It moves within a season -- 14,732 of the 19,467
 multi-probe student x measure standard x season partitions (76%) change -- while
 Amplify's `goal` is the fixed season-end endpoint and changes in 32 (0.2%).
 `aimline_status` is computed against the moving value, not against `goal`.
-Confirming that it moves does NOT reopen the decision recorded above: academics
-are waiting on a definition from KIPP Foundation. The measurement is written
-down so the next session recognises what it has found and stops, instead of
-re-deriving it and proposing the same change. (This session proposed it before
-reading the decision.)
 
-**Amplify's `goal` is not our `benchmark_goal` unpadded.** Tempting, and wrong
-for two rows in three: joined on region x grade x season x measure standard,
-36.6% of probe rows match our published standard exactly, 39.8% sit below it and
-23.6% above. Amplify sets the endpoint per student -- lower for students far
-behind, higher for students already past the bar. Grade 3 Reading Fluency
-BOY->MOY: our standard 105, Amplify's goals 33 to 189. Neither column
-substitutes for the other in either direction.
+Measured behaviour, AY2025: a straight line in calendar days (mean absolute
+residual 0.126 words against the line through each partition's first and last
+probe, max 1.0), monotonic non-decreasing on 29,051 of 29,051 consecutive pairs,
+never above `goal`, and equal to `goal` on only 10.9% of final probes.
+
+Unknown, and the reason for the hold: what anchors the line's two ends.
+Extrapolating to where each line reaches `goal` spreads over 52 dates across two
+months for Newark BOY->MOY, so there is no shared season-end anchor to describe.
+Academics are waiting on a definition from KIPP Foundation before using it.
+
+So: confirming it moves is NOT the missing piece and does not on its own reopen
+the decision -- but the hold is reversible, and this is the material to revisit
+it with when the definition lands. Do not reach for the column to fill a missing
+`aimline_status` in the meantime.
+
+**Amplify's `goal` is a per-student growth target, not the grade's bar.** It is
+written from the individual student's point of view -- where this student should
+reasonably reach by the end of the period, given where they started -- so two
+students in the same class on the same measure can correctly hold different
+goals. `benchmark_goal` is the opposite kind of thing: one published grade-level
+standard everyone is held to. A per-student endpoint is what the per-student
+aimline trajectory has to run to.
+
+It is therefore not `benchmark_goal` unpadded, which is the tempting guess and
+wrong for two rows in three: 36.6% of probe rows match our standard exactly,
+39.8% sit below it, 23.6% above. Grade 3 Reading Fluency BOY->MOY -- our
+standard 105, Amplify's goals 33 to 189. The rows that do match are students
+whose individual target coincides with the standard, not evidence the column is
+the standard. Never substitute either column for the other, and never label
+`goal` as a grade-level goal in a view.
 
 ### A missing aimline `goal` is a school-grade condition, not thin data
 
