@@ -2449,6 +2449,56 @@ A measure-labelled view binds `expected_measure_name_code` with
 standard-labelled view keeps the `_standard_` pair. Do not mix a dimension from
 one grain with a flag from the other.
 
+### Where the model's wording departs from T&L's doc, on purpose
+
+T&L's canonical definitions live in the "Definitions Needed" table of "SY26 -
+KIPP NJ - DIBELS PM Rounds + Goals" (owner mtambawala). The model matches it
+everywhere except two places, both settled by the dashboard owner on 2026-09-19
+after reading the doc against the model. **Do not "correct" either one back to
+the doc.**
+
+- **`Meeting Aimline, On-Track`** -- the doc says "On Track and Meeting
+  Aimline". Kept as is so it reads as a pair with `Meeting Aimline, Off-Track`.
+  Same concept, better-matched siblings.
+- **`Not Tested` vs `Round Incomplete`** -- the doc defines Not Tested as "not
+  PM tested on ONE OR MORE measures", i.e. our Round Incomplete. Split
+  deliberately, for two reasons worth repeating to whoever asks: cohort-level
+  testing already makes "why is this student untested" hard to read, since BB
+  and WBB students sit different rounds; and Alisha Fairfax asked for
+  percent-tested-over-time, which needs fully tested / not started / incomplete
+  as separate states so schools can target the incomplete ones.
+
+The doc also closes a question people keep reopening: on `aimline_value_by_date`
+it records T&L's own words, "I don't know what this is. Decision: wait until we
+get definitions from KIPP Foundation before we do anything with this." That is a
+decision, not a pending question.
+
+`On Track to Benchmark`, which appears in some of their screenshots but in no
+definitions table, comes from a separate wishlist line -- "Meeting Aimline,
+Below Benchmark Trajectory, could be a swap view". That is the origin of
+`aimline_trajectory_category`. It is a different ask, not drift, so do not
+retire that column as a duplicate without checking whether the swap view is
+still wanted.
+
+**Three pads exist, and the doc's "PADDING UPDATE (K-8)" block governs two of
+them -- not the PM one.** Read against the PM chain the block looks like a
+contradiction. It is not; it is about the benchmark-goal chain.
+
+| Pad    | Where                                       | Applies to                                  |
+| ------ | ------------------------------------------- | ------------------------------------------- |
+| `+3`   | `stg_google_sheets__dibels_pm_goals`        | `benchmark_goal_padded`, the PM bar         |
+| `+5`   | `rpt_gsheets__dibels_bm_goals_calculations` | expected at/above count, BOY ONLY           |
+| `x1.5` | `rpt_gsheets__dibels_bm_goals_calculations` | the expected-minus-actual gap, every season |
+
+That resolves the wording exactly. "Double padded" is the `+5` AND the `x1.5`
+together, which is BOY. "Single padding, keep the 1.5 pad" is dropping the `+5`
+and keeping the multiplier -- which is what `if(period = 'BOY', 5, 0)` already
+does. Implemented, seasonal, and matching the note.
+
+So the PM `+3` is correct as shipped and that block never referred to it.
+Confirmed by the owner 2026-09-19. Do not re-open it from the doc text, and do
+not read "double padded" as a PM instruction.
+
 ### Slice on `expected_*`, never on a scores-side column
 
 The dashboard has two parallel dimension sets. `expected_*` comes from the

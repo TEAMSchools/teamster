@@ -1966,6 +1966,37 @@ a student meeting benchmark but not aimline still belongs there, so the label
 overstates what it checks — 696 of its 6,844 AY2025 rows are actually below the
 aimline. That wording is theirs, recorded so nobody 'corrects' it.
 
+##### Where the wording departs from T&L's document, deliberately
+
+T&L's canonical definitions are the "Definitions Needed" table in _SY26 - KIPP
+NJ - DIBELS PM Rounds + Goals_. The model matches it everywhere but two places,
+both settled on 2026-09-19 after reading the two side by side. Neither is drift.
+
+**`Meeting Aimline, On-Track`** — the doc calls it "On Track and Meeting
+Aimline". Kept as is so it reads as a pair with `Meeting Aimline, Off-Track`;
+matching the doc on one label would leave the two siblings phrased
+inconsistently. The benchmark-wins carve-out is theirs verbatim: "If a student
+meeting benchmark but not aimline by any chance, they should still be in this
+category."
+
+**`Not Tested` versus `Round Incomplete`** — the doc defines Not Tested as
+"Student was not PM tested on **one or more** measures within the pre-identified
+round dates", which is this model's Round Incomplete. Split deliberately, for
+two reasons that hold up against the doc rather than overlooking it.
+Cohort-level testing means Below Benchmark and Well Below Benchmark students sit
+different rounds, so "why is this student untested" is already hard for a school
+to read, and collapsing the two states makes it worse. And
+percent-tested-over-time, requested by Alisha Fairfax, needs fully tested, not
+started, and partially tested as distinct states — the operational point of the
+view is to find the partially-tested students and push them to finish, which a
+single Not Tested bucket hides.
+
+`On Track to Benchmark`, which appears in some of T&L's screenshots but in no
+definitions table, comes from a separate wishlist line — "Meeting Aimline, Below
+Benchmark Trajectory … could be a swap view". That is the origin of
+`aimline_trajectory_category`, so the two category columns answer two different
+requests rather than duplicating one.
+
 **`Round Incomplete` and `Not Tested` are different states, and the extract
 carries both.** Round Incomplete means the student sat some of the round's
 measures but not all. Not Tested means no row exists in this model at all,
