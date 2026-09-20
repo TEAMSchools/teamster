@@ -799,6 +799,17 @@ models:
           standard under this measure name code -- Met Benchmark, Did Not Meet
           Benchmark, or Not Tested. Populated on both PM methods.
 
+          Not Tested carries two states that the extract's coalesce flattens
+          into one. A LEFT JOIN miss means the student sat nothing. An explicit
+          null from the intermediate means the student DID sit the round but
+          Amplify published no benchmark goal for one of its measures, so the
+          rollup has nothing to judge. Measured on AY2025 the second state
+          occurs on zero rows in both methods, because the population it depends
+          on is the Miami benchmark_goal nulls and Miami produces no rows in
+          this extract -- so the conflation is latent, not live. It becomes real
+          the day Miami appears, and the honest fix then is a fourth value
+          rather than a wider Not Tested.
+
           The measure-name-code rung of the benchmark lens, between
           admin_benchmark_goal_status at measure-standard grain and
           round_benchmark_status at round grain.
@@ -811,6 +822,17 @@ models:
           Whether the student met the benchmark standard on EVERY measure
           standard the round expected -- Met Benchmark, Did Not Meet Benchmark,
           or Not Tested. Populated on both PM methods.
+
+          Not Tested carries two states that the extract's coalesce flattens
+          into one. A LEFT JOIN miss means the student sat nothing. An explicit
+          null from the intermediate means the student DID sit the round but
+          Amplify published no benchmark goal for one of its measures, so the
+          rollup has nothing to judge. Measured on AY2025 the second state
+          occurs on zero rows in both methods, because the population it depends
+          on is the Miami benchmark_goal nulls and Miami produces no rows in
+          this extract -- so the conflation is latent, not live. It becomes real
+          the day Miami appears, and the honest fix then is a fourth value
+          rather than a wider Not Tested.
 
           Round grain, so it repeats on every measure-standard row of that
           student's round. Count distinct students rather than rows.

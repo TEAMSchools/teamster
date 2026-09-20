@@ -1021,14 +1021,22 @@ data_tests:
       independently from met_measure_standard_goal and the coalesced status
       column.
 
-      Independently is the point. The string is built from a CASE in two
-      duplicated copies in the extract, so a check that re-applies that same
-      CASE compares the expression to itself and passes whatever it does. That
-      is not hypothetical -- the column shipped with the Aimline half matching
-      on a `like 'Met%'` prefix, which 'Meeting Aimline' does not satisfy, so
-      all 13,886 met-aimline rows on AY2025 rendered as `?` instead of `A` and a
-      self-referential check reported zero mismatches. This test reproduces that
-      failure at 13,886 rows.
+      Independently, but be precise about of what. The test proves the WINDOW
+      MECHANICS -- that string_agg places each round's token at that round's
+      position, under the right partition and order. It does NOT independently
+      prove the flag-to-token mapping, since it reads the same
+      met_measure_standard_goal column the extract's CASE reads; two copies
+      changed identically and wrongly would still pass. Do not cite it as proof
+      of more than it covers.
+
+      The shape it does rule out is the one that slipped through: a check that
+      re-applies the extract's own string-matching CASE compares the expression
+      to itself and passes whatever it does. That is not hypothetical -- the
+      column shipped with the Aimline half matching on a `like 'Met%'` prefix,
+      which 'Meeting Aimline' does not satisfy, so all 13,886 met-aimline rows
+      on AY2025 rendered as `?` instead of `A` and a self-referential check
+      reported zero mismatches. This test reproduces that failure at 13,886
+      rows.
 
       Warn rather than error because a mismatch makes the string misleading
       rather than the extract unbuildable, and because the fix is a reporting
