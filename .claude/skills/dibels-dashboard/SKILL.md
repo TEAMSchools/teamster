@@ -2557,6 +2557,39 @@ measure-code pairing test fires". Do not re-derive it -- and note that the fix
 is the point at which `Incomplete Measure` stops being dead and becomes the
 right value to add.
 
+### The switcher grid, and why its names are inconsistent
+
+Added 2026-09-19. One Tableau selector pair drives every distribution view --
+granularity picks the row, comparison item the column:
+
+| Grain             | Own goal                        | Benchmark                            | Aimline + benchmark                          | Trajectory                            |
+| ----------------- | ------------------------------- | ------------------------------------ | -------------------------------------------- | ------------------------------------- |
+| Measure standard  | `measure_standard_goal_status`  | `admin_benchmark_goal_status`        | `aimline_category`                           | `aimline_trajectory_category`         |
+| Measure name code | `measure_name_code_goal_status` | `measure_name_code_benchmark_status` | `measure_name_code_aimline_benchmark_status` | `measure_name_code_trajectory_status` |
+| Round             | `pm_round_status`               | `round_benchmark_status`             | `aimline_round_category`                     | `round_trajectory_status`             |
+
+"Own goal" is the method's own target -- cumulative growth on Internal, the
+aimline on Aimline. The right two lenses are Aimline-only.
+
+**Do not file the naming inconsistency as a bug.** The five new columns use
+`<grain>_<lens>_status`; the four older ones do not. Aligning all nine was
+considered and DEFERRED on the day, because three of the older names are shared
+with Internal and renaming them forces a rebind of the internal Tableau tabs
+too. It is recorded in the reference document as a follow-up. Additive was the
+owner's explicit choice for timing.
+
+**Coarser grains are strictly stricter.** AY2025 Aimline benchmark: 8,731 met at
+measure standard, 5,197 at name code, 3,004 at round, zero rows where a coarser
+grain reads met while a finer one does not. If that ever inverts, something is
+wrong with a rollup window.
+
+**Grain and dimension must move together.** A coarse-grain value repeats across
+the round's measure rows, so a view showing round-grain status broken out by
+measure standard asserts a difference that does not exist, and student counts
+stop summing to the population -- 404 slice-counts against 327 students at
+measure-standard grain in one measured school. Drive the Columns dimension from
+the same parameter as the status column.
+
 ### The four goal grains each have a flag and a labelled twin
 
 | Grain             | Flag                            | Labelled twin                   |

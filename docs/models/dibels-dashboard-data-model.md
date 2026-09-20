@@ -2033,6 +2033,41 @@ absence does not break a run either. T&L dropped the three-in-a-row variant.
 the PM rows. Added 2026-09-15, and `met_measure_standard_goal` is likewise
 populated on the Aimline branch rather than null.
 
+##### The switcher grid: three granularities × four lenses
+
+Added 2026-09-19 so one Tableau selector pair drives every distribution view.
+Granularity picks the row, comparison item picks the column:
+
+| Grain             | Own goal                        | Benchmark                            | Aimline + benchmark                          | Trajectory                            |
+| ----------------- | ------------------------------- | ------------------------------------ | -------------------------------------------- | ------------------------------------- |
+| Measure standard  | `measure_standard_goal_status`  | `admin_benchmark_goal_status`        | `aimline_category`                           | `aimline_trajectory_category`         |
+| Measure name code | `measure_name_code_goal_status` | `measure_name_code_benchmark_status` | `measure_name_code_aimline_benchmark_status` | `measure_name_code_trajectory_status` |
+| Round             | `pm_round_status`               | `round_benchmark_status`             | `aimline_round_category`                     | `round_trajectory_status`             |
+
+"Own goal" is the method's own target — cumulative growth on Internal, the
+aimline on Aimline. The right two lenses are Aimline-only; they have no meaning
+without an aimline.
+
+The coarser grains are strictly stricter, never looser. Measured on AY2025
+Aimline benchmark: 8,731 met at measure standard, 5,197 at name code, 3,004 at
+round, with zero rows where a coarser grain reads met while a finer one does
+not.
+
+**The naming is deliberately inconsistent, and it is debt rather than design.**
+The five columns added on 2026-09-19 use `<grain>_<lens>_status`. The four that
+predate them use `_goal_status` or `_category`, with the grain in varying
+positions. Aligning all nine was considered and deferred on the day: three of
+the older names — `measure_standard_goal_status`, `admin_benchmark_goal_status`
+and `pm_round_status` — are shared with the Internal method, so renaming them
+would force a rebind of the internal Tableau tabs alongside the aimline ones,
+and the build was mid-flight. Worth doing as a follow-up; nothing depends on the
+inconsistency.
+
+`expected_round_label` ships alongside as the reader-facing round name
+(`BOY->MOY: R1`). Round numbers already run 1 to 8 uniquely across the year, so
+the season adds no information — but a filter list of bare integers tells a
+school nothing about which half of the year it is looking at.
+
 ##### The status vocabulary, settled 2026-09-19
 
 Four goal grains, each with a flag and a labelled twin. Three of the twins speak

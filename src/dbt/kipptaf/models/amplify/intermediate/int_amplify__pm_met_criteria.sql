@@ -87,6 +87,26 @@ with
         from met_standard_goal
     ),
 
+    met_benchmark_rollups as (
+        select
+            *,
+
+            min(met_admin_benchmark_goal) over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as code_bm_min_met,
+
+            min(met_admin_benchmark_goal) over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as round_bm_min_met,
+
+        from met_measure_code_goal
+    ),
+
     met_round_criteria as (
         select
             *,
@@ -106,7 +126,7 @@ with
                     )
             end as met_pm_round_criteria,
 
-        from met_measure_code_goal
+        from met_benchmark_rollups
     ),
 
     met_round_overall as (
@@ -166,6 +186,14 @@ select
         when met_admin_benchmark_goal = 0
         then 'Did Not Meet Benchmark'
     end as admin_benchmark_goal_status,
+
+    if(
+        code_bm_min_met = 1, 'Met Benchmark', 'Did Not Meet Benchmark'
+    ) as measure_name_code_benchmark_status,
+
+    if(
+        round_bm_min_met = 1, 'Met Benchmark', 'Did Not Meet Benchmark'
+    ) as round_benchmark_status,
 
     -- a round the student did not finish is unmeasurable rather than failed, but
     -- only where the missing measures could still have changed the answer: AND is

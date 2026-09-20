@@ -149,6 +149,24 @@ with
                 else 1
             end as met_measure_name_code_goal,
 
+            countif(met_admin_benchmark_goal is null) over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_bm_unpublished,
+
+            min(met_admin_benchmark_goal) over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as code_bm_min_met,
+
         from measure_flags
     ),
 
@@ -167,6 +185,14 @@ with
             max(met_measure_name_code_goal) over (
                 partition by academic_year, admin_season, round_number, student_number
             ) as round_max_met,
+
+            countif(met_admin_benchmark_goal is null) over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_bm_unpublished,
+
+            min(met_admin_benchmark_goal) over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as round_bm_min_met,
 
         from code_goal
     ),
@@ -229,6 +255,16 @@ with
                 else 'No Aimline Data, Off-Track'
             end as aimline_category,
 
+            case
+                when met_measure_standard_goal is null
+                then 'No Aimline Data'
+                when met_measure_standard_goal = 0
+                then 'Below Aimline'
+                when met_admin_benchmark_goal = 1
+                then 'On Track to Benchmark'
+                else 'On Aimline, Below Benchmark'
+            end as trajectory_row,
+
         from round_overall
     ),
 
@@ -251,6 +287,81 @@ with
             countif(aimline_category = 'Meeting Aimline, Off-Track') over (
                 partition by academic_year, admin_season, round_number, student_number
             ) as n_round_off_track,
+
+            countif(aimline_category = 'Round Incomplete') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_incomplete,
+
+            countif(aimline_category = 'Below Aimline') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_below,
+
+            countif(aimline_category like 'No Aimline Data%') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_no_aimline,
+
+            countif(aimline_category = 'Meeting Aimline, Off-Track') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_off_track,
+
+            countif(trajectory_row = 'Below Aimline') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_traj_below,
+
+            countif(trajectory_row = 'No Aimline Data') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_traj_no_data,
+
+            countif(trajectory_row = 'On Aimline, Below Benchmark') over (
+                partition by
+                    academic_year,
+                    admin_season,
+                    round_number,
+                    measure_name_code,
+                    student_number
+            ) as n_code_traj_off,
+
+            countif(trajectory_row = 'Below Aimline') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_traj_below,
+
+            countif(trajectory_row = 'No Aimline Data') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_traj_no_data,
+
+            countif(trajectory_row = 'On Aimline, Below Benchmark') over (
+                partition by academic_year, admin_season, round_number, student_number
+            ) as n_round_traj_off,
 
         from measure_category
     )
@@ -324,6 +435,54 @@ select
         then 'No Aimline Data'
         else 'Below Aimline'
     end as pm_round_status,
+
+    case
+        when code_bm_min_met = 0
+        then 'Did Not Meet Benchmark'
+        when n_code_bm_unpublished > 0
+        then null
+        else 'Met Benchmark'
+    end as measure_name_code_benchmark_status,
+
+    case
+        when round_bm_min_met = 0
+        then 'Did Not Meet Benchmark'
+        when n_round_bm_unpublished > 0
+        then null
+        else 'Met Benchmark'
+    end as round_benchmark_status,
+
+    case
+        when n_code_incomplete > 0
+        then 'Round Incomplete'
+        when n_code_below > 0
+        then 'Below Aimline'
+        when n_code_no_aimline > 0
+        then 'No Aimline Data'
+        when n_code_off_track > 0
+        then 'Meeting Aimline, Off-Track'
+        else 'Meeting Aimline, On-Track'
+    end as measure_name_code_aimline_benchmark_status,
+
+    case
+        when n_code_traj_below > 0
+        then 'Below Aimline'
+        when n_code_traj_no_data > 0
+        then 'No Aimline Data'
+        when n_code_traj_off > 0
+        then 'On Aimline, Below Benchmark'
+        else 'On Track to Benchmark'
+    end as measure_name_code_trajectory_status,
+
+    case
+        when n_round_traj_below > 0
+        then 'Below Aimline'
+        when n_round_traj_no_data > 0
+        then 'No Aimline Data'
+        when n_round_traj_off > 0
+        then 'On Aimline, Below Benchmark'
+        else 'On Track to Benchmark'
+    end as round_trajectory_status,
 
     case
         when n_round_incomplete > 0

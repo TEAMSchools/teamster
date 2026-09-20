@@ -114,11 +114,17 @@ select
     null as measure_name_code_goal_status,
     null as admin_benchmark_goal_status,
     null as pm_round_status,
+    null as measure_name_code_benchmark_status,
+    null as round_benchmark_status,
+    null as measure_name_code_aimline_benchmark_status,
+    null as measure_name_code_trajectory_status,
+    null as round_trajectory_status,
     null as aimline_cohort_level,
     null as missed_aimline_consecutive,
     null as aimline_category,
 
     cast(a.round_number as string) as expected_round_number,
+    cast(null as string) as expected_round_label,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -317,11 +323,21 @@ select
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
     coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+    coalesce(
+        pm.measure_name_code_benchmark_status, 'Not Tested'
+    ) as measure_name_code_benchmark_status,
+    coalesce(pm.round_benchmark_status, 'Not Tested') as round_benchmark_status,
+    null as measure_name_code_aimline_benchmark_status,
+    null as measure_name_code_trajectory_status,
+    null as round_trajectory_status,
     null as aimline_cohort_level,
     null as missed_aimline_consecutive,
     null as aimline_category,
 
     cast(e.round_number as string) as expected_round_number,
+    concat(
+        e.admin_season, ': R', cast(e.round_number as string)
+    ) as expected_round_label,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -545,6 +561,17 @@ select
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
     coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+    coalesce(
+        pm.measure_name_code_benchmark_status, 'Not Tested'
+    ) as measure_name_code_benchmark_status,
+    coalesce(pm.round_benchmark_status, 'Not Tested') as round_benchmark_status,
+    coalesce(
+        pm.measure_name_code_aimline_benchmark_status, 'Not Tested'
+    ) as measure_name_code_aimline_benchmark_status,
+    coalesce(
+        pm.measure_name_code_trajectory_status, 'Not Tested'
+    ) as measure_name_code_trajectory_status,
+    coalesce(pm.round_trajectory_status, 'Not Tested') as round_trajectory_status,
 
     r.overall_aimline_composite_level as aimline_cohort_level,
 
@@ -553,6 +580,9 @@ select
     coalesce(pm.aimline_category, 'Not Tested') as aimline_category,
 
     cast(e.round_number as string) as expected_round_number,
+    concat(
+        e.admin_season, ': R', cast(e.round_number as string)
+    ) as expected_round_label,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 

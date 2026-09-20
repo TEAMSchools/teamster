@@ -11,13 +11,38 @@ models:
       Focus supplies a placement field or Ops confirms a mapping. Ratified on
       #4996.
 
-      The four `*_status` columns — `measure_standard_goal_status`,
-      `measure_name_code_goal_status`, `admin_benchmark_goal_status`,
-      `pm_round_status` — are labelled twins of the `met_*` flags beside them,
-      so the dashboard's goal-type selector can pick a column instead of
-      converting a flag. One per goal grain, so a selector offering all four
-      returns a string on every branch. They are PM-only and null on every
-      Benchmark row. On PM rows they are never null, because
+      The `*_status` and `*_category` columns form a grid: three granularities
+      (measure standard, measure name code, round) crossed with four comparison
+      lenses (the method's own goal, the benchmark standard, aimline and
+      benchmark combined, and the trajectory). A Tableau selector picks one
+      cell, so every view reads a string rather than converting a flag.
+
+      At measure-standard grain the four lenses are
+      measure_standard_goal_status, admin_benchmark_goal_status,
+      aimline_category and aimline_trajectory_category. At measure-name-code
+      grain they are measure_name_code_goal_status,
+      measure_name_code_benchmark_status,
+      measure_name_code_aimline_benchmark_status and
+      measure_name_code_trajectory_status. At round grain they are
+      pm_round_status, round_benchmark_status, aimline_round_category and
+      round_trajectory_status.
+
+      The coarser grains are strictly stricter, never looser. AY2025 Aimline
+      benchmark: 8,731 met at measure standard, 5,197 at name code, 3,004 at
+      round, with zero rows where a coarser grain reads met while a finer one
+      does not.
+
+      **The names are not uniform, and that is a known debt.** The five added on
+      2026-09-19 use `<grain>_<lens>_status`; the four that predate them use
+      `_goal_status` or `_category` with the grain in varying positions.
+      Aligning the whole set was considered and deferred: three of the older
+      names are shared with the internal method, so renaming them would force a
+      rebind of the internal Tableau tabs as well, which was not worth the risk
+      mid-build. Worth doing as a follow-up.
+
+      The two combined-lens and two trajectory columns are Aimline-only — those
+      lenses have no meaning without an aimline. Everything else is PM-only and
+      null on every Benchmark row. On PM rows they are never null, because
       `int_amplify__pm_met_criteria` carries scored rows only and this model
       coalesces the resulting gap to `Not Tested` — a student who was expected
       to test and was not. So a null here means a Benchmark row, and nothing
@@ -639,6 +664,64 @@ models:
       - name: expected_round_number
         data_type: string
         description: The expected PM round, as a string for the Tableau filter.
+      - name: expected_round_label
+        data_type: string
+        description: >-
+          The PM round as a reader-facing label -- the season, a colon, and the
+          round, e.g. `BOY->MOY: R1`. PM rows only; a benchmark administration
+          has no PM round and would invent one.
+
+          Purely for display. Round numbers already run 1 to 8 uniquely across
+          the year, 1-4 in BOY->MOY and 5-8 in MOY->EOY, so the season adds no
+          information -- but a filter list reading 1, 2, 3 tells a school
+          nothing about which half of the year it is looking at.
+      - name: measure_name_code_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard under this measure name code -- Met Benchmark, Did Not Meet
+          Benchmark, or Not Tested. Populated on both PM methods.
+
+          The measure-name-code rung of the benchmark lens, between
+          admin_benchmark_goal_status at measure-standard grain and
+          round_benchmark_status at round grain.
+      - name: round_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard the round expected -- Met Benchmark, Did Not Meet Benchmark,
+          or Not Tested. Populated on both PM methods.
+
+          Round grain, so it repeats on every measure-standard row of that
+          student's round. Count distinct students rather than rows.
+      - name: measure_name_code_aimline_benchmark_status
+        data_type: string
+        description: >-
+          T&L's combined reporting category rolled up to the measure name code
+          -- the same seven values aimline_category carries at measure-standard
+          grain, applied to the worst state the student holds on any standard
+          under the code.
+
+          Aimline rows only; the lens has no meaning without an aimline.
+      - name: measure_name_code_trajectory_status
+        data_type: string
+        description: >-
+          The trajectory category rolled up to the measure name code -- Below
+          Aimline, On Aimline Below Benchmark, On Track to Benchmark, No Aimline
+          Data, or Not Tested.
+
+          Differs from measure_name_code_aimline_benchmark_status by ignoring
+          round completion, which is the same distinction
+          aimline_trajectory_category has from aimline_category one grain down.
+          Aimline rows only.
+      - name: round_trajectory_status
+        data_type: string
+        description: >-
+          The trajectory category rolled up to the whole round, ignoring round
+          completion. Same five values as the measure-name-code version.
+
+          Aimline rows only, round grain, so it repeats across the round's
+          measure-standard rows.
       - name: schedule_student_grade_level
         data_type: string
         description:
