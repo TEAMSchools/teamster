@@ -1012,3 +1012,65 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__assessments__vendor_subject_crosswalk
+
+  - name: rpt_tableau__dibels_dashboard__round_verdict_token_reconciles
+    description: >-
+      Every character of measure_standard_round_verdicts agrees with the row it
+      describes. For each PM row the test takes the character at that row's own
+      position in its season's string and compares it against a token derived
+      independently from met_measure_standard_goal and the coalesced status
+      column.
+
+      Independently, but be precise about of what. The test proves the WINDOW
+      MECHANICS -- that string_agg places each round's token at that round's
+      position, under the right partition and order. It does NOT independently
+      prove the flag-to-token mapping, since it reads the same
+      met_measure_standard_goal column the extract's CASE reads; two copies
+      changed identically and wrongly would still pass. Do not cite it as proof
+      of more than it covers.
+
+      The shape it does rule out is the one that slipped through: a check that
+      re-applies the extract's own string-matching CASE compares the expression
+      to itself and passes whatever it does. That is not hypothetical -- the
+      column shipped with the Aimline half matching on a `like 'Met%'` prefix,
+      which 'Meeting Aimline' does not satisfy, so all 13,886 met-aimline rows
+      on AY2025 rendered as `?` instead of `A` and a self-referential check
+      reported zero mismatches. This test reproduces that failure at 13,886
+      rows.
+
+      Warn rather than error because a mismatch makes the string misleading
+      rather than the extract unbuildable, and because the fix is a reporting
+      correction that wants triage rather than a blocked deploy.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard
+  - name: rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none
+    description: >-
+      Within one measure name code, a student either sat every measure standard
+      under it or none of them. The two multi-standard codes come off a single
+      probe administration -- NWF-CLS and NWF-WRC are two scores from one NWF
+      sitting, ORF and ORF-Accu from one passage -- so a partial code group is
+      not a thing the assessment can produce. Measured on AY2025: 0 partial
+      groups on Internal, 0 on Aimline, against 12,466 and 10,568 fully-scored
+      ones.
+
+      met_measure_name_code_goal depends on that. It rolls the standard-level
+      verdicts up with an avg() over the code partition, and the rollup reads
+      only the rows that carry a verdict. If a student ever sat one standard and
+      not its partner, the flag would report that single standard's verdict as
+      the whole measure's -- so a student who sat Decoding, met it, and never
+      sat Letter Sounds would read as having met NWF. Wrong, and silent.
+
+      Warn rather than error because the condition is a source-behaviour change,
+      not a build failure, and the extract is still usable while it is triaged.
+      What to do when it fires is in the DIBELS reference document under "If the
+      measure-code pairing test fires".
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard
