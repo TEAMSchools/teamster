@@ -187,7 +187,7 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: aimline_status
-      - name: goal
+      - name: aimline_season_student_goal
         data_type: numeric
         description: >-
           The aimline target this probe was measured against, drawn from the

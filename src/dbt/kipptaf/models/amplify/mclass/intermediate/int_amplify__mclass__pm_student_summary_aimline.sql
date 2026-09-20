@@ -78,7 +78,7 @@ with
             b._dagster_partition_key,
             b.source_file_name,
 
-            a.goal,
+            a.goal as aimline_season_student_goal,
 
             -- Amplify has moved aimline_status/aimline_value_by_date between
             -- this file and the base PM file mid-year without notice before,

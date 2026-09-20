@@ -2215,12 +2215,13 @@ and come back fully redacted. Redirect to a file and pull specific patterns
 stage. Only the first stage differs: `met_measure_standard_goal` translates
 Amplify's `aimline_status` instead of comparing a score to a cohort target.
 Inputs are `int_amplify__all_assessments` (`model_type = 'Aimline'`, which
-carries `aimline_status`, `goal` and `met_measure_standard_goal` -- the
-translation lives there so every consumer reads one flag, under the SAME name
-the internal method uses), the by-levels gate for `pm_goal_criteria`,
-`benchmark_goal` and the previous EXPECTED round, and the roster's Aimline rows
-for completion. It is wired into `rpt_tableau__dibels_dashboard` as a third
-UNION branch, told apart by `model_type`.
+carries `aimline_status`, `aimline_season_student_goal` and
+`met_measure_standard_goal` -- the translation lives there so every consumer
+reads one flag, under the SAME name the internal method uses), the by-levels
+gate for `pm_goal_criteria`, `benchmark_goal` and the previous EXPECTED round,
+and the roster's Aimline rows for completion. It is wired into
+`rpt_tableau__dibels_dashboard` as a third UNION branch, told apart by
+`model_type`.
 
 **Trap 1 -- the by-levels gate needs the cohort level.** It is split by
 `measure_standard_level`, and on an Aimline row `overall_probe_eligible` carries
@@ -2287,11 +2288,11 @@ three-in-a-row variant.
   wording. Read it here when you need Amplify's literal At or Above / Below.
 - `aimline_value_by_date` is not to be used -- academics are waiting on a
   definition from KIPP Foundation. Do not reach for it to fill a missing status,
-  and do not derive the verdict from `goal` either: that is the season-end
-  target and reproduces `aimline_status` on only five rows in six. What the
-  column measurably does, and what the missing definition would have to settle,
-  is under "The aimline method has no visible target" below -- the hold is
-  reversible, so read that before answering a question about it.
+  and do not derive the verdict from `aimline_season_student_goal` either: that
+  is the season-end target and reproduces `aimline_status` on only five rows in
+  six. What the column measurably does, and what the missing definition would
+  have to settle, is under "The aimline method has no visible target" below --
+  the hold is reversible, so read that before answering a question about it.
 
 Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
 lost to the roster join (2 Newark students, in the yml).
@@ -2569,11 +2570,16 @@ gate:
 | 2025-12-01 | R3     | R3     | R3       | R2           |
 | 2026-02-05 | R4     | R4     | R4       | R4, MOY->EOY |
 
-Two consequences. `is_current_round` exists so a view can say "wherever each
-cohort actually is" instead of hard-coding a number -- latest round whose window
-has OPENED, partitioned by year, region and grade. And `expected_round_label` is
-load-bearing, NOT cosmetic: a filter on the bare round number silently mixes NJ
-students mid-first-half with Miami students in their second half.
+Two consequences. `expected_round_selection` exists so a view can say "wherever
+each cohort actually is" instead of hard-coding a number -- it reads `Current`
+on the latest round whose window has OPENED, partitioned by year, region and
+grade, and carries that round's label on every other row. A string, not a
+boolean, so one filter selection follows each region; the cost is that a round
+that is current somewhere is no longer selectable by number on this field, so
+"everyone's round 3" comes from `expected_round_number` or
+`expected_round_label`. And `expected_round_label` is load-bearing, NOT
+cosmetic: a filter on the bare round number silently mixes NJ students
+mid-first-half with Miami students in their second half.
 
 Latent today only because Miami produces no rows in the extract at all. Do not
 "simplify" the label away on the grounds that round numbers look unique -- they
@@ -2640,12 +2646,20 @@ Measured 2026-09-19 on AY2025. Full tables in the reference doc under
 [Both methods have a moving target](../../../docs/models/dibels-dashboard-data-model.md);
 what a session needs before opening a file is here.
 
-**The extract's `goal` column is null on every Aimline row** -- all 44,865 of
-them on AY2025 -- because the branch hardcodes `null as goal`. The Internal
-branch fills the same column with `cumulative_growth_words`. So an internal PM
-view can show "scored 30 against a target of 21" and an aimline view cannot.
-That asymmetry is the current intended state; do not report it as a bug, and do
-not fill it from Amplify's `goal` (below).
+**The two methods' targets live in separate extract columns, deliberately.**
+`goal` is internal-only (`cumulative_growth_words`, the running waypoint) and is
+null on every Aimline row. The aimline season endpoint publishes as
+`aimline_season_student_goal`, with `aimline_season_student_goal_gap` (measure
+standard score minus that goal) beside it, and both are null on Internal and
+Benchmark rows. Do not merge them into one column: a running waypoint and a
+season endpoint are different quantities, and the aimline one is per student
+rather than per cohort. On AY2025 the goal populates 33,873 of 44,865 Aimline
+rows; the gap populates the same 33,873, because every row carrying a goal also
+carries a score.
+
+The residual asymmetry is the MOVING target, not the target: an aimline view
+still cannot show the line's value on the probe date. Do not fill that from
+`aimline_season_student_goal` -- see below.
 
 **`aimline_value_by_date` is the analogue of `cumulative_growth_words`, and is
 on hold rather than rejected.** It moves within a season -- 14,732 of the 19,467

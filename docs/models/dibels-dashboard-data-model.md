@@ -2063,19 +2063,27 @@ would force a rebind of the internal Tableau tabs alongside the aimline ones,
 and the build was mid-flight. Worth doing as a follow-up; nothing depends on the
 inconsistency.
 
-##### `is_current_round` and `expected_round_label`: regions are not in step
+##### `expected_round_selection` and `expected_round_label`: regions are not in step
 
 Regions do not run the same round at the same time, and the gap is larger than a
 few days. AY2025 Miami sits a week to a month behind the NJ regions on every
 round, and runs **three** rounds per season where NJ runs four.
 
-`is_current_round` marks the latest round whose window has **opened**, per
-academic year, region and grade. Latest-opened rather than currently-in-window:
-between rounds nothing is in-window, so the in-window reading goes blank for
-most of the year, while this keeps pointing at the round people are actually
-discussing. Partitioned by year, region and grade — not season, which would give
-two current rounds, and not school, since T&L set schedules at region and grade
-band.
+`expected_round_selection` reads `Current` on the latest round whose window has
+**opened**, per academic year, region and grade, and carries that round's label
+on every other row. Latest-opened rather than currently-in-window: between
+rounds nothing is in-window, so the in-window reading goes blank for most of the
+year, while this keeps pointing at the round people are actually discussing.
+Partitioned by year, region and grade — not season, which would give two current
+rounds, and not school, since T&L set schedules at region and grade band.
+
+A string rather than a boolean, so a single Tableau filter selection follows
+each region to wherever it actually is. The trade is deliberate: once a round is
+current for a region it is no longer selectable by number on this field.
+Camden's round 3 reads `Current` while Newark's round 3 reads its label, so
+"everyone's round 3" comes from `expected_round_number` or
+`expected_round_label` instead — the three fields are companions. The benchmark
+branch has no PM round, so it carries the administration season.
 
 Verified by simulating two dates against the AY2025 expectation gate:
 
@@ -2247,13 +2255,21 @@ on 3,162 AY2025 rows where `met_admin_benchmark_goal` reads 0, which raises
 Internal at-grade-level attainment from 5,569 to 8,731. That needs T&L, not an
 engineering decision.
 
-The sibling also carries Amplify's per-student `goal`, the season-end target,
-for context only. Do not derive the aimline verdict from it: Amplify evaluates a
-probe against its own trajectory, so comparing a score to `goal` reproduces
-`aimline_status` on only about five rows in six. `aimline_status` is the only
-aimline field the model uses. The source's third aimline column,
-`aimline_value_by_date`, is on hold pending a definition from KIPP Foundation —
-what it does, and what is still unknown about it, is set out under
+The sibling also carries Amplify's per-student season-end target. It is
+published as `aimline_season_student_goal`, renamed from the vendor's bare
+`goal` at `int_amplify__mclass__pm_student_summary_aimline` and carried under
+that name the rest of the way down — the vendor name says nothing about whose
+goal or over what horizon, and on the extract `goal` already means the internal
+method's `cumulative_growth_words`. Do not derive the aimline verdict from it:
+Amplify evaluates a probe against its own trajectory, so comparing a score to
+the season goal reproduces `aimline_status` on only about five rows in six.
+`aimline_status` is the only aimline field the model uses. The goal itself
+reaches the extract for display, beside `aimline_season_student_goal_gap` — the
+measure-standard score minus that goal, negative while the student is short of
+it, null on internal and benchmark rows and wherever either input is null. The
+source's third aimline column, `aimline_value_by_date`, is on hold pending a
+definition from KIPP Foundation — what it does, and what is still unknown about
+it, is set out under
 [What `aimline_value_by_date` is](#what-aimline_value_by_date-is-and-what-is-still-unknown-about-it).
 
 The **goal** is season-level: `benchmark_goal` is the same number in every round
@@ -2277,17 +2293,18 @@ the answer is yes, and acting on it is nonetheless the wrong move.
 
 The aimline file carries two different numbers, and only one of them moves:
 
-| Column                  | What it is                                   | Moves within a season |
-| ----------------------- | -------------------------------------------- | --------------------- |
-| `goal`                  | The fixed season-end target                  | No                    |
-| `aimline_value_by_date` | The aimline's value on the day of that probe | **Yes**               |
+| Column                        | What it is                                   | Moves within a season |
+| ----------------------------- | -------------------------------------------- | --------------------- |
+| `aimline_season_student_goal` | The fixed season-end target                  | No                    |
+| `aimline_value_by_date`       | The aimline's value on the day of that probe | **Yes**               |
 
 `aimline_value_by_date` is the true analogue of `cumulative_growth_words`, and
-`aimline_status` is computed against it — not against `goal`. Of the 19,467
-student × measure standard × season partitions holding more than one probe,
-14,732 (76%) have a changing `aimline_value_by_date`; `goal` changes in 32
-(0.2%). One Kinder PSF student, BOY→MOY, shows the shape: scores 10 / 30 / 57 /
-59 against aimline values 9 / 15 / 19 / 26, with `goal` fixed at 29 throughout.
+`aimline_status` is computed against it — not against the season goal. Of the
+19,467 student × measure standard × season partitions holding more than one
+probe, 14,732 (76%) have a changing `aimline_value_by_date`; the season goal
+changes in 32 (0.2%). One Kinder PSF student, BOY→MOY, shows the shape: scores
+10 / 30 / 57 / 59 against aimline values 9 / 15 / 19 / 26, with the season goal
+fixed at 29 throughout.
 
 ##### What `aimline_value_by_date` is, and what is still unknown about it
 
@@ -2332,19 +2349,21 @@ looking at it, which is the reason for the hold. Confirming that it moves — th
 first bullet above — is **not** the missing piece and does not by itself reopen
 the decision.
 
-Neither number reaches the dashboard today, by two different mechanisms:
+Only one of the two reaches the dashboard today:
 
+- `aimline_season_student_goal` reaches the extract under its own name, with
+  `aimline_season_student_goal_gap` beside it. The extract's `goal` column stays
+  internal-only (`cumulative_growth_words`); the two methods' targets sit in
+  separate columns rather than sharing one, because they are different
+  quantities.
 - `aimline_value_by_date` is not projected by `int_amplify__all_assessments`, so
   it never enters the extract's lineage at all.
-- `goal` does reach `int_amplify__pm_met_criteria_aimline`, but the extract's
-  Aimline branch hardcodes `null as goal`. All 44,865 AY2025 Aimline rows read
-  null. The Internal branch fills the same column with
-  `cumulative_growth_words`.
 
-The practical consequence for BI: an internal PM view can show "scored 30
-against a target of 21"; an aimline view can show the verdict only. That is a
-real asymmetry between the two halves of the same dashboard, and it is the
-current intended state rather than an oversight.
+The residual asymmetry for BI is about the _moving_ target, not the target: an
+internal PM view can show "scored 30 against a running target of 21"; an aimline
+view can show the score against the season endpoint, but not against the line's
+value on the probe date. That is a current intended state rather than an
+oversight.
 
 #### Amplify's `goal` is a growth target for one student, not the grade's bar
 
@@ -2982,22 +3001,24 @@ a later year, not this one.
 
 ### What the aimline file provides
 
-| Field                                          | Replaces                                                                |
-| ---------------------------------------------- | ----------------------------------------------------------------------- |
-| `goal`                                         | Per-student end-of-period goal (was: PM goals sheet)                    |
-| `aimline_status` (`'At or Above'` / `'Below'`) | Score-vs-goal comparison in `int_amplify__pm_met_criteria`              |
-| `aimline_value_by_date`                        | Expected score by probe date — present in the file, not used; see below |
-| `measure_standard_score_change`                | Manual score delta calculation (was: `score_change`)                    |
+| Field                                               | Replaces                                                                |
+| --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `goal` (published as `aimline_season_student_goal`) | Per-student end-of-period goal (was: PM goals sheet)                    |
+| `aimline_status` (`'At or Above'` / `'Below'`)      | Score-vs-goal comparison in `int_amplify__pm_met_criteria`              |
+| `aimline_value_by_date`                             | Expected score by probe date — present in the file, not used; see below |
+| `measure_standard_score_change`                     | Manual score delta calculation (was: `score_change`)                    |
 
 The file covers all regions via the location crosswalk join in the kipptaf
 staging model. It provides probe-level detail (one row per student / measure /
 probe attempt within a PM period).
 
 The table above says what the file **carries**, not what the dashboard serves.
-**None of the four reaches the extract under its own name.** `aimline_status`
-drives the verdict but stops at `int_amplify__pm_met_criteria_aimline`, which
-publishes it as `measure_standard_goal_status` in academics' vocabulary instead;
-`goal` reaches that model and is then null-cast in the extract;
+**Only one of the four reaches the extract, and not under the vendor's name.**
+`aimline_status` drives the verdict but stops at
+`int_amplify__pm_met_criteria_aimline`, which publishes it as
+`measure_standard_goal_status` in academics' vocabulary instead; `goal` is
+renamed `aimline_season_student_goal` at the mClass summary and reaches the
+extract under that name, with a derived gap column beside it;
 `aimline_value_by_date` is not projected past the staging intermediate; and
 `measure_standard_score_change` is not projected at all. Null rates, how the
 three aimline fields nest, and why `aimline_value_by_date` stays unused are

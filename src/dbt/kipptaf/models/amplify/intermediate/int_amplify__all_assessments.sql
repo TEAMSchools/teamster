@@ -35,7 +35,7 @@ with
             p.measure_standard_score,
 
             cast(null as string) as aimline_status,
-            cast(null as numeric) as goal,
+            cast(null as numeric) as aimline_season_student_goal,
             cast(null as int64) as met_measure_standard_goal,
 
             p.measure_standard_score_change as score_change,
@@ -108,7 +108,7 @@ with
             p.measure as measure_standard,
             p.measure_standard_score,
             p.aimline_status,
-            p.goal,
+            p.aimline_season_student_goal,
 
             case
                 when p.aimline_status = 'At or Above'
@@ -215,7 +215,7 @@ select
     cast(null as int64) as total_number_of_probes,
     cast(null as numeric) as score_change,
     cast(null as string) as aimline_status,
-    cast(null as numeric) as goal,
+    cast(null as numeric) as aimline_season_student_goal,
     cast(null as int64) as met_measure_standard_goal,
 
     boy_probe_eligible,
@@ -271,7 +271,7 @@ select
     s.score_change,
 
     s.aimline_status,
-    s.goal,
+    s.aimline_season_student_goal,
     s.met_measure_standard_goal,
 
     s.boy_probe_eligible,

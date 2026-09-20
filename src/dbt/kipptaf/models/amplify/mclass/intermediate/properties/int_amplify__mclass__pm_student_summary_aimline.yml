@@ -53,7 +53,7 @@ models:
         description: Assessment grade as integer, K-8 with kindergarten as 0.
         data_tests:
           - not_null
-      - name: goal
+      - name: aimline_season_student_goal
         data_type: numeric
         description: >-
           End-of-period aimline goal score, set by Amplify per student — where

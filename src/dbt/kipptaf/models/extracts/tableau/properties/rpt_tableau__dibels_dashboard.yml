@@ -334,6 +334,26 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: aimline_season_student_goal
+        data_type: float64
+        description:
+          The student's own end-of-season target on the aimline method -- where
+          the aimline lands on the last day of the season. It is individual to
+          the student, so it does not have to equal the benchmark goal. Null on
+          every internal-method and benchmark row.
+        config:
+          meta:
+            contains_pii: true
+      - name: aimline_season_student_goal_gap
+        data_type: float64
+        description:
+          Measure-standard score minus aimline_season_student_goal -- negative
+          when the student is short of the season target, positive when past it.
+          Null on every internal-method and benchmark row, and wherever either
+          input is null.
+        config:
+          meta:
+            contains_pii: true
       - name: schedule_student_number
         data_type: int64
         description:
@@ -683,33 +703,40 @@ models:
           rows in this model at all (see the model description), so today every
           round number resolves to one season. It becomes real the day Miami
           appears.
-      - name: is_current_round
-        data_type: boolean
+      - name: expected_round_selection
+        data_type: string
         description: >-
-          Whether this row's round is the CURRENT one for its cohort -- the
-          latest round whose window has opened, per academic year, region and
-          grade.
+          The round as a filter value, with one substitution: on the row that IS
+          its cohort's current round the value reads `Current` instead of the
+          round label. Every other row carries its label, e.g. `BOY->MOY: R1`.
+          Benchmark rows carry the administration season.
 
-          Regions do not run the same round at the same time. AY2025 Miami sits
-          a week to a month behind the NJ regions on every round and runs three
-          rounds per season where NJ runs four, so a view that hard-codes a
+          It exists so one filter selection follows every region to wherever it
+          actually is. Regions are not in step -- AY2025 Miami sat a week to a
+          month behind the NJ regions on every round -- so a view pinned to a
           round number is wrong for somebody as soon as the calendars diverge.
-          This lets one Tableau selection mean "wherever each cohort actually
-          is".
+          Selecting `Current` returns Camden's round 3 and Newark's round 4
+          together, each being that region's present round.
 
-          Latest-OPENED rather than currently-in-window, deliberately. Between
-          rounds no window contains today, so an in-window definition returns
-          nothing for most of the year; this one keeps pointing at the round
-          people are discussing until the next opens.
+          The trade is deliberate: once a round is current for a region it is no
+          longer selectable by number HERE. Camden's round 3 reads `Current`
+          while Newark's round 3 reads its label, so "everyone's round 3" comes
+          from expected_round_number or expected_round_label instead. The three
+          columns are companions, not alternatives.
 
-          Partitioned by year, region and grade -- not season, which would give
-          two current rounds per year, and not school, since T&L set schedules
-          at region and grade band. Before the first round of a year opens, no
-          row is current.
+          Current means the latest round whose window has OPENED, per academic
+          year, region and grade -- not the round whose window contains today,
+          which would go blank between rounds. Before the first round of a year
+          opens, no row is current and every row shows its label.
 
-          Evaluated at query time against the local timezone. A Tableau extract
-          freezes that at refresh, so the dashboard reads as of the last nightly
-          run.
+          Non-current rows carry the label rather than the bare number because
+          round numbers are not unique network-wide: Miami runs three rounds per
+          season where NJ runs four, so Miami's round 4 is MOY->EOY while every
+          NJ round 4 is BOY->MOY.
+
+          Evaluated at query time in the local timezone, so a Tableau extract
+          freezes it at the nightly refresh and the dashboard reads as of last
+          night.
       - name: measure_name_code_benchmark_status
         data_type: string
         description: >-

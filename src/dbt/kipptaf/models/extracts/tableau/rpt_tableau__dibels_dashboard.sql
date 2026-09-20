@@ -68,6 +68,8 @@ select
     cast(null as float64) as daily_growth_rate,
     cast(null as int64) as round_growth_words_goal,
     cast(null as float64) as goal,
+    cast(null as float64) as aimline_season_student_goal,
+    cast(null as float64) as aimline_season_student_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -126,13 +128,17 @@ select
     cast(a.round_number as string) as expected_round_number,
     cast(null as string) as expected_round_label,
 
-    a.round_number = max(
-        if(
-            a.start_date <= current_date('{{ var("local_timezone") }}'),
-            a.round_number,
-            null
-        )
-    ) over (partition by s.academic_year, s.region, a.grade) as is_current_round,
+    if(
+        a.round_number = max(
+            if(
+                a.start_date <= current_date('{{ var("local_timezone") }}'),
+                a.round_number,
+                null
+            )
+        ) over (partition by s.academic_year, s.region, a.grade),
+        'Current',
+        a.admin_season
+    ) as expected_round_selection,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -273,6 +279,8 @@ select
     g.daily_growth_rate,
     g.round_growth_words_goal,
     g.cumulative_growth_words as goal,
+    cast(null as float64) as aimline_season_student_goal,
+    cast(null as float64) as aimline_season_student_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -347,13 +355,17 @@ select
         e.admin_season, ': R', cast(e.round_number as string)
     ) as expected_round_label,
 
-    e.round_number = max(
-        if(
-            e.start_date <= current_date('{{ var("local_timezone") }}'),
-            e.round_number,
-            null
-        )
-    ) over (partition by s.academic_year, s.region, e.grade) as is_current_round,
+    if(
+        e.round_number = max(
+            if(
+                e.start_date <= current_date('{{ var("local_timezone") }}'),
+                e.round_number,
+                null
+            )
+        ) over (partition by s.academic_year, s.region, e.grade),
+        'Current',
+        concat(e.admin_season, ': R', cast(e.round_number as string))
+    ) as expected_round_selection,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -522,6 +534,9 @@ select
     cast(null as float64) as daily_growth_rate,
     cast(null as int64) as round_growth_words_goal,
     cast(null as float64) as goal,
+    pm.aimline_season_student_goal,
+    a.measure_standard_score
+    - pm.aimline_season_student_goal as aimline_season_student_goal_gap,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -600,13 +615,17 @@ select
         e.admin_season, ': R', cast(e.round_number as string)
     ) as expected_round_label,
 
-    e.round_number = max(
-        if(
-            e.start_date <= current_date('{{ var("local_timezone") }}'),
-            e.round_number,
-            null
-        )
-    ) over (partition by s.academic_year, s.region, e.grade) as is_current_round,
+    if(
+        e.round_number = max(
+            if(
+                e.start_date <= current_date('{{ var("local_timezone") }}'),
+                e.round_number,
+                null
+            )
+        ) over (partition by s.academic_year, s.region, e.grade),
+        'Current',
+        concat(e.admin_season, ': R', cast(e.round_number as string))
+    ) as expected_round_selection,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
