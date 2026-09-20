@@ -1949,11 +1949,11 @@ values as of 2026-09-15, with AY2025 counts:
 | Value                          | AY2025 rows | Source       |
 | ------------------------------ | ----------: | ------------ |
 | **Below Aimline**              |      16,813 | T&L          |
-| **Meeting Aimline, Off-Track** |       7,071 | T&L          |
+| **Meeting Aimline, Off-Track** |       7,070 | T&L          |
 | **Meeting Aimline, On-Track**  |       6,844 | T&L          |
 | **Round Incomplete**           |       2,554 | T&L, renamed |
 | **No Aimline Data, Off-Track** |       1,688 | model        |
-| **No Aimline Data, On-Track**  |       1,534 | model        |
+| **No Aimline Data, On-Track**  |       1,533 | model        |
 
 The cascade tests in that order, and two things about it are T&L's decisions
 rather than ours. `Round Incomplete` comes first and overrides the rest, because
@@ -2012,7 +2012,7 @@ same way the Meeting values do, because a missing aimline verdict says nothing
 about whether the student is on pace.
 
 That split is also a fix. Until 2026-09-15 the benchmark branch fired before any
-aimline check and swallowed the null case, so 1,534 AY2025 rows read
+aimline check and swallowed the null case, so 1,533 AY2025 rows read
 `Meeting Aimline, On-Track` with no aimline verdict behind the claim, while the
 other 1,688 sat in a single undifferentiated `No Aimline Status`. Missing data
 is deliberately NOT folded into T&L's benchmark-wins rule: that rule is about a
@@ -2203,9 +2203,9 @@ The measure-level status is independent of the round gate, which is what makes
 the display coherent: a row can read `Round Incomplete` and `Meeting Aimline`
 together — the round is unfinished, that measure passed.
 
-On AY2025 the model produces 36,504 rows on an exact grain, and the six category
+On AY2025 the model produces 36,502 rows on an exact grain, and the six category
 counts above sum to exactly that. `all_assessments` holds 36,514 aimline rows
-for the year over 36,507 distinct keys, and 3 of those rows, for 2 Newark
+for the year over 36,507 distinct keys, and 5 of those rows, for 3 Newark
 students, do not survive the roster join — documented in the yml.
 
 #### Aimline attainment: the three grains academics report

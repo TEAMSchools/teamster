@@ -910,10 +910,10 @@ models:
           2,554 AY2025 Round Incomplete rows by design — do not union or compare
           them. `round_test_status` still carries the round question separately.
 
-          Measured against the branch build on 2026-09-15, AY2025, of 35,484
-          tested rows — `Below Aimline` 18,284, `On Aimline, Below Benchmark`
-          7,431, `On Track to Benchmark` 6,456, `No Aimline Data` 3,313. A
-          further 9,383 rows are `Not Tested`, for 44,867 expected rows in all.
+          Measured against prod on 2026-09-20, AY2025, of 35,482 tested rows —
+          `Below Aimline` 18,284, `On Aimline, Below Benchmark` 7,430, `On Track
+          to Benchmark` 6,456, `No Aimline Data` 3,312. A further 9,383 rows are
+          `Not Tested`, for 44,865 expected rows in all.
       - name: mtss_enrollment
         data_type: string
         description: MTSS programme the student is enrolled in, if any.

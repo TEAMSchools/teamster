@@ -48,14 +48,15 @@ models:
       aimline verdict, per T&L's rule that a student meeting benchmark but not
       aimline still counts as On Track.
 
-      Known population loss. On AY2025 the model produces 36,504 rows against
-      36,507 distinct keys in `all_assessments`, so 3 rows do not survive the
-      roster join — 2 students, both Newark, measured 2026-09-15. The join
-      matches on grade and on round, and either side can break: a mid-year grade
-      change makes the score's grade and the roster's grade disagree, and a
-      composite level that moves between seasons makes the two sides derive the
-      expected rounds from different levels. At 0.01% this is recorded rather
-      than fixed; see the grade-change note in the DIBELS reference.
+      Known population loss. On AY2025 the model produces 36,502 rows against
+      36,507 distinct keys in `all_assessments`, so 5 rows do not survive the
+      roster join — 3 students, all Newark, measured against prod 2026-09-20.
+      The join matches on grade and on round, and either side can break: a
+      mid-year grade change makes the score's grade and the roster's grade
+      disagree, and a composite level that moves between seasons makes the two
+      sides derive the expected rounds from different levels. At 0.01% this is
+      recorded rather than fixed; see the grade-change note in the DIBELS
+      reference.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -95,7 +96,7 @@ models:
           standard for — and met_admin_benchmark_goal derives from this column
           with a case whose else branch is 0, so a null standard would read as
           "not at grade level" instead of failing. No such row reaches this
-          model today, measured at 0 of 36,504 on AY2025, which is what makes
+          model today, measured at 0 of 36,502 on AY2025, which is what makes
           the not_null test meaningful rather than vacuous: it fails the day a
           null-standard round becomes score-eligible, which is the same silent
           mislabelling this model's aimline_category rewrite exists to fix.
@@ -143,7 +144,7 @@ models:
           Missing data is deliberately NOT folded into T&L's benchmark-wins rule
           above. That rule is about a student who missed a known aimline, and
           these rows have no aimline to miss. Before 2026-09-15 the benchmark
-          branch swallowed them and 1,534 AY2025 rows read as Meeting Aimline
+          branch swallowed them and 1,533 AY2025 rows read as Meeting Aimline
           with no aimline verdict behind the claim.
         data_tests:
           - not_null

@@ -2293,8 +2293,12 @@ three-in-a-row variant.
   moving value reproduces it exactly. What the column measurably does, and the
   one question still open about it, is under "The two aimline targets" below.
 
-Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
-lost to the roster join (2 Newark students, in the yml).
+Validated on AY2025 against PROD: 36,502 rows, exact grain, six tests pass, 5
+rows lost to the roster join (3 Newark students, in the yml). Measure documented
+counts against prod, never a dev build -- `--favor-state` does NOT defer a model
+that already exists in your dev schema, so a stale `zz_<user>_*` copy silently
+wins and the build looks authoritative. That is how nine figures in these docs
+were wrong for four days.
 
 ### "% meeting aimline, overall and by measure" is three grains, and all three already exist
 
