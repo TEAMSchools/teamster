@@ -139,6 +139,7 @@ select
         'Current',
         a.admin_season
     ) as expected_round_selection,
+    cast(null as string) as measure_standard_round_verdicts,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -366,6 +367,29 @@ select
         'Current',
         concat(e.admin_season, ': R', cast(e.round_number as string))
     ) as expected_round_selection,
+    string_agg(
+        case
+            when pm.measure_standard_goal_status is null
+            then '.'
+            when pm.measure_standard_goal_status like 'Met%'
+            then 'M'
+            when pm.measure_standard_goal_status like 'Below%'
+            then 'B'
+            when pm.measure_standard_goal_status = 'Not Met'
+            then 'B'
+            else '?'
+        end,
+        '-'
+    ) over (
+        partition by
+            s.academic_year,
+            s.region,
+            s.student_number,
+            e.expected_measure_standard,
+            e.admin_season
+        order by e.round_number
+        rows between unbounded preceding and unbounded following
+    ) as measure_standard_round_verdicts,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -626,6 +650,29 @@ select
         'Current',
         concat(e.admin_season, ': R', cast(e.round_number as string))
     ) as expected_round_selection,
+    string_agg(
+        case
+            when pm.measure_standard_goal_status is null
+            then '.'
+            when pm.measure_standard_goal_status like 'Met%'
+            then 'M'
+            when pm.measure_standard_goal_status like 'Below%'
+            then 'B'
+            when pm.measure_standard_goal_status = 'Not Met'
+            then 'B'
+            else '?'
+        end,
+        '-'
+    ) over (
+        partition by
+            s.academic_year,
+            s.region,
+            s.student_number,
+            e.expected_measure_standard,
+            e.admin_season
+        order by e.round_number
+        rows between unbounded preceding and unbounded following
+    ) as measure_standard_round_verdicts,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 

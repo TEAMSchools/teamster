@@ -742,6 +742,42 @@ models:
           Evaluated at query time in the local timezone, so a Tableau extract
           freezes it at the nightly refresh and the dashboard reads as of last
           night.
+      - name: measure_standard_round_verdicts
+        data_type: string
+        description: >-
+          Every round of this season's verdicts for this measure standard, one
+          character per round in round order, hyphen separated -- so a round 3
+          row reads something like `B-B-M` and carries the student's whole
+          season to date without the view having to stack rows.
+
+          M is met or meeting aimline, B is not met or below aimline, ? is an
+          aimline row Amplify published no value for, and . is a round the
+          student did not test. The same letter means the same thing on both
+          methods, which is the point of using one alphabet for two
+          vocabularies. No token is the hyphen, so the string stays parseable
+          when a student missed rounds -- `B-B-.` is three rounds, not four.
+
+          Scoped to the administration season, so it never runs BOY->MOY into
+          MOY->EOY -- the two seasons have different goals and a string spanning
+          both would read as one trajectory when it is two. Null on Benchmark
+          rows, which have no PM round sequence.
+
+          Built over the expectation spine rather than over scored rows, so a
+          round the student skipped appears as . rather than vanishing and
+          shortening the string. The string length is therefore the number of
+          rounds expected of that student in that season.
+
+          Repeats on every row of its partition, being a season-level value on a
+          round-level row. Count students on it only with a round filter, or it
+          multiplies by the round count.
+
+          Three student-measure-season partitions per method carry a round
+          twice, from the course-enrollment fan-out that predates this column,
+          so their string holds a repeated character -- 14 rows of 44,865 on
+          AY2025. Fixing it belongs upstream at the fan-out, not here.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_name_code_benchmark_status
         data_type: string
         description: >-

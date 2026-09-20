@@ -2101,6 +2101,47 @@ label renders them as `BOY->MOY: R4` and `MOY->EOY: R4`.
 That ambiguity is latent rather than live today, because Miami produces no rows
 in this model at all. It becomes real the day Miami appears.
 
+##### `measure_standard_round_verdicts`: the season on one row
+
+A roster row shows one round. Asking "how has this student tracked all season"
+otherwise means stacking four rows per measure standard, which is a lot of
+screen for a question a reader answers at a glance.
+`measure_standard_round_verdicts` puts the whole season on every row as one
+hyphen-separated string in round order, e.g. `B-B-M`.
+
+| Token | Meaning                                         |
+| ----- | ----------------------------------------------- |
+| `M`   | Met (Internal) / Meeting Aimline                |
+| `B`   | Not Met (Internal) / Below Aimline              |
+| `?`   | No Aimline Data — Amplify published no value    |
+| `.`   | Not Tested — the student did not sit that round |
+
+One alphabet for both methods, deliberately: the same letter means the same
+thing whichever half of the dashboard a reader is on, which is the whole point
+of the internal/aimline alignment. No token is the hyphen, so the string stays
+parseable when rounds are missing — `B-B-.` is three rounds, not four.
+
+Three properties worth knowing before binding it:
+
+- **Scoped to the administration season.** It never runs BOY→MOY into MOY→EOY.
+  The two seasons carry different goals, so a string spanning both would read as
+  one trajectory when it is two.
+- **Built over the expectation spine, not over scored rows.** A skipped round is
+  a `.`, not a gap — the string's length is the number of rounds expected of
+  that student in that season. Building it from scored rows would silently
+  shorten it and hide the skip, the same trap as filtering on `period`.
+- **It repeats across the partition.** It is a season-level value sitting on a
+  round-level row, so counting students on it without a round filter multiplies
+  by the round count.
+
+Verified on AY2025 in dev: for all 89,730 PM rows across both methods, the
+character at the row's own round position equals that row's own
+`measure_standard_goal_status` — 44,865 Internal and 44,865 Aimline, zero
+mismatches. Every partition holds exactly one distinct string whose token count
+equals its row count. The exception is three partitions per method (14 rows)
+where the pre-existing course-enrollment fan-out repeats a round, so their
+string repeats a character; the fix for that belongs at the fan-out.
+
 ##### The status vocabulary, settled 2026-09-19
 
 Four goal grains, each with a flag and a labelled twin. Three of the twins speak

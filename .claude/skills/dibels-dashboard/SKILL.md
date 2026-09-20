@@ -2668,6 +2668,29 @@ a season endpoint but no aimline value for that probe -- those carry a gap while
 `measure_standard_goal_status` reads `No Aimline Data`, so a roster can show a
 gap on a row that has no verdict.
 
+**`measure_standard_round_verdicts` puts the whole season on one row.** One
+hyphen-separated character per round in round order, e.g. `B-B-M`. `M` is met or
+meeting aimline, `B` is not met or below aimline, `?` is No Aimline Data, `.` is
+a round not tested. One alphabet for both methods on purpose. No token is the
+hyphen, so `B-B-.` reads unambiguously as three rounds.
+
+It is scoped to the administration season (never runs BOY->MOY into MOY->EOY,
+which carry different goals) and built over the expectation spine, so a skipped
+round is a `.` rather than a shortened string. It repeats across its partition
+-- season-level value on a round-level row -- so counting students on it without
+a round filter multiplies by the round count. Null on Benchmark rows.
+
+Verified AY2025: on all 89,730 PM rows the character at the row's own round
+position equals that row's own `measure_standard_goal_status`, zero mismatches
+either method. Known wrinkle: 3 partitions per method (14 rows) repeat a
+character, from the course-enrollment fan-out that predates the column.
+
+WATCH OUT when verifying anything partitioned on this extract: leave
+`model_type` out of the partition and you merge Internal with Aimline, which
+silently doubles every partition. That is the same double-count trap the
+row-level rules warn about, and it burned a verification pass in this session
+before the column itself turned out to be correct.
+
 **Reading a roster row.** Grain is student x measure standard x season x round,
 one row per round -- "every score so far at round 3" is three stacked rows, not
 one wide row. The season endpoint is the END OF THAT SEASON, not the year: a
