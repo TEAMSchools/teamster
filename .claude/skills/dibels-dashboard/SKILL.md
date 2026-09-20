@@ -2663,7 +2663,22 @@ them, and do not compare a score to the season endpoint to get the verdict.
 
 AY2025 populations: `goal` on all 44,865 Internal rows and 32,170 of 44,865
 Aimline rows; `aimline_season_student_goal` on 33,873 Aimline rows with the gap
-on the same 33,873.
+on the same 33,873. The two counts differ by ~1,700 rows where Amplify published
+a season endpoint but no aimline value for that probe -- those carry a gap while
+`measure_standard_goal_status` reads `No Aimline Data`, so a roster can show a
+gap on a row that has no verdict.
+
+**Reading a roster row.** Grain is student x measure standard x season x round,
+one row per round -- "every score so far at round 3" is three stacked rows, not
+one wide row. The season endpoint is the END OF THAT SEASON, not the year: a
+BOY->MOY row's goal is the MOY target, and MOY->EOY carries a different one.
+Round numbers run 1-8 across the year without restarting, so round 3 is
+unambiguously BOY->MOY, but Camden's MOY->EOY is rounds 6-8 where Newark and
+Paterson run 5-8 -- which is why `expected_round_label` stays load-bearing. A
+row's gap is THAT round's score minus the season endpoint, so it can read
+negative while the status reads `Meeting Aimline`: on pace, not yet arrived.
+Never filter a roster on `period` -- it is null on the 9,383 untested rows, the
+exact rows a participation view needs; use `expected_round_label`.
 
 **`aimline_value_by_date` reproduces the aimline verdict exactly.** On the
 extract, `measure_standard_score >= goal` matches `measure_standard_goal_status`
@@ -2686,11 +2701,15 @@ never above the season endpoint, equal to it on 1,819 extract rows and on 10.9%
 of final probes. It moves in 14,732 of 19,467 multi-probe partitions (76%) where
 the season endpoint moves in 32 (0.2%).
 
-Still open, but NOT blocking: what anchors the line's two ends. Extrapolating to
-where each line reaches the season endpoint spreads over 52 dates across two
-months for Newark BOY->MOY, so there is no shared season-end anchor to describe.
-Take that to Amplify; do not re-derive it from the published columns, which is
-already at its limit.
+How Amplify anchors the line is NOT an open question for this repo. Amplify
+publishes the equation behind the starting point; it is too complex to be worth
+reimplementing and there is no reason to, since school leaders already treat the
+per-student goal as Amplify's output and trust it. Route any "how is this drawn"
+question to Amplify. Do NOT spend a session fitting it from the published
+columns -- that work is done and at its limit. (For the record: the endpoint is
+not a shared season-end date; extrapolating each line to its season endpoint
+spreads Newark BOY->MOY over 52 dates. Property of the method, affects no column
+we publish.)
 
 **Amplify's `goal` is a per-student growth target, not the grade's bar.** It is
 written from the individual student's point of view -- where this student should

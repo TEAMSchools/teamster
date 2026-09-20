@@ -2339,22 +2339,20 @@ What the data establishes, measured on AY2025:
   the season goal exactly on 2,960 of 27,214 final probes (10.9%), which is what
   a trajectory still short of the period end looks like.
 
-What is still open. None of it blocks the column — the verdict reconciles
-exactly whatever anchors the line — but a school leader asking "why that number"
-cannot be given a full answer yet:
+**How Amplify anchors the line is not our question to answer.** Amplify
+publishes the equation behind the starting point, it is more complex than is
+worth reimplementing here, and there is no reason to: school leaders already
+treat the per-student goal as Amplify's output and trust it as such. If someone
+does ask how the line is drawn, that goes to Amplify, not to this repo. Do not
+spend a session re-deriving it from the published columns — the fitting above is
+already at the limit of what they can settle, and the answer would be redundant
+with Amplify's own documentation.
 
-- **What anchors the two ends of the line.** Extrapolating each fitted line
-  forward to where it would reach `goal` does not land on a shared date: Newark
-  BOY→MOY spreads across 52 distinct dates from 2025-11-17 to 2026-02-15. Some
-  of that is rounding noise on short spans, but not a two-month spread. So the
-  endpoint is not a single season-end date the way the internal method's is, and
-  the starting anchor — presumably the student's benchmark score, on some date —
-  has not been confirmed either.
-- **How Amplify picks the `goal` the line runs to.** Covered in the next
-  section: it is not our published standard for roughly two rows in three.
-
-Take both to Amplify rather than re-deriving them here; the fitting above is
-already at the limit of what the published columns can settle.
+The one thing worth knowing about the endpoint is that it is not a single shared
+season-end date: extrapolating each fitted line forward to where it would reach
+the season goal spreads Newark BOY→MOY across 52 distinct dates. That is a
+property of the method, not a defect, and it does not affect any column we
+publish — the verdict reconciles exactly whatever anchors the line.
 
 How the two numbers land on the extract:
 
