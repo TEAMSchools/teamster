@@ -533,7 +533,7 @@ select
     cast(null as int64) as required_growth_words,
     cast(null as float64) as daily_growth_rate,
     cast(null as int64) as round_growth_words_goal,
-    cast(null as float64) as goal,
+    pm.aimline_value_by_date as goal,
     pm.aimline_season_student_goal,
     a.measure_standard_score
     - pm.aimline_season_student_goal as aimline_season_student_goal_gap,

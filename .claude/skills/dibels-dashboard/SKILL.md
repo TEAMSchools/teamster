@@ -2286,13 +2286,12 @@ three-in-a-row variant.
   this model -- the extract does not publish it, because
   `measure_standard_goal_status` already carries the same verdict in academics'
   wording. Read it here when you need Amplify's literal At or Above / Below.
-- `aimline_value_by_date` is not to be used -- academics are waiting on a
-  definition from KIPP Foundation. Do not reach for it to fill a missing status,
-  and do not derive the verdict from `aimline_season_student_goal` either: that
-  is the season-end target and reproduces `aimline_status` on only five rows in
-  six. What the column measurably does, and what the missing definition would
-  have to settle, is under "The aimline method has no visible target" below --
-  the hold is reversible, so read that before answering a question about it.
+- `aimline_value_by_date` IS the target `aimline_status` was computed against,
+  and publishes as the extract's `goal` on Aimline rows. Do not derive the
+  verdict from `aimline_season_student_goal` instead: that is the season-end
+  target and reproduces `aimline_status` on only five rows in six, where the
+  moving value reproduces it exactly. What the column measurably does, and the
+  one question still open about it, is under "The two aimline targets" below.
 
 Validated on AY2025 in dev: 36,504 rows, exact grain, six tests pass, 3 rows
 lost to the roster join (2 Newark students, in the yml).
@@ -2469,10 +2468,11 @@ the doc.**
   percent-tested-over-time, which needs fully tested / not started / incomplete
   as separate states so schools can target the incomplete ones.
 
-The doc also closes a question people keep reopening: on `aimline_value_by_date`
-it records T&L's own words, "I don't know what this is. Decision: wait until we
-get definitions from KIPP Foundation before we do anything with this." That is a
-decision, not a pending question.
+The doc also records where `aimline_value_by_date` started: T&L's own words, "I
+don't know what this is. Decision: wait until we get definitions from KIPP
+Foundation before we do anything with this." That hold is DISCHARGED --
+Amplify's own report documentation defines the column, so it now publishes. Cite
+the definition, not the old decision, if someone reopens it.
 
 `On Track to Benchmark`, which appears in some of their screenshots but in no
 definitions table, comes from a separate wishlist line -- "Meeting Aimline,
@@ -2640,47 +2640,57 @@ broken out by measure standard and it repeats identically across the
 sub-standards -- the average stays right, but the view asserts a difference that
 does not exist.
 
-### The aimline method has no visible target, and three ways to get that wrong
+### The two aimline targets, and three ways to get them wrong
 
 Measured 2026-09-19 on AY2025. Full tables in the reference doc under
 [Both methods have a moving target](../../../docs/models/dibels-dashboard-data-model.md);
 what a session needs before opening a file is here.
 
-**The two methods' targets live in separate extract columns, deliberately.**
-`goal` is internal-only (`cumulative_growth_words`, the running waypoint) and is
-null on every Aimline row. The aimline season endpoint publishes as
-`aimline_season_student_goal`, with `aimline_season_student_goal_gap` (measure
-standard score minus that goal) beside it, and both are null on Internal and
-Benchmark rows. Do not merge them into one column: a running waypoint and a
-season endpoint are different quantities, and the aimline one is per student
-rather than per cohort. On AY2025 the goal populates 33,873 of 44,865 Aimline
-rows; the gap populates the same 33,873, because every row carrying a goal also
-carries a score.
+**Aimline has TWO targets and they go in different extract columns. Keep them
+apart.**
 
-The residual asymmetry is the MOVING target, not the target: an aimline view
-still cannot show the line's value on the probe date. Do not fill that from
-`aimline_season_student_goal` -- see below.
+| Extract column                    | Internal rows             | Aimline rows                    |
+| --------------------------------- | ------------------------- | ------------------------------- |
+| `goal`                            | `cumulative_growth_words` | `aimline_value_by_date`         |
+| `aimline_season_student_goal`     | null                      | Amplify's season endpoint       |
+| `aimline_season_student_goal_gap` | null                      | score minus the season endpoint |
 
-**`aimline_value_by_date` is the analogue of `cumulative_growth_words`, and is
-on hold rather than rejected.** It moves within a season -- 14,732 of the 19,467
-multi-probe student x measure standard x season partitions (76%) change -- while
-Amplify's `goal` is the fixed season-end endpoint and changes in 32 (0.2%).
-`aimline_status` is computed against the moving value, not against `goal`.
+`goal` is the MOVING target -- what the verdict was computed against, climbing
+across the season -- and it is the one column both methods share, because both
+halves answer the same question. The season endpoint is a different quantity,
+per student rather than per cohort, and stays in its own column. Do not merge
+them, and do not compare a score to the season endpoint to get the verdict.
+
+AY2025 populations: `goal` on all 44,865 Internal rows and 32,170 of 44,865
+Aimline rows; `aimline_season_student_goal` on 33,873 Aimline rows with the gap
+on the same 33,873.
+
+**`aimline_value_by_date` reproduces the aimline verdict exactly.** On the
+extract, `measure_standard_score >= goal` matches `measure_standard_goal_status`
+on 32,170 of 32,170 scored Aimline rows with a target (13,886 Meeting Aimline,
+18,284 Below Aimline, zero disagreements either way). The season endpoint agrees
+on only 7,850 of those 13,886. Zero rows carry a verdict without a target or a
+target without a verdict. If a view's aimline numbers disagree with the status
+column, the view is wrong, not the data.
+
+**The hold on it is discharged.** Amplify's report documentation defines it as
+the "score that is on the aimline on the day that the PM test is administered",
+ranged 0-999 whole for most measures, 0-100 for ORF Accuracy, 0-999 with `.5`
+for Maze -- and our data conforms exactly (3,134 Maze decimals, all `.5`, no
+range violations). That definition was the blocker; it is answered.
 
 Measured behaviour, AY2025: a straight line in calendar days (mean absolute
 residual 0.126 words against the line through each partition's first and last
 probe, max 1.0), monotonic non-decreasing on 29,051 of 29,051 consecutive pairs,
-never above `goal`, and equal to `goal` on only 10.9% of final probes.
+never above the season endpoint, equal to it on 1,819 extract rows and on 10.9%
+of final probes. It moves in 14,732 of 19,467 multi-probe partitions (76%) where
+the season endpoint moves in 32 (0.2%).
 
-Unknown, and the reason for the hold: what anchors the line's two ends.
-Extrapolating to where each line reaches `goal` spreads over 52 dates across two
+Still open, but NOT blocking: what anchors the line's two ends. Extrapolating to
+where each line reaches the season endpoint spreads over 52 dates across two
 months for Newark BOY->MOY, so there is no shared season-end anchor to describe.
-Academics are waiting on a definition from KIPP Foundation before using it.
-
-So: confirming it moves is NOT the missing piece and does not on its own reopen
-the decision -- but the hold is reversible, and this is the material to revisit
-it with when the definition lands. Do not reach for the column to fill a missing
-`aimline_status` in the meantime.
+Take that to Amplify; do not re-derive it from the published columns, which is
+already at its limit.
 
 **Amplify's `goal` is a per-student growth target, not the grade's bar.** It is
 written from the individual student's point of view -- where this student should

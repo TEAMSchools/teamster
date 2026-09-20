@@ -276,10 +276,22 @@ models:
           It is a season-end target and Amplify evaluates a probe against its
           own trajectory, so the comparison reproduces aimline_status on only
           about five rows in six. aimline_status is the only aimline field this
-          model uses, and the only one it should. The source carries a further
-          aimline column; how Amplify derives it is not documented or understood
-          here, and academics have said not to use it — so it is not a route to
-          filling a missing status either.
+          model uses, and the only one it should. For the target a probe was
+          actually judged against, read aimline_value_by_date instead — but read
+          it as context, not as a route to filling a missing status.
+        config:
+          meta:
+            contains_pii: true
+      - name: aimline_value_by_date
+        data_type: numeric
+        description: >-
+          Where the student's aimline sits on the day the probe was
+          administered, per Amplify — the score that is on the aimline on the
+          day that the PM test is administered. This is the number
+          aimline_status is computed against, and it climbs across the season
+          toward aimline_season_student_goal, so it is the aimline method's
+          analogue of the internal method's cumulative_growth_words. Carried
+          through unchanged; this model derives nothing from it.
         config:
           meta:
             contains_pii: true

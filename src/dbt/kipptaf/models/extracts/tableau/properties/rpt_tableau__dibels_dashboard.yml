@@ -329,8 +329,13 @@ models:
       - name: goal
         data_type: float64
         description:
-          The running growth target the score is compared against for this round
-          -- cumulative_growth_words from the frozen PM goals sheet.
+          The moving target the score is compared against in this round. It
+          splits by method -- cumulative_growth_words from the frozen PM goals
+          sheet on Internal rows, aimline_value_by_date on Aimline rows. Both
+          climb across the season, so the two methods answer the same question
+          here and a view can read one column. Null on Benchmark rows. The
+          season endpoint is a different quantity and lives in
+          aimline_season_student_goal.
         config:
           meta:
             contains_pii: true
