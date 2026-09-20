@@ -671,6 +671,9 @@ models:
           The two disagree by design: a student below the aimline on any one
           measure reads Below Aimline for the round, so the round-level share
           below is the higher of the two.
+        config:
+          meta:
+            contains_pii: true
       - name: aimline_category
         data_type: string
         description: >-
@@ -791,6 +794,9 @@ models:
           The measure-name-code rung of the benchmark lens, between
           admin_benchmark_goal_status at measure-standard grain and
           round_benchmark_status at round grain.
+        config:
+          meta:
+            contains_pii: true
       - name: round_benchmark_status
         data_type: string
         description: >-
@@ -800,6 +806,9 @@ models:
 
           Round grain, so it repeats on every measure-standard row of that
           student's round. Count distinct students rather than rows.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_name_code_aimline_benchmark_status
         data_type: string
         description: >-
@@ -809,6 +818,9 @@ models:
           under the code.
 
           Aimline rows only; the lens has no meaning without an aimline.
+        config:
+          meta:
+            contains_pii: true
       - name: measure_name_code_trajectory_status
         data_type: string
         description: >-
@@ -820,6 +832,9 @@ models:
           round completion, which is the same distinction
           aimline_trajectory_category has from aimline_category one grain down.
           Aimline rows only.
+        config:
+          meta:
+            contains_pii: true
       - name: round_trajectory_status
         data_type: string
         description: >-
@@ -828,6 +843,9 @@ models:
 
           Aimline rows only, round grain, so it repeats across the round's
           measure-standard rows.
+        config:
+          meta:
+            contains_pii: true
       - name: schedule_student_grade_level
         data_type: string
         description:

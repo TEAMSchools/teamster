@@ -273,6 +273,35 @@ models:
           cannot occur here, since this model's flag is a plain if(), but the
           aimline sibling's flag is genuinely nullable and the two columns are
           kept the same shape.
+      - name: measure_name_code_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard under this measure name code — Met Benchmark or Did Not Meet
+          Benchmark. Rolls met_admin_benchmark_goal up one grain with a min, so
+          one standard short of the bar makes the whole code short of it.
+
+          Named to match the aimline sibling of the same name, whose values are
+          identical: the benchmark standard is the one verdict here that does
+          not depend on which PM method a view is reading.
+        config:
+          meta:
+            contains_pii: true
+      - name: round_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on every measure
+          standard expected in this round — Met Benchmark or Did Not Meet
+          Benchmark. The same min rollup one grain coarser than
+          measure_name_code_benchmark_status, so it is strictly the stricter of
+          the two.
+
+          Broadcasts across every row of the round, being a round-level value on
+          a measure-standard row. Count students on it only with a measure
+          filter, or it multiplies by the measure count.
+        config:
+          meta:
+            contains_pii: true
       - name: pm_round_status
         data_type: string
         description: >-

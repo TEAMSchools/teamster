@@ -262,6 +262,68 @@ models:
         description: >-
           The PM round, from the expectation gate. Round numbers run
           consecutively across the year rather than restarting each season.
+      - name: measure_name_code_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on EVERY measure
+          standard under this measure name code — Met Benchmark, Did Not Meet
+          Benchmark, or null where Amplify published no verdict for one of the
+          standards. Identical in name and values to the internal sibling,
+          because the benchmark standard is the one verdict here that does not
+          depend on which PM method a view is reading.
+        config:
+          meta:
+            contains_pii: true
+      - name: round_benchmark_status
+        data_type: string
+        description: >-
+          Whether the student met the benchmark standard on every measure
+          standard expected in this round — the same rollup as
+          measure_name_code_benchmark_status one grain coarser, so strictly the
+          stricter of the two, and null where any verdict is unpublished.
+
+          Broadcasts across every row of the round. Count students on it only
+          with a measure filter, or it multiplies by the measure count.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_aimline_benchmark_status
+        data_type: string
+        description: >-
+          The aimline verdict and the benchmark verdict answered together at
+          measure name code grain — Round Incomplete, Below Aimline, No Aimline
+          Data, Meeting Aimline Off-Track, or Meeting Aimline On-Track. It
+          exists because meeting the aimline and being on course for the
+          benchmark are different questions, and a leader looking at one code
+          wants both at once.
+
+          Precedence runs incomplete, then below, then unpublished, then
+          off-track. A student short on any standard under the code takes the
+          worse label, so the column never reports better than its worst
+          component.
+        config:
+          meta:
+            contains_pii: true
+      - name: measure_name_code_trajectory_status
+        data_type: string
+        description: >-
+          Whether the student is on course for the benchmark at measure name
+          code grain — Below Aimline, No Aimline Data, On Aimline Below
+          Benchmark, or On Track to Benchmark. Trajectory, not attainment, so
+          unlike the goal-status columns it ignores whether the round was
+          finished.
+        config:
+          meta:
+            contains_pii: true
+      - name: round_trajectory_status
+        data_type: string
+        description: >-
+          The same trajectory question one grain coarser, across every measure
+          standard expected in the round. Broadcasts across the round's rows, so
+          count students on it only with a measure filter.
+        config:
+          meta:
+            contains_pii: true
       - name: aimline_season_student_goal
         data_type: numeric
         description: >-
