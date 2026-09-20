@@ -661,6 +661,14 @@ models:
       - name: aimline_round_category
         data_type: string
         description: >-
+          OPEN DECISION, not yet confirmed by academics — Below Aimline outranks
+          No Aimline Data in this rollup. A student below the aimline on one
+          measure and carrying no published aimline on another reads Below
+          Aimline. Reversing it would move 694 of 10,046 AY2025 Below Aimline
+          round groups to No Aimline Data. Every other rung of the precedence is
+          forced by the per-measure column; this one is a judgment about what a
+          leader should see.
+
           The reporting category for the whole round rather than one measure
           standard, so a student appears once however many measures they sat.
           Aimline rows only, and Not Tested here where the student has no row in

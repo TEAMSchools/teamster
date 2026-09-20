@@ -2165,6 +2165,36 @@ is still unidentified; start from the `met_pm_round_criteria` window partitions
 rather than from the CASE, since the CASE reads columns that are themselves
 round-level.
 
+##### Below Aimline outranks No Aimline Data — the one open decision
+
+A student sits several measures in a round and can hold a different verdict on
+each. The round-level columns collapse those into one answer, which needs a
+precedence order. Almost all of that order was already fixed by the per-measure
+column: `Round Incomplete` comes first because it is already a round-level
+judgment, and the rest follows from the row-level cascade.
+
+**One rung was a judgment call.** A student can be below the aimline on one
+measure while Amplify published no aimline value at all on another. Two
+defensible answers:
+
+- **Below Aimline wins** — a real negative verdict outweighs a missing one, so
+  say the thing we actually know.
+- **No Aimline Data wins** — the picture is incomplete, so decline to render a
+  verdict rather than report one built on partial evidence.
+
+The model implements the first. That is a choice about what a school leader
+should see, not a fact about the data, and **academics have not confirmed it.**
+
+**What it costs if they reverse it.** On AY2025, 694 of the 10,046 round groups
+now reading `Below Aimline` hold at least one no-data measure, so they would
+read `No Aimline Data` instead — 6.9% of that bucket, 4.1% of all 17,011 round
+groups. It is a one-line change to the precedence cascade, but it moves
+published numbers, so it wants an answer before the dashboard is socialised
+rather than after.
+
+Affects `aimline_round_category` and, through the same cascade, the round-grain
+columns built beside it.
+
 ##### The status vocabulary, settled 2026-09-19
 
 Four goal grains, each with a flag and a labelled twin. Three of the twins speak

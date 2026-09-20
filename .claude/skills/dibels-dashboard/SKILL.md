@@ -2712,6 +2712,16 @@ silently doubles every partition. That is the same double-count trap the
 row-level rules warn about, and it burned a verification pass in this session
 before the column itself turned out to be correct.
 
+**The one open decision: Below Aimline outranks No Aimline Data.** When a
+round's measures disagree, the round rollup takes the worst state, and every
+rung of that order is forced by the row-level cascade EXCEPT this one. A student
+below the aimline on one measure and carrying no published aimline on another
+reads `Below Aimline`, on the reading that a real negative verdict beats a
+missing one. Academics have NOT confirmed it. If they reverse it, 694 of 10,046
+AY2025 `Below Aimline` round groups (6.9%) become `No Aimline Data` — a one-line
+change to the cascade that moves published numbers. Do not present round-level
+aimline figures as settled without saying this is open.
+
 **Reading a roster row.** Grain is student x measure standard x season x round,
 one row per round -- "every score so far at round 3" is three stacked rows, not
 one wide row. The season endpoint is the END OF THAT SEASON, not the year: a
