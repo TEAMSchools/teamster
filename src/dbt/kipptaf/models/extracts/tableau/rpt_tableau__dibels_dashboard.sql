@@ -339,11 +339,31 @@ select
     coalesce(
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
-    coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+    coalesce(
+        max(pm.pm_round_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as pm_round_status,
     coalesce(
         pm.measure_name_code_benchmark_status, 'Not Tested'
     ) as measure_name_code_benchmark_status,
-    coalesce(pm.round_benchmark_status, 'Not Tested') as round_benchmark_status,
+    coalesce(
+        max(pm.round_benchmark_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as round_benchmark_status,
     cast(null as string) as measure_name_code_aimline_benchmark_status,
     cast(null as string) as measure_name_code_trajectory_status,
     cast(null as string) as round_trajectory_status,
@@ -613,18 +633,48 @@ select
     coalesce(
         pm.admin_benchmark_goal_status, 'Not Tested'
     ) as admin_benchmark_goal_status,
-    coalesce(pm.pm_round_status, 'Not Tested') as pm_round_status,
+    coalesce(
+        max(pm.pm_round_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as pm_round_status,
     coalesce(
         pm.measure_name_code_benchmark_status, 'Not Tested'
     ) as measure_name_code_benchmark_status,
-    coalesce(pm.round_benchmark_status, 'Not Tested') as round_benchmark_status,
+    coalesce(
+        max(pm.round_benchmark_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as round_benchmark_status,
     coalesce(
         pm.measure_name_code_aimline_benchmark_status, 'Not Tested'
     ) as measure_name_code_aimline_benchmark_status,
     coalesce(
         pm.measure_name_code_trajectory_status, 'Not Tested'
     ) as measure_name_code_trajectory_status,
-    coalesce(pm.round_trajectory_status, 'Not Tested') as round_trajectory_status,
+    coalesce(
+        max(pm.round_trajectory_status) over (
+            partition by
+                s.academic_year,
+                s.region,
+                s.student_number,
+                e.admin_season,
+                e.round_number
+        ),
+        'Not Tested'
+    ) as round_trajectory_status,
 
     r.overall_aimline_composite_level as aimline_cohort_level,
 
