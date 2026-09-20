@@ -2687,6 +2687,21 @@ position equals that row's own `measure_standard_goal_status`, zero mismatches
 either method. Known wrinkle: 3 partitions per method (14 rows) repeat a
 character, from the course-enrollment fan-out that predates the column.
 
+**Never verify a derived column by re-applying its own derivation.** The verdict
+string shipped broken and a check reported zero mismatches, because the check
+re-used the same CASE the column was built from -- it compared the expression to
+itself. The Aimline half matched on `like 'Met%'`, which `Meeting Aimline` does
+not satisfy (`Mee`, not `Met`), so all 13,886 met-aimline rows rendered `?`
+instead of `A` and nothing caught it. Derive the expected value from a DIFFERENT
+column -- here the underlying `met_measure_standard_goal` flag -- or the check
+is theatre. `rpt_tableau__dibels_dashboard__round_verdict_token_reconciles` now
+does that and reproduces the failure at 13,886 rows.
+
+A related habit: the token is driven off the `1`/`0`/`null` flag rather than off
+the human-readable `*_status` string, so a future wording change on either
+method's vocabulary cannot silently re-break it. Prefer flags over string
+prefixes anywhere the two methods' vocabularies diverge.
+
 WATCH OUT when verifying anything partitioned on this extract: leave
 `model_type` out of the partition and you merge Internal with Aimline, which
 silently doubles every partition. That is the same double-count trap the

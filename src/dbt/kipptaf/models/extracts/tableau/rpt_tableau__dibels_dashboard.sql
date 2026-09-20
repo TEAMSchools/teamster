@@ -371,11 +371,9 @@ select
         case
             when pm.measure_standard_goal_status is null
             then '.'
-            when pm.measure_standard_goal_status like 'Met%'
+            when pm.met_measure_standard_goal = 1
             then 'A'
-            when pm.measure_standard_goal_status like 'Below%'
-            then 'B'
-            when pm.measure_standard_goal_status = 'Not Met'
+            when pm.met_measure_standard_goal = 0
             then 'B'
             else '?'
         end,
@@ -654,11 +652,9 @@ select
         case
             when pm.measure_standard_goal_status is null
             then '.'
-            when pm.measure_standard_goal_status like 'Met%'
+            when pm.met_measure_standard_goal = 1
             then 'A'
-            when pm.measure_standard_goal_status like 'Below%'
-            then 'B'
-            when pm.measure_standard_goal_status = 'Not Met'
+            when pm.met_measure_standard_goal = 0
             then 'B'
             else '?'
         end,

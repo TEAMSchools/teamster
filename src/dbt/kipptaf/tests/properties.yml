@@ -1013,6 +1013,32 @@ data_tests:
           ref:
             name: stg_google_sheets__assessments__vendor_subject_crosswalk
 
+  - name: rpt_tableau__dibels_dashboard__round_verdict_token_reconciles
+    description: >-
+      Every character of measure_standard_round_verdicts agrees with the row it
+      describes. For each PM row the test takes the character at that row's own
+      position in its season's string and compares it against a token derived
+      independently from met_measure_standard_goal and the coalesced status
+      column.
+
+      Independently is the point. The string is built from a CASE in two
+      duplicated copies in the extract, so a check that re-applies that same
+      CASE compares the expression to itself and passes whatever it does. That
+      is not hypothetical -- the column shipped with the Aimline half matching
+      on a `like 'Met%'` prefix, which 'Meeting Aimline' does not satisfy, so
+      all 13,886 met-aimline rows on AY2025 rendered as `?` instead of `A` and a
+      self-referential check reported zero mismatches. This test reproduces that
+      failure at 13,886 rows.
+
+      Warn rather than error because a mismatch makes the string misleading
+      rather than the extract unbuildable, and because the fix is a reporting
+      correction that wants triage rather than a blocked deploy.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard
   - name: rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none
     description: >-
       Within one measure name code, a student either sat every measure standard

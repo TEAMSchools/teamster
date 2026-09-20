@@ -2144,6 +2144,27 @@ equals its row count. The exception is three partitions per method (14 rows)
 where the pre-existing course-enrollment fan-out repeats a round, so their
 string repeats a character; the fix for that belongs at the fan-out.
 
+##### `pm_round_status` disagrees with itself on 40 round groups
+
+Measured 2026-09-20 on AY2025. The internal method's `pm_round_status` is a
+round-level column, so every row of one
+`(academic_year, student_number, admin_season, round_number)` group should carry
+the same value. On 40 groups it does not — 22 reading `Met,Not Met` and 18
+reading `Not Met,Met` — and neither `pm_goal_criteria` nor
+`completed_test_round` varies inside any of them, so the two obvious
+explanations are ruled out.
+
+**It is pre-existing, not a regression.** Prod returns the same 40 groups. The
+aimline siblings are clean: `aimline_round_category`, `round_benchmark_status`
+and `round_trajectory_status` are each single-valued across every group, zero
+violations.
+
+Recorded here rather than left in a PR thread because the next person to touch
+`pm_round_status` would otherwise re-investigate it from scratch. The mechanism
+is still unidentified; start from the `met_pm_round_criteria` window partitions
+rather than from the CASE, since the CASE reads columns that are themselves
+round-level.
+
 ##### The status vocabulary, settled 2026-09-19
 
 Four goal grains, each with a flag and a labelled twin. Three of the twins speak
