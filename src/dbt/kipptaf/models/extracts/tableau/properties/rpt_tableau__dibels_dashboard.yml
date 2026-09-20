@@ -747,15 +747,18 @@ models:
         description: >-
           Every round of this season's verdicts for this measure standard, one
           character per round in round order, hyphen separated -- so a round 3
-          row reads something like `B-B-M` and carries the student's whole
+          row reads something like `B-B-A` and carries the student's whole
           season to date without the view having to stack rows.
 
-          M is met or meeting aimline, B is not met or below aimline, ? is an
-          aimline row Amplify published no value for, and . is a round the
-          student did not test. The same letter means the same thing on both
-          methods, which is the point of using one alphabet for two
-          vocabularies. No token is the hyphen, so the string stays parseable
-          when a student missed rounds -- `B-B-.` is three rounds, not four.
+          A is at or above -- Amplify's own wording for meeting the aimline, and
+          met on the internal method. B is below, meaning below aimline or not
+          met. ? is an aimline row Amplify published no value for, and . is a
+          round the student did not test. The same letter means the same thing
+          on both methods, which is the point of using one alphabet for two
+          vocabularies, and A/B is the pair school leaders already read on
+          Amplify's own reports. No token is the hyphen, so the string stays
+          parseable when a student missed rounds -- `B-B-.` is three rounds, not
+          four.
 
           Scoped to the administration season, so it never runs BOY->MOY into
           MOY->EOY -- the two seasons have different goals and a string spanning

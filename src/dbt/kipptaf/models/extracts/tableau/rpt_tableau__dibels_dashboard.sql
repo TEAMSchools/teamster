@@ -372,7 +372,7 @@ select
             when pm.measure_standard_goal_status is null
             then '.'
             when pm.measure_standard_goal_status like 'Met%'
-            then 'M'
+            then 'A'
             when pm.measure_standard_goal_status like 'Below%'
             then 'B'
             when pm.measure_standard_goal_status = 'Not Met'
@@ -655,7 +655,7 @@ select
             when pm.measure_standard_goal_status is null
             then '.'
             when pm.measure_standard_goal_status like 'Met%'
-            then 'M'
+            then 'A'
             when pm.measure_standard_goal_status like 'Below%'
             then 'B'
             when pm.measure_standard_goal_status = 'Not Met'

@@ -2107,19 +2107,21 @@ A roster row shows one round. Asking "how has this student tracked all season"
 otherwise means stacking four rows per measure standard, which is a lot of
 screen for a question a reader answers at a glance.
 `measure_standard_round_verdicts` puts the whole season on every row as one
-hyphen-separated string in round order, e.g. `B-B-M`.
+hyphen-separated string in round order, e.g. `B-B-A`.
 
-| Token | Meaning                                         |
-| ----- | ----------------------------------------------- |
-| `M`   | Met (Internal) / Meeting Aimline                |
-| `B`   | Not Met (Internal) / Below Aimline              |
-| `?`   | No Aimline Data — Amplify published no value    |
-| `.`   | Not Tested — the student did not sit that round |
+| Token | Meaning                                           |
+| ----- | ------------------------------------------------- |
+| `A`   | At or Above — Meeting Aimline, or Met on Internal |
+| `B`   | Below — Below Aimline, or Not Met on Internal     |
+| `?`   | No Aimline Data — Amplify published no value      |
+| `.`   | Not Tested — the student did not sit that round   |
 
-One alphabet for both methods, deliberately: the same letter means the same
-thing whichever half of the dashboard a reader is on, which is the whole point
-of the internal/aimline alignment. No token is the hyphen, so the string stays
-parseable when rounds are missing — `B-B-.` is three rounds, not four.
+`A`/`B` is Amplify's own pair, the one school leaders already read on Amplify's
+reports, so the column asks them to learn nothing new. One alphabet covers both
+methods deliberately: the same letter means the same thing whichever half of the
+dashboard a reader is on, which is the whole point of the internal/aimline
+alignment. No token is the hyphen, so the string stays parseable when rounds are
+missing — `B-B-.` is three rounds, not four.
 
 Three properties worth knowing before binding it:
 

@@ -2669,9 +2669,11 @@ a season endpoint but no aimline value for that probe -- those carry a gap while
 gap on a row that has no verdict.
 
 **`measure_standard_round_verdicts` puts the whole season on one row.** One
-hyphen-separated character per round in round order, e.g. `B-B-M`. `M` is met or
-meeting aimline, `B` is not met or below aimline, `?` is No Aimline Data, `.` is
-a round not tested. One alphabet for both methods on purpose. No token is the
+hyphen-separated character per round in round order, e.g. `B-B-A`. `A` is at or
+above (meeting aimline, or met on internal), `B` is below (below aimline, or not
+met), `?` is No Aimline Data, `.` is a round not tested. A/B is Amplify's own
+pair, which is why it was chosen over Met/Not Met wording -- leaders already
+read it that way. One alphabet for both methods on purpose. No token is the
 hyphen, so `B-B-.` reads unambiguously as three rounds.
 
 It is scoped to the administration season (never runs BOY->MOY into MOY->EOY,
