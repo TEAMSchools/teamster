@@ -59,15 +59,15 @@ select
     a.grade as grade_level,
     a.grade_level_text as expected_grade_level,
 
-    null as average_starting_words,
-    null as pm_round_days,
-    null as pm_days,
-    null as benchmark_goal,
-    null as benchmark_goal_padded,
-    null as required_growth_words,
-    null as daily_growth_rate,
-    null as round_growth_words_goal,
-    null as goal,
+    cast(null as int64) as average_starting_words,
+    cast(null as int64) as pm_round_days,
+    cast(null as int64) as pm_days,
+    cast(null as float64) as benchmark_goal,
+    cast(null as float64) as benchmark_goal_padded,
+    cast(null as int64) as required_growth_words,
+    cast(null as float64) as daily_growth_rate,
+    cast(null as int64) as round_growth_words_goal,
+    cast(null as float64) as goal,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -104,27 +104,35 @@ select
     r.participation_group,
     r.round_test_status,
 
-    null as met_measure_standard_goal,
-    null as met_admin_benchmark_goal,
-    null as met_admin_benchmark_goal_unpadded,
-    null as met_measure_name_code_goal,
-    null as met_pm_round_criteria,
-    null as met_pm_round_overall_criteria,
-    null as measure_standard_goal_status,
-    null as measure_name_code_goal_status,
-    null as admin_benchmark_goal_status,
-    null as pm_round_status,
-    null as measure_name_code_benchmark_status,
-    null as round_benchmark_status,
-    null as measure_name_code_aimline_benchmark_status,
-    null as measure_name_code_trajectory_status,
-    null as round_trajectory_status,
-    null as aimline_cohort_level,
-    null as missed_aimline_consecutive,
-    null as aimline_category,
+    cast(null as int64) as met_measure_standard_goal,
+    cast(null as int64) as met_admin_benchmark_goal,
+    cast(null as int64) as met_admin_benchmark_goal_unpadded,
+    cast(null as int64) as met_measure_name_code_goal,
+    cast(null as int64) as met_pm_round_criteria,
+    cast(null as int64) as met_pm_round_overall_criteria,
+    cast(null as string) as measure_standard_goal_status,
+    cast(null as string) as measure_name_code_goal_status,
+    cast(null as string) as admin_benchmark_goal_status,
+    cast(null as string) as pm_round_status,
+    cast(null as string) as measure_name_code_benchmark_status,
+    cast(null as string) as round_benchmark_status,
+    cast(null as string) as measure_name_code_aimline_benchmark_status,
+    cast(null as string) as measure_name_code_trajectory_status,
+    cast(null as string) as round_trajectory_status,
+    cast(null as string) as aimline_cohort_level,
+    cast(null as int64) as missed_aimline_consecutive,
+    cast(null as string) as aimline_category,
 
     cast(a.round_number as string) as expected_round_number,
     cast(null as string) as expected_round_label,
+
+    a.round_number = max(
+        if(
+            a.start_date <= current_date('{{ var("local_timezone") }}'),
+            a.round_number,
+            null
+        )
+    ) over (partition by s.academic_year, s.region, a.grade) as is_current_round,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -240,19 +248,19 @@ select
     e.expected_measure_name,
     e.expected_measure_standard,
 
-    null as admin_goal_season,
-    null as admin_goal,
-    null as admin_goal_grade_range,
-    null as n_admin_season_school_gl_all,
-    null as n_admin_season_school_gl_at_above,
-    null as n_admin_season_school_gl_bl_wb,
-    null as n_admin_season_school_gl_at_above_expected,
-    null as n_admin_season_school_gl_at_above_gap,
-    null as n_admin_season_region_gl_all,
-    null as n_admin_season_region_gl_at_above,
-    null as n_admin_season_region_gl_bl_wb,
-    null as n_admin_season_region_gl_at_above_expected,
-    null as n_admin_season_region_gl_at_above_gap,
+    cast(null as string) as admin_goal_season,
+    cast(null as float64) as admin_goal,
+    cast(null as float64) as admin_goal_grade_range,
+    cast(null as int64) as n_admin_season_school_gl_all,
+    cast(null as int64) as n_admin_season_school_gl_at_above,
+    cast(null as int64) as n_admin_season_school_gl_bl_wb,
+    cast(null as int64) as n_admin_season_school_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_school_gl_at_above_gap,
+    cast(null as int64) as n_admin_season_region_gl_all,
+    cast(null as int64) as n_admin_season_region_gl_at_above,
+    cast(null as int64) as n_admin_season_region_gl_bl_wb,
+    cast(null as int64) as n_admin_season_region_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_region_gl_at_above_gap,
 
     g.assessment_grade_int as grade_level,
     g.assessment_grade as expected_grade_level,
@@ -293,8 +301,8 @@ select
     r.moy_composite,
     r.eoy_composite,
 
-    null as aggregated_measure_standard_level,
-    null as foundation_measure_standard_level,
+    cast(null as string) as aggregated_measure_standard_level,
+    cast(null as string) as foundation_measure_standard_level,
 
     rs.expected_row_count,
     rs.actual_row_count,
@@ -327,17 +335,25 @@ select
         pm.measure_name_code_benchmark_status, 'Not Tested'
     ) as measure_name_code_benchmark_status,
     coalesce(pm.round_benchmark_status, 'Not Tested') as round_benchmark_status,
-    null as measure_name_code_aimline_benchmark_status,
-    null as measure_name_code_trajectory_status,
-    null as round_trajectory_status,
-    null as aimline_cohort_level,
-    null as missed_aimline_consecutive,
-    null as aimline_category,
+    cast(null as string) as measure_name_code_aimline_benchmark_status,
+    cast(null as string) as measure_name_code_trajectory_status,
+    cast(null as string) as round_trajectory_status,
+    cast(null as string) as aimline_cohort_level,
+    cast(null as int64) as missed_aimline_consecutive,
+    cast(null as string) as aimline_category,
 
     cast(e.round_number as string) as expected_round_number,
     concat(
         e.admin_season, ': R', cast(e.round_number as string)
     ) as expected_round_label,
+
+    e.round_number = max(
+        if(
+            e.start_date <= current_date('{{ var("local_timezone") }}'),
+            e.round_number,
+            null
+        )
+    ) over (partition by s.academic_year, s.region, e.grade) as is_current_round,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -478,34 +494,34 @@ select
     e.expected_measure_name,
     e.expected_measure_standard,
 
-    null as admin_goal_season,
-    null as admin_goal,
-    null as admin_goal_grade_range,
-    null as n_admin_season_school_gl_all,
-    null as n_admin_season_school_gl_at_above,
-    null as n_admin_season_school_gl_bl_wb,
-    null as n_admin_season_school_gl_at_above_expected,
-    null as n_admin_season_school_gl_at_above_gap,
-    null as n_admin_season_region_gl_all,
-    null as n_admin_season_region_gl_at_above,
-    null as n_admin_season_region_gl_bl_wb,
-    null as n_admin_season_region_gl_at_above_expected,
-    null as n_admin_season_region_gl_at_above_gap,
+    cast(null as string) as admin_goal_season,
+    cast(null as float64) as admin_goal,
+    cast(null as float64) as admin_goal_grade_range,
+    cast(null as int64) as n_admin_season_school_gl_all,
+    cast(null as int64) as n_admin_season_school_gl_at_above,
+    cast(null as int64) as n_admin_season_school_gl_bl_wb,
+    cast(null as int64) as n_admin_season_school_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_school_gl_at_above_gap,
+    cast(null as int64) as n_admin_season_region_gl_all,
+    cast(null as int64) as n_admin_season_region_gl_at_above,
+    cast(null as int64) as n_admin_season_region_gl_bl_wb,
+    cast(null as int64) as n_admin_season_region_gl_at_above_expected,
+    cast(null as float64) as n_admin_season_region_gl_at_above_gap,
 
     e.grade as grade_level,
     e.grade_level_text as expected_grade_level,
 
-    null as average_starting_words,
-    null as pm_round_days,
-    null as pm_days,
+    cast(null as int64) as average_starting_words,
+    cast(null as int64) as pm_round_days,
+    cast(null as int64) as pm_days,
 
     e.benchmark_goal,
 
-    null as benchmark_goal_padded,
-    null as required_growth_words,
-    null as daily_growth_rate,
-    null as round_growth_words_goal,
-    null as goal,
+    cast(null as float64) as benchmark_goal_padded,
+    cast(null as int64) as required_growth_words,
+    cast(null as float64) as daily_growth_rate,
+    cast(null as int64) as round_growth_words_goal,
+    cast(null as float64) as goal,
 
     c.students_student_number as schedule_student_number,
     c.cc_teacherid as teacherid,
@@ -534,8 +550,8 @@ select
     r.moy_composite,
     r.eoy_composite,
 
-    null as aggregated_measure_standard_level,
-    null as foundation_measure_standard_level,
+    cast(null as string) as aggregated_measure_standard_level,
+    cast(null as string) as foundation_measure_standard_level,
 
     rs.expected_row_count,
     rs.actual_row_count,
@@ -546,7 +562,7 @@ select
 
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
-    null as met_admin_benchmark_goal_unpadded,
+    cast(null as int64) as met_admin_benchmark_goal_unpadded,
     pm.met_measure_name_code_goal,
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
@@ -583,6 +599,14 @@ select
     concat(
         e.admin_season, ': R', cast(e.round_number as string)
     ) as expected_round_label,
+
+    e.round_number = max(
+        if(
+            e.start_date <= current_date('{{ var("local_timezone") }}'),
+            e.round_number,
+            null
+        )
+    ) over (partition by s.academic_year, s.region, e.grade) as is_current_round,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 

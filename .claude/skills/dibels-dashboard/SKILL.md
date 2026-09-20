@@ -2557,6 +2557,28 @@ measure-code pairing test fires". Do not re-derive it -- and note that the fix
 is the point at which `Incomplete Measure` stops being dead and becomes the
 right value to add.
 
+### Regions are not on the same round, and round numbers are not unique
+
+AY2025 Miami sits a week to a month behind the NJ regions on every round, and
+runs THREE rounds per season where NJ runs four. So Miami's round 4 is in
+MOY->EOY while every NJ round 4 is in BOY->MOY. Simulated against the AY2025
+gate:
+
+| As of      | Camden | Newark | Paterson | Miami        |
+| ---------- | ------ | ------ | -------- | ------------ |
+| 2025-12-01 | R3     | R3     | R3       | R2           |
+| 2026-02-05 | R4     | R4     | R4       | R4, MOY->EOY |
+
+Two consequences. `is_current_round` exists so a view can say "wherever each
+cohort actually is" instead of hard-coding a number -- latest round whose window
+has OPENED, partitioned by year, region and grade. And `expected_round_label` is
+load-bearing, NOT cosmetic: a filter on the bare round number silently mixes NJ
+students mid-first-half with Miami students in their second half.
+
+Latent today only because Miami produces no rows in the extract at all. Do not
+"simplify" the label away on the grounds that round numbers look unique -- they
+look unique because Miami is missing.
+
 ### The switcher grid, and why its names are inconsistent
 
 Added 2026-09-19. One Tableau selector pair drives every distribution view --

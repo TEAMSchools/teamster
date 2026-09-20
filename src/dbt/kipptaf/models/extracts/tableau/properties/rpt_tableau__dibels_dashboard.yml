@@ -671,10 +671,45 @@ models:
           round, e.g. `BOY->MOY: R1`. PM rows only; a benchmark administration
           has no PM round and would invent one.
 
-          Purely for display. Round numbers already run 1 to 8 uniquely across
-          the year, 1-4 in BOY->MOY and 5-8 in MOY->EOY, so the season adds no
-          information -- but a filter list reading 1, 2, 3 tells a school
-          nothing about which half of the year it is looking at.
+          NOT purely cosmetic, although it looks it. Round numbers run 1-8
+          uniquely across the year in the NJ regions, 1-4 in BOY->MOY and 5-8 in
+          MOY->EOY -- but Miami runs THREE rounds per season where NJ runs four,
+          so Miami's round 4 is in MOY->EOY while every NJ round 4 is in
+          BOY->MOY. On 2026-02-05 all four regions read round 4 and two
+          different halves of the year. A filter on the bare number silently
+          mixes them.
+
+          The ambiguity is latent rather than live: Miami currently produces no
+          rows in this model at all (see the model description), so today every
+          round number resolves to one season. It becomes real the day Miami
+          appears.
+      - name: is_current_round
+        data_type: boolean
+        description: >-
+          Whether this row's round is the CURRENT one for its cohort -- the
+          latest round whose window has opened, per academic year, region and
+          grade.
+
+          Regions do not run the same round at the same time. AY2025 Miami sits
+          a week to a month behind the NJ regions on every round and runs three
+          rounds per season where NJ runs four, so a view that hard-codes a
+          round number is wrong for somebody as soon as the calendars diverge.
+          This lets one Tableau selection mean "wherever each cohort actually
+          is".
+
+          Latest-OPENED rather than currently-in-window, deliberately. Between
+          rounds no window contains today, so an in-window definition returns
+          nothing for most of the year; this one keeps pointing at the round
+          people are discussing until the next opens.
+
+          Partitioned by year, region and grade -- not season, which would give
+          two current rounds per year, and not school, since T&L set schedules
+          at region and grade band. Before the first round of a year opens, no
+          row is current.
+
+          Evaluated at query time against the local timezone. A Tableau extract
+          freezes that at refresh, so the dashboard reads as of the last nightly
+          run.
       - name: measure_name_code_benchmark_status
         data_type: string
         description: >-

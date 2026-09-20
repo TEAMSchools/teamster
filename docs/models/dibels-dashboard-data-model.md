@@ -2063,10 +2063,35 @@ would force a rebind of the internal Tableau tabs alongside the aimline ones,
 and the build was mid-flight. Worth doing as a follow-up; nothing depends on the
 inconsistency.
 
-`expected_round_label` ships alongside as the reader-facing round name
-(`BOY->MOY: R1`). Round numbers already run 1 to 8 uniquely across the year, so
-the season adds no information — but a filter list of bare integers tells a
-school nothing about which half of the year it is looking at.
+##### `is_current_round` and `expected_round_label`: regions are not in step
+
+Regions do not run the same round at the same time, and the gap is larger than a
+few days. AY2025 Miami sits a week to a month behind the NJ regions on every
+round, and runs **three** rounds per season where NJ runs four.
+
+`is_current_round` marks the latest round whose window has **opened**, per
+academic year, region and grade. Latest-opened rather than currently-in-window:
+between rounds nothing is in-window, so the in-window reading goes blank for
+most of the year, while this keeps pointing at the round people are actually
+discussing. Partitioned by year, region and grade — not season, which would give
+two current rounds, and not school, since T&L set schedules at region and grade
+band.
+
+Verified by simulating two dates against the AY2025 expectation gate:
+
+| As of      | Camden | Newark | Paterson | Miami           |
+| ---------- | ------ | ------ | -------- | --------------- |
+| 2025-12-01 | R3     | R3     | R3       | **R2**          |
+| 2026-02-05 | R4     | R4     | R4       | **R4, MOY→EOY** |
+
+The second row is the one that matters. All four regions read round 4, and
+Miami's is in a different half of the year — so **`expected_round_label` is
+load-bearing, not cosmetic.** A filter on the bare round number mixes NJ
+students mid-first-half with Miami students in their second half, silently. The
+label renders them as `BOY->MOY: R4` and `MOY->EOY: R4`.
+
+That ambiguity is latent rather than live today, because Miami produces no rows
+in this model at all. It becomes real the day Miami appears.
 
 ##### The status vocabulary, settled 2026-09-19
 
