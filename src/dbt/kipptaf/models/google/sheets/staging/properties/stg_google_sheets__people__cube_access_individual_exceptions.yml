@@ -2,13 +2,17 @@ models:
   - name: stg_google_sheets__people__cube_access_individual_exceptions
     description: >-
       Cube access individual-exception grants, maintained by the data team in
-      Google Sheets. An employee may have multiple rows -- each row grants at
-      most one additional location (network/region/school) that is unioned into
-      that person's normal location remit, and/or overrides one or more of the
-      five staff sensitive-field scopes. A row is only live when status =
-      'active', grant_date has passed (or is null), and expiry_date has not
-      passed (or is null); dim_staff_cube_access ignores every other row as if
-      it didn't exist. At most one live row per employee may set a
+      Google Sheets. Keyed on google_email, not employee_number, so a grant can
+      reach a contractor who holds a KTAF Google login but has no ADP employment
+      record -- dim_staff_cube_access emits a row for such a grantee off this
+      sheet (see its non_employee_grantees CTE), where the work-assignment spine
+      alone would emit nothing. A grantee may have multiple rows -- each row
+      grants at most one additional location (network/region/school) that is
+      unioned into that person's normal location remit, and/or overrides one or
+      more of the five staff sensitive-field scopes. A row is only live when
+      status = 'active', grant_date has passed (or is null), and expiry_date has
+      not passed (or is null); dim_staff_cube_access ignores every other row as
+      if it didn't exist. At most one live row per grantee may set a
       remit-override column
       (test_cube_access_individual_exceptions_single_remit_row) -- those columns
       describe the person, not a location, so they don't multiply across a
@@ -17,7 +21,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - employee_number
+              - google_email
               - additional_location_type
               - additional_location_name
           config:
@@ -41,18 +45,43 @@ models:
           config:
             severity: warn
     columns:
-      - name: employee_number
+      - name: google_email
         data_type: string
         description: >-
-          ADP employee number (matches dim_staff.employee_number). No longer
-          unique -- an employee may have multiple live rows, one per additional
-          location grant.
+          The grantee's KTAF Google address -- the key this whole sheet is read
+          by, matching dim_staff_cube_access.google_email, which is what Cube
+          looks a viewer up on. Lower-cased and trimmed in the staging model,
+          because Cube's identity read is a case-sensitive match against the JWT
+          email claim. Not unique -- a grantee may have multiple live rows, one
+          per additional location grant. An address with no ADP employment
+          record behind it is expected: that is the contractor case this sheet
+          exists to cover.
         config:
           meta:
             contains_pii: true
         data_tests:
           - not_null:
               config:
+                severity: error
+          # A grant whose address matches no Google account at all grants
+          # nothing: dim_staff_cube_access's non-employee leg requires a
+          # directory row, so the row resolves to no identity and denies.
+          # Catches the two ways that happens -- a typo, and an account deleted
+          # outright rather than suspended. A suspended or archived account
+          # still HAS a directory row, so it passes here and is excluded in the
+          # mart instead. The directory asset syncs three times a day, so a
+          # newly created contractor account resolves within hours; error
+          # severity per the staging-layer convention.
+          - relationships:
+              arguments:
+                to: ref('stg_google_directory__users')
+                field: lower(primary_email)
+              config:
+                where: >-
+                  status = 'active' and (expiry_date is null or expiry_date >=
+                  current_date('{{ var("local_timezone") }}')) and (grant_date
+                  is null or grant_date <= current_date('{{
+                  var("local_timezone") }}'))
                 severity: error
       - name: additional_location_type
         data_type: string
@@ -107,7 +136,7 @@ models:
         description: >-
           Department remit bounding the staff sensitive fields. Null falls
           through to the department override or role crosswalk. At most one live
-          row per employee may set this.
+          row per grantee may set this.
         data_tests:
           - accepted_values:
               arguments:
@@ -119,7 +148,7 @@ models:
         description: >-
           Staff PII field visibility (per-field sensitive scope enum). Null
           falls through to the department override or role crosswalk. At most
-          one live row per employee may set this.
+          one live row per grantee may set this.
         data_tests:
           - accepted_values:
               arguments:

@@ -8,19 +8,42 @@ this sheet, see
 For how to add or edit a Google Sheets source in general, see the
 [Google Sheets & Forms guide](google-sheets.md).
 
+## Identify people by their Google address
+
+Every row is keyed on **`google_email`** — the person's KIPP Google address, the
+same one they sign in to Cube with. Not their employee number.
+
+That is deliberate: it lets you grant access to a **contractor or anyone else
+who has a KIPP Google login but no employment record**. Those people appear in
+no HR feed, so there is nothing to look an employee number up from, and before
+this they could not be granted access at all.
+
+Two things to get right:
+
+- **Use the address exactly as they sign in**, and nothing else — not a personal
+  address, not an alias. Capitalization and stray spaces are fine; they are
+  cleaned up automatically.
+- **The account has to exist and be active.** A typo, or the address of someone
+  whose account has been deleted, grants nothing at all rather than failing
+  loudly at the moment you type it. A validation check catches typos on the next
+  pipeline run.
+
+`requested_by` and `approved_by` are still employee numbers — those are staff
+approving the grant, not the person receiving it.
+
 ## One row per additional location
 
 Each row can grant **one** additional location — a whole network, a named
 region, or a named school. If someone needs access to two schools, add **two
-rows** with the same employee number, one `additional_location_name` each —
-never try to combine two locations into a single row.
+rows** with the same Google address, one `additional_location_name` each — never
+try to combine two locations into a single row.
 
 **Example — access to two additional schools:**
 
-| employee_number | additional_location_type | additional_location_name | include_student_data | status |
-| --------------- | ------------------------ | ------------------------ | -------------------- | ------ |
-| 045678          | school                   | KIPP BOLD Academy        | TRUE                 | active |
-| 045678          | school                   | KIPP THRIVE Academy      | FALSE                | active |
+| google_email                       | additional_location_type | additional_location_name | include_student_data | status |
+| ---------------------------------- | ------------------------ | ------------------------ | -------------------- | ------ |
+| `example.one@apps.teamschools.org` | school                   | KIPP BOLD Academy        | TRUE                 | active |
+| `example.one@apps.teamschools.org` | school                   | KIPP THRIVE Academy      | FALSE                | active |
 
 This person gets staff access at both schools, but student data only at KIPP
 BOLD Academy (the second row's `include_student_data` is FALSE).
@@ -35,17 +58,17 @@ instead of listing every region.
 **Example — three additional regions** (instead of one row saying "all
 regions"):
 
-| employee_number | additional_location_type | additional_location_name          |
-| --------------- | ------------------------ | --------------------------------- |
-| 056789          | region                   | KIPP Cooper Norcross Academy      |
-| 056789          | region                   | KIPP Miami                        |
-| 056789          | region                   | KIPP TEAM and Family Schools Inc. |
+| google_email                       | additional_location_type | additional_location_name          |
+| ---------------------------------- | ------------------------ | --------------------------------- |
+| `example.two@apps.teamschools.org` | region                   | KIPP Cooper Norcross Academy      |
+| `example.two@apps.teamschools.org` | region                   | KIPP Miami                        |
+| `example.two@apps.teamschools.org` | region                   | KIPP TEAM and Family Schools Inc. |
 
 **Example — literally everything** (one row, not one per region):
 
-| employee_number | additional_location_type | additional_location_name |
-| --------------- | ------------------------ | ------------------------ |
-| 012345          | network                  | _(leave blank)_          |
+| google_email                         | additional_location_type | additional_location_name |
+| ------------------------------------ | ------------------------ | ------------------------ |
+| `example.three@apps.teamschools.org` | network                  | _(leave blank)_          |
 
 ## The two things a row can do
 
@@ -82,10 +105,10 @@ on the same setting.
 
 **Example — a row that has already expired, alongside a still-active one:**
 
-| employee_number | additional_location_name | status | expiry_date       |
-| --------------- | ------------------------ | ------ | ----------------- |
-| 090123          | KIPP Sunrise Academy     | active | 2025-06-30 (past) |
-| 090123          | KIPP Seek Academy        | active | 2026-12-31        |
+| google_email                        | additional_location_name | status | expiry_date       |
+| ----------------------------------- | ------------------------ | ------ | ----------------- |
+| `example.four@apps.teamschools.org` | KIPP Sunrise Academy     | active | 2025-06-30 (past) |
+| `example.four@apps.teamschools.org` | KIPP Seek Academy        | active | 2026-12-31        |
 
 Only the KIPP Seek Academy grant is currently in effect — the Sunrise row is
 kept for history but doesn't grant anything once its `expiry_date` has passed.
@@ -99,6 +122,6 @@ every row so the sheet stays a usable audit trail on its own.
 
 **Example — a fully filled-in row:**
 
-| employee_number | additional_location_type | additional_location_name     | business_justification                            | requested_by | approved_by | grant_date | expiry_date | status | notes                            |
-| --------------- | ------------------------ | ---------------------------- | ------------------------------------------------- | ------------ | ----------- | ---------- | ----------- | ------ | -------------------------------- |
-| 023456          | region                   | KIPP Cooper Norcross Academy | Covering the Camden data audit through September. | 034521       | 011200      | 2026-07-01 | 2026-09-01  | active | Requested by Finance leadership. |
+| google_email                        | additional_location_type | additional_location_name     | business_justification                            | requested_by | approved_by | grant_date | expiry_date | status | notes                            |
+| ----------------------------------- | ------------------------ | ---------------------------- | ------------------------------------------------- | ------------ | ----------- | ---------- | ----------- | ------ | -------------------------------- |
+| `example.five@apps.teamschools.org` | region                   | KIPP Cooper Norcross Academy | Covering the Camden data audit through September. | 034521       | 011200      | 2026-07-01 | 2026-09-01  | active | Requested by Finance leadership. |

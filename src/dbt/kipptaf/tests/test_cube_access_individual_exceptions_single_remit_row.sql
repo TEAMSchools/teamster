@@ -1,7 +1,7 @@
 with
     live as (
         select
-            employee_number,
+            google_email,
             staff_department_scope,
             staff_pii_scope,
             staff_compensation_scope,
@@ -19,7 +19,7 @@ with
             )
     )
 
-select employee_number, count(*) as n_remit_rows,
+select google_email, count(*) as n_remit_rows,
 from live
-group by employee_number
+group by google_email
 having count(*) > 1

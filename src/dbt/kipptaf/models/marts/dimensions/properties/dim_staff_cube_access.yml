@@ -1,18 +1,25 @@
 models:
   - name: dim_staff_cube_access
     description: >-
-      Cube access-control resolution, one row per active primary staff member
-      keyed on staff_key. Resolves each person's current role to the student
-      location scope, the staff sensitive-field remit (location + department),
-      the per-field sensitive scopes, and any individual-exception grants,
-      derived from the current primary work assignment and the Google Sheets
-      access crosswalks (individual exception, then department special-access
-      override, then role mapping, in that priority order for the five
-      staff_*_scope remit columns). Read by cube.js's resolveAccess, matched on
-      google_email, to build the securityContext groups and the allow-lists that
-      each view's access_policy reads; not exposed as a Cube. The staff
-      directory and aggregate summary are open — these scopes only constrain
-      sensitive fields. Unresolved roles emit 'none' (deny), never NULL.
+      Cube access-control resolution, one row per viewer, keyed on staff_key.
+      Resolves each person's current role to the student location scope, the
+      staff sensitive-field remit (location + department), the per-field
+      sensitive scopes, and any individual-exception grants, derived from the
+      current primary work assignment and the Google Sheets access crosswalks
+      (individual exception, then department special-access override, then role
+      mapping, in that priority order for the five staff_*_scope remit columns).
+      Two kinds of viewer are unioned onto one grain: active primary staff, off
+      the work-assignment spine, and non-employee grantees such as contractors,
+      off the individual-exceptions sheet. The latter hold a KTAF Google login
+      but no ADP record, so nothing in the work-assignment tree emits them, and
+      their row carries NULL for every role and org attribute, leaving all five
+      scopes at 'none' except what their own exception grants. A non-employee
+      row also requires a Google directory account that is neither suspended nor
+      archived. Read by cube.js's resolveAccess, matched on google_email, to
+      build the securityContext groups and the allow-lists that each view's
+      access_policy reads; not exposed as a Cube. The staff directory and
+      aggregate summary are open — these scopes only constrain sensitive fields.
+      Unresolved roles emit 'none' (deny), never NULL.
     data_tests:
       # A remit-scoped PII scope (all_in_scope / teaching_staff) with a none
       # location AND no additional-location grant, or a none department, is a
@@ -45,8 +52,14 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Primary key — generate_surrogate_key([employee_number]), matching
-          dim_staff.
+          Primary key. For a staff viewer it is
+          generate_surrogate_key([employee_number]), matching dim_staff. For a
+          non-employee grantee there is no employee number, so it is
+          generate_surrogate_key(['non_employee', google_email]) — the literal
+          keeps the two keyspaces from colliding and marks the row's origin. A
+          non-employee key matches nothing in dim_staff_reporting_chain, so
+          reporting-chain scopes resolve empty for them, which is correct: they
+          manage no one.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -58,6 +71,9 @@ models:
         description: >-
           Resolve-only lookup for the Cube JWT boundary; the active+primary
           Google email so a recycled address cannot resolve to a stale identity.
+          Also the key the individual-exceptions sheet is written against, and
+          the only identifier a non-employee grantee has. Cube matches it
+          case-sensitively, so the sheet side is lower-cased upstream.
         data_tests:
           - not_null:
               config:

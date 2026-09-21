@@ -36,7 +36,6 @@ with
             pd.staff_key,
 
             s.google_email,
-            s.staff_unique_id as employee_number,
 
             j.job_function_code,
 
@@ -88,7 +87,6 @@ with
         select
             ca.staff_key,
             ca.google_email,
-            ca.employee_number,
             ca.job_function_code,
             ca.department_name,
             ca.entity,
@@ -146,10 +144,7 @@ with
             staff_observations_scope,
             staff_benefits_scope,
 
-            -- the sheet's employee_number is STRING (avoids Sheets autodetect
-            -- mangling leading zeros); dim_staff's is INT64 (staff_unique_id) --
-            -- cast once here so every downstream join is a plain column match.
-            safe_cast(employee_number as int64) as employee_number,
+            google_email,
 
             -- additional_location_type is already constrained to
             -- network/region/school by the staging accepted_values test, and a
@@ -162,19 +157,19 @@ with
         where {{ is_live_row("status", "grant_date", "expiry_date") }}
     ),
 
-    -- At most one live row per employee sets these (enforced by
+    -- At most one live row per grantee sets these (enforced by
     -- test_cube_access_individual_exceptions_single_remit_row), so max() is a
     -- safe deterministic pick, not an arbitrary one.
     individual_exception_scopes as (
         select
-            employee_number,
+            google_email,
             max(staff_department_scope) as staff_department_scope,
             max(staff_pii_scope) as staff_pii_scope,
             max(staff_compensation_scope) as staff_compensation_scope,
             max(staff_observations_scope) as staff_observations_scope,
             max(staff_benefits_scope) as staff_benefits_scope,
         from individual_exceptions_live
-        group by employee_number
+        group by google_email
     ),
 
     -- One struct per live location-grant row, array_agg'd per employee so this
@@ -183,7 +178,7 @@ with
     -- element (see src/cube/access.js and src/cube/CLAUDE.md).
     individual_exception_grants as (
         select
-            iel.employee_number,
+            iel.google_email,
             array_agg(
                 struct(
                     iel.location_scope,
@@ -200,7 +195,62 @@ with
             {{ ref("dim_locations") }} as loc
             on iel.additional_location_name = loc.`name`
         where iel.additional_location_type is not null
-        group by iel.employee_number
+        group by iel.google_email
+    ),
+
+    -- Contractors and anyone else granted access without an employment record.
+    -- They hold a KTAF Google login but no ADP work assignment, so the spine
+    -- above emits nothing for them and their grant rows would join to nothing.
+    -- This leg gives them a row of their own. The directory join is the
+    -- authorization check: the address must be a real Google account, and one
+    -- that is neither suspended nor archived, so a typo or a deprovisioned
+    -- contractor cannot mint an identity. Every role- and org-derived attribute
+    -- is NULL by construction, so each scope below falls through to 'none' and
+    -- the person sees only what their own exception rows grant.
+    non_employee_grantees as (
+        select distinct
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["'non_employee'", "iel.google_email"]
+                )
+            }} as staff_key, iel.google_email,
+        from individual_exceptions_live as iel
+        inner join
+            {{ ref("stg_google_directory__users") }} as u
+            on iel.google_email = lower(u.primary_email)
+            and not coalesce(u.suspended, false)
+            and not coalesce(u.archived, false)
+        left join enriched as e on iel.google_email = e.google_email
+        where e.google_email is null
+    ),
+
+    -- Both kinds of viewer on one grain, so the resolution below is written
+    -- once. The staff leg carries its role and org attributes; the non-employee
+    -- leg carries NULLs, which the coalesces read as 'none'.
+    access_spine as (
+        select
+            staff_key,
+            google_email,
+            department_name,
+            department_group,
+            entity,
+            job_function_code,
+            region_key,
+            location_abbreviation,
+        from enriched
+
+        union all
+
+        select
+            staff_key,
+            google_email,
+            cast(null as string) as department_name,
+            cast(null as string) as department_group,
+            cast(null as string) as entity,
+            cast(null as string) as job_function_code,
+            cast(null as string) as region_key,
+            cast(null as string) as location_abbreviation,
+        from non_employee_grantees
     ),
 
     matched as (
@@ -251,13 +301,11 @@ with
             ) as staff_benefits_scope,
 
             coalesce(ieg.additional_location_grants, []) as additional_location_grants,
-        from enriched as e
+        from access_spine as e
         left join
-            individual_exception_scopes as iex
-            on e.employee_number = iex.employee_number
+            individual_exception_scopes as iex on e.google_email = iex.google_email
         left join
-            individual_exception_grants as ieg
-            on e.employee_number = ieg.employee_number
+            individual_exception_grants as ieg on e.google_email = ieg.google_email
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_override") }}
             as ovr

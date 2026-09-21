@@ -727,32 +727,41 @@ tail -f ~/Library/Logs/Claude/mcp-server-cube-mcp-server.log
 Cube resolves each user's access at query time via two BigQuery reads against
 `kipptaf_marts` (no Google Admin Directory API):
 
-1. **`dim_staff_cube_access`** — one row per active+primary staff member, keyed
-   on `google_email`. Carries per-field scope enums (`student_location_scope`,
-   `staff_pii_scope`, etc.) that `cube.js` translates into Cube group strings
-   via `access.buildGroups(row)`.
+1. **`dim_staff_cube_access`** — one row per viewer, keyed on `google_email`.
+   Covers active+primary staff plus non-employee grantees (contractors and the
+   like, who hold a KIPP Google login but no employment record) named on the
+   `cube_access_individual_exceptions` sheet. Carries per-field scope enums
+   (`student_location_scope`, `staff_pii_scope`, etc.) plus
+   `additional_location_grants`, which `cube.js` translates into Cube group
+   strings and allow-lists via `access.buildGroups(row)`.
 2. **`dim_staff_reporting_chain`** — transitive closure of the org tree, keyed
    on `(manager_staff_key, reportee_staff_key)`. Used to resolve the viewer's
    direct and indirect reports for `reporting_chain` and
    `reporting_chain_or_below_rank` scopes.
 
-Results are cached until next midnight ET. A staff member not in
-`dim_staff_cube_access` (e.g. a non-staff admin user) resolves to an empty group
-list and sees no data (default deny).
+Results are cached until next midnight ET. Anyone not in `dim_staff_cube_access`
+resolves to an empty group list and sees no data (default deny).
 
 ### Access groups
 
-`access.buildGroups(row)` emits scope-specific group strings from the access
-row's scope columns. A viewer holds at most one group per axis, and each gated
-view's `access_policy` matches exactly one of them — no group on an axis means
+`access.buildGroups(row)` emits group strings from the access row's scope
+columns. A viewer holds at most one group per axis, and each gated view's
+`access_policy` matches exactly one of them — no group on an axis means
 default-deny for the views gated by it:
 
-| Group                                                          | Emitted when                                 |
-| -------------------------------------------------------------- | -------------------------------------------- |
-| `student-region` / `student-school` / `student-network`        | matching non-`none` `student_location_scope` |
-| `staff-directory`                                              | always (every resolved viewer)               |
-| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`   |
-| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                |
+| Group                                                          | Emitted when                                       |
+| -------------------------------------------------------------- | -------------------------------------------------- |
+| `student`                                                      | `allowed_student_abbreviations` resolves non-empty |
+| `staff-directory`                                              | always (every resolved viewer)                     |
+| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`         |
+| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                      |
+
+There is one flat `student` group rather than one per location tier.
+`allowed_student_abbreviations` is precomputed server-side: the viewer's base
+`student_location_scope` resolved to a set of school abbreviations, unioned with
+every `additional_location_grants` entry marked `include_student_data`. A tier
+group could only say "my whole region"; the array can say "my region plus this
+one other school," which is what an individual exception needs to express.
 
 The `staff_pii_scope` values are `all_in_scope`, `teaching_staff`,
 `reporting_chain`, and `reporting_chain_or_below_rank`. The compensation /
@@ -762,10 +771,10 @@ observations / benefits groups are emitted but no view consumes them yet
 Row-level filtering is enforced **declaratively in each view's `access_policy`**
 — `row_level` filters that interpolate the `securityContext` values
 `resolveAccess` builds — **not** in `cube.js`, which carries no RLS at all.
-Student domains are single collapsed views (no summary/detail split); any
-`student-<scope>` group sees every field, including PII, with location scoping
-applied by the matching policy. Staff is split into `staff_directory` (open
-roster, no PII) and `staff_pii` (the sensitive fields, gated per
+Student domains are single collapsed views (no summary/detail split); the
+`student` group sees every field, including PII, with location scoping applied
+from `allowed_student_abbreviations`. Staff is split into `staff_directory`
+(open roster, no PII) and `staff_pii` (the sensitive fields, gated per
 `staff_pii_scope` by a location-and-department remit precomputed into
 `securityContext`).
 

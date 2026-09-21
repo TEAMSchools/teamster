@@ -2318,7 +2318,7 @@ sources:
             sheet_range: cube_access_individual_exceptions
             skip_leading_rows: 1
         columns:
-          - name: employee_number
+          - name: google_email
             data_type: string
           - name: additional_location_type
             data_type: string

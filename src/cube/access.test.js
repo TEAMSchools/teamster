@@ -606,3 +606,103 @@ test("resolveEmulationTarget: a non-string callerEmail resolves to no caller and
   });
   assert.deepEqual(r, { caller: null, target: null, emulating: false });
 });
+
+// A non-employee grantee (contractor) as dim_staff_cube_access now emits one:
+// a real staff_key off the exceptions sheet, but NULL for every role- and
+// org-derived attribute, so all five scopes sit at 'none' and the only thing
+// granting anything is additional_location_grants.
+const CONTRACTOR = {
+  staff_key: "non-employee-hash",
+  region_key: null,
+  location_abbreviation: null,
+  department_group: null,
+  job_function_level: null,
+  student_location_scope: "none",
+  staff_location_scope: "none",
+  staff_department_scope: "none",
+  staff_pii_scope: "none",
+  staff_compensation_scope: "none",
+  staff_observations_scope: "none",
+  staff_benefits_scope: "none",
+};
+
+test("contractor: a 'none' base scope resolves to no abbreviations on either axis", () => {
+  // Nothing about the row itself grants a location — that is the whole point of
+  // the non-employee leg. Both axes start empty and only grants can fill them.
+  assert.deepEqual(
+    a.computeAllowedAbbreviations(
+      CONTRACTOR.staff_location_scope,
+      CONTRACTOR.region_key,
+      CONTRACTOR.location_abbreviation,
+      LOCATION_UNIVERSE,
+    ),
+    [],
+  );
+  assert.deepEqual(
+    a.computeAllowedAbbreviations(
+      CONTRACTOR.student_location_scope,
+      CONTRACTOR.region_key,
+      CONTRACTOR.location_abbreviation,
+      LOCATION_UNIVERSE,
+    ),
+    [],
+  );
+});
+
+test("contractor: one school grant with student data yields exactly that school on both axes", () => {
+  const grants = [
+    {
+      location_scope: "school",
+      region_key: null,
+      location_abbreviation: "B",
+      includes_student_data: true,
+    },
+  ];
+  const staff = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE);
+  const student = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
+    studentOnly: true,
+  });
+  assert.deepEqual(staff, ["B"]);
+  assert.deepEqual(student, ["B"]);
+
+  // staff_department_scope is 'none', so the remit's department axis is empty
+  // and no staff-pii group is emitted — but the student group is, because the
+  // grant filled allowedStudentAbbreviations.
+  const g = a.buildGroups(CONTRACTOR, staff, [], [], student);
+  assert.ok(g.includes("student"));
+  assert.ok(g.includes("staff-directory"));
+  assert.ok(!g.some((x) => x.startsWith("staff-pii-")));
+});
+
+test("contractor: a location grant WITHOUT student data grants no student access", () => {
+  const grants = [
+    {
+      location_scope: "school",
+      region_key: null,
+      location_abbreviation: "B",
+      includes_student_data: false,
+    },
+  ];
+  const student = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
+    studentOnly: true,
+  });
+  assert.deepEqual(student, []);
+  // Empty student array → no `student` group → default-deny on every student
+  // view, rather than an `equals []` filter Cube would hard-error on (#4269).
+  const g = a.buildGroups(
+    CONTRACTOR,
+    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE),
+    [],
+    [],
+    student,
+  );
+  assert.ok(!g.includes("student"));
+});
+
+test("contractor: a grantee with no live grants at all gets no student or pii access", () => {
+  const g = a.buildGroups(CONTRACTOR, [], [], [], []);
+  assert.ok(!g.includes("student"));
+  assert.ok(!g.some((x) => x.startsWith("staff-pii-")));
+  // Still a resolved identity, so the open directory tier is present.
+  assert.deepEqual(g, ["staff-directory"]);
+});
