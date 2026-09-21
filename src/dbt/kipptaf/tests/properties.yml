@@ -885,9 +885,14 @@ data_tests:
       graduation rate. Falling behind that cohort is ordinary retention and is
       not a defect, so only the other direction is tested -- a student whose
       grade level implies an earlier graduating class than their recorded
-      cohort. That means a skipped grade or a missing enrollment year, and it
-      misstates the graduating class in state reporting. Warn because the fix is
-      a records correction in PowerSchool rather than a code change.
+      cohort. Three causes produce that shape. A skipped grade and a missing
+      enrollment year are records problems, corrected in PowerSchool. Summer
+      credit recovery is not -- a student can advance a grade over the summer
+      with no enrollment row to show for it, because
+      int_powerschool__student_enrollment_union filters out the summer school,
+      so the records are already right. Warn rather than error, because no
+      result here is fixed by a code change, and because the cut score join no
+      longer depends on the two agreeing.
     config:
       severity: warn
       meta:
