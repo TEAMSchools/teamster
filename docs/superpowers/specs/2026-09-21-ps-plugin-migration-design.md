@@ -199,7 +199,9 @@ members, invites, workspaces, API keys and similar, not skills. The separate
 `/v1/skills` API is unrelated here — those skills are private to an API
 workspace and never appear in claude.ai or Claude Desktop. So the release asset
 is the handoff point on both paths, and a human performs the last step either
-way. Issue #5440 tracks closing that gap if Anthropic ships an API.
+way. **TEAMSchools/teamster#5440** tracks closing that gap if Anthropic ships an
+API; it links the 2 upstream requests in `anthropics/claude-code` to watch.
+Every bare `#N` in this document is an issue in this repository.
 
 ### Applying ICM selectively
 
