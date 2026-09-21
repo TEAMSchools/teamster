@@ -4,7 +4,7 @@ sources:
       Miami's PowerSchool archive (final ODBC pull 2026-07-01; Miami's SIS moved
       to Focus). Permanent history source for stored grades, attendance, the
       course enrollments they hang off (#5193), section teachers (#5260), and
-      the calendars the network calendar models read — 14 permanent tables in
+      the calendars the network calendar models read — 15 permanent tables in
       total. Enrollment stints and terms are deliberately absent. Focus is
       Miami's sole enrollment source across all years, and the Focus branch of
       int_students__terms floors at syear 2018 — Miami's first school year —
@@ -83,6 +83,15 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__gpa_term
+      - name: int_powerschool__gpa
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__gpa
       - name: int_powerschool__gpa_cumulative
         config:
           meta:
