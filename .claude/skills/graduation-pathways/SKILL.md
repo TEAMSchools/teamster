@@ -181,6 +181,15 @@ names:
    The grace period belongs only to 11th graders with no records yet, and it
    ends once results land in late June.
 
+**A student who graduates without ever being placed in grade 12 is never checked
+for FAFSA.** `fafsa_required` reads `grade_level = 12`, so an 11th grader who
+finishes over the summer is scored on pathways as a junior and then drops out of
+the model entirely when the graduation lands -- `rn_undergrad = 1` and
+`enroll_status = 0` both exclude them. Nothing in the warehouse can see those
+students, and no test can catch them. Operations owns the manual check. Do not
+try to close this by widening `fafsa_required` to grade 11: that would hold
+every junior to a deadline that does not apply to them, which is rule 2.
+
 ---
 
 ## Transfer scores are entered by hand in PowerSchool
