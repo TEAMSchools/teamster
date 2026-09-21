@@ -31,6 +31,35 @@ Two things to get right:
 `requested_by` and `approved_by` are still employee numbers — those are staff
 approving the grant, not the person receiving it.
 
+## Students and staff are separate columns
+
+A row says how far it reaches for each kind of data, in the same words the role
+sheet uses:
+
+- **`additional_student_location_scope`** — student data.
+- **`additional_staff_location_scope`** — staff data.
+
+Both take `network`, `region`, `school`, or `none` (a blank cell means `none`).
+They are independent, so you can widen one without the other —
+`student = school` with `staff = none` gives someone student data at one school
+and no extra staff visibility at all.
+
+**When you set both, they must be the same word.** A row carries a single
+`additional_location_name`, so it cannot be a region for staff and a school for
+students at the same time. To give someone different breadth per kind of data,
+use two rows.
+
+`network` is the widest value. There is no `all` — `all` belongs to
+`staff_department_scope`, which is a different question (which departments, not
+which locations).
+
+## When to leave `additional_location_name` blank
+
+Leave it blank **only** when the scope is `network`, because `network` already
+means every location and there is nothing left to name. For `region` or `school`
+the name is required, and a blank one fails validation on the next pipeline run
+rather than silently granting nothing.
+
 ## One row per additional location
 
 Each row can grant **one** additional location — a whole network, a named
@@ -40,45 +69,45 @@ try to combine two locations into a single row.
 
 **Example — access to two additional schools:**
 
-| google_email                       | additional_location_type | additional_location_name | include_student_data | status |
-| ---------------------------------- | ------------------------ | ------------------------ | -------------------- | ------ |
-| `example.one@apps.teamschools.org` | school                   | KIPP BOLD Academy        | TRUE                 | active |
-| `example.one@apps.teamschools.org` | school                   | KIPP THRIVE Academy      | FALSE                | active |
+| google_email                       | additional_student_location_scope | additional_staff_location_scope | additional_location_name | status |
+| ---------------------------------- | --------------------------------- | ------------------------------- | ------------------------ | ------ |
+| `example.one@apps.teamschools.org` | school                            | school                          | KIPP BOLD Academy        | active |
+| `example.one@apps.teamschools.org` | none                              | school                          | KIPP THRIVE Academy      | active |
 
 This person gets staff access at both schools, but student data only at KIPP
-BOLD Academy (the second row's `include_student_data` is FALSE).
+BOLD Academy — the second row's `additional_student_location_scope` is `none`.
 
 ## There is no "All" option
 
 List every additional region or school as its own row — there is no shortcut
 value that means "all of them." If someone genuinely needs access across the
-**entire network**, use `additional_location_type = network` on a single row
-instead of listing every region.
+**entire network**, set the scope columns to `network` on a single row instead
+of listing every region.
 
 **Example — three additional regions** (instead of one row saying "all
 regions"):
 
-| google_email                       | additional_location_type | additional_location_name          |
-| ---------------------------------- | ------------------------ | --------------------------------- |
-| `example.two@apps.teamschools.org` | region                   | KIPP Cooper Norcross Academy      |
-| `example.two@apps.teamschools.org` | region                   | KIPP Miami                        |
-| `example.two@apps.teamschools.org` | region                   | KIPP TEAM and Family Schools Inc. |
+| google_email                       | additional_student_location_scope | additional_staff_location_scope | additional_location_name          |
+| ---------------------------------- | --------------------------------- | ------------------------------- | --------------------------------- |
+| `example.two@apps.teamschools.org` | region                            | region                          | KIPP Cooper Norcross Academy      |
+| `example.two@apps.teamschools.org` | region                            | region                          | KIPP Miami                        |
+| `example.two@apps.teamschools.org` | region                            | region                          | KIPP TEAM and Family Schools Inc. |
 
 **Example — literally everything** (one row, not one per region):
 
-| google_email                         | additional_location_type | additional_location_name |
-| ------------------------------------ | ------------------------ | ------------------------ |
-| `example.three@apps.teamschools.org` | network                  | _(leave blank)_          |
+| google_email                         | additional_student_location_scope | additional_staff_location_scope | additional_location_name |
+| ------------------------------------ | --------------------------------- | ------------------------------- | ------------------------ |
+| `example.three@apps.teamschools.org` | network                           | network                         | _(leave blank)_          |
 
 ## The two things a row can do
 
 A row can do either or both of the following. A row that does neither is inert
 (it exists in the sheet but grants nothing).
 
-1. **Grant a location** (`additional_location_type` / `additional_location_name`
-   / `include_student_data`) — this is **additive**. It adds the named location
-   on top of the person's normal access; it never takes away anything they
-   already have.
+1. **Grant a location** (`additional_student_location_scope` /
+   `additional_staff_location_scope` / `additional_location_name`) — this is
+   **additive**. It adds the named location on top of the person's normal
+   access; it never takes away anything they already have.
 2. **Override a sensitive-field visibility setting** (`staff_department_scope`,
    `staff_pii_scope`, `staff_compensation_scope`, `staff_observations_scope`,
    `staff_benefits_scope`) — this **replaces** the person's normal setting for
@@ -122,6 +151,6 @@ every row so the sheet stays a usable audit trail on its own.
 
 **Example — a fully filled-in row:**
 
-| google_email                        | additional_location_type | additional_location_name     | business_justification                            | requested_by | approved_by | grant_date | expiry_date | status | notes                            |
-| ----------------------------------- | ------------------------ | ---------------------------- | ------------------------------------------------- | ------------ | ----------- | ---------- | ----------- | ------ | -------------------------------- |
-| `example.five@apps.teamschools.org` | region                   | KIPP Cooper Norcross Academy | Covering the Camden data audit through September. | 034521       | 011200      | 2026-07-01 | 2026-09-01  | active | Requested by Finance leadership. |
+| google_email                        | additional_student_location_scope | additional_staff_location_scope | additional_location_name     | business_justification                            | requested_by | approved_by | grant_date | expiry_date | status | notes                            |
+| ----------------------------------- | --------------------------------- | ------------------------------- | ---------------------------- | ------------------------------------------------- | ------------ | ----------- | ---------- | ----------- | ------ | -------------------------------- |
+| `example.five@apps.teamschools.org` | region                            | region                          | KIPP Cooper Norcross Academy | Covering the Camden data audit through September. | 034521       | 011200      | 2026-07-01 | 2026-09-01  | active | Requested by Finance leadership. |

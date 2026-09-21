@@ -136,7 +136,6 @@ with
     -- exactly as if it didn't exist.
     individual_exceptions_live as (
         select
-            additional_location_type,
             additional_location_name,
             staff_department_scope,
             staff_pii_scope,
@@ -146,13 +145,19 @@ with
 
             google_email,
 
-            -- additional_location_type is already constrained to
+            -- additional_location_scope is already constrained to
             -- network/region/school by the staging accepted_values test, and a
             -- null (remit-only row) is filtered out downstream (where
-            -- additional_location_type is not null) before this could ever
-            -- resolve to 'none' -- a plain coalesce, not a case, is enough.
-            coalesce(additional_location_type, 'none') as location_scope,
-            coalesce(include_student_data, false) as includes_student_data,
+            -- location_scope != 'none') before this could ever resolve to
+            -- 'none' -- a plain coalesce, not a case, is enough.
+            coalesce(additional_location_scope, 'none') as location_scope,
+
+            -- Which axes this row's location reaches. The staging model has
+            -- already folded a blank cell and the literal 'none' to NULL, so
+            -- presence is the whole test. Independent per axis: a row may widen
+            -- students without staff, or the reverse.
+            additional_student_location_scope is not null as includes_student_data,
+            additional_staff_location_scope is not null as includes_staff_data,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
         where {{ is_live_row("status", "grant_date", "expiry_date") }}
     ),
@@ -184,7 +189,8 @@ with
                     iel.location_scope,
                     reg.region_key,
                     loc.abbreviation as location_abbreviation,
-                    iel.includes_student_data
+                    iel.includes_student_data,
+                    iel.includes_staff_data
                 )
             ) as additional_location_grants,
         from individual_exceptions_live as iel
@@ -194,7 +200,7 @@ with
         left join
             {{ ref("dim_locations") }} as loc
             on iel.additional_location_name = loc.`name`
-        where iel.additional_location_type is not null
+        where iel.location_scope != 'none'
         group by iel.google_email
     ),
 

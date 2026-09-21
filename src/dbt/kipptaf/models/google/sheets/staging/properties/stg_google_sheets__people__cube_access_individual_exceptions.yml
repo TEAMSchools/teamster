@@ -22,7 +22,7 @@ models:
           arguments:
             combination_of_columns:
               - google_email
-              - additional_location_type
+              - additional_location_scope
               - additional_location_name
           config:
             severity: error
@@ -33,8 +33,21 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: >-
-              additional_location_type not in ('region', 'school') or
+              additional_location_scope not in ('region', 'school') or
               additional_location_name is not null
+          config:
+            severity: error
+      # A row grants one location, so when a row reaches both axes they must
+      # name the same tier -- there is a single additional_location_name and it
+      # cannot be a region for staff and a school for students at once. To give
+      # someone different breadth per axis, use two rows.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >-
+              additional_student_location_scope is null or
+              additional_staff_location_scope is null or
+              additional_student_location_scope =
+              additional_staff_location_scope
           config:
             severity: error
       - dbt_utils.expression_is_true:
@@ -83,30 +96,64 @@ models:
                   is null or grant_date <= current_date('{{
                   var("local_timezone") }}'))
                 severity: error
-      - name: additional_location_type
+      - name: additional_student_location_scope
         data_type: string
         description: >-
-          The tier of this row's additional location grant: network (the whole
-          network -- additional_location_name is not needed), region
-          (additional_location_name must match a dim_regions.legal_entity), or
-          school (additional_location_name must match a dim_locations.name).
-          Null when this row carries no location grant (remit-override-only
-          row). There is no "all" value -- list every additional region or
-          school as its own row.
+          How far this row's location grant reaches for STUDENT data, in the
+          same vocabulary the role sheet uses for student_location_scope --
+          network (every location, so additional_location_name is not needed),
+          region (additional_location_name must match a
+          dim_regions.legal_entity), or school (additional_location_name must
+          match a dim_locations.name). Blank, or the literal none, means this
+          row grants no student access; the staging model collapses both to
+          NULL. There is no "all" value -- network is the word for every
+          location, and any narrower set is one row per region or school.
         data_tests:
           - accepted_values:
               arguments:
-                values: [network, region, school]
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: additional_staff_location_scope
+        data_type: string
+        description: >-
+          How far this row's location grant reaches for STAFF data, in the same
+          vocabulary the role sheet uses for staff_location_scope, and with the
+          same values as additional_student_location_scope above. Blank or none
+          means this row grants no staff access. Independent of the student
+          axis, so a row can widen one without the other -- but when a row sets
+          both they must name the same tier, since the row carries a single
+          additional_location_name.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: additional_location_scope
+        data_type: string
+        description: >-
+          The row's single location tier, derived in the staging model as the
+          first non-null of the student and staff axis scopes. Not a sheet
+          column -- it exists so the grain test, the two foreign-key checks
+          below, and dim_staff_cube_access can all read one tier instead of
+          re-deriving it. NULL when the row grants no location at all (a
+          remit-override-only row).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
               config:
                 severity: error
       - name: additional_location_name
         data_type: string
         description: >-
           The specific region or school this row grants, matched against
-          dim_regions.legal_entity (when additional_location_type = region) or
-          dim_locations.name (when additional_location_type = school). Required
-          whenever additional_location_type is region or school; null when
-          additional_location_type is network or this row carries no location
+          dim_regions.legal_entity (when additional_location_scope = region) or
+          dim_locations.name (when additional_location_scope = school). Required
+          whenever additional_location_scope is region or school. Left blank
+          when the scope is network -- network already means every location, so
+          there is nothing to name -- and when this row carries no location
           grant.
         data_tests:
           - relationships:
@@ -115,7 +162,7 @@ models:
                 field: legal_entity
               config:
                 where: >-
-                  additional_location_type = 'region' and status = 'active' and
+                  additional_location_scope = 'region' and status = 'active' and
                   (expiry_date is null or expiry_date >= current_date('{{
                   var("local_timezone") }}')) and (grant_date is null or
                   grant_date <= current_date('{{ var("local_timezone") }}'))
@@ -126,7 +173,7 @@ models:
                 field: "`name`"
               config:
                 where: >-
-                  additional_location_type = 'school' and status = 'active' and
+                  additional_location_scope = 'school' and status = 'active' and
                   (expiry_date is null or expiry_date >= current_date('{{
                   var("local_timezone") }}')) and (grant_date is null or
                   grant_date <= current_date('{{ var("local_timezone") }}'))
@@ -218,12 +265,6 @@ models:
                 values: [active, expired, revoked]
               config:
                 severity: error
-      - name: include_student_data
-        data_type: boolean
-        description: >-
-          Whether this row's location grant (if any) also widens student-data
-          visibility to that location, not just staff visibility. Per-row -- one
-          employee's multiple location grants may differ. Null treated as false.
       - name: business_justification
         data_type: string
         description: >-

@@ -160,25 +160,35 @@ function computeAllowedAbbreviations(
 // Unions a base allow-list of abbreviations with every individual-exception
 // location grant on the row (dim_staff_cube_access.additional_location_grants
 // — an array of { location_scope, region_key, location_abbreviation,
-// includes_student_data } structs, one per live grant; empty when the person
-// has none). Each grant is resolved through the same computeAllowedAbbreviations
-// used for the base scope, so a `network` grant contributes every abbreviation,
-// a `region` grant contributes that region's abbreviations, and a `school`
-// grant contributes just that one school — exactly the mechanism that lets an
-// exception add a single specific extra location rather than only widening to
-// a whole tier. Pass `studentOnly: true` to only union grants where
-// includes_student_data is true (used for the student remit); omit it (the
-// staff remit) to union every grant unconditionally — a location grant always
-// widens staff visibility regardless of includes_student_data.
+// includes_student_data, includes_staff_data } structs, one per live grant;
+// empty when the person has none). Each grant is resolved through the same
+// computeAllowedAbbreviations used for the base scope, so a `network` grant
+// contributes every abbreviation, a `region` grant contributes that region's
+// abbreviations, and a `school` grant contributes just that one school —
+// exactly the mechanism that lets an exception add a single specific extra
+// location rather than only widening to a whole tier.
+//
+// `axis` selects which per-grant flag gates the union: "student" reads
+// includes_student_data, "staff" reads includes_staff_data. The two are
+// independent (they mirror the sheet's two axis columns), so a grant can widen
+// students without staff or the reverse — call this once per axis. A missing or
+// unrecognized axis unions nothing and returns the base list, failing closed
+// rather than widening the wrong axis.
 function unionAdditionalGrants(
   baseAbbreviations,
   grants,
   universe,
-  { studentOnly = false } = {},
+  { axis } = {},
 ) {
   const result = new Set(baseAbbreviations ?? []);
+  const gate =
+    axis === "student"
+      ? "includes_student_data"
+      : axis === "staff"
+        ? "includes_staff_data"
+        : null;
   for (const grant of grants ?? []) {
-    if (studentOnly && !grant.includes_student_data) continue;
+    if (!gate || !grant[gate]) continue;
     for (const abbreviation of computeAllowedAbbreviations(
       grant.location_scope,
       grant.region_key,

@@ -2320,12 +2320,12 @@ sources:
         columns:
           - name: google_email
             data_type: string
-          - name: additional_location_type
+          - name: additional_student_location_scope
+            data_type: string
+          - name: additional_staff_location_scope
             data_type: string
           - name: additional_location_name
             data_type: string
-          - name: include_student_data
-            data_type: boolean
           - name: staff_department_scope
             data_type: string
           - name: staff_pii_scope

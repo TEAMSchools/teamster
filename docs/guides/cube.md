@@ -759,9 +759,9 @@ default-deny for the views gated by it:
 There is one flat `student` group rather than one per location tier.
 `allowed_student_abbreviations` is precomputed server-side: the viewer's base
 `student_location_scope` resolved to a set of school abbreviations, unioned with
-every `additional_location_grants` entry marked `include_student_data`. A tier
-group could only say "my whole region"; the array can say "my region plus this
-one other school," which is what an individual exception needs to express.
+every `additional_location_grants` entry whose `includes_student_data` is true.
+A tier group could only say "my whole region"; the array can say "my region plus
+this one other school," which is what an individual exception needs to express.
 
 The `staff_pii_scope` values are `all_in_scope`, `teaching_staff`,
 `reporting_chain`, and `reporting_chain_or_below_rank`. The compensation /

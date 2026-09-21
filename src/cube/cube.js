@@ -162,18 +162,20 @@ async function resolveAccess(email) {
     );
     // additional_location_grants (dim_staff_cube_access) is one struct per
     // live individual-exception location grant, unioned in on top of the base
-    // scope — always for staff, only where includes_student_data for
-    // students. See access.js's unionAdditionalGrants / buildGroups docs.
+    // scope once per axis — each grant carries its own includes_staff_data /
+    // includes_student_data, so the two axes widen independently. See
+    // access.js's unionAdditionalGrants / buildGroups docs.
     const allowedAbbreviations = access.unionAdditionalGrants(
       baseStaffAbbreviations,
       row?.additional_location_grants,
       universes.locations,
+      { axis: "staff" },
     );
     const allowedStudentAbbreviations = access.unionAdditionalGrants(
       baseStudentAbbreviations,
       row?.additional_location_grants,
       universes.locations,
-      { studentOnly: true },
+      { axis: "student" },
     );
     const allowedDepartmentGroups = access.computeAllowedDepartmentGroups(
       row?.staff_department_scope,

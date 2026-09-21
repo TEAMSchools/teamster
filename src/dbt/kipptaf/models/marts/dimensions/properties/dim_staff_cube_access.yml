@@ -220,13 +220,15 @@ models:
 
       - name: additional_location_grants
         data_type: |
-          ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL>>
+          ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL, includes_staff_data BOOL>>
         description: >-
           Individual-exception location grants for this person, one struct per
           live grant row (empty array when they have none) -- location_scope is
           network/region/school; region_key is populated only when
           location_scope = region; location_abbreviation only when
-          location_scope = school; includes_student_data is per-grant. Unioned
+          location_scope = school. includes_student_data and includes_staff_data
+          are per-grant and independent, mirroring the sheet's two axis columns,
+          so one grant can widen students without staff or the reverse. Unioned
           into the person's normal location remit by cube.js/access.js
-          (computeAllowedAbbreviations, called once per element), never
-          replacing student_location_scope/staff_location_scope.
+          (unionAdditionalGrants, once per axis), never replacing
+          student_location_scope/staff_location_scope.

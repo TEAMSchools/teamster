@@ -265,11 +265,37 @@ test("computeAllowedAbbreviations: empty/undefined universe returns []", () => {
 });
 
 test("unionAdditionalGrants: no grants returns the base list unchanged", () => {
-  assert.deepEqual(a.unionAdditionalGrants(["A"], [], LOCATION_UNIVERSE), [
+  assert.deepEqual(
+    a.unionAdditionalGrants(["A"], [], LOCATION_UNIVERSE, { axis: "staff" }),
+    ["A"],
+  );
+  assert.deepEqual(
+    a.unionAdditionalGrants(["A"], undefined, LOCATION_UNIVERSE, {
+      axis: "staff",
+    }),
+    ["A"],
+  );
+});
+
+test("unionAdditionalGrants: a missing or unrecognized axis unions nothing (fails closed)", () => {
+  const grants = [
+    {
+      location_scope: "network",
+      region_key: null,
+      location_abbreviation: null,
+      includes_student_data: true,
+      includes_staff_data: true,
+    },
+  ];
+  // No axis at all, and a typo'd axis, both return the base list untouched
+  // rather than widening the wrong axis.
+  assert.deepEqual(a.unionAdditionalGrants(["A"], grants, LOCATION_UNIVERSE), [
     "A",
   ]);
   assert.deepEqual(
-    a.unionAdditionalGrants(["A"], undefined, LOCATION_UNIVERSE),
+    a.unionAdditionalGrants(["A"], grants, LOCATION_UNIVERSE, {
+      axis: "students",
+    }),
     ["A"],
   );
 });
@@ -281,16 +307,24 @@ test("unionAdditionalGrants: a school grant adds exactly that one abbreviation, 
       region_key: null,
       location_abbreviation: "B",
       includes_student_data: false,
+      includes_staff_data: true,
     },
   ];
   assert.deepEqual(
-    a.unionAdditionalGrants(["A"], grants, LOCATION_UNIVERSE).sort(),
+    a
+      .unionAdditionalGrants(["A"], grants, LOCATION_UNIVERSE, {
+        axis: "staff",
+      })
+      .sort(),
     ["A", "B"],
   );
   // Granting a school already in the base list doesn't duplicate it.
-  assert.deepEqual(a.unionAdditionalGrants(["B"], grants, LOCATION_UNIVERSE), [
-    "B",
-  ]);
+  assert.deepEqual(
+    a.unionAdditionalGrants(["B"], grants, LOCATION_UNIVERSE, {
+      axis: "staff",
+    }),
+    ["B"],
+  );
 });
 
 test("unionAdditionalGrants: two school grants for the same person both union in (Example D)", () => {
@@ -300,24 +334,50 @@ test("unionAdditionalGrants: two school grants for the same person both union in
       region_key: null,
       location_abbreviation: "B",
       includes_student_data: true,
+      includes_staff_data: true,
     },
     {
       location_scope: "school",
       region_key: null,
       location_abbreviation: "C",
       includes_student_data: false,
+      includes_staff_data: true,
     },
   ];
   assert.deepEqual(
-    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE).sort(),
+    a
+      .unionAdditionalGrants([], grants, LOCATION_UNIVERSE, { axis: "staff" })
+      .sort(),
     ["B", "C"],
   );
-  // studentOnly filters to only the grant with includes_student_data = true.
+  // The student axis reads includes_student_data, so only the first grant.
   assert.deepEqual(
     a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
-      studentOnly: true,
+      axis: "student",
     }),
     ["B"],
+  );
+});
+
+test("unionAdditionalGrants: the two axes are independent — a student-only grant does not widen staff", () => {
+  const grants = [
+    {
+      location_scope: "school",
+      region_key: null,
+      location_abbreviation: "B",
+      includes_student_data: true,
+      includes_staff_data: false,
+    },
+  ];
+  assert.deepEqual(
+    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
+      axis: "student",
+    }),
+    ["B"],
+  );
+  assert.deepEqual(
+    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, { axis: "staff" }),
+    [],
   );
 });
 
@@ -332,9 +392,11 @@ test("unionAdditionalGrants: a network grant adds every abbreviation", () => {
             region_key: null,
             location_abbreviation: null,
             includes_student_data: true,
+            includes_staff_data: true,
           },
         ],
         LOCATION_UNIVERSE,
+        { axis: "staff" },
       )
       .sort(),
     ["A", "B", "C"],
@@ -352,9 +414,11 @@ test("unionAdditionalGrants: a region grant adds that region's abbreviations onl
             region_key: "R2",
             location_abbreviation: null,
             includes_student_data: false,
+            includes_staff_data: true,
           },
         ],
         LOCATION_UNIVERSE,
+        { axis: "staff" },
       )
       .sort(),
     ["C"],
@@ -656,11 +720,14 @@ test("contractor: one school grant with student data yields exactly that school 
       region_key: null,
       location_abbreviation: "B",
       includes_student_data: true,
+      includes_staff_data: true,
     },
   ];
-  const staff = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE);
+  const staff = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
+    axis: "staff",
+  });
   const student = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
-    studentOnly: true,
+    axis: "student",
   });
   assert.deepEqual(staff, ["B"]);
   assert.deepEqual(student, ["B"]);
@@ -681,17 +748,18 @@ test("contractor: a location grant WITHOUT student data grants no student access
       region_key: null,
       location_abbreviation: "B",
       includes_student_data: false,
+      includes_staff_data: true,
     },
   ];
   const student = a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
-    studentOnly: true,
+    axis: "student",
   });
   assert.deepEqual(student, []);
   // Empty student array → no `student` group → default-deny on every student
   // view, rather than an `equals []` filter Cube would hard-error on (#4269).
   const g = a.buildGroups(
     CONTRACTOR,
-    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE),
+    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, { axis: "staff" }),
     [],
     [],
     student,
