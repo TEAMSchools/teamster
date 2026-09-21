@@ -59,10 +59,12 @@ both sides are frozen archive tables. Nothing live participates.
 4. Add `academic_year` to `int_powerschool__gpa_term` and
    `int_powerschool__attendance_streak`.
 
-**Edit both staging variants.** `agg_credittype` goes in `staging/dlt/` **and**
-`staging/odbc/`. The archive bakes through the ODBC variant while the 3 NJ
-districts run on dlt, so a column added to dlt alone reaches NJ and silently
-misses Miami.
+**Edit all 3 staging variants.** `agg_credittype` goes in `staging/dlt/`,
+`staging/odbc/` and `staging/sftp/`. The archive bakes through the ODBC variant
+while the 3 NJ districts run on dlt, so a column added to dlt alone reaches NJ
+and silently misses Miami. `sftp/` is `+enabled: false` and no district uses it,
+but all 3 variants share one contract-enforced properties file, so a column
+declared there must be produced by every variant or that variant's build fails.
 
 **Do not widen `int_powerschool__gpa_term` instead of adding
 `int_powerschool__gpa`.** Widening is the smaller diff and it is wrong.
@@ -164,7 +166,7 @@ bakes and no safety.
   cross-project column-change procedure in `.claude/rules/dbt-models.md`, which
   ships district first and `kipptaf` second, or use the single-PR pattern it
   points at.
-- **The archive bakes through ODBC.** See both-variants above.
+- **The archive bakes through ODBC.** See all-3-variants above.
 - **A properties-yml-only change does not bump the dagster-dbt code version**,
   which is derived from the SQL checksum.
 
