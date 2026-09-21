@@ -1262,9 +1262,12 @@ four-district spine, and moves the Focus branch's floor from syear 2018 to the
 SIS cutover year 2026. The archive now supplies Miami's quarters for every year
 before the cutover, which is where the 492,482 null-term membership days were.
 
-The full join is gone rather than rewired: measured on prod it produced exactly
-its two inputs stacked (926 quarter rows and 1,925 raw rows, symmetric
-difference 0), and no consumer reads a merged row.
+The full join is gone rather than rewired. Measured on prod, the two shapes
+carry the same values -- 926 quarter rows and 1,925 raw rows on both, symmetric
+difference 0 -- but not the same rows: the join merged 840 matched pairs into
+single rows, and the union emits two rows each, so NJ output grows from 2,011 to
+2,851. No consumer reads a merged row's two halves together, and both uniqueness
+keys hold over the full branch sets.
 
 Refs #5397
 
