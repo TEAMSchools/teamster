@@ -1,39 +1,14 @@
 with
-    terms_ranked as (
-        select
-            dcid,
-            `name`,
-            firstday,
-            lastday,
-            abbreviation,
-            importmap,
-            terminfo_guid,
-            psguid,
-            ip_address,
-            whomodifiedtype,
-            transaction_date,
-            id,
-            noofdays,
-            yearlycredithrs,
-            termsinyear,
-            portion,
-            autobuildbin,
-            isyearrec,
-            periods_per_day,
-            days_per_cycle,
-            attendance_calculation_code,
-            sterms,
-            suppresspublicview,
-            whomodifiedid,
-            fiscal_year,
-            schoolid,
-            yearid,
-            academic_year,
-
-            row_number() over (
-                partition by schoolid, yearid, abbreviation order by id, dcid
-            ) as rn,
-        from {{ ref("stg_powerschool__terms") }}
+    -- Defensive only: keeps a duplicate raw record from doubling a school year's
+    -- raw rows. dcid is the staging primary key, so the pick is deterministic.
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("stg_powerschool__terms"),
+                partition_by="schoolid, yearid, abbreviation",
+                order_by="dcid desc",
+            )
+        }}
     )
 
 select
@@ -70,10 +45,7 @@ select
     schoolid,
     yearid,
     academic_year,
-from terms_ranked
--- Defensive only: the guard keeps a duplicate raw record from doubling a school
--- year's raw rows.
-where rn = 1
+from deduplicate
 
 union all
 
