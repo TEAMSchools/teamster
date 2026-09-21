@@ -21,13 +21,15 @@ carry calendar-week fields on `int_powerschool__ps_adaadm_daily_ctod` (#5193),
 and a fourth time to add `int_powerschool__section_teachers`, the
 section-teacher join, for #5260, and a fifth time to add `int_powerschool__gpa`
 and widen storedgrades, the two GPA models, attendance streak, and calendar day,
-for #5413. The recipe is the `dbt_project.yml` `powerschool:` block: re-include
-the package with the ODBC staging variant and 16 post-hooks — the 8400 Focus
-prefix on `student_number` (`stg_powerschool__students`), 14 staging models with
-`yearid` dropping rows past AY2025 (`yearid > 35`), and
-`stg_powerschool__calendar_day` deleting `date_value >= '2026-07-01'`. The
-package is re-included for each rebuild and removed after.
-`int_fldoe__all_assessments` resolves `student_number` from
+for #5413. The sixth rebuild, for #5397, was partial — a
+`--select int_powerschool__terms_spine` build, not the whole project — so every
+other model in the dataset still sits at its #5413 state. The recipe is the
+`dbt_project.yml` `powerschool:` block: re-include the package with the ODBC
+staging variant and 16 post-hooks — the 8400 Focus prefix on `student_number`
+(`stg_powerschool__students`), 14 staging models with `yearid` dropping rows
+past AY2025 (`yearid > 35`), and `stg_powerschool__calendar_day` deleting
+`date_value >= '2026-07-01'`. The package is re-included for each rebuild and
+removed after. `int_fldoe__all_assessments` resolves `student_number` from
 `int_focus__students`, not the archive. kipptaf reads the dataset as a BQ-native
 source. Do not drop the dataset or the GCS files.
 
