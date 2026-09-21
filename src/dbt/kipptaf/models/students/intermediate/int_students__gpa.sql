@@ -42,11 +42,6 @@ with
             st.student_number,
             loc.powerschool_school_id as schoolid,
 
-            -- Derived so the reporting-terms join in fct_grades_gpa keeps
-            -- working for both branches, even though no Focus row resolves a
-            -- term.
-            g.syear - 1990 as yearid,
-
             cast(null as int64) as studentid,
 
             -- Focus's student_gpa_calculated is course-history GPA only: every
@@ -78,6 +73,11 @@ with
             cast(null as float64) as cumulative_y1_gpa_projected,
             cast(null as float64) as potential_credits_cum,
 
+            -- Derived so the reporting-terms join in fct_grades_gpa keeps
+            -- working for both branches, even though no Focus row resolves a
+            -- term.
+            g.syear - 1990 as yearid,
+
         from {{ ref("stg_focus__student_gpa_calculated") }} as g
         inner join
             {{ ref("int_focus__students") }} as st on g.student_id = st.student_id
@@ -94,10 +94,58 @@ with
         where g.syear >= sc.focus_start_academic_year
     )
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    studentid,
+    schoolid,
+    yearid,
+    academic_year,
+    term_name,
+    semester,
+    gpa_term,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_semester,
+    n_failing_y1,
+    total_credit_hours_term,
+    total_credit_hours_y1,
+    grade_avg_term,
+    grade_avg_y1,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected,
+    earned_credits_cum,
+    potential_credits_cum,
+    student_number,
+    class_rank,
 from powerschool_conformed
 
-full union all corresponding
+union all
 
-select *,
+select
+    _dbt_source_relation,
+    _dbt_source_project,
+    studentid,
+    schoolid,
+    yearid,
+    academic_year,
+    term_name,
+    semester,
+    gpa_term,
+    gpa_y1,
+    gpa_y1_unweighted,
+    gpa_semester,
+    n_failing_y1,
+    total_credit_hours_term,
+    total_credit_hours_y1,
+    grade_avg_term,
+    grade_avg_y1,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected,
+    earned_credits_cum,
+    potential_credits_cum,
+    student_number,
+    class_rank,
 from focus_conformed
