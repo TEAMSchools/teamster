@@ -119,13 +119,22 @@ file makes it unreadable and unreliable. Restructure it into a routing
 `SKILL.md` plus `references/` and `playbooks/`, following
 `tableau-workbook-xml`, which routes in 263 lines to seven reference files.
 
-The skill then owns three responsibilities:
+The skill then owns four responsibilities:
 
 1. The dbt models and the Tableau dashboard, which it already covers.
 2. The PowerSchool plugin: how it is built, versioned, packaged, and deployed to
    each instance.
 3. Propagating a plugin change into the end-user skill, in plain language, and
    shipping it by whichever of the 2 distribution paths applies.
+4. The published Google Sheets the skill reads, which come in pairs: the
+   Connected Sheets extraction in IMPORTRANGE Sources and the friendly-named
+   copy in Reports. **A change to either has to be made in both.** Nothing in
+   the pipeline creates a tab or widens an `IMPORTRANGE` range — the Dagster
+   exposure asset is a marker that writes nothing. The column case fails
+   silently: the source refreshes correctly, the report keeps working, and the
+   user never sees the new column. The procedure and the per-change table live
+   in `docs/guides/google-sheets.md`; the skill points at it rather than
+   restating it.
 
 Responsibility 3 gets a named playbook, with the instruction to avoid technical
 detail written into the playbook itself. Otherwise plain language depends on
@@ -307,6 +316,12 @@ asserted:
 - The seeded end-user skill names the 2 Drive calls and says which one drops an
   empty `NOTE` column. Grep `references/sheets.md` for `get_file_metadata` to
   confirm the dropped section came back.
+- `references/sheets.md` names the Reports sheet
+  (`1Fx_tc1Bja2IWrIHyidTJrI4a0ZNcds07V29kjtkh3Go`) and does not mention
+  `1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0` anywhere. Grep for the source
+  id; a hit is a failure.
+- `references/sheets.md` documents the all-weeks tab and says what it is for:
+  telling a week with no expectations apart from a week that does not exist.
 - `gradebook-audit/SKILL.md` routes rather than holds content, and passes a cold
   read: an agent with no memory orients and acts from the entry file plus at
   most two more reads.
@@ -320,7 +335,30 @@ under `~/.claude/skills/synced/`. Its files sit at the **zip root**, not inside
 a `gradebook-expectations-upload/` folder; that is the layout that installs
 correctly today, so the build workflow must reproduce it exactly.
 
-Three known defects are in scope to record, and to fix where noted:
+Five known defects are in scope to record, and to fix where noted. Three of them
+land in the same file, `references/sheets.md`, so seeding that one file is where
+most of the care goes.
+
+**The skill points Teaching & Learning at the wrong sheet.**
+`references/sheets.md` sends them to
+`1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0`, which is
+`rpt_gsheets__gradebook_audit_template` in the **IMPORTRANGE Sources** folder —
+the Connected Sheets extraction where the refresh schedules are programmed. The
+data team's convention puts users on the Reports copy precisely so they cannot
+break that. The correct target already exists: `Gradebook Audit Template`,
+`1Fx_tc1Bja2IWrIHyidTJrI4a0ZNcds07V29kjtkh3Go`, in **Reports**. Repoint the
+skill when seeding. The convention is written up in
+`docs/guides/google-sheets.md`, "Publishing a warehouse view to a Google Sheet";
+it was undocumented until 2026-09-21, which is how the skill came to name the
+source sheet in the first place.
+
+**The skill cannot see the school calendar.** It reads only the rows already
+loaded into `U_EXPECTATIONS`, so it cannot tell a week that has no expectations
+from a week that does not exist. `rpt_gsheets__gradebook_audit_all_weeks` is the
+full-year grid that closes the gap — 202 rows, the same week grid without the
+expectations join, so it runs to the end of the year instead of stopping at the
+last completed week. It is on `main` and wired to the upload-template exposure.
+Add it to `references/sheets.md` as a fourth tab, on the Reports copy.
 
 **The Desktop restructure dropped a section, and seeding must restore it.** The
 stale flat copy in `ps-plugins` carries a section at `SKILL.md` lines 188 to

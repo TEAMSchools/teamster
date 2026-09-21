@@ -143,12 +143,34 @@ every other consumer.
 3. **The report sheet uses `IMPORTRANGE` only.** No formulas that reshape data,
    and no second data path — anything the user needs computed belongs in the dbt
    model.
-4. **A new tab has to be created by hand in both sheets.** Dagster's exposure
-   asset is a marker that writes nothing, so adding a model to an exposure does
-   not create its tab.
+4. **Every change is made in both sheets.** See below — this is the step people
+   miss.
 5. **The exposure `url` points at the source sheet**, not the report. The
    exposure tracks the sheet dbt actually feeds. Do not "correct" it to the
    report link.
+
+### Changing a published view
+
+**Both sheets need the change. Doing only one is the common failure.**
+
+Dagster's exposure asset is a marker that writes nothing, so nothing in the
+pipeline creates a tab, widens a range, or renames anything in either sheet. The
+dbt model landing in BigQuery is the start of the job, not the end of it.
+
+| What changed in the model   | Source sheet                      | Report sheet                                                                              |
+| --------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------- |
+| A new model on the exposure | Add a Connected Sheets tab for it | Add a tab with an `IMPORTRANGE` to the new source tab                                     |
+| A column added or removed   | Refresh picks it up               | **Widen or narrow the `IMPORTRANGE` range** — a fixed range silently drops the new column |
+| A tab renamed               | Rename it                         | Update every `IMPORTRANGE` naming that tab, or it returns `#REF!`                         |
+| A model retired             | Remove the tab                    | Remove the tab                                                                            |
+
+The column case is the dangerous one. The source sheet refreshes and looks
+correct, the report sheet keeps working, and the user simply never sees the new
+column. Nothing errors.
+
+After any change, open the report sheet and confirm it shows what you expect.
+That check takes seconds and is the only thing standing between a silent
+mismatch and a user acting on stale columns.
 
 ## Adding a Google Form source
 
