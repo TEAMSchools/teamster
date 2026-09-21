@@ -53,8 +53,7 @@ select
     streak_length_membership,
     streak_length_calendar,
     _dbt_source_project,
-
-    yearid + 1990 as academic_year,
+    academic_year,
 from {{ ref("int_powerschool__attendance_streak") }}
 
 union all
