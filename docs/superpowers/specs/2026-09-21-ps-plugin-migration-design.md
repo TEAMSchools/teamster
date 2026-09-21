@@ -30,6 +30,14 @@ The migration is a relocation, not a rewrite. Plugin behavior, the deployed v2.5
 package, and the dbt models do not change. What changes is where the files live
 and what CI asserts about them.
 
+The relocation starts from a verified base. On 2026-09-21 the zip held in Google
+Drive was compared against a package built from the repo by
+`scripts/build_plugin.py`. All 8 payload files matched on size and CRC32; the
+only difference was 5 empty directory entries that the build script does not
+emit, which PowerSchool ignores. The repo has therefore not drifted from what is
+deployed, so `teamster` inherits a correct source of truth rather than an
+assumed one.
+
 ## What moves
 
 | Source path (`ps-plugins`)            | Destination (`teamster`)                  |
@@ -68,15 +76,32 @@ not move with the tree.
 
 They were committed to `ps-plugins` because nothing in that repo could reach
 Google Drive. `teamster` does not have that limitation: it authenticates to
-Drive through `src/teamster/libraries/google/drive/resources.py`. Move the five
-files to the shared Drive folder and record each Drive file ID in the committed
-index, which is the pattern the index already uses for the PowerSchool Data
-Dictionary.
+Drive through `src/teamster/libraries/google/drive/resources.py`.
+
+**No upload is needed.** All 5 PDFs already sit in the shared Drive folder
+`1qjtKWlEE2XrfUXBh4QAodEX2g6c8do4T`, and each matches its repo copy byte for
+byte. The migration only records the file IDs in the committed index, which is
+the pattern the index already uses for the PowerSchool Data Dictionary.
+
+| Drive file ID                       | Document                           | Repo file                                        |
+| ----------------------------------- | ---------------------------------- | ------------------------------------------------ |
+| `1LH0b5PSX_49PKnPOz3I2W_kD2QDI50Gd` | 2 - PS Plugins Intro               | `02_plugins_intro.pdf`                           |
+| `1jRvB4-Cc9N8kQ1zDOGb_bDNtOtDwrRl1` | 3 - PS Plugins XML                 | `03_plugin_xml_reference.pdf`                    |
+| `1N8uHTD9oJhZpQAEa0UsYR2oy1yF6qC5r` | 4 - Database Extensions            | `04_database_extensions_admin.pdf`               |
+| `18P1l28IanSON-lPuMCwR560HWKzxQujE` | 5 - Advanced User Guide            | `05_database_extensions_advanced_guide_2015.pdf` |
+| `1ZxRjgezkF1Mi2ZTAyE6Q0WCwamq69mq5` | 6 - PowerTeacher Pro Customization | `06_powerteacher_pro_customization.pdf`          |
+| `1wtd7lmAB9LEI0yPtIQ6tTEdDjTJlt7TY` | 1 - PS Data Dictionary             | not in the repo                                  |
 
 Record in the index how a reader fetches a PDF, so a successor does not have to
-work it out: either through the Google Drive connector, or through a throwaway
-script run under pytest, which is how `tests/CLAUDE.md` says to run credentialed
-one-offs.
+work it out. The folder is shared with both the user and the Codespaces service
+account, and the two paths behave differently:
+
+- **A script under `uv run`** downloads the bytes to disk using Application
+  Default Credentials. This is the working path, verified on 2026-09-21.
+- **The Google Drive connector** returns file content as base64, which
+  `check-output.sh` redacts as a high-entropy string. Binary files therefore
+  cannot be read through the connector. Use it for metadata and for text
+  documents only.
 
 ## Skills
 
@@ -236,7 +261,10 @@ asserted:
 - Each contract check fails when one side is changed alone. Demonstrate the
   failure for both checks before claiming either works.
 - The end-user skill zip builds, attaches to a release, and carries a version
-  stamp.
+  stamp. Its files sit at the zip root, matching the layout that installs today.
+- The seeded end-user skill names the 2 Drive calls and says which one drops an
+  empty `NOTE` column. Grep `references/sheets.md` for `get_file_metadata` to
+  confirm the dropped section came back.
 - `gradebook-audit/SKILL.md` routes rather than holds content, and passes a cold
   read: an agent with no memory orients and acts from the entry file plus at
   most two more reads.
@@ -244,19 +272,43 @@ asserted:
 
 ## Open items
 
-The Claude Desktop zip of the end-user skill is a required input and is not yet
-in hand. The implementation plan can be written without it, but the skill cannot
-be seeded until it arrives.
+The Claude Desktop zip of the end-user skill is in hand as of 2026-09-21. It
+holds 9 files totalling 46,028 bytes and is byte-identical to the copy synced
+under `~/.claude/skills/synced/`. Its files sit at the **zip root**, not inside
+a `gradebook-expectations-upload/` folder; that is the layout that installs
+correctly today, so the build workflow must reproduce it exactly.
 
-Two known defects are in scope to record, and optionally to fix:
+Three known defects are in scope to record, and to fix where noted:
 
-The Desktop skill's `playbooks/rollover.md` carries an unresolved gap. Its
-date-to-week-number method needs at least one existing row in `ps_plugin_data`
-to anchor against, and a genuine rollover run before the school year starts has
-none. Nobody has confirmed how PowerSchool assigns week numbers in that case.
-The gap was found in dry-run testing and has never been exercised against a real
-start-of-year load.
+**The Desktop restructure dropped a section, and seeding must restore it.** The
+stale flat copy in `ps-plugins` carries a section at `SKILL.md` lines 188 to
+224, "How to read these sheets — two calls per sheet, on purpose". None of the 9
+Desktop files mention `read_file_content`, `get_file_metadata`,
+`snippetVerbosity`, the ten-tab structure, or addressing the sheets by file ID.
 
-The plugin's generated template and its `validSL` check accept `ES` as a school
-level, but the end-user skill only ever produces `MS` and `HS` rows. Either
-record why `ES` is accepted or remove it.
+What the section held, and what a seeded skill loses without it: which 2 Drive
+calls to make and what each one is good for; that the metadata read at
+`MAX_ALLOWED` silently drops an empty `NOTE` column while the content read keeps
+the columns aligned; the rule never to identify a tab by its values, because
+several tabs open with near-identical counts and a draft can pass for another
+region; and the rule to stop when a read returns anything less than every tab's
+rows and every tab's name. `references/sheets.md` warns about the misaligned-row
+symptom but names neither the cause nor the avoidance. Restore the section into
+`references/sheets.md` when seeding, rather than copying the Desktop zip in
+unchanged.
+
+Everything else probed carried over: the emergency fallback, the single-row fix,
+the carry-forward rules, partial-quarter handling, next-day verification, and
+the `Delete Selected` behavior.
+
+**Rollover week numbering is unsolved before a school year starts.** The Desktop
+skill's `playbooks/rollover.md` derives week numbers by a method that needs at
+least one existing row in `ps_plugin_data` to anchor against, and a genuine
+rollover run before the year starts has none. Nobody has confirmed how
+PowerSchool assigns week numbers in that case. The gap was found in dry-run
+testing and has never been exercised against a real start-of-year load. Answer
+it before the skill is trusted with a real load.
+
+**`ES` is accepted but never produced.** The plugin's generated template and its
+`validSL` check accept `ES` as a school level, but the end-user skill only ever
+produces `MS` and `HS` rows. Either record why `ES` is accepted or remove it.
