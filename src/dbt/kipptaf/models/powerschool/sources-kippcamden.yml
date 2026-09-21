@@ -1067,3 +1067,12 @@ sources:
                 - kippcamden
                 - powerschool
                 - int_powerschool__terms
+      - name: int_powerschool__terms_spine
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippcamden
+                - powerschool
+                - int_powerschool__terms_spine

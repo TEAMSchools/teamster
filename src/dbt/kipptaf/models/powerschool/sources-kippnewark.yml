@@ -1067,3 +1067,12 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__terms
+      - name: int_powerschool__terms_spine
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__terms_spine

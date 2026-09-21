@@ -1,0 +1,4 @@
+models:
+  - name: int_powerschool__terms_spine
+    config:
+      materialized: table
