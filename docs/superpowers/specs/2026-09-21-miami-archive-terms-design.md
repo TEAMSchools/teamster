@@ -230,9 +230,17 @@ Both lose their only consumer.
   sources with no remaining `ref()`. The #5162 exception in
   `.claude/rules/dbt-models.md` applies: delete outright, source entries
   included.
-- `stg_powerschool__terms` — carries the `rn` window, so it is not a bare
-  passthrough. Disable it with `config: enabled: false` in its properties yml,
-  and disable its tests alongside.
+- `stg_powerschool__terms` — the `rn` window goes too, at cbini's direction, so
+  this is a bare passthrough as well and gets the same delete. The window's
+  stated purpose is to keep a duplicate raw record from fanning out across the
+  quarter-grain full join, and change 4 removes that join. The signal moves
+  upstream instead: the `powerschool` package's `stg_powerschool__terms` carries
+  a warn-severity `dbt_utils.unique_combination_of_columns` on
+  `(schoolid, yearid, abbreviation)`, so a duplicate surfaces to ops rather than
+  being absorbed silently. `severity: warn` departs from the staging-severity
+  rule in `.claude/rules/dbt-yaml.md`, also at cbini's direction: PowerSchool
+  does not enforce the key, no district violates it today, and
+  `int_powerschool__terms_spine` still reduces to one row per key.
 
 Both also carry the false Miami header comment, which goes with them.
 
@@ -312,9 +320,11 @@ rebuild will not see the new relation.
 
 ## Risks
 
-- **Change 5's delete-versus-disable split** follows the letter of
-  `.claude/rules/dbt-models.md` but is a judgment call. Disabling both is the
-  conservative alternative.
+- **Change 5 deletes both wrappers**, which the #5162 exception in
+  `.claude/rules/dbt-models.md` permits but does not compel. Disabling both is
+  the conservative alternative. The cost of being wrong is bounded: nothing in
+  kipptaf reads either wrapper after change 4, and the district relations they
+  read stay in place, so a forgotten consumer loses a view that held no logic.
 - **The Focus floor move to 2026** is safe only because schoolids 30200805,
   30200806 and 30200807 carry zero pre-AY2026 attendance and enrollment days.
   Verified on prod; re-verify if the cutover value changes.

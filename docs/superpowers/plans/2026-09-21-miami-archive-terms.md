@@ -107,7 +107,7 @@ That is the whole reason this is a new model rather than a widening.
 | --------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
 | `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__terms_spine.sql`            | Create | Four-district `union_relations` passthrough over the package spine.     |
 | `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__terms_spine.yml` | Create | `materialized: table`, matching its retiring sibling.                   |
-| `src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml`                                   | Modify | Add the spine table entry; remove the `int_powerschool__terms` entry.   |
+| `src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml`                                   | Modify | Add the spine entry; remove both retiring wrappers' entries.            |
 | `src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml`                                   | Modify | Same.                                                                   |
 | `src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml`                                 | Modify | Same.                                                                   |
 | `src/dbt/kipptaf/models/powerschool/sources-kippmiami.yml`                                    | Modify | Add the spine table entry; rewrite the false source description.        |
@@ -115,7 +115,8 @@ That is the whole reason this is a new model rather than a widening.
 | `src/dbt/kipptaf/models/students/intermediate/properties/int_students__terms.yml`             | Modify | Rewrite the description and the ten "For Miami" column docs.            |
 | `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__terms.sql`                  | Delete | Bare `select *` passthrough, zero remaining `ref()`s (#5162 exception). |
 | `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__terms.yml`       | Delete | Goes with its model.                                                    |
-| `src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__terms.yml`            | Modify | Add `enabled: false`. Carries the `rn` window, so disable, not delete.  |
+| `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__terms.sql`                       | Delete | Bare passthrough once its `rn` window goes (#5162 exception).           |
+| `src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__terms.yml`            | Delete | Goes with its model.                                                    |
 
 ### Facts verified while writing this plan
 
@@ -148,6 +149,19 @@ Do not re-derive these.
 ---
 
 ## Task 1: Package spine model (PR A)
+
+> **Shipped differently from the code blocks below, on review.** The row pick is
+> a
+> `dbt_utils.deduplicate(relation=ref("stg_powerschool__terms"), partition_by="schoolid, yearid, abbreviation", order_by="dcid desc")`
+> CTE, not the hand-written `row_number() ... as rn` window with a 28-column
+> passthrough CTE and a `where rn = 1` filter. `dcid` alone is a total order —
+> it carries a `unique` test at error severity and a `primary_key` constraint in
+> `stg_powerschool__terms` — and `.claude/rules/dbt-sql.md` keeps
+> `dbt_utils.deduplicate()` as the default at this row count. Verified
+> output-neutral: 1,759 rows in kippnewark, 1,166 raw plus 593 quarter, matching
+> the prod census. The 33-column union order, the two composite tests, and the
+> unit test's four cases are as written below; read `rn` in the text below as
+> "the dedup guard". Shipped in `e95eac3973`.
 
 **Files:**
 
@@ -1421,11 +1435,13 @@ EOF
   `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__terms.sql`
 - Delete:
   `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__terms.yml`
-- Modify:
+- Delete:
+  `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__terms.sql`
+- Delete:
   `src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__terms.yml`
 - Modify: `src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml`,
   `sources-kippcamden.yml`, `sources-kipppaterson.yml` — remove the
-  `int_powerschool__terms` table entries
+  `int_powerschool__terms` AND `stg_powerschool__terms` table entries
 
 **Interfaces:**
 
@@ -1433,8 +1449,17 @@ EOF
 - Produces: nothing. This is the cleanup half of the change and is deliberately
   its own task: a reviewer can ship Tasks 3 through 5 and defer this.
 
-The two models get different treatment, and the difference is the rule, not a
-preference.
+Both models get the same treatment, and it is the rule, not a preference.
+`int_powerschool__terms` is a
+`select ur.*, extract_source_project("ur") as _dbt_source_project` union
+passthrough. `stg_powerschool__terms` is the same shape plus one `row_number()`
+window, and cbini directed that the window go: the guard's stated purpose is to
+protect the quarter-grain FULL JOIN that Task 4 replaces with a `union all`, so
+its reason for existing does not survive the refactor, and the package staging
+model now carries a warn-severity composite test on the same key (shipped in PR
+A) so a duplicate raw record surfaces to ops instead of being absorbed. With the
+window gone the two wrappers are structurally identical, so the same #5162
+exception reaches both.
 
 - [ ] **Step 1: Confirm both have zero remaining references**
 
@@ -1447,51 +1472,45 @@ task cannot proceed. Note that `int_powerschool__terms` also exists in the
 `powerschool` package — the package model stays, and this grep is scoped to
 `src/dbt/kipptaf/models/` so it does not see it.
 
-- [ ] **Step 2: Delete the `int_powerschool__terms` wrapper**
+- [ ] **Step 2: Delete both wrappers**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && git rm src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__terms.sql src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__terms.yml
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && git rm src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__terms.sql src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__terms.yml src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__terms.sql src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__terms.yml
 ```
 
 Deleted, not disabled. This is the #5162 exception in
 `.claude/rules/dbt-models.md`: a kipptaf `select *` union passthrough over
 district sources with no remaining `ref()` is deleted outright, source entries
-included. It holds no logic, and the district relations it read stay in place.
+included. Neither holds logic once the `rn` window is gone, and the district
+relations both read stay in place.
 
-- [ ] **Step 3: Remove its three source entries**
+Nothing else reads either wrapper's `rn`. Verified:
+`int_students__terms.sql:111` was the only `ref("stg_powerschool__terms")` in
+kipptaf and the only reader of `rn`, and Task 4 replaced it. That is also why
+dropping the window cannot land on PR A — PR A is package-only, and kipptaf CI
+would fail deterministically on `Name rn not found`.
 
-Delete the `int_powerschool__terms` table entry from `sources-kippnewark.yml`
-(currently lines 1061-1069), `sources-kippcamden.yml`, and
-`sources-kipppaterson.yml`. Leave every other entry alone, and do not touch
-`sources-kippmiami.yml` — it never had one.
+- [ ] **Step 3: Remove their six source entries**
 
-- [ ] **Step 4: Disable `stg_powerschool__terms`, do not delete it**
+Delete BOTH the `int_powerschool__terms` table entry (in
+`sources-kippnewark.yml`, currently lines 1061-1069) and the
+`stg_powerschool__terms` entry (currently lines 476-484 — a 9-line block with a
+`meta.dagster.asset_key`, same shape) from `sources-kippnewark.yml`,
+`sources-kippcamden.yml`, and `sources-kipppaterson.yml`. Six entries, three
+files. Leave every other entry alone, and do not touch `sources-kippmiami.yml` —
+it never had either one.
 
-Replace the contents of
-`src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__terms.yml`
-with:
+- [ ] **Step 4: Confirm there were no tests to carry over**
 
-```yaml
-models:
-  - name: stg_powerschool__terms
-    config:
-      enabled: false
-      materialized: table
-```
+There are none. Both retiring wrappers' properties files are four lines of
+`config` only, so the delete takes nothing with it. Do not go looking for tests
+here, and do not try to disable a `data_tests` block that does not exist.
 
-It is disabled rather than deleted because it is not a bare passthrough — it
-carries the `row_number()` dedup window that moved to the package spine, so the
-#5162 exception does not reach it and the default rule applies: retiring a model
-is a disable, and the prod relation stays in place.
-
-There are no tests to disable alongside it. Both retiring wrappers' properties
-files are four lines of `config` only. Do not go looking for tests here, and do
-not add `enabled: false` to a `data_tests` block that does not exist.
-
-Also delete the stale header comment from
-`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__terms.sql`, which
-claims Miami is absent from the union because Focus covers the whole PowerSchool
-archive range. The SQL itself stays, since a disabled model keeps its file.
+The uniqueness coverage the `stg_powerschool__terms` wrapper never had now lives
+in two places: the package staging model's warn-severity
+`dbt_utils.unique_combination_of_columns` on `(schoolid, yearid, abbreviation)`,
+shipped in PR A, and `int_powerschool__terms_spine`'s two error-severity
+composite tests on the same key. Nothing is lost by deleting the wrapper's yml.
 
 - [ ] **Step 5: Verify what actually disappeared from the graph**
 
@@ -1503,31 +1522,35 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && uv ru
 
 Expected: parses clean with no
 `Model depends on a source named ... which was not found` error. Then confirm
-the disable landed:
+both models left the graph entirely:
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && uv run --with dbt-common python -c "import json; m=json.load(open('src/dbt/kipptaf/target/manifest.json')); print('disabled:', [k for k in m['disabled'] if 'stg_powerschool__terms' in k]); print('in nodes:', [k for k in m['nodes'] if k.endswith('stg_powerschool__terms') or k.endswith('int_powerschool__terms')])"
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && uv run --with dbt-common python -c "import json; m=json.load(open('src/dbt/kipptaf/target/manifest.json')); print('in nodes:', [k for k in m['nodes'] if k.endswith('stg_powerschool__terms') or k.endswith('int_powerschool__terms')]); print('disabled:', [k for k in m['disabled'] if 'powerschool__terms' in k]); print('sources:', [k for k in m['sources'] if k.endswith('powerschool__terms')])"
 ```
 
-Expected: `stg_powerschool__terms` appears under `disabled`, and neither model
-name appears in `nodes`.
+Expected: all three lists empty. A leftover `sources:` hit means a source entry
+survived Step 3; the kipptaf spine wrapper's own source entries end in
+`int_powerschool__terms_spine`, so they do not match this filter.
 
 - [ ] **Step 6: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__terms.yml src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__terms.sql src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml </dev/null 2>&1 | tail -n 20
+cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml </dev/null 2>&1 | tail -n 20
 ```
 
-Expected: `✔ No issues`. Then:
+Only the three source files are linted — the other four paths are deletions, so
+naming them makes `trunk check` fail on a missing file. Expected: `✔ No issues`.
+Then:
 
 ```bash
 cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && git add -u && git commit -F - <<'EOF'
 refactor(dbt): retire the superseded kipptaf terms wrappers
 
-int_powerschool__terms is deleted -- a select * union passthrough with no
-remaining ref, per the #5162 exception. stg_powerschool__terms is disabled
-instead, because it carries the row_number dedup window that moved into the
-package spine, so the default retire-is-a-disable rule applies.
+Both are select * union passthroughs over district sources with no remaining
+ref, so both are deleted outright per the #5162 exception, source entries
+included. stg_powerschool__terms also drops its row_number dedup window: the
+window guarded the quarter-grain full join that int_students__terms no longer
+has, and the package staging model now warns on a duplicate raw record.
 
 Refs #5397
 
@@ -1754,12 +1777,15 @@ change 8 to Phase C. The spec's Sequencing maps to Tasks 1, 2, and 7; its
 Testing to Tasks 1, 4, and 8; its Risks to the model-description rewrite in Task
 5 Step 1.
 
-**Two spec corrections this plan makes, deliberately.** Change 3 named only
+**Three spec corrections this plan makes, deliberately.** Change 3 named only
 `sources-kippmiami.yml`, but a four-district `union_relations` needs the spine
 declared in all four source files or dbt fails at parse — Task 3 Step 1 adds all
 four. Change 5 said to "disable its tests alongside", and neither retiring
 wrapper has any tests — Task 6 Step 4 says so explicitly so nobody hunts for
-them.
+them. Change 5 also originally disabled `stg_powerschool__terms` rather than
+deleting it, on the grounds that its `rn` window made it more than a
+passthrough; cbini directed that the window go, so the spec and Task 6 now
+delete both wrappers. The spec carries the same correction.
 
 **Type consistency.** The 33-column spine contract is fixed once, in Global
 Constraints, and Tasks 1, 3, and 4 all reference that one list. Types come from
