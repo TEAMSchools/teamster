@@ -52,7 +52,9 @@ with
             end as is_cohort_grad_year,
 
             case
-                when co.academic_year + 1 = co.cohort and co.exitcode = 'G1'
+                -- <=, not =. A student who graduates early counts in the
+                -- cohort they entered with; one who graduates late does not.
+                when co.academic_year + 1 <= co.cohort and co.exitcode = 'G1'
                 then 1
                 else 0
             end as is_4yr_grad,
