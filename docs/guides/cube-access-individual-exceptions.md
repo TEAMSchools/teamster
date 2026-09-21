@@ -56,16 +56,26 @@ use two rows.
 `staff_department_scope`, which is a different question (which departments, not
 which locations).
 
-## `additional_location_name`: a real name, or `n/a`
+## `additional_location_name`: a real name, or `all`, or `none`
 
-For `region` or `school`, write the exact region or school name. For `network`,
-write **`n/a`** — `network` already means every location, so there is nothing
-left to name. Same for a row that only changes a visibility setting and grants
-no location.
+Three cases, and the word always matches how much the row actually grants:
 
-Validation checks this both ways. A real name on a `network` row fails, because
-it reads as granting that one school while actually granting everything. An
-`n/a` on a `region` or `school` row fails too.
+| this row's scope     | write                           |
+| -------------------- | ------------------------------- |
+| `region` or `school` | the exact region or school name |
+| `network`            | `all`                           |
+| `none` on both axes  | `none`                          |
+
+`all` and `none` look like they ought to be one shared "not applicable" value,
+and they are not — they are opposites. A `network` row reaches **every**
+location, so `all` is literally true. A row that only changes a visibility
+setting reaches **no** location, so `none` is literally true. A single
+placeholder would be wrong on whichever of the two it didn't describe.
+
+Validation checks all three. A real school name on a `network` row fails — it
+reads as granting that one school while actually granting everything. An `all`
+left behind on a row that names a real school fails. So does a visibility-only
+row still claiming a location.
 
 ## One row per additional location
 
@@ -104,7 +114,7 @@ regions"):
 
 | google_email                         | additional_student_location_scope | additional_staff_location_scope | additional_location_name |
 | ------------------------------------ | --------------------------------- | ------------------------------- | ------------------------ |
-| `example.three@apps.teamschools.org` | network                           | network                         | n/a                      |
+| `example.three@apps.teamschools.org` | network                           | network                         | all                      |
 
 ## The two things a row can do
 

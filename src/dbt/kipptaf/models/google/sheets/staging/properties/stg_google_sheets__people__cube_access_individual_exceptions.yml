@@ -30,16 +30,26 @@ models:
               status = 'active' and (expiry_date is null or expiry_date >=
               current_date('{{ var("local_timezone") }}')) and (grant_date is
               null or grant_date <= current_date('{{ var("local_timezone") }}'))
-      # The name and the row's tier must agree in BOTH directions: a named
-      # region or school means the tier is region or school, and n/a means it is
-      # not. Catches a school name typed onto a network row -- which reads as
-      # granting that one school while actually granting every location -- and
-      # an n/a left behind on a row that does name a tier.
+      # additional_location_name has to say the same thing as the row's tier,
+      # in all three cases. A real name means the tier is region or school; the
+      # word all means it is network; the word none means the row grants no
+      # location at all. Catches a school name typed onto a network row (which
+      # reads as granting that one school while actually granting every
+      # location), an all left behind on a row that names a real school, and a
+      # remit-only row still claiming a location. The two not-applicable cases
+      # are opposites -- network reaches everything, a remit-only row reaches
+      # nothing -- so one shared sentinel would be wrong on whichever it did not
+      # describe.
       - dbt_utils.expression_is_true:
           arguments:
-            expression: >-
-              (coalesce(additional_location_scope, 'none') in ('region',
-              'school')) = (additional_location_name != 'n/a')
+            expression: |
+              case
+                  when additional_location_scope is null
+                      then additional_location_name = 'none'
+                  when additional_location_scope = 'network'
+                      then additional_location_name = 'all'
+                  else additional_location_name not in ('all', 'none')
+              end
           config:
             severity: error
       # A row grants one location, so when a row reaches both axes they must
@@ -164,10 +174,13 @@ models:
           The specific region or school this row grants, matched against
           dim_regions.legal_entity (when additional_location_scope = region) or
           dim_locations.name (when additional_location_scope = school). Required
-          whenever additional_location_scope is region or school. Write n/a when
-          the scope is network, since network already means every location and
-          there is nothing left to name, and on a remit-override-only row. Never
-          blank, so a Google Form can require it.
+          whenever additional_location_scope is region or school. Otherwise it
+          carries the word matching the row's breadth: all when the scope is
+          network, since that grant does reach every location, and none on a
+          remit-override-only row, which reaches no location at all. Those two
+          cases are opposites, so one shared not-applicable value would be wrong
+          on whichever of them it did not describe. Never blank, so a Google
+          Form can require it.
         data_tests:
           - not_null:
               config:
