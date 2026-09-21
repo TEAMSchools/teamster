@@ -221,8 +221,7 @@
     "dbt@dbt-agent-marketplace": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "superpowers@superpowers-dev": true,
-    "claude-md-management@claude-plugins-official": false
+    "superpowers@superpowers-dev": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
