@@ -26,3 +26,5 @@ select distinct
     null as `24 Tech Prep`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("stg_powerschool__courses") }}
+-- Miami left Illuminate ahead of AY2026-27
+where _dbt_source_project != 'kippmiami'

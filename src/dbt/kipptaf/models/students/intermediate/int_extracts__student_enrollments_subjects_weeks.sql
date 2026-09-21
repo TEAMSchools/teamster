@@ -316,6 +316,9 @@ select
     ) as is_enrolled_week_end,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 inner join
-    {{ ref("int_powerschool__calendar_week") }} as cw
+    {{ ref("int_students__calendar_week") }} as cw
     on co.academic_year = cw.academic_year
     and co.schoolid = cw.schoolid
+    and co._dbt_source_project = cw._dbt_source_project
+    and co.entrydate <= cw.school_week_end_date
+    and co.exitdate >= cw.school_week_start_date

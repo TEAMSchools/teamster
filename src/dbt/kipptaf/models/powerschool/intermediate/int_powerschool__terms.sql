@@ -1,3 +1,6 @@
+-- Miami is absent from this list on purpose: the Focus branch of
+-- int_students__terms floors at syear 2018, so Focus already supplies Miami
+-- terms across the whole PowerSchool archive range (#4750).
 with
     union_relations as (
         {{
@@ -5,7 +8,6 @@ with
                 relations=[
                     source("kippnewark_powerschool", "int_powerschool__terms"),
                     source("kippcamden_powerschool", "int_powerschool__terms"),
-                    source("kippmiami_powerschool", "int_powerschool__terms"),
                     source("kipppaterson_powerschool", "int_powerschool__terms"),
                 ]
             )

@@ -146,7 +146,7 @@ views:
           - region_name
           - state
 
-      - join_path: student_assessment_scores.student_section_enrollments.terms
+      - join_path: student_assessment_scores.terms
         includes:
           - semester
           - term_name

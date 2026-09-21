@@ -1,0 +1,73 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_branchingminds__school_year
+          schema: kipptaf_extracts
+    file_config:
+      stem: school_year
+      suffix: csv
+    destination_config:
+      name: branchingminds
+      path: /incoming_files/brm/school_year
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_branchingminds__daily_attendance
+          schema: kipptaf_extracts
+    file_config:
+      stem: daily_attendance
+      suffix: csv
+    destination_config:
+      name: branchingminds
+      path: /incoming_files/brm/daily_attendance
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_branchingminds__behavior_incident
+          schema: kipptaf_extracts
+    file_config:
+      stem: behavior_incident
+      suffix: csv
+    destination_config:
+      name: branchingminds
+      path: /incoming_files/brm/behavior_incident
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_branchingminds__behavior_incident_detail
+          schema: kipptaf_extracts
+    file_config:
+      stem: behavior_incident_detail
+      suffix: csv
+    destination_config:
+      name: branchingminds
+      path: /incoming_files/brm/behavior_incident_detail
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_branchingminds__course_info
+          schema: kipptaf_extracts
+    file_config:
+      stem: course_info
+      suffix: csv
+    destination_config:
+      name: branchingminds
+      path: /incoming_files/brm/course_info
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_branchingminds__course_performance
+          schema: kipptaf_extracts
+    file_config:
+      stem: course_performance
+      suffix: csv
+    destination_config:
+      name: branchingminds
+      path: /incoming_files/brm/course_performance

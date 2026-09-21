@@ -40,7 +40,8 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as commlog_reason
-        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
+        cross join
+            unnest(['kippnewark', 'kippcamden', 'kipppaterson']) as _dbt_source_project
     ),
 
     comm_log as (
@@ -92,7 +93,7 @@ select
         true,
         false
     ) as is_ca_exception,
-from {{ ref("int_powerschool__ada") }} as ada
+from {{ ref("int_students__ada") }} as ada
 inner join
     intervention_scaffold as sc
     on ada._dbt_source_project = sc._dbt_source_project

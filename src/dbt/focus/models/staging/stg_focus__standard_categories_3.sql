@@ -6,11 +6,12 @@ select
     district_id,
     title,
     short_name,
-    sort_order,
     rollover_id,
     cte_import,
     cpalms,
     guid,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "standard_categories_3") }}

@@ -8,8 +8,6 @@ select
     type,
     state_code,
     default_code,
-    table_name,
-    sort_order,
     is_daily_code,
     excused,
     tardy,
@@ -25,4 +23,7 @@ select
     uuid,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
+    cast(table_name as numeric) as table_name,
 from {{ source("focus", "attendance_codes") }}

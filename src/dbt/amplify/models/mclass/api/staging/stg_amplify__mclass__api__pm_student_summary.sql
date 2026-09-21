@@ -53,12 +53,6 @@ with
                 else substr(measure, strpos(measure, '(') + 1, 3)
             end as measure_name_code,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    ["student_primary_id", "school_year", "pm_period", "measure"]
-                )
-            }} as surrogate_key,
-
         from {{ source("amplify_mclass_api", "pm_student_summary") }}
     )
 

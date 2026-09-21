@@ -2,6 +2,7 @@ from dagster import define_asset_job
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.extracts.assets import (
+    branchingminds_extract_assets,
     clever_extract_assets,
     coupa_extract,
     deanslist_annual_extract_assets,
@@ -11,7 +12,6 @@ from teamster.code_locations.kipptaf.extracts.assets import (
     illuminate_extract_assets,
     lattice_extract,
     littlesis_extract,
-    parentsquare_extract_assets,
 )
 
 coupa_extract_asset_job = define_asset_job(
@@ -44,6 +44,11 @@ littlesis_extract_asset_job = define_asset_job(
     selection=[littlesis_extract],
 )
 
+branchingminds_extract_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}__extracts__branchingminds__asset_job",
+    selection=branchingminds_extract_assets,
+)
+
 clever_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__extracts__clever__asset_job",
     selection=clever_extract_assets,
@@ -57,9 +62,4 @@ deanslist_annual_extract_asset_job = define_asset_job(
 illuminate_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__extracts__illuminate__asset_job",
     selection=illuminate_extract_assets,
-)
-
-parentsquare_extract_asset_job = define_asset_job(
-    name=f"{CODE_LOCATION}__extracts__parentsquare__asset_job",
-    selection=parentsquare_extract_assets,
 )

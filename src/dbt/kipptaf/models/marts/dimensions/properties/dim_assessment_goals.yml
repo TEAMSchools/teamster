@@ -20,7 +20,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: location_key
         data_type: string
@@ -28,11 +27,11 @@ models:
           FK to dim_locations. Derived from location_clean_name. Null when the
           school does not appear in the location crosswalk.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:

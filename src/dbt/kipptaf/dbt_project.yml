@@ -80,6 +80,8 @@ models:
         +enabled: false
     assessments:
       +schema: assessments
+    cambium:
+      +schema: cambium
     collegeboard:
       +schema: collegeboard
       staging:

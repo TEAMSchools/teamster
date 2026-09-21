@@ -1,0 +1,19 @@
+exposures:
+  - name: parentsquare
+    label: ParentSquare
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_parentsquare__emergency_contacts")
+      - ref("rpt_parentsquare__parents")
+      - ref("rpt_parentsquare__rosters")
+      - ref("rpt_parentsquare__schools")
+      - ref("rpt_parentsquare__sections")
+      - ref("rpt_parentsquare__staff")
+      - ref("rpt_parentsquare__students")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - parentsquare

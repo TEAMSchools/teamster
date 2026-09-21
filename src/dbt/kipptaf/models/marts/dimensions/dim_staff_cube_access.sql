@@ -1,38 +1,3 @@
-{#-
-  One row per active, primary staff member, keyed on staff_key. Resolves each
-  person's current role to the Cube access model: the student location scope,
-  the staff sensitive-field remit (location + department), the per-field
-  sensitive scopes, and any individual-exception grants. Read by Cube's
-  contextToGroups (by google_email) to build the access group list and the
-  queryRewrite filters; not exposed as a Cube. Assembled intra-mart from the
-  current primary work assignment; mappings come from the Google Sheets
-  crosswalks (individual exception wins over department override, which wins
-  over the role mapping, for the five staff_*_scope remit columns). entity
-  (KTAF/Region) is derived from business_unit_name. The viewer identity keys
-  (region_key, location_abbreviation, department_group) are carried so cube.js
-  builds location/department filters from the scope level. Rows that resolve
-  to no role emit 'none' (deny) rather than NULL.
-
-  Role crosswalk precedence: when the cube_access_role sheet carries both a
-  wildcard row (entity='any') and a specific row (entity=KTAF/Region) for the
-  same job_function_code, the specific row wins — role_picked ranks a specific
-  entity match ahead of the wildcard and keeps one row per staff, so the overlap
-  cannot fan out staff_key (previously it would have, caught only by the unique
-  test). Wildcard rows remain the entity-agnostic fallback.
-
-  Individual exceptions (stg_google_sheets__people__cube_access_individual_exceptions)
-  are additive, not override, for location: an employee may have several live
-  rows (status='active', not past expiry_date, not before grant_date), each
-  granting ONE additional network/region/school that is unioned into their
-  normal remit downstream in cube.js/access.js (see additional_location_grants
-  below) rather than replacing student_location_scope/staff_location_scope,
-  which resolve from department override and role only, unchanged. The five
-  staff_*_scope remit columns are still override-style (highest priority), but
-  at most one live row per employee may set them -- enforced by
-  test_cube_access_individual_exceptions_single_remit_row -- since they
-  describe the person, not a location, and don't multiply across a person's
-  location-grant rows.
--#}
 with
     -- one current primary work assignment per staff (dedup'd below)
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
@@ -138,11 +103,10 @@ with
     ),
 
     -- Rank the crosswalk role rows so a specific-entity match beats the 'any'
-    -- wildcard, then keep one per staff (role_picked). Prevents the fan-out when
-    -- the sheet carries both a wildcard and a specific row for one
-    -- job_function_code. Window rank as a named column, filtered in the next CTE
-    -- (no QUALIFY, per the SQL guide). A LEFT-join miss yields one null-role row
-    -- (role_rank 1) that coalesces to 'none' downstream.
+    -- wildcard, then keep 1 per staff member (`role_picked`). The rank prevents
+    -- a fan-out when the sheet carries both a wildcard and a specific row for
+    -- one `job_function_code`. A LEFT-join miss yields 1 null-role row at
+    -- `role_rank` 1, which coalesces to 'none' downstream.
     role_ranked as (
         select
             e.staff_key,

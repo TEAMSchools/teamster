@@ -11,7 +11,9 @@ models:
       which is derived from enrollment dates — the enrollment ran to the end of
       its school year, or covers today. Deliberately not `enroll_status`, which
       is student-level and current-only and therefore excludes graduated seniors
-      from every completed year.
+      from every completed year. Miami is temporarily out of scope — it runs on
+      Focus rather than PowerSchool, so its students join no GPA record and
+      would sit in the goal denominator with no way to be measured.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -71,7 +73,9 @@ unit_tests:
       favor of the current-term row. Two further students pin the population
       predicate in both directions — a graduated senior whose year ran to
       completion is retained, and a mid-year withdrawal is dropped even though
-      its status is still active.
+      its status is still active. A sixth student pins the region scope — a
+      Miami enrollment is dropped even though it satisfies every other
+      predicate.
     model: int_gpa__goal_student_metrics
     given:
       - input: ref('int_extracts__student_enrollments')
@@ -156,6 +160,23 @@ unit_tests:
               false,
               'kippnewark',
               cast(3.80 as float64)
+          union all
+          /* Miami: runs on Focus, joins no PowerSchool GPA row. MUST be
+             excluded until Miami GPA data is available (#5171). */
+          select
+              2025,
+              'Miami',
+              303,
+              9,
+              90006,
+              1006,
+              35,
+              'HS',
+              1,
+              0,
+              true,
+              'kippmiami',
+              cast(3.00 as float64)
       - input: ref('int_powerschool__gpa_term')
         format: sql
         rows: |

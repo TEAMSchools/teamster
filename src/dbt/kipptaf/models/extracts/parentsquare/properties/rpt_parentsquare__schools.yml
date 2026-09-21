@@ -1,7 +1,11 @@
 models:
   - name: rpt_parentsquare__schools
     description:
-      ParentSquare `schools.csv` for KIPP Newark — one row per reporting school.
+      ParentSquare `schools.csv` for the KIPP NJ regions — one row per reporting
+      school. Miami is excluded because it rosters from Focus rather than
+      PowerSchool. Each district's thin `extracts/parentsquare` wrapper slices
+      this to its own `code_location`, and that wrapper is what ParentSquare
+      receives; this view is the shared export format, not a delivered file.
       Delivered as a full snapshot each run; ParentSquare reconciles adds and
       removals on its side. `state_excludefromreporting` filters out the summer
       school, graduated-students, and non-operating placeholder schools, leaving
@@ -18,6 +22,17 @@ models:
           - unique:
               config:
                 severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region; it is not part of the ParentSquare file and no
+          wrapper projects it.
+        data_tests:
           - not_null:
               config:
                 severity: error

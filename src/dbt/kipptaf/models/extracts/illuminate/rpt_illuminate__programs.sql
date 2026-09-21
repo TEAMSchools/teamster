@@ -1,4 +1,3 @@
-/* Gifted & Talented */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -33,7 +32,6 @@ where
 
 union all
 
-/* ELL */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -68,7 +66,6 @@ where
 
 union all
 
-/* Buckets */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
@@ -118,7 +115,6 @@ where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_ye
 
 union all
 
-/* L25 */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,

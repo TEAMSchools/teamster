@@ -1,7 +1,8 @@
-from dagster import DefaultScheduleStatus, ScheduleDefinition
+from dagster import ScheduleDefinition
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.extracts.jobs import (
+    branchingminds_extract_asset_job,
     clever_extract_asset_job,
     coupa_extract_asset_job,
     deanslist_annual_extract_asset_job,
@@ -11,7 +12,12 @@ from teamster.code_locations.kipptaf.extracts.jobs import (
     illuminate_extract_asset_job,
     lattice_extract_asset_job,
     littlesis_extract_asset_job,
-    parentsquare_extract_asset_job,
+)
+
+branchingminds_extract_assets_schedule = ScheduleDefinition(
+    job=branchingminds_extract_asset_job,
+    cron_schedule="0 3 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 clever_extract_assets_schedule = ScheduleDefinition(
@@ -68,20 +74,8 @@ littlesis_extract_assets_schedule = ScheduleDefinition(
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
-# ParentSquare recommends sending roster files in the early evening rather than
-# the 3am slot the other extracts use. `default_status` is spelled out because
-# this schedule must NOT start on deploy: the ParentSquare SFTP credentials do
-# not exist yet, so a tick would fail on an unresolvable environment variable.
-# Start it by hand once the credentials land and a one-file round-trip is
-# verified.
-parentsquare_extract_assets_schedule = ScheduleDefinition(
-    job=parentsquare_extract_asset_job,
-    cron_schedule="0 18 * * *",
-    execution_timezone=str(LOCAL_TIMEZONE),
-    default_status=DefaultScheduleStatus.STOPPED,
-)
-
 schedules = [
+    branchingminds_extract_assets_schedule,
     clever_extract_assets_schedule,
     coupa_extract_assets_schedule,
     deanslist_annual_extract_asset_job_schedule,
@@ -91,5 +85,4 @@ schedules = [
     illuminate_extract_assets_schedule,
     lattice_extract_assets_schedule,
     littlesis_extract_assets_schedule,
-    parentsquare_extract_assets_schedule,
 ]

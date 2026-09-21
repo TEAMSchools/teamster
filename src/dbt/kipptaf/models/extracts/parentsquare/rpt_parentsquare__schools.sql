@@ -1,11 +1,10 @@
 with
     principals as (
         -- ParentSquare wants the principal's given and family name as separate
-        -- fields, but PowerSchool stores only one combined `principal` string
-        -- that also carries honorifics ('Dr. Jane Doe'), so a whitespace split
-        -- would put the honorific in first_name. Resolve the pair from the staff
-        -- roster by email instead. `mail` is unique on the roster, so this
-        -- cannot fan out.
+        -- fields, but PowerSchool stores one combined `principal` string that
+        -- also carries honorifics. A whitespace split would put the honorific in
+        -- `first_name`, so resolve the pair from the staff roster by email
+        -- instead. `mail` is unique on the roster, so this join cannot fan out.
         select
             given_name as principal_first_name,
             family_name_1 as principal_last_name,
@@ -23,15 +22,14 @@ with
             schoolstate as school_state,
             schoolzip as school_zip,
             principalemail as principal_email,
+            _dbt_source_project as code_location,
 
             cast(school_number as string) as school_id,
             lower(principalemail) as principal_email_match,
 
-            -- PowerSchool holds school phones in mixed formats (bare digits and
-            -- dash-separated); ParentSquare wants 10 digits.
             regexp_replace(schoolphone, r'[^0-9]', '') as school_phone,
         from {{ ref("stg_powerschool__schools") }}
-        where _dbt_source_project = 'kippnewark' and state_excludefromreporting = 0
+        where state_excludefromreporting = 0
     )
 
 select
@@ -43,6 +41,7 @@ select
     s.school_state,
     s.principal_email,
     s.school_phone,
+    s.code_location,
 
     p.principal_first_name,
     p.principal_last_name,

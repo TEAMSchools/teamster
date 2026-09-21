@@ -17,16 +17,51 @@ clean-targets:
   - dbt_packages
 
 data_tests:
-  +severity: warn
   +store_failures: true
   +store_failures_as: view
+  kipppaterson:
+    +severity: warn
+  # stg_cambium__njgpa is disabled below, and disabling a model leaves its
+  # tests enabled — they would scan a relation Paterson never builds. Each
+  # name is dbt's generated test name; changing the njgpa yml's accepted
+  # values renames the test and re-orphans it here.
+  cambium:
+    staging:
+      properties:
+        unique_stg_cambium__njgpa_studenttestuuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_studenttestuuid:
+          +enabled: false
+        not_null_stg_cambium__njgpa_test_date:
+          +enabled: false
+        not_null_stg_cambium__njgpa_period:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa_period__Spring__Fall__FALL__FallBlock:
+          +enabled: false
+        not_null_stg_cambium__njgpa_administration_period:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa_administration_period__Spring__Fall:
+          +enabled: false
+        not_null_stg_cambium__njgpa_test_grade:
+          +enabled: false
+        accepted_values_stg_cambium__njgpa_test_grade__False__11:
+          +enabled: false
 
 vars:
   local_timezone: America/New_York
   current_academic_year: 2026
   current_fiscal_year: 2027
   cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
+  # Paterson's EdPlan feed starts in FY27, after the one-time NJSMART
+  # archive load, so there is no archive table to union in.
+  edplan_has_archive: false
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  # Paterson sits only NJSLA and NJSLA Science, and its Pearson files carry
+  # the district SIS id, so the union reads the int_pearson__* remaps instead
+  # of the package staging models (stg_pearson__njgpa / _parcc are disabled).
+  pearson_state_assessment_relations:
+    - int_pearson__njsla
+    - int_pearson__njsla_science
 
 models:
   kipppaterson:
@@ -57,6 +92,16 @@ models:
         staging:
           stg_amplify__mclass__sftp__pm_student_summary_aimline:
             +enabled: false
+  edplan:
+    +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
+  cambium:
+    +materialized: table
+    staging:
+      stg_cambium__njgpa:
+        +enabled: false
   deanslist:
     +materialized: table
     staging:
@@ -85,6 +130,13 @@ models:
         # Paterson's PowerSchool (no dlt model)
         int_powerschool__section_grade_config:
           +enabled: false
+        # data-forced exception: needs the grad-plan dlt tables (gpnode,
+        # gpprogresssubject*), which are disabled below (empty in Paterson's
+        # PowerSchool)
+        int_powerschool__gpnode:
+          +enabled: false
+        int_powerschool__gpprogress_grades:
+          +enabled: false
         # contacts layer disabled for Paterson (parity with kippnewark)
         int_powerschool__contacts:
           +enabled: false
@@ -106,10 +158,13 @@ models:
             +enabled: false
           stg_powerschool__u_clg_et_stu_alt:
             +enabled: false
-          stg_powerschool__u_expectations:
-            +enabled: false
           stg_powerschool__u_storedgrades_de:
             +enabled: false
+  titan:
+    +materialized: table
+    staging:
+      stg_titan__income_form_data:
+        +enabled: false
 
 sources:
   amplify:
@@ -128,6 +183,10 @@ sources:
     finalsite:
       contacts:
         +enabled: true
+  cambium:
+    cambium:
+      src_cambium__njgpa:
+        +enabled: false
   deanslist:
     deanslist:
       src_deanslist__dff_stats:
@@ -145,4 +204,8 @@ sources:
       src_pearson__parcc:
         +enabled: false
       src_pearson__student_test_update:
+        +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
         +enabled: false

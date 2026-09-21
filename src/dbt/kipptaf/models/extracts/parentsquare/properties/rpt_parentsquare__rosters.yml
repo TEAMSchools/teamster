@@ -1,9 +1,11 @@
 models:
   - name: rpt_parentsquare__rosters
     description:
-      ParentSquare `rosters.csv` for KIPP Newark — one row per enrolled student,
-      placing them in their school-and-grade section. Together with
-      `rpt_parentsquare__sections` this satisfies ParentSquare's roster
+      ParentSquare `rosters.csv` for the KIPP NJ regions — one row per enrolled
+      student, placing them in their school-and-grade section. Each district's
+      thin `extracts/parentsquare` wrapper slices this to its own
+      `code_location`, and that wrapper is what ParentSquare receives. Together
+      with `rpt_parentsquare__sections` this satisfies ParentSquare's roster
       requirement at the school-and-grade granularity the Integration Planner
       specified, without any teacher-classroom data. Both models read the same
       enrollment filter and build `section_id` the same way, so every row
@@ -61,5 +63,16 @@ models:
               arguments:
                 to: ref('rpt_parentsquare__schools')
                 field: school_id
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region; it is not part of the ParentSquare file and no
+          wrapper projects it.
+        data_tests:
+          - not_null:
               config:
                 severity: error

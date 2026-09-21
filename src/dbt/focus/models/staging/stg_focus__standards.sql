@@ -6,7 +6,6 @@ select
     title,
     short_name,
     description,
-    sort_order,
     category_1_id,
     category_2_id,
     category_3_id,
@@ -24,4 +23,6 @@ select
     publication,
     created_at,
     updated_at,
+
+    cast(sort_order as numeric) as sort_order,
 from {{ source("focus", "standards") }}

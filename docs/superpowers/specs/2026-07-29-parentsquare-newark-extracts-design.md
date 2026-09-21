@@ -275,6 +275,12 @@ All seven files sent. `Yes*` = one of email/phone required.
 
 ## Delivery
 
+- **Owned by the `kippnewark` code location**, not `kipptaf` — see _Delivery
+  moved to the kippnewark code location_ under _Implementation notes_. The seven
+  `rpt_parentsquare__*` views stay in `kipptaf` and now cover all three
+  PowerSchool NJ regions; `kippnewark` holds thin wrappers, the SFTP resource,
+  the job, and the schedule. Every reference to `kipptaf` owning the config,
+  resource, job, or schedule earlier in this document is superseded.
 - Server `sftp3.parentsquare.com`, **district-level single connection** (one set
   of files covering all Newark schools). Password or SSH key — created in the
   ParentSquare admin UI, which issues the username.
@@ -421,12 +427,78 @@ with the rest of the row. This drops 6 emergency-contact rows whose only phone
 is a 9-digit typo and which carry no email — an upstream Finalsite data-entry
 fix for Ops, not a modelling problem.
 
-### No exposure
+### Exposure — reversed once delivery moved regional
 
-Every SFTP extract feed in the repo omits one and the extract asset already
-depends on the dbt model's asset key, so lineage is intact. Adding a lone
-`sftp.yml` exposure for ParentSquare would be inconsistent with clever,
-illuminate, idauto, coupa, and egencia.
+The original call was to omit one, on the grounds that every SFTP extract feed
+in the repo omits one (clever, illuminate, idauto, coupa, egencia). That survey
+missed the one feed this build now resembles: `powerschool_autocomm`, which is
+delivered from the regional projects and **does** carry an exposure, in the
+regional project. Moving ParentSquare delivery to `kippnewark` put it on that
+side of the line, so `src/dbt/kippnewark/models/exposures/parentsquare.yml`
+exists and mirrors `powerschool.yml`.
+
+### Delivery moved to the kippnewark code location
+
+Issue #4735, a follow-up after #4668 merged. The feed is Newark-only, so the
+Newark Dagster instance owns delivery — following the `extracts/powerschool/`
+autocomm precedent rather than the Clever one this build originally copied.
+
+| Layer                                              | Before                            | After                                |
+| -------------------------------------------------- | --------------------------------- | ------------------------------------ |
+| 7 `rpt_parentsquare__*` views, descriptions, tests | kipptaf                           | kipptaf (unchanged home)             |
+| Region filter                                      | inside each kipptaf view          | each district's thin wrapper         |
+| Extract config, assets, job, schedule              | kipptaf                           | kippnewark                           |
+| `SSH_RESOURCE_PARENTSQUARE` + 3 variable mappings  | kipptaf                           | kippnewark                           |
+| Asset keys                                         | `kipptaf/extracts/parentsquare/*` | `kippnewark/extracts/parentsquare/*` |
+
+The model logic could not move. `rpt_parentsquare__staff` joins
+`stg_ldap__group`, `stg_ldap__user_person` and `int_people__staff_roster`,
+`rpt_parentsquare__sections` reads the staff feed, and `int_students__contacts`
+/ `int_extracts__student_enrollments` are kipptaf-level cross-region models.
+
+Pushing the region filter down widened the views from Newark to the three
+PowerSchool NJ regions — Miami excluded, since it rosters from Focus rather than
+PowerSchool, the same carve-out `rpt_clever__*` makes — and exposed a
+`code_location` column each wrapper filters on, named to match
+`rpt_powerschool__autocomm_students`. A future Camden or Paterson feed is then a
+copy of the wrappers plus config, with no kipptaf SQL change.
+
+Two consequences of widening needed real changes, not just a filter swap:
+
+- **The staff school fan-out is now region-keyed.** A bare `cross join` would
+  put every Newark leader at every NJ school. The join mirrors the "all region"
+  assignment branch of `rpt_clever__staff`.
+- **The section owner is picked per region.** `min(staff_id)` over the whole
+  staff feed would assign one leader network-wide, dangling in every other
+  region's file — and the single-column `relationships` test on `staff_id` would
+  still have passed, because it only proves the id exists somewhere in the feed.
+  `section_owner` now groups by `code_location`; the join to it is a LEFT join
+  so an emptied Ops group still trips the `not_null` guard rather than silently
+  dropping that region's sections; and a new singular test
+  `rpt_parentsquare__sections__staff_id_resolves_at_its_own_school` asserts the
+  `(school_id, staff_id)` pair resolves. The Clever feeds shipped this same
+  class of cross-region leak before.
+
+Widening was checked against prod data before implementing, since it changes the
+population 33 error-severity tests run over: no school-number collisions across
+the three NJ regions, `student_number` unique across them (7,894 of 7,894),
+every NJ grade level inside 0..12 (so the `-4`..`12` `accepted_values` test
+still holds), and every NJ region carrying at least one Ops leader with no
+missing `google_email` (Newark 8, Camden 2, Paterson 1). A local `dbt build` of
+the seven views then ran 48/48 green with no warnings, and Newark's row counts
+came out identical to the pre-change prod views, file for file, measured in the
+same moment — the absolute figures drift from the table below as enrollment
+changes.
+
+NJ-wide counts, for contrast with the Newark figures below — `schools` 19,
+`students` 9,821, `parents` 12,982, `emergency_contacts` 20,593, `staff` 108,
+`sections` 86, `rosters` 9,821.
+
+The wrappers read prod `kipptaf_extracts` (their source carries no
+target-conditional schema, same as the autocomm wrappers), so they cannot be
+built locally until the widened kipptaf views reach prod. Post-merge ordering
+comes from the `sources.yml` `asset_key` mapping, which makes each kipptaf view
+an upstream of its wrapper in the Dagster asset graph.
 
 ### Verified output (current academic year, prod data)
 

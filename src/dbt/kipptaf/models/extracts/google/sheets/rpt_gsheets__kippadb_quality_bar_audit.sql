@@ -63,7 +63,6 @@ with
 
 -- trunk-ignore(sqlfluff/ST06)
 select
-    -- student identity
     r.contact_id,
     r.student_number,
     r.first_name,
@@ -73,12 +72,10 @@ select
     r.contact_graduation_year as graduation_year,
     r.ktc_cohort as cohort,
 
-    -- quality bar drivers
     r.best_guess_pathway,
     r.is_ed_ea,
     r.gpa,
 
-    -- application context
     a.id as application_id,
     a.name as application_name,
     a.account_name as college_name,
@@ -101,7 +98,6 @@ select
     ogc.has_duplicate_overgrad_2nd_choice,
     ogc.has_duplicate_overgrad_3rd_choice,
 
-    -- per-app quality bar component flags
     a.account_type in ('Public 4 yr', 'Private 4 yr') as is_4yr,
     a.account_billing_state = 'NJ' as is_nj,
     a.account_type in (
@@ -113,7 +109,6 @@ select
     a.adjusted_6_year_minority_graduation_rate >= 68 as is_68plus_ecc,
     a.adjusted_6_year_minority_graduation_rate >= 85 as is_85plus_ecc,
 
-    -- student-level wishlist counts (actual vs required)
     ro.n_wishlist,
     ro.n_4_year_wishlist,
     ro.n_55plus_ecc_wishlist,
@@ -127,7 +122,6 @@ select
     ro.n_meets_full_need_ea_ed_wishlist,
     ro.n_meets_full_need_ea_ed_85ecc_wishlist,
 
-    -- student-level submitted counts (actual vs required)
     ro.n_submitted,
     ro.n_55_plus_ecc_submitted,
     ro.n_60_plus_ecc_submitted,
@@ -142,12 +136,10 @@ select
     ro.n_meets_full_need_68plus_ecc_ea_ed_submitted,
     ro.n_meets_full_need_85plus_ecc_ea_ed_submitted,
 
-    -- quality bar pass/fail outcomes
     ro.is_wishlist_quality_bar_int,
     ro.is_submitted_quality_bar_4yr_int,
     ro.is_submitted_quality_bar_ea_int,
 
-    -- which quality bar tier applies to this student (for auditing context)
     case
         when r.best_guess_pathway = '4-year' and r.gpa >= 3.50
         then '4yr_3.50plus'

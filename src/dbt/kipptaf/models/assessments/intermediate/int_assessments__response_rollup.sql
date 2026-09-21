@@ -20,6 +20,7 @@ with
             s.is_replacement,
             s.student_assessment_id,
             s.canonical_assessment_id,
+            s.date_taken,
 
             asr.response_type,
             asr.response_type_id,
@@ -40,7 +41,6 @@ with
                 s.is_internal_assessment, c.grade_level_id, s.grade_level_id
             ) as canonical_grade_level_id,
 
-            if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
             {{ ref("int_illuminate__agg_student_responses") }} as asr
@@ -53,6 +53,53 @@ with
         left join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on s.canonical_assessment_id = c.canonical_assessment_id
+    ),
+
+    -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
+    -- directions: the raw column spans 0001-01-01 to 4024-12-04. Every row is
+    -- judged against a date it should sit near, never against a calendar
+    -- constant — an absolute floor is arbitrary, and being one-sided it can
+    -- never reject a future date.
+    --
+    -- Preferred anchor is the row's own administration (+/-365 days). ~296k
+    -- rows have none, so those fall back to their `academic_year`, which is
+    -- always populated; the +/-1 year window is wide enough to absorb the
+    -- academic-year tagging drift of #3801. Together they null 11,455 rows
+    -- (0.34% of dated rows) and bring the range to 2013-06-03 .. 2026-12-27.
+    --
+    -- The fallback is what earns its keep: an earlier version of this guard
+    -- used a 2000-01-01 floor for unanchored rows, which caught exactly 1 row
+    -- and let a ~1,300-row cluster of 2001-01-01 sittings through, because
+    -- they cleared the constant while sitting a decade from their academic
+    -- year.
+    --
+    -- Rows inside their window pass through untouched, so a legitimately
+    -- future-dated sitting within its administration window is preserved, and
+    -- `assessment_date_key` (`coalesce(administration, date_taken)`) keeps a
+    -- real administration date where one exists — the invariant #4546 rests on.
+    --
+    -- This matters more than the row counts suggest: the final select takes
+    -- `min(date_taken)` per canonical group, so one junk row poisons its whole
+    -- group's date. Nulling before the aggregate is what actually fixes it.
+    sanitized_responses as (
+        select
+            * except (date_taken),
+
+            case
+                when date_taken is null
+                then null
+                when
+                    canonical_administered_at is not null
+                    and date_diff(date_taken, canonical_administered_at, day)
+                    between -365 and 365
+                then date_taken
+                when
+                    canonical_administered_at is null
+                    and extract(year from date_taken)
+                    between academic_year - 1 and academic_year + 1
+                then date_taken
+            end as date_taken,
+        from scaffold_responses
     ),
 
     -- Per-partition tiebreak for location columns. NOT a canonical attribute —
@@ -69,7 +116,7 @@ with
             first_value(powerschool_school_id) over (w) as selected_school_id,
             first_value(region) over (w) as selected_region,
             first_value(_dbt_source_project) over (w) as selected_dbt_source_project,
-        from scaffold_responses
+        from sanitized_responses
         window
             w as (
                 partition by
@@ -223,7 +270,10 @@ with
             canonical_performance_band_set_id as performance_band_set_id,
 
             false as is_multipart_assessment,
-        from scaffold_responses
+        -- sanitized_responses, not scaffold_responses: both union branches must
+        -- read the cleaned date_taken. Reading the raw CTE here leaves the
+        -- non-internal branch unsanitized.
+        from sanitized_responses
         where not is_internal_assessment
     )
 

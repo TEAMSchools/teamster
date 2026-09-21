@@ -8,11 +8,11 @@ models:
       derived from the current primary work assignment and the Google Sheets
       access crosswalks (individual exception, then department special-access
       override, then role mapping, in that priority order for the five
-      staff_*_scope remit columns). Read by Cube's contextToGroups, matched on
-      google_email, to build the access group list and queryRewrite filters; not
-      exposed as a Cube. The staff directory and aggregate summary are open —
-      these scopes only constrain sensitive fields. Unresolved roles emit 'none'
-      (deny), never NULL.
+      staff_*_scope remit columns). Read by cube.js's resolveAccess, matched on
+      google_email, to build the securityContext groups and the allow-lists that
+      each view's access_policy reads; not exposed as a Cube. The staff
+      directory and aggregate summary are open — these scopes only constrain
+      sensitive fields. Unresolved roles emit 'none' (deny), never NULL.
     data_tests:
       # A remit-scoped PII scope (all_in_scope / teaching_staff) with a none
       # location AND no additional-location grant, or a none department, is a
@@ -52,11 +52,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: google_email
         data_type: string

@@ -7,10 +7,11 @@ select
     address_id,
     student_relation,
     imported,
-    sort_order,
     uuid,
     updated_at,
     created_at,
+
+    cast(sort_order as numeric) as sort_order,
 
     custody = 'Y' as is_custodial,
     emergency = 'Y' as is_emergency,

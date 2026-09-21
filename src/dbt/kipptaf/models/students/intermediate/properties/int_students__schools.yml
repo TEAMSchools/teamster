@@ -1,0 +1,42 @@
+models:
+  - name: int_students__schools
+    description: >-
+      SIS-agnostic school spine. Unions the PowerSchool school staging view for
+      the three New Jersey regions with Miami school identity conformed from
+      Focus to the PowerSchool school spine's vocabulary, keyed on the
+      PowerSchool numeric school id instead of Focus's own school code. Focus is
+      Miami's system of record for schools, so the frozen PowerSchool archive
+      contributes no Miami rows -- including its 999999 "Graduated Students"
+      sentinel, which is no longer needed now that the Miami alumni graduate
+      placeholder enrollments it served are gone. The Focus branch is limited to
+      schools with a match on the people locations sheet; Focus's non-physical
+      administrative entries (ZZ Course History, Virtual Franchise) have no such
+      match and are excluded.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - school_number
+              - _dbt_source_project
+    columns:
+      - name: school_number
+        description: Canonical network school number.
+      - name: name
+        quote: true
+        description: School name.
+      - name: location_key
+        description: >-
+          Canonical location_key. For Miami, resolved via the people locations
+          sheet on Focus's school code.
+      - name: abbreviation
+        description: Short school name from the people locations sheet.
+      - name: school_level
+        description: >-
+          Single school-level code (ES, MS, HS). For Miami, derived from Focus's
+          school-level label; null for closed schools, which carry no
+          school-level label in Focus.
+      - name: _dbt_source_project
+        description:
+          District code location, passed through from the source union view.
+      - name: _dbt_source_relation
+        description: Source relation, passed through from the source union view.

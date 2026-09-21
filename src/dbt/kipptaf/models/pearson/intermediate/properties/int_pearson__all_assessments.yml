@@ -1,17 +1,65 @@
 models:
   - name: int_pearson__all_assessments
     description: >
-      Network-level union of Pearson state assessment results (PARCC, NJSLA,
-      NJSLA Science, NJGPA) enriched with student crosswalk lookups and
-      standardized metadata. Computes aligned demographic labels, proficiency
-      banding, and subject/test-code normalization for use in reporting and
-      demographic comparison models.
+      Network-level union of state assessment results (PARCC, NJSLA, NJSLA
+      Science, NJGPA) enriched with student crosswalk lookups and standardized
+      metadata. NJGPA is dual-vendor -- Pearson through the Fall 2025
+      administration, Cambium TIDE starting Spring 2026 -- unioned into this
+      same shape. The model's Pearson-only name is a known misnomer now that a
+      second vendor feeds it; a rename is pending. The aligned demographic
+      labels, proficiency banding, and subject/test-code normalization are
+      computed upstream: int_pearson__all_assessments in the pearson package per
+      district, and stg_cambium__njgpa in the cambium package. This model only
+      unions the district copies, repairs localstudentidentifier from the
+      crosswalk, and casts the state id.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - studenttestuuid
     columns:
+      - name: assessment_version
+        data_type: string
+        description: >-
+          Which version of the assessment produced the row, set as a literal by
+          each vendor's staging model. NJGPA splits into NJGPA for the retired
+          Pearson form and NJGPA-A for the Cambium adaptive form, which use
+          different score scales and therefore different cut scores. Every other
+          assessment repeats assessment_name, having only one version.
+          Graduation pathway cut scores join on this value, so a score is only
+          ever compared against the threshold set for its own scale.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [PARCC, NJSLA, NJSLA Science, NJGPA, NJGPA-A]
+              config:
+                severity: error
+
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label ('state_nj_parcc' / '..._njsla' /
+          '..._njsla_science' / '..._njgpa') computed upstream. Marts hash it
+          into assessment_key. Tested here because union_relations null-fills a
+          column a relation forgot to supply: a null or unknown value means a
+          feeding relation lost its aligned columns.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - state_nj_parcc
+                  - state_nj_njsla
+                  - state_nj_njsla_science
+                  - state_nj_njgpa
+              config:
+                severity: error
+
       - name: _dbt_source_relation
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
@@ -42,7 +90,12 @@ models:
 
       - name: assessmentgrade
         data_type: string
-        description: Assessment grade level as reported by Pearson.
+        description: >-
+          Assessment grade level as reported by the vendor. Pearson sent 'Grade
+          11' on every row. Cambium sends the test DESIGN level instead — 'Grade
+          10' for ELAGP and 'Grade 11' for MATGP — so this column carries two
+          values and is NOT the student's grade. Use test_grade (always 11 for
+          NJGPA) or the enrollment for reporting grade level.
 
       - name: assessmentyear
         data_type: string
@@ -78,12 +131,6 @@ models:
         data_type: boolean
         description: >
           Whether the student scored at the Below or Far Below proficiency band.
-
-      - name: is_504
-        data_type: boolean
-        description: >
-          Whether the student has a 504 plan, derived from
-          studentwithdisabilities being '504' or 'B'.
 
       - name: nativehawaiianorotherpacificislander
         data_type: string
@@ -158,7 +205,11 @@ models:
 
       - name: testscorecomplete
         data_type: float64
-        description: Score completeness indicator as reported by Pearson.
+        description: >-
+          Score completeness indicator as reported by the vendor. Pearson set it
+          to 1 on every row surviving the staging filter. Cambium does not
+          populate it, so it is NULL for all Cambium NJGPA rows; consumers must
+          coalesce rather than compare directly.
 
       - name: twoormoreraces
         data_type: string
@@ -167,16 +218,6 @@ models:
       - name: white
         data_type: string
         description: White race indicator from Pearson ('Y' or null).
-
-      - name: results_type
-        data_type: string
-        description:
-          Always 'Actual' for Pearson results (no preliminary scores).
-
-      - name: district_state
-        data_type: string
-        description: >
-          Network district/state identifier; always 'KTAF NJ' for this model.
 
       - name: statestudentidentifier
         data_type: string
@@ -189,113 +230,9 @@ models:
           when available, otherwise the raw value from the source file. Used to
           work around incorrect studentidentifiers provided during testing.
 
-      - name: aligned_test_code
-        data_type: string
-        description: >
-          Test code normalized for stacked reporting across assessment programs
-          — science codes SC05, SC08, SC11 are remapped to SCI05, SCI08, SCI11
-          to match the standard codes used across all sources; all other codes
-          pass through unchanged.
-
-      - name: race_ethnicity
-        data_type: string
-        description: >
-          Single-character race/ethnicity code derived from Pearson indicator
-          flags using a priority hierarchy (T, H, I, A, B, P, W).
-
-      - name: illuminate_subject
-        data_type: string
-        description: >
-          Standardized subject label for Illuminate/reporting — ELA subjects map
-          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
-          'Mathematics'; all others pass through unchanged.
-
-      - name: njsla_aggregated_proficiency
-        data_type: string
-        description: >
-          Aggregated proficiency band for NJSLA: levels 1-2 = 'Below/Far Below',
-          level 3 = 'Approaching', level 4+ = 'At/Above'; null for non-NJSLA
-          assessments.
-
-      - name: njsla_performance_band_group_label
-        data_type: string
-        description: >
-          Performance band group label for NJSLA: levels 1-2 = 'Not Proficient
-          (1-2)', level 3 = 'Bubble (3)', level 4+ = 'Proficient (4-5)'; null
-          for non-NJSLA assessments.
-
-      - name: lep_status
-        data_type: boolean
-        description: >
-          Whether the student is classified as an English Learner/EL, derived
-          from the englishlearnerel indicator.
-
-      - name: iep_status
-        data_type: string
-        description: >
-          IEP status label — 'Has IEP' when studentwithdisabilities is 'IEP' or
-          'B', otherwise 'No IEP'.
-
       - name: admin
         data_type: string
         quote: true
         description: >
           Testing administration period with 'FallBlock' normalized to 'Fall';
           reserved word alias for Tableau.
-
-      - name: aligned_subject
-        data_type: string
-        description: >
-          Subject normalized for stacked reporting across assessment programs —
-          'English Language Arts/Literacy' is shortened to 'English Language
-          Arts' to match the label used in other sources; all other subjects
-          pass through unchanged.
-
-      - name: is_proficient_int
-        data_type: int64
-        description:
-          Integer representation of is_proficient (1 = true, 0 = false).
-
-      - name: is_approaching_int
-        data_type: int64
-        description: >
-          Integer flag for approaching proficiency (1 = approaching, 0 =
-          otherwise) — NJSLA Science level 2, ELA/Math level 3; always 0 for
-          NJGPA.
-
-      - name: is_below_int
-        data_type: int64
-        description: >
-          Integer flag for below proficiency (1 = below, 0 = otherwise) — NJGPA
-          level 1, NJSLA Science below level 2, ELA/Math below level 3.
-
-      - name: aligned_aggregate_ethnicity
-        data_type: string
-        description: >
-          Race/ethnicity label normalized for stacked reporting across
-          assessment programs — expands the single-character race_ethnicity code
-          to a full label (e.g. B = 'African American', H = 'Hispanic') that
-          matches the demographic labels used in comparison sources; null maps
-          to 'Blank'.
-
-      - name: aligned_ml_status
-        data_type: string
-        description: >
-          Multilingual learner status normalized for stacked reporting across
-          assessment programs — 'ML' when lep_status is true, 'Not ML'
-          otherwise, using the label convention shared across comparison
-          sources.
-
-      - name: aligned_iep_status
-        data_type: string
-        description: >
-          IEP status normalized for stacked reporting across assessment programs
-          — 'Students With Disabilities' or 'Students Without Disabilities',
-          using the label convention shared across comparison sources.
-
-      - name: assessment_type
-        data_type: string
-        description: >-
-          Program-lineage label ('state_nj_parcc' / '..._njsla' /
-          '..._njsla_science' / '..._njgpa') derived from assessment_name. Used
-          by marts as the hash-input value for assessment_key.

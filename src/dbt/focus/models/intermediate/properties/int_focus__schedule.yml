@@ -6,8 +6,9 @@ models:
       as stg_focus__schedule. Course period and course are inner-joined because
       a schedule row without them is not interpretable; stg_focus__schedule
       carries relationships tests on both keys so an orphan fails there rather
-      than silently disappearing here. Marking period is left-joined and is null
-      for full-year schedules, which Focus records with a 0 marking-period id.
+      than silently disappearing here. Marking period is left-joined on syear
+      and school_id as well as the id, resolving Focus's full-year sentinel
+      (marking_period_id 0) to the school's year-level marking period.
       Internal-only — a rpt_ view must sit between this model and any external
       consumer.
     columns:
@@ -35,12 +36,14 @@ models:
           Focus course-period (section) id the student is scheduled into.
       - name: marking_period_id
         description: >-
-          Focus marking-period id the schedule row covers, with the full-year
-          sentinel 0 normalized to null.
+          Focus marking-period id the schedule row covers. A full-year row
+          carries the school's year-level marking-period id, resolved from
+          Focus's 0 sentinel; it is never the raw 0.
       - name: mp
         description: >-
           Term the schedule row covers as a code — FY full year, SEM semester,
-          QTR quarter. FY rows are the ones with a null marking_period_id.
+          QTR quarter. FY rows are the ones whose marking_period_id was resolved
+          from the full-year sentinel, so marking_period_type reads year.
       - name: course_weight
         description: >-
           Weighting applied to the course when computing GPA for this scheduled
@@ -54,11 +57,23 @@ models:
           Rotation-day pattern the section meets on, for schools running a
           rotating rather than fixed weekly timetable.
       - name: start_date
-        description: First date the student is scheduled into the section.
+        description: >-
+          First date the schedule row covers. This is the marking period's start
+          date, not the day the student joined the section -- Focus dates a
+          schedule row to its term. Measured on Miami AY2026 (2026-08-27): it
+          equals marking_period_start_date on 90.7% of rows, falls before it on
+          zero rows, and takes only 16 distinct values across 19,363 rows
+          against 3 distinct marking-period starts. The rows that fall later are
+          mid-term adds, dated to the day the row was written. Every Semester 2
+          row is dated to the Semester 2 start, a date months in the future, so
+          it cannot be read as an event date. See #5002.
       - name: end_date
         description: >-
-          Last date the student is scheduled into the section; null while the
-          schedule row is open.
+          Last date the schedule row covers; null while the row is open, which
+          is the normal state. Focus closes a row by setting this rather than by
+          deleting it, so a value here means the student stopped being scheduled
+          into the section. Populated on 3.2% of Miami AY2026 rows, and never at
+          or after the marking period's end. See #4968.
       - name: fefp_number
         description: >-
           Florida Education Finance Program funding category code for the
@@ -157,18 +172,21 @@ models:
         description: Whether the course is a homeroom rather than instructional.
       - name: marking_period_title
         description: >-
-          Marking-period name from stg_focus__marking_periods; null for
-          full-year schedules.
+          Marking-period name from stg_focus__marking_periods; the school's
+          year-level marking period on a full-year schedule.
       - name: marking_period_short_name
         description: >-
-          Abbreviated marking-period name; null for full-year schedules.
+          Abbreviated marking-period name; the school's year-level marking
+          period on a full-year schedule.
       - name: marking_period_type
         description: >-
           Marking-period granularity (year, semester, quarter, progress period);
-          null for full-year schedules.
+          reads year on a full-year schedule.
       - name: marking_period_start_date
-        description:
-          First date of the marking period; null for full-year schedules.
+        description: >-
+          First date of the marking period; the first day of the school year on
+          a full-year schedule.
       - name: marking_period_end_date
-        description:
-          Last date of the marking period; null for full-year schedules.
+        description: >-
+          Last date of the marking period; the last day of the school year on a
+          full-year schedule.

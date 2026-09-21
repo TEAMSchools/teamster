@@ -84,10 +84,12 @@ is login-gated.
   fields (`is_parent2/3/4`, `p1_*`–`p4_*`, `emrg_*`) live ONLY on student
   records — `is_parent2` means "this student has a Parent 2" and is never set on
   the parent's own record (0 in tenant data), so never gate on it via `rel_id`.
-  Parent identity comes from `relationships`: `primary` = Parent 1 (a verified
-  per-student singleton), an additional `financial`-without-`primary`
-  relationship = Parent 2. `households` carry only id + address — membership has
-  no roles.
+  Parent identity comes from `relationships`: candidates are relationships
+  flagged `primary` or `financial` whose related contact is an adult
+  (`status = 'not_in_workflow'`), ranked by the `primary` flag, then by sharing
+  a household with the student, then by `relationship_id`, and numbered densely
+  from `contact_1` with no fixed ceiling. `households` carry only id + address —
+  membership has no roles.
 
 ## Cross-Project Usage
 

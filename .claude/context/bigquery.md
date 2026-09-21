@@ -1,34 +1,41 @@
-# BigQuery MCP gotchas
+# BigQuery gotchas
 
-Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
-wide tables, paginate with `WHERE ordinal_position > N`.
+## Which client
 
-`<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
-— use it to check whether a model rebuilt or is a live view.
-`INFORMATION_SCHEMA.TABLES` has neither. `__TABLES__.row_count` lags — it can
-read `0` for a table that already holds rows (e.g. just after a CI rebuild);
-confirm population with `COUNT(*)`, not `__TABLES__.row_count`.
+Three identities reach BigQuery here, and they differ in what they can read:
 
-Verifying a just-re-materialized partition: the external-table query can read
-the **stale pre-overwrite file for minutes even with `_FILE_NAME`**
-(file-listing lag after `create or replace`) — a re-pull that changed the data
-still shows the OLD rows/count. Cross-check the run's materialization
-`record_count` + `data_version` via `mcp__dagster__get_asset_materializations`
-(ground truth) before concluding a re-pull did or didn't change anything.
+- **MCP** (`mcp__bigquery__*`) — the service account
+  `codespaces@teamster-332318.iam.gserviceaccount.com`. Default for warehouse
+  inspection. SELECT-only, truncates results at 50 rows, and cannot read
+  GOOGLE_SHEETS external tables.
+- **ADC from Python** — carries Drive scope and does not expire. The only client
+  that reads a sheet-backed external live.
+- **`bq` CLI** — gcloud USER creds that expire mid-session. For shell contexts
+  (Monitor poll loops) and CSV dumps only.
 
-Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
-as a bare token fails with "Syntax error: Expected end of input but got '-'".
-Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+The MCP's 50-row truncation is silent: a 200-row query returns 50 rows with no
+marker, so never read a 50-row result as complete. When querying
+`INFORMATION_SCHEMA.COLUMNS` for wide tables, paginate with
+`WHERE ordinal_position > N`.
 
-Single quotes inside a BigQuery string literal escape with a **backslash**
-(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
-"concatenated string literals must be separated by whitespace".
-
-The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
+The BigQuery MCP service account cannot read GOOGLE_SHEETS external tables
 ("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
-scope. To inspect a sheet-backed source's rows, build the staging model via dbt
-(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
-query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
+scope. ADC does have Drive scope, so query the external directly from a Python
+client instead — no dbt build, no `stage_external_sources`, and it reads the
+sheet live, so a paste is verifiable seconds after it happens. Run the script
+with `uv run python <script.py>`:
+
+```python
+from google.cloud import bigquery
+
+client = bigquery.Client(project="teamster-332318")
+rows = client.query("select ... from `teamster-332318`.<dataset>.<src_table>")
+```
+
+Verified 2026-09-18 against
+`kipptaf_google_sheets.src_google_sheets__state_test_comparison_demographics`
+(8025 rows through ADC, 403 through the MCP). Build into a dev/staging table
+only when something downstream must read it, not to look at rows.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
@@ -42,17 +49,83 @@ PII to Ops, redirect to a local `.claude/scratch/*.csv`
 (`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
 verify with `wc -l`, and reference the FILE (never the values) in any tracker.
 
-**`bq` CLI auth expires mid-session** — it uses gcloud USER creds (not the MCP's
-SA), so SELECTs that worked early fail later with "Reauthentication failed"
-(non-interactive can't `gcloud auth login`). The BQ MCP keeps working but is
-SELECT-only, so **DML/DDL (`DELETE`/`CREATE`/`DROP`) must be handed to the
-user's terminal**.
+`bq` auth expires mid-session, so SELECTs that worked early fail later with
+"Reauthentication failed" (non-interactive can't `gcloud auth login`). Switch to
+the MCP or to ADC from Python rather than retrying.
 
-**BQ merge/upsert cost**: clustering the target does NOT prune a dynamic-join
-`MERGE` / `DELETE ... WHERE EXISTS` (only partitioning + a _static_ predicate
-prunes). `--dry_run` reflects partition pruning but NOT clustering pruning —
-measure clustering via actual `total_bytes_billed` in
-`INFORMATION_SCHEMA.JOBS_BY_PROJECT`.
+## Metadata and staleness
+
+`<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
+— use it to check whether a model rebuilt or is a live view.
+`INFORMATION_SCHEMA.TABLES` has neither. `__TABLES__.row_count` lags — it can
+read `0` for a table that already holds rows (e.g. just after a CI rebuild);
+confirm population with `COUNT(*)`, not `__TABLES__.row_count`.
+
+Verifying a just-re-materialized partition: the external-table query can read
+the stale pre-overwrite file for minutes even with `_FILE_NAME` (file-listing
+lag after `create or replace`) — a re-pull that changed the data still shows the
+OLD rows/count. Cross-check the run's materialization `record_count` +
+`data_version` via `mcp__dagster__get_asset_materializations` (ground truth)
+before concluding a re-pull did or didn't change anything.
+
+`INFORMATION_SCHEMA.JOBS.referenced_tables` lists base tables reached via view
+expansion, NOT a directly-selected view. To find consumers of a view, filter by
+`REGEXP_CONTAINS(query, '<view_name>')`.
+
+Extracting a relation name from `JOBS_BY_PROJECT.query` with a regex catches
+developer dev-schema jobs (`zz_<user>_<schema>`) alongside prod. Anchor the
+pattern on the full backticked path (`` `<project>`.`<schema>`.`<rel>` ``) or
+prod and dev failures land in the same result set.
+
+## Query shapes that fail
+
+Three failure modes, not interchangeable:
+
+- `exceeds the maximum allowed number of nested views` — chain depth >16.
+  Materialize a mid-chain model. Chained joins through PR-branch marts
+  (mart-view → mart-view → upstream-view) hit this; query materialized prod
+  tables instead, or split the query.
+- `Resources exceeded during query execution: Not enough resources for query planning - query is too complex`
+  — fan-out width, can fire well below 16. Materialize the fan-out point.
+- `Correlated subqueries that reference other tables are not supported` —
+  `array(select ... from unnest(<col>) inner join <table> ...)`. View DDL
+  succeeds; reads fail. Restructure to a CTE:
+  `cross join unnest + standard join + array_agg`.
+
+## SQL idioms and syntax traps
+
+Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
+as a bare token fails with "Syntax error: Expected end of input but got '-'".
+Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+
+Single quotes inside a BigQuery string literal escape with a backslash
+(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
+"concatenated string literals must be separated by whitespace".
+
+For NULL-safe distinct counts on composite keys, use
+`count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
+is NULL and silently miscounts violations.
+
+Cross-district queries: always use `teamster-332318.kipptaf_*` datasets for
+queries spanning multiple districts — never manually `UNION ALL` across
+`kippnewark_*`, `kippcamden_*`, `kippmiami_*`. Extract district from
+`_dbt_source_relation` with
+`REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
+
+Per-column population on a wide table (which optional/custom columns actually
+carry data) without dynamic SQL: `to_json(t)` the row, unnest its keys,
+subscript. `json_value`'s path argument must be CONSTANT so it cannot take the
+unnested key — use `j[k]` and compare `to_json_string`, since a JSON null is not
+a SQL NULL:
+
+```sql
+with rows_json as (select to_json(t) as j from `<dataset>.<table>` as t)
+select k, countif(to_json_string(j[k]) not in ('null', '""')) as populated
+from rows_json, unnest(json_keys(j, 1)) as k
+group by k
+```
+
+## PR-branch and CI schemas
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is
@@ -70,34 +143,13 @@ PR-branch build to prod: `count(*)` plus
 `dbt_cloud_pr_<job>_<pr>_<schema>.<model>` vs the prod schema. Identical counts
 are a value-level proof; `--empty` only proves column resolution.
 
-Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
-hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
-split the query.
+## Cost and performance
 
-Three BQ query-shape failure modes (not interchangeable):
-
-- `exceeds the maximum allowed number of nested views` — chain depth >16.
-  Materialize a mid-chain model.
-- `Resources exceeded during query execution: Not enough resources for query planning - query is too complex`
-  — fan-out width, can fire well below 16. Materialize the fan-out point.
-- `Correlated subqueries that reference other tables are not supported` —
-  `array(select ... from unnest(<col>) inner join <table> ...)`. View DDL
-  succeeds; reads fail. Restructure to a CTE:
-  `cross join unnest + standard join + array_agg`.
-
-`INFORMATION_SCHEMA.JOBS.referenced_tables` lists base tables reached via view
-expansion, NOT a directly-selected view. To find consumers of a view, filter by
-`REGEXP_CONTAINS(query, '<view_name>')`.
-
-For NULL-safe distinct counts on composite keys, use
-`count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
-is NULL and silently miscounts violations.
-
-**Cross-district queries**: Always use `teamster-332318.kipptaf_*` datasets for
-queries spanning multiple districts — never manually `UNION ALL` across
-`kippnewark_*`, `kippcamden_*`, `kippmiami_*`. Extract district from
-`_dbt_source_relation` with
-`REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
+Merge/upsert cost: clustering the target does NOT prune a dynamic-join `MERGE` /
+`DELETE ... WHERE EXISTS` (only partitioning + a _static_ predicate prunes).
+`--dry_run` reflects partition pruning but NOT clustering pruning — measure
+clustering via actual `total_bytes_billed` in
+`INFORMATION_SCHEMA.JOBS_BY_PROJECT`.
 
 Slow/timed-out dbt model: in `JOBS_BY_PROJECT`, same `total_bytes_processed` +
 N× `total_slot_ms` across runs of the same model = BigQuery straggler/shard
@@ -113,16 +165,3 @@ Cost triage ("why did BigQuery costs go up"): query
 dbt models (on-demand ≈ $6.25/TiB billed; filter `statement_type != 'SCRIPT'` to
 avoid double-counting parent jobs). Group by `user_email` to split Dagster vs
 dbt Cloud CI vs humans.
-
-Per-column population on a wide table (which optional/custom columns actually
-carry data) without dynamic SQL: `to_json(t)` the row, unnest its keys,
-subscript. `json_value`'s path argument must be CONSTANT so it cannot take the
-unnested key — use `j[k]` and compare `to_json_string`, since a JSON null is not
-a SQL NULL:
-
-```sql
-with rows_json as (select to_json(t) as j from `<dataset>.<table>` as t)
-select k, countif(to_json_string(j[k]) not in ('null', '""')) as populated
-from rows_json, unnest(json_keys(j, 1)) as k
-group by k
-```

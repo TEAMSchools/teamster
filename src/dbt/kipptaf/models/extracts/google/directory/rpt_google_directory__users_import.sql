@@ -57,7 +57,7 @@ with
             row_number() over (
                 partition by student_number order by academic_year desc, exitdate desc
             ) as rn_all,
-        from {{ ref("int_focus__student_enrollments") }}
+        from {{ ref("int_focus__student_enrollment_roster") }}
     ),
 
     focus_students as (
@@ -199,6 +199,8 @@ with
 
             u.surrogate_key_target,
 
+            'group-students-' || s.region || '@teamstudents.org' as group_key_target,
+
             if(u.primary_email is not null, true, false) as is_matched,
 
             if(
@@ -220,34 +222,42 @@ with
 
     final as (
         select
-            *,
+            w.*,
 
-            if(not is_matched and not suspended, true, false) as is_create,
+            g.email as group_key,
+
+            if(not w.is_matched and not w.suspended, true, false) as is_create,
 
             if(
-                is_matched
+                w.is_matched
                 and {{
                     dbt_utils.generate_surrogate_key(
                         ["first_name", "last_name", "suspended", "org_unit_path"]
                     )
-                }} != surrogate_key_target,
+                }} != w.surrogate_key_target,
                 true,
                 false
             ) as is_update,
-        from with_google
+        from with_google as w
+        /* A null group_key means the region's students group does not exist in
+        Google. Unlike a null org_unit_path, it does NOT drop the student: the
+        account is still provisioned, and the user_create asset skips the
+        membership add and reports the missing group once. */
+        left join
+            {{ ref("stg_google_directory__groups") }} as g
+            on w.group_key_target = g.email
     )
 
 select
     student_email_google as `primaryEmail`,
     org_unit_path as `orgUnitPath`,
+    group_key as `groupKey`,
     suspended,
     is_create,
     is_update,
     student_number,
 
     'SHA-1' as `hashFunction`,
-
-    'group-students-' || region || '@teamstudents.org' as `groupKey`,
 
     struct(first_name as `givenName`, last_name as `familyName`) as `name`,
     to_hex(sha1(student_web_password)) as `password`,

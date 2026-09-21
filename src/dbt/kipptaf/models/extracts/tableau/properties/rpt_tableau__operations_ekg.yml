@@ -16,16 +16,22 @@ models:
       - name: location_clean_name
         data_type: string
         description: >-
-          Canonical location from int_people__location_crosswalk. Drives the
-          Tableau location gate; retired name aliases collapse onto their
-          canonical clean name here.
+          The respondent's own canonical location from
+          int_people__location_crosswalk, resolved through the roster join on
+          respondent_email. This is where the walkthrough's author works, NOT
+          the school they walked — use school_clean_name to scope a row to the
+          observed school. Retired name aliases collapse onto their canonical
+          clean name here.
         data_tests:
           - not_null
       - name: home_business_unit_name
         data_type: string
         description: >-
-          Legal entity. Drives the Tableau entity gate. Never location_region,
-          which is a property of the location rather than the person.
+          The respondent's own legal entity, from the roster join. This does NOT
+          drive the Tableau entity gate on this model — use
+          school_business_unit_name, the entity of the school that was walked.
+          Central-office respondents walk schools in every region, and no
+          respondent on this form is based in KIPP Paterson.
         data_tests:
           - not_null
           - accepted_values:
@@ -36,6 +42,39 @@ models:
                   - KIPP Miami
                   - KIPP Paterson
                   - KIPP TEAM and Family Schools Inc.
+      - name: school_clean_name
+        data_type: string
+        description: >-
+          The walked school resolved to its canonical name via
+          int_people__location_crosswalk, so every alias of one school collapses
+          to a single value. This is the column a Tableau location gate scopes
+          on. Null when the form label is absent from the crosswalk, which is
+          also when school_business_unit_name and grade_band are null.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: school_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity that owns the walked school, from
+          int_people__location_crosswalk. This is the column a Tableau entity
+          gate scopes on, NOT home_business_unit_name — that one is the
+          respondent's own entity, and central-office staff walk schools in
+          every region. Takes four values, not the five home_business_unit_name
+          takes — KIPP TEAM and Family Schools Inc. owns no school, so it never
+          appears here. Null when the form label is absent from the crosswalk.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
       - name: respondent
         data_type: string
       - name: google_email
@@ -88,7 +127,8 @@ models:
         data_type: int64
       - name: walkthrough_round
         data_type: string
-      - name: school
-        data_type: string
       - name: grade_band
         data_type: string
+        description: >-
+          Grade band of the walked school, from int_people__location_crosswalk.
+          Null when the form's school label is absent from the crosswalk.

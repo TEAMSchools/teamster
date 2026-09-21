@@ -1,5 +1,11 @@
 with
-    staff_roster as (
+    active_roster as (
+        /* every non-terminated employee, no title filter. The manager
+           self-joins below (head of school, MDSO) read this CTE: a School
+           Leader's manager holds titles such as Head of Schools, Managing
+           Director, or Chief Academic Officer, and a title list can never be
+           complete. Filtering the manager lookup by title nulled `hos` for
+           every MS/HS student (#5164). */
         select
             employee_number,
             formatted_name,
@@ -14,6 +20,13 @@ with
             home_work_location_campus_name,
             reports_to_employee_number,
         from {{ ref("int_people__staff_roster") }}
+        where assignment_status != 'Terminated'
+    ),
+
+    staff_roster as (
+        /* the school-based leadership roles this crosswalk is keyed on */
+        select *,
+        from active_roster
         where
             job_title in (
                 'Director School Operations',
@@ -22,7 +35,6 @@ with
                 'School Leader',
                 'School Leader in Residence'
             )
-            and assignment_status != 'Terminated'
             and home_work_location_powerschool_school_id != 0
     ),
 
@@ -109,8 +121,8 @@ select
     mdo.sam_account_name as mdo_sam_account_name,
 from school_leadership as l
 left join staff_roster as sl on l.sl_employee_number = sl.employee_number
-left join staff_roster as hos on sl.reports_to_employee_number = hos.employee_number
+left join active_roster as hos on sl.reports_to_employee_number = hos.employee_number
 left join staff_roster as dso on l.dso_employee_number = dso.employee_number
-left join staff_roster as mdso on dso.reports_to_employee_number = mdso.employee_number
+left join active_roster as mdso on dso.reports_to_employee_number = mdso.employee_number
 left join mdo as m on l.home_work_location_region = m.home_work_location_region
 left join staff_roster as mdo on m.mdo_employee_number = mdo.employee_number
