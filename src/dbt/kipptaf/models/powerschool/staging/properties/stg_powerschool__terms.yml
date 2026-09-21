@@ -1,4 +1,5 @@
 models:
   - name: stg_powerschool__terms
     config:
+      enabled: false
       materialized: table

@@ -1058,15 +1058,6 @@ sources:
                 - kippcamden
                 - powerschool
                 - stg_powerschool__s_stu_x
-      - name: int_powerschool__terms
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippcamden
-                - powerschool
-                - int_powerschool__terms
       - name: int_powerschool__terms_spine
         config:
           meta:
