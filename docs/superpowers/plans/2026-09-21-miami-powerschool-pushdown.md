@@ -142,8 +142,7 @@ No Cube view, no exposure, no Python. Moving it is contained.
 
 In `rpt_gsheets__award_ceremony_gpa.sql`, the `grade_source` CTE's Stored branch
 currently reads `sg.agg_credittype as credittype`. Replace that plain ref with
-the CASE, moved down into the case-statement position (sqlfluff ST06 bucket 6,
-after every plain ref in the branch):
+the CASE **in place**, keeping it in the same 7th slot:
 
 ```sql
     grade_source as (
@@ -156,10 +155,6 @@ after every plain ref in the branch):
             co.lastfirst,
 
             sg.course_number,
-            sg.potentialcrhrs,
-
-            sg.earnedcrhrs,
-            sg.gpa_points,
 
             case
                 when sg.credit_type like 'ENG%'
@@ -173,19 +168,30 @@ after every plain ref in the branch):
                 else sg.credit_type
             end as credittype,
 
+            sg.potentialcrhrs,
+
+            sg.earnedcrhrs,
+            sg.gpa_points,
+
         from {{ ref("stg_powerschool__storedgrades") }} as sg
 ```
 
-`sg.potentialcrhrs` moves up one line to close the gap the old `agg_credittype`
-ref left. Everything from `inner join` onward is unchanged.
+Everything from `inner join` onward is unchanged. Keep the `sg.` prefix: this
+SELECT reads two relations, so the single-relation no-prefix rule does not
+apply.
 
-Keep the `sg.` prefix: this SELECT reads two relations, so the single-relation
-no-prefix rule does not apply.
+**Do not sort the CASE to the end of the select list.** sqlfluff ST06 would
+normally put a case statement after every plain ref, and that is wrong here.
+`grade_source` feeds a positional `union all`, and `credittype` sits at ordinal
+7 in BOTH branches. Sorting it to position 10 binds the Stored branch's
+`credittype` to the Live branch's `gpa_points` — a cross-type misalignment that
+compiles clean and corrupts the sheet. ST06 does not fire here in any case:
+sqlfluff skips the rule near the templated `{{ ref() }}` slice, and a
+`trunk-ignore` for it is reported as unneeded.
 
-The Live branch below is unchanged — it already produces `credittype` from
-`fg.credittype`, and the `union all` matches by position, so the Stored branch's
-`credittype` must stay in the same ordinal slot. It does: it was the 7th column
-and it still is.
+Confirm the alignment before finishing. Both branches must read, in order:
+`gpa_type`, `school_abbreviation`, `grade_level`, `student_number`, `lastfirst`,
+`course_number`, `credittype`, `potentialcrhrs`, `earnedcrhrs`, `gpa_points`.
 
 - [ ] **Step 2: Drop the derivation from the wrapper**
 
@@ -346,26 +352,30 @@ next to the existing `yearid` entry:
     PowerSchool's yearid plus 1990.
 ```
 
-- [ ] **Step 4: Verify the values against prod before trusting them**
-
-```sql
-select
-  countif(academic_year != yearid + 1990) as n_disagree,
-  count(*) as n_rows,
-from `teamster-332318`.kippnewark_powerschool.int_powerschool__gpa_term
-```
-
-Run this against the model built in dev (Step 5), not prod — prod has no
-`academic_year` column yet. Expected: `n_disagree = 0`.
-
-- [ ] **Step 5: Build into dev and check**
+- [ ] **Step 4: Build into dev**
 
 ```bash
 uv run dbt build --select int_powerschool__gpa_term --target dev --defer --state <prod-manifest-dir> --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown/src/dbt/kippnewark 2>&1 | tail -n 20
 ```
 
-Expected: PASS. Then run Step 4's query against
-`zz_<user>_kippnewark_powerschool.int_powerschool__gpa_term`.
+Expected: PASS.
+
+- [ ] **Step 5: Verify the values on the dev relation**
+
+Query the relation Step 4 just built, not prod — prod has no `academic_year`
+column yet, so this query cannot run there.
+
+```sql
+select
+  countif(academic_year != yearid + 1990) as n_disagree,
+  countif(academic_year is null) as n_null,
+  count(*) as n_rows,
+from `teamster-332318`.zz_<user>_kippnewark_powerschool.int_powerschool__gpa_term
+```
+
+Expected: `n_disagree = 0`. `n_null` should equal the count of rows with a null
+`yearid`; a surprise there means the arithmetic landed on rows it should not
+have.
 
 - [ ] **Step 6: Lint and commit**
 
