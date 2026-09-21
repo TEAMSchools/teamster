@@ -124,11 +124,15 @@ The skill then owns three responsibilities:
 1. The dbt models and the Tableau dashboard, which it already covers.
 2. The PowerSchool plugin: how it is built, versioned, packaged, and deployed to
    each instance.
-3. Propagating a plugin change into the end-user skill, in plain language.
+3. Propagating a plugin change into the end-user skill, in plain language, and
+   shipping it by whichever of the 2 distribution paths applies.
 
 Responsibility 3 gets a named playbook, with the instruction to avoid technical
 detail written into the playbook itself. Otherwise plain language depends on
-whoever is driving remembering to ask for it.
+whoever is driving remembering to ask for it. The playbook ends at the release
+asset and then branches: upload to organization skills, or send the zip for a
+per-user install. Both branches are written out, because the one that is
+unavailable is the one somebody will need.
 
 ### The end-user skill stays separate and shippable
 
@@ -152,6 +156,41 @@ A workflow builds the zip on push and attaches it to a release, so the download
 link is stable and always current. Stamp a version inside `SKILL.md` and have
 the `gradebook-audit` skill know the current one, so a report of "the screen
 does not match the instructions" can be resolved against a known build.
+
+#### Two distribution paths, both documented
+
+The same zip reaches Teaching & Learning 2 ways. Write a procedure for each, in
+the `gradebook-audit` skill, and keep both current. The second exists because
+the first depends on a plan tier and an organization setting that can change
+without warning.
+
+**Primary — organization skills.** An administrator uploads the zip at claude.ai
+under Organization settings, Skills, Add. Anthropic's documentation states the
+skill is provisioned to every user in the organization immediately, and that
+approving a new version updates everyone who uses it automatically. Teaching &
+Learning installs nothing and cannot end up on a stale version. Two
+preconditions: the organization is on a Team or Enterprise plan, and code
+execution is enabled in organization settings, which the skill needs to write
+the CSV files.
+
+**Fallback — per-user install.** The data team sends the zip and each person
+installs it themselves in Claude Desktop under Settings, Skills, Add, Upload
+skill. This is the procedure `INSTALL.md` already describes. Keep `INSTALL.md`
+in the skill folder for it, and keep it accurate.
+
+The fallback is not hypothetical. It is the only path when the organization
+setting is off, when a person is outside the organization, and when an urgent
+fix must reach one region before an administrator is available. A per-user
+install also does not auto-update, so the version stamp matters on that path: it
+is the only way to tell who is behind.
+
+There is no programmatic push to organization skills. Anthropic exposes no API
+or CLI for them; the web console is the only surface, and the Admin API covers
+members, invites, workspaces, API keys and similar, not skills. The separate
+`/v1/skills` API is unrelated here — those skills are private to an API
+workspace and never appear in claude.ai or Claude Desktop. So the release asset
+is the handoff point on both paths, and a human performs the last step either
+way. Issue #5440 tracks closing that gap if Anthropic ships an API.
 
 ### Applying ICM selectively
 
@@ -262,6 +301,9 @@ asserted:
   failure for both checks before claiming either works.
 - The end-user skill zip builds, attaches to a release, and carries a version
   stamp. Its files sit at the zip root, matching the layout that installs today.
+- The `gradebook-audit` skill documents both distribution paths, and a reader
+  who has never done either can follow each one without asking. `INSTALL.md`
+  ships inside the skill folder and still matches the per-user screens.
 - The seeded end-user skill names the 2 Drive calls and says which one drops an
   empty `NOTE` column. Grep `references/sheets.md` for `get_file_metadata` to
   confirm the dropped section came back.
