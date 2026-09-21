@@ -48,6 +48,8 @@ select
     max(school_week_end_date) as week_end_friday,
 
 from week_school_levels
+-- elementary keeps assignments in DeansList, not PowerSchool, so there is no
+-- gradebook to audit; Sumner resolves to MS above and survives this filter
 where school_level != 'ES'
 group by
     academic_year,

@@ -391,6 +391,19 @@ PowerSchool assigns week numbers in that case. The gap was found in dry-run
 testing and has never been exercised against a real start-of-year load. Answer
 it before the skill is trusted with a real load.
 
-**`ES` is accepted but never produced.** The plugin's generated template and its
-`validSL` check accept `ES` as a school level, but the end-user skill only ever
-produces `MS` and `HS` rows. Either record why `ES` is accepted or remove it.
+**`ES` is accepted but never produced, and should be removed.** The plugin's
+generated template and its `validSL` check accept `ES` as a school level, but
+the end-user skill only ever produces `MS` and `HS` rows.
+
+The reason, recorded 2026-09-21: elementary keeps assignments in DeansList, not
+PowerSchool, so there is no PowerSchool gradebook to audit. That is why
+`rpt_gsheets__gradebook_audit_all_weeks` filters `school_level != 'ES'` and why
+the template drops every ES row at its `u_expectations` join. Those filters read
+as arbitrary without it, so the SQL now carries a one-line note at the filter.
+
+Remove `ES` from `validSL` and from the generated template at the next plugin
+version bump; it does not justify a deploy of its own. Accepting it today lets
+someone upload elementary expectations that nothing will ever read, and believe
+elementary is being audited — a false belief, with no error anywhere, which is
+the failure mode this whole migration is built to catch. Sumner is unaffected:
+its grade 5 and up is audited as middle school and its rows load as `MS`.
