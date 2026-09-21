@@ -46,8 +46,9 @@ Schoolid 30200805 carries a full 7-row Focus term set in every year from AY2018
 with zero attendance and zero enrollment behind it. The existing `syear >= 2018`
 floor was never sufficient; those rows are fabricated.
 
-`int_students__sis_cutover` resolves to **2026** in prod. Flooring the Focus arm
-there orphans nothing: every Focus grades and attendance model reads
+The SIS cutover year is 2026, and it is permanent — the cutover already
+happened, so the year is a historical fact, not a parameter. Flooring the Focus
+arm there orphans nothing: every Focus grades and attendance model reads
 `stg_focus__marking_periods` directly, never through `int_students__terms`, so
 the 321 pre-2018 report card grade rows keep resolving.
 
@@ -187,17 +188,21 @@ the cutover year and Focus supplies them from the cutover year on.
 ### 4. `int_students__terms` collapses
 
 From 257 lines to roughly 90. The PowerSchool arm becomes a projection of the
-new spine wrapper. The Focus arm keeps its conform but changes its floor:
+new spine wrapper. The Focus arm keeps its conform but changes its floor from
+`mp.syear >= 2018` to the cutover year:
 
 ```sql
-cross join {{ ref("int_students__sis_cutover") }} as c
-where mp.type in ('year', 'semester', 'quarter')
-  and mp.syear >= c.focus_start_academic_year
+where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2026
 ```
 
-This mirrors `int_students__calendar_day`. The existing note about 321 report
-card grade rows stays — it explains why both filters live here rather than in
-staging, and that reasoning is unchanged.
+The literal is deliberate. `int_students__calendar_day` reads the same year from
+`int_students__sis_cutover`, which derives it from the first Focus academic year
+with recorded attendance — so a Focus backfill reaching further back would move
+it. The cutover is done and 2026 will not change, so this model states the year
+instead of deriving it, and takes on no dependency on the cutover model.
+
+The existing note about 321 report card grade rows stays — it explains why both
+filters live here rather than in staging, and that reasoning is unchanged.
 
 Deleted: `powerschool_quarters`, `powerschool_canonical`, `powerschool_joined`,
 the full join, and its comment.
