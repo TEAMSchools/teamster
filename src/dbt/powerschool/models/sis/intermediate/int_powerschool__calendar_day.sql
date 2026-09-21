@@ -8,6 +8,9 @@ select
     sch.abbreviation as school_abbreviation,
     sch.school_level,
     sch.schoolcity,
+
+    cd.insession = 1 as is_in_session,
+    cd.membershipvalue > 0 as is_in_membership,
 from {{ ref("stg_powerschool__calendar_day") }} as cd
 /* left join: a day with no covering year term keeps flowing with a null year,
    which is what kipptaf's int_students__calendar_day does today */

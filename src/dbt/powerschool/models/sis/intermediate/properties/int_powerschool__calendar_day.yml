@@ -85,3 +85,10 @@ models:
         data_type: string
       - name: schoolcity
         data_type: string
+      - name: is_in_session
+        data_type: boolean
+        description: True when the school is in session on this date.
+      - name: is_in_membership
+        data_type: boolean
+        description:
+          True when this date counts toward student membership at this school.
