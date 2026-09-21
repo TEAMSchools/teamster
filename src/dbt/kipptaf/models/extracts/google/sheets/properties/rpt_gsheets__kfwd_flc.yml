@@ -23,12 +23,13 @@ models:
         data_type: string
       - name: ccr_period
         data_type: string
-      - name: college_counselor
+      - name: college_name
         data_type: string
         description:
           Name of the Salesforce user in the student's College Counselor lookup
           field. Null when the contact record has no college counselor assigned,
-          or when the student has no Salesforce contact record.
+          or when the student has no Salesforce contact record. Aliased to
+          counselor_name to match original pattern.
       - name: contact_college_match_display_gpa
         data_type: numeric
       - name: contact_highest_act_score
