@@ -1,0 +1,8 @@
+models:
+  - name: int_powerschool__gpa
+    description: >-
+      Network-wide union of the districts' term-grained GPA joined to cumulative
+      GPA. Column semantics live on the package model.
+    config:
+      meta:
+        contains_pii: true

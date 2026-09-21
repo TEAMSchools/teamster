@@ -770,6 +770,15 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__gpa_term
+      - name: int_powerschool__gpa
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gpa
       - name: int_powerschool__gradescaleitem_lookup
         config:
           meta:
