@@ -184,10 +184,13 @@ apply.
 normally put a case statement after every plain ref, and that is wrong here.
 `grade_source` feeds a positional `union all`, and `credittype` sits at ordinal
 7 in BOTH branches. Sorting it to position 10 binds the Stored branch's
-`credittype` to the Live branch's `gpa_points` — a cross-type misalignment that
-compiles clean and corrupts the sheet. ST06 does not fire here in any case:
-sqlfluff skips the rule near the templated `{{ ref() }}` slice, and a
-`trunk-ignore` for it is reported as unneeded.
+`credittype` to the Live branch's `gpa_points`. `credittype` is `string` and
+`gpa_points`, `earnedcrhrs` and `potentialcrhrs` are all `float64`, so BigQuery
+rejects the union outright rather than corrupting the sheet quietly — but the
+suggestion is wrong either way, and a future edit that happens to align the
+types would fail silently. ST06 does not fire here in any case: sqlfluff skips
+the rule near the templated `{{ ref() }}` slice, and a `trunk-ignore` for it is
+reported as unneeded.
 
 Confirm the alignment before finishing. Both branches must read, in order:
 `gpa_type`, `school_abbreviation`, `grade_level`, `student_number`, `lastfirst`,
