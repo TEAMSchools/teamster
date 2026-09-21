@@ -85,7 +85,7 @@ select
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
 
-    kt.contact_college_counselor_name as college_counselor,
+    kt.contact_college_counselor_name as counselor_name,
     kt.contact_college_match_display_gpa,
     kt.contact_highest_act_score,
     kt.best_guess_pathway,
