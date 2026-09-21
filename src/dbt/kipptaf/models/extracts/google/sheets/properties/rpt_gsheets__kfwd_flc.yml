@@ -23,13 +23,12 @@ models:
         data_type: string
       - name: ccr_period
         data_type: string
-      - name: college_name
+      - name: counselor_name
         data_type: string
         description:
           Name of the Salesforce user in the student's College Counselor lookup
           field. Null when the contact record has no college counselor assigned,
-          or when the student has no Salesforce contact record. Aliased to
-          counselor_name to match original pattern.
+          or when the student has no Salesforce contact record.
       - name: contact_college_match_display_gpa
         data_type: numeric
       - name: contact_highest_act_score
@@ -110,5 +109,5 @@ models:
         data_type: string
         description:
           Name of the Salesforce user who owns the student's contact record.
-          Distinct from college_counselor, which comes from the College
-          Counselor lookup field rather than record ownership.
+          Distinct from counselor_name, which comes from the College Counselor
+          lookup field rather than record ownership.
