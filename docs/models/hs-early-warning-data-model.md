@@ -217,6 +217,20 @@ For the working rules, cut score maintenance, and the failure modes, use the
 - `cohort` is frozen at high school entry, which is correct for NJ's 4-year
   adjusted cohort graduation rate but means a retained or accelerated student
   sits the assessment with a different class than their cohort.
+- The cut score join therefore keys on `least(cohort, cohort_primary)`, the
+  soonest class the student could graduate with, not on `cohort` alone.
+  `cohort_primary` is `(academic_year + 13) - grade_level`, so it moves when the
+  grade level moves. Neither column works alone. A student who already skipped a
+  grade needs `cohort_primary`. A student repeating a grade who recovers credits
+  over the summer needs `cohort`, because the recovery leaves no enrollment row
+  and the model cannot see it until the grade level moves the next fall. `least`
+  takes whichever is earlier and is right in both cases.
+- Two costs come with that choice. A student retained more than once keys to a
+  class that can predate the assessment version they sat, and NJGPA-A rows exist
+  for the class of 2027 only, so that student matches nothing. An 11th grader
+  who graduates without ever being placed in grade 12 is never checked for
+  FAFSA, because `fafsa_required` reads `grade_level = 12`. Operations has to
+  watch for the second one, because the warehouse cannot see it.
 
 ### Which pathway code a student gets
 
@@ -445,6 +459,14 @@ The enforcement is the `scores_have_cutoffs` test, which warns and names the
 students who cannot be scored rather than letting them fall through to a default
 `R`. Hand that list to the HS team; in September 2026 it went to Casey and
 Walters.
+
+Run that test again after the new rows land, and read what is left rather than
+assuming the rows closed it. Three causes leave a student unscoreable and the
+new rows fix only the first: a class NJDOE has not published, a twice-retained
+student whose `least(cohort, cohort_primary)` key predates the assessment
+version they sat, and a student holding no NJGPA record at all. Split the
+remainder by cause before handing it over -- the second needs a records decision
+and the third needs nothing.
 
 ### Step 2 — Community service custom fields
 

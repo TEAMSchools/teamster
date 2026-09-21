@@ -145,6 +145,15 @@ different class than their cohort, so a cohort can legitimately need cut score
 rows for more than one assessment version. When a student's pathway looks wrong,
 check this before suspecting a bad score match.
 
+**The cut score join does not key on `cohort`.** It keys on
+`least(cohort, cohort_primary)`, the soonest class the student could graduate
+with, derived as `cut_score_cohort` in the `students` CTE of
+`int_students__graduation_pathway_scores`. Neither column works alone: a student
+who already skipped a grade needs `cohort_primary`, and a student repeating a
+grade who recovers credits over the summer needs `cohort`, because summer
+recovery leaves no enrollment row for the model to read. Do not "simplify" it
+back to either column.
+
 The actionable drift signal is a student **ahead** of their entry cohort
 (`(academic_year + 13) - grade_level < cohort`), which means a grade skip or a
 missing enrollment year. A student _behind_ their cohort is ordinary retention
@@ -334,6 +343,15 @@ join is wrong — usually a new-scale cut applied to old-scale scores.
 A cohort with scores but no cut score row produces `final_grad_path_code = 'R'`,
 which reads as "no pathway met". That is indistinguishable from a genuine
 failure on the dashboard, so a missing row is a silent wrong answer, not a gap.
+
+Then re-run `int_students__graduation_path_codes__scores_have_cutoffs` and read
+the remainder. Three causes leave a student unscoreable and the rows you just
+entered fix only the first: a class NJDOE has not published, a twice-retained
+student whose `least(cohort, cohort_primary)` key predates the assessment
+version they sat, and a student holding no NJGPA record at all. Report the
+remainder to the HS team split by cause — the second needs a records decision,
+the third needs nothing, and handing over one undifferentiated list wastes their
+time.
 
 ---
 

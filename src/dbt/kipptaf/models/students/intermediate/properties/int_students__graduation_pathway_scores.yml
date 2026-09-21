@@ -9,7 +9,11 @@ models:
       assessment file, hand entry in PowerSchool for transfer students, and the
       college board assessments. Students whose pathway PowerSchool already
       decided still get one row per subject so they do not disappear from
-      reporting. int_students__graduation_path_codes rolls this up into a
+      reporting. The cut score join keys on the soonest class the student could
+      graduate with, the lesser of cohort and cohort_primary. NJDOE sets
+      graduation requirements by graduating class, while cohort freezes at high
+      school entry, so the two disagree for a student who skipped or repeated a
+      grade. int_students__graduation_path_codes rolls this up into a
       per-student standing.
     config:
       materialized: table
