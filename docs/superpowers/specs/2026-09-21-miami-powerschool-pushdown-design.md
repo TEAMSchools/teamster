@@ -51,6 +51,9 @@ both sides are frozen archive tables. Nothing live participates.
    `credit_type` by prefix into `ENG` / `MATH` / `SCI` / `SOC`, row-local over
    one frozen column.
 2. Add a new `int_powerschool__gpa` model holding the term-to-cumulative join.
+   It joins the package's own `int_powerschool__gpa_term` to the package's
+   `int_powerschool__gpa_cumulative` on `studentid` and `schoolid`, and carries
+   the `academic_year` that change 4 adds.
 3. Add `is_in_session` (`insession = 1`) and `is_in_membership`
    (`membershipvalue > 0`) to `int_powerschool__calendar_day`.
 4. Add `academic_year` to `int_powerschool__gpa_term` and
@@ -77,7 +80,11 @@ model also has roughly 19 other consumers.
 ## Changes to `kipptaf`
 
 1. Add an `int_powerschool__gpa` union wrapper and a `sources-kippmiami.yml`
-   entry for it. The archive grows from 14 tables to 15.
+   entry for it. The archive grows from 14 tables to 15. The new wrapper is
+   additive: the `int_powerschool__gpa_term` and
+   `int_powerschool__gpa_cumulative` wrappers both stay, because other models
+   read them directly and `int_powerschool__gpa_cumulative` still holds the KTAF
+   bands until #5462 moves them.
 2. Rewrite `int_students__gpa` to read the new wrapper instead of joining the
    two GPA models itself, and to read `academic_year` instead of computing
    `yearid + 1990`.
@@ -144,8 +151,9 @@ absorbed a new model before, so splitting the work into risk waves buys two
 bakes and no safety.
 
 1. Package changes, all 4 at once.
-2. Miami archive re-bake, per the `src/dbt/kippmiami/CLAUDE.md` recipe, adding
-   `int_powerschool__gpa` as the 15th table.
+2. Miami archive re-bake, per the `src/dbt/kippmiami/CLAUDE.md` recipe. It adds
+   `int_powerschool__gpa` as the 15th table and rebuilds the 4 tables that
+   change 1, 3 and 4 widen.
 3. `kipptaf` changes.
 
 ## Traps
