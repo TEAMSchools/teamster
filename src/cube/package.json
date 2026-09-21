@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@cubejs-backend/bigquery-driver": "^1.7.38",
-    "@cubejs-backend/server": "^1.7.38",
+    "@cubejs-backend/server": "^1.7.42",
     "@google-cloud/bigquery": "^9.0.3",
     "jsonwebtoken": "^9.0.3"
   }
