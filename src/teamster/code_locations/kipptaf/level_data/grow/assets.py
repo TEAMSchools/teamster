@@ -115,13 +115,12 @@ def _observes_fallback(user: dict[str, Any]) -> bool:
 # A Regional Observer observes every observee at each school their scope
 # names, not only their own reports, so they get a group of their own rather
 # than a seat in anyone else's.
-REGIONAL_OBSERVER_ROLE = "Regional Observer"
 REGIONAL_OBSERVER_GROUP = "Regional Observers"
 
 
 def _observes_whole_school(user: dict[str, Any]) -> bool:
     """A Regional Observer who can anchor a group."""
-    return _can_anchor_group(user) and REGIONAL_OBSERVER_ROLE in user["role_names"]
+    return _can_anchor_group(user) and "Regional Observer" in user["role_names"]
 
 
 def _at_school(
