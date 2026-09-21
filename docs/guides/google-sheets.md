@@ -112,6 +112,44 @@ consumers will reference prod data for anything you haven't changed. See the
    uv run dbt build --select {STAGING_MODEL_NAME}
    ```
 
+## Publishing a warehouse view to a Google Sheet
+
+The sections above cover sheets coming **in** as dbt sources. This one covers
+the other direction: an `rpt_gsheets__*` model going **out** to someone who
+reads it in Sheets.
+
+Every published view takes two sheets, in two folders of the Data Integration
+shared drive.
+
+| Folder                                                                                          | Holds                                                                                                            | Named                                                                |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [IMPORTRANGE Sources](https://drive.google.com/drive/folders/1kwng_xGxQzIRNTVueiJqa_VHsd1tSQgO) | The Connected Sheets extraction. Refresh schedules are programmed here.                                          | Exactly the model name, e.g. `rpt_gsheets__gradebook_audit_template` |
+| [Reports](https://drive.google.com/drive/folders/17PG7aMo6f3JxqtSvx7bm0w7FESf0Qbpy)             | What the user opens. Pulls from the source sheet with `IMPORTRANGE` and contains no Connected Sheets of its own. | A friendly name, e.g. `Gradebook Audit Template`                     |
+
+### Why two
+
+The split exists so a user cannot break the pipeline. Editing a Connected Sheets
+range, renaming a tab, or deleting a column in the source sheet breaks the
+refresh for everybody. The report sheet is downstream of that: a user who breaks
+their own copy breaks only their own copy, and the source keeps refreshing for
+every other consumer.
+
+### Rules
+
+1. **Share the Reports link, never the source link.** This is the whole point of
+   the split. A source-sheet link handed to a user defeats it.
+2. **Program refreshes only in the source sheet.** The report sheet has no
+   Connected Sheets and nothing to schedule.
+3. **The report sheet uses `IMPORTRANGE` only.** No formulas that reshape data,
+   and no second data path — anything the user needs computed belongs in the dbt
+   model.
+4. **A new tab has to be created by hand in both sheets.** Dagster's exposure
+   asset is a marker that writes nothing, so adding a model to an exposure does
+   not create its tab.
+5. **The exposure `url` points at the source sheet**, not the report. The
+   exposure tracks the sheet dbt actually feeds. Do not "correct" it to the
+   report link.
+
 ## Adding a Google Form source
 
 Google Forms feed data into Teamster via a linked Google Sheet (Forms
