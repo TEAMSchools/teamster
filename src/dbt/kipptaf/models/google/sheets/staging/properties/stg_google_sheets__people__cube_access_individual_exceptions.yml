@@ -52,15 +52,15 @@ models:
               end
           config:
             severity: error
-      # A row grants one location, so when a row reaches both axes they must
-      # name the same tier -- there is a single additional_location_name and it
+      # A row grants one location, so when a row reaches both axes -- neither
+      # of them 'none' -- they must name the same tier -- there is a single additional_location_name and it
       # cannot be a region for staff and a school for students at once. To give
       # someone different breadth per axis, use two rows.
       - dbt_utils.expression_is_true:
           arguments:
             expression: >-
-              additional_student_location_scope is null or
-              additional_staff_location_scope is null or
+              additional_student_location_scope = 'none' or
+              additional_staff_location_scope = 'none' or
               additional_student_location_scope =
               additional_staff_location_scope
           config:

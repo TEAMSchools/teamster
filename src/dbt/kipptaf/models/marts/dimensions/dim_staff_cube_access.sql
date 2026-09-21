@@ -137,13 +137,19 @@ with
     individual_exceptions_live as (
         select
             additional_location_name,
-            staff_department_scope,
-            staff_pii_scope,
-            staff_compensation_scope,
-            staff_observations_scope,
-            staff_benefits_scope,
-
             google_email,
+
+            -- The sheet spells "leave this alone" as 'inherit' so a form can
+            -- require every cell and a reader can tell a deliberate no from an
+            -- unfilled one. NULL is what the coalesce chain below reads as
+            -- fall-through, so the translation happens here, once, before the
+            -- max() in individual_exception_scopes -- which would otherwise
+            -- pick the literal 'inherit' over a real override.
+            nullif(staff_department_scope, 'inherit') as staff_department_scope,
+            nullif(staff_pii_scope, 'inherit') as staff_pii_scope,
+            nullif(staff_compensation_scope, 'inherit') as staff_compensation_scope,
+            nullif(staff_observations_scope, 'inherit') as staff_observations_scope,
+            nullif(staff_benefits_scope, 'inherit') as staff_benefits_scope,
 
             -- additional_location_scope is already constrained to
             -- network/region/school by the staging accepted_values test, and a
@@ -152,12 +158,12 @@ with
             -- 'none' -- a plain coalesce, not a case, is enough.
             coalesce(additional_location_scope, 'none') as location_scope,
 
-            -- Which axes this row's location reaches. The staging model has
-            -- already folded a blank cell and the literal 'none' to NULL, so
-            -- presence is the whole test. Independent per axis: a row may widen
-            -- students without staff, or the reverse.
-            additional_student_location_scope is not null as includes_student_data,
-            additional_staff_location_scope is not null as includes_staff_data,
+            -- Which axes this row's location reaches. Independent per axis: a
+            -- row may widen students without staff, or the reverse. 'none' is
+            -- the sheet's word for "not this axis"; it is never blank, so a
+            -- plain inequality is the whole test.
+            additional_student_location_scope != 'none' as includes_student_data,
+            additional_staff_location_scope != 'none' as includes_staff_data,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
         where {{ is_live_row("status", "grant_date", "expiry_date") }}
     ),

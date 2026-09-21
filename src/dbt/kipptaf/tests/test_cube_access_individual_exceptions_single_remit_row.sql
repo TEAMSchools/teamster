@@ -11,11 +11,11 @@ with
         where
             {{ is_live_row("status", "grant_date", "expiry_date") }}
             and (
-                staff_department_scope is not null
-                or staff_pii_scope is not null
-                or staff_compensation_scope is not null
-                or staff_observations_scope is not null
-                or staff_benefits_scope is not null
+                staff_department_scope != 'inherit'
+                or staff_pii_scope != 'inherit'
+                or staff_compensation_scope != 'inherit'
+                or staff_observations_scope != 'inherit'
+                or staff_benefits_scope != 'inherit'
             )
     )
 
