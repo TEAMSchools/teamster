@@ -39,10 +39,13 @@ sheet uses:
 - **`additional_student_location_scope`** — student data.
 - **`additional_staff_location_scope`** — staff data.
 
-Both take `network`, `region`, `school`, or `none` (a blank cell means `none`).
-They are independent, so you can widen one without the other —
-`student = school` with `staff = none` gives someone student data at one school
-and no extra staff visibility at all.
+Both take `network`, `region`, `school`, or `none`. They are independent, so you
+can widen one without the other: `student = school` with `staff = none` gives
+someone student data at one school and no extra staff visibility at all.
+
+**No cell in this sheet is ever left blank.** Every column takes a word or a
+date, so a request form can make each field required and nobody has to work out
+whether an empty cell was deliberate.
 
 **When you set both, they must be the same word.** A row carries a single
 `additional_location_name`, so it cannot be a region for staff and a school for
@@ -53,12 +56,16 @@ use two rows.
 `staff_department_scope`, which is a different question (which departments, not
 which locations).
 
-## When to leave `additional_location_name` blank
+## `additional_location_name`: a real name, or `n/a`
 
-Leave it blank **only** when the scope is `network`, because `network` already
-means every location and there is nothing left to name. For `region` or `school`
-the name is required, and a blank one fails validation on the next pipeline run
-rather than silently granting nothing.
+For `region` or `school`, write the exact region or school name. For `network`,
+write **`n/a`** — `network` already means every location, so there is nothing
+left to name. Same for a row that only changes a visibility setting and grants
+no location.
+
+Validation checks this both ways. A real name on a `network` row fails, because
+it reads as granting that one school while actually granting everything. An
+`n/a` on a `region` or `school` row fails too.
 
 ## One row per additional location
 
@@ -97,7 +104,7 @@ regions"):
 
 | google_email                         | additional_student_location_scope | additional_staff_location_scope | additional_location_name |
 | ------------------------------------ | --------------------------------- | ------------------------------- | ------------------------ |
-| `example.three@apps.teamschools.org` | network                           | network                         | _(leave blank)_          |
+| `example.three@apps.teamschools.org` | network                           | network                         | n/a                      |
 
 ## The two things a row can do
 
@@ -114,20 +121,39 @@ A row can do either or both of the following. A row that does neither is inert
    that field.
 
 If a person has multiple rows for their location grants, put any visibility
-overrides on **only one** of those rows and leave the rest blank on the other
-rows — the sheet will fail validation if two of a person's active rows disagree
-on the same setting.
+overrides on **only one** of those rows and write `inherit` on the other rows —
+the sheet will fail validation if two of a person's active rows disagree on the
+same setting.
+
+### `inherit` versus `none` on the override columns
+
+Each of the five override columns takes one of two "do nothing much" values, and
+they are opposites. Read this twice:
+
+- **`inherit`** leaves the person's normal setting alone. This is almost always
+  what you want, and it is what goes on every override column you are not
+  deliberately changing.
+- **`none`** replaces their normal setting with "see nothing", which **takes
+  away** access their role would otherwise give them.
+
+Both are spelled out on purpose. An empty cell used to mean `inherit`, which
+made "I did not touch this" and "I meant to revoke this" impossible to tell
+apart by looking at the sheet.
+
+`none` is a real tool — it is how you revoke someone's visibility below their
+role's default — just rarely what you want.
 
 ## Lifecycle: status, grant_date, expiry_date
 
 - **`status`** — `active`, `expired`, or `revoked`. Only `active` rows (that
   have also reached their `grant_date` and haven't passed their `expiry_date`)
   actually apply.
-- **`grant_date`** — the date the row starts applying. Leave blank for
-  "immediately." A future date means the grant doesn't take effect until that
-  day arrives.
-- **`expiry_date`** — the date the row stops applying. Leave blank for "never
-  expires."
+- **`grant_date`** — the date the row starts applying. Required; use today's
+  date for "right away." A future date means the grant doesn't take effect until
+  that day arrives.
+- **`expiry_date`** — the date the row stops applying. Required; write
+  `9999-12-31` for a grant that never expires. Prefer a real date — access that
+  expires on its own cannot be forgotten about.
 - **To end a grant early**, set `status` to `revoked` rather than deleting the
   row — this keeps the row for audit history while making it stop applying
   immediately.

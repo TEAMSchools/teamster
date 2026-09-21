@@ -30,11 +30,16 @@ models:
               status = 'active' and (expiry_date is null or expiry_date >=
               current_date('{{ var("local_timezone") }}')) and (grant_date is
               null or grant_date <= current_date('{{ var("local_timezone") }}'))
+      # The name and the row's tier must agree in BOTH directions: a named
+      # region or school means the tier is region or school, and n/a means it is
+      # not. Catches a school name typed onto a network row -- which reads as
+      # granting that one school while actually granting every location -- and
+      # an n/a left behind on a row that does name a tier.
       - dbt_utils.expression_is_true:
           arguments:
             expression: >-
-              additional_location_scope not in ('region', 'school') or
-              additional_location_name is not null
+              (coalesce(additional_location_scope, 'none') in ('region',
+              'school')) = (additional_location_name != 'n/a')
           config:
             severity: error
       # A row grants one location, so when a row reaches both axes they must
@@ -104,11 +109,15 @@ models:
           network (every location, so additional_location_name is not needed),
           region (additional_location_name must match a
           dim_regions.legal_entity), or school (additional_location_name must
-          match a dim_locations.name). Blank, or the literal none, means this
-          row grants no student access; the staging model collapses both to
-          NULL. There is no "all" value -- network is the word for every
-          location, and any narrower set is one row per region or school.
+          match a dim_locations.name). Write none to grant no student access; a
+          blank cell means the same thing, but none is preferred because it
+          distinguishes a deliberate no from an unfilled cell. There is no "all"
+          value -- network is the word for every location, and any narrower set
+          is one row per region or school.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
                 values: [network, region, school, none]
@@ -119,12 +128,15 @@ models:
         description: >-
           How far this row's location grant reaches for STAFF data, in the same
           vocabulary the role sheet uses for staff_location_scope, and with the
-          same values as additional_student_location_scope above. Blank or none
-          means this row grants no staff access. Independent of the student
-          axis, so a row can widen one without the other -- but when a row sets
-          both they must name the same tier, since the row carries a single
+          same values as additional_student_location_scope above. Write none to
+          grant no staff access. Independent of the student axis, so a row can
+          widen one without the other -- but when a row sets both they must name
+          the same tier, since the row carries a single
           additional_location_name.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
                 values: [network, region, school, none]
@@ -138,7 +150,8 @@ models:
           column -- it exists so the grain test, the two foreign-key checks
           below, and dim_staff_cube_access can all read one tier instead of
           re-deriving it. NULL when the row grants no location at all (a
-          remit-override-only row).
+          remit-override-only row). NULL here is the one legitimate empty in
+          this model -- it is derived, not typed, so no form field maps to it.
         data_tests:
           - accepted_values:
               arguments:
@@ -151,11 +164,14 @@ models:
           The specific region or school this row grants, matched against
           dim_regions.legal_entity (when additional_location_scope = region) or
           dim_locations.name (when additional_location_scope = school). Required
-          whenever additional_location_scope is region or school. Left blank
-          when the scope is network -- network already means every location, so
-          there is nothing to name -- and when this row carries no location
-          grant.
+          whenever additional_location_scope is region or school. Write n/a when
+          the scope is network, since network already means every location and
+          there is nothing left to name, and on a remit-override-only row. Never
+          blank, so a Google Form can require it.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - relationships:
               arguments:
                 to: ref('dim_regions')
@@ -181,25 +197,35 @@ models:
       - name: staff_department_scope
         data_type: string
         description: >-
-          Department remit bounding the staff sensitive fields. Null falls
-          through to the department override or role crosswalk. At most one live
-          row per grantee may set this.
+          Department remit bounding the staff sensitive fields. Required, and
+          never blank -- write inherit to leave the person's department or role
+          setting alone, or none to REVOKE it below that setting. At most one
+          live row per grantee may set this to anything other than inherit.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
-                values: [all, own_group, none]
+                values: [inherit, all, own_group, none]
               config:
                 severity: error
       - name: staff_pii_scope
         data_type: string
         description: >-
-          Staff PII field visibility (per-field sensitive scope enum). Null
-          falls through to the department override or role crosswalk. At most
-          one live row per grantee may set this.
+          Staff PII field visibility (per-field sensitive scope enum). Required,
+          and never blank -- write inherit to leave the person's department or
+          role setting alone, or none to REVOKE it below that setting. The only
+          one of the five remit columns that gates a live view today. At most
+          one live row per grantee may set this to anything other than inherit.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
                 values:
+                  - inherit
                   - none
                   - all_in_scope
                   - reporting_chain_or_below_rank
@@ -209,11 +235,18 @@ models:
                 severity: error
       - name: staff_compensation_scope
         data_type: string
-        description: Staff compensation field visibility (same vocabulary).
+        description: >-
+          Staff compensation field visibility (same vocabulary and the same
+          required inherit/none distinction as staff_pii_scope). No view
+          consumes this yet, so it grants nothing today.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
                 values:
+                  - inherit
                   - none
                   - all_in_scope
                   - reporting_chain_or_below_rank
@@ -223,11 +256,18 @@ models:
                 severity: error
       - name: staff_observations_scope
         data_type: string
-        description: Staff observation field visibility (same vocabulary).
+        description: >-
+          Staff observation field visibility (same vocabulary and the same
+          required inherit/none distinction as staff_pii_scope). No view
+          consumes this yet, so it grants nothing today.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
                 values:
+                  - inherit
                   - none
                   - all_in_scope
                   - reporting_chain_or_below_rank
@@ -237,11 +277,18 @@ models:
                 severity: error
       - name: staff_benefits_scope
         data_type: string
-        description: Staff benefits field visibility (same vocabulary).
+        description: >-
+          Staff benefits field visibility (same vocabulary and the same required
+          inherit/none distinction as staff_pii_scope). No view consumes this
+          yet, so it grants nothing today.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - accepted_values:
               arguments:
                 values:
+                  - inherit
                   - none
                   - all_in_scope
                   - reporting_chain_or_below_rank
@@ -292,15 +339,25 @@ models:
       - name: grant_date
         data_type: date
         description: >-
-          The date this row's grant takes effect. Null means already in effect.
-          A future grant_date excludes the row from dim_staff_cube_access until
-          that date arrives.
+          The date this row's grant takes effect. Required -- write the real
+          start date, or today's date for "right away". A future grant_date
+          excludes the row from dim_staff_cube_access until that date arrives.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: expiry_date
         data_type: date
         description: >-
-          The date this row's grant stops applying. Null means it never expires.
-          A past expiry_date excludes the row from dim_staff_cube_access,
-          regardless of status.
+          The date this row's grant stops applying. Required -- write 9999-12-31
+          for a grant that never expires, matching the open-ended sentinel
+          dim_work_assignment_status already uses. A past expiry_date excludes
+          the row from dim_staff_cube_access regardless of status. Prefer a real
+          date: exceptional access that time-boxes itself cannot be forgotten.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: notes
         data_type: string
         description: >-

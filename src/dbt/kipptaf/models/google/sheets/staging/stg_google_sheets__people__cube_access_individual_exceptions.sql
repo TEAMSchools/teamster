@@ -1,6 +1,13 @@
 select
     * except (
-        google_email, additional_student_location_scope, additional_staff_location_scope
+        google_email,
+        additional_student_location_scope,
+        additional_staff_location_scope,
+        staff_department_scope,
+        staff_pii_scope,
+        staff_compensation_scope,
+        staff_observations_scope,
+        staff_benefits_scope
     ),
 
     -- Cube resolves a viewer with a case-sensitive `google_email = @email`
@@ -10,10 +17,10 @@ select
     -- matching nothing and denying silently.
     lower(trim(google_email)) as google_email,
 
-    -- A blank cell and the literal 'none' both mean "this axis gets nothing
-    -- from this row". Collapse them once here so every consumer tests for NULL
-    -- and nothing has to know both spellings. 'none' is accepted at all because
-    -- it is the word the role and department sheets use for the same idea.
+    -- Every cell in this sheet carries a word, so a Google Form can make each
+    -- field required and nothing downstream has to guess at an empty cell.
+    -- 'none' is that word for the two location axes, and NULL here means only
+    -- "no grant on this axis".
     nullif(
         additional_student_location_scope, 'none'
     ) as additional_student_location_scope,
@@ -26,6 +33,19 @@ select
         nullif(additional_student_location_scope, 'none'),
         nullif(additional_staff_location_scope, 'none')
     ) as additional_location_scope,
+
+    -- The five remit columns are overrides, so they need two distinct ways to
+    -- say nothing, and the sheet spells both: 'inherit' leaves the person's
+    -- role- or department-derived setting alone, and 'none' REVOKES below it.
+    -- 'inherit' becomes NULL because that is what the coalesce chain in
+    -- dim_staff_cube_access reads as "fall through"; 'none' is passed straight
+    -- through to win that coalesce. Blank would be indistinguishable from an
+    -- unfilled cell, which is why neither means anything here.
+    nullif(staff_department_scope, 'inherit') as staff_department_scope,
+    nullif(staff_pii_scope, 'inherit') as staff_pii_scope,
+    nullif(staff_compensation_scope, 'inherit') as staff_compensation_scope,
+    nullif(staff_observations_scope, 'inherit') as staff_observations_scope,
+    nullif(staff_benefits_scope, 'inherit') as staff_benefits_scope,
 from
     {{
         source(
