@@ -87,14 +87,29 @@ halves but never on one row.
 
 Value-level equivalence against prod:
 
-| Check                                                             | Result                                                |
-| ----------------------------------------------------------------- | ----------------------------------------------------- |
-| Quarter rows in the full join vs `int_powerschool__terms`         | 926 = 926, symmetric difference 0 over 9 columns      |
-| Raw rows in the full join vs `stg_powerschool__terms` at `rn = 1` | 1,925 = 1,925, symmetric difference 0 over 15 columns |
+| Check                                                             | Result                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------ |
+| Quarter rows in the full join vs `int_powerschool__terms`         | 926 = 926, symmetric difference 0 over 9 columns       |
+| Raw rows in the full join vs `stg_powerschool__terms` at `rn = 1` | 1,925 = 1,925, symmetric difference 0 over 15 columns  |
+| Rows where the full join MERGES a raw record with its quarter     | 840 -- kippnewark 548, kippcamden 276, kipppaterson 16 |
 
-The full join adds nothing beyond stacking its two inputs. A `union all` is
-exactly equivalent for every consumer, and the 86 orphans stop being a special
-case, because a union never attempts a match.
+The two shapes carry the same VALUES but not the same ROWS. Where a raw Q1-Q4
+record's `abbreviation` matches a quarter's `term`, the full join collapses the
+pair into one row carrying both halves; a `union all` emits two. NJ output
+therefore grows from 2,011 rows to 2,851.
+
+That is safe, on two measurements. Both uniqueness keys hold over the full
+branch sets rather than only the subsets they are tested on today -- 0 duplicate
+keys on `(schoolid, yearid, abbreviation)` across all 1,925 raw rows, and 0 on
+`(schoolid, yearid, term)` across all 926 quarter rows. And no consumer reads a
+merged row's two halves together or changes cardinality when one row becomes
+two: of 9 consumers, 5 read quarter-side columns only, 2 read raw-side only, and
+2 (`rpt_tableau__gradebook_gpa`, `rpt_tableau__student_course_grades`) read both
+families but in separate single-sided `union all` branches. Nothing is lost
+either -- the union is a strict superset of the full join's row set.
+
+The 86 orphans also stop being a special case, because a union never attempts a
+match.
 
 ### Date-based joining is worse, measured
 

@@ -10,13 +10,15 @@ its 492,482 null-`term` membership days resolve, by pushing the PowerSchool
 conform down into the `powerschool` package as a union rather than a full join.
 
 **Architecture:** A new package model `int_powerschool__terms_spine` stacks the
-raw `terms` rows and the derived quarter rows with `union all` — the full join
-in `int_students__terms` was measured to produce exactly its two inputs stacked,
-and no consumer reads a merged row. A kipptaf `union_relations` wrapper unions
-that spine across all four districts, including the Miami archive, which makes
-the archive's pre-cutover quarters reachable for the first time.
-`int_students__terms` then becomes a projection of that wrapper unioned with the
-Focus arm, floored at the SIS cutover year so the two arms are disjoint by year.
+raw `terms` rows and the derived quarter rows with `union all`. The full join in
+`int_students__terms` merges a matched raw record and its quarter into one row —
+840 such rows today — and the union emits them as two, which is safe because no
+consumer reads a merged row's two halves together. A kipptaf `union_relations`
+wrapper unions that spine across all four districts, including the Miami
+archive, which makes the archive's pre-cutover quarters reachable for the first
+time. `int_students__terms` then becomes a projection of that wrapper unioned
+with the Focus arm, floored at the SIS cutover year so the two arms are disjoint
+by year.
 
 **Tech Stack:** dbt (BigQuery), `dbt_utils.union_relations`, Dagster, dbt Cloud
 CI, `uv`, trunk.
@@ -736,9 +738,21 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-miami-archive-terms && git a
 feat(dbt): add a full-grain PowerSchool terms spine
 
 Stacks the raw terms records and the derived quarter records with union all
-rather than joining them. Measured against prod: the full join in
-int_students__terms produces exactly its two inputs stacked, and no consumer
-reads a merged row, so the join was never merging anything.
+rather than joining them.
+
+Measured against prod, the two shapes are equivalent in VALUES but not in ROWS.
+The quarter side is 926 rows under both shapes with a symmetric difference of 0,
+and the raw side is 1,925 rows under both with a symmetric difference of 0. But
+the full join in int_students__terms collapses a matched raw record and its
+quarter into a single row carrying both halves, and there are 840 such rows today
+(kippnewark 548, kippcamden 276, kipppaterson 16). The spine emits them as two
+rows, so NJ output grows from 2,011 rows to 2,851.
+
+That is safe on the grain: no row carries both a null dcid and a null term, and
+both uniqueness keys hold over the full branch sets rather than only the subsets
+they are tested on today -- 0 duplicate keys on (schoolid, yearid, abbreviation)
+across all 1,925 raw rows and 0 on (schoolid, yearid, term) across all 926
+quarter rows.
 
 int_powerschool__terms is unchanged, so
 int_powerschool__student_course_grades_spine is untouched.
@@ -1198,7 +1212,10 @@ Three things not to change while writing this:
 - No `full join`, no `coalesce(p.x, q.x)`. If a reviewer asks why the arms are
   not reconciled: measured on prod, the quarter side is 926 rows and the raw
   side 1,925 rows in both the old and new shape, with a symmetric difference of
-  0 over every compared column, and no consumer reads a merged row.
+  0 over every compared column. The old shape additionally MERGED 840 matched
+  pairs into single rows; the new shape emits two rows each, so NJ output grows
+  2,011 to 2,851. No consumer reads a merged row's two halves together, and both
+  uniqueness keys hold over the full branch sets.
 
 - [ ] **Step 2: Compile and check the output column list**
 
@@ -1598,10 +1615,17 @@ answer its prompts in place. Include `Refs #5397`, and end with
 Four things the body must state, because a reviewer cannot derive them from the
 diff:
 
-1. The full join is replaced by `union all` because it was measured to produce
-   exactly its two inputs stacked — 926 quarter rows and 1,925 raw rows on both
-   shapes, symmetric difference 0 over every compared column — and no consumer
-   reads a merged row.
+1. The full join is replaced by `union all`. The two shapes carry the same
+   values — 926 quarter rows and 1,925 raw rows on both, symmetric difference 0
+   over every compared column — but not the same rows: the full join merges 840
+   matched raw-plus-quarter pairs into single rows, and the union emits two rows
+   each, growing NJ output from 2,011 to 2,851. Safe on two measurements. Both
+   uniqueness keys hold over the full branch sets, not just the subsets they are
+   tested on today — 0 duplicate keys on `(schoolid, yearid, abbreviation)`
+   across all 1,925 raw rows and 0 on `(schoolid, yearid, term)` across all 926
+   quarter rows. And no consumer reads a merged row's two halves together: of 9
+   consumers, 5 read quarter-side columns only, 2 raw-side only, and 2 read both
+   families in separate single-sided `union all` branches.
 2. The Focus arm's floor moves from `syear >= 2018` to a literal `2026`. The
    literal is deliberate rather than a read of `int_students__sis_cutover`: the
    cutover already happened, so 2026 is a historical fact, and a Focus backfill
