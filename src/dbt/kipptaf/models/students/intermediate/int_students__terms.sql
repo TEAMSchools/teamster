@@ -26,11 +26,12 @@ with
         inner join focus_schools as fs on mp.school_id = fs.focus_school_id
         -- Progress periods have no PowerSchool `terms` equivalent. The 2026
         -- floor is the SIS cutover year: before it the frozen PowerSchool
-        -- archive owns Miami's terms, and Focus carries a full
-        -- year/semester/quarter set for 2 schools in every syear back to 1980,
+        -- archive owns Miami's terms, while Focus carries a full
+        -- year/semester/quarter set back to 1980 for a handful of schools,
         -- which would fabricate history here. Both filters stay in this model
-        -- rather than in staging, because 321 report card grade rows point at
-        -- pre-2018 marking periods and flooring the staging model orphans them.
+        -- rather than in staging, because Focus report card grades point at
+        -- pre-cutover marking periods that flooring the staging model would
+        -- orphan.
         where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2026
     ),
 

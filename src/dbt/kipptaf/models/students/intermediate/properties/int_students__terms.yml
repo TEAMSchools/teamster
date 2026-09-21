@@ -7,30 +7,34 @@ models:
       conformed inline to the PowerSchool terms vocabulary. PowerSchool is the
       source of record before the SIS cutover year, Miami included -- its frozen
       archive supplies terms back to its first school year -- and Focus supplies
-      Miami from the cutover year on, so the two arms are disjoint by year and
-      nothing is reconciled between them. On the PowerSchool arm the
-      quarter-only columns (term, term_start_date, term_end_date, semester,
-      is_current_term) are populated only on quarter rows, and the raw-terms
-      columns (dcid, name, firstday, lastday, id, and the PowerSchool
+      Miami from the cutover year on. The 2026 floor is on the Focus arm alone,
+      so the three NJ districts stay on the PowerSchool arm in every year,
+      cutover included. Only Miami is split, and for Miami the two arms are
+      disjoint by year. Nothing is reconciled between them. On the PowerSchool
+      arm the quarter-only columns (term, term_start_date, term_end_date,
+      semester, is_current_term) are populated only on quarter rows, and the
+      raw-terms columns (dcid, name, firstday, lastday, id, and the PowerSchool
       bookkeeping fields) only on the rows that come from the raw terms table,
-      so a quarter appears as two rows -- one carrying its abbreviation and
-      scheduling-window dates, one carrying its term code and
-      grade-storage-window dates. The two windows routinely disagree, and no
-      consumer reads both halves on one row. The Focus arm has no such split --
-      one row per marking period, and a quarter-type period carries its
-      abbreviation, its scheduling window, and its term columns together, with
-      term equal to abbreviation. On the PowerSchool arm the quarter rows
-      resolve their dates from termbins where termbins carries the quarter and
-      from the raw terms table's own quarter row where it does not; on the Focus
-      arm they are derived from Focus's quarter-type marking periods. Consumers
-      that need only the quarter grain filter to term is not null at the call
-      site.
+      so a quarter usually appears as two rows -- one carrying its abbreviation
+      and scheduling-window dates, one carrying its term code and
+      grade-storage-window dates. A quarter that termbins carries but the raw
+      terms table never had appears as one row, the spine's. The two windows
+      routinely disagree, and no consumer reads both halves on one row. The
+      Focus arm has no such split -- one row per marking period, and a
+      quarter-type period carries its abbreviation, its scheduling window, and
+      its term columns together, with term equal to abbreviation. On the
+      PowerSchool arm the quarter rows resolve their dates from termbins where
+      termbins carries the quarter and from the raw terms table's own quarter
+      row where it does not; on the Focus arm they are derived from Focus's
+      quarter-type marking periods. Consumers that need only the quarter grain
+      filter to term is not null at the call site.
     data_tests:
       # Two tests, because the two halves of the grain key on different
-      # columns. Quarter rows key on term, which int_powerschool__terms_spine
-      # supplies; year and semester rows have no term at all and key on
-      # abbreviation, which comes straight off the raw terms row. One test over
-      # both would have to key on a column that is null for half the model.
+      # columns. Spine rows key on term, which int_powerschool__terms_spine
+      # supplies. Everything with no term -- year and semester rows, and the
+      # raw Q1-Q4 records -- keys on abbreviation, which comes straight off the
+      # raw terms row. One test over both would have to key on a column that is
+      # null for half the model.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -70,15 +74,19 @@ models:
           Academic year the term falls in. On Focus rows, from Focus syear.
       - name: name
         quote: true
-        description: The common name for this term (e.g. Semester 1, Quarter 1).
+        description: >-
+          The common name for this term (e.g. Semester 1, Quarter 1). Null on
+          the spine's quarter rows.
       - name: abbreviation
         description: >-
           The short code for the term (e.g. S1, Q1, FY). On Focus rows, from
           Focus short_name. Null on the spine's quarter rows.
       - name: firstday
-        description: The first calendar date of the term.
+        description: >-
+          The first calendar date of the term. Null on the spine's quarter rows.
       - name: lastday
-        description: The last calendar date of the term.
+        description: >-
+          The last calendar date of the term. Null on the spine's quarter rows.
       - name: isyearrec
         description: >-
           Flag indicating if this record is the year-long term. 1 = yes, 0 = no.

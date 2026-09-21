@@ -17,10 +17,9 @@ select
 
     {{ extract_source_project() }} as _dbt_source_project,
 
-    -- Guards a quarter-grain join against a duplicate raw record for the same
-    -- school/year/term, so consumers attaching termbins columns see one row
-    -- per quarter. No such duplicate exists today -- all 1,925 keys across the
-    -- three NJ districts are singletons -- so this is defensive only.
+    -- Picks one row per school/year/abbreviation where the raw terms table
+    -- holds a duplicate. No such duplicate exists today, so this is defensive
+    -- only.
     row_number() over (
         partition by schoolid, yearid, abbreviation, {{ extract_source_project() }}
         order by id

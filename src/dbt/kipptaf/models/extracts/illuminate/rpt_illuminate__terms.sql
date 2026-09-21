@@ -18,9 +18,8 @@ from {{ ref("int_students__terms") }}
 where
     -- Miami left Illuminate ahead of AY2026-27
     _dbt_source_project != 'kippmiami'
-    -- Excludes the synthetic quarter rows int_students__terms adds for a
-    -- handful of historical schoolids whose termbins quarter has no matching
-    -- row in the raw terms table (see int_students__terms.sql) -- those carry
-    -- no term name or PowerSchool identifiers and are not real
-    -- Illuminate-importable terms.
+    -- Keeps only the raw terms rows. int_students__terms splits each term
+    -- across a spine row and a raw terms row; the spine rows carry no name
+    -- or PowerSchool identifiers, so this drops the whole spine arm and
+    -- leaves the records Illuminate can import.
     and `name` is not null
