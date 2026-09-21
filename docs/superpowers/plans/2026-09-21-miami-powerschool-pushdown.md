@@ -10,9 +10,11 @@ rows into the `powerschool` package, so the archive bakes the values once
 instead of recomputing them on every read.
 
 **Architecture:** 4 changes to the `powerschool` package (1 new intermediate, 3
-column adds), one Miami archive re-bake, then 6 `kipptaf` edits that read the
-new columns instead of deriving them. The package and `kipptaf` halves ship as 2
-PRs, because a column added at package staging does not reach a `kipptaf` union
+column adds), one Miami archive re-bake, then 5 `kipptaf` edits that read the
+new columns instead of deriving them. One derivation goes the other way:
+`agg_credittype` has a single consumer, so it moves down into that report rather
+than up into the package. The package and `kipptaf` halves ship as 2 PRs,
+because a column added at package staging does not reach a `kipptaf` union
 wrapper until the district projects rebuild prod.
 
 **Tech Stack:** dbt 1.9 on BigQuery, `dbt_utils`, Dagster+ for materialization,
@@ -65,7 +67,9 @@ dbt Cloud CI. Run everything through `uv run`.
   `like '<prefix>%'` on `credit_type`, else `credit_type` unchanged.
   Byte-for-byte the same CASE that
   `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__storedgrades.sql`
-  runs today.
+  runs today. It moves down to its one consumer rather than up into the package
+  — Task 1 has the reasoning. Do not "fix" its case-sensitivity while moving it:
+  that changes values, and this plan changes none.
 - **`academic_year` = `yearid + 1990`.** Verified equal on all 126,319
   non-null-`yearid` rows of `int_powerschool__calendar_day` across all 4
   districts, zero disagreements.
@@ -84,131 +88,106 @@ dbt Cloud CI. Run everything through `uv run`.
 
 ---
 
-## Decision required before Task 1
-
-`agg_credittype` is the one item here with no clean ship order. The spec does
-not name this, because the collision only appears once you write the diff.
-
-**The collision.** The `kipptaf` wrapper is
-`select u.*, <case> as agg_credittype from union_relations as u`. Once the
-package produces `agg_credittype`, `u.*` carries it and the wrapper's own alias
-duplicates it — BigQuery fails with `Duplicate column name`. So the wrapper's
-CASE must go the moment the districts rebuild. But drop it any earlier and
-`agg_credittype` does not exist until they rebuild, so its one consumer,
-`rpt_gsheets__award_ceremony_gpa`, fails with `Name agg_credittype not found`.
-There is no ordering that avoids both. Every other column in this plan is purely
-additive and has neither problem.
-
-**What it costs.** One Dagster tick where that one extract fails, self-healing
-on the next tick after the district rebuild. It feeds an award-ceremony Google
-Sheet, not a live operational feed. In CI it costs more: PR 1 touches both the
-package and `kipptaf`, and dbt Cloud CI reads the stale `zz_stg_*` copies, so
-the wrapper without its CASE compiles and the extract fails deterministically
-until you seed the staged copies (Task 1 Step 8 has the commands).
-
-**What it buys.** `agg_credittype` is a 4-branch row-local CASE with exactly 1
-consumer network-wide — `grep -rn agg_credittype src/` returns 3 hits: the
-wrapper, its properties entry, and that extract. It is the smallest of the 4
-package changes and the only one that can break prod.
-
-**Recommendation: keep it, and ship the package add and the wrapper drop
-together in PR 1.** One PR means one window instead of two. The design rule
-applies to it as squarely as to the others, and the blast radius is a sheet that
-reruns nightly.
-
-- [ ] **Confirm with the user** whether `agg_credittype` stays in scope. If they
-      drop it, skip Task 1 entirely, drop `agg_credittype` from the PR 2 gate
-      query, and add it to the spec's _What does not change_ section with this
-      reasoning. Every other task is unaffected — no other column in the plan
-      has this problem.
-
----
-
 ## PR 1 — package changes and the archive re-bake
 
-### Task 1: `agg_credittype` on the package storedgrades staging
+### Task 1: move `agg_credittype` into its only consumer
 
 **Files:**
 
 - Modify:
-  `src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__storedgrades.sql:83-112`
-- Modify:
-  `src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__storedgrades.sql:89-118`
-- Modify:
-  `src/dbt/powerschool/models/sis/staging/sftp/stg_powerschool__storedgrades.sql:81-88`
-- Modify:
-  `src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__storedgrades.yml`
+  `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__award_ceremony_gpa.sql:1-28`
 - Modify:
   `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__storedgrades.sql:17-38`
-- Leave unchanged, but read:
+- Modify:
   `src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__storedgrades.yml:145`
-- Leave unchanged, but read:
-  `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__award_ceremony_gpa.sql:12`
 
 **Interfaces:**
 
-- Consumes: `credit_type` (string) on the raw storedgrades source.
-- Produces: `agg_credittype` (string) on `stg_powerschool__storedgrades` in
-  every district project.
+- Consumes: `credit_type` (string), already on `stg_powerschool__storedgrades`
+  today.
+- Produces: nothing new. `agg_credittype` stops existing as a column; the value
+  is computed inline in the one report that reads it, under its existing local
+  name `credittype`.
 
-**All 3 staging variants, not 2.** The spec says "both staging variants" and
-that is wrong — there is a third, `sftp/`. All 3 share ONE contract at
-`staging/properties/stg_powerschool__storedgrades.yml`, so a column declared
-there must be produced by every variant or that variant's build fails its
-contract. `sftp/` is `+enabled: false` in `src/dbt/powerschool/dbt_project.yml`
-and no district enables it, so it never builds today — but leaving it short of
-the contract plants a failure for whoever enables it.
+**This task touches no package file and has no cross-project dependency.** It
+ships in PR 1 only because PR 1 comes first — it would be equally correct
+standing alone. `credit_type` is already on the wrapper, so nothing waits on a
+district rebuild.
 
-- [ ] **Step 1: Add the CASE to the dlt variant**
+**Why this instead of pushing it down to the package.** The spec has
+`agg_credittype` moving into `stg_powerschool__storedgrades` in the package.
+That is wrong, for two reasons found while planning.
 
-Append a second CASE to the final SELECT, after the existing
-`gradescale_name_unweighted` CASE (sqlfluff ST06 puts every case statement in
-the same bucket, so their relative order is free):
+The first is mechanical. The wrapper is
+`select u.*, <case> as agg_credittype from union_relations as u`. Once the
+package emits `agg_credittype`, `u.*` carries it and the wrapper's alias
+duplicates it, so BigQuery fails with `Duplicate column name`. Drop the alias
+any earlier and the column does not exist until the districts rebuild. No ship
+order avoids both, so the pushdown costs a broken deploy window that no other
+change in this plan costs.
+
+The second is the stronger one. The CASE is not a canonical subject mapping; it
+is a report-local heuristic that only half works. `like` is case-sensitive in
+BigQuery, so it buckets `ENG-T1` and `MATH-T2` but misses `Eng`, `ELA`, `Math`,
+`MaTH`, `Math-T1`, `MA` and `MAT`, all of which are live values in `credit_type`
+today. A partial heuristic does not belong in a shared source package where 4
+districts inherit it and other models may start trusting it. It belongs next to
+the one report that accepts its limits.
+
+`grep -rn agg_credittype src/` returns exactly 3 hits, verified 2026-09-21: the
+definition, its properties entry, and `rpt_gsheets__award_ceremony_gpa.sql:12`.
+No Cube view, no exposure, no Python. Moving it is contained.
+
+- [ ] **Step 1: Compute the bucket inside the report**
+
+In `rpt_gsheets__award_ceremony_gpa.sql`, the `grade_source` CTE's Stored branch
+currently reads `sg.agg_credittype as credittype`. Replace that plain ref with
+the CASE, moved down into the case-statement position (sqlfluff ST06 bucket 6,
+after every plain ref in the branch):
 
 ```sql
-    case
-        when credit_type like 'ENG%'
-        then 'ENG'
-        when credit_type like 'MATH%'
-        then 'MATH'
-        when credit_type like 'SCI%'
-        then 'SCI'
-        when credit_type like 'SOC%'
-        then 'SOC'
-        else credit_type
-    end as agg_credittype,
-from with_years
+    grade_source as (
+        select
+            'Stored' as gpa_type,
+
+            co.school_abbreviation,
+            co.grade_level,
+            co.student_number,
+            co.lastfirst,
+
+            sg.course_number,
+            sg.potentialcrhrs,
+
+            sg.earnedcrhrs,
+            sg.gpa_points,
+
+            case
+                when sg.credit_type like 'ENG%'
+                then 'ENG'
+                when sg.credit_type like 'MATH%'
+                then 'MATH'
+                when sg.credit_type like 'SCI%'
+                then 'SCI'
+                when sg.credit_type like 'SOC%'
+                then 'SOC'
+                else sg.credit_type
+            end as credittype,
+
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
 ```
 
-No alias prefix: this SELECT reads from a single CTE, and
-`.claude/rules/dbt-sql.md` forbids prefixing columns in that case.
+`sg.potentialcrhrs` moves up one line to close the gap the old `agg_credittype`
+ref left. Everything from `inner join` onward is unchanged.
 
-- [ ] **Step 2: Add the identical CASE to the odbc variant**
+Keep the `sg.` prefix: this SELECT reads two relations, so the single-relation
+no-prefix rule does not apply.
 
-Same block, same position in
-`src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__storedgrades.sql`.
-The odbc final SELECT also reads `from with_years`, so the text is identical.
+The Live branch below is unchanged — it already produces `credittype` from
+`fg.credittype`, and the `union all` matches by position, so the Stored branch's
+`credittype` must stay in the same ordinal slot. It does: it was the 7th column
+and it still is.
 
-- [ ] **Step 3: Add the identical CASE to the sftp variant**
-
-The sftp final SELECT reads `from storedgrades` and has no CASE yet. Append the
-same block last — ST06 puts case statements after the arithmetic already there.
-
-- [ ] **Step 4: Declare the column in the shared package contract**
-
-In
-`src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__storedgrades.yml`,
-add to `columns:` (position is free; contracts match by name, not order):
-
-```yaml
-- name: agg_credittype
-  data_type: string
-  description:
-    Credit type bucketed to its subject prefix — ENG, MATH, SCI or SOC — with
-    any other credit type passed through unchanged.
-```
-
-- [ ] **Step 5: Drop the derivation from the kipptaf wrapper**
+- [ ] **Step 2: Drop the derivation from the wrapper**
 
 `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__storedgrades.sql`
 becomes:
@@ -226,70 +205,74 @@ left join
     {{ ref("int_people__location_crosswalk") }} as l on u.schoolname = l.location_name
 ```
 
-`is_transfer_grade` stays: it reads a LEFT JOIN to a live `kipptaf` view, so it
-fails the design test and is not pushable.
+`is_transfer_grade` stays. It reads a LEFT JOIN to a live `kipptaf` view, so it
+is not row-local and has nowhere else to go.
 
-- [ ] **Step 6: Keep the kipptaf column documented, and leave its consumer
-      alone**
+- [ ] **Step 3: Drop the properties entry**
 
-`src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__storedgrades.yml:145`
-already has an `agg_credittype` entry. Leave it. The column still appears on the
-wrapper, now arriving through `u.*` rather than being computed there.
+Remove the `agg_credittype` block at
+`src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__storedgrades.yml:145`.
+The column no longer exists on the model, and a properties entry for a column
+the model does not produce is a parse warning at best and a contract failure
+where contracts are enforced.
 
-`rpt_gsheets__award_ceremony_gpa.sql:12` reads
-`sg.agg_credittype as credittype`. It needs no edit either: the column keeps its
-name and its values. It is the model that fails during the deploy window, not a
-model that changes.
-
-- [ ] **Step 7: Verify the SQL parses**
+- [ ] **Step 4: Confirm nothing else referenced it**
 
 ```bash
-uv run dbt parse --no-partial-parse --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown/src/dbt/kippnewark 2>&1 | tail -n 15
+grep -rn "agg_credittype" /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown/src/
 ```
 
-Expected: `Performance info` / no errors. A parse error here means a syntax
-slip; a contract mismatch does not surface until `dbt build`.
+Expected: no output. A hit means a consumer this plan did not account for — stop
+and report it rather than deleting the reference.
 
-- [ ] **Step 8: Seed the staged copies so PR 1's CI can pass**
-
-This is the single-PR cross-project pattern from `src/dbt/kipptaf/CLAUDE.md`.
-Without it, CI's `kipptaf` wrapper rebuild reads the stale `zz_stg_*` tables,
-which have no `agg_credittype`, and `rpt_gsheets__award_ceremony_gpa` fails with
-`Name agg_credittype not found`.
-
-`dbt clone` does NOT help here — it copies the prod schema, which is the old
-one. The package model is modified in this PR, so it must be built into
-`zz_stg_*` directly, per district:
+- [ ] **Step 5: Compile the report**
 
 ```bash
-uv run dbt build --select stg_powerschool__storedgrades --target staging --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown/src/dbt/kippnewark 2>&1 | tail -n 20
+uv run dbt compile --select rpt_gsheets__award_ceremony_gpa --target staging --project-dir /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown/src/dbt/kipptaf 2>&1 | tail -n 10
 ```
 
-Repeat for `kippcamden` and `kipppaterson`. Miami is not in this list: its
-archive is frozen and Task 7's re-bake covers it.
+Expected: clean. `Name credit_type not found` would mean the wrapper does not
+expose it, which would contradict the current schema — re-check before working
+around it.
 
-**This writes to the shared `zz_stg_*` schemas.** It needs the user's explicit
-authorization, restated in plain text in the message immediately before the
-call, and each district goes in its own Bash call.
+- [ ] **Step 6: Prove the report's output is unchanged**
 
-Also confirm the wrapper is `state:modified` so CI actually rebuilds it. Task 1
-Step 5 edits the wrapper's `.sql`, which satisfies that on its own — a
-properties-yml change would not.
+This runs after CI builds the model. The move is value-preserving: the same CASE
+over the same column, one layer later.
 
-- [ ] **Step 9: Lint**
+```sql
+select count(*) as n_differing_rows,
+from `teamster-332318`.dbt_cloud_pr_<job>_<pr>_kipptaf_extracts.rpt_gsheets__award_ceremony_gpa as new
+full join `teamster-332318`.kipptaf_extracts.rpt_gsheets__award_ceremony_gpa as old
+  on new.student_number = old.student_number
+  and new.credittype = old.credittype
+  and new.gpa_type = old.gpa_type
+where
+  to_json_string(new) != to_json_string(old)
+  or new.student_number is null
+  or old.student_number is null
+```
+
+Expected: 0. Confirm the join keys above are actually the report's grain before
+trusting the result — read the model's tail, which groups in a `calculations`
+CTE, and use whatever it groups by.
+
+- [ ] **Step 7: Lint**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__storedgrades.sql src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__storedgrades.sql src/dbt/powerschool/models/sis/staging/sftp/stg_powerschool__storedgrades.sql src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__storedgrades.yml src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__storedgrades.sql </dev/null 2>&1 | tail -n 20
+cd /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__award_ceremony_gpa.sql src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__storedgrades.sql src/dbt/kipptaf/models/powerschool/staging/properties/stg_powerschool__storedgrades.yml </dev/null 2>&1 | tail -n 20
 ```
 
-Expected: `✔ No issues`. ST06 on the new CASE is the likely failure; if it
+Expected: `✔ No issues`. ST06 on the moved CASE is the likely failure; if it
 fires, move the block rather than suppressing it.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 8: Commit**
 
-Subject: `refactor(dbt): compute agg_credittype in the package`. Body: name all
-3 staging variants and the shared contract, and say that the kipptaf wrapper
-stops deriving it and why the two halves ship together.
+Subject:
+`refactor(kipptaf): compute the subject bucket in the report that uses it`.
+Body: say it has one consumer, that the CASE is a case-sensitive partial
+heuristic rather than a canonical mapping, and that this is why it did not go
+into the package as the spec first proposed.
 
 ```bash
 git -C /workspaces/teamster/.worktrees/cbini/refactor/claude-miami-powerschool-pushdown add -u
@@ -897,10 +880,10 @@ prompts in place. Include `Refs #5413` so the PR lands on the project board;
 never `gh project item-add` a PR. End the body with the
 `🤖 Generated with [Claude Code]` line.
 
-Say in the body that this PR is the package half of a 2-PR change, that the
-kipptaf half follows once Dagster materializes these models in prod, and that
-`agg_credittype` has a one-tick window where `rpt_gsheets__award_ceremony_gpa`
-can fail.
+Say in the body that this PR is the package half of a 2-PR change and that the
+kipptaf half follows once Dagster materializes these models in prod. Note that
+Task 1 is the one kipptaf change riding along: it has no cross-project
+dependency, so it does not have to wait.
 
 - [ ] **Step 3: Verify the PR body landed as intended**
 
@@ -1074,15 +1057,14 @@ where
     'kippmiami_powerschool', 'kipppaterson_powerschool'
   )
   and (
-    (table_name = 'stg_powerschool__storedgrades' and column_name = 'agg_credittype')
-    or (table_name = 'int_powerschool__gpa_term' and column_name = 'academic_year')
+    (table_name = 'int_powerschool__gpa_term' and column_name = 'academic_year')
     or (table_name = 'int_powerschool__attendance_streak' and column_name = 'academic_year')
     or (table_name = 'int_powerschool__calendar_day' and column_name in ('is_in_session', 'is_in_membership'))
   )
 order by table_schema, table_name, column_name
 ```
 
-Expected: 20 rows — 5 columns × 4 districts. Anything less means a district has
+Expected: 16 rows — 4 columns × 4 districts. Anything less means a district has
 not rebuilt and PR 2 will fail CI deterministically. Wait rather than working
 around it.
 
@@ -1597,9 +1579,11 @@ placeholder calendar days are tracked for school ops in Asana.
   SIS, so the join result keeps changing after the bake and the value cannot be
   frozen. It passes the design test.
 - **Move `is_transfer_grade`.** It reads a LEFT JOIN to
-  `int_people__location_crosswalk`, a live `kipptaf` view. Its sibling
-  `agg_credittype` sits in the same model and is pushable; only one of the 2
-  moves.
+  `int_people__location_crosswalk`, a live `kipptaf` view, so it is not
+  row-local and has nowhere to go. Its sibling `agg_credittype` leaves the model
+  in Task 1, but downward into its consumer, not up into the package.
+- **Push `agg_credittype` into the `powerschool` package.** The spec proposed
+  this; Task 1 explains why the plan does the opposite.
 - **Add a uniqueness test to `int_powerschool__gpa_term`.** It has none, which
   the repo's per-layer requirements say every intermediate must. That is
   pre-existing debt and fixing it here would widen the blast radius of a

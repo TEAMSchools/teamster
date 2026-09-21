@@ -47,24 +47,14 @@ both sides are frozen archive tables. Nothing live participates.
 
 ## Changes to the `powerschool` package
 
-1. Add `agg_credittype` to `stg_powerschool__storedgrades`. It buckets
-   `credit_type` by prefix into `ENG` / `MATH` / `SCI` / `SOC`, row-local over
-   one frozen column.
-2. Add a new `int_powerschool__gpa` model holding the term-to-cumulative join.
+1. Add a new `int_powerschool__gpa` model holding the term-to-cumulative join.
    It joins the package's own `int_powerschool__gpa_term` to the package's
    `int_powerschool__gpa_cumulative` on `studentid` and `schoolid`, and carries
-   the `academic_year` that change 4 adds.
-3. Add `is_in_session` (`insession = 1`) and `is_in_membership`
+   the `academic_year` that change 3 adds.
+2. Add `is_in_session` (`insession = 1`) and `is_in_membership`
    (`membershipvalue > 0`) to `int_powerschool__calendar_day`.
-4. Add `academic_year` to `int_powerschool__gpa_term` and
+3. Add `academic_year` to `int_powerschool__gpa_term` and
    `int_powerschool__attendance_streak`.
-
-**Edit all 3 staging variants.** `agg_credittype` goes in `staging/dlt/`,
-`staging/odbc/` and `staging/sftp/`. The archive bakes through the ODBC variant
-while the 3 NJ districts run on dlt, so a column added to dlt alone reaches NJ
-and silently misses Miami. `sftp/` is `+enabled: false` and no district uses it,
-but all 3 variants share one contract-enforced properties file, so a column
-declared there must be produced by every variant or that variant's build fails.
 
 **Do not widen `int_powerschool__gpa_term` instead of adding
 `int_powerschool__gpa`.** Widening is the smaller diff and it is wrong.
@@ -93,7 +83,8 @@ model also has roughly 19 other consumers.
 3. Rewrite `int_students__calendar_day` to read the `academic_year` and the 2
    booleans that now arrive on `int_powerschool__calendar_day`.
 4. Rewrite `int_students__attendance_streak` to read `academic_year`.
-5. Drop `agg_credittype` from the `stg_powerschool__storedgrades` wrapper.
+5. Move `agg_credittype` out of the `stg_powerschool__storedgrades` wrapper and
+   into `rpt_gsheets__award_ceremony_gpa`, its only consumer.
 6. Strip the stale detail from the `date_key` description on
    `dim_school_calendars`.
 
@@ -112,9 +103,19 @@ SIS, so the join result changes as Focus data arrives and the value cannot be
 frozen.
 
 **`is_transfer_grade` passes the test.** It reads a LEFT JOIN to
-`int_people__location_crosswalk`, a live `kipptaf` view. Its sibling
-`agg_credittype` sits in the same model and is pushable; only one of the two
-moves.
+`int_people__location_crosswalk`, a live `kipptaf` view, so it is not row-local
+and has nowhere to go.
+
+**`agg_credittype` moves down, not up.** Its sibling in the same wrapper, it is
+row-local over a frozen column and so looks pushable. Two things rule the
+package out. Once the package emits it, the wrapper's own alias for it
+duplicates the column and BigQuery fails, and no ship order avoids a broken
+deploy window — every other change here is purely additive. More importantly,
+the CASE is not a canonical subject mapping but a report-local heuristic: `like`
+is case-sensitive, so it buckets `ENG-T1` and `MATH-T2` while missing `Eng`,
+`ELA`, `Math`, `MaTH`, `MA` and `MAT`, all live values today. A partial
+heuristic does not belong in a package 4 districts inherit. It has exactly 1
+consumer network-wide, so it moves there instead.
 
 **The KTAF GPA bands stay out of the package.** The cut-offs are network policy,
 documented in `src/dbt/kipptaf/models/students/CLAUDE.md` next to the separate
@@ -152,11 +153,12 @@ One change, one re-bake. The archive re-bake is the expensive step and it has
 absorbed a new model before, so splitting the work into risk waves buys two
 bakes and no safety.
 
-1. Package changes, all 4 at once.
+1. Package changes, all 3 at once.
 2. Miami archive re-bake, per the `src/dbt/kippmiami/CLAUDE.md` recipe. It adds
-   `int_powerschool__gpa` as the 15th table and rebuilds the 4 tables that
-   change 1, 3 and 4 widen.
-3. `kipptaf` changes.
+   `int_powerschool__gpa` as the 15th table and rebuilds the 3 tables that
+   changes 2 and 3 widen.
+3. `kipptaf` changes. The `agg_credittype` move is the exception: it touches no
+   package file and waits on nothing, so it can ship with step 1.
 
 ## Traps
 
@@ -166,7 +168,6 @@ bakes and no safety.
   cross-project column-change procedure in `.claude/rules/dbt-models.md`, which
   ships district first and `kipptaf` second, or use the single-PR pattern it
   points at.
-- **The archive bakes through ODBC.** See all-3-variants above.
 - **A properties-yml-only change does not bump the dagster-dbt code version**,
   which is derived from the SQL checksum.
 
