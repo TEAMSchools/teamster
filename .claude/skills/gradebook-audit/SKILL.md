@@ -150,6 +150,14 @@ about the gsheets side rather than the Tableau side:
   (write side; T&L exports it as the CSV they load into `U_EXPECTATIONS` via the
   PowerSchool plugin)
 
+The upload-template spreadsheet carries two more models on the same exposure:
+`rpt_gsheets__gradebook_audit_current_expectations` (the raw `U_EXPECTATIONS`
+dump) and `rpt_gsheets__gradebook_audit_all_weeks` (the same week grid without
+the expectations join, so it runs to the end of the year instead of stopping at
+the last completed week). All four gsheets models publish as Connected Sheets
+tabs — Dagster's exposure asset is a marker and writes nothing, so a new tab has
+to be created by hand in the spreadsheet.
+
 ---
 
 ## Procedure: Explain the data model
@@ -442,8 +450,9 @@ reads; the gsheets report itself no longer carries any toggle):
 - `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
 - `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_template.sql`
+- `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_all_weeks.sql`
 
-**Five changes to make:**
+**Six changes to make:**
 
 1. In `rpt_tableau__gradebook_audit` — change the year filter in
    `category_join`'s `WHERE` clause (1 occurrence, marked
@@ -544,10 +553,34 @@ reads; the gsheets report itself no longer carries any toggle):
    silently reports every comment as missing.
 
 5. In `rpt_gsheets__gradebook_audit_template` — the expectations upload template
-   T&L uses to build the PowerSchool CSV. Change both occurrences (one filters
-   `int_powerschool__calendar_week` in the `term_weeks` CTE, marked
-   `-- summer toggle: see skill`; one stamps the output `academic_year` column,
-   marked `/* summer toggle: see skill */`):
+   T&L uses to build the PowerSchool CSV. Change all THREE occurrences, each
+   marked `-- summer toggle: see skill` except the last: one filters
+   `int_students__school_directory` in the `school_levels` CTE, one filters
+   `int_students__calendar_week` in the `week_school_levels` CTE, and one stamps
+   the output `academic_year` column, marked `/* summer toggle: see skill */`:
+
+   ```sql
+   -- change this (appears 3 times):
+   {{ var("current_academic_year") }}
+   -- to this:
+   {{ var("current_academic_year") - 1 }}
+   ```
+
+   The `school_levels` filter is easy to miss and matters: it resolves
+   `school_level_alt`, so leaving it at the current year while the calendar
+   filter is toggled back resolves prior-year weeks against current-year school
+   levels. Today that only moves Sumner, but it is silent when wrong.
+
+   **While toggled, this model shows the PRIOR year's week grid.** It is the
+   sheet T&L exports to upload the NEW year's expectations, so do not hand it
+   over as the new-year grid until the toggle is reverted — they would be
+   editing last year's weeks.
+
+6. In `rpt_gsheets__gradebook_audit_all_weeks` — the full-year companion grid on
+   the same spreadsheet. Change both occurrences, both marked
+   `-- summer toggle: see skill`: one filters `int_students__school_directory`
+   in the `school_levels` CTE, one filters `int_students__calendar_week` in the
+   `week_school_levels` CTE:
 
    ```sql
    -- change this (appears 2 times):
@@ -556,12 +589,11 @@ reads; the gsheets report itself no longer carries any toggle):
    {{ var("current_academic_year") - 1 }}
    ```
 
-   **While toggled, this model shows the PRIOR year's week grid.** It is the
-   sheet T&L exports to upload the NEW year's expectations, so do not hand it
-   over as the new-year grid until the toggle is reverted — they would be
-   editing last year's weeks.
+   Unlike the template, this model projects `academic_year` straight from
+   `int_students__calendar_week` rather than stamping it as a literal, so there
+   is no third occurrence to change — the column follows the filter.
 
-Build and verify after all five changes:
+Build and verify after all six changes:
 
 ```bash
 uv run dbt build \
@@ -570,6 +602,7 @@ uv run dbt build \
     rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
     rpt_tableau__gradebook_es_comments \
     rpt_gsheets__gradebook_audit_template \
+    rpt_gsheets__gradebook_audit_all_weeks \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state target/prod
@@ -581,7 +614,7 @@ would otherwise read the un-toggled prod copy.
 
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
-`current_academic_year - 1` → `current_academic_year` in all five files, and
+`current_academic_year - 1` → `current_academic_year` in all six files, and
 `'last_year'` → `'current_year'` in
 `int_extracts__gradebook_audit_student_flags`.
 
