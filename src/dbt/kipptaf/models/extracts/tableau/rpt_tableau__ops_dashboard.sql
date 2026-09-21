@@ -101,7 +101,6 @@ with
         where rn_year = 1
     )
 
--- trunk-ignore(sqlfluff/ST06): next_* column order is fixed by the contract
 select
     se.student_number,
     se.student_name as lastfirst,
@@ -168,12 +167,6 @@ select
     t.lep_only_ratio,
     t.sped_ratio,
 
-    null as is_enrolled_oct15_week,
-    null as is_enrolled_jan15_week,
-
-    coalesce(att_mem.n_attendance, 0) as n_attendance,
-    coalesce(att_mem.n_membership, 0) as n_membership,
-
     nxt.schoolid as next_schoolid,
     nxt.exitdate as next_exitdate,
     nxt.exitcode as next_exitcode,
@@ -181,6 +174,11 @@ select
     nxt.exit_code_ts as next_exit_code_ts,
     nxt.exitcomment as next_exitcomment,
 
+    null as is_enrolled_oct15_week,
+    null as is_enrolled_jan15_week,
+
+    coalesce(att_mem.n_attendance, 0) as n_attendance,
+    coalesce(att_mem.n_membership, 0) as n_membership,
     coalesce(nxt.is_enrolled_oct01, false) as is_enrolled_oct01_next,
     coalesce(nxt.is_enrolled_oct15, false) as is_enrolled_oct15_next,
 from {{ ref("int_extracts__student_enrollments") }} as se
