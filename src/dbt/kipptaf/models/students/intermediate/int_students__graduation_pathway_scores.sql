@@ -16,7 +16,9 @@ with
             e.ps_grad_path_code,
             e.met_fafsa_requirement as has_fafsa,
 
-            least(e.cohort, e.cohort_primary) as cut_score_cohort,
+            (
+                select min(x), from unnest([e.cohort, e.cohort_primary]) as x
+            ) as cut_score_cohort,
 
             case
                 when e.ps_grad_path_code in ('M', 'N')
