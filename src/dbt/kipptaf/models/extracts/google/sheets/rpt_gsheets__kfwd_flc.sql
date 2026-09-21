@@ -85,7 +85,7 @@ select
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
 
-    kt.contact_owner_name as counselor_name,
+    kt.contact_college_counselor_name as college_counselor,
     kt.contact_college_match_display_gpa,
     kt.contact_highest_act_score,
     kt.best_guess_pathway,
@@ -174,6 +174,8 @@ select
     kt.contact_graduation_year as graduation_year,
 
     coalesce(cn.as6, 0) as as6_complete,
+
+    kt.contact_owner_name,
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
