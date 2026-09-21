@@ -799,8 +799,17 @@ models:
         data_type: float64
       - name: next_year_school
         data_type: string
+        description:
+          School abbreviation on the student's primary enrollment for the
+          following academic year. Null when the student has no enrollment in
+          that year, including a student who leaves and returns after a gap.
       - name: next_year_schoolid
         data_type: int64
+        description:
+          School id on the student's primary enrollment for the following
+          academic year. Null when the student has no enrollment in that year,
+          including a student who leaves and returns after a gap. The 999999
+          placeholder carries through from the graduate placeholder rows.
       - name: finalsite_student_id
         data_type: string
       - name: district
