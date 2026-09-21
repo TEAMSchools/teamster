@@ -71,7 +71,7 @@ with
             school_abbreviation,
 
             academic_year - 1 as prior_academic_year,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from enrollments
         where rn_year = 1
     ),
 
