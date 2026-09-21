@@ -8,19 +8,23 @@ models:
       source of record before the SIS cutover year, Miami included -- its frozen
       archive supplies terms back to its first school year -- and Focus supplies
       Miami from the cutover year on, so the two arms are disjoint by year and
-      nothing is reconciled between them. The quarter-only columns (term,
-      term_start_date, term_end_date, semester, is_current_term) are populated
-      only on quarter rows, and the raw-terms columns (dcid, name, firstday,
-      lastday, id, and the PowerSchool bookkeeping fields) only on the rows that
-      come from the raw terms table. A quarter therefore appears as two rows,
-      one carrying its abbreviation and scheduling-window dates and one carrying
-      its term code and grade-storage-window dates; the two windows routinely
-      disagree, and no consumer reads both halves on one row. On the PowerSchool
-      arm the quarter rows resolve their dates from termbins where termbins
-      carries the quarter and from the raw terms table's own quarter row where
-      it does not; on the Focus arm they are derived from Focus's quarter-type
-      marking periods. Consumers that need only the quarter grain filter to term
-      is not null at the call site.
+      nothing is reconciled between them. On the PowerSchool arm the
+      quarter-only columns (term, term_start_date, term_end_date, semester,
+      is_current_term) are populated only on quarter rows, and the raw-terms
+      columns (dcid, name, firstday, lastday, id, and the PowerSchool
+      bookkeeping fields) only on the rows that come from the raw terms table,
+      so a quarter appears as two rows -- one carrying its abbreviation and
+      scheduling-window dates, one carrying its term code and
+      grade-storage-window dates. The two windows routinely disagree, and no
+      consumer reads both halves on one row. The Focus arm has no such split --
+      one row per marking period, and a quarter-type period carries its
+      abbreviation, its scheduling window, and its term columns together, with
+      term equal to abbreviation. On the PowerSchool arm the quarter rows
+      resolve their dates from termbins where termbins carries the quarter and
+      from the raw terms table's own quarter row where it does not; on the Focus
+      arm they are derived from Focus's quarter-type marking periods. Consumers
+      that need only the quarter grain filter to term is not null at the call
+      site.
     data_tests:
       # Two tests, because the two halves of the grain key on different
       # columns. Quarter rows key on term, which int_powerschool__terms_spine
