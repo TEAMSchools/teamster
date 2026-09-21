@@ -31,7 +31,7 @@ with
             academic_year,
 
             row_number() over (
-                partition by schoolid, yearid, abbreviation order by id
+                partition by schoolid, yearid, abbreviation order by id, dcid
             ) as rn,
         from {{ ref("stg_powerschool__terms") }}
     )
@@ -71,10 +71,8 @@ select
     yearid,
     academic_year,
 from terms_ranked
--- Defensive only: all 1,925 (schoolid, yearid, abbreviation) keys across the
--- three NJ districts are singletons today, and Miami's 193 archive rows are
--- singletons too. The guard keeps a duplicate raw record from doubling a
--- school year's raw rows.
+-- Defensive only: the guard keeps a duplicate raw record from doubling a school
+-- year's raw rows.
 where rn = 1
 
 union all

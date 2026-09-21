@@ -12,6 +12,14 @@ models:
       attempted and why every column belonging to the other branch is null.
       Consumers that want the quarter grain filter to term is not null;
       consumers that want the raw grain filter to term is null.
+
+      The raw branch's reduction to one row per school, year, and abbreviation
+      is defensive rather than corrective. Measured on prod in September 2026,
+      every one of the 1,925 raw keys across the three NJ districts was already
+      a singleton, as were Miami's 193 archive rows; the reduction exists so a
+      duplicate raw record cannot double a school year's raw rows. The pick is
+      ordered by id then dcid, because PowerSchool does not guarantee id is
+      unique and dcid is the staging primary key.
     data_tests:
       # Two tests, because the two branches key on different columns. Quarter
       # rows key on term and carry no abbreviation; raw rows key on
@@ -70,7 +78,6 @@ models:
           The short code for the term as the raw terms table records it, so S1,
           Q1, or a year label. Null on quarter-branch rows.
       - name: name
-        quote: true
         description: >-
           The common name for this term, so Semester 1 or Quarter 1. Null on
           quarter-branch rows.
