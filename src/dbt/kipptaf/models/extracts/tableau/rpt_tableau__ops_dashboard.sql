@@ -80,8 +80,28 @@ with
         from target_union
         group by
             academic_year, schoolid, grade_level, is_self_contained, _dbt_source_project
+    ),
+
+    -- keyed on the year BEFORE its own, so the join below matches
+    -- academic_year + 1 and nothing else
+    next_year as (
+        select
+            student_number,
+            schoolid,
+            exitdate,
+            exitcode,
+            exit_code_kf,
+            exit_code_ts,
+            exitcomment,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+            academic_year - 1 as prior_academic_year,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_year = 1
     )
 
+-- trunk-ignore(sqlfluff/ST06): next_* column order is fixed by the contract
 select
     se.student_number,
     se.student_name as lastfirst,
@@ -154,30 +174,15 @@ select
     coalesce(att_mem.n_attendance, 0) as n_attendance,
     coalesce(att_mem.n_membership, 0) as n_membership,
 
-    lead(se.schoolid, 1) over (
-        partition by se.student_number order by se.academic_year asc
-    ) as next_schoolid,
-    lead(se.exitdate, 1) over (
-        partition by se.student_number order by se.academic_year asc
-    ) as next_exitdate,
-    lead(se.exitcode, 1) over (
-        partition by se.student_number order by se.academic_year asc
-    ) as next_exitcode,
-    lead(se.exit_code_kf, 1) over (
-        partition by se.student_number order by se.academic_year asc
-    ) as next_exit_code_kf,
-    lead(se.exit_code_ts, 1) over (
-        partition by se.student_number order by se.academic_year asc
-    ) as next_exit_code_ts,
-    lead(se.exitcomment, 1) over (
-        partition by se.student_number order by se.academic_year asc
-    ) as next_exitcomment,
-    lead(se.is_enrolled_oct01, 1, false) over (
-        partition by se.student_number order by se.academic_year
-    ) as is_enrolled_oct01_next,
-    lead(se.is_enrolled_oct15, 1, false) over (
-        partition by se.student_number order by se.academic_year
-    ) as is_enrolled_oct15_next,
+    nxt.schoolid as next_schoolid,
+    nxt.exitdate as next_exitdate,
+    nxt.exitcode as next_exitcode,
+    nxt.exit_code_kf as next_exit_code_kf,
+    nxt.exit_code_ts as next_exit_code_ts,
+    nxt.exitcomment as next_exitcomment,
+
+    coalesce(nxt.is_enrolled_oct01, false) as is_enrolled_oct01_next,
+    coalesce(nxt.is_enrolled_oct15, false) as is_enrolled_oct15_next,
 from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("int_students__calendar_rollup") }} as cal
@@ -197,4 +202,8 @@ left join
     and se.grade_level = t.grade_level
     and se.is_self_contained = t.is_self_contained
     and se._dbt_source_project = t._dbt_source_project
+left join
+    next_year as nxt
+    on se.student_number = nxt.student_number
+    and se.academic_year = nxt.prior_academic_year
 where se.rn_year = 1
