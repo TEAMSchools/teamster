@@ -65,9 +65,11 @@ via `_build_dbt_condition()`:
   `newly_missing`, `code_version_changed`, or `execution_failed`. Intentionally
   omits `any_deps_updated` since views are computed on read.
 - `dbt_union_relations_automation_condition()` — for views using the
-  `union_relations` macro: adds recursive ancestor `code_version_changed`
-  detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
-  code deploys that change upstream model definitions, not on data refreshes.
+  `union_relations` macro: adds one trigger to the view condition, firing on the
+  tick a parent's post-code-change materialization lands (parent's own code or
+  any ancestor's; looks through view parents). Not on the deploy tick, and not
+  on data refreshes (no `any_deps_updated`). The trigger resets only on
+  `newly_requested`, so a stale in-flight run cannot consume it.
 - `dbt_cron_automation_condition(cron_schedule, cron_timezone)` — for expensive
   TABLE models whose consumers refresh on a schedule: replaces the
   ancestor-updated trigger with `cron_tick_passed`. NOT stock `on_cron()` (its
@@ -91,15 +93,14 @@ deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
 
-**`union_relations` wrapper can freeze on a deploy race** (#4290): its condition
-fires on ancestor `code_version_changed`, not `any_deps_updated`. If the wrapper
-materializes at deploy BEFORE its (often cross-code-location) upstream table
-rebuilds with a new schema, `.since(newly_updated)` consumes the trigger and the
-wrapper stays compiled against the OLD column set — downstream reads then fail
-`... failed to parse view` at query time and it does NOT self-heal.
+**`union_relations` wrapper can still freeze in two edge cases** (#4290): a
+parent that reloads and finishes rebuilding within one sensor tick, or a parent
+table that does a data rebuild before its changed ancestor rebuilds. Symptom:
+downstream reads fail `... failed to parse view` and it does NOT self-heal.
 Rematerialize the wrapper + its consumers via `launch_run`. Diagnose by
 comparing the wrapper's stored `input_data_version/<upstream>` materialization
-tag to the upstream's current `data_version`.
+tag to the upstream's current `data_version`. `code_version_changed()` is true
+for exactly one tick (cursor compare), so never build a gate on it alone.
 
 **No dep-code-version gate**: `_build_dbt_condition()` does NOT block
 materialization when a direct dep has
