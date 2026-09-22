@@ -473,15 +473,6 @@ sources:
                 - kippcamden
                 - powerschool
                 - stg_powerschool__termbins
-      - name: stg_powerschool__terms
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippcamden
-                - powerschool
-                - stg_powerschool__terms
       - name: stg_powerschool__u_clg_et_stu
         config:
           meta:
