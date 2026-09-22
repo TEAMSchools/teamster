@@ -249,5 +249,6 @@
       }
     }
   },
+  "promptSuggestionEnabled": false,
   "autoMemoryEnabled": false
 }
