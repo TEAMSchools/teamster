@@ -150,12 +150,9 @@ with
         select
             *,
 
-            coalesce(
-                lead(academic_year) over (
-                    partition by _dbt_source_project, student_number, schoolid
-                    order by academic_year
-                ),
-                9999
+            lead(academic_year, 1, 9999) over (
+                partition by _dbt_source_project, student_number, schoolid
+                order by academic_year
             ) as valid_until_academic_year,
         from gpa_cumulative_year
     )
