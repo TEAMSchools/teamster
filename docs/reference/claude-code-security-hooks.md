@@ -125,7 +125,8 @@ Scans output from Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and all
 MCP tools for patterns that indicate leaked secrets (Edit is excluded — it does
 not produce content that could contain secrets):
 
-- `op://` references (1Password URIs)
+- 1Password references that name a vault; the bare `op://` scheme and
+  placeholder templates such as `op://{vault}/...` pass
 - Private key headers (RSA, EC, OPENSSH)
 - Google API keys (`AIza...`), OAuth tokens (`ya29.`), `goog_` prefixes
 - JWTs (`eyJ...eyJ...`)
@@ -133,7 +134,9 @@ not produce content that could contain secrets):
 - Database connection strings (postgres/mysql/mongodb URIs with credentials)
 - Service account JSON (`"type": "service_account"`)
 - GitHub tokens (`ghp_`, `ghs_`, `ghu_`, `gho_`, `ghr_`, `github_pat_`)
-- High-entropy strings (120+ chars of `[A-Za-z0-9+/=_-]`) as a catch-all
+- High-entropy strings as a catch-all: mixed-case runs of 120+ chars of
+  `[A-Za-z0-9+/=_-]`. Pure-hex runs, single-case runs, and snake_case
+  identifiers (no 24-char stretch without an underscore) are exempt.
 
 The output hook also decodes base64 blobs found in the output and re-scans the
 decoded content, catching secrets that were base64-encoded in tool responses.
