@@ -5,13 +5,10 @@ with
             cw.academic_year,
             cw.week_start_monday,
             cw.week_end_sunday,
+            cw.grade_level,
 
+            amp.assessment_grade_int,
             amp.aggregated_measure_standard_level,
-
-            row_number() over (
-                partition by cw.student_number, cw.academic_year, cw.week_start_monday
-                order by if(amp.assessment_grade_int = cw.grade_level, 0, 1) asc
-            ) as rn,
         from {{ ref("int_extracts__student_enrollments_weeks") }} as cw
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -28,6 +25,16 @@ with
         where
             cw.academic_year >= {{ var("current_academic_year") - 1 }}
             and cw.grade_level <= 8
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="composite_weeks",
+                partition_by="student_number, academic_year, week_start_monday",
+                order_by="(assessment_grade_int = grade_level) desc",
+            )
+        }}
     )
 
 select
@@ -42,5 +49,4 @@ select
         when aggregated_measure_standard_level = 'Below/Well Below'
         then 0
     end as is_proficient_int,
-from composite_weeks
-where rn = 1
+from deduplicate
