@@ -187,9 +187,11 @@ with
             state_student_identifier as statestudentidentifier,
             student_test_uuid as studenttestuuid,
             student_with_disabilities as studentwithdisabilities,
-            test_performance_level as testperformancelevel,
             test_scale_score as testscalescore,
             two_or_more_races as twoormoreraces,
+
+            /* INT64 on the Pearson side; the union would widen it to NUMERIC. */
+            cast(test_performance_level as int) as testperformancelevel,
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
@@ -287,9 +289,11 @@ with
             state_student_identifier as statestudentidentifier,
             student_test_uuid as studenttestuuid,
             student_with_disabilities as studentwithdisabilities,
-            test_performance_level as testperformancelevel,
             test_scale_score as testscalescore,
             two_or_more_races as twoormoreraces,
+
+            /* INT64 on the Pearson side; the union would widen it to NUMERIC. */
+            cast(test_performance_level as int) as testperformancelevel,
 
             'NJGPA' as assessment_name,
             'NJGPA-A' as assessment_version,
