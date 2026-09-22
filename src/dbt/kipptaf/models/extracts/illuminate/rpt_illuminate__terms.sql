@@ -18,8 +18,8 @@ from {{ ref("int_students__terms") }}
 where
     -- Miami left Illuminate ahead of AY2026-27
     _dbt_source_project != 'kippmiami'
-    -- Keeps only the raw terms rows. int_students__terms splits each term
-    -- across a spine row and a raw terms row; the spine rows carry no name
-    -- or PowerSchool identifiers, so this drops the whole spine arm and
-    -- leaves the records Illuminate can import.
+    -- Keeps only the rows that carry a term name. On the PowerSchool arm each
+    -- quarter appears twice: once from the raw terms table, carrying the name
+    -- and identifiers Illuminate needs, and once as a quarter row carrying
+    -- neither. This drops the second of each pair.
     and `name` is not null
