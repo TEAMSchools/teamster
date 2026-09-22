@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from dagster import StaticPartitionsDefinition
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR
@@ -13,7 +15,7 @@ partitions_def = StaticPartitionsDefinition(
 )
 
 
-def archive_remote_dir(subdir: str):
+def archive_remote_dir(subdir: str) -> Callable[[str], str]:
     """Amplify moves a closed school year's exports from /<subdir> to /YY-YY/<subdir>."""
     return lambda school_year: f"/{school_year[2:4]}-{school_year[-2:]}/{subdir}"
 
