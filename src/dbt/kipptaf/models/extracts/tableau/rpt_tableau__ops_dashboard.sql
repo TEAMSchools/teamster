@@ -204,4 +204,4 @@ left join
     next_year as nxt
     on se.student_number = nxt.student_number
     and se.academic_year = nxt.prior_academic_year
-where se.rn_year = 1
+where se.rn_year = 1 and se.enroll_status in (0, 2, 3)
