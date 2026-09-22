@@ -104,3 +104,34 @@ def test_missing_validator_reports_the_file_not_a_type_error(tmp_path):
     (pages / "gradebook_expectations.html").write_text("<html>no validator</html>")
     with pytest.raises(ValueError, match="gradebook_expectations.html"):
         build_plugin.plugin_csv_header(tmp_path)
+
+
+def test_csv_header_contract_holds_when_the_skill_documents_the_exact_header(
+    tmp_path,
+):
+    references = tmp_path / "references"
+    references.mkdir()
+    (references / "csv-format.md").write_text(
+        "Upload a CSV with this header:\n\n"
+        "    School Level, Quarter, Week Number, W, H, F, S, Notes\n"
+    )
+    assert build_plugin.check_csv_header_contract(PLUGIN, tmp_path) == []
+
+
+def test_csv_header_contract_fails_when_the_documented_header_has_an_extra_column(
+    tmp_path,
+):
+    # A documented header that is a SUPERSET of the plugin's -- one extra
+    # trailing column -- describes a 9-column format. The plugin's import page
+    # validates an exact match and rejects the file outright, so this must be
+    # a build failure, not a pass. A naive `header in text` substring check
+    # wrongly passes here because the correct 8-column string still occurs
+    # inside the 9-column line.
+    references = tmp_path / "references"
+    references.mkdir()
+    (references / "csv-format.md").write_text(
+        "Upload a CSV with this header:\n\n"
+        "    School Level, Quarter, Week Number, W, H, F, S, Notes, Extra Column\n"
+    )
+    errors = build_plugin.check_csv_header_contract(PLUGIN, tmp_path)
+    assert errors != []

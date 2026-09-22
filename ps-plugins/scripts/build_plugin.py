@@ -195,8 +195,11 @@ def check_csv_header_contract(plugin_dir: Path, skill_dir: Path) -> list[str]:
         return [f"{documented} is missing; the skill must document the header"]
 
     header = ",".join(plugin_csv_header(plugin_dir))
-    text = documented.read_text().lower().replace(", ", ",")
-    if header not in text:
+    lines = (
+        line.strip().lower().replace(", ", ",")
+        for line in documented.read_text().splitlines()
+    )
+    if not any(line == header for line in lines):
         return [
             f"references/csv-format.md does not contain the header the plugin "
             f"accepts: {header}"
