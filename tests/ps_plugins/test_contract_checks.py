@@ -5,12 +5,26 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parents[2]
 PLUGIN = REPO / "ps-plugins" / "gradebook-audit"
 DBT_MODEL = (
     REPO
     / "src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql"
 )
+SKILL = REPO / "ps-plugins" / "skills" / "gradebook-expectations-upload"
+
+EXPECTED_HEADER = [
+    "school level",
+    "quarter",
+    "week number",
+    "w",
+    "h",
+    "f",
+    "s",
+    "notes",
+]
 
 _spec = importlib.util.spec_from_file_location(
     "build_plugin", REPO / "ps-plugins" / "scripts" / "build_plugin.py"
@@ -78,3 +92,15 @@ def test_dbt_model_columns_strips_an_inline_trailing_comment(tmp_path):
         "select\n    cast(cnt_s as int) as cnt_s, -- audit field\nfrom source_table\n"
     )
     assert build_plugin.dbt_model_columns(sql) == {"cnt_s"}
+
+
+def test_plugin_csv_header_is_read_from_the_validator():
+    assert build_plugin.plugin_csv_header(PLUGIN) == EXPECTED_HEADER
+
+
+def test_missing_validator_reports_the_file_not_a_type_error(tmp_path):
+    pages = tmp_path / "WEB_ROOT" / "admin" / "gradebookaudit"
+    pages.mkdir(parents=True)
+    (pages / "gradebook_expectations.html").write_text("<html>no validator</html>")
+    with pytest.raises(ValueError, match="gradebook_expectations.html"):
+        build_plugin.plugin_csv_header(tmp_path)

@@ -36,6 +36,7 @@ DBT_U_EXPECTATIONS = (
     REPO.parent
     / "src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql"
 )
+SKILL_DIR = REPO / "skills" / "gradebook-expectations-upload"
 
 # Documentation and repo furniture never belong in a plugin package -- PS only
 # needs plugin.xml and the *_root/WEB_ROOT trees.
@@ -169,6 +170,40 @@ def check_column_contract(plugin_dir: Path, sql_path: Path) -> list[str]:
     return errors
 
 
+# The import page validates an uploaded file against this literal. It is the
+# authoritative header: a file that does not match is rejected outright with
+# "Header row does not match template", and nothing imports.
+CSV_EXPECTED = re.compile(r"var\s+expected\s*=\s*\[([^\]]+)\]")
+
+
+def plugin_csv_header(plugin_dir: Path) -> list[str]:
+    """The lower-cased column names the plugin's import validator accepts."""
+    page = plugin_dir / "WEB_ROOT/admin/gradebookaudit/gradebook_expectations.html"
+    match = CSV_EXPECTED.search(page.read_text())
+    if match is None:
+        raise ValueError(
+            f"no `var expected = [...]` CSV validator found in {page.name}; "
+            "the import page changed shape and this check needs updating"
+        )
+    return [v.strip().strip("'\"") for v in match.group(1).split(",")]
+
+
+def check_csv_header_contract(plugin_dir: Path, skill_dir: Path) -> list[str]:
+    """The end-user skill must document the header the plugin accepts."""
+    documented = skill_dir / "references" / "csv-format.md"
+    if not documented.is_file():
+        return [f"{documented} is missing; the skill must document the header"]
+
+    header = ",".join(plugin_csv_header(plugin_dir))
+    text = documented.read_text().lower().replace(", ", ",")
+    if header not in text:
+        return [
+            f"references/csv-format.md does not contain the header the plugin "
+            f"accepts: {header}"
+        ]
+    return []
+
+
 def build(plugin_dir: Path) -> Path | None:
     name, version = plugin_meta(plugin_dir / "plugin.xml")
     slug = plugin_dir.name.replace("-", "_")
@@ -184,6 +219,8 @@ def build(plugin_dir: Path) -> Path | None:
 
         errors = validate(staged, refs)
         errors += check_column_contract(plugin_dir, DBT_U_EXPECTATIONS)
+        if SKILL_DIR.is_dir():
+            errors += check_csv_header_contract(plugin_dir, SKILL_DIR)
         if errors:
             print("\n  BUILD FAILED:")
             for e in errors:
