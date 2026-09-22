@@ -52,14 +52,9 @@ dependencies), pytest, GitHub Actions, dbt, markdown.
 
 ## Out of scope
 
-Two of the spec's five open items are deliberately not tasks here. An executor
-who goes looking for them should stop.
+One of the spec's five open items is deliberately not a task here. An executor
+who goes looking for it should stop.
 
-- **Rollover week numbering before a school year starts.** The Desktop skill's
-  `playbooks/rollover.md` needs at least 1 existing row in `ps_plugin_data` to
-  anchor against, and a genuine pre-year-start rollover has none. Nobody has
-  confirmed how PowerSchool assigns week numbers in that case. That is a
-  question for the data team and a live PowerSchool instance, not a code change.
 - **Removing `ES` from the plugin.** Elementary keeps assignments in DeansList,
   so there is no PowerSchool gradebook to audit and the plugin should stop
   accepting `ES`. It needs a `plugin.xml` version bump and a deploy to 3
@@ -756,18 +751,56 @@ def test_sheets_reference_explains_the_two_drive_calls():
         assert token in text, f"{token} missing; the dropped section was not restored"
 
 
-def test_sheets_reference_documents_the_all_weeks_tab():
-    assert "all_weeks" in SHEETS.read_text()
+def test_skill_uses_the_reports_tab_names():
+    """The Reports copy is the user-friendly one; its tabs are named for people."""
+    text = SHEETS.read_text()
+    for tab in (
+        "PS Full Calendar",
+        "Plugin Data Raw",
+        "Template QW-Date Crosswalk",
+        "PS Plugin CSV Template",
+    ):
+        assert tab in text, f"{tab} is a tab on the Reports copy and is not named"
+
+
+def test_rollover_no_longer_needs_an_existing_plugin_row():
+    """PS Full Calendar carries week numbers, so the anchor problem is gone."""
+    rollover = (SKILL / "playbooks" / "rollover.md").read_text()
+    assert "PS Full Calendar" in rollover
+    assert "🛑" not in (SKILL / "SKILL.md").read_text(), (
+        "the open-gap note is answered; a stale warning teaches readers to "
+        "distrust the live ones"
+    )
+
+
+def test_both_files_warn_about_the_academic_year_rollover():
+    """The tab shows last year's weeks until the warehouse variable flips."""
+    for name in ("playbooks/rollover.md", "references/sheets.md"):
+        assert "academic_year" in (SKILL / name).read_text(), (
+            f"{name} must tell the reader to confirm the academic_year column "
+            "before trusting the calendar tab"
+        )
+
+
+def test_skill_never_uses_a_source_sheet_tab_name():
+    """Those tabs exist only on the IMPORTRANGE Sources copy, which users never open."""
+    offenders = []
+    for p in SKILL.rglob("*.md"):
+        body = p.read_text()
+        for tab in ("ps_plugin_raw", "ps_plugin_data", "ps_all_weeks"):
+            if tab in body:
+                offenders.append(f"{p.relative_to(SKILL)}: {tab}")
+    assert offenders == []
 ```
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
 Run: `uv run pytest tests/ps_plugins/test_skill_source.py -v`
 
-Expected: all 4 FAIL. The seeded copy names the source sheet, lacks the
-Drive-call section, and does not know the all-weeks tab exists.
+Expected: all 7 FAIL. The seeded copy names the source sheet and its tab names,
+lacks the Drive-call section, and does not know the full-calendar tab exists.
 
-- [ ] **Step 4: Repoint every sheet reference to the Reports copy**
+- [ ] **Step 4: Repoint the URL and remap every tab name**
 
 In `references/sheets.md`, change the template sheet's URL from
 `https://docs.google.com/spreadsheets/d/1ofCxW0pLniywn_XZT69S23vhcDs6y9ElAtJa5fTtiT0/edit`
@@ -776,11 +809,28 @@ to
 and rename it from `rpt_gsheets__gradebook_audit_template` to **Gradebook Audit
 Template**, which is what it is called in Drive.
 
-Then grep the whole folder, not just this file — a playbook may carry the id
-too:
+**Then remap every tab name.** The Reports copy is the user-friendly one, so its
+tabs carry user-friendly names — changing only the URL sends a reader to a sheet
+whose tabs are not the ones the skill names. Verified 2026-09-22 by comparing
+header rows; each pair below is identical in its columns.
+
+| Skill says today | Change it to                 | Holds                                    |
+| ---------------- | ---------------------------- | ---------------------------------------- |
+| `ps_plugin_raw`  | `Plugin Data Raw`            | what actually landed in `U_EXPECTATIONS` |
+| `ps_plugin_data` | `Template QW-Date Crosswalk` | the quarter-week to date mapping         |
+| —                | `PS Full Calendar`           | the full-year week grid (Step 6)         |
+| —                | `PS Plugin CSV Template`     | the literal CSV header row, to copy      |
+
+`PS Plugin CSV Template` exists only on the Reports copy and has no model behind
+it. Its header row is `School Level,Quarter,Week Number,W,H,F,S,Notes` — the
+same header the plugin's validator enforces and `references/csv-format.md`
+documents. Name it in `sheets.md` as the place to copy the header from, so
+nobody retypes it by hand.
+
+Then grep the whole folder — a playbook may carry the old id or an old tab name:
 
 ```bash
-grep -rn "1ofCxW0" "$w/ps-plugins/skills/" || echo "clean"
+cd "$w/ps-plugins/skills" && grep -rn "1ofCxW0\|ps_plugin_raw\|ps_plugin_data\|ps_all_weeks" . || echo "clean"
 ```
 
 - [ ] **Step 5: Restore the dropped Drive-call section**
@@ -803,18 +853,68 @@ already.
 Add to `references/sheets.md`, in the list of tabs on the template sheet:
 
 ```markdown
-**`all_weeks`** — from `rpt_gsheets__gradebook_audit_all_weeks`. The whole
-school year's week grid, not just the weeks already loaded into
-`U_EXPECTATIONS`. Use it to tell a week that has no expectations apart from a
-week that does not exist — the other tabs cannot distinguish those, because they
-only show rows PowerSchool already has.
+**`PS Full Calendar`** — the whole school year's week grid, not just the weeks
+already loaded into `U_EXPECTATIONS`. Use it to tell a week that has no
+expectations apart from a week that does not exist; the other tabs cannot
+distinguish those, because they only show rows PowerSchool already has. Columns
+are `academic_year`, `region`, `school_level`, `quarter`, `week_number_quarter`,
+`week_start_monday`, `week_end_friday`.
 ```
+
+Name the tab, not the model behind it. A T&L reader is looking at tabs in a
+spreadsheet; `rpt_gsheets__gradebook_audit_all_weeks` is a name they will never
+see. The model belongs in the data-team skill, which Task 9 covers.
+
+- [ ] **Step 6a: Rewrite the rollover week-numbering method**
+
+This tab is what closes the skill's longest-standing gap, so the playbook has to
+actually use it.
+
+`playbooks/rollover.md` and `references/week-matching.md` derive a week number
+by anchoring against a row that already exists in the plugin data. A genuine
+rollover, run before the school year starts, has no such row — which is why the
+Desktop skill carries a 🛑 saying the method is unsolved for that case and was
+never exercised against a real start-of-year load.
+
+`PS Full Calendar` removes the anchor entirely. It comes from
+`int_students__calendar_week`, the PowerSchool calendar, not from
+`U_EXPECTATIONS`, and it already carries `week_number_quarter` beside
+`week_start_monday` and `week_end_friday`. Reading a week number off it needs no
+expectations row to exist.
+
+Rewrite both files so the method is: find the row in `PS Full Calendar` whose
+`week_start_monday` and `week_end_friday` bracket the dates on the Academics
+tab, and take its `week_number_quarter`. Delete the 🛑 open-gap note from
+`SKILL.md`'s maintainer section — it is answered, and a stale warning about a
+solved problem teaches a reader to distrust the warnings that are still live.
+
+State the precondition plainly, because it has 2 parts and the second one is a
+trap:
+
+1. The school year's calendar is loaded in PowerSchool.
+2. **`current_academic_year` has been rolled over in the warehouse.**
+
+The tab filters `academic_year = {{ var("current_academic_year") }}`. A
+PowerSchool instance can be sitting in the next school year all summer while the
+warehouse variable still points at the old one, and until someone rolls that
+variable over, `PS Full Calendar` shows **last year's** weeks.
+
+That is worse than showing nothing. Last year's week numbers and dates look
+entirely plausible — same columns, same shape, same quarter names — so a
+rollover run in that window produces a confident, wrong upload with no error
+anywhere. Write the check as an instruction the reader cannot skip: **before
+using this tab for a rollover, confirm the `academic_year` column shows the year
+you are loading.** One glance at the column answers it.
+
+Put the same warning in `references/sheets.md` beside the tab description. A
+reader who reaches the tab from the troubleshooting playbook never opens
+`rollover.md`.
 
 - [ ] **Step 7: Run the tests to verify they pass**
 
 Run: `uv run pytest tests/ps_plugins/test_skill_source.py -v`
 
-Expected: 4 passed.
+Expected: 7 passed.
 
 - [ ] **Step 8: Drop the Task 4 guard and confirm the header check runs**
 

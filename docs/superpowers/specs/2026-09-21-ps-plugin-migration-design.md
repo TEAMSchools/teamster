@@ -383,13 +383,27 @@ Everything else probed carried over: the emergency fallback, the single-row fix,
 the carry-forward rules, partial-quarter handling, next-day verification, and
 the `Delete Selected` behavior.
 
-**Rollover week numbering is unsolved before a school year starts.** The Desktop
-skill's `playbooks/rollover.md` derives week numbers by a method that needs at
-least one existing row in `ps_plugin_data` to anchor against, and a genuine
-rollover run before the year starts has none. Nobody has confirmed how
-PowerSchool assigns week numbers in that case. The gap was found in dry-run
-testing and has never been exercised against a real start-of-year load. Answer
-it before the skill is trusted with a real load.
+**Rollover week numbering is answered by the all-weeks grid, and seeding must
+rewrite the method.** The Desktop skill's `playbooks/rollover.md` derives week
+numbers by anchoring against a row that already exists in the plugin data, and a
+rollover run before the year starts has none. That is the 🛑 note the skill
+carries.
+
+`rpt_gsheets__gradebook_audit_all_weeks` removes the anchor. It reads
+`int_students__calendar_week` — the PowerSchool calendar, not `U_EXPECTATIONS` —
+and already carries `week_number_quarter` beside `week_start_monday` and
+`week_end_friday`. No expectations row has to exist. Rewrite `rollover.md` and
+`references/week-matching.md` to read the week number off the `PS Full Calendar`
+tab, and delete the 🛑 note.
+
+The precondition has 2 parts, and the second is a trap. The calendar must be
+loaded in PowerSchool, **and `current_academic_year` must have been rolled over
+in the warehouse.** The tab filters on that variable, so a PowerSchool instance
+can sit in the next school year all summer while the tab still shows last year's
+weeks. Last year's weeks look entirely plausible — same columns, same quarter
+names — so a rollover run in that window produces a confident, wrong upload with
+no error anywhere. The skill must tell the reader to confirm the `academic_year`
+column shows the year being loaded, in both `rollover.md` and `sheets.md`.
 
 **`ES` is accepted but never produced, and should be removed.** The plugin's
 generated template and its `validSL` check accept `ES` as a school level, but
