@@ -1301,7 +1301,12 @@ Four rules for this class of question:
 Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
 live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
 `/PM`, and every file is a daily cumulative snapshot (704 of them), so the asset
-takes the newest match by mtime.
+takes the newest match by mtime. Since 2026-09-22 the kippnewark assets list the
+`/YY-YY/<BM|PM>` archive directory for any partition other than the last one
+(`archive_remote_dir` in the kippnewark assets module), so a closed-year re-pull
+works. The sensor still matches only `/BM` and `/PM`; it never triggers on the
+archive folders. Amplify keeps refreshing the archived year daily, so a re-pull
+lands a newer snapshot of the same export.
 
 ### SY2026-2027 header rename: null ids are a column move, not missing data
 

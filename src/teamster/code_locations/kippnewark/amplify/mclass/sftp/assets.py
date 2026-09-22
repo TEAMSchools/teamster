@@ -12,9 +12,16 @@ partitions_def = StaticPartitionsDefinition(
     [f"{year - 1}-{year}" for year in range(2026, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
 )
 
+
+def archive_remote_dir(subdir: str):
+    """Amplify moves a closed school year's exports from /<subdir> to /YY-YY/<subdir>."""
+    return lambda school_year: f"/{school_year[2:4]}-{school_year[-2:]}/{subdir}"
+
+
 benchmark_student_summary = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "amplify", "mclass", "sftp", "benchmark_student_summary"],
     remote_dir_regex=r"/BM",
+    archive_remote_dir=archive_remote_dir("BM"),
     remote_file_regex=r"dibels8_BM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
     ssh_resource_key="ssh_amplify",
     avro_schema=BENCHMARK_STUDENT_SUMMARY_SCHEMA,
@@ -25,6 +32,7 @@ benchmark_student_summary = build_sftp_file_asset(
 pm_student_summary = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "amplify", "mclass", "sftp", "pm_student_summary"],
     remote_dir_regex=r"/PM",
+    archive_remote_dir=archive_remote_dir("PM"),
     remote_file_regex=r"dibels8_PM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
     ssh_resource_key="ssh_amplify",
     avro_schema=PM_STUDENT_SUMMARY_SCHEMA,
@@ -41,6 +49,7 @@ pm_student_summary_aimline = build_sftp_file_asset(
         "pm_student_summary_aimline",
     ],
     remote_dir_regex=r"/PM",
+    archive_remote_dir=archive_remote_dir("PM"),
     remote_file_regex=r"dibels8_PM_CUSTOM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
     ssh_resource_key="ssh_amplify",
     avro_schema=PM_STUDENT_SUMMARY_AIMLINE_SCHEMA,

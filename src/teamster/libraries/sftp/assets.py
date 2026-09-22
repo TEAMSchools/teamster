@@ -1,6 +1,7 @@
 import os
 import re
 import zipfile
+from collections.abc import Callable
 
 from dagster import (
     AssetExecutionContext,
@@ -70,6 +71,7 @@ def build_sftp_file_asset(
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
     ignore_multiple_matches: bool = False,
+    archive_remote_dir: Callable[[str], str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
     slugify_cols: bool = True,
@@ -154,6 +156,19 @@ def build_sftp_file_asset(
             remote_dir_regex_composed = compose_regex(
                 regexp=remote_dir_regex, partition_key=partition_key
             )
+
+            # a closed partition may have moved to an archive directory; the
+            # asset metadata keeps remote_dir_regex so sensors still match only
+            # the current directory
+            if (
+                archive_remote_dir is not None
+                and partition_key is not None
+                and partition_key
+                != check.not_none(
+                    value=context.assets_def.partitions_def
+                ).get_last_partition_key()
+            ):
+                remote_dir_regex_composed = archive_remote_dir(partition_key)
 
             remote_file_regex_composed = compose_regex(
                 regexp=remote_file_regex, partition_key=partition_key
