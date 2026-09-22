@@ -79,4 +79,12 @@ check_output "dagster asset check planned event (dbt test name)" clean \
 check_output "dbt accepted_values test name with short upper codes" clean \
 	"asset check accepted_values_${mdl}__Benchmark_Period__BOY__MOY__EOY__PM1__PM2__PM3__PM4__PM5__PM6"
 
+# A 1Password reference names a vault; the bare scheme, or a template whose
+# vault is a placeholder, names nothing (tests/conftest.py, tests/CLAUDE.md).
+scheme="op:""//"
+check_output "1Password ref template in code" clean Read \
+	"        [\"op\", \"read\", f\"${scheme}{vault}/{item}/{filename}\"],"
+check_output "1Password scheme named in prose" clean Read \
+	"fixtures (\`${scheme}\`, key headers, cloud tokens) get redacted"
+
 print_summary "FP corpus"

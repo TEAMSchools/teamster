@@ -101,8 +101,10 @@ runs all of them; each `test_*.sh` covers one rule area; `helpers.sh` provides
   `check-output.sh`. Read clean ranges only, or anchor Edits on a non-fixture
   line (e.g. `print_summary`).
 - Synthetic secret fixtures: split the literal (`"sk_live""_..."`,
-  `'-----BEGIN ''PRIVATE KEY-----'`) so gitleaks' source scan misses it but bash
+  `'-----BEGIN PRIVATE'' KEY-----'`) so gitleaks' source scan misses it but bash
   rebuilds the value at run time — cleaner than a `trunk-ignore`, which trips
   `trunk/ignore-does-nothing` when gitleaks wouldn't have flagged it anyway.
+  Split inside the text `check-output.sh` matches, not beside it, or reading the
+  source file gets redacted too.
 - New detection rules: add benign outputs to `test_fp_corpus.sh` and measure
   against it — it is the false-positive back-out gauge.
