@@ -76,8 +76,8 @@ exercise. Each has a test in the task that owns the code.
    not list them. A naive set comparison fails on day one. Task 3.
 2. **A plugin page with no CSV validator must not crash the header check.** The
    check parses a JavaScript array literal out of HTML; a page that does not
-   contain one must produce a clear failure naming the file, not a `TypeError`.
-   Task 4.
+   contain one must produce a clear failure naming the file, not a bare
+   `AttributeError` from calling `.group()` on `None`. Task 4.
 3. **The skill zip must not silently ship a broken relative link.** Every
    `playbooks/` and `references/` path named in `SKILL.md` must resolve inside
    the zip, or a T&L user hits a dead pointer with no error. Task 7.
@@ -578,8 +578,9 @@ def test_missing_validator_reports_the_file_not_a_type_error(tmp_path):
         build_plugin.plugin_csv_header(tmp_path)
 ```
 
-The second test is Review Focus item 2. A `TypeError` from unpacking `None`
-tells a maintainer nothing; naming the file tells them where to look.
+The second test is Review Focus item 2. Without the guard, `match.group(1)` on
+`None` raises a bare `AttributeError`, which tells a maintainer nothing about
+which file changed shape; naming the file tells them where to look.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
