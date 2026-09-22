@@ -52,10 +52,11 @@ version stays the same.
 A third condition that sits between view and table. Triggers on everything in
 the view condition, plus one extra trigger:
 
-- **A parent's code change lands** — the view re-runs on the tick a parent
-  table's post-code-change materialization lands. "Code change" covers the
-  parent's own raw SQL or any of its ancestors'. View parents are looked through
-  to the table behind them (up to 10 levels).
+- **A parent's code change lands** — the view re-runs on the tick a parent's
+  post-code-change materialization lands. "Code change" covers the parent's own
+  raw SQL or any of its ancestors'. A view parent counts when it rebuilds
+  itself, and the check also looks through it to the table behind it (up to 10
+  levels).
 
 It does **not** re-run on the deploy tick itself. At that point the parent still
 has its old schema, and re-running then compiles the stale column list
@@ -67,10 +68,17 @@ Unlike the table condition, this does **not** trigger on upstream data changes
 (`any_deps_updated`). Re-materializing views on every upstream data refresh
 would waste Dagster credits and Kubernetes resources.
 
-Known limits: a parent that reloads and finishes rebuilding within one sensor
-tick is missed; and if a parent table does a data rebuild before its changed
-ancestor rebuilds, the view re-runs early against the old schema. In either
-case, rematerialize the view from the Dagster UI.
+Known limits:
+
+- A parent that reloads and finishes rebuilding within one sensor tick is
+  missed.
+- If a parent table does a data rebuild before its changed ancestor rebuilds,
+  the view re-runs early against the old schema.
+- A second parent that lands on the tick right after the view was requested is
+  dropped. This usually does no harm, because the requested run compiles after
+  the landing. The exception is a table behind a view parent.
+
+In each case, rematerialize the view from the Dagster UI.
 
 The `CustomDagsterDbtTranslator` **auto-detects** these views by checking for
 `"union_relations"` in the model's `raw_code`.

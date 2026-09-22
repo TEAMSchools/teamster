@@ -236,6 +236,11 @@ def dbt_union_relations_automation_condition() -> AutomationCondition:
     - If a parent table does a data rebuild before its changed ancestor
       rebuilds, pending clears early and the view rebuilds against the old
       schema; the later rebuild does not re-fire it.
+    - A second parent that lands on the tick right after the view was requested
+      is dropped: that tick's newly_requested reset wins, because the trigger
+      carries no timing metadata. Usually harmless (the requested run compiles
+      after the landing), except for a table behind a view parent, which
+      ~any_deps_in_progress does not hold back.
     - A phantom pending (stale cursor state) costs at most one extra view
       rebuild. It cannot deadlock: this is a trigger, not a gate.
     """
