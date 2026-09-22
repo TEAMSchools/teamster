@@ -151,10 +151,10 @@ Almost always an unresolved `localstudentidentifier`.
    | `Student_Number`    | the correct network student_number |
 
    The sheet is named for Pearson but serves every NJ vendor. **Cambium
-   corrections go in this same tab** -- `stg_cambium__njgpa` aliases
-   `student_test_uuid` to `studenttestuuid` upstream, so the join reaches them
-   with no code change. One row per test, not per student: a student with four
-   bad test rows needs four rows here.
+   corrections go in this same tab** -- `int_pearson__all_assessments` aliases
+   Cambium's `student_test_uuid` to `studenttestuuid` before the join, so it
+   reaches them with no code change. One row per test, not per student: a
+   student with four bad test rows needs four rows here.
 
 5. **Re-check by reading the sheet external directly**, with a Python client on
    ADC — the BigQuery MCP 403s on a Drive-backed external but ADC has Drive

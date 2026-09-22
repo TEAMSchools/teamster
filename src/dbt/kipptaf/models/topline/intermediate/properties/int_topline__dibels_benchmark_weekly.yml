@@ -1,5 +1,15 @@
 models:
   - name: int_topline__dibels_benchmark_weekly
+    description: >-
+      DIBELS benchmark Composite proficiency carried onto the enrollment week
+      spine, one row per K-8 student-week inside a LITEX reporting term, in the
+      current and prior academic year. Each week reads the Composite score from
+      the benchmark period that the term names. When a student's grade changed
+      inside one period, int_amplify__all_assessments holds a row per assessment
+      grade, and the row recorded at the student's enrolled grade wins, as in
+      rpt_tableau__dibels_dashboard. Students with no Composite score for the
+      period keep a row with a null is_proficient_int. Feeds
+      int_topline__student_metrics.
     config:
       materialized: table
       meta:
@@ -9,3 +19,32 @@ models:
           # midnight tick (deps-in-progress guard serializes). Refs #4153
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - week_start_monday
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        description: KIPP student number of the enrolled student.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        description: Academic year the enrollment week belongs to.
+      - name: week_start_monday
+        description: Monday that opens the enrollment week.
+      - name: week_end_sunday
+        description: Sunday that closes the enrollment week.
+      - name: is_proficient_int
+        description:
+          1 when the period's Composite score is At/Above benchmark, 0 when it
+          is Below/Well Below, and null when the student has no Composite score
+          for the period.
+        config:
+          meta:
+            contains_pii: true
