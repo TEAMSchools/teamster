@@ -45,11 +45,11 @@ models:
           though grad_roster's cohort filter excludes them from every other
           column on this model. Counts distinct students with exitcode = 'G1'
           whose academic_year + 1 equals the current academic year, grouped by
-          school only. Added 2026-09-11 when CSGF's Portal task added this
-          column; confirmed real students exist in both the earlier- and
-          later-cohort direction for all three current HS schools (e.g. KIPP
-          Cooper Norcross High School has 87 on-time cohort-2026 grads per
-          total_4yr_grad, plus 3 cohort-2025 and 4 cohort-2027 grads this column
-          adds, for 94 total).
+          school only -- verification numbers and background live in
+          docs/models/csgf-data-model.md. A school with off-cohort graduates but
+          zero current-cohort HS students would not get a row here at all (this
+          model is driven from grad_roster, which this column's CTE
+          intentionally isn't scoped to) -- monitored, not currently
+          manifesting; see the reference doc's Known Risks.
       - name: pct_grad
         data_type: float64

@@ -223,6 +223,16 @@ for all three current HS schools this cycle: KIPP Cooper Norcross High School
 has 87 on-time (cohort 2026) grads plus 3 cohort-2025 and 4 cohort-2027 grads
 for 94 total; Newark Collegiate 161 -> 168; Newark Lab 126 -> 129.
 
+**Latent gap, monitored, not currently manifesting**: the final query is driven
+from `grad_roster` (`left join all_graduates`), so a school with off- cohort
+graduates but zero current-cohort HS students would get no row at all --
+`total_graduates` would silently vanish for that school rather than report a
+real count. Checked directly against prod: zero schools are currently in that
+state (every school with an off-cohort graduate also has current-cohort
+students). If a future cycle's school mix changes this, the fix is deriving the
+school list from a fuller join across both CTEs rather than driving from
+`grad_roster` alone.
+
 ### The four HS-scoped student-level models must match `csgf_hs_enrollment`'s population — resolved
 
 `csgf_hs_enrollment`'s own task instructions say "ONLY INCLUDE STUDENTS WHO
