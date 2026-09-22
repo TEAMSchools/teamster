@@ -9,13 +9,9 @@ models:
 
 
       The cumulative GPA columns come from `int_students__gpa_cumulative`, so
-      they cover both PowerSchool and Focus. Each enrollment year takes the
-      student's most recent cumulative GPA at that school from that year or
-      earlier, carried forward until a later year supplies one. A year before
-      the student's first GPA at the school stays null. The carry-forward
-      crosses Miami's move from PowerSchool to Focus, so a Miami student with no
-      Focus GPA yet shows their last PowerSchool cumulative GPA at the same
-      school.
+      they cover both PowerSchool and Focus. Cumulative GPA is calculated per
+      school, so every enrollment year at a school shows the student's current
+      cumulative GPA at that school.
     config:
       schema: extracts
       materialized: table

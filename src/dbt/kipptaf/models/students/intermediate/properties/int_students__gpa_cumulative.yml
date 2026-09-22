@@ -1,31 +1,23 @@
 models:
   - name: int_students__gpa_cumulative
     description: >-
-      SIS-neutral cumulative GPA, one row per student, school and academic year.
+      SIS-neutral cumulative GPA, one row per student and school. Cumulative GPA
+      is calculated per school, not per year, so there is no year in the grain.
       Unions PowerSchool's `int_powerschool__gpa_cumulative` with Miami's Focus
       `student_gpa_calculated`, conformed to the PowerSchool column vocabulary,
-      and computes the KTAF GPA bands once for both systems. The Miami
-      PowerSchool branch covers years before Focus coverage begins, and the
-      Focus branch covers years at or after it, so the frozen archive and the
-      live SIS never overlap.
+      and computes the KTAF GPA bands once for both systems.
 
 
-      **PowerSchool cumulative GPA has no year of its own.** PowerSchool stores
-      one current value per student and school. The PowerSchool branch takes its
-      years from the student's term GPA rows in `int_powerschool__gpa` and
-      repeats that current value on each of them. Focus stores a value per
-      school year, so Focus rows are genuinely year-specific.
+      **Focus wins over the Miami PowerSchool archive.** Where a Miami student
+      has both a frozen PowerSchool value and a Focus value at the same school,
+      only the Focus row is kept. The two never agree, and Focus always shows
+      fewer cumulative credits, so the Focus value does not appear to include
+      the student's PowerSchool history at that school.
 
 
-      **Miami Focus coverage is partial, and that comes from the source.** On
-      the first prod load Focus held rows for only a fraction of Miami's AY2026
-      enrollment, spread across every grade K through 9, and every student with
-      imported course history had a row. So a Miami student missing from this
-      model has no imported course history; the join is not broken.
-
-
-      Keyed on `student_number` rather than PowerSchool's `studentid`, because
-      the Focus branch has no PowerSchool `studentid`.
+      **Miami Focus coverage is partial, and that comes from the source.** A
+      Miami student missing from Focus has no imported course history, and falls
+      back to the PowerSchool archive where one exists.
     config:
       materialized: table
       meta:
@@ -36,13 +28,11 @@ models:
           # int_students__gpa's 0.137 GiB. Refs #5462
           #
           # Not a view, even though the intermediate layer permits it. The
-          # uniqueness test here is the SIS-cutover tripwire. The PowerSchool
-          # and Focus branches are exact complements around the Focus floor,
-          # so a >= slipping to > or the floor moving makes one Miami academic
-          # year emit from both branches -- both carrying
-          # _dbt_source_project = 'kippmiami', which the uniqueness key
-          # catches. As a view the test would fire only on code change, because
-          # the data-change condition re-materializes tables only.
+          # uniqueness test here guards the Focus-over-PowerSchool anti-join:
+          # if it breaks, a Miami student-school emits from both branches,
+          # both carrying _dbt_source_project = 'kippmiami'. As a view the test
+          # would fire only on code change, because the data-change condition
+          # re-materializes tables only.
           automation_condition:
             cron_schedule: 0 * * * *
     data_tests:
@@ -52,7 +42,6 @@ models:
           arguments:
             combination_of_columns:
               - student_number
-              - academic_year
               - schoolid
               - _dbt_source_project
           config:
@@ -82,11 +71,11 @@ models:
           PowerSchool school id. On the Focus branch it is
           `stg_google_sheets__people__locations.powerschool_school_id`, reached
           by joining Focus's `school_number` to that model's `focus_school_id`.
-      - name: academic_year
+      - name: calculated_academic_year
         data_type: int64
         description: >-
-          Academic year. On the PowerSchool branch, a year the student has term
-          GPA rows at the school; on the Focus branch, Focus's `syear`.
+          Academic year the SIS calculated the value in, from Focus's `syear`.
+          Null on every PowerSchool row, which stores only the current value.
       - name: cumulative_y1_gpa
         data_type: float64
         description: >-

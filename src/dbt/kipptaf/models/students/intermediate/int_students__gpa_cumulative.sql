@@ -1,53 +1,10 @@
 with
-    powerschool_years as (
-        -- grain projection, not dup-masking: term rows collapse to one row per
-        -- student, school and year
-        select distinct
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            schoolid,
-            academic_year,
-            students_student_number as student_number,
-        from {{ ref("int_powerschool__gpa") }}
-    ),
-
-    powerschool_conformed as (
-        select
-            py._dbt_source_relation,
-            py._dbt_source_project,
-            py.studentid,
-            py.schoolid,
-            py.academic_year,
-            py.student_number,
-
-            gc.cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected,
-            gc.cumulative_y1_gpa_projected_unweighted,
-            gc.cumulative_y1_gpa_projected_s1,
-            gc.cumulative_y1_gpa_projected_s1_unweighted,
-            gc.core_cumulative_y1_gpa,
-            gc.earned_credits_cum,
-            gc.earned_credits_cum_projected,
-            gc.potential_credits_cum,
-
-            -- The PowerSchool GPA chain does not produce class rank at all.
-            cast(null as int64) as class_rank,
-        from powerschool_years as py
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on py.studentid = gc.studentid
-            and py.schoolid = gc.schoolid
-            and py._dbt_source_project = gc._dbt_source_project
-    ),
-
     focus_conformed as (
         select
             g._dbt_source_relation,
             g._dbt_source_project,
 
-            g.syear as academic_year,
+            g.syear as calculated_academic_year,
 
             g.class_rank,
 
@@ -79,12 +36,39 @@ with
         left join
             {{ ref("stg_google_sheets__people__locations") }} as loc
             on fs.school_number = loc.focus_school_id
-        -- The archive branch above owns Miami's years before the cutover, so
-        -- admit only rows at or after it — the same boundary, applied from the
-        -- other side. A floor rather than a set of Focus years: a Focus year
-        -- that recorded nothing must not fall back to an archive holding
-        -- nothing for it either.
         where g.syear >= 2026
+    ),
+
+    powerschool_conformed as (
+        select
+            gc._dbt_source_relation,
+            gc._dbt_source_project,
+            gc.studentid,
+            gc.schoolid,
+            gc.cumulative_y1_gpa,
+            gc.cumulative_y1_gpa_unweighted,
+            gc.cumulative_y1_gpa_projected,
+            gc.cumulative_y1_gpa_projected_unweighted,
+            gc.cumulative_y1_gpa_projected_s1,
+            gc.cumulative_y1_gpa_projected_s1_unweighted,
+            gc.core_cumulative_y1_gpa,
+            gc.earned_credits_cum,
+            gc.earned_credits_cum_projected,
+            gc.potential_credits_cum,
+            gc.students_student_number as student_number,
+
+            -- The PowerSchool GPA chain does not produce class rank at all.
+            cast(null as int64) as class_rank,
+            -- PowerSchool stores only the current value per student and school.
+            cast(null as int64) as calculated_academic_year,
+        from {{ ref("int_powerschool__gpa_cumulative") }} as gc
+        -- Focus wins where a Miami student has both at the same school.
+        left join
+            focus_conformed as fc
+            on gc.students_student_number = fc.student_number
+            and gc.schoolid = fc.schoolid
+            and gc._dbt_source_project = fc._dbt_source_project
+        where fc.student_number is null
     ),
 
     unioned as (
@@ -93,7 +77,6 @@ with
             _dbt_source_project,
             studentid,
             schoolid,
-            academic_year,
             student_number,
             cumulative_y1_gpa,
             cumulative_y1_gpa_unweighted,
@@ -106,6 +89,7 @@ with
             earned_credits_cum_projected,
             potential_credits_cum,
             class_rank,
+            calculated_academic_year,
         from powerschool_conformed
 
         union all
@@ -115,7 +99,6 @@ with
             _dbt_source_project,
             studentid,
             schoolid,
-            academic_year,
             student_number,
             cumulative_y1_gpa,
             cumulative_y1_gpa_unweighted,
@@ -128,6 +111,7 @@ with
             earned_credits_cum_projected,
             potential_credits_cum,
             class_rank,
+            calculated_academic_year,
         from focus_conformed
     )
 

@@ -105,32 +105,6 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
-    ),
-
-    gpa_cumulative as (
-        select
-            _dbt_source_project,
-            student_number,
-            schoolid,
-            academic_year,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_unweighted,
-            cumulative_y1_gpa_projected,
-            cumulative_y1_gpa_projected_s1,
-            cumulative_y1_gpa_projected_s1_unweighted,
-            cumulative_y1_gpa_projected_unweighted,
-            core_cumulative_y1_gpa,
-            earned_credits_cum,
-            earned_credits_cum_projected,
-            potential_credits_cum,
-            cumulative_y1_gpa_unweighted_band,
-            cumulative_y1_gpa_projected_unweighted_band,
-
-            lead(academic_year, 1, 9999) over (
-                partition by _dbt_source_project, student_number, schoolid
-                order by academic_year
-            ) as valid_until_academic_year,
-        from {{ ref("int_students__gpa_cumulative") }}
     )
 
 select
@@ -550,12 +524,10 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join
-    gpa_cumulative as gc
+    {{ ref("int_students__gpa_cumulative") }} as gc
     on e.student_number = gc.student_number
     and e.schoolid = gc.schoolid
     and e._dbt_source_project = gc._dbt_source_project
-    and e.academic_year >= gc.academic_year
-    and e.academic_year < gc.valid_until_academic_year
 left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid

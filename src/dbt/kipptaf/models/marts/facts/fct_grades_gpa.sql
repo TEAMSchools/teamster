@@ -25,9 +25,17 @@ with
         where `type` = 'RT'
     ),
 
-    -- Full join: Focus years carry cumulative GPA with no term row.
     gpa_term_cumulative as (
         select
+            t._dbt_source_project,
+            t.schoolid,
+            t.academic_year,
+            t.student_number,
+            c.cumulative_y1_gpa,
+            c.cumulative_y1_gpa_unweighted,
+            c.cumulative_y1_gpa_projected,
+            c.earned_credits_cum,
+            c.potential_credits_cum,
             t.yearid,
             t.term_name,
             t.semester,
@@ -40,26 +48,41 @@ with
             t.total_credit_hours_y1,
             t.grade_avg_term,
             t.grade_avg_y1,
-
-            c.cumulative_y1_gpa,
-            c.cumulative_y1_gpa_unweighted,
-            c.cumulative_y1_gpa_projected,
-            c.earned_credits_cum,
-            c.potential_credits_cum,
-
-            coalesce(
-                t._dbt_source_project, c._dbt_source_project
-            ) as _dbt_source_project,
-            coalesce(t.schoolid, c.schoolid) as schoolid,
-            coalesce(t.academic_year, c.academic_year) as academic_year,
-            coalesce(t.student_number, c.student_number) as student_number,
         from {{ ref("int_students__gpa_term") }} as t
-        full join
+        left join
             {{ ref("int_students__gpa_cumulative") }} as c
             on t.student_number = c.student_number
             and t.schoolid = c.schoolid
-            and t.academic_year = c.academic_year
             and t._dbt_source_project = c._dbt_source_project
+
+        union all
+
+        -- Focus has cumulative GPA and no term rows.
+        select
+            _dbt_source_project,
+            schoolid,
+            calculated_academic_year as academic_year,
+            student_number,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            cumulative_y1_gpa_projected,
+            earned_credits_cum,
+            potential_credits_cum,
+
+            cast(null as int64) as yearid,
+            cast(null as string) as term_name,
+            cast(null as string) as semester,
+            cast(null as float64) as gpa_term,
+            cast(null as float64) as gpa_y1,
+            cast(null as float64) as gpa_y1_unweighted,
+            cast(null as float64) as gpa_semester,
+            cast(null as int64) as n_failing_y1,
+            cast(null as float64) as total_credit_hours_term,
+            cast(null as float64) as total_credit_hours_y1,
+            cast(null as float64) as grade_avg_term,
+            cast(null as float64) as grade_avg_y1,
+        from {{ ref("int_students__gpa_cumulative") }}
+        where studentid is null
     ),
 
     gpa_term as (
