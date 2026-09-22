@@ -6,6 +6,15 @@ models:
       `is_enrolled_recent` or `is_out_of_district` dropped Miami entirely until
       #5038 populated those flags upstream; `is_self_contained` is still null
       for Miami by design. Ratified on #4996.
+
+
+      The cumulative GPA columns come from `int_students__gpa`, so they cover
+      both PowerSchool and Focus. Each enrollment year takes the student's most
+      recent cumulative GPA at that school from that year or earlier, carried
+      forward until a later year supplies one. A year before the student's first
+      GPA at the school stays null. The carry-forward crosses Miami's move from
+      PowerSchool to Focus, so a Miami student with no Focus GPA yet shows their
+      last PowerSchool cumulative GPA at the same school.
     config:
       schema: extracts
       materialized: table

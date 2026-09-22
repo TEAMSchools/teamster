@@ -51,14 +51,11 @@ models:
       materialized: table
       meta:
         dagster:
-          # 1x/day instead of eager. Rebuilds 85.7 times a day at 0.137 GiB a
-          # build, 11.7 GiB/day, and it is one of the models driving the
-          # 69.7/day churn in snapshot_powerschool__gpa_term and 73.7/day in
-          # snapshot_powerschool__gpa_cumulative. Eager buys freshness nothing
-          # reads: the only downstream mart is fct_grades_gpa, which appears in
-          # no cube file and no extract. The cube_semantic_layer exposure does
-          # list it, but no file under src/cube/model/ reads it, so that entry
-          # overstates consumption.
+          # Hourly, matching int_extracts__student_enrollments (0 * * * *),
+          # which takes its cumulative GPA columns from here. A daily tick left
+          # that extract's GPA up to a day behind. At 0.137 GiB a build this is
+          # about 3.3 GiB/day, against 11.7 GiB/day when it ran eager (85.7
+          # builds a day). Refs #5462
           #
           # Not a view, even though the intermediate layer permits it. The
           # uniqueness test here is the SIS-cutover tripwire. The PowerSchool
@@ -72,13 +69,12 @@ models:
           # keeps it firing on the one boundary the SIS migration is actively
           # moving.
           #
-          # 0 4 matches the gradebook_and_gpa_dashboard batch these marts feed.
-          # All 4 leaves (category_grades, gradebook_assignments_scores, gpa,
-          # final_grades) share the tick, so ~any_deps_in_progress serializes
-          # the pass -- they are direct parent-child. The group costs about
-          # 8.7 GiB/day against 228.1 today. Refs #5082
+          # The hourly tick includes 04:00, when the gradebook_and_gpa_dashboard
+          # batch (category_grades, gradebook_assignments_scores, final_grades)
+          # runs, so ~any_deps_in_progress still serializes this model ahead of
+          # fct_grades_gpa. Refs #5082
           automation_condition:
-            cron_schedule: 0 4 * * *
+            cron_schedule: 0 * * * *
     data_tests:
       # Scoped to rows that resolved a student_number. int_powerschool__gpa_term
       # carries 4 Camden AY2015 rows at schoolid 0 whose students_student_number
@@ -185,10 +181,37 @@ models:
         description: >-
           Projected year-end cumulative GPA. Null on every Focus row — Focus
           projects nothing.
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+        description: >-
+          Projected year-end cumulative unweighted GPA, read from
+          `int_powerschool__gpa_cumulative`. Null on every Focus row.
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+        description: >-
+          Projected cumulative weighted GPA counting current-year Y1 grades as
+          of the end of Q2, read from `int_powerschool__gpa_cumulative`. Null on
+          every Focus row.
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+        description: >-
+          Unweighted counterpart of `cumulative_y1_gpa_projected_s1`, read from
+          `int_powerschool__gpa_cumulative`. Null on every Focus row.
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted GPA over math, science, English and social studies
+          courses only, read from `int_powerschool__gpa_cumulative`. Null on
+          every Focus row.
       - name: earned_credits_cum
         data_type: float64
         description: >-
           Cumulative credits earned. Mapped from Focus's `cumulative_credits`.
+      - name: earned_credits_cum_projected
+        data_type: float64
+        description: >-
+          Projected cumulative credits earned, counting in-progress courses,
+          read from `int_powerschool__gpa_cumulative`. Null on every Focus row.
       - name: potential_credits_cum
         data_type: float64
         description: >-
@@ -199,3 +222,15 @@ models:
           Class rank as the SIS computed it. Null on every PowerSchool row —
           that chain does not produce a rank at all — and populated on only 3 of
           441 Focus rows so far, so it is not yet usable as a reporting measure.
+      - name: cumulative_y1_gpa_unweighted_band
+        data_type: int64
+        description: >-
+          KTAF GPA band for `cumulative_y1_gpa_unweighted` (4 = 3.00 and above,
+          3 = 2.50–2.99, 2 = 2.00–2.49, 1 = below 2.00). Null when the GPA is
+          null.
+      - name: cumulative_y1_gpa_projected_unweighted_band
+        data_type: int64
+        description: >-
+          KTAF GPA band for `cumulative_y1_gpa_projected_unweighted`, on the
+          same cut-offs. Null when the projected GPA is null, which is every
+          Focus row.
