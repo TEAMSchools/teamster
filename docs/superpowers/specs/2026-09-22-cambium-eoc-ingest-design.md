@@ -129,6 +129,29 @@ Pearson relations rebuild in prod.
 6. Post-merge: launch the prod `eoc` assets immediately, before the first
    automation tick requests `stg_cambium__njsla` against an empty prefix.
 
+## Revision after PR review
+
+The PR review on #5489 replaced the dbt half of the design above. It supersedes
+the staging union, the `cambium_eoc_enabled` var, and the column renames in the
+cambium staging models.
+
+- **Staging keeps Cambium's own shape.** `stg_cambium__njsla`,
+  `stg_cambium__njgpa` and a new `stg_cambium__eoc` keep Cambium's snake_case
+  names. They only cast types, apply the summative and attempted filter, and
+  derive `test_date`. Tests on Cambium's own values stay there.
+- **The Pearson aliases move to kipptaf `int_pearson__all_assessments`.** Its
+  Pearson relations stay a `union_relations` passthrough. Two CTEs map the
+  kipptaf `stg_cambium__njsla` + `stg_cambium__eoc` union views and the
+  `stg_cambium__njgpa` view to the shared shape. `full union all corresponding`
+  joins the three by column name. Tests on the shared columns move there, scoped
+  to Cambium rows.
+- **No new intermediate models.** `dim_assessments` and
+  `dim_assessment_administrations` read the Cambium rows from
+  `int_pearson__all_assessments` instead of `stg_cambium__*`.
+- **Paterson turns EOC off with model config.** It disables `stg_cambium__eoc`,
+  `src_cambium__eoc` and the EOC model's tests. The kipptaf `stg_cambium__eoc`
+  view lists only Newark and Camden. There is no var.
+
 ## Out of scope
 
 `rpt_tableau__academic_goals_rollup` filters

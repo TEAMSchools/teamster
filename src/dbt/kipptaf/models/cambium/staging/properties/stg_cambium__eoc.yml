@@ -1,9 +1,11 @@
 models:
-  - name: stg_cambium__njgpa
+  - name: stg_cambium__eoc
     description: >-
-      Union of Newark and Camden stg_cambium__njgpa (the cambium package model),
-      in Cambium's own column names. Column docs and tests live there;
+      Union of Newark and Camden stg_cambium__eoc (the cambium package model),
+      the end-of-course Algebra I, Algebra II and Geometry record file in
+      Cambium's own column names. Column docs and tests live there;
       int_pearson__all_assessments maps it to the shared NJ-assessment shape.
+      Paterson has no EOC file yet.
     config:
       materialized: table
     columns:
