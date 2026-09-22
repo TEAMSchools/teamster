@@ -43,6 +43,34 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # references/powerschool-navigation.md walks Teaching & Learning staff
+      # through the WEB_ROOT screens step by step. No test can tell that prose
+      # describing a user interface has gone stale, so this is a human gate
+      # with a machine trigger: a PR that changes plugin pages must also
+      # touch the skill, or say in its title that the walkthrough doesn't
+      # need it.
+      - name: Check the walkthrough was considered
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          base=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          pages=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/gradebook-audit/WEB_ROOT/**' | wc -l)
+          skill=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/skills/**' | wc -l)
+          if [ "$pages" -gt 0 ] && [ "$skill" -eq 0 ]; then
+            echo "::error::This PR changes plugin pages but not the end-user skill."
+            echo "Confirm references/powerschool-navigation.md still matches the"
+            echo "screens, then rebuild the zip. If the walkthrough genuinely needs"
+            echo "no change, add [skill-unaffected] to the PR title."
+            if echo "$PR_TITLE" | grep -q '\[skill-unaffected\]'; then
+              echo "Author asserted the walkthrough is unaffected."
+              exit 0
+            fi
+            exit 1
+          fi
 
       # Validates and packages. Exits non-zero if any page path referenced in
       # plugin.xml or permissions_root/*.xml is missing from the package, so a
