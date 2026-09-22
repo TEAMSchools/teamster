@@ -1,8 +1,15 @@
 # Drain the assessment project knowledge into Cube descriptions and MCP docstrings
 
-Design for #5236. Brainstormed 2026-09-10. Warehouse figures measured in prod
-BigQuery the same day; re-measure before each PR. No figure in this document
-goes into a YAML description.
+Design for #5236. Brainstormed 2026-09-10; every warehouse figure re-measured
+against prod on 2026-09-22 and dated where it moved. Re-measure again before
+each implementation PR. No figure in this document goes into a YAML description.
+
+**What the 2026-09-22 pass found.** C1's first half shipped upstream — there is
+no null `response_type` left anywhere — but its placeholder rows survive under a
+new label, so C1 needs re-deciding rather than re-measuring. Two reference facts
+about `response_type` and one about `administration_period` are now wrong and
+are corrected below. C2's figures drifted without changing its argument. C3 and
+C4 are unchanged.
 
 ## Decision
 
@@ -282,26 +289,32 @@ Each change is a correction or an addition, worded qualitatively. The ones that
 correct shipped text:
 
 - `module_type`: currently "e.g., QA, CR". Becomes an open list of the values in
-  use with a note that `pct_proficient_formative` covers only `QA`, `MQQ`,
-  `CRQ`.
+  use — 28 distinct values on Illuminate as of 2026-09-22, and null for every
+  other source — with a note that `pct_proficient_formative` covers only `QA`,
+  `MQQ`, `CRQ`.
 - `is_internal_assessment`: currently "FALSE for state and college". Adds the
   vendors and points at `assessment_type` for source selection.
 - `grade_level_tested`: currently "Null for college-entrance". Adds that it is
   null for every vendor row and that `grade_level` is the field to use there.
 - `administration_period`: currently omits vendor values. Adds `BOY`, `MOY`,
-  `EOY`, `Outside Round` for i-Ready and DIBELS, `Fall`, `Winter`, `Spring` for
-  STAR, `PM1` to `PM3` for FL, and that the vocabulary is only meaningful with
-  `assessment_type` scoped.
+  `EOY` for i-Ready and DIBELS, `Outside Round` for i-Ready **only** (DIBELS has
+  no such value — verified 2026-09-22), `Fall`, `Winter`, `Spring` for STAR,
+  `PM1` to `PM3` for FL, `Fall` and `Spring` for NJGPA, `Spring` for NJSLA, and
+  that the vocabulary is only meaningful with `assessment_type` scoped. It is
+  null for every Illuminate row.
 - `response_type`: currently "overall, strand, standard". Becomes `overall`,
-  `standard`, `group`, plus the null case until C1 lands.
+  `standard`, `group`, `not_taken` — the null case is gone as of 2026-09-22, and
+  `not_taken` marks an assigned-but-unsat Illuminate assessment. Says that
+  `standard` is Illuminate-only but `group` is not: i-Ready and DIBELS populate
+  it too.
 - `performance_band_label_number`: currently "Null for state". Adds Illuminate
   only, and not comparable across band sets.
 - `academic_subject`: currently lists "English Language Arts" as an example.
   Adds that values are source-dependent and Illuminate's ELA-equivalent is
   `Text Study`.
 - `count_scores` and `pct_proficient`: until C1 lands, say that Illuminate
-  carries unscored placeholder rows that sit in the denominator when
-  `response_type` is not filtered.
+  carries unscored `not_taken` rows that sit in the denominator when
+  `response_type` is not filtered, and name the filter that excludes them.
 
 A test in `tests/cube/test_cube_schema.py` loads the YAML and asserts one key
 phrase per moved fact, keyed by member name, so a later edit cannot drop one
@@ -330,31 +343,59 @@ existing procedure in `src/cube/mcp/CLAUDE.md`.
 Each is its own PR. The text fallback from PR 1 is removed in the same PR that
 lands the model change.
 
-### C1. `response_type` null rows and unscored placeholders
+### C1. Unscored placeholder rows
 
-Finding. The reference says only non-Illuminate rows have a null
-`response_type`. The fact has 940,115 Illuminate rows with null `response_type`,
-null `response_type_code`, null `is_mastery`, null `percent_correct`, and all
-but 15 with a null test date. They come from the `left join` of
-`int_assessments__scaffold` to `int_illuminate__agg_student_responses` in
-`int_assessments__response_rollup`: a student was assigned an assessment and no
-responses were joined. About 7% of Illuminate rows. `count_scores` counts them,
-so an Illuminate `pct_proficient` without a `response_type` filter has an
-inflated denominator. The fact's only SQL consumer is the Cube scores cube; the
-bridge and dimension files mention it in descriptions only.
+**Half of this shipped upstream between 10 and 22 September. Re-measured
+2026-09-22; the finding below replaces the original.**
 
-Chosen. In `fct_assessment_scores_enrollment_scoped`: set `response_type` to
-`'overall'` on the state and vendor branches, and drop rows where
-`response_type`, `is_mastery`, `percent_correct`, and `scale_score` are all
-null. After this, `equals "overall"` works for every source and the null case
-disappears from the view. Update `count_scores`, `pct_proficient`, and
-`response_type` descriptions to drop the placeholder note. Record row counts
-before and after in the PR: total, per `assessment_type`, and the Illuminate
-`overall` count, which must not change.
+What changed. There is no longer a null `response_type` anywhere in the fact —
+zero rows, every source. State and vendor now carry `'overall'`, which is
+exactly what C1's first half proposed, so that part is done and needs no PR. The
+unscored placeholder rows were not dropped, though. They were relabelled to a
+new `response_type` value, `'not_taken'`.
 
-Check before the PR: `int_assessments__scaffold` consumers other than the
-rollup, to confirm nothing expects assigned-but-unscored rows to reach this
-fact.
+| `response_type` | Rows      | Fully unscored |
+| --------------- | --------- | -------------- |
+| `standard`      | 7,992,496 | 0              |
+| `group`         | 4,270,447 | 5,562          |
+| `overall`       | 1,854,540 | 0              |
+| `not_taken`     | 928,765   | 928,765        |
+
+Finding. All 928,765 `not_taken` rows are Illuminate, and every one has a null
+`is_mastery`, `percent_correct` and `scale_score` — a student was assigned an
+assessment and no responses joined. `count_scores` still counts them, so an
+Illuminate `pct_proficient` computed without a `response_type` filter still has
+an inflated denominator. **The problem C1 exists to fix is intact; only its
+shape changed.**
+
+Three knock-on corrections, all of which land in PR 1 rather than here:
+
+- The reference's `response_type` value list (`overall`, `standard`, `group`,
+  `null`) is wrong. The values are `overall`, `standard`, `group`, `not_taken`.
+- The reference's "every other source is `response_type = null`" is wrong, and
+  so is "only Illuminate populates `standard` / `group`". Only `standard` is
+  Illuminate-only. i-Ready contributes 1,208,458 `group` rows and DIBELS
+  269,820.
+- `notSet` versus `equals "null"` is still a real Cube trap and stays in the
+  `load` docstring, but it no longer has anything to do with `response_type`.
+
+Chosen — **re-decide before PR 3 is planned.** The original choice (drop the
+rows) rested on a benefit that no longer exists: the null case is already gone,
+so dropping them no longer buys `equals "overall"` working everywhere. What is
+left is only the denominator, and a filter on `response_type != 'not_taken'`
+fixes that without a rebuild. Against dropping: `not_taken` is now a named,
+legible signal that a student was assigned an assessment and did not sit it.
+Deleting the rows destroys that, and nothing else in the warehouse carries it at
+this grain. The three options are drop, filter the proficiency primitives, or
+document — and they are no longer close enough to settle by inspection.
+
+Check before the PR: whether anything now consumes `not_taken` deliberately, and
+`int_assessments__scaffold` consumers other than
+`int_assessments__response_rollup`.
+
+Separately, 5,562 `group` rows are fully unscored and carry no `not_taken`
+label. Small, and not covered by whatever relabelled the rest — worth a look
+when C1 is re-decided.
 
 **Partition the fact in this same PR.**
 `fct_assessment_scores_enrollment_scoped` carries `assessment_date_key` as a
@@ -375,17 +416,19 @@ and the denominator effect.
 
 ### C2. Canonical standard code
 
-Finding. `response_type = 'standard'` has 1,791 distinct codes. Stripping all
-non-alphanumerics and the narrow rule
-`REGEXP_REPLACE(code, r'\.([a-z])$', r'\1')` both collapse them to 1,736. Every
-one of the 55 merged groups is a pair differing only by a dot before the
-trailing sub-standard letter, such as `CCSS.Math.Content.8.EE.C.8.b` and
-`CCSS.Math.Content.8.EE.C.8b`. Descriptions are identical apart from whitespace
-in 4 pairs. No group has 3 members and no group mixes two standards. The root
-cause is upstream: Illuminate holds two mirror copies of the CCSS Math standards
-document, category ids 39 to 61 with the dot and 64 to 92 without, 110 standard
-ids for the 55 pairs, none hidden. Numeric-only codes such as `6.2.1` exist, so
-the blunt strip carries a collision risk the narrow rule does not.
+Finding. Re-measured 2026-09-22: `response_type = 'standard'` has 1,840 distinct
+codes, and both the blunt strip of all non-alphanumerics and the narrow rule
+`REGEXP_REPLACE(code, r'\.([a-z])$', r'\1')` collapse them to 1,785. (On 10
+September the same pair of figures was 1,791 and 1,736; the gap of 55 merged
+groups is unchanged.) Every one of the 55 merged groups is a pair differing only
+by a dot before the trailing sub-standard letter, such as
+`CCSS.Math.Content.8.EE.C.8.b` and `CCSS.Math.Content.8.EE.C.8b`. Descriptions
+are identical apart from whitespace in 4 pairs. No group has 3 members and no
+group mixes two standards. The root cause is upstream: Illuminate holds two
+mirror copies of the CCSS Math standards document, category ids 39 to 61 with
+the dot and 64 to 92 without, 110 standard ids for the 55 pairs, none hidden.
+Numeric-only codes such as `6.2.1` exist, so the blunt strip carries a collision
+risk the narrow rule does not.
 
 Chosen. Add `response_type_code_canonical` to
 `fct_assessment_scores_enrollment_scoped` with the narrow rule, raw code kept.
@@ -446,10 +489,11 @@ Side finding for the same PR's description text: 2,260 standard-level rows from
 ### C3. Assessment count
 
 Finding. "How many times was this standard assessed" is a distinct count of
-`source_assessment_id`, not `count_scores`. Per standard per year the distinct
-assessment count has quartiles 1, 1, 2, 3 and a maximum of 52; 43% of
+`source_assessment_id`, not `count_scores`. Re-measured 2026-09-22 and
+unchanged: per standard per year the distinct assessment count has quartiles 1,
+1, 2, 3 and a maximum of 52, across 6,729 standard-years, and 43.4% of
 standard-years rest on one assessment. Distinct `assessment_administration_key`
-differs in 84% of standard-years because that key includes region and
+differs in 84.6% of standard-years because that key includes region and
 administered date, so it counts sittings.
 
 Chosen. Add `count_assessments` to the scores cube: `count_distinct` on
@@ -577,7 +621,7 @@ rather than inlined in the scorer's main loop.
 | --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | YAML descriptions, `ai_context` values, the `cube-authoring.md` rule, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
 | 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture                                    | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
-| 3   | C1: `response_type` and placeholder rows, plus `partition_by`                                     | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
+| 3   | C1: `not_taken` placeholder rows (re-decide first), plus `partition_by`                           | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
 | 4   | C2: canonical standard code                                                                       | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
 | 5   | C3: `count_assessments`                                                                           | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
 | 6   | C4: `assessment_family`                                                                           | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
