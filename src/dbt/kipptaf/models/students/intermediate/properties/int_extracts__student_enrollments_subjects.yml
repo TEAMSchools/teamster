@@ -27,7 +27,6 @@ models:
               - entrydate
               - iready_subject
           config:
-            enabled: false
             severity: error
     columns:
       - name: _dbt_source_relation

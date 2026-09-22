@@ -1,6 +1,7 @@
 import os
 import re
 import zipfile
+from collections.abc import Callable
 
 from dagster import (
     AssetExecutionContext,
@@ -70,6 +71,7 @@ def build_sftp_file_asset(
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
     ignore_multiple_matches: bool = False,
+    archive_remote_dir: Callable[[str], str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
     slugify_cols: bool = True,
@@ -159,27 +161,47 @@ def build_sftp_file_asset(
                 regexp=remote_file_regex, partition_key=partition_key
             )
 
+        # a closed partition may have moved to an archive directory; try the
+        # current directory first, since the vendor's move can lag the partition
+        # rollover. The asset metadata keeps remote_dir_regex so sensors still
+        # match only the current directory.
+        remote_dirs = [remote_dir_regex_composed]
+
+        if archive_remote_dir is not None and partition_key is not None:
+            remote_dirs.append(archive_remote_dir(partition_key))
+
+        file_matches: list[str] = []
+
         with (
             ssh.get_connection() as connection,
             connection.open_sftp() as sftp_client,
         ):
-            files = ssh.listdir_attr_r(
-                sftp_client=sftp_client,
-                remote_dir=remote_dir_regex_composed,
-                exclude_dirs=exclude_dirs,
-            )
+            for remote_dir in remote_dirs:
+                try:
+                    files = ssh.listdir_attr_r(
+                        sftp_client=sftp_client,
+                        remote_dir=remote_dir,
+                        exclude_dirs=exclude_dirs,
+                    )
+                except OSError as e:
+                    context.log.warning(msg=f"Could not list {remote_dir}: {e}")
+                    continue
 
-        files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
+                files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
 
-        file_matches = [
-            path
-            for _, path in files
-            if re.search(
-                pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
-                string=path,
-            )
-            is not None
-        ]
+                file_matches = [
+                    path
+                    for _, path in files
+                    if re.search(
+                        pattern=f"{remote_dir}/{remote_file_regex_composed}",
+                        string=path,
+                    )
+                    is not None
+                ]
+
+                if file_matches:
+                    remote_dir_regex_composed = remote_dir
+                    break
 
         # exit if no matches
         if not file_matches:

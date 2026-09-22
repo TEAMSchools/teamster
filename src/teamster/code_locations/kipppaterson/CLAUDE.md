@@ -16,13 +16,14 @@ GCS bucket: `teamster-kipppaterson`
 | `dbt`                   | dbt assets                   | `AutomationConditionSensor`                                           |
 | `powerschool` (sis/dlt) | dlt assets (Oracle→BigQuery) | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
 | `amplify` (mclass sftp) | SFTP assets                  | sensor (`build_amplify_mclass_sftp_sensor`)                           |
+| `cambium`               | SFTP assets                  | sensor (`couchdrop_sftp_sensor`)                                      |
 | `deanslist`             | API assets                   | schedule (nightly)                                                    |
 | `edplan`                | SFTP assets                  | sensor (`build_edplan_sftp_sensor`)                                   |
 | `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
-| `pearson`               | SFTP assets                  | `AutomationConditionSensor`                                           |
+| `pearson`               | SFTP assets                  | sensor (`couchdrop_sftp_sensor`)                                      |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
 | `titan`                 | SFTP assets                  | sensor (`build_titan_sftp_sensor`)                                    |
-| `couchdrop`             | sensor only                  | sensor (Google Drive watcher, Finalsite only)                         |
+| `couchdrop`             | sensor only                  | sensor (Google Drive watcher: cambium, pearson, finalsite)            |
 
 ## PowerSchool via dlt
 
@@ -47,8 +48,9 @@ Consequences:
   via `dagster-cloud.yaml` (`PS_DB_*`, `PS_SSH_*`)
 - Ingestion writes to BigQuery `dagster_kipppaterson_dlt_powerschool`; the dbt
   `powerschool` package `staging/dlt` variant is enabled here
-- The former Couchdrop-SFTP PowerSchool feed is retired; `couchdrop_sftp_sensor`
-  now watches Finalsite `status_report` only
+- `couchdrop_sftp_sensor` carries no PowerSchool files; it watches Cambium
+  `njsla`, Pearson `njsla` / `njsla_science` / `student_list_report`, and
+  Finalsite `status_report`
 - No `iready`, `overgrad`, or `renlearn`
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
@@ -70,8 +72,11 @@ a freshness check. PowerSchool dlt runs on an intraday change-detection sensor
 (`kipppaterson__powerschool__dlt__intraday_sensor`, 15-min probe) plus one
 nightly cron schedule (unconditional full-refresh + re-baseline, matching
 kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
-autocomm `extracts` job add nightly schedules; Finalsite `status_report`
-(`couchdrop_sftp_sensor`), Amplify (`build_amplify_mclass_sftp_sensor`), Titan
-(`build_titan_sftp_sensor`), EdPlan (`build_edplan_sftp_sensor`), and
-PowerSchool intraday are sensor-driven. `AutomationConditionSensor` handles any
-assets with an automation condition defined (e.g. `pearson`).
+autocomm `extracts` job add nightly schedules; Cambium, Pearson and Finalsite
+`status_report` (`couchdrop_sftp_sensor`), Amplify
+(`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), EdPlan
+(`build_edplan_sftp_sensor`), and PowerSchool intraday are sensor-driven. The
+`AutomationConditionSensor` targets `AssetSelection.all()`, so it covers the
+`dbt` assets plus EdPlan `njsmart_powerschool`, the one Paterson SFTP asset that
+passes an `automation_condition` (`AutomationCondition.eager()`) — that asset
+materializes from either its own sensor or the automation sensor.
