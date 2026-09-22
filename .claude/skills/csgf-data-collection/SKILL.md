@@ -883,6 +883,23 @@ live CSGF sheet directly.
 
 ---
 
+## 2026-2027 cycle submission status
+
+Tracking what CSGF has actually accepted, so a later reader doesn't re-verify
+already-closed items. Update the date whenever a status changes.
+
+- **Accepted by CSGF (confirmed 2026-09-22)**: Preliminary Questions, HS Grad
+  Data, AP Scores, AP Offerings, SAT (the last four resubmitted after the
+  `enroll_status` and `total_graduates` fixes -- see PR #5275 -- and after the
+  studentid `100034` GPA correction was applied to the official sheet), and
+  Kevin's Org Staffing Data.
+- **Still open**: everything else on the per-person split above (Schools List
+  fields still needed from Laz, the shared School Enrollment task, Discipline,
+  Finance, etc.) -- check each owner directly rather than assuming acceptance
+  carries over between tasks.
+
+---
+
 ## Known data risks -- verify before submitting
 
 **Fixed 2026-09-11: SAT/ACT/AP Scores/AP Offerings must scope to the same
