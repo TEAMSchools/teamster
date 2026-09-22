@@ -50,6 +50,12 @@ jobs:
       - name: Build and validate plugin packages
         run: python3 ps-plugins/scripts/build_plugin.py
 
+      # https://github.com/astral-sh/setup-uv
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+
+      - name: Run plugin contract tests
+        run: uv run pytest tests/ps_plugins -v
+
       - name: Upload plugin zips
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

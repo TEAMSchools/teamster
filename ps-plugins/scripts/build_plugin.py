@@ -31,6 +31,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 DIST = REPO / "dist"
 
+# Resolved from the plugin directory so the script works from any cwd.
+DBT_U_EXPECTATIONS = (
+    REPO.parent
+    / "src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__u_expectations.sql"
+)
+
 # Documentation and repo furniture never belong in a plugin package -- PS only
 # needs plugin.xml and the *_root/WEB_ROOT trees.
 EXCLUDE_DIRS = {"docs", ".git", "__pycache__"}
@@ -104,6 +110,57 @@ def validate(staged: Path, refs: set[str]) -> list[str]:
     return errors
 
 
+# PowerSchool stamps these onto every U_ table. The named query does not list
+# them because the list page does not show them, so they are expected to appear
+# on the dbt side and nowhere else. Without this exemption the contract check
+# fails on its first run against a correct pair.
+PS_AUDIT_COLUMNS = {"whocreated", "whencreated", "whomodified", "whenmodified"}
+
+COLUMN_TAG = re.compile(r'<column\s+column="[^."]+\.([^"]+)"')
+
+
+def named_query_columns(plugin_dir: Path) -> set[str]:
+    """Every column the plugin's named queries declare on u_expectations."""
+    columns: set[str] = set()
+    for xml in sorted((plugin_dir / "queries_root").glob("*.xml")):
+        columns |= set(COLUMN_TAG.findall(xml.read_text()))
+    return columns
+
+
+def dbt_model_columns(sql_path: Path) -> set[str]:
+    """Column names the dbt staging model projects.
+
+    The model enumerates its columns, so the names are readable without a dbt
+    parse. Backticks around reserved words (`quarter`) are stripped.
+    """
+    body = sql_path.read_text()
+    body = body[: body.index("from ")]
+    columns: set[str] = set()
+    for line in body.splitlines():
+        line = line.strip().rstrip(",")
+        if not line or line.startswith(("select", "--")):
+            continue
+        name = line.split(" as ")[-1] if " as " in line else line
+        columns.add(name.strip().strip("`"))
+    return columns
+
+
+def check_column_contract(plugin_dir: Path, sql_path: Path) -> list[str]:
+    """The plugin's declared columns must all exist in the dbt model."""
+    declared = named_query_columns(plugin_dir)
+    modelled = dbt_model_columns(sql_path)
+
+    errors = [
+        f"{c} is declared in a named query but the dbt model does not project it"
+        for c in sorted(declared - modelled)
+    ]
+    errors += [
+        f"{c} is in the dbt model but no named query declares it"
+        for c in sorted(modelled - declared - PS_AUDIT_COLUMNS)
+    ]
+    return errors
+
+
 def build(plugin_dir: Path) -> Path | None:
     name, version = plugin_meta(plugin_dir / "plugin.xml")
     slug = plugin_dir.name.replace("-", "_")
@@ -118,6 +175,7 @@ def build(plugin_dir: Path) -> Path | None:
         stage(plugin_dir, staged)
 
         errors = validate(staged, refs)
+        errors += check_column_contract(plugin_dir, DBT_U_EXPECTATIONS)
         if errors:
             print("\n  BUILD FAILED:")
             for e in errors:
