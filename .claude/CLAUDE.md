@@ -80,8 +80,9 @@ correct schema override.)
 containing the tokens the hooks deny gets your own `mcp__*`/Bash write denied.
 Beyond bare `env`: `.env`/`.environment` (Rule 1 `\.env[.a-z]*` is unanchored —
 matches anywhere, even mid-word in prose), bounded dotfile/cert paths,
-`/proc/*/environ`, and secret-shaped fixtures (`op://`, key headers — these also
-trip `check-output.sh` on the _response_). Reword/backtick them, or keep literal
+`/proc/*/environ`, and secret-shaped fixtures (1Password refs that name a vault
+— the bare `op://` scheme passes — and key headers; these also trip
+`check-output.sh` on the _response_). Reword/backtick them, or keep literal
 evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
