@@ -1,43 +1,114 @@
 models:
   - name: rpt_gsheets__njdoe_universal_screener_data
+    description: >-
+      Universal literacy screener results in the shape New Jersey's Department
+      of Education expects for its Universal Literacy Screener collection. One
+      row per student per benchmark period, carrying a score and a performance
+      level for each of six DIBELS measures.
+
+      Scoped to New Jersey students in grades K through 3 whose enrollment grade
+      matches the grade they were assessed in, for the current academic year
+      only. Miami is excluded — Florida has no equivalent collection.
+
+      Source data is read directly from the raw Amplify datasets rather than
+      through a dbt source, so dbt holds no lineage edge to the tables this
+      model actually depends on. An upstream Amplify column rename therefore
+      breaks this model with no graph signal and no failing test upstream of it.
+
+      Performance levels are recoded from Amplify's benchmark vocabulary into
+      the state's grade-level vocabulary. The two below-benchmark levels Amplify
+      distinguishes collapse into a single output value, so that distinction is
+      not recoverable from this extract.
     columns:
       - name: region
         data_type: string
+        description: >-
+          KIPP region, derived from the location crosswalk's Dagster code
+          location rather than from the Amplify record.
       - name: schoolid
         data_type: int64
+        description: PowerSchool school id, from the location crosswalk.
       - name: school
         data_type: string
+        description: School abbreviation, from the location crosswalk.
       - name: benchmark_period
         data_type: string
+        description: >-
+          Amplify benchmark window the result belongs to — beginning, middle or
+          end of year. Carried through from the source unchanged.
       - name: district_code
         data_type: string
+        description: >-
+          The region's NJDOE district identifier, hardcoded per region rather
+          than sourced from a crosswalk.
       - name: school_code
         data_type: string
+        description: >-
+          The region's NJDOE school identifier, hardcoded per region rather than
+          sourced from a crosswalk. One value covers every school in a region,
+          so this is not a per-school code.
       - name: sid
         data_type: string
+        description: >-
+          State-assigned student identifier, taken from the enrollment extract's
+          `state_studentnumber`. This is the key NJDOE matches submissions on.
       - name: assessment_name
         data_type: string
+        description: >-
+          Amplify assessment edition the result came from, reported to NJDOE as
+          the assessment name.
       - name: phonics_and_decoding_score
         data_type: string
+        description: >-
+          Nonsense Word Fluency words-recoded-correctly score, reported under
+          NJDOE's phonics and decoding measure.
       - name: letter_naming_score
         data_type: string
+        description: Letter Naming Fluency score.
       - name: phonemic_awareness_score
         data_type: string
+        description: Phoneme Segmentation Fluency score.
       - name: comprehension_score
         data_type: string
+        description: >-
+          Maze comprehension score, reported under NJDOE's comprehension
+          measure.
       - name: oral_reading_fluency_score
         data_type: string
+        description: Oral Reading Fluency score.
       - name: composite_score
         data_type: string
+        description: >-
+          Amplify composite score across the measures administered for the
+          student's grade and benchmark period.
       - name: phonics_and_decoding_level
         data_type: string
+        description: >-
+          Performance level for phonics and decoding, recoded to the state's
+          vocabulary. See the model description for the recoding, and the
+          reference doc for the full mapping.
       - name: letter_naming_level
         data_type: string
+        description:
+          Performance level for letter naming, recoded to the state's
+          vocabulary.
       - name: phonemic_awareness_level
         data_type: string
+        description: >-
+          Performance level for phonemic awareness, recoded to the state's
+          vocabulary.
       - name: comprehension_level
         data_type: string
+        description:
+          Performance level for comprehension, recoded to the state's
+          vocabulary.
       - name: oral_reading_fluency_level
         data_type: string
+        description: >-
+          Performance level for oral reading fluency, recoded to the state's
+          vocabulary.
       - name: composite_level
         data_type: string
+        description: >-
+          Composite performance level, recoded to the state's vocabulary. This
+          is the field NJDOE reads as the student's overall screener outcome.
