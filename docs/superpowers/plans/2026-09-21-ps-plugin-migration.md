@@ -678,11 +678,20 @@ git -C "$w" commit -m "feat(ps-plugins): fail the build when the CSV header and 
 render. No test can tell that prose describing a user interface has gone stale,
 so this is a human gate with a machine trigger.
 
+**No `${{ }}` may appear inside the `run:` block.** GitHub Actions splices those
+expressions into the script text before any shell sees it, so a value an
+outsider controls — a pull request title above all — executes as code on the
+runner. Pass every such value through `env:` and reference the shell variable,
+quoted.
+
 ```yaml
 - name: Check the walkthrough was considered
   if: github.event_name == 'pull_request'
+  env:
+    PR_TITLE: ${{ github.event.pull_request.title }}
+    BASE_REF: ${{ github.base_ref }}
   run: |
-    base=$(git merge-base origin/${{ github.base_ref }} HEAD)
+    base=$(git merge-base "origin/$BASE_REF" HEAD)
     pages=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/gradebook-audit/WEB_ROOT/**' | wc -l)
     skill=$(git diff --name-only "$base"...HEAD -- 'ps-plugins/skills/**' | wc -l)
     if [ "$pages" -gt 0 ] && [ "$skill" -eq 0 ]; then
@@ -694,17 +703,23 @@ so this is a human gate with a machine trigger.
     fi
 ```
 
+Verify with a grep: no `${{` inside the `run:` block. An empty result is the
+evidence.
+
 - [ ] **Step 2: Give the gate an escape hatch**
 
 Some page changes genuinely do not touch a documented screen — a comment, a CSS
 tweak. Before the `exit 1`, add:
 
 ```bash
-          if echo "${{ github.event.pull_request.title }}" | grep -q '\[skill-unaffected\]'; then
+          if echo "$PR_TITLE" | grep -q '\[skill-unaffected\]'; then
             echo "Author asserted the walkthrough is unaffected."
             exit 0
           fi
 ```
+
+`$PR_TITLE` comes from the `env:` block in Step 1, never inline. Reading a
+hostile title is fine; splicing one into the script is not.
 
 A gate with no escape hatch gets disabled the first time it is wrong, and then
 it protects nothing.
