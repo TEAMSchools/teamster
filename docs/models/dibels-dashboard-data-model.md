@@ -419,10 +419,24 @@ Each year populates only its own column; the other is null. The staging model
 `stg_amplify__mclass__sftp__benchmark_student_summary` coalesces the two student
 id columns into `student_primary_id`, so downstream models never see the split.
 Until that fix landed (2026-09-22), every SY2026-2027 BM row had a null id and
-the staging uniqueness test failed with one duplicate key per grade. The PM file
-has the same rename; its staging model still reads the old column, and the Avro
-schema only started carrying `student_primary_id` with the same fix, so the PM
-coalesce follows once the SY2026-2027 PM partition is re-pulled.
+the staging uniqueness test failed with one duplicate key per grade.
+
+The PM file has the same rename, but its staging model keeps the old column
+names in its contract. `stg_amplify__mclass__sftp__pm_student_summary` folds
+each new-name column into the old one, and the new `additional_student_id` goes
+into `additional_student_id_sisid`, the column SY2025-2026 PM rows fill. The PM
+Avro schema only started carrying the new names on 2026-09-22, so both PM
+partitions were re-pulled that day before the coalesce could compile.
+
+#### SY2026-2027 Miami school ids are alphanumeric
+
+From SY2026-2027 Amplify reports Miami school ids such as `2332A` (Royalty
+Academy, previously `30200804`) and `2008A` (Legacy Elementary). The two PM
+staging models used to cast `school_primary_id` to an integer, which failed on
+these ids. They now keep it as a string, matching the BM staging model, so the
+vendor's id survives as sent. The kipptaf PM intermediate casts both its inputs
+to strings and prefers the crosswalk school id matched on `school_name`, so its
+`school_primary_id` is a string too. Nothing downstream joins on it.
 
 #### Internal structure
 
