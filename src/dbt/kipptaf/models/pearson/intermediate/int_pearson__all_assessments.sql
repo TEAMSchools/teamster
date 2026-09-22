@@ -9,6 +9,9 @@ with
                     source("kipppaterson_pearson", "int_pearson__all_assessments"),
                     source("kippnewark_cambium", "stg_cambium__njgpa"),
                     source("kippcamden_cambium", "stg_cambium__njgpa"),
+                    source("kippnewark_cambium", "stg_cambium__njsla"),
+                    source("kippcamden_cambium", "stg_cambium__njsla"),
+                    source("kipppaterson_cambium", "stg_cambium__njsla"),
                 ],
                 include=[
                     "_dbt_source_relation",
@@ -35,7 +38,6 @@ with
                     "firstname",
                     "hispanicorlatinoethnicity",
                     "iep_status",
-                    "illuminate_subject",
                     "is_504",
                     "is_approaching_int",
                     "is_below_int",
@@ -86,8 +88,8 @@ with
     )
 
 /* Every per-row derivation lives upstream: int_pearson__all_assessments in the
-   pearson package and stg_cambium__njgpa in the cambium package. Only the two
-   cross-source repairs remain here. */
+   pearson package and the stg_cambium__* models in the cambium package. Only
+   the two cross-source repairs remain here. */
 select
     s.* replace (
         cast(s.statestudentidentifier as string) as statestudentidentifier,

@@ -14,6 +14,20 @@ with
                 order_by="_dagster_partition_key desc",
             )
         }}
+    ),
+
+    status_report_gated as (
+        select
+            finalsite_enrollment_id,
+            assigned_school,
+
+            -- Carries the model's stale-cycle guard, so the enrolled_date the
+            -- model deliberately drops is not reported here as a stale read.
+            -- Refs #5313.
+            if(
+                enrolled_date < applicant_date, cast(null as date), enrolled_date
+            ) as enrolled_date,
+        from status_report_latest
     )
 
 select
@@ -24,7 +38,7 @@ select
     sr.assigned_school as status_report_assigned_school,
 from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
 inner join
-    status_report_latest as sr on l.finalsite_enrollment_id = sr.finalsite_enrollment_id
+    status_report_gated as sr on l.finalsite_enrollment_id = sr.finalsite_enrollment_id
 where
     (l.enrollment_start_date is null and sr.enrolled_date is not null)
     or (l.assigned_school is null and sr.assigned_school is not null)
