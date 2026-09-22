@@ -5,11 +5,13 @@ against prod on 2026-09-22 and dated where it moved. Re-measure again before
 each implementation PR. No figure in this document goes into a YAML description.
 
 **What the 2026-09-22 pass found.** C1's first half shipped upstream — there is
-no null `response_type` left anywhere — but its placeholder rows survive under a
-new label, so C1 needs re-deciding rather than re-measuring. Two reference facts
-about `response_type` and one about `administration_period` are now wrong and
-are corrected below. C2's figures drifted without changing its argument. C3 and
-C4 are unchanged.
+no null `response_type` left anywhere — and chasing the other half turned up a
+live correctness bug on `pct_proficient` that is wider than C1 described. That
+left this spec as [#5501](https://github.com/TEAMSchools/teamster/issues/5501);
+C1 shrinks to a description change and folds into PR 1, and PR 3 becomes the
+partitioning work alone. Two reference facts about `response_type` and one about
+`administration_period` are now wrong and are corrected below. C2's figures
+drifted without changing its argument. C3 and C4 are unchanged.
 
 ## Decision
 
@@ -379,23 +381,39 @@ Three knock-on corrections, all of which land in PR 1 rather than here:
 - `notSet` versus `equals "null"` is still a real Cube trap and stays in the
   `load` docstring, but it no longer has anything to do with `response_type`.
 
-Chosen — **re-decide before PR 3 is planned.** The original choice (drop the
-rows) rested on a benefit that no longer exists: the null case is already gone,
-so dropping them no longer buys `equals "overall"` working everywhere. What is
-left is only the denominator, and a filter on `response_type != 'not_taken'`
-fixes that without a rebuild. Against dropping: `not_taken` is now a named,
-legible signal that a student was assigned an assessment and did not sit it.
-Deleting the rows destroys that, and nothing else in the warehouse carries it at
-this grain. The three options are drop, filter the proficiency primitives, or
-document — and they are no longer close enough to settle by inspection.
+Chosen — **the denominator fix left this spec. It is
+[#5501](https://github.com/TEAMSchools/teamster/issues/5501).**
 
-Check before the PR: whether anything now consumes `not_taken` deliberately, and
-`int_assessments__scaffold` consumers other than
-`int_assessments__response_rollup`.
+Chasing C1 down found a bigger problem than C1 describes. `pct_proficient`
+divides `_sum_proficient` by `count_scores`, a bare row count, so every row with
+a null `is_mastery` sits in the denominator and can never reach the numerator.
+That is 936,836 rows, and `not_taken` is only 99.1% of them:
 
-Separately, 5,562 `group` rows are fully unscored and carry no `not_taken`
-label. Small, and not covered by whatever relabelled the rest — worth a look
-when C1 is re-decided.
+| `response_type` | Rows    | Sources          |
+| --------------- | ------- | ---------------- |
+| `not_taken`     | 928,765 | illuminate       |
+| `group`         | 5,562   | dibels           |
+| `overall`       | 2,509   | illuminate, star |
+
+So the reported rate is wrong on three of the four sources — STAR by 16.34
+points, Illuminate by 3.51, DIBELS by 0.81 — and **no `response_type` filter
+fixes it**, because 2,509 of the bad rows are `overall`, the value the reference
+tells people to default to. Dropping rows does not fix it either.
+
+That is a live correctness bug on a published metric, not a documentation-drain
+task, so it moved to its own issue with the worked fix attached. It is Cube-only
+and needs no dbt change.
+
+**C1 shrinks to a description change and folds into PR 1.** What remains here is
+saying, on `count_scores` and `pct_proficient`, that a score row can carry no
+proficiency verdict, and on `response_type`, what `not_taken` means. Those
+sentences are needed whether or not #5501 has landed; they get reworded once it
+does.
+
+The rows themselves stay. `not_taken` is a deliberate, documented signal that a
+student was assigned an assessment and never sat it, pinned by an
+`accepted_values` test in `fct_assessment_scores_enrollment_scoped.yml`, and
+nothing else in the warehouse carries it at this grain.
 
 **Partition the fact in this same PR.**
 `fct_assessment_scores_enrollment_scoped` carries `assessment_date_key` as a
@@ -409,10 +427,8 @@ off only for queries that filter a fact-side time dimension. Decide the
 partitioning column and whether the view needs a fact-side date member when PR 3
 is planned.
 
-Alternatives. Cube-only: a `scored` segment, or filter the proficiency
-primitives on `is_mastery IS NOT NULL`. No rebuild, but it changes measure
-semantics without a schema change. Text only: describe the null, the operator,
-and the denominator effect.
+Alternatives are recorded on #5501, which also carries why dropping rows and
+filtering `response_type` were both rejected.
 
 ### C2. Canonical standard code
 
@@ -621,7 +637,7 @@ rather than inlined in the scorer's main loop.
 | --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | YAML descriptions, `ai_context` values, the `cube-authoring.md` rule, reference trim, schema test | `uv run pytest tests/cube/`; Cube Cloud branch staging validates the model                                                                                 |
 | 2   | `load` and `meta` docstrings, eval family 4, pre-drain fixture                                    | `uv run pytest tests/cube/`; eval run, arm B beats arm A                                                                                                   |
-| 3   | C1: `not_taken` placeholder rows (re-decide first), plus `partition_by`                           | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
+| 3   | `partition_by` on `fct_assessment_scores_enrollment_scoped`                                       | `uv run dbt build --select fct_assessment_scores_enrollment_scoped+`; row counts before and after; dry-run bytes on a date-filtered query before and after |
 | 4   | C2: canonical standard code                                                                       | dbt build; pre-agg partition count unchanged on branch staging                                                                                             |
 | 5   | C3: `count_assessments`                                                                           | `uv run pytest tests/cube/`; branch staging query returns quartile-shaped counts                                                                           |
 | 6   | C4: `assessment_family`                                                                           | `uv run dbt build --select dim_assessments+`; eval rerun                                                                                                   |
