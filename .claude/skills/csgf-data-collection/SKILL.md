@@ -51,9 +51,10 @@ table -- re-check it fresh each cycle, this is NOT guaranteed to repeat):
   generic "Finance" hand-wave).
 - **Jeff Fleming / Nadja Salem / Susie Chu**: Key Contacts, School Finance
   (P&L), Org Finance, Bank Info, Budget Upload.
-- **Not named anywhere in the item-list doc**: ADA% and Chronic Absenteeism% on
-  the School Enrollment task. Worth flagging back to the collection owner as a
-  possible gap in her own planning doc rather than assuming it's covered.
+- **Anthony Walters**: ADA% and Chronic Absenteeism% on the School Enrollment
+  task, confirmed by the collection owner 2026-09-22 -- not in the item-list
+  doc's own table (a real gap in that doc, not a dbt gap), so this line is the
+  only place it's written down.
 
 **When helping someone who isn't the collection owner**, don't default to
 walking them through the collection owner's full checklist (Steps 1-7 below).
@@ -1024,9 +1025,11 @@ fields on this task with no column here. **Confirmed not a gap** -- per this
 cycle's item-list doc (see "Who this skill is for" above), the budget/seat
 fields are Laszlo's, and Teacher Count/Retention plus the leader-info fields are
 Kevin's -- both entered directly on the Portal, not sourced through this dbt
-model. ADA%/Chronic Absenteeism% aren't named to anyone in that doc; worth
-flagging back to the collection owner rather than assuming they're covered.
-Documented so a future reader doesn't mistake any of this for an oversight.
+model. **ADA%/Chronic Absenteeism% belong to Walters** (confirmed by the
+collection owner 2026-09-22, after this doc first flagged them as unassigned in
+the item-list doc) -- also entered directly on the Portal, not sourced through
+this dbt model. Documented so a future reader doesn't mistake any of this for an
+oversight.
 
 **Forward risk for next cycle, not this one:** Miami opened its first high
 school in AY2026 -- KIPP Miami Technical High, ~95 students, mostly grade 9. The
