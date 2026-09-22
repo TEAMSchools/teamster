@@ -1245,8 +1245,10 @@ When the calendar checks above pass and an entire region still has no scores,
 gave the user three wrong causes for Miami's empty AY2026 dashboard -- a missing
 union member, a crosswalk gap, then the `is_self_contained` exclusion -- before
 checking the top of the hierarchy, where the answer was sitting: Amplify's
-SY2026-2027 export contains no Miami schools at all. The account was renamed
-from `Kipp New Jersey And Miami` to `Kipp New Jersey` and their schools left it.
+SY2026-2027 export contained no Miami schools at all on that date. By 2026-09-22
+Amplify had added 4 Miami schools back under a new `district_name`,
+`Kipp Florida` (the NJ schools moved to `Kipp New Jersey`). The export moves
+under you; re-run the query, do not trust the last answer.
 
 Run this before anything else:
 
@@ -1256,7 +1258,7 @@ select
     district_name,
     school_name,
     count(*) as n_rows,
-    count(distinct student_primary_id_studentnumber) as n_students,
+    count(distinct student_primary_id) as n_students,
     cast(max(sync_date) as string) as last_sync,
 from `teamster-332318`.kippnewark_amplify.benchmark_student_summary
 where school_year = '2026-2027'
@@ -1278,11 +1280,14 @@ Four rules for this class of question:
   crosswalk absorbed both. A rename it misses produces a **null region**, not
   missing rows -- so compare row counts layer by layer and check for null
   regions before concluding anything. Identical counts across layers means
-  nothing is being dropped at the join.
-- **Confirm by student number, not by school name.** Matching the file's
-  `student_primary_id_studentnumber` against enrollment rules out a rename
-  entirely, because it never touches a name. That is the check that actually
-  closes the question.
+  nothing is being dropped at the join. Live gap as of 2026-09-22:
+  `Kipp Legacy Elementary` and `Kipp Legacy Middle` (Miami, ~205 students) are
+  in the export and not in the crosswalk. Adding them to the locations sheet is
+  Ops' fix, not a dbt one.
+- **Confirm by student number, not by school name.** Matching the file's student
+  id against enrollment rules out a rename entirely, because it never touches a
+  name. That is the check that actually closes the question. Which column holds
+  the id depends on the year -- see the header rename below.
 - **Reading the raw SFTP file is available and cheap.** Credentials come from
   the pytest session fixture, so a throwaway `tests/**/test_zz_*.py` using
   `SSH_RESOURCE_AMPLIFY.process_config_and_initialize()` plus
@@ -1295,6 +1300,35 @@ Two facts about the remote layout, current as of 2026-09-15: SY2025-2026 files
 live under `/25-26/BM` and `/25-26/PM` while SY2026-2027 files are at `/BM` and
 `/PM`, and every file is a daily cumulative snapshot (704 of them), so the asset
 takes the newest match by mtime.
+
+### SY2026-2027 header rename: null ids are a column move, not missing data
+
+Amplify dropped the parenthetical qualifiers from the id headers in the
+SY2026-2027 BM and PM files, so `slugify` produced new column names:
+`student_primary_id_studentnumber` -> `student_primary_id`,
+`enrollment_teacher_staff_id_teachernumber` -> `enrollment_teacher_staff_id`,
+`assessing_teacher_staff_id_teachernumber` -> `assessing_teacher_staff_id`,
+`secondary_student_id_stateid` -> `secondary_student_id`,
+`additional_student_id_primarysisid` / `_sisid` -> `additional_student_id`. Each
+year populates only its own column.
+
+Two failure shapes follow from it, and they look different:
+
+- **BM**: the Avro schema already carried both names, so the new column landed
+  in the warehouse with values and the old one went null. Symptom: the staging
+  `unique_combination_of_columns` test fails with exactly one duplicate key per
+  grade (all-null id). Fix shipped 2026-09-22: the staging model coalesces the
+  two columns.
+- **PM**: the Avro schema (`PMStudentSummary` in
+  `src/teamster/libraries/amplify/mclass/sftp/schema.py`) lacked the new names,
+  so `fastavro` dropped the columns and SY2026-2027 PM rows had NO id column at
+  all. The 5 fields were added to the schema on 2026-09-22; the SY2026-2027 PM
+  partition needs a re-pull before the PM staging model can coalesce them, and
+  that coalesce is a follow-up. Do not add a column the external does not have
+  yet -- prod compile and CI both fail on `Unrecognized name`.
+
+A `dibels8_PM_CUSTOM_2026-2027` aimline file was not on the server as of
+2026-09-22; that asset partition is expected to be missing.
 
 ### Verifying a year that is not in prod yet -- go to the source
 

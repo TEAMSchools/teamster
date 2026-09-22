@@ -41,7 +41,9 @@ select
     ),
 
     cast(left(school_year, 4) as int) as academic_year,
-    cast(student_primary_id_studentnumber as int) as student_primary_id,
+    cast(
+        coalesce(student_primary_id_studentnumber, student_primary_id) as int
+    ) as student_primary_id,
 
     cast(device_date as date) as device_date,
     cast(sync_date as date) as sync_date,
