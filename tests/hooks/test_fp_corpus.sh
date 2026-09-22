@@ -69,4 +69,14 @@ check_output "dbt log invocation_id + node ids" clean "23:14:02  invocation_id: 
 23:14:12    compiled code at target/compiled/kipptaf/models/powerschool/staging/tests/dbt_utils_unique_combination_o_${hex32}.sql"
 check_output "markdown rule of 130 dashes" clean "$(printf -- '-%.0s' {1..130})"
 
+# dagster-dbt names an asset check after the full dbt test name, which embeds
+# the model's Title_Case column names: a dot-free, mixed-case run of 135-290
+# chars with an underscore every few letters (2026-09-22, get_run_logs).
+mdl="stg_amplify__mclass__sftp__pm_student_summary"
+cols="Student_Primary_ID__School_Year__Benchmark_Period__Assessment_Measure__Assessment_Grade"
+check_output "dagster asset check planned event (dbt test name)" clean \
+	"__ASSET_JOB intends to execute asset check dbt_utils_unique_combination_of_columns_${mdl}_${cols} on asset [\"kippnewark\", \"amplify\", \"${mdl}\"]"
+check_output "dbt accepted_values test name with short upper codes" clean \
+	"asset check accepted_values_${mdl}__Benchmark_Period__BOY__MOY__EOY__PM1__PM2__PM3__PM4__PM5__PM6"
+
 print_summary "FP corpus"
