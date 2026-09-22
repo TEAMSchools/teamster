@@ -431,12 +431,11 @@ partitions were re-pulled that day before the coalesce could compile.
 #### SY2026-2027 Miami school ids are alphanumeric
 
 From SY2026-2027 Amplify reports Miami school ids such as `2332A` (Royalty
-Academy, previously `30200804`) and `2008A` (Legacy Elementary). Paterson Prep
-Elementary reports `1234`. The two PM staging models cast `school_primary_id`
-with `safe_cast`, so a non-numeric id reads null. Nothing downstream loses it:
-the kipptaf PM intermediate replaces `school_primary_id` with the crosswalk
-school id matched on `school_name`. The BM staging model keeps the id as a
-string and was never affected.
+Academy, previously `30200804`) and `2008A` (Legacy Elementary). The two PM
+staging models cast `school_primary_id` with `safe_cast`, so a non-numeric id
+reads null. Nothing downstream loses it: the kipptaf PM intermediate replaces
+`school_primary_id` with the crosswalk school id matched on `school_name`. The
+BM staging model keeps the id as a string and was never affected.
 
 #### Internal structure
 
