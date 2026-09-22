@@ -65,6 +65,9 @@ with
             cast(statestudentidentifier as string) as statestudentidentifier,
 
         from {{ ref("int_pearson__all_assessments") }}
+        /* NJSLA is the only Pearson assessment carrying a proficiency, and it
+           runs one window a year; NJGPA's Fall and Spring rows carry none. */
+        where assessment_name = 'NJSLA'
 
         union all
 
@@ -92,7 +95,14 @@ with
     ),
 
     prev_yr_state_test_resolved as (
-        select p.*, coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
+        select
+            p._dbt_source_project,
+            p.statestudentidentifier,
+            p.academic_year_plus,
+            p.njsla_proficiency,
+
+            coalesce(x.illuminate_subject_area, p.raw_subject) as `subject`,
+
         from prev_yr_state_test as p
         left join
             {{ ref("stg_google_sheets__assessments__vendor_subject_crosswalk") }} as x

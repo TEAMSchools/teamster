@@ -121,15 +121,24 @@ Do NOT search the codebase. Go directly to the exposure file:
 
 `src/dbt/kipptaf/models/exposures/tableau.yml`
 
-Find the exposure named `gradebook_audit` and read its `depends_on` list — that
-is the authoritative answer.
+Find the exposure named `academic_gradebook_health_suite` and read its
+`depends_on` list — that is the authoritative answer. It is the live dashboard
+staff actually use, and it reads 4 models besides the audit, so the audit is one
+input among several rather than the whole exposure.
 
 Current `depends_on` list (update if the exposure changes):
 
+- `rpt_tableau__gpa_goals`
+- `rpt_tableau__gpa_goal_progress`
+- `rpt_tableau__gpa_cumulative_year`
+- `rpt_tableau__student_course_grades`
 - `rpt_tableau__gradebook_audit`
 
-There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
-only if the user asks about disabled or archived workbooks.
+Two disabled exposures, `gradebook_audit` and `gradebook_audit_teacher_report`,
+also name `rpt_tableau__gradebook_audit`. Do NOT read either as the answer —
+`gradebook_audit`'s workbook holds one sheet, has no views, and reads an extract
+from a dbt Cloud CI schema that no longer exists. Mention them only if the user
+asks about disabled or archived workbooks.
 
 Two companion Google Sheets have their own exposures in
 `src/dbt/kipptaf/models/exposures/google-sheets.yml` — check there if asked

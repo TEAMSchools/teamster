@@ -782,6 +782,24 @@ data_tests:
           ref:
             name: stg_cambium__njgpa
 
+  - name: stg_cambium__njsla__not_empty
+    description: >-
+      stg_cambium__njsla must never build empty, for the same reason as its
+      NJGPA sibling above -- a dropped or renamed Cambium column reads entirely
+      NULL, the district staging filter returns zero rows, and every unique /
+      not_null test passes vacuously over an empty relation. NJSLA carries the
+      additional risk that Science, ELA and Mathematics all arrive in the one
+      file, so a single silent column change removes three assessments at once.
+      Declared here in kipptaf rather than in the cambium package because the
+      district projects' unscoped `data_tests: +severity: warn` overrides
+      installed-package test config.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_cambium__njsla
+
   - name: int_students__graduation_path_codes__cutoff_within_score_scale
     description: >-
       A graduation pathway cut score must be reachable on the scale of the
@@ -867,9 +885,14 @@ data_tests:
       graduation rate. Falling behind that cohort is ordinary retention and is
       not a defect, so only the other direction is tested -- a student whose
       grade level implies an earlier graduating class than their recorded
-      cohort. That means a skipped grade or a missing enrollment year, and it
-      misstates the graduating class in state reporting. Warn because the fix is
-      a records correction in PowerSchool rather than a code change.
+      cohort. Three causes produce that shape. A skipped grade and a missing
+      enrollment year are records problems, corrected in PowerSchool. Summer
+      credit recovery is not -- a student can advance a grade over the summer
+      with no enrollment row to show for it, because
+      int_powerschool__student_enrollment_union filters out the summer school,
+      so the records are already right. Warn rather than error, because no
+      result here is fixed by a code change, and because the cut score join no
+      longer depends on the two agreeing.
     config:
       severity: warn
       meta:
@@ -994,3 +1017,95 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__assessments__vendor_subject_crosswalk
+
+  - name: rpt_tableau__dibels_dashboard__round_verdict_token_reconciles
+    description: >-
+      Every character of measure_standard_round_verdicts agrees with the row it
+      describes. For each PM row the test takes the character at that row's own
+      position in its season's string and compares it against a token derived
+      independently from met_measure_standard_goal and the coalesced status
+      column.
+
+      Independently, but be precise about of what. The test proves the WINDOW
+      MECHANICS -- that string_agg places each round's token at that round's
+      position, under the right partition and order. It does NOT independently
+      prove the flag-to-token mapping, since it reads the same
+      met_measure_standard_goal column the extract's CASE reads; two copies
+      changed identically and wrongly would still pass. Do not cite it as proof
+      of more than it covers.
+
+      The shape it does rule out is the one that slipped through: a check that
+      re-applies the extract's own string-matching CASE compares the expression
+      to itself and passes whatever it does. That is not hypothetical -- the
+      column shipped with the Aimline half matching on a `like 'Met%'` prefix,
+      which 'Meeting Aimline' does not satisfy, so all 13,886 met-aimline rows
+      on AY2025 rendered as `?` instead of `A` and a self-referential check
+      reported zero mismatches. This test reproduces that failure at 13,886
+      rows.
+
+      Warn rather than error because a mismatch makes the string misleading
+      rather than the extract unbuildable, and because the fix is a reporting
+      correction that wants triage rather than a blocked deploy.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard
+  - name: rpt_tableau__dibels_dashboard__round_columns_single_valued
+    description: >-
+      Every round-grain column holds ONE value per student per round. That is
+      what makes them countable with COUNTD(student) in a BI tool, and it is not
+      something the SQL guarantees on its own.
+
+      The models produce these columns correctly -- verified at zero splits in
+      both intermediates. The risk is the extract, which drives off the
+      expectation spine and so carries a row for every measure the round
+      expected, including ones the student did not sit. A plain coalesce(pm.x,
+      'Not Tested') puts the real round verdict on the sat rows and Not Tested
+      on the rest, so a partially-tested student lands in two buckets at once
+      and a percent-of-total distribution sums past 100.
+
+      Measured before the fix on AY2025 BOY->MOY R3, aimline, currently
+      enrolled: 397 of 3,338 students split on pm_round_status,
+      round_benchmark_status and round_trajectory_status -- exactly the Round
+      Incomplete population, none anywhere else. The first aimline Region
+      Overview build showed category shares summing to 114% because of it, with
+      no error and plausible-looking bars.
+
+      Warn rather than error because a split makes a distribution misleading
+      rather than the extract unbuildable, and triage wants the extract
+      readable.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard
+  - name: rpt_tableau__dibels_dashboard__measure_code_sat_all_or_none
+    description: >-
+      Within one measure name code, a student either sat every measure standard
+      under it or none of them. The two multi-standard codes come off a single
+      probe administration -- NWF-CLS and NWF-WRC are two scores from one NWF
+      sitting, ORF and ORF-Accu from one passage -- so a partial code group is
+      not a thing the assessment can produce. Measured on AY2025: 0 partial
+      groups on Internal, 0 on Aimline, against 12,466 and 10,568 fully-scored
+      ones.
+
+      met_measure_name_code_goal depends on that. It rolls the standard-level
+      verdicts up with an avg() over the code partition, and the rollup reads
+      only the rows that carry a verdict. If a student ever sat one standard and
+      not its partner, the flag would report that single standard's verdict as
+      the whole measure's -- so a student who sat Decoding, met it, and never
+      sat Letter Sounds would read as having met NWF. Wrong, and silent.
+
+      Warn rather than error because the condition is a source-behaviour change,
+      not a build failure, and the extract is still usable while it is triaged.
+      What to do when it fires is in the DIBELS reference document under "If the
+      measure-code pairing test fires".
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__dibels_dashboard

@@ -161,18 +161,6 @@ schema. Dagster default `backoffLimit` is **0** (not K8s default 6) —
 
 ## Pod Labels (for selectors / PDBs / anti-affinity)
 
-From `dagster_k8s/utils.py` `get_common_labels()` — applied to both run and step
-pods:
-
-| Key                           | Value                                       |
-| ----------------------------- | ------------------------------------------- |
-| `app.kubernetes.io/name`      | `dagster`                                   |
-| `app.kubernetes.io/instance`  | `dagster`                                   |
-| `app.kubernetes.io/part-of`   | `dagster`                                   |
-| `app.kubernetes.io/component` | `run_worker` (run) / `step_worker` (step)   |
-| `dagster/run-id`              | run UUID (both)                             |
-| `dagster/code-location`       | location name if `remote_job_origin` is set |
-
 Code server pods (`<location>-prod-*`) carry `managed_by: K8sUserCodeLauncher`,
 `deployment_name: prod`, `location_name: <loc>` — already used by the
 per-location PDB selectors in `extraManifests`.

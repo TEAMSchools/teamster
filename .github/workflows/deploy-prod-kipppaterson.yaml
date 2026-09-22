@@ -25,6 +25,7 @@ on:
       - src/teamster/code_locations/kipppaterson/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
@@ -35,6 +36,7 @@ on:
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/titan/**
       - "!**/CLAUDE.md"
   pull_request:
     paths:
@@ -45,6 +47,7 @@ on:
       - src/teamster/code_locations/kipppaterson/**
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
+      - src/teamster/libraries/cambium/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
@@ -55,6 +58,7 @@ on:
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/titan/**
       - "!**/CLAUDE.md"
     types:
       - opened

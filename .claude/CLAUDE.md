@@ -12,29 +12,8 @@ Two hooks guard secrets and sensitive paths:
   material (keys, tokens, connection strings)
 
 See each script for exact regex patterns. This document covers operational
-behavior.
-
-## Hook protocol
-
-Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
-
-- **Allow**: exit 0 with no output (or empty stdout)
-- **PreToolUse deny**: exit 0 with
-  `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` on stdout
-- **PostToolUse redact**: exit 0 with
-  `{"hookSpecificOutput": {"updatedToolOutput": <redacted tool_response>, ...}}`.
-  PostToolUse cannot deny: the tool already ran, and `permissionDecision` is
-  silently ignored on this event (the scanner emitted it for months with no
-  effect). `updatedToolOutput` must keep the tool's output shape or the harness
-  drops it and shows the original. `{"decision": "block", "reason": ...}` ends
-  the turn with a warning and is used only when there is nothing to redact.
-
-**Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
-anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The
-regression test suite (`expect_deny_exit0`) enforces both invariants.
-
-Auto mode does not replace either hook: `permissions.deny` and PreToolUse hooks
-run before the classifier, and the classifier never sees tool results.
+behavior; the hook protocol (exit codes, JSON shapes) and the context-injection
+hook are in `.claude/rules/claude-settings.md`, which loads on a hook read.
 
 ## What is blocked
 
@@ -76,11 +55,6 @@ Read/Grep/Glob always run through it. Read/Grep/Glob allowed:
 
 Note: `*.md` files under `.claude/` (like this CLAUDE.md) are writable.
 
-**Claude CLI via Bash** — the `claude` binary lives under
-`~/.vscode-remote/extensions/` and is not on `$PATH`, so it cannot be run via
-Bash. Plugin and marketplace commands (`claude plugins install`,
-`claude plugins marketplace list`, etc.) must be run manually in a terminal.
-
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 
 - Environment variable / process memory leakage (`printenv`, `set`, `env`, etc.)
@@ -106,8 +80,9 @@ correct schema override.)
 containing the tokens the hooks deny gets your own `mcp__*`/Bash write denied.
 Beyond bare `env`: `.env`/`.environment` (Rule 1 `\.env[.a-z]*` is unanchored —
 matches anywhere, even mid-word in prose), bounded dotfile/cert paths,
-`/proc/*/environ`, and secret-shaped fixtures (`op://`, key headers — these also
-trip `check-output.sh` on the _response_). Reword/backtick them, or keep literal
+`/proc/*/environ`, and secret-shaped fixtures (1Password refs that name a vault
+— the bare `op://` scheme passes — and key headers; these also trip
+`check-output.sh` on the _response_). Reword/backtick them, or keep literal
 evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
@@ -122,11 +97,6 @@ Also fires on `mcp__github__*` PR / issue bodies — prose like "staging env" /
 command expanding a non-allowlisted uppercase var — including one you define in
 that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
 (`sc=...; echo "${sc}"`) in throwaway commands.
-
-**BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
-DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
-matches the keyword as a substring — including inside a string literal
-(`where type = 'Drop'`). Reword to avoid the literal (`like 'Dr%'`).
 
 **Deny messages name the rule.** Every `check-sensitive.sh` denial reads
 `❌ check-sensitive.sh Rule N: <what matched>. <what to do instead>.` Follow the
@@ -147,55 +117,6 @@ path: Rule 2's protected set is `settings.json`, `settings.local.json`,
 Extract with `jq -r '.result' <file> | jq '<filter>'`. The spill message itself
 suggests a subagent — ignore that; verified 2026-09-16 after following the old
 "Bash-unreadable" note here burned a ~42k-token dispatch to run one `jq length`.
-
-## Context injection (`tool-gotchas.sh`)
-
-A third hook adds context instead of blocking. `tool-gotchas.sh` (PreToolUse,
-matcher `Agent|Workflow|mcp__.*`) injects `.claude/context/<key>.md` the first
-time a key is used in a session. The key is the server segment of an MCP tool
-name (`mcp__<server>__<tool>`), or `agent` for the `Agent` and `Workflow` tools.
-Add or change guidance for a server by editing that file — no hook or settings
-change needed. A new non-MCP tool needs a new `case` arm in the script.
-
-- It fails **open** (unparseable payload → exit 0, call proceeds) because it
-  only adds context. The two guard hooks fail closed — do not copy this pattern
-  into them.
-- `additionalContext` is consumed by PreToolUse at runtime but is NOT in the
-  harness's documented PreToolUse schema (only `permissionDecision`,
-  `permissionDecisionReason`, `updatedInput` are). If injection silently stops
-  after an upgrade, move the matcher to PostToolUse, where the field IS
-  documented; the script echoes the event name back, so it needs no edit.
-- Fires once per session per server, tracked by
-  `.claude/scratch/.gotchas-<session>-<server>`. A SessionStart `compact` hook
-  deletes those markers so the guidance survives a compaction.
-
-## Git authentication for new repos
-
-The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
-provisioned for. Pushing to other org repos requires bypassing it:
-`GITHUB_TOKEN= git -c credential.helper='!gh auth git-credential' push`
-
-The Codespace token also lacks `project` and org-admin scopes. `gh` calls that
-mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
-— prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
-which has full scopes.
-
-`gh run rerun` needs that same `GITHUB_TOKEN=` prefix, and with it, it works —
-so rerun a transiently failed CI job yourself instead of handing it over. Plain
-`gh run rerun <id> --failed` fails with "Resource not accessible by integration"
-because the `ghu_*` token lacks `workflow` scope; prefixing `GITHUB_TOKEN=`
-reruns it. Success prints NOTHING, so confirm it took by re-reading the run
-status rather than by the empty output. Verified 2026-09-16 on run 35135448204
-(a transient Artifact Registry 401 in a `dagster-cloud-deploy / merge` job,
-green on the rerun). Only the `--failed` form was exercised.
-
-`gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
-`ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
-integration"), and emptying it via `GITHUB_TOKEN=` leaves `gh` API calls
-unauthenticated. No `mcp__github__*` tool dispatches workflows either — hand it
-to the user or the Actions UI. (Pushing a commit that edits a
-`deploy-prod-<loc>.yaml` also triggers that location's deploy, since the file is
-in its own push-paths.)
 
 ## Protected files
 
